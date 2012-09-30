@@ -754,7 +754,6 @@ core/src/org/labkey/core/user/impersonate.jsp -text
 core/src/org/labkey/core/user/toggleInactive.jsp -text
 core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
-core/src/org/labkey/core/user/userPreferences.jsp -text
 core/src/org/labkey/core/webdav/DavController.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
@@ -2957,6 +2956,7 @@ study/src/org/labkey/study/designer/XMLSerializer.java -text
 study/src/org/labkey/study/designer/view/CreateRepositoryWizard.jsp -text
 study/src/org/labkey/study/designer/view/StudyDesignsWebPart.java -text
 study/src/org/labkey/study/designer/view/studyDesignSummary.jsp -text
+study/src/org/labkey/study/importer/AbstractStudyPiplineJob.java -text
 study/src/org/labkey/study/importer/CohortImporter.java -text
 study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
 study/src/org/labkey/study/importer/DatasetCohortAssigner.java -text
@@ -2969,6 +2969,7 @@ study/src/org/labkey/study/importer/ParticipantCommentImporter.java -text
 study/src/org/labkey/study/importer/ParticipantGroupImporter.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
 study/src/org/labkey/study/importer/ProtocolDocumentImporter.java -text
+study/src/org/labkey/study/importer/PublishStudyPipelineJob.java -text
 study/src/org/labkey/study/importer/QcStatesImporter.java -text
 study/src/org/labkey/study/importer/RequestabilityManager.java -text
 study/src/org/labkey/study/importer/SchemaReader.java -text
@@ -2976,6 +2977,7 @@ study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SchemaXmlReader.java -text
 study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
+study/src/org/labkey/study/importer/SpecimenRefreshPipelineJob.java -text
 study/src/org/labkey/study/importer/StudyImportContext.java -text
 study/src/org/labkey/study/importer/StudyImportFinalTask.java -text
 study/src/org/labkey/study/importer/StudyImportInitialTask.java -text

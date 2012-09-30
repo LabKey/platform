@@ -63,6 +63,7 @@ import java.util.Set;
 public class CoreQuerySchema extends UserSchema
 {
     private Set<Integer> _projectUserIds;
+    final boolean _mustCheckPermissions;
 
     public static final String USERS_TABLE_NAME = "Users";
     public static final String GROUPS_TABLE_NAME = "Groups";
@@ -77,7 +78,13 @@ public class CoreQuerySchema extends UserSchema
 
     public CoreQuerySchema(User user, Container c)
     {
+        this(user, c, true);
+    }
+
+    public CoreQuerySchema(User user, Container c, boolean mustCheckPermissions)
+    {
         super("core", SCHEMA_DESCR, user, c, CoreSchema.getInstance().getSchema());
+        _mustCheckPermissions = mustCheckPermissions;
     }
 
     public Set<String> getTableNames()
@@ -525,5 +532,16 @@ public class CoreQuerySchema extends UserSchema
             return true;
         return getContainer().hasPermission(getUser(),SeeUserEmailAddressesPermission.class) ||
             ContainerManager.getRoot().hasPermission(getUser(),SeeUserEmailAddressesPermission.class);
+    }
+
+    public boolean getMustCheckPermissions()
+    {
+        return _mustCheckPermissions;
+    }
+
+    @Override
+    protected boolean canReadSchema()
+    {
+        return !getMustCheckPermissions() || super.canReadSchema();
     }
 }

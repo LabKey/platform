@@ -68,6 +68,12 @@
     width: 23px;
 }
 
+/* participant & group filter panel label */
+.lk-filter-panel-label:hover
+{
+    text-decoration: underline;
+}
+
 .edit-views-link:hover
 {
     background: url("../_images/pencil2.png") center top no-repeat;

@@ -65,6 +65,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable
 {
     List<FieldKey> _defaultColumns;
     Set<String> _illegalColumns;
+    boolean _mustCheckPermissions = true;
 
     public UsersTable(UserSchema schema, SchemaTableInfo table)
     {
@@ -131,6 +132,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable
 
             if (!getUser().isAdministrator() && !getContainer().hasPermission(getUser(), AdminPermission.class))
             {
+                //_illegalColumns.add("UserId");
                 _illegalColumns.add("Phone");
                 _illegalColumns.add("Mobile");
                 _illegalColumns.add("Pager");
@@ -240,11 +242,19 @@ public class UsersTable extends SimpleUserSchema.SimpleTable
         return null;
     }
 
-/*
+    public boolean getMustCheckPermissions()
+    {
+        return _mustCheckPermissions;
+    }
+
+    public void setMustCheckPermissions(boolean mustCheckPermissions)
+    {
+        _mustCheckPermissions = mustCheckPermissions;
+    }
+
     @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return false;
+        return !getMustCheckPermissions() || super.hasPermission(user, perm);
     }
-*/
 }

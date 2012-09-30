@@ -456,19 +456,11 @@ public class LoginController extends SpringActionController
         // After successful login (and possibly profile update) we'll end up here
         URLHelper returnURL = form.getReturnURLHelper(defaultURL);
 
-        try
+        // If this is user's first log in or some required field isn't filled in then go to update page first
+        if (!skipProfile && null != user)
         {
-            // If this is user's first log in or some required field isn't filled in then go to update page first
-            if (!skipProfile && null != user && (user.isFirstLogin() || UserController.requiresUpdate(user)))
-            {
-                returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(returnURL, user.getUserId());
-            }
+            returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(returnURL, user.getUserId(), !user.isFirstLogin());
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
         return returnURL;
     }
 

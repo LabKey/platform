@@ -121,7 +121,7 @@ public class StudyImportContext extends AbstractContext
         try
         {
             studyDoc = StudyDocument.Factory.parse(studyXml, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(studyDoc);
+            XmlBeansUtil.validateXmlDocument(studyDoc, studyXml.getName());
         }
         catch (XmlException e)
         {

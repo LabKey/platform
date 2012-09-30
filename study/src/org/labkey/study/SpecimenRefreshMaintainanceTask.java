@@ -19,16 +19,21 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.study.importer.SpecimenRefreshPipelineJob;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.model.StudySnapshot.SnapshotSettings;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 /**
  * User: adam
@@ -81,17 +86,26 @@ public class SpecimenRefreshMaintainanceTask implements SystemMaintenance.Mainte
             if (null == destinationStudy.getLastSpecimenLoad() ||
                 sourceStudy.getLastSpecimenLoad().compareTo(destinationStudy.getLastSpecimenLoad()) > 0)
             {
-                LOG.info("Refreshing specimen data from \"" + sourceStudy.getContainer().getPath() + "\" (" + sourceStudy.getLabel() +
-                    ") to \"" + destinationStudy.getContainer().getPath() + "\" (" + destinationStudy.getLabel() + ")");
-                SnapshotSettings settings = snapshot.getSnapshotSettings();
+                try
+                {
+                    LOG.info("Refreshing specimen data from \"" + sourceStudy.getContainer().getPath() + "\" (" + sourceStudy.getLabel() +
+                        ") to \"" + destinationStudy.getContainer().getPath() + "\" (" + destinationStudy.getLabel() + ")");
+                    SnapshotSettings settings = snapshot.getSnapshotSettings();
 
-                List<String> participants = settings.getParticipants();
-                Set<Integer> visits = settings.getVisits();
-                boolean useAlternateIds = settings.isUseAlternateIds();
-                boolean shiftDates = settings.isShiftDates();
-                boolean remoteProtected = settings.isRemoveProtected();
+                    User user = UserManager.getUser(snapshot.getCreatedBy());
 
-                // TODO: This is where we kick off the actually specimen export and import, NYI
+                    // User must exist and have admin rights in both folders... but this may not be the case.
+                    // TODO: Support a built-in admin user for this purpose?  Ben Bimber has mentioned a need as well.
+
+                    PipeRoot root = PipelineService.get().findPipelineRoot(sourceStudy.getContainer());
+                    PipelineJob job = new SpecimenRefreshPipelineJob(sourceStudy.getContainer(), destinationStudy.getContainer(), user, null, root, settings);
+                    PipelineService.get().getPipelineQueue().addJob(job);
+                }
+                catch(Exception e)
+                {
+                    // Might not want to log this... or perhaps ignore PipelineValidationException?
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
             }
         }
     }

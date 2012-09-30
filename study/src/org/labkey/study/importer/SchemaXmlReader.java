@@ -65,7 +65,7 @@ public class SchemaXmlReader implements SchemaReader
             XmlObject doc = root.getXmlBean(metaDataFile);
             if (doc instanceof TablesDocument)
             {
-                XmlBeansUtil.validateXmlDocument(doc);
+                XmlBeansUtil.validateXmlDocument(doc, metaDataFile);
                 tablesDoc =  (TablesDocument)doc;
             }
             else

@@ -114,9 +114,9 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
             function renderTip(tip) {
                 if (_active)
-                    tip.update(Ext4.util.Format.htmlEncode(_active.data[labelField]));
+                    tip.update('<b>' + Ext4.util.Format.htmlEncode(_active.data[labelField]) + '</b><br>Click the label to ' +
+                            'select only this item. Click the checkbox to toggle this item and preserve other selections.');
             }
-
 
             function loadRecord(tip) {
                 var r = view.getRecord(tip.triggerElement.parentNode);
@@ -146,6 +146,8 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             });
         }
 
+        var selectionModel = Ext4.create('Ext.selection.CheckboxModel', {checkOnly : true});
+
         return {
             xtype       : 'grid',
             itemId      : 'selectGrid',
@@ -161,10 +163,17 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 stripeRows : false,
                 listeners  : {
                     render : initToolTip,
+                    cellclick : function(cmp, td, idx, record, tr, rowIdx, e) {
+                        var checker = e.getTarget('.lk-filter-panel-label');
+
+                        // clicking on the grid label selects only that item
+                        if (checker)
+                            selectionModel.select(rowIdx);
+                    },
                     scope  : this
                 }
             },
-            selType     : 'checkboxmodel',
+            selModel    : selectionModel,
             bubbleEvents: ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave'],
             scope       : this
         };
@@ -270,10 +279,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     },
 
     getColumnCfg : function(isHeader) {
-        var tpl = '<div' + (this.normalWrap ? ' class="normalwrap-gridcell"' : '') + '>{'+this.labelField+':htmlEncode}</div>';
+        var tpl = '<div><span ' + (this.normalWrap ? ' class="lk-filter-panel-label normalwrap-gridcell"' : '') + '>{'+this.labelField+':htmlEncode}</span></div>';
 
         if (isHeader)
-            tpl =  '<div' + (this.normalWrap ? ' class="normalwrap-gridcell"' : '') + '><b class="filter-description">{'+this.labelField+':htmlEncode}</b></div>';
+            tpl =  '<div><span ' + (this.normalWrap ? ' class="lk-filter-panel-label normalwrap-gridcell"' : '') + '><b class="filter-description">{'+this.labelField+':htmlEncode}</b></span></div>';
 
         return [{
             xtype     : 'templatecolumn',

@@ -18,6 +18,7 @@ package org.labkey.core.user;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -34,32 +35,32 @@ import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.module.ModuleContext;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.LoginUrls;
@@ -80,21 +81,21 @@ import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.OwnerRole;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -114,11 +115,13 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.query.UsersDomainKind;
+import org.labkey.core.query.UsersTable;
 import org.labkey.core.security.SecurityController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -193,11 +196,13 @@ public class UserController extends SpringActionController
             return url;
         }
 
-        public ActionURL getUserUpdateURL(URLHelper returnURL, int userId)
+        public ActionURL getUserUpdateURL(URLHelper returnURL, int userId, boolean checkIfRequired)
         {
-            ActionURL url = new ActionURL(ShowUpdateAction.class, ContainerManager.getRoot());
+            ActionURL url = new ActionURL(CheckUpdateAction.class, ContainerManager.getRoot());
             url.addReturnURL(returnURL);
             url.addParameter("userId", userId);
+            url.addParameter("checkIfRequired", checkIfRequired);
+
             return url;
         }
 
@@ -244,16 +249,6 @@ public class UserController extends SpringActionController
         return getUserColumnNames(null, null);
     }
 
-    private class SiteUserDataRegion extends DataRegion
-    {
-        protected boolean isRecordSelectorEnabled(RenderContext ctx)
-        {
-            int userId = ctx.getViewContext().getUser().getUserId();
-            Integer rowId = (Integer) ctx.getRow().get("userId");
-            return  (userId != rowId);
-        }
-    }
-
     private void setDataRegionButtons(DataRegion rgn, boolean isOwnRecord)
     {
         final User user = getUser();
@@ -294,9 +289,10 @@ public class UserController extends SpringActionController
         if (isAnyAdmin)
             detailsButtonBar.add(showGrid);
 
-        ActionURL editURL = QueryService.get().urlDefault(c, QueryAction.updateQueryRow,
-                CoreSchema.getInstance().getSchemaName(), CoreQuerySchema.USERS_TABLE_NAME);
-        editURL.addParameter("userId", currentURL.getParameter("userId"));
+        ActionURL editURL = new ActionURL(ShowUpdateAction.class, getContainer());
+        editURL.addParameter(QueryParam.schemaName.toString(), "core");
+        editURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
+        editURL.addParameter("userId", NumberUtils.toInt(currentURL.getParameter("userId")));
         editURL.addParameter(QueryParam.srcURL, currentURL.getLocalURIString());
 
         if (isOwnRecord || isSiteAdmin)
@@ -311,7 +307,6 @@ public class UserController extends SpringActionController
         ButtonBar updateButtonBar = new ButtonBar();
         updateButtonBar.setStyle(ButtonBar.Style.separateButtons);
         ActionButton update = new ActionButton(editURL, "Submit");
-        update.setActionType(ActionButton.Action.LINK);
         if (isOwnRecord)
         {
             updateButtonBar.addContextualRole(OwnerRole.class);
@@ -578,32 +573,6 @@ public class UserController extends SpringActionController
         }
     }
 
-    private static boolean validateRequiredColumns(Map<String, Object> resultMap, TableInfo table)
-    {
-        final String requiredFields = UserManager.getRequiredUserFields();
-        if (requiredFields == null || requiredFields.length() == 0)
-            return true;
-
-        for (String key : resultMap.keySet())
-        {
-            final ColumnInfo col = table.getColumn(key);
-            if (col != null && isColumnRequired(col.getName(), requiredFields))
-            {
-                final Object val = resultMap.get(key);
-                if (val == null || val.toString().trim().length() == 0)
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    private static boolean isColumnRequired(String column, String requiredColumns)
-    {
-        return requiredColumns != null && requiredColumns.toLowerCase().indexOf(column.toLowerCase()) != -1;
-    }
-
     public static class ShowUsersForm extends QueryViewAction.QueryExportForm
     {
         private boolean _inactive;
@@ -839,27 +808,19 @@ public class UserController extends SpringActionController
         }
     }
 
-
-    private boolean isValidRequiredField(final String name)
-    {
-        return (!"Email".equals(name) && !"UserId".equals(name) &&
-                !"LastLogin".equals(name) && !"DisplayName".equals(name));
-    }
-
-
     @RequiresSiteAdmin
-    public class ShowUserPreferencesAction extends RedirectAction<UserPreferenceForm>
+    public class ShowUserPreferencesAction extends RedirectAction<Object>
     {
         ActionURL _successUrl;
 
         @Override
-        public URLHelper getSuccessURL(UserPreferenceForm userPreferenceForm)
+        public URLHelper getSuccessURL(Object form)
         {
             return _successUrl;
         }
 
         @Override
-        public boolean doAction(UserPreferenceForm userPreferenceForm, BindException errors) throws Exception
+        public boolean doAction(Object form, BindException errors) throws Exception
         {
             String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
@@ -875,62 +836,108 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public void validateCommand(UserPreferenceForm target, Errors errors)
+        public void validateCommand(Object form, Errors errors)
         {
         }
     }
 
-/*
-    @RequiresSiteAdmin
-    public class ShowUserPreferencesAction extends FormViewAction<UserPreferenceForm>
+    @RequiresLogin @CSRF
+    public class ShowUpdateAction extends UserSchemaAction
     {
-        public void validateCommand(UserPreferenceForm target, Errors errors)
+        public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors) throws Exception
         {
-        }
+            User user = getViewContext().getUser();
+            int userId = user.getUserId();
+            if (null == form.getPkVal())
+                form.setPkVal(userId);
 
-        public ModelAndView getView(UserPreferenceForm userPreferenceForm, boolean reshow, BindException errors) throws Exception
-        {
-            List<String> columnNames = new ArrayList<String>();
-            for (String name : getDefaultUserColumnNames().split(","))
+            boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == userId;
+            HttpView view;
+
+            if (user.isAdministrator() || isOwnRecord)
             {
-                name = name.trim();
-                if (isValidRequiredField(name))
-                    columnNames.add(name);
-            }
-            List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(columnNames.toArray(new String[columnNames.size()]));
-            UserPreference bean = new UserPreference(cols, UserManager.getRequiredUserFields());
-            return new JspView<UserPreference>("/org/labkey/core/user/userPreferences.jsp", bean);
-        }
+                ButtonBar bb = createSubmitCancelButtonBar(form);
+                bb.addContextualRole(OwnerRole.class);
+                for (DisplayElement button : bb.getList())
+                    button.addContextualRole(OwnerRole.class);
+                view = new UpdateView(form, errors);
 
-        public boolean handlePost(UserPreferenceForm form, BindException errors) throws Exception
-        {
-            final StringBuilder sb = new StringBuilder();
-            if (form.getRequiredFields().length > 0)
+                DataRegion rgn = ((UpdateView)view).getDataRegion();
+                rgn.setButtonBar(bb);
+
+                TableInfo table = ((UpdateView) view).getTable();
+                if (table instanceof UsersTable)
+                    ((UsersTable)table).setMustCheckPermissions(false);
+/*
+                view.getViewContext().addContextualRole(ReadPermission.class);
+                view.getViewContext().addContextualRole(UpdatePermission.class);
+*/
+            }
+            else
             {
-                String sep = "";
-                for (String field : form.getRequiredFields())
-                {
-                    sb.append(sep);
-                    sb.append(field);
-                    sep = ";";
-                }
+                throw new UnauthorizedException();
             }
-            UserManager.setRequiredUserFields(sb.toString());
-            return true;
+
+            if (isOwnRecord)
+                view =  new VBox(new HtmlView("Please enter your contact information."), view);
+
+            return view;
         }
 
-        public ActionURL getSuccessURL(UserPreferenceForm userPreferenceForm)
+        @Override
+        protected QueryForm createQueryForm(ViewContext context)
         {
-            return new UserUrlsImpl().getSiteUsersURL();
+            QueryForm form = new UserQueryForm();
+
+            form.setViewContext(context);
+            form.bindParameters(context.getBindPropertyValues());
+
+            return form;
+        }
+
+        public boolean handlePost(QueryUpdateForm form, BindException errors) throws Exception
+        {
+            User user = getViewContext().getUser();
+            int userId = user.getUserId();
+            boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == userId;
+
+            if (user.isAdministrator() || isOwnRecord)
+            {
+                TableInfo table = form.getTable();
+                if (table instanceof UsersTable)
+                    ((UsersTable)table).setMustCheckPermissions(false);
+                doInsertUpdate(form, errors, false);
+            }
+            return 0 == errors.getErrorCount();
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            return root.addChild("User Preferences");
+            super.appendNavTrail(root);
+            root.addChild("Edit " + _form.getQueryName());
+            return root;
         }
     }
-*/
+
+    private static class UserQueryForm extends QueryForm
+    {
+        @Override
+        public UserSchema getSchema()
+        {
+            int userId = NumberUtils.toInt(getViewContext().getActionURL().getParameter("userId"));
+            boolean checkPermission = mustCheckPermissions(getUser(), userId);
+
+            return new CoreQuerySchema(getViewContext().getUser(), getViewContext().getContainer(), checkPermission);
+        }
+
+        private boolean mustCheckPermissions(User user, int userRecordId)
+        {
+            if (user.isAdministrator())
+                return false;
+
+            return user.getUserId() != userRecordId;
+        }
+    }
 
     public static class AccessDetail
     {
@@ -1078,37 +1085,6 @@ public class UserController extends SpringActionController
                 return thisUser.getDisplayName(getViewContext().getUser()).compareTo(thatUser.getDisplayName(getViewContext().getUser()));
             else
                 return this.getUser().getName().compareTo(o.getUser().getName());
-        }
-    }
-
-    public static class UserPreference
-    {
-        private List<ColumnInfo> _columns;
-        private String _requiredFields;
-
-        public UserPreference(List<ColumnInfo> columns, String requiredFields)
-        {
-            _columns = columns;
-            _requiredFields = requiredFields;
-        }
-
-        public List<ColumnInfo> getColumns(){return _columns;}
-        public String getRequiredFields(){return _requiredFields;}
-    }
-
-    public static class UserPreferenceForm
-    {
-        private String[] _requiredFields = new String[0];
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setRequiredFields(String[] requiredFields)
-        {
-            _requiredFields = requiredFields;
-        }
-
-        public String[] getRequiredFields()
-        {
-            return _requiredFields;
         }
     }
 
@@ -1454,116 +1430,117 @@ public class UserController extends SpringActionController
     }
 
     @RequiresLogin @CSRF
-    public class ShowUpdateAction extends FormViewAction<UpdateForm>
+    public class CheckUpdateAction extends RedirectAction<CheckUserUpdateForm>
     {
-        Integer _userId;
+        private URLHelper _target;
 
-        public void validateCommand(UpdateForm form, Errors errors)
+        @Override
+        public URLHelper getSuccessURL(CheckUserUpdateForm form)
         {
+            return _target;
         }
 
-        public ModelAndView getView(UpdateForm form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public boolean doAction(CheckUserUpdateForm form, BindException errors) throws Exception
         {
-            User user = getUser();
-            int userId = user.getUserId();
-            if (null == form.getPkVal())
-                form.setPkVal(userId);
-
-            boolean isOwnRecord = ((Integer) form.getPkVal()) == userId;
-            HttpView view;
-
-            if (user.isAdministrator() || isOwnRecord)
+            if (form.isCheckIfRequired() && form.getReturnUrl() != null)
             {
-                form.setContainer(null);
-                CoreQuerySchema schema = new CoreQuerySchema(getUser(), getContainer());
-                QueryUpdateForm quf = new QueryUpdateForm(schema.createTable(CoreQuerySchema.USERS_TABLE_NAME), getViewContext());
-                UpdateView updateView = new UpdateView(quf, errors);
-                DataRegion rgn = updateView.getDataRegion();
-
-                setDataRegionButtons(rgn, isOwnRecord);
-
-                rgn.removeColumns("Active");
-
-                String returnUrl = form.getStrings().get(ActionURL.Param.returnUrl.name());
-
-                if (null != returnUrl)
-                    rgn.addHiddenFormField(ActionURL.Param.returnUrl, returnUrl);
-
-                view = new UpdateView(rgn, form, errors);
-                view.getViewContext().addContextualRole(ReadPermission.class);
-                view.getViewContext().addContextualRole(UpdatePermission.class);
-            }
-            else
-            {
-                throw new UnauthorizedException();
+                getViewContext().addContextualRole(ReadPermission.class);
+                if (!requiresUpdate(getUser(), errors))
+                    _target = form.getReturnUrl().getURLHelper();
             }
 
-            if (isOwnRecord)
-                view =  new VBox(new HtmlView("Please enter your contact information."), view);
+            if (_target == null)
+            {
+                ActionURL url = new ActionURL(ShowUpdateAction.class, getContainer());
+                url.addParameter(QueryParam.schemaName.toString(), "core");
+                url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
+                url.addParameter("userId", getUser().getUserId());
+                //url.addParameter(QueryParam.srcURL, form.getReturnUrl().toString());
 
-            _userId = (Integer)form.getPkVal();
-            return view;
+                _target = url;
+            }
+
+            return !errors.hasErrors();
         }
 
-        public boolean handlePost(UpdateForm form, BindException errors) throws Exception
+        private boolean requiresUpdate(User user, BindException errors) throws SQLException
         {
-            User user = getUser();
-            Map<String,Object> values = form.getTypedValues();
-            UserManager.updateUser(user, values, form.getPkVal());
-            return true;
+            String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
+            Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+
+            if (domain != null)
+            {
+                try {
+
+                    List<String> requiredFields = new ArrayList<String>();
+                    for (DomainProperty prop : domain.getProperties())
+                    {
+                        if (prop.isRequired())
+                            requiredFields.add(prop.getName());
+                    }
+
+                    if (!requiredFields.isEmpty())
+                    {
+                        UserSchema schema = new CoreQuerySchema(getUser(), getContainer(), false);
+                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, CoreQuerySchema.USERS_TABLE_NAME);
+
+                        settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
+
+                        Map<String, Object> params = Collections.emptyMap();
+                        TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
+                        Results results = QueryService.get().select(table, table.getColumns(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()),
+                                null, params);
+                        ResultSet rs = results.getResultSet();
+
+                        try {
+                            if (results.next())
+                            {
+                                for (String fieldName : requiredFields)
+                                {
+                                    FieldKey fieldKey = FieldKey.fromParts(fieldName);
+                                    if (results.hasColumn(fieldKey))
+                                    {
+                                        Object val = results.getObject(fieldKey);
+                                        if (val == null || val.toString().trim().length() == 0)
+                                            return true;
+                                    }
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            ResultSetUtil.close(rs);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new SQLException(e);
+                }
+            }
+            return false;
         }
 
-        public URLHelper getSuccessURL(UpdateForm form)
+        @Override
+        public void validateCommand(CheckUserUpdateForm target, Errors errors)
         {
-            URLHelper returnURL = form.getReturnURLHelper();
-            return new UserUrlsImpl().getUserDetailsURL(getContainer(), ((Integer)form.getPkVal()).intValue(), returnURL);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            addUserDetailsNavTrail(root, _userId);
-            root.addChild("Update");
-            return root.addChild(UserManager.getEmailForId(_userId));
         }
     }
 
-    /**
-     * Checks to see if the specified user has required fields in their
-     * info form that have not been filled.
-     * @param user
-     * @return
-     */
-    public static boolean requiresUpdate(User user) throws SQLException
+    public static class CheckUserUpdateForm extends ReturnUrlForm
     {
-        final String required = UserManager.getRequiredUserFields();
+        private boolean _checkIfRequired;
 
-        if (user != null && required != null && required.length() > 0)
+        public boolean isCheckIfRequired()
         {
-            DataRegion rgn = new DataRegion();
-            List<ColumnInfo> columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(getDefaultUserColumnNames());
-            rgn.setColumns(columns);
-
-            TableInfo info = rgn.getTable();
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("userId", user.getUserId(), CompareType.EQUAL);
-
-			List<ColumnInfo> select = new ArrayList<ColumnInfo>(columns);
-			select.add(CoreSchema.getInstance().getTableInfoUsers().getColumn("userId"));
-            Table.TableResultSet trs = Table.select(info, select, filter, null);
-
-            try
-			{
-                // this should really only return one row
-                if (trs.next())
-                    return !validateRequiredColumns(trs.getRowMap(), info);
-            }
-            finally
-            {
-                trs.close();
-            }
+            return _checkIfRequired;
         }
 
-        return false;
+        public void setCheckIfRequired(boolean checkIfRequired)
+        {
+            _checkIfRequired = checkIfRequired;
+        }
     }
 
     @RequiresSiteAdmin @CSRF
@@ -1628,7 +1605,6 @@ public class UserController extends SpringActionController
         }
     }
 
-
     public static class UpdateForm extends TableViewForm
     {
         public UpdateForm()
@@ -1692,19 +1668,6 @@ public class UserController extends SpringActionController
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Pager number greater than 64 characters: " + phoneNum);
             }
-        }
-
-        public ColumnInfo getColumnByFormFieldName(String name)
-        {
-            ColumnInfo info = super.getColumnByFormFieldName(name);
-            final String requiredFields = UserManager.getRequiredUserFields();
-
-            if (isColumnRequired(name, requiredFields))
-            {
-                return new RequiredColumn(info);
-            }
-
-            return info;
         }
     }
 

@@ -84,7 +84,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                     if (xml instanceof PagesDocument)
                     {
                         pagesDocXml = (PagesDocument)xml;
-                        XmlBeansUtil.validateXmlDocument(pagesDocXml);
+                        XmlBeansUtil.validateXmlDocument(pagesDocXml, pagesFileName);
                     }
                     else
                     {

@@ -7720,6 +7720,45 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ExportParticipantTransformsAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            if (study != null)
+            {
+                // Ensure alternateIds are generated for all participants
+                StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
+
+                TableInfo ti = StudySchema.getInstance().getTableInfoParticipant();
+                List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+                cols.add(ti.getColumn("participantid"));
+                cols.add(ti.getColumn("dateoffset"));
+                cols.add(ti.getColumn("alternateid"));
+                SimpleFilter filter = new SimpleFilter();
+                filter.addCondition(ti.getColumn("container"), getContainer());
+                Results rs = QueryService.get().select(ti, cols, filter, new Sort("participantid"));
+
+                TSVGridWriter writer = new TSVGridWriter(rs);
+                writer.setApplyFormats(false);
+                writer.setFilenamePrefix("ParticipantTransforms");
+                writer.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                writer.write(getViewContext().getResponse()); // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+
+                return null;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     private static final String ALTERNATEID_PROPERTIES = "Study.alternateIdProperties";
     private static final String ALTERNATEID_PREFIX_PROPERTY = "alternateIdPrefixProperty";
     private static final String ALTERNATEID_NUMDIGITS_PROPERTY = "alternateIdNumDigitsProperty";

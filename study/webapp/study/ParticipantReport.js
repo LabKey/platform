@@ -202,7 +202,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             standardSubmit  : true,
             items           : [
                 {xtype : 'hidden', name : 'htmlFragment'},
-                {xtype : 'hidden', name : 'X-LABKEY-CSRF'}
+                {xtype : 'hidden', name : 'X-LABKEY-CSRF'},
+                {xtype : 'fileuploadfield', name : 'file', hidden : true}
             ]
         });
 

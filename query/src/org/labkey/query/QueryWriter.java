@@ -15,8 +15,8 @@
  */
 package org.labkey.query;
 
+import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
-import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
@@ -24,6 +24,8 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
@@ -39,6 +41,8 @@ import java.util.List;
  */
 public class QueryWriter extends BaseFolderWriter
 {
+    private static final Logger _log = Logger.getLogger(QueryWriter.class);
+
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION =  ".query.xml";
 
@@ -81,7 +85,16 @@ public class QueryWriter extends BaseFolderWriter
                 if (null != query.getMetadataXml())
                 {
                     XmlObject xObj = XmlObject.Factory.parse(query.getMetadataXml());
-                    queryXml.setMetadata(xObj);
+
+                    try
+                    {
+                        XmlBeansUtil.validateXmlDocument(xObj, "metadata for " + query.getSchemaName() + "." + query.getName());
+                        queryXml.setMetadata(xObj);
+                    }
+                    catch (XmlValidationException e)
+                    {
+                        _log.error("Invalid meta data set on query " + query.getSchemaName() + "." + query.getName() + ". Meta data will not be exported for this query.", e);
+                    }
                 }
 
                 queriesDir.saveXmlBean(query.getName() + META_FILE_EXTENSION, qDoc);

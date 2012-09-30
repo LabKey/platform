@@ -107,6 +107,10 @@
                         handler: function() {changeAlternateIds(prefixField, digitsField);}
                     },{
                         xtype: 'button',
+                        text: 'Export',
+                        handler: function() {window.location = LABKEY.ActionURL.buildURL("study", "exportParticipantTransforms");}
+                    },{
+                        xtype: 'button',
                         text: 'Done',
                         handler: function() {window.location = LABKEY.ActionURL.buildURL('study', 'manageStudy.view', null, null);}
                     }]
@@ -120,7 +124,7 @@
                     buttons: Ext4.MessageBox.OK,
                     icon: Ext4.MessageBox.INFO
                 });
-            }
+            };
 
             var changeAlternateIds = function(prefixField, digitsField) {
                 Ext4.MessageBox.show({
@@ -150,8 +154,8 @@
                         }
                     }
                 });
-            }
-        }
+            };
+        };
 
         Ext4.onReady(init);
 

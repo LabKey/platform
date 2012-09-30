@@ -33,7 +33,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -64,7 +63,6 @@ import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -104,7 +102,6 @@ import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.xml.ApiTestsDocument;
 import org.labkey.query.xml.TestCaseType;
-import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -2004,153 +2001,6 @@ public class QueryController extends SpringActionController
         public ActionURL getSuccessURL(QueryForm queryForm)
         {
             return _url;
-        }
-    }
-
-    protected static abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
-    {
-        QueryForm _form;
-        UserSchema _schema;
-        TableInfo _table;
-
-        public BindException bindParameters(PropertyValues m) throws Exception
-        {
-            QueryForm form = new QueryForm();
-            form.setViewContext(getViewContext());
-            form.bindParameters(getViewContext().getBindPropertyValues());
-
-            _form = form;
-            _schema = form.getSchema();
-            if (null == _schema)
-            {
-                throw new NotFoundException("Schema not found");
-            }
-            _table = _schema.getTable(form.getQueryName(), true, true);
-            if (null == _table)
-            {
-                throw new NotFoundException("Query not found");
-            }
-            _table.overlayMetadata(_table.getName(), _schema, new ArrayList<QueryException>());
-            QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext(), null);
-            BindException errors = new NullSafeBindException(new BeanUtilsPropertyBindingResult(command, "form"));
-            command.validateBind(errors);
-            return errors;
-        }
-
-        public void validateCommand(QueryUpdateForm target, Errors errors)
-        {
-        }
-
-        protected ButtonBar createSubmitCancelButtonBar(QueryUpdateForm tableForm)
-        {
-            ButtonBar bb = new ButtonBar();
-            bb.setStyle(ButtonBar.Style.separateButtons);
-            String submitGUID = "submit-" + GUID.makeGUID();
-            String cancelGUID = "cancel-" + GUID.makeGUID();
-            String disableButtonScript = "Ext.get('" + submitGUID + "').replaceClass('labkey-button', 'labkey-disabled-button'); Ext.get('" + cancelGUID + "').replaceClass('labkey-button', 'labkey-disabled-button'); return true;";
-            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
-            btnSubmit.setScript(disableButtonScript);
-            btnSubmit.setActionType(ActionButton.Action.POST);
-            btnSubmit.setId(submitGUID);
-            ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
-            btnCancel.setId(cancelGUID);
-            bb.add(btnSubmit);
-            bb.add(btnCancel);
-            return bb;
-        }
-
-        public ActionURL getSuccessURL(QueryUpdateForm form)
-        {
-            String returnURL = getViewContext().getRequest().getParameter(QueryParam.srcURL.toString());
-            if (returnURL != null)
-                return new ActionURL(returnURL);
-            return _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
-        }
-
-        public ActionURL getCancelURL(QueryUpdateForm form)
-        {
-            ActionURL cancelURL;
-            if (getViewContext().getActionURL().getParameter(QueryParam.srcURL) != null)
-            {
-                cancelURL = new ActionURL(getViewContext().getActionURL().getParameter(QueryParam.srcURL));
-            }
-            else if (_schema != null && _table != null)
-            {
-                cancelURL = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
-            }
-            else
-            {
-                cancelURL = new ActionURL(ExecuteQueryAction.class, form.getContainer());
-            }
-            return cancelURL;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            if (_table != null)
-                root.addChild(_table.getName(), getSuccessURL(null));
-            return root;
-        }
-
-        protected void doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert) throws Exception
-        {
-            TableInfo table = form.getTable();
-            if (!table.hasPermission(form.getUser(), insert ? InsertPermission.class : UpdatePermission.class))
-            {
-                throw new UnauthorizedException();
-            }
-
-            Map<String, Object> values = form.getTypedColumns();
-
-            QueryUpdateService qus = table.getUpdateService();
-            if (qus == null)
-                throw new IllegalArgumentException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
-
-            DbSchema dbschema = table.getSchema();
-            try
-            {
-                dbschema.getScope().ensureTransaction();
-
-                if (insert)
-                {
-                    BatchValidationException batchErrors = new BatchValidationException();
-                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null);
-                    if (batchErrors.hasErrors())
-                        throw batchErrors;
-                }
-                else
-                {
-                    Map<String, Object> oldValues = null;
-                    if (form.getOldValues() instanceof Map)
-                    {
-                        oldValues = (Map<String, Object>)form.getOldValues();
-                        if (!(oldValues instanceof CaseInsensitiveMapWrapper))
-                            oldValues = new CaseInsensitiveMapWrapper<Object>(oldValues);
-                    }
-                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
-                }
-
-                dbschema.getScope().commitTransaction();
-            }
-            catch (SQLException x)
-            {
-                if (!SqlDialect.isConstraintException(x))
-                    throw x;
-                errors.reject(ERROR_MSG, x.getMessage());
-            }
-            catch (BatchValidationException x)
-            {
-                x.addToErrors(errors);
-            }
-            catch (Exception x)
-            {
-                errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
-                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
-            }
-            finally
-            {
-                dbschema.getScope().closeConnection();
-            }
         }
     }
 

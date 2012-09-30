@@ -256,8 +256,7 @@
         <ns:inputType>text</ns:inputType>
         <ns:inputLength>10</ns:inputLength>
         <ns:nullable>false</ns:nullable>
-        <ns:isReadOnly>false</ns:isReadOnly>
-        <ns:isUserEditable>false</ns:isUserEditable>
+        <ns:isReadOnly>true</ns:isReadOnly>
         <ns:description>The unique id of this user.</ns:description>
       </ns:column>
       <ns:column columnName="DisplayName">

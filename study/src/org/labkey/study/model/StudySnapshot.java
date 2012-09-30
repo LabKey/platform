@@ -139,8 +139,8 @@ public class StudySnapshot
     public static class SnapshotSettings
     {
         private boolean specimenRefresh;
-        private boolean useAlternateIds;
-        private boolean removeProtected;
+        private boolean useAlternateParticipantIds;
+        private boolean removeProtectedColumns;
         private boolean shiftDates;
         private Set<Integer> visits;
         private List<String> participants;
@@ -152,8 +152,8 @@ public class StudySnapshot
         private SnapshotSettings(StudyExportContext ctx, boolean refresh)
         {
             specimenRefresh = refresh;
-            useAlternateIds = ctx.isAlternateIds();
-            removeProtected = ctx.isRemoveProtected();
+            useAlternateParticipantIds = ctx.isAlternateIds();
+            removeProtectedColumns = ctx.isRemoveProtected();
             shiftDates = ctx.isShiftDates();
 
             visits = ctx.getVisitIds();
@@ -165,14 +165,14 @@ public class StudySnapshot
             return specimenRefresh;
         }
 
-        public boolean isUseAlternateIds()
+        public boolean isUseAlternateParticipantIds()
         {
-            return useAlternateIds;
+            return useAlternateParticipantIds;
         }
 
-        public boolean isRemoveProtected()
+        public boolean isRemoveProtectedColumns()
         {
-            return removeProtected;
+            return removeProtectedColumns;
         }
 
         public boolean isShiftDates()

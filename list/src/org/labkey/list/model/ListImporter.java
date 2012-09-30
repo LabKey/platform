@@ -73,7 +73,7 @@ public class ListImporter
             if (listXml instanceof TablesDocument)
             {
                 tablesDoc = (TablesDocument)listXml;
-                XmlBeansUtil.validateXmlDocument(tablesDoc);
+                XmlBeansUtil.validateXmlDocument(tablesDoc, ListWriter.SCHEMA_FILENAME);
             }
             else
                 throw new ImportException("Unable to get an instance of TablesDocument from " + ListWriter.SCHEMA_FILENAME);
@@ -98,7 +98,7 @@ public class ListImporter
             if (listSettingsXml instanceof ListsDocument)
             {
                 ListsDocument listSettingsDoc = (ListsDocument)listSettingsXml;
-                XmlBeansUtil.validateXmlDocument(listSettingsDoc);
+                XmlBeansUtil.validateXmlDocument(listSettingsDoc, ListWriter.SETTINGS_FILENAME);
 
                 ListsDocument.Lists.List[] listArray = listSettingsDoc.getLists().getListArray();
 
