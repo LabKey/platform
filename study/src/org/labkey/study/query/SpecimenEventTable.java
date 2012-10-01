@@ -76,6 +76,7 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("UpdateTimestamp"));
         addWrapColumn(_rootTable.getColumn("TotalCellCount"));
         addWrapColumn(_rootTable.getColumn("TubeType"));
+        addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addContainerColumn();
     }
 
