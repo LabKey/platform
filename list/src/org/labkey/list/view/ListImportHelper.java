@@ -30,11 +30,9 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.model.FileNameUniquifier;
 import org.labkey.list.model.ListItemImpl;
-import org.labkey.list.model.ListManager;
 
 import java.io.File;
 import java.io.InputStream;

@@ -53,7 +53,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.list.view.ListItemAttachmentParent;
 
@@ -220,12 +219,12 @@ public class ListItemImpl implements ListItem
         return null != prop ? prop.value() : null;
     }
 
-    public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
+    public void save(User user) throws SQLException, IOException, ValidationException
     {
         save(user, false);
     }
 
-    public void save(User user, boolean bulkLoad) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
+    public void save(User user, boolean bulkLoad) throws SQLException, IOException, ValidationException
     {
         try
         {
@@ -344,6 +343,10 @@ public class ListItemImpl implements ListItem
             }
 
             ExperimentService.get().commitTransaction();
+        }
+        catch (IOException e)
+        {
+            throw new ValidationException(e.getMessage());
         }
         finally
         {
