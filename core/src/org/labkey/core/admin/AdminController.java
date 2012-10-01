@@ -2749,7 +2749,9 @@ public class AdminController extends SpringActionController
         {
             getViewContext().getSession().setAttribute("adminMode", form.isAdminMode());
             NavTreeManager.uncacheAll();
-            return new ActionURL(form.getRedir());
+            if (null != form.getReturnActionURL())
+                return form.getReturnActionURL();
+            return new ActionURL();
         }
     }
 
@@ -2761,16 +2763,17 @@ public class AdminController extends SpringActionController
         public ActionURL getRedirectURL(UserPrefsForm form) throws Exception
         {
             PreferenceService.get().setProperty("showFolders", Boolean.toString(form.isShowFolders()), getUser());
-            return new ActionURL(form.getRedir());
+            if (null != form.getReturnActionURL())
+                return form.getReturnActionURL();
+            return new ActionURL();
         }
     }
 
 
-    public static class UserPrefsForm
+    public static class UserPrefsForm extends ReturnUrlForm
     {
         private boolean adminMode;
         private boolean showFolders;
-        private String redir;
 
         public boolean isAdminMode()
         {
@@ -2790,17 +2793,6 @@ public class AdminController extends SpringActionController
         public void setShowFolders(boolean showFolders)
         {
             this.showFolders = showFolders;
-        }
-
-        // TODO: Should be a ReturnUrlForm
-        public String getRedir()
-        {
-            return redir;
-        }
-
-        public void setRedir(String redir)
-        {
-            this.redir = redir;
         }
     }
 
