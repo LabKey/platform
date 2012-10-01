@@ -856,7 +856,14 @@ public class ReportsController extends BaseStudyController
                 Report report = form.getReport(getViewContext());
                 if (report != null)
                 {
-                    v.addView(report.renderReport(getViewContext()));
+                    try
+                    {
+                        v.addView(report.renderReport(getViewContext()));
+                    }
+                    catch (RuntimeException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
 
                     SaveReportViewForm bean = new SaveReportViewForm(report);
                     bean.setShareReport(true);
@@ -865,6 +872,7 @@ public class ReportsController extends BaseStudyController
                     bean.setDataRegionName(form.getDataRegionName());
                     bean.setViewName(form.getViewName());
                     bean.setRedirectUrl(form.getRedirectUrl());
+                    bean.setErrors(errors);
 
                     if (!getUser().isGuest())
                     {
