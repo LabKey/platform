@@ -92,7 +92,7 @@ public class Crosstab
                     _statType = StatType.string;
             }
             else
-                throw new IllegalArgumentException("The specified statistics column: " + _statFieldKey + " is not available in this view");
+                throw new RuntimeException("The specified statistics column: " + _statFieldKey + " is not available in this view");
 
 //        ResultSet rs = _results.getResultSet();
 
