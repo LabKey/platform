@@ -27,10 +27,8 @@ import org.labkey.api.study.assay.PlateUrls;
 import org.labkey.api.gwt.client.util.ColorGenerator;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.study.plate.PlateDataServiceImpl;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.view.StudyGWTView;
@@ -297,14 +295,7 @@ public class PlateController extends SpringActionController
                 Container dest = ContainerManager.getForPath(_selectedDestination);
                 if (dest != null)
                 {
-                    try
-                    {
-                        _destinationTemplates = PlateService.get().getPlateTemplates(dest);
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
-                    }
+                    _destinationTemplates = PlateService.get().getPlateTemplates(dest);
                 }
             }
 
@@ -373,16 +364,7 @@ public class PlateController extends SpringActionController
             if (destination == null || !destination.hasPermission(getUser(), InsertPermission.class))
                 errors.reject("copyForm", "Destination container does not exist or permission is denied.");
 
-            PlateTemplate destinationTemplate = null;
-            try
-            {
-                destinationTemplate = PlateService.get().getPlateTemplate(destination, form.getTemplateName());
-            }
-            catch (SQLException e)
-            {
-                _log.error("Failure checking for template in destination container", e);
-                errors.reject("copyForm", "Unable to validate destination directory: " + e.getMessage());
-            }
+            PlateTemplate destinationTemplate = PlateService.get().getPlateTemplate(destination, form.getTemplateName());
 
             if (destinationTemplate != null)
                 errors.reject("copyForm", "A plate template with the same name already exists in the destination folder.");

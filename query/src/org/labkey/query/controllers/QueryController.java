@@ -4239,7 +4239,7 @@ public class QueryController extends SpringActionController
                     QueryDefinition qdef = entry.getValue();
                     if (!qdef.isTemporary())
                     {
-                        ActionURL viewDataUrl = qdef.urlFor(QueryAction.executeQuery);
+                        ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
                         qinfos.add(getQueryProps(qdef.getName(), qdef.getDescription(), viewDataUrl, true, uschema, form.isIncludeColumns()));
                     }
                 }
@@ -4250,9 +4250,14 @@ public class QueryController extends SpringActionController
             {
                 for (String qname : uschema.getVisibleTableNames())
                 {
-                    ActionURL viewDataUrl = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, uschema.getSchemaName(), qname);
-                    TableInfo tinfo = uschema.getTable(qname);
-                    qinfos.add(getQueryProps(qname, tinfo.getDescription(), viewDataUrl, false, uschema, form.isIncludeColumns()));
+                    // Go direct against the UserSchema instead of calling into QueryService, which takes a schema and
+                    // query name as strings and therefore has to create new instances
+                    QueryDefinition qdef = uschema.getQueryDefForTable(qname);
+                    if (qdef != null)
+                    {
+                        ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
+                        qinfos.add(getQueryProps(qname, qdef.getDescription(), viewDataUrl, false, uschema, form.isIncludeColumns()));
+                    }
                 }
             }
             response.put("queries", qinfos);
@@ -4267,47 +4272,43 @@ public class QueryController extends SpringActionController
             qinfo.put("isUserDefined", isUserDefined);
             if (null != description)
                 qinfo.put("description", description);
+            if (viewDataUrl != null)
+                qinfo.put("viewDataUrl", viewDataUrl);
 
-            //get the table info if the user requested column info
-            //or if the description coming in was null (need to get form TableInfo)
-            TableInfo table = null;
-            if (includeColumns || !isUserDefined)
+            if (includeColumns)
             {
                 try
                 {
-                    table = schema.getTable(name);
+                    //get the table info if the user requested column info
+                    TableInfo table = schema.getTable(name);
+
+                    if (null != table)
+                    {
+                        //enumerate the columns
+                        List<Map<String, Object>> cinfos = new ArrayList<Map<String, Object>>();
+                        for(ColumnInfo col : table.getColumns())
+                        {
+                            Map<String, Object> cinfo = new HashMap<String, Object>();
+                            cinfo.put("name", col.getName());
+                            if (null != col.getLabel())
+                                cinfo.put("caption", col.getLabel());
+                            if (null != col.getShortLabel())
+                                cinfo.put("shortCaption", col.getShortLabel());
+                            if (null != col.getDescription())
+                                cinfo.put("description", col.getDescription());
+
+                            cinfos.add(cinfo);
+                        }
+                        if (cinfos.size() > 0)
+                            qinfo.put("columns", cinfos);
+                    }
                 }
                 catch(Exception e)
                 {
                     //may happen due to query failing parse
                 }
-                if (null != table && null == description)
-                    qinfo.put("description", table.getDescription());
             }
 
-            if (null != table && includeColumns)
-            {
-                //enumerate the columns
-                List<Map<String, Object>> cinfos = new ArrayList<Map<String, Object>>();
-                for(ColumnInfo col : table.getColumns())
-                {
-                    Map<String, Object> cinfo = new HashMap<String, Object>();
-                    cinfo.put("name", col.getName());
-                    if (null != col.getLabel())
-                        cinfo.put("caption", col.getLabel());
-                    if (null != col.getShortLabel())
-                        cinfo.put("shortCaption", col.getShortLabel());
-                    if (null != col.getDescription())
-                        cinfo.put("description", col.getDescription());
-
-                    cinfos.add(cinfo);
-                }
-                if (cinfos.size() > 0)
-                    qinfo.put("columns", cinfos);
-
-                if (viewDataUrl != null)
-                    qinfo.put("viewDataUrl", viewDataUrl);
-            }
             return qinfo;
         }
     }

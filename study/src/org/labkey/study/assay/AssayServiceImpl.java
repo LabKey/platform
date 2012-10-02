@@ -25,14 +25,12 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.DomainDescriptor;
-import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -273,15 +271,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         if (provider instanceof PlateBasedAssayProvider)
         {
             List<String> plateTemplates = new ArrayList<String>();
-            try
-            {
-                for (PlateTemplate template : PlateService.get().getPlateTemplates(getContainer()))
-                    plateTemplates.add(template.getName());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            for (PlateTemplate template : PlateService.get().getPlateTemplates(getContainer()))
+                plateTemplates.add(template.getName());
             protocol.setAvailablePlateTemplates(plateTemplates);
         }
     }

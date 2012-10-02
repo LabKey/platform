@@ -27,17 +27,18 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -136,12 +137,12 @@ public class PlateManager implements PlateService.Service
         return new PositionImpl(container, row, column);
     }
 
-    public PlateTemplateImpl getPlateTemplate(Container container, String name) throws SQLException
+    public PlateTemplateImpl getPlateTemplate(Container container, String name)
     {
-        SimpleFilter filter = new SimpleFilter("Template", Boolean.TRUE);
-        filter.addCondition("Name", name);
-        filter.addCondition("Container", container);
-        PlateTemplateImpl template = Table.selectObject(StudySchema.getInstance().getTableInfoPlate(), filter, null, PlateTemplateImpl.class);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
+        filter.addCondition(FieldKey.fromParts("Name"), name);
+        filter.addCondition(FieldKey.fromParts("Container"), container);
+        PlateTemplateImpl template = new TableSelector(StudySchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
         if (template != null)
         {
             populatePlate(template);
@@ -150,12 +151,12 @@ public class PlateManager implements PlateService.Service
         return template;
     }
 
-    public PlateTemplate[] getPlateTemplates(Container container) throws SQLException
+    public PlateTemplate[] getPlateTemplates(Container container)
     {
-        SimpleFilter filter = new SimpleFilter("Template", Boolean.TRUE);
-        filter.addCondition("Container", container);
-        PlateTemplateImpl[] templates = Table.select(StudySchema.getInstance().getTableInfoPlate(),
-                Table.ALL_COLUMNS, filter, new Sort("Name"), PlateTemplateImpl.class);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
+        filter.addCondition(FieldKey.fromParts("Container"), container);
+        PlateTemplateImpl[] templates = new TableSelector(StudySchema.getInstance().getTableInfoPlate(),
+                Table.ALL_COLUMNS, filter, new Sort("Name")).getArray(PlateTemplateImpl.class);
         for (int i = 0; i < templates.length; i++)
         {
             PlateTemplateImpl template = templates[i];
@@ -177,12 +178,12 @@ public class PlateManager implements PlateService.Service
         return new PlateTemplateImpl(container, null, templateType, rowCount, colCount);
     }
 
-    public PlateImpl getPlate(Container container, int rowid) throws SQLException
+    public PlateImpl getPlate(Container container, int rowid)
     {
         PlateImpl plate = (PlateImpl) getCachedPlateTemplate(container, rowid);
         if (plate != null)
             return plate;
-        plate = Table.selectObject(StudySchema.getInstance().getTableInfoPlate(), rowid, PlateImpl.class);
+        plate = new TableSelector(StudySchema.getInstance().getTableInfoPlate()).getObject(rowid, PlateImpl.class);
         if (plate == null)
             return null;
         populatePlate(plate);
@@ -190,13 +191,13 @@ public class PlateManager implements PlateService.Service
         return plate;
     }
 
-    public PlateImpl getPlate(Container container, String entityId) throws SQLException
+    public PlateImpl getPlate(Container container, String entityId)
     {
         PlateImpl plate = (PlateImpl) getCachedPlateTemplate(container, entityId);
         if (plate != null)
             return plate;
-        SimpleFilter filter = new SimpleFilter("Container", container).addCondition("DataFileId", entityId);
-        plate = Table.selectObject(StudySchema.getInstance().getTableInfoPlate(), filter, null, PlateImpl.class);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container).addCondition(FieldKey.fromParts("DataFileId"), entityId);
+        plate = new TableSelector(StudySchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
         if (plate == null)
             return null;
         populatePlate(plate);
@@ -204,19 +205,19 @@ public class PlateManager implements PlateService.Service
         return plate;
     }
 
-    public PlateImpl getPlate(String lsid) throws SQLException
+    public PlateImpl getPlate(String lsid)
     {
-        SimpleFilter filter = new SimpleFilter("lsid", lsid);
-        PlateImpl plate = Table.selectObject(StudySchema.getInstance().getTableInfoPlate(), filter, PlateImpl.class);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
+        PlateImpl plate = new TableSelector(StudySchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
         if (plate == null)
             return null;
         populatePlate(plate);
         return plate;
     }
 
-    public WellGroup getWellGroup(Container container, int rowid) throws SQLException
+    public WellGroup getWellGroup(Container container, int rowid)
     {
-        WellGroupImpl unboundWellgroup = Table.selectObject(StudySchema.getInstance().getTableInfoWellGroup(), rowid, WellGroupImpl.class);
+        WellGroupImpl unboundWellgroup = new TableSelector(StudySchema.getInstance().getTableInfoWellGroup()).getObject(rowid, WellGroupImpl.class);
         if (unboundWellgroup == null || !unboundWellgroup.getContainer().equals(container))
             return null;
         Plate plate = getPlate(container, unboundWellgroup.getPlateId());
@@ -229,10 +230,10 @@ public class PlateManager implements PlateService.Service
         return null;
     }
 
-    public WellGroup getWellGroup(String lsid) throws SQLException
+    public WellGroup getWellGroup(String lsid)
     {
-        SimpleFilter filter = new SimpleFilter("lsid", lsid);
-        WellGroupImpl unboundWellgroup = Table.selectObject(StudySchema.getInstance().getTableInfoWellGroup(), filter, null, WellGroupImpl.class);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
+        WellGroupImpl unboundWellgroup = new TableSelector(StudySchema.getInstance().getTableInfoWellGroup(), filter, null).getObject(WellGroupImpl.class);
         if (unboundWellgroup == null)
             return null;
         Plate plate = getPlate(unboundWellgroup.getContainer(), unboundWellgroup.getPlateId());
@@ -280,7 +281,7 @@ public class PlateManager implements PlateService.Service
         }
     }
 
-    private void populatePlate(PlateTemplateImpl plate) throws SQLException
+    private void populatePlate(PlateTemplateImpl plate)
     {
         // set plate properties:
         setProperties(plate.getContainer(), plate);
@@ -333,20 +334,20 @@ public class PlateManager implements PlateService.Service
 
     }
 
-    private PositionImpl[] getPositions(PlateTemplateImpl plate) throws SQLException
+    private PositionImpl[] getPositions(PlateTemplateImpl plate)
     {
-        SimpleFilter plateFilter = new SimpleFilter("PlateId", plate.getRowId());
+        SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
         Sort sort = new Sort("Col,Row");
-        return Table.select(StudySchema.getInstance().getTableInfoWell(), Table.ALL_COLUMNS,
-                plateFilter, sort, plate.isTemplate() ? PositionImpl.class : WellImpl.class);
+        return new TableSelector(StudySchema.getInstance().getTableInfoWell(), Table.ALL_COLUMNS,
+                plateFilter, sort).getArray(plate.isTemplate() ? PositionImpl.class : WellImpl.class);
 
     }
 
-    private WellGroupTemplateImpl[] getWellGroups(PlateTemplateImpl plate) throws SQLException
+    private WellGroupTemplateImpl[] getWellGroups(PlateTemplateImpl plate)
     {
-        SimpleFilter plateFilter = new SimpleFilter("PlateId", plate.getRowId());
-        return Table.select(StudySchema.getInstance().getTableInfoWellGroup(), Table.ALL_COLUMNS,
-                plateFilter, null, plate.isTemplate() ? WellGroupTemplateImpl.class : WellGroupImpl.class);
+        SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
+        return new TableSelector(StudySchema.getInstance().getTableInfoWellGroup(), Table.ALL_COLUMNS,
+                plateFilter, null).getArray(plate.isTemplate() ? WellGroupTemplateImpl.class : WellGroupImpl.class);
     }
 
     private String getLsid(PlateTemplateImpl plate, Class type, boolean instance)
@@ -592,14 +593,7 @@ public class PlateManager implements PlateService.Service
     {
         protected PlateImpl getPlate(Lsid lsid)
         {
-            try
-            {
-                return PlateManager.get().getPlate(lsid.toString());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            return PlateManager.get().getPlate(lsid.toString());
         }
 
         public String getDisplayURL(Lsid lsid)
@@ -636,14 +630,7 @@ public class PlateManager implements PlateService.Service
     {
         protected WellGroup getWellGroup(Lsid lsid)
         {
-            try
-            {
-                return PlateManager.get().getWellGroup(lsid.toString());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            return PlateManager.get().getWellGroup(lsid.toString());
         }
 
         public String getDisplayURL(Lsid lsid)

@@ -20,7 +20,6 @@ import org.labkey.api.query.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.study.PlateQueryView;
@@ -31,7 +30,6 @@ import org.labkey.study.StudySchema;
 
 import java.util.Set;
 import java.util.HashSet;
-import java.sql.SQLException;
 
 /**
  * User: brittp
@@ -47,18 +45,11 @@ public class PlateSchema extends UserSchema
     {
         public QuerySchema getSchema(DefaultSchema schema)
         {
-            try
-            {
-                PlateTemplate[] templates = PlateService.get().getPlateTemplates(schema.getContainer());
-                if (templates != null && templates.length > 0)
-                    return new PlateSchema(schema.getUser(), schema.getContainer());
-                else
-                    return null;
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            PlateTemplate[] templates = PlateService.get().getPlateTemplates(schema.getContainer());
+            if (templates != null && templates.length > 0)
+                return new PlateSchema(schema.getUser(), schema.getContainer());
+            else
+                return null;
         }
     }
 

@@ -89,6 +89,8 @@ public class AssaySchemaImpl extends AssaySchema
     private static final String BATCH_PROPERTIES_COLUMN_NAME = "BatchProperties";
 
     private Map<ExpProtocol, AssayProvider> _protocols;
+    /** Cache the "child" schemas so that we don't have to recreate them over and over within this schema's lifecycle */
+    private Map<ExpProtocol, AssaySchema> _providerSchemas = new HashMap<ExpProtocol, AssaySchema>();
 
     static public class Provider extends DefaultSchema.SchemaProvider
     {
@@ -106,7 +108,7 @@ public class AssaySchemaImpl extends AssaySchema
     /**
      * Use this constructor to use a prefetched map of assay protocols in this AssaySchema.
      */
-    public AssaySchemaImpl(User user, Container container, Map<ExpProtocol, AssayProvider> protocols)
+    public AssaySchemaImpl(User user, Container container, @Nullable Map<ExpProtocol, AssayProvider> protocols)
     {
         this(user, container);
         _protocols = protocols;
@@ -203,7 +205,12 @@ public class AssaySchemaImpl extends AssaySchema
                     }
                     else
                     {
-                        AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
+                        AssaySchema providerSchema = _providerSchemas.get(protocol);
+                        if (providerSchema == null)
+                        {
+                            providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
+                            _providerSchemas.put(protocol, providerSchema);
+                        }
                         if (providerSchema != null && name.toLowerCase().startsWith(protocol.getName().toLowerCase() + " "))
                         {
                             table = providerSchema.createTable(name);
