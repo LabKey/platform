@@ -20,6 +20,7 @@ import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.Filter;
 
 import java.io.BufferedReader;
@@ -34,9 +36,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -60,7 +65,50 @@ import java.util.regex.Pattern;
  */
 public class TabLoader extends DataLoader
 {
+    public static final FileType TSV_FILE_TYPE = new FileType(Arrays.asList("tsv", "txt"), "tsv");
+    public static final FileType CSV_FILE_TYPE = new FileType(Arrays.asList("csv"), "csv");
+
     private static final Logger _log = Logger.getLogger(TabLoader.class);
+
+    public static class TsvFactory extends AbstractDataLoaderFactory
+    {
+        @NotNull @Override
+        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            return new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
+        }
+
+        @NotNull @Override
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            return new TabLoader(new InputStreamReader(is), hasColumnHeaders, mvIndicatorContainer);
+        }
+
+        @NotNull @Override
+        public FileType getFileType() { return TSV_FILE_TYPE; }
+    }
+
+    public static class CsvFactory extends AbstractDataLoaderFactory
+    {
+        @NotNull @Override
+        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            TabLoader loader = new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
+            loader.parseAsCSV();
+            return loader;
+        }
+
+        @NotNull @Override
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            TabLoader loader = new TabLoader(new InputStreamReader(is), hasColumnHeaders, mvIndicatorContainer);
+            loader.parseAsCSV();
+            return loader;
+        }
+
+        @NotNull @Override
+        public FileType getFileType() { return CSV_FILE_TYPE; }
+    }
 
     // source data
     private CharSequence _stringData = null;

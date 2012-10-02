@@ -16,25 +16,21 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -112,11 +108,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
     {
         try
         {
-            return DataLoader.getDataLoaderForFile(getImportFile(), getContainer(), true);
-        }
-        catch (ServletException e)
-        {
-            throw new ImportException(e.getMessage());
+            return DataLoader.get().createLoader(getImportFile(), true, getContainer());
         }
         catch (IOException e)
         {

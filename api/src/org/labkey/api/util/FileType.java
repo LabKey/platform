@@ -16,6 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOCase;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
@@ -24,6 +26,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -249,7 +252,7 @@ public class FileType implements Serializable
     }
 
     // used to avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml" file 
-    private boolean isAntiFileType(String name)
+    private boolean isAntiFileType(String name, byte[] header)
     {
         for (FileType a : _antiTypes)
         {
@@ -277,7 +280,7 @@ public class FileType implements Serializable
                 if (NetworkDrive.exists(f))
                 {
                     // avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml" file
-                    if (!isAntiFileType(name))
+                    if (!isAntiFileType(name, null))
                     {
                         return name;
                     }
@@ -308,7 +311,7 @@ public class FileType implements Serializable
      */
     public int getIndexMatch(File file)
     {
-        if (!isAntiFileType(file.getName()))  // avoid, for example, mistaking .pep-prot.xml for .xml
+        if (!isAntiFileType(file.getName(), null))  // avoid, for example, mistaking .pep-prot.xml for .xml
         {
             for (int i = 0; i < _suffixes.size(); i++)
             {
@@ -347,8 +350,9 @@ public class FileType implements Serializable
      */
     public String getBaseName(File file)
     {
-        if (isAntiFileType(file.getName()) || !isType(file))
+        if (isAntiFileType(file.getName(), null) || !isType(file))
             return file.getName();
+
         String suffix = null;
         for (String s : _suffixes)
         {
@@ -384,10 +388,15 @@ public class FileType implements Serializable
 
     public boolean isType(File file)
     {
+        return isType(file, null);
+    }
+
+    public boolean isType(File file, byte[] header)
+    {
         if ((file == null) || (_dir != null && _dir.booleanValue() != file.isDirectory()))
             return false;
-        
-        return isType(file.getName());
+
+        return isType(file.getName(), header);
     }
 
     /**
@@ -395,23 +404,48 @@ public class FileType implements Serializable
      */
     public boolean isType(String filePath)
     {
+        return isType(filePath, null);
+    }
+
+    /**
+     * Checks if the path matches any of the suffixes and the file header if provided.
+     */
+    public boolean isType(@Nullable String filePath, @Nullable byte[] header)
+    {
+        if (filePath == null && header == null)
+            throw new IllegalArgumentException("filePath or header required");
+
         // avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml"
-        if (isAntiFileType(filePath))
+        if (isAntiFileType(filePath, header))
         {
             return false;
         }
-        for (String suffix : _suffixes)
+
+        if (filePath != null)
         {
-            if (toLowerIfCaseInsensitive(filePath).endsWith(toLowerIfCaseInsensitive(suffix)))
+            // Attempt to match by suffix and header.
+            filePath = toLowerIfCaseInsensitive(filePath);
+            for (String suffix : _suffixes)
             {
-                return true;
-            }
-            // TPP treats .xml.gz as a native format
-            if (_supportGZ.booleanValue() && toLowerIfCaseInsensitive(filePath).endsWith(toLowerIfCaseInsensitive(suffix) + ".gz"))
-            {
-                return true;
+                suffix = toLowerIfCaseInsensitive(suffix);
+                if (filePath.endsWith(suffix))
+                {
+                    if (header == null || isHeaderMatch(header))
+                        return true;
+                }
+                // TPP treats .xml.gz as a native format
+                if (_supportGZ.booleanValue() && filePath.endsWith(suffix + ".gz"))
+                {
+                    if (header == null || isHeaderMatch(header))
+                        return true;
+                }
             }
         }
+
+        // Attempt to match using only the header.
+        if (header != null && isHeaderMatch(header))
+            return true;
+
         return false;
     }
 
@@ -429,6 +463,18 @@ public class FileType implements Serializable
                 return true;
             }
         }
+        return false;
+    }
+
+    /**
+     * Checks if the file header matches. This is useful for FileTypes that share an
+     * extension, e.g. "txt" or "xml", or when the filename or extension isn't available.
+     *
+     * @param header First few K of the file.
+     * @return True if the header matches, false otherwise.
+     */
+    public boolean isHeaderMatch(@NotNull byte[] header)
+    {
         return false;
     }
 
@@ -451,6 +497,11 @@ public class FileType implements Serializable
     public String getDefaultSuffix()
     {
         return _defaultSuffix;
+    }
+
+    public List<String> getSuffixes()
+    {
+        return Collections.unmodifiableList(_suffixes);
     }
 
     public int hashCode()

@@ -21,16 +21,20 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileType;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -44,6 +48,29 @@ import java.util.Map;
  */
 public class ExcelLoader extends DataLoader
 {
+    public static FileType FILE_TYPE = new FileType(Arrays.asList("xlsx", "xls"), "xlsx");
+    static {
+        FILE_TYPE.setExtensionsMutuallyExclusive(false);
+    }
+
+    public static class Factory extends AbstractDataLoaderFactory
+    {
+        @NotNull @Override
+        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            return new ExcelLoader(file, hasColumnHeaders, mvIndicatorContainer);
+        }
+
+        @NotNull @Override
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            return new ExcelLoader(is, hasColumnHeaders, mvIndicatorContainer);
+        }
+
+        @NotNull @Override
+        public FileType getFileType() { return FILE_TYPE; }
+    }
+
     private final Workbook workbook;
 
     private String sheetName;
@@ -58,6 +85,21 @@ public class ExcelLoader extends DataLoader
     public ExcelLoader(File file, boolean hasColumnHeaders) throws IOException
     {
         this(file, hasColumnHeaders, null);
+    }
+
+    public ExcelLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    {
+        super(mvIndicatorContainer);
+        setHasColumnHeaders(hasColumnHeaders);
+
+        try
+        {
+            workbook = ExcelFactory.create(is);
+        }
+        catch (InvalidFormatException e)
+        {
+            throw new IOException(e.getMessage());
+        }
     }
 
     public ExcelLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException

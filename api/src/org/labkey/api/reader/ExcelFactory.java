@@ -41,8 +41,7 @@ import org.junit.Test;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
-import org.omg.CORBA.DynAnyPackage.Invalid;
-import org.systemsbiology.jrap.Base64;
+import org.labkey.api.util.FileUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -50,7 +49,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -71,19 +69,36 @@ public class ExcelFactory
     public static final String SUB_TYPE_BIFF5 = "x-tika-msoffice";
     public static final String SUB_TYPE_BIFF8 = "vnd.ms-excel";
 
-    public static Workbook create(File dataFile) throws IOException, InvalidFormatException
+    public static Workbook create(File file) throws IOException, InvalidFormatException
     {
         try
         {
-            return WorkbookFactory.create(new FileInputStream(dataFile));
+            return WorkbookFactory.create(new FileInputStream(file));
         }
         catch (OldExcelFormatException e)
         {
-            return new JxlWorkbook(dataFile);
+            return new JxlWorkbook(new FileInputStream(file));
         }
         catch (IllegalArgumentException e)
         {
             throw new InvalidFormatException("Unable to open file as an Excel document. " + e.getMessage() == null ? "" : e.getMessage());
+        }
+    }
+
+    /** Creates a temp file from the InputStream, then attempts to parse using the new and old formats. */
+    public static Workbook create(InputStream is) throws IOException, InvalidFormatException
+    {
+
+        File temp = File.createTempFile("excel", "tmp");
+        try
+        {
+            FileUtil.copyData(is, temp);
+            return create(temp);
+        }
+        finally
+        {
+            if (temp != null)
+                temp.delete();
         }
 /*
         DefaultDetector detector = new DefaultDetector();

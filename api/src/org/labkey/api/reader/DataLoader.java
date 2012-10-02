@@ -41,16 +41,9 @@ import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.webdav.WebdavResource;
-import org.springframework.web.multipart.MultipartFile;
-import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -69,6 +62,11 @@ import java.util.Set;
 // Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
 public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader, DataIteratorBuilder
 {
+    public static DataLoaderService.I get()
+    {
+        return DataLoaderService.get();
+    }
+    
     // if a conversion error occurs, the original field value is returned
     public static final Object ERROR_VALUE_USE_ORIGINAL = new Object();
     private static final Logger _log = Logger.getLogger(DataLoader.class);
@@ -106,135 +104,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     {
         _mvIndicatorContainer = mvIndicatorContainer;
     }
-
-
-    public static DataLoader getDataLoaderForFile(File file, boolean  hasColumnHeaders) throws ServletException, IOException
-    {
-        return getDataLoaderForFile(file, null, hasColumnHeaders);
-    }
-
-    public static DataLoader getDataLoaderForInputStream(InputStream is, boolean asCSV) throws ServletException, IOException
-    {
-        Reader r = new InputStreamReader(is);
-        TabLoader loader = new TabLoader(r, true);
-
-        if (asCSV)
-            loader.parseAsCSV();
-
-        return loader;
-    }
-
-    public static DataLoader getDataLoaderForFile(MultipartFile file) throws ServletException, IOException
-    {
-        String origName = StringUtils.trimToEmpty(file.getOriginalFilename());
-        String filename = origName.toLowerCase();
-
-        if (filename.endsWith(".xls") || filename.endsWith("xlsx"))
-        {
-            File f = File.createTempFile("import", origName);
-            f.deleteOnExit();
-            file.transferTo(f);
-            ExcelLoader loader = new ExcelLoader(f, true);
-            loader.setDeleteFileOnClose(true);
-            return loader;
-        }
-        else if (filename.endsWith(".txt") || filename.endsWith(".tsv"))
-        {
-            Reader r = new InputStreamReader(file.getInputStream());
-            return new TabLoader(r, true);
-        }
-        else if (filename.endsWith(".csv"))
-        {
-            Reader r = new InputStreamReader(file.getInputStream());
-            TabLoader loader = new TabLoader(r, true);
-            loader.parseAsCSV();
-            return loader;
-        }
-        else if (FastaDataLoader.isFastaFile(filename))
-        {
-            File f = File.createTempFile("import", origName);
-            f.deleteOnExit();
-            file.transferTo(f);
-
-            FastaDataLoader loader = new FastaDataLoader(f, true);
-            return loader;
-        }
-
-        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv, .csv, .fna or .fasta.");
-    }
-
-
-    public static DataLoader getDataLoaderForFile(WebdavResource r, boolean hasColumnHeaders) throws ServletException, IOException
-    {
-        File fOnDisk = r.getFile();
-        if (null != fOnDisk)
-            return getDataLoaderForFile(fOnDisk, hasColumnHeaders);
-
-        String origName = StringUtils.trimToEmpty(r.getName());
-        String filename = origName.toLowerCase();
-
-        if (filename.endsWith(".xls") || filename.endsWith("xlsx"))
-        {
-            File f = File.createTempFile("import", origName);
-            f.deleteOnExit();
-            IOUtils.copy(r.getInputStream(),new FileOutputStream(f));
-            ExcelLoader loader = new ExcelLoader(f, hasColumnHeaders);
-            loader.setDeleteFileOnClose(true);
-            return loader;
-        }
-        else if (filename.endsWith(".txt") || filename.endsWith(".tsv"))
-        {
-            Reader reader = new InputStreamReader(r.getInputStream());
-            return new TabLoader(reader, hasColumnHeaders);
-        }
-        else if (filename.endsWith(".csv"))
-        {
-            Reader reader = new InputStreamReader(r.getInputStream());
-            TabLoader loader = new TabLoader(reader, hasColumnHeaders);
-            loader.parseAsCSV();
-            return loader;
-        }
-        else if (FastaDataLoader.isFastaFile(filename))
-        {
-            File f = File.createTempFile("import", origName);
-            f.deleteOnExit();
-            IOUtils.copy(r.getInputStream(),new FileOutputStream(f));
-
-            FastaDataLoader loader = new FastaDataLoader(f, hasColumnHeaders);
-            return loader;
-        }
-
-        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv, .csv, .fna or .fasta.");
-    }
-
-
-    public static DataLoader getDataLoaderForFile(File file, Container mvIndicatorContainer, boolean hasColumnHeaders) throws ServletException, IOException
-    {
-        String filename = file.getName().toLowerCase();
-
-        if (filename.endsWith("xls") || filename.endsWith("xlsx"))
-        {
-            return new ExcelLoader(file, hasColumnHeaders, mvIndicatorContainer);
-        }
-        else if (filename.endsWith("txt") || filename.endsWith("tsv"))
-        {
-            return new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
-        }
-        else if (filename.endsWith("csv"))
-        {
-            TabLoader loader = new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
-            loader.parseAsCSV();
-            return loader;
-        }
-        else if (FastaDataLoader.isFastaFile(filename))
-        {
-            FastaDataLoader loader = new FastaDataLoader(file, hasColumnHeaders, mvIndicatorContainer);
-            return loader;
-        }
-
-        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv, .csv, .fna or .fasta.");
-    }
-
 
     public void setInferTypes(boolean infer)
     {

@@ -15,13 +15,18 @@
  */
 package org.labkey.api.reader;
 
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.iterator.CloseableIterator;
-import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.FileType;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,17 +38,34 @@ import java.util.Map;
  */
 public class FastaDataLoader extends DataLoader
 {
-    GenericFastaLoader _loader;
-
-    public static boolean isFastaFile(String fileName)
-    {
-        String extension = FileUtil.getExtension(fileName);
-
-        if (extension == null)
-            return false;
-
-        return extension.equalsIgnoreCase("fna") || extension.equalsIgnoreCase("fasta");
+    public static FileType FILE_TYPE = new FileType(Arrays.asList("fna", "fasta"), "fna");
+    static {
+        FILE_TYPE.setExtensionsMutuallyExclusive(false);
     }
+
+    public static class Factory extends AbstractDataLoaderFactory
+    {
+        @NotNull @Override
+        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            return new FastaDataLoader(file, hasColumnHeaders, mvIndicatorContainer);
+        }
+
+        @NotNull @Override
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            File f = File.createTempFile("import", ".fasta");
+            f.deleteOnExit();
+            IOUtils.copy(is, new FileOutputStream(f));
+
+            return new FastaDataLoader(f, hasColumnHeaders, mvIndicatorContainer);
+        }
+
+        @NotNull @Override
+        public FileType getFileType() { return FILE_TYPE; }
+    }
+
+    GenericFastaLoader _loader;
 
     public FastaDataLoader(File inputFile, Boolean hasColumnHeaders) throws IOException
     {

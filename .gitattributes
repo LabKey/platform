@@ -757,8 +757,11 @@ api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotForm.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotService.java -text
 api/src/org/labkey/api/query/textExportOptions.jsp -text
+api/src/org/labkey/api/reader/AbstractDataLoaderFactory.java -text
 api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
+api/src/org/labkey/api/reader/DataLoaderFactory.java -text
+api/src/org/labkey/api/reader/DataLoaderService.java -text
 api/src/org/labkey/api/reader/ExcelFactory.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
 api/src/org/labkey/api/reader/FastaDataLoader.java -text
@@ -1217,6 +1220,7 @@ api/src/org/labkey/api/util/UniqueID.java -text
 api/src/org/labkey/api/util/UsageReportingLevel.java -text
 api/src/org/labkey/api/util/VersionNumber.java -text
 api/src/org/labkey/api/util/WebPartErrorRenderer.java -text
+api/src/org/labkey/api/util/XMLFileType.java -text
 api/src/org/labkey/api/util/XmlBeansUtil.java -text
 api/src/org/labkey/api/util/XmlValidationException.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
