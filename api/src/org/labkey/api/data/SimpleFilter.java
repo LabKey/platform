@@ -472,6 +472,8 @@ public class SimpleFilter implements Filter
         {
             return _fieldKey;
         }
+
+        public abstract CompareType getCompareType();
     }
 
     public static class InClause extends MultiValuedFilterClause
@@ -521,6 +523,12 @@ public class SimpleFilter implements Filter
         public List<FieldKey> getFieldKeys()
         {
             return Arrays.asList(getFieldKey());
+        }
+
+        @Override
+        public CompareType getCompareType()
+        {
+            return _negated ? CompareType.NOT_IN : CompareType.IN;
         }
 
         @Override
@@ -730,6 +738,12 @@ public class SimpleFilter implements Filter
             _urlClause = urlClause;
             _fieldKey = fieldKey;
             _negated = negated;
+        }
+
+        @Override
+        public CompareType getCompareType()
+        {
+            return _negated ? CompareType.CONTAINS_ONE_OF : CompareType.CONTAINS_NONE_OF;
         }
 
         @Override
@@ -1120,13 +1134,13 @@ public class SimpleFilter implements Filter
                 value = cc.getParamVals() != null && cc.getParamVals()[0] != null ?
                         cc.getParamVals()[0].toString() : null;
             }
-            else if (fc instanceof SimpleFilter.InClause)
+            else if (fc instanceof MultiValuedFilterClause)
             {
-                SimpleFilter.InClause inClause = (SimpleFilter.InClause)fc;
-                urlType = CompareType.IN.getPreferredUrlKey();
+                MultiValuedFilterClause clause = (MultiValuedFilterClause)fc;
+                urlType = clause.getCompareType().getPreferredUrlKey();
                 StringBuilder values = new StringBuilder();
                 String separator = "";
-                for (Object inValue : inClause.getParamVals())
+                for (Object inValue : clause.getParamVals())
                 {
                     values.append(separator);
                     separator = ";";
