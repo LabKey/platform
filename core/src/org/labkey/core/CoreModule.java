@@ -29,6 +29,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.reader.DataLoaderService;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
@@ -137,6 +138,7 @@ import org.labkey.core.query.ContainerAuditViewFactory;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
+import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
@@ -223,6 +225,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FirstRequestHandler.addFirstRequestListener(new CoreFirstRequestHandler());
         RhinoService.register();
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
+        ServiceRegistry.get().registerService(DataLoaderService.I.class, new DataLoaderServiceImpl());
 
         ModuleStaticResolverImpl.get();
 

@@ -31,6 +31,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresNoPermission;
@@ -228,7 +229,7 @@ public class PropertyController extends SpringActionController
             {
                 throw new UploadException(UNRECOGNIZED_FILE_TYPE_ERROR, HttpServletResponse.SC_BAD_REQUEST);
             }
-            String suffix = filename.substring(dotIndex + 1).toLowerCase();
+            String suffix = filename.substring(dotIndex).toLowerCase();
             String prefix = filename.substring(0, dotIndex);
             if (prefix.length() < 3)
             {
@@ -342,7 +343,7 @@ public class PropertyController extends SpringActionController
                 output.close();
                 input.close();
 
-                dataLoader = getDataLoader(tempFile, suffix);
+                dataLoader = getDataLoader(tempFile);
                 if (dataLoader == null)
                 {
                     error(writer, UNRECOGNIZED_FILE_TYPE_ERROR);
@@ -396,27 +397,13 @@ public class PropertyController extends SpringActionController
             return o.toString();
         }
 
-        private DataLoader getDataLoader(File tempFile, String suffix) throws IOException
+        private DataLoader getDataLoader(File tempFile) throws IOException
         {
-            DataLoader dataLoader = null;
-            if (suffix.equals("xls") || suffix.equals("xlsx"))
-            {
-                dataLoader = new ExcelLoader(tempFile, true);
-            }
-            else if (suffix.equals("tsv") || suffix.equals("txt"))
-            {
-                dataLoader = new TabLoader(tempFile, true);
-            }
-            else if (suffix.equals("csv"))
-            {
-                TabLoader loader = new TabLoader(tempFile, true);
-                loader.parseAsCSV();
-                dataLoader = loader;
-            }
-            if (dataLoader == null) // unknown document type
+            DataLoaderFactory factory = DataLoader.get().findFactory(tempFile);
+            if (factory == null)
                 return null;
 
-            return dataLoader;
+            return factory.createLoader(tempFile, true);
         }
     }
 

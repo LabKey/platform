@@ -30,9 +30,6 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.FastaDataLoader;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunUploadContext;
@@ -111,20 +108,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         DataLoader loader = null;
         try
         {
-
-            if (dataFile.getName().toLowerCase().endsWith(".xls") ||
-                dataFile.getName().toLowerCase().endsWith(".xlsx"))
-            {
-                loader = new ExcelLoader(dataFile, true);
-            }
-            else if (FastaDataLoader.isFastaFile(dataFile.getName()))
-            {
-                loader = new FastaDataLoader(dataFile, true);
-            }
-            else
-            {
-                loader = new TabLoader(dataFile, true);
-            }
+            loader = DataLoader.get().createLoader(dataFile, true, null);
 
             loader.setThrowOnErrors(settings.isThrowOnErrors());
             for (ColumnDescriptor column : loader.getColumns())

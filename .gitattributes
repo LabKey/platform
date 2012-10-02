@@ -725,6 +725,7 @@ core/src/org/labkey/core/query/UserAuditViewFactory.java -text
 core/src/org/labkey/core/query/UsersDomainKind.java -text
 core/src/org/labkey/core/query/UsersMsgPrefTable.java -text
 core/src/org/labkey/core/query/UsersTable.java -text
+core/src/org/labkey/core/reader/DataLoaderServiceImpl.java -text
 core/src/org/labkey/core/search/NoopSearchService.java -text
 core/src/org/labkey/core/security/ContainersView.java -text
 core/src/org/labkey/core/security/FolderPermissions.jsp -text

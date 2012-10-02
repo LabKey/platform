@@ -151,11 +151,13 @@ public class ListImporter
             if (null != def)
             {
                 String legalName = FileUtil.makeLegalName(name);
-                InputStream tsv = listsDir.getInputStream(legalName + ".tsv");
+                String fileName = legalName + ".tsv";
+                InputStream tsv = listsDir.getInputStream(fileName);
                 if (null != tsv)
                 {
                     BatchValidationException batchErrors = new BatchValidationException();
-                    int count = def.insertListItems(user, DataLoader.getDataLoaderForInputStream(tsv, false), batchErrors, listsDir.getDir(legalName), null);
+                    DataLoader loader = DataLoader.get().createLoader(fileName, tsv, false, null);
+                    int count = def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null);
                     for (ValidationException v : batchErrors.getRowErrors())
                         errors.add(v.getMessage());
                     // TODO: Error the entire job on import error?
