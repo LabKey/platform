@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -269,6 +269,12 @@ Ext4.onReady(function(){
                                 })
                             },{
                                 xtype: 'checkbox',
+                                boxLabel: 'Include Direct Children Only',
+                                disabled: panel.containerTypes && panel.containerTypes.match(/project/),
+                                checked: (panel.store.containerFilter == 'CurrentAndFirstChildren'),
+                                itemId: 'directDescendants'
+                            },{
+                                xtype: 'checkbox',
                                 boxLabel: 'Include Workbooks',
                                 disabled: panel.containerTypes && panel.containerTypes.match(/project/),
                                 checked: (panel.containerTypes.match(/project/) || panel.containerTypes.match(/workbook/)),
@@ -285,6 +291,8 @@ Ext4.onReady(function(){
                                     var window = field.up('form');
                                     window.down('#containerPath').setDisabled(val.folderTypes != 'folder');
                                     window.down('#includeWorkbooks').setDisabled(val.folderTypes != 'folder');
+                                    window.down('#directDescendants').setDisabled(val.folderTypes != 'folder');
+
                                     window.doLayout();
                                     field.up('window').doLayout();
 
@@ -317,7 +325,8 @@ Ext4.onReady(function(){
                                     panel.containerTypes.push('workbook');
                                 panel.containerTypes = panel.containerTypes.join(';');
 
-                                panel.store.containerFilter = 'CurrentAndSubfolders';
+                                var directDescendants = btn.up('window').down('#directDescendants').getValue();
+                                panel.store.containerFilter = directDescendants ? 'CurrentAndFirstChildren' : 'CurrentAndSubfolders';
                                 panel.store.filterArray = panel.getFilterArray(panel);
                                 panel.store.filterArray.push(LABKEY.Filter.create('EntityId', panel.store.containerPath, LABKEY.Filter.Types.NOT_EQUAL));
                             }
