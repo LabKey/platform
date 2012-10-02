@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -26,5 +28,9 @@ import java.sql.SQLException;
 public interface SqlFactory
 {
     SQLFragment getSql();
+
+    // Returns the value to set on Statement.maxRows(). Null in most cases; only needed on SAS (which has no LIMIT SQL syntax)
+    @Nullable Integer getStatementMaxRows();
+
     void processResultSet(ResultSet rs) throws SQLException;
 }

@@ -16,8 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -48,7 +46,7 @@ public interface Selector
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    Table.TableResultSet getResultSet(boolean scrollable, boolean cache, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException;
+    Table.TableResultSet getResultSet(boolean scrollable, boolean cache) throws SQLException;
 
     long getRowCount();
 

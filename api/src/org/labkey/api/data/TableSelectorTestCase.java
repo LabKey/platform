@@ -52,7 +52,7 @@ public class TableSelectorTestCase extends Assert
         testOffsetAndLimit(selector, clazz);
     }
 
-    private <K> void testOffsetAndLimit(TableSelector selector, Class<K> clazz)
+    private <K> void testOffsetAndLimit(TableSelector selector, Class<K> clazz) throws SQLException
     {
         int count = (int) selector.getRowCount();
 
@@ -71,6 +71,7 @@ public class TableSelectorTestCase extends Assert
             selector.setMaxRows(count);
             K[] sortedArray = selector.getArray(clazz);
             List<K> sortedList = new ArrayList<K>(selector.getCollection(clazz));
+            verifyResultSet(selector, count, true);
 
             // Set a row count, verify the lengths and contents against the expected array & list subsets
             selector.setMaxRows(rowCount);
@@ -81,6 +82,7 @@ public class TableSelectorTestCase extends Assert
             List<K> rowCountList = new ArrayList<K>(selector.getCollection(clazz));
             assertEquals(rowCount, rowCountList.size());
             assertEquals(sortedList.subList(0, rowCount), rowCountList);
+            verifyResultSet(selector, rowCount, false);
 
             // Set an offset, verify the lengths and contents against the expected array & list subsets
             selector.setOffset(offset);
@@ -91,6 +93,7 @@ public class TableSelectorTestCase extends Assert
             List<K> offsetList = new ArrayList<K>(selector.getCollection(clazz));
             assertEquals(rowCount, offsetList.size());
             assertEquals(sortedList.subList(offset, offset + rowCount), offsetList);
+            verifyResultSet(selector, rowCount, false);
 
             // Back to all rows and verify
             selector.setMaxRows(Table.ALL_ROWS);
@@ -98,6 +101,30 @@ public class TableSelectorTestCase extends Assert
             assertEquals(count, (int) selector.getRowCount());
             assertEquals(count, selector.getArray(clazz).length);
             assertEquals(count, selector.getCollection(clazz).size());
+            verifyResultSet(selector, count, true);
+        }
+    }
+
+    private void verifyResultSet(TableSelector selector, int expectedRowCount, boolean expectedComplete) throws SQLException
+    {
+        // Test normal cached ResultSet, uncached ResultSet, and Results
+        for (Table.TableResultSet rs : new Table.TableResultSet[]{
+                selector.getResultSet(),
+                selector.getResultSet(false, false),
+                selector.getResults()})
+        {
+            try
+            {
+                int rsCount = 0;
+                while(rs.next())
+                    rsCount++;
+                assertEquals(expectedRowCount, rsCount);
+                assertEquals(expectedComplete, rs.isComplete());
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
         }
     }
 
@@ -136,37 +163,7 @@ public class TableSelectorTestCase extends Assert
             }
         }, clazz);
 
-        ResultSet rs = null;
-
-        // Test cached ResultSet
-        AtomicInteger rsCachedCount = new AtomicInteger(0);
-
-        try
-        {
-            rs = selector.getResultSet();
-
-            while (rs.next())
-                rsCachedCount.incrementAndGet();
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-
-        // Test uncached ResultSet
-        AtomicInteger rsUncachedCount = new AtomicInteger(0);
-
-        try
-        {
-            rs = selector.getResultSet(false, false, null, null);
-
-            while (rs.next())
-                rsUncachedCount.incrementAndGet();
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        verifyResultSet(selector, array.length, true);
 
         assertTrue
         (
@@ -174,9 +171,7 @@ public class TableSelectorTestCase extends Assert
             array.length == forEachcount.intValue() &&
             array.length == mapCount.intValue() &&
             array.length == objCount.intValue() &&
-            array.length == selector.getRowCount() &&
-            array.length == rsCachedCount.intValue() &&
-            array.length == rsUncachedCount.intValue()
+            array.length == selector.getRowCount()
         );
     }
 }

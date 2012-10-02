@@ -127,10 +127,10 @@ public class Table
 
     @Deprecated // Use TableSelector
     @NotNull
-    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int rowCount, long offset)
+    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int maxRows, long offset)
             throws SQLException
     {
-        return new LegacyTableSelector(table, select, filter, sort).setMaxRows(rowCount).setOffset(offset).getArray(clss);
+        return new LegacyTableSelector(table, select, filter, sort).setMaxRows(maxRows).setOffset(offset).getArray(clss);
     }
 
     // return a result from a one column resultset. K should be a string or number type
@@ -357,9 +357,9 @@ public class Table
      * you must explicitly start your own transaction and commit it.
      */
     @Deprecated // Use TableSelector
-    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount) throws SQLException
+    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
     {
-        return new LegacySqlSelector(schema, sql).setMaxRows(rowCount).getResultSet();
+        return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
     }
 
     /**
@@ -371,9 +371,9 @@ public class Table
      * you must explicitly start your own transaction and commit it.
      */
     @Deprecated // Use TableSelector
-    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount, boolean cache, boolean scrollable) throws SQLException
+    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows, boolean cache, boolean scrollable) throws SQLException
     {
-        return new LegacySqlSelector(schema, sql).setMaxRows(rowCount).getResultSet(scrollable, cache, null, null);
+        return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet(scrollable, cache);
     }
 
     /**
@@ -385,10 +385,10 @@ public class Table
      * you must explicitly start your own transaction and commit it.
      */
     @Deprecated // Use TableSelector
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache)
+    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
             throws SQLException
     {
-        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(rowCount).getResultSet(false, cache, null, null);
+        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(false, cache);
     }
 
     /**
@@ -400,10 +400,10 @@ public class Table
      * you must explicitly start your own transaction and commit it.
      */
     @Deprecated // Use TableSelector
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache, boolean scrollable)
+    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache, boolean scrollable)
             throws SQLException
     {
-        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(rowCount).getResultSet(scrollable, cache, null, null);
+        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(scrollable, cache);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -418,7 +418,7 @@ public class Table
     }
 
 
-    static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount)
+    static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows)
             throws SQLException
     {
         ResultSet rs;
@@ -426,13 +426,13 @@ public class Table
         if (null == parameters || 0 == parameters.length)
         {
             Statement statement = conn.createStatement(scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-            initializeStatement(statement, asyncRequest, statementRowCount);
+            initializeStatement(statement, asyncRequest, statementMaxRows);
             rs = statement.executeQuery(sql);
         }
         else
         {
             PreparedStatement stmt = conn.prepareStatement(sql, scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-            initializeStatement(stmt, asyncRequest, statementRowCount);
+            initializeStatement(stmt, asyncRequest, statementMaxRows);
 
             try
             {
@@ -454,12 +454,12 @@ public class Table
     }
 
 
-    private static void initializeStatement(Statement statement, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException
+    private static void initializeStatement(Statement statement, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
     {
         // Don't set max rows if null or special ALL_ROWS value (we're assuming statement.getMaxRows() defaults to 0, though this isn't actually documented...)
-        if (null != statementRowCount && ALL_ROWS != statementRowCount)
+        if (null != statementMaxRows && ALL_ROWS != statementMaxRows)
         {
-            statement.setMaxRows(statementRowCount == NO_ROWS ? 1 : statementRowCount);
+            statement.setMaxRows(statementMaxRows == NO_ROWS ? 1 : statementMaxRows);
         }
 
         if (asyncRequest != null)
@@ -575,7 +575,7 @@ public class Table
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    private static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, long scrollOffset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log, @Nullable Integer statementRowCount)
+    private static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, long scrollOffset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log, @Nullable Integer statementMaxRows)
             throws SQLException
     {
         if (log == null) log = _log;
@@ -594,15 +594,15 @@ public class Table
                 schema.getSqlDialect().configureToDisableJdbcCaching(conn);
             }
 
-            rs = _executeQuery(conn, sql, parameters, scrollable, asyncRequest, statementRowCount);
+            rs = _executeQuery(conn, sql, parameters, scrollable, asyncRequest, statementMaxRows);
 
             while (scrollOffset > 0 && rs.next())
                 scrollOffset--;
 
             if (cache)
-                return cacheResultSet(schema.getSqlDialect(), rs, rowCount, asyncRequest);
+                return cacheResultSet(schema.getSqlDialect(), rs, maxRows, null != asyncRequest ? asyncRequest.getCreationStackTrace() : null);
             else
-                return new ResultSetImpl(conn, schema.getScope(), rs, rowCount);
+                return new ResultSetImpl(conn, schema.getScope(), rs, maxRows);
         }
         catch(SQLException e)
         {
@@ -1260,19 +1260,6 @@ public class Table
     }
 
 
-    public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset)
-            throws SQLException
-    {
-        return selectForDisplay(table, columnInfosList(table, select), parameters, filter, sort, rowCount, offset);
-    }
-
-
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset)
-            throws SQLException
-    {
-        return selectForDisplay(table, select, parameters, filter, sort, rowCount, offset, true, false);
-    }
-
     public static Map<String, List<Aggregate.Result>>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
             Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, Filter filter, boolean cache) throws SQLException
     {
@@ -1342,7 +1329,8 @@ public class Table
             throws SQLException, IOException
     {
         final AsyncQueryRequest<Map<String, List<Aggregate.Result>>> asyncRequest = new AsyncQueryRequest<Map<String, List<Aggregate.Result>>>(response);
-        return asyncRequest.waitForResult(new Callable<Map<String, List<Aggregate.Result>>>() {
+        return asyncRequest.waitForResult(new Callable<Map<String, List<Aggregate.Result>>>()
+        {
             public Map<String, List<Aggregate.Result>> call() throws Exception
             {
                 return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, cache, asyncRequest);
@@ -1351,13 +1339,7 @@ public class Table
     }
 
 
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean cache, boolean scrollable)
-            throws SQLException
-    {
-        return selectForDisplay(table, select, parameters, filter, sort, rowCount, offset, cache, scrollable, null, null);
-    }
-
-
+/*
     private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
             throws SQLException
     {
@@ -1400,8 +1382,55 @@ public class Table
         return rowcount;
     }
 
+*/
 
-    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, Map<String,Object> parameters, final @Nullable Filter filter, final @Nullable Sort sort, final int rowCount, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
+    @Deprecated // Use TableSelector instead
+    public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+
+        return selector.getResults();
+    }
+
+
+    @Deprecated // Use TableSelector instead
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+
+        return selector.getResults();
+    }
+
+    @Deprecated // Use TableSelector instead
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean cache, boolean scrollable)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+
+        return selector.getResults(scrollable, cache);
+    }
+
+
+    @Deprecated // Use TableSelector instead
+    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters).setLogger(log);
+
+        if (null != asyncRequest)
+            selector.setAsyncRequest(asyncRequest);
+
+        return selector.getResults(scrollable, cache);
+    }
+
+
+    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, Map<String,Object> parameters, final @Nullable Filter filter, final @Nullable Sort sort, final int maxRows, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
     {
         final Logger log = ConnectionWrapper.getConnectionLogger();
         final AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response);
@@ -1412,7 +1441,7 @@ public class Table
 		{
             public Results call() throws Exception
             {
-                return selectForDisplay(table, select, parametersCopy, filter, sort, rowCount, offset, cache, scrollable, asyncRequest, log);
+                return selectForDisplay(table, select, parametersCopy, filter, sort, maxRows, offset, cache, scrollable, asyncRequest, log);
             }
         });
     }
@@ -1510,12 +1539,12 @@ public class Table
     }
 
 
-    static TableResultSet cacheResultSet(SqlDialect dialect, ResultSet rs, int rowCount, @Nullable AsyncQueryRequest asyncRequest) throws SQLException
+    static TableResultSet cacheResultSet(SqlDialect dialect, ResultSet rs, int maxRows, @Nullable StackTraceElement[] creationStackTrace) throws SQLException
     {
-        CachedResultSet crs = new CachedResultSet(rs, dialect.shouldCacheMetaData(), rowCount);
+        CachedResultSet crs = new CachedResultSet(rs, dialect.shouldCacheMetaData(), maxRows);
 
-        if (null != asyncRequest && AppProps.getInstance().isDevMode())
-            crs.setStackTrace(asyncRequest.getCreationStackTrace());
+        if (null != creationStackTrace && AppProps.getInstance().isDevMode())
+            crs.setStackTrace(creationStackTrace);
 
         return crs;
     }
@@ -1877,15 +1906,15 @@ public class Table
 
             Results rsAll = Table.selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, ALL_ROWS, NO_OFFSET);
             rsAll.last();
-            int rowCount = rsAll.getRow();
+            int maxRows = rsAll.getRow();
             assertTrue(((Table.TableResultSet)rsAll.getResultSet()).isComplete());
             rsAll.close();
 
-            rowCount -= 2;
-            Results rs = Table.selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, rowCount, NO_OFFSET);
+            maxRows -= 2;
+            Results rs = Table.selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, maxRows, NO_OFFSET);
             rs.last();
             int row = rs.getRow();
-            assertTrue(row == rowCount);
+            assertTrue(row == maxRows);
             assertFalse(((Table.TableResultSet)rs.getResultSet()).isComplete());
             rs.close();
         }

@@ -36,9 +36,14 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
 {
     protected int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
+    protected @Nullable Map<String, Object> _namedParameters = null;
 
-    abstract protected FACTORY getSqlFactory();  // A single query's SQL factory; this allows better Selector reuse, since query-specific
-                                       // optimizations won't mutate the Selector's externally set state.
+    // SQL factory used for the duration of a single query. This helps Selector reuse, since query-specific optimizations
+    // won't mutate the Selector's externally set state.
+    abstract protected FACTORY getSqlFactory();
+
+    // SQL factory used for ResultSet / Results (has different maxRows handling to support isComplete())
+    abstract protected FACTORY getResultSetSqlFactory();
 
     protected BaseSelector(DbScope scope)
     {
@@ -64,14 +69,19 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
         return getThis();
     }
 
+    public SELECTOR setNamedParameters(@Nullable Map<String, Object> namedParameters)
+    {
+        _namedParameters = namedParameters;
+        return getThis();
+    }
+
     // Standard internal handleResultSet method used by everything except ResultSets
     private <K> K handleResultSet(SqlFactory sqlFactory, ResultSetHandler<K> handler)
     {
-        return handleResultSet(sqlFactory, handler, true, false, false, null, null);
+        return handleResultSet(sqlFactory, handler, true, false, false);
     }
 
-    private <K> K handleResultSet(SqlFactory sqlFactory, ResultSetHandler<K> handler, boolean closeOnSuccess, boolean scrollable,
-        boolean tweakJdbcParameters, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount)
+    private <K> K handleResultSet(SqlFactory sqlFactory, ResultSetHandler<K> handler, boolean closeOnSuccess, boolean scrollable, boolean tweakJdbcParameters)
     {
         DbScope scope = getScope();
         SQLFragment sql = sqlFactory.getSql();
@@ -92,7 +102,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
                 scope.getSqlDialect().configureToDisableJdbcCaching(conn);
             }
 
-            rs = Table._executeQuery(conn, sql.getSQL(), sql.getParamsArray(), scrollable, asyncRequest, statementRowCount);
+            rs = Table._executeQuery(conn, sql.getSQL(), sql.getParamsArray(), scrollable, getAsyncRequest(), sqlFactory.getStatementMaxRows());
             sqlFactory.processResultSet(rs);
 
             return handler.handle(rs, conn, scope);
@@ -111,10 +121,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
         }
     }
 
-    // TODO: Named parameters
-    // TODO: Set Logger?
-    // TODO: Statement row count
-    private Table.TableResultSet getResultSet(SqlFactory sqlFactory, boolean scrollable, boolean cache, final @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException
+    protected Table.TableResultSet getResultSet(SqlFactory sqlFactory, boolean scrollable, boolean cache) throws SQLException
     {
         if (cache)
         {
@@ -123,9 +130,9 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
                 @Override
                 public TableResultSet handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
                 {
-                    return Table.cacheResultSet(scope.getSqlDialect(), rs, _maxRows, asyncRequest);
+                    return Table.cacheResultSet(scope.getSqlDialect(), rs, _maxRows, getCreationStacktrace());
                 }
-            }, true, scrollable, true, asyncRequest, statementRowCount);
+            }, true, scrollable, true);
         }
         else
         {
@@ -136,20 +143,20 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
                 {
                     return new Table.ResultSetImpl(conn, scope, rs, _maxRows);
                 }
-            }, false, scrollable, true, asyncRequest, statementRowCount);
+            }, false, scrollable, true);
         }
     }
 
     @Override
     public Table.TableResultSet getResultSet() throws SQLException
     {
-        return getResultSet(false, true, null, null);
+        return getResultSet(false, true);
     }
 
     @Override
-    public Table.TableResultSet getResultSet(boolean scrollable, boolean cache, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException
+    public Table.TableResultSet getResultSet(boolean scrollable, boolean cache) throws SQLException
     {
-        return getResultSet(getSqlFactory(), scrollable, cache, asyncRequest, statementRowCount);
+        return getResultSet(getResultSetSqlFactory(), scrollable, cache);
     }
 
     private <K> ArrayList<K> getArrayList(final Class<K> clazz, FACTORY factory)

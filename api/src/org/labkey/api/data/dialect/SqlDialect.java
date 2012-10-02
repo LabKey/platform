@@ -359,16 +359,16 @@ public abstract class SqlDialect
     /**
      * Limit a SELECT query to the specified number of rows (Table.ALL_ROWS == no limit).
      * @param sql a SELECT query
-     * @param rowCount return the first rowCount number of rows (Table.ALL_ROWS == no limit).
+     * @param maxRows return the first maxRows number of rows (Table.ALL_ROWS == no limit).
      * @return the query
      */
-    public abstract SQLFragment limitRows(SQLFragment sql, int rowCount);
+    public abstract SQLFragment limitRows(SQLFragment sql, int maxRows);
 
-    public void limitRows(StringBuilder builder, int rowCount)
+    public void limitRows(StringBuilder builder, int maxRows)
     {
         SQLFragment frag = new SQLFragment();
         frag.append(builder);
-        limitRows(frag, rowCount);
+        limitRows(frag, maxRows);
         builder.replace(0, builder.length(), frag.getSQL());
     }
 

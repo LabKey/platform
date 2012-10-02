@@ -287,7 +287,7 @@ public class DbScope
         return getConnection(null);
     }
 
-    public Connection getConnection(Logger log) throws SQLException
+    public Connection getConnection(@Nullable Logger log) throws SQLException
     {
         Transaction t = _transaction.get();
 

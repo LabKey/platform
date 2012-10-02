@@ -183,7 +183,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment sql, int rowCount)
+    public SQLFragment limitRows(SQLFragment sql, int maxRows)
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }

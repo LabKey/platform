@@ -166,7 +166,7 @@ abstract public class QueryService
      * be used as a subselect, as some databases don't allow you to do ORDER BY on a subselect if there is no LIMIT/TOP
      * clause 
      */
-    abstract public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean forceSort);
+    abstract public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
 
     /**
      * Gets all of the custom views from the given relative path defined in the set of active modules for the
@@ -217,7 +217,7 @@ abstract public class QueryService
     }
 
 
-    public static class NamedParameterNotProvided extends SQLException
+    public static class NamedParameterNotProvided extends RuntimeException
     {
         public NamedParameterNotProvided(String name)
         {
@@ -226,7 +226,7 @@ abstract public class QueryService
     }
 
     abstract public void bindNamedParameters(SQLFragment frag, Map<String, Object> in);
-    abstract public void validateNamedParameters(SQLFragment frag) throws SQLException;
+    abstract public void validateNamedParameters(SQLFragment frag);
 
     /**
      * Add an audit log entry for this QueryView. The

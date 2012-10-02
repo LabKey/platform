@@ -28,7 +28,7 @@ import java.util.Set;
 * Time: 3:07:21 PM
 */
 
-// Standard TableSelector that throws checked SQLExceptions instead of RuntimeExceptions.
+// Standard TableSelector that throws checked SQLExceptions instead of RuntimeExceptions
 public class LegacyTableSelector extends LegacySelector<TableSelector, LegacyTableSelector>
 {
     public LegacyTableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
@@ -62,8 +62,19 @@ public class LegacyTableSelector extends LegacySelector<TableSelector, LegacyTab
         return this;
     }
 
+    public LegacyTableSelector setForDisplay(boolean forDisplay)
+    {
+        _selector.setForDisplay(forDisplay);
+        return getThis();
+    }
+
     public Results getResults() throws SQLException
     {
         return _selector.getResults();
+    }
+
+    public Results getResults(boolean scrollable, boolean cache) throws SQLException
+    {
+        return _selector.getResults(scrollable, cache);
     }
 }

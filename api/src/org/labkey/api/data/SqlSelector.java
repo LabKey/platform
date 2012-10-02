@@ -63,13 +63,19 @@ public class SqlSelector extends BaseSelector<SqlSelector.SimpleSqlFactory, SqlS
         return new SimpleSqlFactory();
     }
 
+    @Override
+    protected SimpleSqlFactory getResultSetSqlFactory()
+    {
+        return getSqlFactory();  // Same thing for now... until SqlSelector supports limit/offset
+    }
+
 
     public class SimpleSqlFactory extends BaseSqlFactory
     {
         @Override
         public SQLFragment getSql()
         {
-            return _sql;
+            return _sql;   // TODO: Handle limit and offset
         }
     }
 }

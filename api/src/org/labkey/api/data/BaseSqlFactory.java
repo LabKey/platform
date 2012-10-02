@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -27,5 +29,11 @@ public abstract class BaseSqlFactory implements SqlFactory
 {
     public void processResultSet(ResultSet rs) throws SQLException
     {
+    }
+
+    @Override
+    public @Nullable Integer getStatementMaxRows()
+    {
+        return null;
     }
 }

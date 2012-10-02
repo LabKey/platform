@@ -92,10 +92,24 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    // TODO: Version of getResults() that takes cache, etc. parameters?
     public Results getResults() throws SQLException
     {
-        return new ResultsImpl(getResultSet(), _columns);
+        return getResults(false, true);
+    }
+
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
+    public Results getResults(boolean scrollable, boolean cache) throws SQLException
+    {
+        TableSqlFactory factory = getResultSetSqlFactory();
+        ResultSet rs = getResultSet(factory, scrollable, cache);
+        return new ResultsImpl(rs, factory.getColumns());
     }
 
     public TableSelector setForDisplay(boolean forDisplay)
@@ -167,9 +181,16 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
     @Override
     protected TableSqlFactory getSqlFactory()
     {
-        // Return the standard SQL factory (a TableSqlFactory); exposed methods can create custom factories (or wrap
+        // Return the standard SQL factory (a TableSqlFactory); non-standard methods can create custom factories (or wrap
         // this one) to optimize specific queries (see getRowCount() and getObject()).
-        return new TableSqlFactory(_filter, _sort, _columns, true);
+        return new TableSqlFactory(_filter, _sort, _columns, 0, true);
+    }
+
+    @Override
+    protected TableSqlFactory getResultSetSqlFactory()
+    {
+        // Same as above, but select one extra row to support isComplete()
+        return new TableSqlFactory(_filter, _sort, _columns, 1, true);
     }
 
 
@@ -177,39 +198,38 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
     {
         private final @Nullable Filter _filter;
         private final @Nullable Sort _sort;
-        private final Collection<ColumnInfo> _columns;
         private final boolean _allowSort;
+        private final int _extraRows;
 
+        private Collection<ColumnInfo> _columns;
         private long _scrollOffset = 0;
+        private @Nullable Integer _statementMaxRows;
 
-        public TableSqlFactory(@Nullable Filter filter, @Nullable Sort sort, Collection<ColumnInfo> columns, boolean allowSort)
+        public TableSqlFactory(@Nullable Filter filter, @Nullable Sort sort, Collection<ColumnInfo> columns, int extraRows, boolean allowSort)
         {
             _filter = filter;
             _sort = allowSort ? sort : null;    // Ensure consistency
             _columns = columns;
+            _extraRows = extraRows;
             _allowSort = allowSort;
         }
 
         @Override      // Note: This method refers to _table, _offset, _rowCount, and _forDisplay from parent; the other fields are from this class.
         public SQLFragment getSql()
         {
-            Collection<ColumnInfo> columns;
-
             if (_forDisplay)
             {
                 Map<String, ColumnInfo> map = Table.getDisplayColumnsList(_columns);
-                Table.ensureRequiredColumns(_table, map, _filter, _sort, null);
-                columns = map.values();
-            }
-            else
-            {
-                columns = _columns;
-            }
 
-            // NOTE: When ResultSet is supported, we'll need to select one extra row to support isComplete(). Factory will
-            // need to know that a ResultSet was requested
+                // QueryService.getSelectSQL() also calls ensureRequiredColumns, so this call is redundant. However, we
+                // need to know the actual select columns (e.g., if the caller is building a Results) and getSelectSQL()
+                // doesn't return them. TODO: Provide a way to return the selected columns from getSelectSQL()
+                Table.ensureRequiredColumns(_table, map, _filter, _sort, null);
+                _columns = map.values();
+            }
 
             boolean forceSort = _allowSort && (_offset != Table.NO_OFFSET || _maxRows != Table.ALL_ROWS);
+            long selectOffset;
 
             if (requiresManualScrolling())
             {
@@ -218,15 +238,29 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
                 // - Set _scrollOffset so getResultSet() skips over the rows we don't want
 
                 _scrollOffset = _offset;
-                return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, (int)_offset + _maxRows, 0, forceSort);
+                selectOffset = 0;
             }
             else
             {
                 // Standard case is simply to create SQL using maxRows and offset
 
                 _scrollOffset = 0;
-                return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, _maxRows, _offset, forceSort);
+                selectOffset = _offset;
             }
+
+            int selectMaxRows = (Table.ALL_ROWS == _maxRows || Table.NO_ROWS == _maxRows) ? _maxRows : (int)_scrollOffset + _maxRows + _extraRows;
+            SQLFragment sql = QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, selectMaxRows, selectOffset, forceSort);
+
+            // This is for SAS, which doesn't support a SQL LIMIT syntax, so we must set Statement.maxRows() instead
+            _statementMaxRows = _table.getSqlDialect().requiresStatementMaxRows() ? selectMaxRows : null;
+
+            if (null != _namedParameters)
+            {
+                QueryService.get().bindNamedParameters(sql, _namedParameters);
+                QueryService.get().validateNamedParameters(sql);
+            }
+
+            return sql;
         }
 
         protected boolean requiresManualScrolling()
@@ -235,11 +269,22 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
         }
 
         @Override
+        public @Nullable Integer getStatementMaxRows()
+        {
+            return _statementMaxRows;
+        }
+
+        @Override
         public void processResultSet(ResultSet rs) throws SQLException
         {
             // Special handling for dialects that don't support offset
             while (_scrollOffset > 0 && rs.next())
                 _scrollOffset--;
+        }
+
+        public Collection<ColumnInfo> getColumns()
+        {
+            return _columns;
         }
     }
 
@@ -251,7 +296,7 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
         public PreventSortTableSqlFactory(Filter filter, Collection<ColumnInfo> columns)
         {
             // Really don't include a sort for this query
-            super(filter, null, columns, false);
+            super(filter, null, columns, 0, false);
         }
     }
 

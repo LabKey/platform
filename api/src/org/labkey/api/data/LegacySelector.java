@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
@@ -33,8 +34,8 @@ import java.util.Map;
 // checked SQLExceptions. This class helps migrate to the new API by wrapping a Selector and translating
 // its RuntimeSQLExceptions into checked SQLExceptions.
 
-// This declaration borders insanity...
-abstract class LegacySelector<SELECTOR extends BaseSelector<?, SELECTOR>, LEGACYSELECTOR extends LegacySelector<SELECTOR, LEGACYSELECTOR>>
+// This declaration borders on insanity...
+abstract class LegacySelector<SELECTOR extends BaseSelector<? extends SqlFactory, SELECTOR>, LEGACYSELECTOR extends LegacySelector<SELECTOR, LEGACYSELECTOR>>
 {
     protected final SELECTOR _selector;
 
@@ -59,6 +60,24 @@ abstract class LegacySelector<SELECTOR extends BaseSelector<?, SELECTOR>, LEGACY
         return getThis();
     }
 
+    public LEGACYSELECTOR setNamedParamters(Map<String, Object> parameters)
+    {
+        _selector.setNamedParameters(parameters);
+        return getThis();
+    }
+
+    public LEGACYSELECTOR setAsyncRequest(@Nullable AsyncQueryRequest asyncRequest)
+    {
+        _selector.setAsyncRequest(asyncRequest);
+        return getThis();
+    }
+
+    public LEGACYSELECTOR setLogger(Logger log)
+    {
+        _selector.setLogger(log);
+        return getThis();
+    }
+
     // All the results-gathering methods are below
 
     public Table.TableResultSet getResultSet() throws SQLException
@@ -66,9 +85,9 @@ abstract class LegacySelector<SELECTOR extends BaseSelector<?, SELECTOR>, LEGACY
         return _selector.getResultSet();
     }
 
-    public Table.TableResultSet getResultSet(boolean scrollable, boolean cache, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException
+    public Table.TableResultSet getResultSet(boolean scrollable, boolean cache) throws SQLException
     {
-        return _selector.getResultSet(scrollable, cache, asyncRequest, statementRowCount);
+        return _selector.getResultSet(scrollable, cache);
     }
 
     public <K> void forEach(Selector.ForEachBlock<K> block, Class<K> clazz) throws SQLException

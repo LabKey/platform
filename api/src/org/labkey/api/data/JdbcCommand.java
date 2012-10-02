@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,10 +31,15 @@ import java.sql.SQLException;
  */
 public abstract class JdbcCommand
 {
+    private static final Logger LOG = Logger.getLogger(JdbcCommand.class);
+
     private final @NotNull DbScope _scope;
     private final @Nullable Connection _conn;
     private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
     private Level _logLevel = Level.WARN;  // Log all warnings and errors by default
+    private Logger _log = LOG;   // Passed to getConnection(), can be customized via getLogger()
+    private @Nullable AsyncQueryRequest _asyncRequest = null;
+    private @Nullable StackTraceElement[] _creationStacktrace = null;
 
     protected JdbcCommand(@NotNull DbScope scope, @Nullable Connection conn)
     {
@@ -43,7 +49,7 @@ public abstract class JdbcCommand
 
     public Connection getConnection() throws SQLException
     {
-        return null == _conn ? _scope.getConnection() : _conn;
+        return null == _conn ? _scope.getConnection(_log) : _conn;
     }
 
     protected void close(@Nullable ResultSet rs, Connection conn)
@@ -59,7 +65,7 @@ public abstract class JdbcCommand
         return _scope;
     }
 
-    public void setExceptionFramework(ExceptionFramework exceptionFramework)
+    public void setExceptionFramework(ExceptionFramework exceptionFramework)   // TODO: Chaining?
     {
         _exceptionFramework = exceptionFramework;
     }
@@ -74,8 +80,38 @@ public abstract class JdbcCommand
         return _logLevel;
     }
 
-    public void setLogLevel(Level logLevel)
+    public void setLogLevel(Level logLevel)    // TODO: Chaining?
     {
         _logLevel = logLevel;
+    }
+
+    public void setLogger(@NotNull Logger log)    // TODO: Chaining?
+    {
+        _log = log;
+    }
+
+    public void setAsyncRequest(@Nullable AsyncQueryRequest asyncRequest)
+    {
+        _asyncRequest = asyncRequest;
+
+        if (null != asyncRequest)
+            _creationStacktrace = asyncRequest.getCreationStackTrace();
+    }
+
+    @Nullable
+    protected AsyncQueryRequest getAsyncRequest()
+    {
+        return _asyncRequest;
+    }
+
+    public void setCreationStacktrace(@Nullable StackTraceElement[] creationStacktrace)
+    {
+        _creationStacktrace = creationStacktrace;
+    }
+
+    @Nullable
+    protected StackTraceElement[] getCreationStacktrace()
+    {
+        return _creationStacktrace;
     }
 }
