@@ -28,36 +28,34 @@ import java.util.Map;
 public enum PropertyType
 {
     // Treat expMultiLine the same as xsdString for lookup purposes, since it's really just a formatting distiction 
-    expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", true, "Multi-Line Text", "VARCHAR", "String", "string"),
-    xsdString("http://www.w3.org/2001/XMLSchema#string", true, "Text (String)", "VARCHAR", "String", "string"),
-    xsdBoolean("http://www.w3.org/2001/XMLSchema#boolean", false, "Boolean", "BOOLEAN", null, "boolean"),
-    xsdInt("http://www.w3.org/2001/XMLSchema#int", true, "Integer", "INT", null, "int"),
-    xsdDouble("http://www.w3.org/2001/XMLSchema#double", true, "Number (Double)", "DOUBLE", "Double", "float"),
-    xsdDateTime("http://www.w3.org/2001/XMLSchema#dateTime", true, "DateTime", "TIMESTAMP", null, "date"),
-    expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File", "CLOB"),
-    expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment", "VARCHAR"),
-    expFlag("http://www.labkey.org/exp/xml#flag", false, "Flag (String)", "VARCHAR");
+    expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", true, "Multi-Line Text", "String", "string"),
+    xsdString("http://www.w3.org/2001/XMLSchema#string", true, "Text (String)", "String", "string"),
+    xsdBoolean("http://www.w3.org/2001/XMLSchema#boolean", false, "Boolean", null, "boolean"),
+    xsdInt("http://www.w3.org/2001/XMLSchema#int", true, "Integer", null, "int"),
+    xsdDouble("http://www.w3.org/2001/XMLSchema#double", true, "Number (Double)", "Double", "float"),
+    xsdDateTime("http://www.w3.org/2001/XMLSchema#dateTime", true, "DateTime", null, "date"),
+    expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File"),
+    expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment"),
+    expFlag("http://www.labkey.org/exp/xml#flag", false, "Flag (String)");
 
     public static final String PARTICIPANT_CONCEPT_URI = "http://cpas.labkey.com/Study#ParticipantId";
 
     private final String _uri;
     private final String _display;
-    private final String _sqlName;
     private final String _jsonType;
     private final String _short;
     private final boolean _lookup;
 
-    PropertyType(String uri, boolean lookup, String display, String sqlName)
+    PropertyType(String uri, boolean lookup, String display)
     {
-        this(uri,lookup,display, sqlName, display, null);
+        this(uri,lookup,display, display, null);
     }
 
-    PropertyType(String uri, boolean lookup, String display, String sqlName, String shortName, String jsonType)
+    PropertyType(String uri, boolean lookup, String display, String shortName, String jsonType)
     {
         this._uri = uri;
         this._lookup = lookup;
         this._display = display;
-        this._sqlName = sqlName;
         this._jsonType = jsonType;
         this._short = shortName == null ? display : shortName;
     }
@@ -65,11 +63,6 @@ public enum PropertyType
     public String getURI()
     {
         return _uri;
-    }
-
-    public String getSqlName()
-    {
-        return _sqlName;
     }
 
     @Override

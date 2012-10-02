@@ -18,7 +18,6 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -37,7 +36,6 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,14 +71,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
     public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol)
     {
         ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#PlateTemplate");
-        try
-        {
-            return prop != null ? PlateService.get().getPlateTemplate(protocol.getContainer(), prop.getStringValue()) : null;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return prop != null ? PlateService.get().getPlateTemplate(protocol.getContainer(), prop.getStringValue()) : null;
     }
 
     public boolean isPlateBased()

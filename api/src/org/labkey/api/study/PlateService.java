@@ -68,17 +68,15 @@ public class PlateService
          * @param container The template's container.
          * @param templateName The template's name.
          * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
-         * @throws SQLException Thrown in the event of a database failure.
          */
-        PlateTemplate getPlateTemplate(Container container, String templateName) throws SQLException;
+        PlateTemplate getPlateTemplate(Container container, String templateName);
 
         /**
          * Gets all plate templates for the specified container.
          * @param container The templates' container.
          * @return An array of all plate templates from the specified container.
-         * @throws SQLException Thrown in the event of a database failure.
          */
-        PlateTemplate[] getPlateTemplates(Container container) throws SQLException;
+        PlateTemplate[] getPlateTemplates(Container container);
 
         /**
          * Creates a new plate template.
@@ -109,27 +107,24 @@ public class PlateService
          * @param container The plate's container.
          * @param rowid The row id of the plate.
          * @return The requested plate, or null if no plate exists with the specified row id.
-         * @throws SQLException Thrown in the event of a database failure.
          */
-        Plate getPlate(Container container, int rowid) throws SQLException;
+        Plate getPlate(Container container, int rowid);
 
         /**
          * Gets a plate instance by entity id.
          * @param container The plate's container.
          * @param entityId The plate's entity id.
          * @return The requested plate, or null if no plate exists with the specified entity id.
-         * @throws SQLException Thrown in the event of a database failure.
          */
-        Plate getPlate(Container container, String entityId) throws SQLException;
+        Plate getPlate(Container container, String entityId);
 
         /**
          * Gets a well group by row id.
          * @param container The object's container.
          * @param rowid The row id of the well group.
          * @return The requested well group, or null if no well group exists with the specified row id.
-         * @throws SQLException Thrown in the event of a database failure.
          */
-        WellGroup getWellGroup(Container container, int rowid) throws SQLException;
+        WellGroup getWellGroup(Container container, int rowid);
 
         /**
          * Creates a position object.
