@@ -971,6 +971,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     getSelectedRecords : function() {
         return this.selectedMeasures;
+    },
+
+    setSelectedRecord : function(measure) {
+        this.measuresGrid.getSelectionModel().select(measure);
     }
 });
 
