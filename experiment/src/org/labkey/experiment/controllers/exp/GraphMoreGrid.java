@@ -94,7 +94,14 @@ public class GraphMoreGrid extends GridView
         {
             inClause.append(separator);
             separator = ", ";
-            inClause.append(Integer.toString(Integer.parseInt(inValue)));
+            try
+            {
+                inClause.append(Integer.toString(Integer.parseInt(inValue)));
+            }
+            catch (NumberFormatException e)
+            {
+                throw new NotFoundException("Invalid RowId requested: " + inValue);
+            }
         }
         inClause.append(") ");
         SimpleFilter filter = new SimpleFilter();
