@@ -285,9 +285,9 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment frag, int rowCount)
+    public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return limitRows(frag, rowCount, 0);
+        return limitRows(frag, maxRows, 0);
     }
 
     private SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)

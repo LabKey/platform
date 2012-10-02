@@ -146,9 +146,9 @@ public abstract class OracleDialect extends SimpleSqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment frag, int rowCount)
+    public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return limitRows(frag, rowCount, 0);
+        return limitRows(frag, maxRows, 0);
     }
 
     @Override

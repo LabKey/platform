@@ -77,7 +77,7 @@ public abstract class SasDialect extends SimpleSqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment frag, int rowCount)
+    public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
         return frag;
     }

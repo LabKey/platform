@@ -1217,7 +1217,7 @@ public class QueryServiceImpl extends QueryService
 
 
     // verify that named parameters have been bound
-    public void validateNamedParameters(SQLFragment frag) throws SQLException
+    public void validateNamedParameters(SQLFragment frag)
     {
         for (Object o : frag.getParams())
         {
@@ -1229,7 +1229,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String,Object> parameters) throws SQLException
+    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters) throws SQLException
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
         bindNamedParameters(sql, parameters);
@@ -1240,9 +1240,9 @@ public class QueryServiceImpl extends QueryService
 
 
 	public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
-                                    int rowCount, long offset, boolean forceSort)
+                                    int maxRows, long offset, boolean forceSort)
 	{
-        assert Table.validMaxRows(rowCount) : rowCount + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
+        assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
 
         if (null == selectColumns)
             selectColumns = table.getColumns();
@@ -1252,8 +1252,8 @@ public class QueryServiceImpl extends QueryService
 
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
-        ArrayList<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(selectColumns);
-        allColumns = (ArrayList<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null);
+        List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(selectColumns);
+        allColumns = (List<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null);
 
         // Check columns again: ensureRequiredColumns() may have added new columns
         assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()");
@@ -1321,7 +1321,7 @@ public class QueryServiceImpl extends QueryService
 		}
 
 		if ((sort == null || sort.getSortList().size() == 0) &&
-            (rowCount > 0 || offset > 0 || Table.NO_ROWS == rowCount || forceSort) &&
+            (maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows || forceSort) &&
             // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
             (!(table instanceof QueryTableInfo) || !((QueryTableInfo)table).hasSort()))
 		{
@@ -1335,7 +1335,7 @@ public class QueryServiceImpl extends QueryService
 			orderBy = sort.getOrderByClause(dialect, columnMap);
 		}
 
-		if ((filterFrag == null || filterFrag.getSQL().length()==0) && sort == null && Table.ALL_ROWS == rowCount && offset == 0)
+		if ((filterFrag == null || filterFrag.getSQL().length()==0) && sort == null && Table.ALL_ROWS == maxRows && offset == 0)
 		{
 			selectFrag.append("\n").append(fromFrag);
 			return selectFrag;
@@ -1343,7 +1343,7 @@ public class QueryServiceImpl extends QueryService
 
 		SQLFragment nestedFrom = new SQLFragment();
 		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x\n");
-		SQLFragment ret = dialect.limitRows(outerSelect, nestedFrom, filterFrag, orderBy, null, rowCount, offset);
+		SQLFragment ret = dialect.limitRows(outerSelect, nestedFrom, filterFrag, orderBy, null, maxRows, offset);
 
         if (AppProps.getInstance().isDevMode())
         {
