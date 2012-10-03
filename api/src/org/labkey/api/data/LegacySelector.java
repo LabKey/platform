@@ -35,7 +35,7 @@ import java.util.Map;
 // its RuntimeSQLExceptions into checked SQLExceptions.
 
 // This declaration borders on insanity...
-abstract class LegacySelector<SELECTOR extends BaseSelector<? extends SqlFactory, SELECTOR>, LEGACYSELECTOR extends LegacySelector<SELECTOR, LEGACYSELECTOR>>
+abstract class LegacySelector<SELECTOR extends BaseSelector<? extends SqlFactory, ?>, LEGACYSELECTOR extends LegacySelector<SELECTOR, ?>>
 {
     protected final SELECTOR _selector;
 
