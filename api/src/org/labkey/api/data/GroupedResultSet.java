@@ -36,7 +36,7 @@ import java.sql.SQLException;
  * Note: only a minimal set of methods has been overridden... just enough to fool DataRegions & ExcelGrids.
  * Note: tested only with Protein (a String column) grouping, doesn't currently support null as a valid value
  */
-public class GroupedResultSet extends Table.ResultSetImpl
+public class GroupedResultSet extends ResultSetImpl
 {
     private int _columnIndex = 0;
     private int _rowOffset = 0;
@@ -207,7 +207,7 @@ public class GroupedResultSet extends Table.ResultSetImpl
         return new NestedResultSet(this);
     }
 
-    public class NestedResultSet extends Table.ResultSetImpl
+    public class NestedResultSet extends ResultSetImpl
     {
         Object _currentValue;
 

@@ -274,6 +274,7 @@ api/src/org/labkey/api/data/QueryProfiler.java -text
 api/src/org/labkey/api/data/RemappingDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/RenderColumn.java -text
 api/src/org/labkey/api/data/RenderContextDecorator.java -text
+api/src/org/labkey/api/data/ResultSetImpl.java -text
 api/src/org/labkey/api/data/ResultSetMetaDataImpl.java -text
 api/src/org/labkey/api/data/Results.java -text
 api/src/org/labkey/api/data/ResultsImpl.java -text

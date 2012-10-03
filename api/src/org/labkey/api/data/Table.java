@@ -54,7 +54,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.rowset.CachedRowSet;
 import java.io.IOException;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
@@ -404,6 +403,58 @@ public class Table
             throws SQLException
     {
         return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(scrollable, cache);
+    }
+
+    @Deprecated // Use TableSelector instead
+    public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+
+        return selector.getResults();
+    }
+
+
+    @Deprecated // Use TableSelector instead
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+
+        return selector.getResults();
+    }
+
+    @Deprecated // Use TableSelector instead
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean cache, boolean scrollable)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+
+        return selector.getResults(scrollable, cache);
+    }
+
+
+    @Deprecated // Use TableSelector instead
+    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
+            throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters).setLogger(log);
+
+        if (null != asyncRequest)
+            selector.setAsyncRequest(asyncRequest);
+
+        return selector.getResults(scrollable, cache);
+    }
+
+    @Deprecated // Use TableSelector instead
+    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, Map<String, Object> parameters, final @Nullable Filter filter, final @Nullable Sort sort, final int maxRows, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setNamedParamters(parameters).setMaxRows(maxRows).setOffset(offset);
+        return selector.getResultsAsync(scrollable, cache, response);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -1339,114 +1390,6 @@ public class Table
     }
 
 
-/*
-    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
-            throws SQLException
-    {
-        assert Table.checkAllColumns(table, select, "selectForDisplay() select columns");
-        Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
-        assert Table.checkAllColumns(table, columns.values(), "selectForDisplay() results of getDisplayColumnsList()");
-        ensureRequiredColumns(table, columns, filter, sort, null);
-        assert Table.checkAllColumns(table, columns.values(), "selectForDisplay() after ensureRequiredColumns");
-
-        long queryOffset = offset, scrollOffset = 0;
-        int queryRowCount = rowCount;
-
-        if (offset > 0 && !table.getSqlDialect().supportsOffset())
-        {
-            queryOffset = 0;
-            scrollOffset = offset;
-            queryRowCount = rowCount + (int)offset;
-        }
-
-        int decideRowCount = decideRowCount(queryRowCount, null);
-        SQLFragment sql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount, queryOffset, true);
-        QueryService.get().bindNamedParameters(sql, parameters);
-        QueryService.get().validateNamedParameters(sql);
-        Integer statementRowCount = (table.getSqlDialect().requiresStatementMaxRows() ? decideRowCount : null);  // TODO: clean this all up
-        Table.TableResultSet rs = (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, scrollable, asyncRequest, log, statementRowCount);
-
-        return new ResultsImpl(rs, columns.values());
-    }
-
-
-    private static int decideRowCount(int rowcount, @Nullable Class clazz)
-    {
-        if (ALL_ROWS == rowcount || NO_ROWS == rowcount)
-            return rowcount;
-
-        // add 1 to count so we can set isComplete()
-        if (null == clazz || java.sql.ResultSet.class.isAssignableFrom(clazz))
-            return rowcount + 1;
-
-        return rowcount;
-    }
-
-*/
-
-    @Deprecated // Use TableSelector instead
-    public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
-
-        return selector.getResults();
-    }
-
-
-    @Deprecated // Use TableSelector instead
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
-
-        return selector.getResults();
-    }
-
-    @Deprecated // Use TableSelector instead
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean cache, boolean scrollable)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
-
-        return selector.getResults(scrollable, cache);
-    }
-
-
-    @Deprecated // Use TableSelector instead
-    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters).setLogger(log);
-
-        if (null != asyncRequest)
-            selector.setAsyncRequest(asyncRequest);
-
-        return selector.getResults(scrollable, cache);
-    }
-
-
-    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, Map<String,Object> parameters, final @Nullable Filter filter, final @Nullable Sort sort, final int maxRows, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
-    {
-        final Logger log = ConnectionWrapper.getConnectionLogger();
-        final AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response);
-        final Map<String,Object> parametersCopy = new CaseInsensitiveHashMap<Object>();
-        if (null != parameters)
-            parametersCopy.putAll(parameters);
-        return asyncRequest.waitForResult(new Callable<Results>()
-		{
-            public Results call() throws Exception
-            {
-                return selectForDisplay(table, select, parametersCopy, filter, sort, maxRows, offset, cache, scrollable, asyncRequest, log);
-            }
-        });
-    }
-
-
     static List<ColumnInfo> columnInfosList(TableInfo table, Set<String> select)
     {
         List<ColumnInfo> allColumns = table.getColumns();
@@ -1564,141 +1507,6 @@ public class Table
 
         /** @return the number of rows in the result set. -1 if unknown */
         int getSize();
-    }
-
-
-    public static class ResultSetImpl extends ResultSetWrapper implements TableResultSet
-    {
-        private final @Nullable DbScope _scope;
-        private final @Nullable Connection _connection;
-        private int _maxRows = ALL_ROWS;
-
-        private boolean _isComplete = true;
-
-        // for resource tracking
-        private Throwable _debugCreated = null;
-        protected boolean _wasClosed = false;
-
-
-        public ResultSetImpl(ResultSet rs)
-        {
-            this(rs, ALL_ROWS);
-        }
-
-
-        public ResultSetImpl(ResultSet rs, int maxRows)
-        {
-            this(null, null, rs, maxRows);
-        }
-
-
-        public ResultSetImpl(Connection connection, DbScope scope, ResultSet rs)
-        {
-            this(connection, scope, rs, ALL_ROWS);
-        }
-
-        public ResultSetImpl(@Nullable Connection connection, @Nullable DbScope scope, ResultSet rs, int maxRows)
-        {
-            super(rs);
-            assert MemTracker.put(this);
-            //noinspection ConstantConditions
-            assert null != (_debugCreated = new Throwable("created ResultSetImpl"));
-            _maxRows = maxRows;
-            _connection = connection;
-            _scope = scope;
-        }
-
-
-        public void setMaxRows(int i)
-        {
-            _maxRows = i;
-        }
-
-
-        public boolean isComplete()
-        {
-            return _isComplete;
-        }
-
-
-        void setComplete(boolean isComplete)
-        {
-            _isComplete = isComplete;
-        }
-
-        @Override
-        public int getSize()
-        {
-            return -1;
-        }
-
-        public boolean next() throws SQLException
-        {
-            boolean success = super.next();
-            if (!success || ALL_ROWS == _maxRows)
-                return success;
-            if (getRow() == _maxRows + 1)
-            {
-                _isComplete = false;
-            }
-            return getRow() <= _maxRows;
-        }
-
-
-        public void close() throws SQLException
-        {
-            // Uncached case... close everything down
-            if (null != _scope)
-            {
-                Statement stmt = getStatement();
-                super.close();
-                if (stmt != null)
-                {
-                    stmt.close();
-                }
-                _scope.releaseConnection(_connection);
-            }
-            else
-                super.close();
-
-            _wasClosed = true;
-        }
-
-
-        public int size() throws SQLException
-        {
-            if (resultset instanceof CachedRowSet)
-                return ((CachedRowSet) resultset).size();
-            return -1;
-        }
-
-
-        public Iterator<Map<String, Object>> iterator()
-        {
-            return new ResultSetIterator(this);
-        }
-
-        public String getTruncationMessage(int maxRows)
-        {
-            return "Displaying only the first " + maxRows + " rows.";
-        }
-
-        public Map<String, Object> getRowMap()
-        {
-            throw new UnsupportedOperationException("getRowMap()");
-        }
-
-
-        protected void finalize() throws Throwable
-        {
-            if (!_wasClosed)
-            {
-                close();
-                if (null != _debugCreated)
-                    _log.error("ResultSet was not closed", _debugCreated);
-            }
-            super.finalize();
-        }
     }
 
 

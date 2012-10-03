@@ -141,7 +141,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
                 @Override
                 public TableResultSet handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
                 {
-                    return new Table.ResultSetImpl(conn, scope, rs, _maxRows);
+                    return new ResultSetImpl(conn, scope, rs, _maxRows);
                 }
             }, false, scrollable, true);
         }

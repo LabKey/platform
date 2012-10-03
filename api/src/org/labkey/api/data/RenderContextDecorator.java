@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -52,13 +53,13 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Errors getErrors()
+    public @Nullable Errors getErrors()
     {
         return _ctx.getErrors();
     }
 
     @Override
-    public void setErrors(Errors errors)
+    public void setErrors(@Nullable Errors errors)
     {
         _ctx.setErrors(errors);
     }

@@ -216,14 +216,17 @@ public class NestedRenderContext extends RenderContext
             offset = 0;
         }
 
+        LegacyTableSelector selector = new LegacyTableSelector(table, columns, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+
         // Force the result set to be cached so that we can do our nesting
         if (async)
         {
-            return Table.selectForDisplayAsync(table, columns, parameters, filter, sort, maxRows, offset, getCache(), true, getViewContext().getResponse());
+            return selector.getResultsAsync(true, getCache(), getViewContext().getResponse());
         }
         else
         {
-            return Table.selectForDisplay(table, columns, parameters, filter, sort, maxRows, offset, getCache(), true);
+            return selector.getResults(true, getCache());
         }
     }
 }

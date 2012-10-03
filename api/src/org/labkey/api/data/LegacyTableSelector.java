@@ -18,6 +18,8 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Set;
@@ -76,5 +78,10 @@ public class LegacyTableSelector extends LegacySelector<TableSelector, LegacyTab
     public Results getResults(boolean scrollable, boolean cache) throws SQLException
     {
         return _selector.getResults(scrollable, cache);
+    }
+
+    public Results getResultsAsync(boolean scrollable, boolean cache, HttpServletResponse response) throws SQLException, IOException
+    {
+        return _selector.getResultsAsync(scrollable, cache, response);
     }
 }

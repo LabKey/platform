@@ -21,6 +21,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.PageFlowUtil;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -28,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, TableSelector>
 {
@@ -110,6 +113,20 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
         TableSqlFactory factory = getResultSetSqlFactory();
         ResultSet rs = getResultSet(factory, scrollable, cache);
         return new ResultsImpl(rs, factory.getColumns());
+    }
+
+    public Results getResultsAsync(final boolean scrollable, final boolean cache, HttpServletResponse response) throws IOException, SQLException
+    {
+        setLogger(ConnectionWrapper.getConnectionLogger());
+        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response);
+
+        return asyncRequest.waitForResult(new Callable<Results>()
+        {
+            public Results call() throws Exception
+            {
+                return getResults(scrollable, cache);
+            }
+        });
     }
 
     public TableSelector setForDisplay(boolean forDisplay)

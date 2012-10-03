@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
@@ -52,7 +53,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     private boolean _useContainerFilter = true;
     private ViewContext _viewContext;
-    private Errors _errors;
+    private @Nullable Errors _errors;
     private TableViewForm _form;
     private DataRegion _currentRegion;
     private Filter _baseFilter;
@@ -76,7 +77,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         this(context, null);
     }
 
-    public RenderContext(ViewContext context, Errors errors)
+    public RenderContext(ViewContext context, @Nullable Errors errors)
     {
         _viewContext = context;
         setErrors(errors);
@@ -93,12 +94,12 @@ public class RenderContext implements Map<String, Object>, Serializable
         _viewContext = context;
     }
 
-    public Errors getErrors()
+    public @Nullable Errors getErrors()
     {
         return _errors;
     }
 
-    public void setErrors(Errors errors)
+    public void setErrors(@Nullable Errors errors)
     {
         _errors = errors;
     }
@@ -410,15 +411,17 @@ public class RenderContext implements Map<String, Object>, Serializable
         filter.addClause(clause);
     }
 
-    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String,Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
+        LegacyTableSelector selector = new LegacyTableSelector(table, columns, filter, sort).setNamedParamters(parameters).setMaxRows(maxRows).setOffset(offset);
+
         if (async)
         {
-            return Table.selectForDisplayAsync(table, columns, parameters, filter, sort, maxRows, offset, getCache(), false, getViewContext().getResponse());
+             return selector.getResultsAsync(false, getCache(), getViewContext().getResponse());
         }
         else
         {
-            return Table.selectForDisplay(table, columns, parameters, filter, sort, maxRows, offset, getCache(), false);
+            return selector.getResults(false, getCache());
         }
     }
 

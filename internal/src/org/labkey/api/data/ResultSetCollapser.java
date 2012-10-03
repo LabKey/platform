@@ -22,7 +22,7 @@ import java.sql.SQLException;
  * User: jeckels
  * Date: Dec 20, 2006
  */
-public class ResultSetCollapser extends Table.ResultSetImpl
+public class ResultSetCollapser extends ResultSetImpl
 {
     private String _columnName;
     private Table.TableResultSet _tableRS;
