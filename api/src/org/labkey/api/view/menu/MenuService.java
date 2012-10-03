@@ -83,7 +83,7 @@ public class MenuService
             url.replaceParameter("adminMode", String.valueOf(!context.isAdminMode()));
             ActionURL redir = context.getActionURL().clone();
             redir.replaceParameter("_dc", GUID.makeHash());
-            url.replaceParameter("redir", redir.toString());
+            url.replaceParameter("returnUrl", redir.toString());
             return url;
         }
     }
