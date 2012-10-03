@@ -408,7 +408,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
         String viewName = viewType.getViewName();
         if (qs.getViewName() == null && viewName != null)
             qs.setViewName(viewName);
-        qs.setAllowCustomizeView(false);
 
         String excludeRequested = StringUtils.trimToNull((String) context.get(PARAMS.excludeRequestedBySite.name()));
         if (null != excludeRequested)
