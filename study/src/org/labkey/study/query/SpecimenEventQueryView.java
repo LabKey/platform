@@ -22,7 +22,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.study.Study;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyImpl;
@@ -34,10 +33,9 @@ import org.labkey.study.model.StudyImpl;
  */
 public class SpecimenEventQueryView extends BaseStudyQueryView
 {
-    protected SpecimenEventQueryView(ViewContext context, UserSchema schema,
-                                     QuerySettings settings, SimpleFilter filter, Sort sort)
+    protected SpecimenEventQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort)
     {
-        super(context, schema, settings, filter, sort);
+        super(schema, settings, filter, sort);
     }
 
     public static SpecimenEventQueryView createView(ViewContext context, Specimen specimen)
@@ -48,7 +46,7 @@ public class SpecimenEventQueryView extends BaseStudyQueryView
         QuerySettings qs = schema.getSettings(context, queryName, queryName);
         SimpleFilter filter = new SimpleFilter("VialId", specimen.getRowId());
         Sort sort = new Sort("-ShipDate");
-        return new SpecimenEventQueryView(context, schema, qs, filter, sort);
+        return new SpecimenEventQueryView(schema, qs, filter, sort);
     }
 
 

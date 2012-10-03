@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
@@ -148,7 +149,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
 
     protected SpecimenRequestQueryView(ViewContext context, UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort, NavTree... extraLinks)
     {
-        super(context, schema, settings, filter, sort);
+        super(schema, settings, filter, sort);
         _extraLinks = extraLinks;
     }
 
@@ -157,7 +158,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         return createView(context, null);
     }
 
-    public static SpecimenRequestQueryView createView(ViewContext context, SimpleFilter filter)
+    public static SpecimenRequestQueryView createView(ViewContext context, @Nullable SimpleFilter filter)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
@@ -171,7 +172,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         return new Sort("-Created");
     }
 
-    private static SimpleFilter addFilterClauses(SimpleFilter filter)
+    private static SimpleFilter addFilterClauses(@Nullable SimpleFilter filter)
     {
         if (filter == null)
             filter = new SimpleFilter();

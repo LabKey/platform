@@ -296,11 +296,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
         public abstract boolean isVialView();
     }
 
-    protected SpecimenQueryView(ViewContext context, UserSchema schema, QuerySettings settings,
-                            SimpleFilter filter, Sort sort, ViewType viewType, boolean participantVisitFiltered,
-                            CohortFilter cohortFilter, boolean requireSequenceNum)
+    protected SpecimenQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort, ViewType viewType,
+                                boolean participantVisitFiltered, CohortFilter cohortFilter, boolean requireSequenceNum)
     {
-        super(context, schema, settings, filter, sort);
+        super(schema, settings, filter, sort);
         _viewType = viewType;
         _cohortFilter = cohortFilter;
         _participantVisitFiltered = participantVisitFiltered;
@@ -417,7 +416,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         addOnlyPreviouslyRequestedFilter(context, filter);
         addEnrollmentSiteRequestFilter(context, filter);
         addRequestFilter(context, filter);
-        return new SpecimenQueryView(context, schema, qs, filter, sort, viewType, participantVisitFiltered, cohortFilter, requireSequenceNum);
+        return new SpecimenQueryView(schema, qs, filter, sort, viewType, participantVisitFiltered, cohortFilter, requireSequenceNum);
     }
 
     public Map<String, Integer> getSampleCounts(RenderContext ctx)

@@ -16,15 +16,18 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.*;
-import org.labkey.api.query.QueryAction;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DisplayElement;
-import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
 
 import java.util.List;
@@ -37,12 +40,11 @@ import java.util.List;
 public abstract class BaseStudyQueryView extends QueryView
 {
     protected SimpleFilter _filter;
-    protected CohortFilter _cohortFilter;
+    protected @Nullable CohortFilter _cohortFilter;
     protected Sort _sort;
     private List<DisplayElement> _buttons;
 
-    public BaseStudyQueryView(ViewContext context, UserSchema schema, QuerySettings settings,
-                          SimpleFilter filter, Sort sort)
+    public BaseStudyQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort)
     {
         super(schema, settings);
         getSettings().setAllowChooseQuery(false);
