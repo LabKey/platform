@@ -1286,7 +1286,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             // need to distinguish between all selected and none selected
             config.noneSelected = this.filterPanel.getFilterPanel().getNoSelectionSections();
-            var filters = this.filterPanel.getSelection(true, true);
+            var filters = this.filterPanel.getSelection(true, false);
             for (var f=0; f < filters.length; f++) {
                 groups.push(filters[f].data);
             }

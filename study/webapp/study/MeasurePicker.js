@@ -502,7 +502,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
             // 2) split term on whitespace
             // 3) return any record where ALL tokens appear at least once in any of the fields.  order does not matter.  the token must begin on a word boundary
 
-            txt = txt.replace(/[^a-z0-9+\-]+/gi, ' ');
+            txt = txt.replace(/[^a-z0-9_+\-]+/gi, ' ');
             txt = Ext4.util.Format.trim(txt);
             txt = Ext4.escapeRe(txt);
 

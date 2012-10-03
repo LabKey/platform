@@ -52,9 +52,9 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             this.fireEvent('chartDefinitionChanged', true);
         }, this);
 
-        this.selection = [];
         if (this.subject && this.subject.values)
         {
+            this.selection = [];
             Ext4.each(this.subject.values, function(val){
                 this.selection.push({type:'participant', id:val});
             }, this);

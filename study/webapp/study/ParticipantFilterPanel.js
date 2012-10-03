@@ -324,7 +324,12 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
     },
 
     initSelection: function(){
-        this.getFilterPanel().initSelection();
+        var panel = this.getFilterPanel();
+        if(!panel){
+            this.initSelection.defer(20, this);
+            return;
+        }
+        panel.initSelection();
     },
 
     getSelection: function(collapsed, skipIfAllSelected){

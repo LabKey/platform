@@ -74,9 +74,9 @@ Ext4.define('LABKEY.vis.GroupSelector', {
                     'The group(s) may have been deleted or you may not have permission to view them.</span><br> <br>'
         });
 
-        this.selection = [];
         if (this.subject && this.subject.groups)
         {
+            this.selection = [];
             Ext4.each(this.subject.groups, function(group){
                 this.selection.push({type:group.type, label:group.label});
             }, this);
@@ -131,7 +131,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
                 },
                 initSelectionComplete : function(numSelected){
                     // if there were saved groups that are no longer availabe, display a message
-                    if (this.selection.length > 0 && this.selection.length != numSelected)
+                    if (this.selection && this.selection.length > 0 && this.selection.length != numSelected)
                         this.groupsRemovedDisplayField.setVisible(true);
 
                     // if this is a new time chart, show the text indicating that we are selecting the first 5 by default
@@ -145,7 +145,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
                         this.defaultDisplayField.show();
                         this.hideDefaultDisplayField.delay(5000);
                     }
-                    
+
                     this.fireEvent('measureMetadataRequestComplete');
                 },
                 scope : this

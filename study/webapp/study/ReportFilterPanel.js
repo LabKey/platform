@@ -25,7 +25,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
     border : false,
     frame  : false,
-    bubbleEvents : ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete', 'beginInitSelection'],
+    bubbleEvents : ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave', 'beforeInitGroupConfig', 'afterInitGroupConfig'],
 
     statics : {
         groupSelCache : {} // 15505
@@ -38,7 +38,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             bodyStyle: 'padding-bottom: 10px;'
         });
 
-        this.addEvents('initSelectionComplete', 'beginInitSelection');
+        this.addEvents('beforeInitGroupConfig', 'afterInitGroupConfig');
         this.registerSelectionCache(this.sectionName);
         this.addEvents('initSelectionComplete');
 
@@ -222,12 +222,12 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         if (!this.maxInitSelection)
             this.maxInitSelection = target.store.getCount();
 
-        this.fireEvent('beginInitSelection', this, target.store);
+        this.fireEvent('beforeInitGroupConfig', this, target.store);
 
         target.suspendEvents(); // queueing of events id depended on
         if (!this.noSelection) {
 
-            if (!this.selection || !this.selection.length) {
+            if (!this.selection) {
                 if (this.maxInitSelection >= target.store.getCount()) {
                     target.getSelectionModel().selectAll();
                     if(this.allowAll){
@@ -268,10 +268,11 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 this.registerSelectionCache(this.sectionName, []); // clear cache
             }
         }
+        this.allSelected();
         target.resumeEvents();
 
         // fire event to tell the panel the initial selection is compelete, return the number of selected records
-        this.fireEvent('initSelectionComplete', target.getSelectionModel().getCount());
+        this.fireEvent('afterInitGroupConfig', target.getSelectionModel().getCount(), this);
     },
 
     getGrid: function(){
@@ -279,10 +280,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     },
 
     getColumnCfg : function(isHeader) {
-        var tpl = '<div><span ' + (this.normalWrap ? ' class="lk-filter-panel-label normalwrap-gridcell"' : '') + '>{'+this.labelField+':htmlEncode}</span></div>';
+        var tpl = '<div><span ' + (this.normalWrap ? ' class="lk-filter-panel-label normalwrap-gridcell"' : 'class="lk-filter-panel-label"') + '>{'+this.labelField+':htmlEncode}</span></div>';
 
         if (isHeader)
-            tpl =  '<div><span ' + (this.normalWrap ? ' class="lk-filter-panel-label normalwrap-gridcell"' : '') + '><b class="filter-description">{'+this.labelField+':htmlEncode}</b></span></div>';
+            tpl =  '<div><span ' + (this.normalWrap ? ' class="lk-filter-panel-label normalwrap-gridcell"' : 'class="lk-filter-panel-label"') + '><b class="filter-description">{'+this.labelField+':htmlEncode}</b></span></div>';
 
         return [{
             xtype     : 'templatecolumn',
@@ -408,7 +409,8 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     extend : 'Ext.panel.Panel',
     alias: 'widget.labkey-filterselectpanel',
 
-    bubbleEvents : ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete'],
+
+    bubbleEvents : ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete', 'beginInitSelection'],
 
     constructor : function(config) {
         Ext4.applyIf(config, {
@@ -417,6 +419,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
             scroll   : 'vertical'
         });
 
+        this.addEvents('initSelectionComplete', 'beginInitSelection');
         this.callParent([config]);
     },
 
@@ -462,11 +465,6 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                 this.allSelected();
                 return true;
             }, this, {stopPropogation: false});
-
-            this.on('initSelectionComplete', function(){
-                this.allSelected();
-                return true;
-            }, this, {stopPropogation: false});
         }
 
         for (var f=0; f < this.sections.length; f++) {
@@ -477,6 +475,9 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                 frame : false
             }));
         }
+
+        this.on('beforeInitGroupConfig', this.handleBeforeInitGroupConfig, this);
+        this.on('afterInitGroupConfig', this.handleAfterInitGroupConfig, this);
 
         return {
             border : false, frame : false,
@@ -555,11 +556,18 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     },
 
     initSelection : function() {
+        this.fireEvent('beginInitSelection', this);
+
         var filterPanels = this.getFilterPanels();
+        var count = 0;
         for (var i=0; i < filterPanels.length; i++) {
             filterPanels[i].initSelection();
+            count += filterPanels[i].getGrid().getSelectionModel().getCount();
         }
         this.allSelected();
+
+        // fire event to tell the panel the initial selection is compelete, return the number of selected records
+        this.fireEvent('initSelectionComplete', count);
     },
 
     allSelected : function() {
@@ -589,7 +597,34 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                 empty.push(filterPanels[i].sectionName);
         }
         return empty;
+    },
+
+    handleBeforeInitGroupConfig : function() {
+
+        if (!this.panelsToInit){
+
+            this.panelsToInit = [];
+            this.panelSelectCount = 0;
+            var filterPanels = this.getFilterPanels();
+            for (var i=0; i < filterPanels.length; i++)
+                this.panelsToInit.push(filterPanels[i].id);
+        }
+    },
+
+    handleAfterInitGroupConfig : function(count, cmp) {
+
+        if (this.panelsToInit){
+            this.panelsToInit.remove(cmp.id);
+            this.panelSelectCount += count;
+            if (this.panelsToInit.length == 0){
+                this.panelsToInit = null;
+                this.allSelected();
+
+                this.fireEvent('initSelectionComplete', this.panelSelectCount);
+            }
+        }
     }
+
 });
 
 Ext4.define('LABKEY.ext4.ReportFilterWindow', {

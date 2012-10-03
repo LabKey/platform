@@ -47,7 +47,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             store: this.renderTypeStore,
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
-            width: 275, // It'd be great if this didn't have to be hard-coded
+            width: 293, // It'd be great if this didn't have to be hard-coded
             queryMode: 'local',
             editable: false,
             forceSelection: true,
@@ -197,6 +197,38 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             }
         });
 
+        this.widthBox = Ext4.create('Ext.form.field.Number', {
+            fieldLabel: 'Width',
+            labelWidth: labelWidth,
+            width: 293,
+            allowDecimals: false,
+            hideTrigger: true,
+            listeners: {
+                scope: this,
+                change: function(){
+                    if(!this.suppressEvents){
+                        this.hasChanges = true;
+                    }
+                }
+            }
+        });
+
+        this.heightBox = Ext4.create('Ext.form.field.Number', {
+            fieldLabel: 'Height',
+            labelWidth: labelWidth,
+            width: 293,
+            allowDecimals: false,
+            hideTrigger: true,
+            listeners: {
+                scope: this,
+                change: function(){
+                    if(!this.suppressEvents){
+                        this.hasChanges = true;
+                    }
+                }
+            }
+        });
+
         this.items = [
             this.renderTypeCombo,
             this.lineWidthSlider,
@@ -204,7 +236,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.pointSizeSlider,
             this.colorFieldContainer,
             this.lineColorContainer,
-            this.fillColorContainer
+            this.fillColorContainer,
+            this.widthBox,
+            this.heightBox
         ];
 
         this.buttons = [{
@@ -244,7 +278,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             pointColor: this.getPointColor(),
             lineWidth: this.getLineWidth(),
             lineColor: this.getLineColor(),
-            fillColor: this.getFillColor()
+            fillColor: this.getFillColor(),
+            width: this.getWidth(),
+            height: this.getHeight()
         };
     },
 
@@ -263,6 +299,10 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.setLineColor(initValues.lineColor);
         if (initValues.hasOwnProperty("fillColor"))
             this.setFillColor(initValues.fillColor);
+        if (initialValues.hasOwnProperty("width"))
+            this.setWidth(initialValues.width);
+        if (initialValues.hasOwnProperty("height"))
+            this.setHeight(initialValues.height);
 
         this.hasChanges = false;
     },
@@ -296,6 +336,14 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         if(config.fillColor){
             this.setFillColor(config.fillColor);
+        }
+
+        if(config.width){
+            this.setWidth(config.width);
+        }
+
+        if(config.height){
+            this.setHeight(config.height);
         }
 
         this.suppressEvents = false;
@@ -355,5 +403,21 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     setFillColor: function(value){
         this.fillColorPicker.select(value);
+    },
+
+    getWidth: function(){
+        return this.widthBox.getValue();
+    },
+
+    setWidth: function(value){
+        this.widthBox.setValue(value);
+    },
+
+    getHeight: function(){
+        return this.heightBox.getValue();
+    },
+
+    setHeight: function(value){
+        this.heightBox.setValue(value);
     }
 });

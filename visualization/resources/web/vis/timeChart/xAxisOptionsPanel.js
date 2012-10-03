@@ -555,6 +555,10 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         return this.dateChartRadio.checked ? this.dateChartRadio.inputValue : this.visitChartRadio.inputValue;
     },
 
+    getInterval : function() {
+        return this.intervalCombo.getValue();
+    },
+
     getPanelOptionValues : function() {
         var axisValues = {
             name : "x-axis",
@@ -573,7 +577,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         return {
             time: this.dateChartRadio.checked ? this.dateChartRadio.inputValue : this.visitChartRadio.inputValue,
             zeroDateCol: Ext4.clone(this.zeroDateCol),
-            interval: this.intervalCombo.getValue(),
+            interval: this.getInterval(),
             axis: axisValues
         };
     },

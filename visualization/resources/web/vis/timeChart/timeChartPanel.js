@@ -836,6 +836,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.aggregateData = undefined;
         this.aggregateHasData = undefined;
 
+        this.hasIntervalData = this.editorXAxisPanel.getTime() != "date"; // only check interval data for date based chart
+
         // get the updated chart information from the various options panels
         this.chartInfo = this.getChartInfoFromOptionPanels();
         this.numberFormats = {};
@@ -881,7 +883,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         for (var i = 0; i < this.individualData.rows.length; i++)
                         {
                             var row = this.individualData.rows[i];
-                            if (row[this.getColumnAlias(this.individualData.columnAliases, s.aliasLookupInfo)].value != null)
+                            var alias = this.getColumnAlias(this.individualData.columnAliases, s.aliasLookupInfo);
+                            if (row[alias] && row[alias].value != null)
                                 this.individualHasData[s.name] = true;
 
                             var visitMappedName = this.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit");
@@ -891,6 +894,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                 if (visitsInData.indexOf(visitVal) == -1)
                                     visitsInData.push(visitVal.toString());
                             }
+
+                            this.checkForIntervalValues(row);
                         }
                     }, this);
 
@@ -949,7 +954,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         for (var i = 0; i < this.aggregateData.rows.length; i++)
                         {
                             var row = this.aggregateData.rows[i];
-                            if (row[this.getColumnAlias(this.aggregateData.columnAliases, s.aliasLookupInfo)].value != null)
+                            var alias = this.getColumnAlias(this.aggregateData.columnAliases, s.aliasLookupInfo);
+                            if (row[alias] && row[alias].value != null)
                                 this.aggregateHasData[s.name] = true;
 
                             var visitMappedName = this.getColumnAlias(this.aggregateData.columnAliases, this.viewInfo.subjectNounSingular + "Visit/Visit");
@@ -959,6 +965,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                 if (visitsInData.indexOf(visitVal) == -1)
                                     visitsInData.push(visitVal.toString());
                             }
+
+                            this.checkForIntervalValues(row);
                         }
                     }, this);
 
@@ -1203,6 +1211,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.addWarningText(msg);
             }
         }
+
+        // for date based charts, give error message if there are no calculated interval values
+        if (!this.hasIntervalData)
+            this.addWarningText("No calculated interval values (i.e. Days, Months, etc.) for the selected 'Measure Date' and 'Interval Start Date'.")
 
         // Use the same max/min for every chart if displaying more than one chart.
         if (this.chartInfo.chartLayout != "single")
@@ -2344,5 +2356,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             + '<div style="margin-left: 50px;">name: "Measure1",<br/>queryName: "Dataset1"<br/>schemaName: "study"</div>'
             + '<div style="margin-left: 40px;">}</div>'
             + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
+    },
+
+    checkForIntervalValues: function(row) {
+        // for date based charts, give error message if there are no calculated interval values
+        // https://www.labkey.org/issues/ITN/details.view?issueId=16156
+        if (this.editorXAxisPanel.getTime() == "date")
+        {
+            var intervalAlias = this.editorXAxisPanel.getInterval();
+            if (row[intervalAlias] && row[intervalAlias].value != null)
+                this.hasIntervalData = true;
+        }
     }
 });

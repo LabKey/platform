@@ -45,6 +45,11 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.study.model.ParticipantGroup" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.LinkedList" %>
+<%@ page import="java.lang.reflect.Array" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
 
@@ -74,7 +79,12 @@
     String intervalLabel;
 
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
-    ParticipantCategoryImpl[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(c, user);
+    List<ParticipantGroup> groups = new LinkedList<ParticipantGroup>();
+
+    for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(c, user))
+    {
+        groups.addAll(Arrays.asList(ParticipantGroupManager.getInstance().getParticipantGroups(c, user, category)));
+    }
 
     if (!study.isAllowReload())
         intervalLabel = "This study is set to not reload";
@@ -166,7 +176,7 @@
     </tr>
     <tr>
         <th align="left"><%= h(subjectNounSingle) %> Groups</th>
-        <td>This study defines <%=categories.length%> <%= h(subjectNounSingle.toLowerCase()) %> groups</td>
+        <td>This study defines <%=groups.size()%> <%= h(subjectNounSingle.toLowerCase()) %> groups</td>
         <td><%= textLink("Manage " + h(subjectNounSingle) + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, c)) %></td>
     </tr>
     <tr>
@@ -316,7 +326,7 @@
                 subject: {
                     nounSingular: <%=q(study.getSubjectNounSingular())%>,
                     nounPlural: <%=q(study.getSubjectNounPlural())%>,
-                    nounColumnName: <%=q(study.getSubjectColumnName())%>,
+                    nounColumnName: <%=q(study.getSubjectColumnName())%>
                 }
             });
 

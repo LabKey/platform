@@ -1586,8 +1586,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         newChartDiv = Ext4.create('Ext.container.Container', {
             border: 1,
-            autoEl: {tag: 'div'}
+            autoEl: {tag: 'div'},
+            autoScroll: true
         });
+
         this.viewPanel.add(newChartDiv);
 
         // TODO: make line charts render if this.xAxisMeasure.type == "date"
@@ -1692,11 +1694,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         };
 
+        var width = chartOptions.width ? chartOptions.width : !forExport ? newChartDiv.getWidth() : 1200;
+        var height = chartOptions.height ? chartOptions.height : !forExport ? newChartDiv.getHeight() - 25 : 600;
+
         plotConfig = this.generatePlotConfig(
                 geom,
                 newChartDiv.id,
-                !forExport ? newChartDiv.getWidth() : 1200,
-                !forExport ? newChartDiv.getHeight() - 25 : 600,
+                width,
+                height,
                 this.chartData.rows,
                 labels,
                 scales
