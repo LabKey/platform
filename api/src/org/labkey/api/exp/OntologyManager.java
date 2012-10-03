@@ -3622,8 +3622,7 @@ public class OntologyManager
 
         Map<String, Object> getRowMap(ResultSet rs) throws SQLException
         {
-            RowMap<Object> map = super.getRowMap();
-            List<Object> list = map.getRow();
+            List<Object> list = new ArrayList<Object>();
             list.add(rs.getString(rsName));
             list.add(rs.getString(rsSearchTerms));
             list.add(rs.getString(rsPropertyUri));
@@ -3634,7 +3633,7 @@ public class OntologyManager
             list.add(conceptCategory.toString());
             list.add(null); // title
             list.add(null); // securableResourceId
-            return map;
+            return super.getRowMap(list);
         }
     }
 

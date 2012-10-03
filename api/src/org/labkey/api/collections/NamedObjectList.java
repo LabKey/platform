@@ -86,7 +86,7 @@ public class NamedObjectList implements Collection<NamedObject>
 
     public Iterator<NamedObject> iterator()
     {
-        return _map.getRow().iterator();
+        return _map.values().iterator();
     }
 
     public boolean remove(Object arg0)

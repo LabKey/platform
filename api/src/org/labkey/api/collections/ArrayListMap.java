@@ -25,6 +25,19 @@ import java.util.*;
 
 public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializable
 {
+    private static final Object DOES_NOT_CONTAINKEY = new Object()
+    {
+        @Override
+        public String toString()
+        {
+            return "ArrayListMap.DOES_NOT_CONTAINKEY";
+        }
+    };
+    private V convertToV(Object o)
+    {
+        return o == DOES_NOT_CONTAINKEY ? null : (V)o;
+    }
+
     public static class FindMap<K> implements Map<K,Integer>
     {
         final Map<K,Integer> _map;
@@ -114,7 +127,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
 
     private final FindMap<K> _findMap;
-    private final List<V> _row;
+    private final List<Object> _row;
 
     public ArrayListMap()
     {
@@ -143,7 +156,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     public ArrayListMap(FindMap findMap, List<V> row)
     {
         _findMap = findMap;
-        _row = row;
+        _row = (List<Object>)row;
     }
 
 
@@ -153,7 +166,8 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         if (I == null)
             return null;
         int i = I.intValue();
-        return i>=_row.size() ? null : _row.get(i);
+        Object v = i>=_row.size() ? null : _row.get(i);
+        return convertToV(v);
     }
 
 
@@ -174,7 +188,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         
         while (i >= _row.size())
             _row.add(null);
-        return _row.set(i, value);
+        return convertToV(_row.set(i,value));
     }
 
 
@@ -187,7 +201,12 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public boolean containsKey(Object key)
     {
-        return _findMap.containsKey(key);
+        Integer I = _findMap.get(key);
+        if (I == null)
+            return false;
+        int i = I.intValue();
+        Object v = i>=_row.size() ? null : _row.get(i);
+    return v != DOES_NOT_CONTAINKEY;
     }
 
 
@@ -197,9 +216,6 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    /**
-     * this would be slow, so don't implement unless we need to
-     */
     public Set<Entry<K, V>> entrySet()
     {
         Set<Entry<K, V>> r = new HashSet<Entry<K, V>>(_row.size() * 2);
@@ -207,7 +223,10 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         {
             int i = e.getValue();
             if (i < _row.size())
-                r.add(new Pair<K,V>(e.getKey(), _row.get(i)));
+            {
+                if (_row.get(i) != DOES_NOT_CONTAINKEY)
+                    r.add(new Pair<K,V>(e.getKey(), (V)_row.get(i)));
+            }
         }
         return r;
     }
@@ -222,11 +241,13 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     /** use getFindMap().remove(key) */
     public V remove(Object key)
     {
-        throw new UnsupportedOperationException();
-/*        if (_findMap.containsKey(key))
-            return put((K)key, null);
-        else
-            return null; */
+        Integer I = _findMap.get(key);
+        if (null == I)
+            return null;
+        int i = I.intValue();
+        while (i >= _row.size())
+            _row.add(null);
+        return convertToV(_row.set(i, DOES_NOT_CONTAINKEY));
     }
 
 
@@ -238,14 +259,23 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public Collection<V> values()
     {
-        return Collections.unmodifiableCollection(_row);
+        ArrayList<V> a = new ArrayList<V>(size());
+        for (Object o : _row)
+        {
+            if (o != DOES_NOT_CONTAINKEY)
+                a.add((V)o);
+        }
+        Collection<V> ret = a;
+        assert null != (ret = Collections.unmodifiableCollection(ret));
+        return ret;
     }
+
 
     /* ArrayListMap extensions (not part of Map) */
 
     public V get(int i)
     {
-        return _row.get(i);
+        return convertToV(i<_row.size() ? _row.get(i) : null);
     }
 
     /**
@@ -253,7 +283,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
      */
     public V set(int i, V value)
     {
-        return _row.set(i, value);
+        return convertToV(_row.set(i, value));
     }
 
 
@@ -294,7 +324,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         return _findMap;
     }
 
-    public List<V> getRow()
+    protected List<Object> getRow()
     {
         return _row;
     }
@@ -322,17 +352,26 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
             assertTrue(a.containsKey("E"));
             assertNull(a.get("E"));
-            assertEquals(b.get("E"),"FIVE");
-            a.put("E", "five");
-            assertEquals(a.get("E"), "five");
-            assertEquals(b.get("E"), "FIVE");
+            assertEquals("FIVE", b.get("E"));
+            assertNull(a.put("E", "five"));
+            assertEquals("five", a.get("E"));
+            assertEquals("FIVE", b.get("E"));
 
             assertTrue(b.containsKey("F"));
             assertNull(b.get("F"));
-            assertEquals(a.get("F"), "six");
+            assertEquals("six", a.get("F"));
             
-            assertEquals(b.get("G"), "SEVEN");
-            
+            assertEquals("SEVEN", b.get("G"));
+            assertTrue(b.containsKey("G"));
+            assertEquals(7, b.values().size());
+            assertEquals("SEVEN", b.remove("G"));
+            assertNull(b.get("G"));
+            assertFalse(b.containsKey("G"));
+            assertEquals(6, b.values().size());
+            assertNull(b.put("G","SEVENTY"));
+            assertEquals("SEVENTY", b.get("G"));
+            assertTrue(b.containsKey("G"));
+
             assertSame(a.getFindMap(), b.getFindMap());
         }
     }
