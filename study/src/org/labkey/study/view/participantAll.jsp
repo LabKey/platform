@@ -184,7 +184,17 @@
 
     int totalSeqKeyCount = 0;
 %>
-
+<script>
+    var tableReady = false;
+    window.onload= function(){
+        tableReady = true;
+    };
+    var toggleIfReady = function(link, notify){
+        if(tableReady)
+            toggleLink(link, notify);
+        return false;
+    };
+</script>
 <table class="labkey-data-region">
 
     <tr class="labkey-alternate-row">
@@ -278,7 +288,7 @@
             %>
             <tr class="labkey-header">
             <th nowrap align="left" class="labkey-expandable-row-header">
-                <a title="Click to expand/collapse" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return toggleLink(this, true);">
+                <a title="Click to expand/collapse" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return toggleIfReady(this, true);">
                     <img src="<%= context.getContextPath() %>/_images/<%= expanded ? "minus.gif" : "plus.gif" %>" alt="Click to expand/collapse">
                     <%=h(dataset.getDisplayString())%>
                 </a><%
