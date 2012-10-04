@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -115,7 +116,7 @@ public class SchemaColumnMetaData
             }
             else
             {
-                ColumnInfo colInfo = null;
+                ColumnInfo colInfo;
 
                 if (tinfo.getTableType() != DatabaseTableType.NOT_IN_DB)
                 {
@@ -153,6 +154,19 @@ public class SchemaColumnMetaData
 
         if (null != _titleColumn)
             _hasDefaultTitleColumn = false;
+
+        int columnIndex = 0;
+        // Reorder based on the sequence of columns in XML
+        for (ColumnType xmlColumn : xmlTable.getColumns().getColumnArray())
+        {
+            // Iterate through the ones in the XML and add them in the right order
+            ColumnInfo column = getColumn(xmlColumn.getColumnName());
+            if (column != null)
+            {
+                _columns.remove(column);
+                _columns.add(columnIndex++, column);
+            }
+        }
     }
 
     private void loadFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo ti) throws SQLException

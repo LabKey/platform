@@ -375,6 +375,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
                 try
                 {
                     _columnMetaData = new SchemaColumnMetaData(this, _autoLoadMetaData);
+
+                    // This needs to happen AFTER all of the other XML-based config has been applied, so it should always
+                    // be at the end of this method
+                    if (_xmlTable != null && _xmlTable.isSetJavaCustomizer())
+                    {
+                        AbstractTableInfo.configureViaTableCustomizer(this, new ArrayList<QueryException>(), _xmlTable.getJavaCustomizer());
+                    }
                 }
                 catch (SQLException e)
                 {

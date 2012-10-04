@@ -844,11 +844,11 @@ abstract public class AbstractTableInfo implements TableInfo
         // be at the end of this method
         if (xmlTable.isSetJavaCustomizer())
         {
-            configureViaTableCustomizer(errors, xmlTable.getJavaCustomizer());
+            configureViaTableCustomizer(this, errors, xmlTable.getJavaCustomizer());
         }
     }
 
-    private void configureViaTableCustomizer(Collection<QueryException> errors, String className)
+    public static void configureViaTableCustomizer(TableInfo table, Collection<QueryException> errors, String className)
     {
         if (className == null)
         {
@@ -865,7 +865,7 @@ abstract public class AbstractTableInfo implements TableInfo
             Class c = Class.forName(className);
             if (!(TableCustomizer.class.isAssignableFrom(c)))
             {
-                addAndLogError(errors, "Class " + c.getName() + " is not an implementation of " + TableCustomizer.class.getName() + " to configure table " + this, null);
+                addAndLogError(errors, "Class " + c.getName() + " is not an implementation of " + TableCustomizer.class.getName() + " to configure table " + table, null);
             }
             else
             {
@@ -873,25 +873,25 @@ abstract public class AbstractTableInfo implements TableInfo
                 try
                 {
                     TableCustomizer customizer = customizerClass.newInstance();
-                    customizer.customize(this);
+                    customizer.customize(table);
                 }
                 catch (InstantiationException e)
                 {
-                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + this, e);
+                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + table, e);
                 }
                 catch (IllegalAccessException e)
                 {
-                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + this, e);
+                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + table, e);
                 }
             }
         }
         catch (ClassNotFoundException e)
         {
-            addAndLogError(errors, "Unable to load class '" + className + "'" + " to configure table " + this, e);
+            addAndLogError(errors, "Unable to load class '" + className + "'" + " to configure table " + table, e);
         }
     }
 
-    private void addAndLogError(Collection<QueryException> errors, String message, Exception e)
+    private static void addAndLogError(Collection<QueryException> errors, String message, Exception e)
     {
         errors.add(new QueryException(message, e));
         LOG.warn(message + ((e == null || e.getMessage() == null) ? "" : e.getMessage()));
