@@ -108,7 +108,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         DataLoader loader = null;
         try
         {
-            loader = DataLoader.get().createLoader(dataFile, true, null);
+            loader = DataLoader.get().createLoader(dataFile, null, true, null);
 
             loader.setThrowOnErrors(settings.isThrowOnErrors());
             for (ColumnDescriptor column : loader.getColumns())

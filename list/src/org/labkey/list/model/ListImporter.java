@@ -156,7 +156,7 @@ public class ListImporter
                 if (null != tsv)
                 {
                     BatchValidationException batchErrors = new BatchValidationException();
-                    DataLoader loader = DataLoader.get().createLoader(fileName, tsv, true, null);
+                    DataLoader loader = DataLoader.get().createLoader(fileName, null, tsv, true, null);
                     int count = def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null);
                     for (ValidationException v : batchErrors.getRowErrors())
                         errors.add(v.getMessage());

@@ -30,6 +30,9 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.reader.DataLoaderService;
+import org.labkey.api.reader.FastaDataLoader;
+import org.labkey.api.reader.HTMLDataLoader;
+import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
@@ -759,6 +762,19 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addFactories(new FolderTypeWriterFactory(), new FolderTypeImporterFactory());
             fsr.addFactories(new SearchSettingsWriterFactory(), new SearchSettingsImporterFactory());
             fsr.addFactories(new PageWriterFactory(), new PageImporterFactory());
+        }
+
+        // Register the default DataLoaders.
+        // The DataLoaderFactories also register a SearchService.DocumentParser so this should be done after SearchService is available.
+        DataLoaderService.I dls = DataLoaderService.get();
+        if (dls != null)
+        {
+            dls.registerFactory(new ExcelLoader.Factory());
+            dls.registerFactory(new TabLoader.TsvFactory());
+            dls.registerFactory(new TabLoader.CsvFactory());
+            dls.registerFactory(new HTMLDataLoader.Factory());
+            dls.registerFactory(new JSONDataLoader.Factory());
+            dls.registerFactory(new FastaDataLoader.Factory());
         }
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL,
