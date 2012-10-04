@@ -1117,6 +1117,12 @@ public class AssayController extends SpringActionController
                         int rowid = Integer.parseInt(lsid.substring(i+1,lsid.length()-1));
                         ret.add(rowid);
                     }
+                    else
+                    {
+                        int i = lsid.lastIndexOf(":");
+                        int rowid = Integer.parseInt(lsid.substring(i+1,lsid.length()));
+                        ret.add(rowid);
+                    }
                 }
                 catch (NumberFormatException x) {}
             }

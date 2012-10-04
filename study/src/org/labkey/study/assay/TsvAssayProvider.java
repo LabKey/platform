@@ -236,8 +236,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             this.endpoint = url.getLocalURIString();
             this.dataregion = dataregion;
             this.jsConvertPKToLSID = "function(pk){return " +
-                    PageFlowUtil.jsString("protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() + "[") +
-                    " + pk + ']'}";
+                    PageFlowUtil.jsString("protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() + ":") + " + pk}";
         }
 
         @Override
@@ -246,7 +245,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             renderFlagScript(ctx, out);
             Integer id = ctx.get(rowId, Integer.class);
             Object comment = getValue(ctx);
-            String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() +  "[" + String.valueOf(id) + "]";
+            String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() +  ":" + String.valueOf(id);
             _renderFlag(ctx, out, lsid, null==comment?null:String.valueOf(comment));
         }
 
