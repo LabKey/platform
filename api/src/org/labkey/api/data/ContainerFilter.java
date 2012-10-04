@@ -409,6 +409,14 @@ public abstract class ContainerFilter
             super(user, perm);
         }
 
+        @Override
+        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean useJDBCParameters, boolean allowNulls)
+        {
+            if (_user.isAdministrator() && container.isRoot())
+                return new SQLFragment("1 = 1");
+            return super.getSQLFragment(schema,containerColumnSQL,container,useJDBCParameters,allowNulls);
+        }
+
         public Collection<String> getIds(Container currentContainer)
         {
             List<Container> containers = new ArrayList<Container>(ContainerManager.getAllChildren(currentContainer, _user, _perm));
