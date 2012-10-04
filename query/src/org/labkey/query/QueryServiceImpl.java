@@ -402,9 +402,43 @@ public class QueryServiceImpl extends QueryService
         return views.get(name);
     }
 
-    public List<CustomView> getCustomViews(User user, Container container, String schema, String query)
+    public List<CustomView> getCustomViews(User user, Container container, @Nullable String schemaName, @Nullable String queryName)
     {
-        return new ArrayList<CustomView>(getCustomViewMap(user, container, schema, query).values());
+        if (schemaName == null || queryName == null)
+        {
+            // TODO - include module-based custom views (.qview.xml) in this list. Currently it only finds views
+            // stored in the database
+            List<CustomView> result = new ArrayList<CustomView>();
+            Map<String, UserSchema> schemas = new HashMap<String, UserSchema>();
+            Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<Pair<String, String>, QueryDefinition>();
+            for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schemaName, queryName, user, true))
+            {
+                Pair<String, String> key = new Pair<String, String>(cstmView.getSchema(), cstmView.getQueryName());
+                QueryDefinition queryDef = queryDefs.get(key);
+                if (queryDef == null)
+                {
+                    UserSchema schema = schemas.get(schemaName);
+                    if (schema == null)
+                    {
+                        schema = getUserSchema(user, container, cstmView.getSchema());
+                        schemas.put(cstmView.getSchema(), schema);
+                    }
+                    if (schema != null)
+                    {
+                        queryDef = schema.getQueryDefForTable(cstmView.getQueryName());
+                        queryDefs.put(key, queryDef);
+                    }
+                }
+
+                if (queryDef != null)
+                {
+                    result.add(new CustomViewImpl(queryDef, cstmView));
+                }
+            }
+            return result;
+        }
+
+        return new ArrayList<CustomView>(getCustomViewMap(user, container, schemaName, queryName).values());
     }
 
     public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, Path path)
