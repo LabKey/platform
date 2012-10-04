@@ -44,15 +44,16 @@ public class DataLoaderService
         public void registerFactory(@NotNull DataLoaderFactory factory);
 
         @Nullable public DataLoaderFactory findFactory(File file);
-        @Nullable public DataLoaderFactory findFactory(String filename, InputStream is);
+        @Nullable public DataLoaderFactory findFactory(File file, String contentType);
+        @Nullable public DataLoaderFactory findFactory(String filename, String contentType, InputStream is);
 
-        public DataLoader createLoader(String filename, InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
+        public DataLoader createLoader(String filename, String contentType, InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
 
         public DataLoader createLoader(MultipartFile file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
 
         public DataLoader createLoader(Resource r, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
 
-        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
+        public DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
 
     }
 }

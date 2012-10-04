@@ -44,6 +44,12 @@ public abstract class AbstractDocumentParser implements SearchService.DocumentPa
     }
 
     /** Writes character data to the XHTML stream */
+    protected void write(ContentHandler h, String text) throws SAXException
+    {
+        h.characters(text.toCharArray(), 0, text.length());
+    }
+
+    /** Writes character data to the XHTML stream */
     protected void write(ContentHandler h, StringBuilder sb, char[] buf) throws SAXException
     {
         int len = Math.min(sb.length(),buf.length);
@@ -51,7 +57,18 @@ public abstract class AbstractDocumentParser implements SearchService.DocumentPa
         h.characters(buf,0,len);
     }
 
-    private static final char[] NEWLINE = new char[] { '\n' };
+    protected void newline(ContentHandler h) throws SAXException
+    {
+        h.characters(NL, 0, NL.length);
+    }
+
+    protected void tab(ContentHandler h) throws SAXException
+    {
+        h.characters(TAB, 0, TAB.length);
+    }
+
+    private static final char[] NL = new char[] { '\n' };
+    private static final char[] TAB = new char[] { '\t' };
 
     /**
      * Creates the structure of a basic XHTML document to pass to Lucene, and then calls parseContent to let
@@ -62,7 +79,6 @@ public abstract class AbstractDocumentParser implements SearchService.DocumentPa
     {
         startTag(handler, "html");
         startTag(handler, "body");
-        startTag(handler, "pre");
 
         try
         {
@@ -70,7 +86,6 @@ public abstract class AbstractDocumentParser implements SearchService.DocumentPa
         }
         catch (ParseFinishedException e) {}
 
-        endTag(handler,"pre");
         endTag(handler,"body");
         endTag(handler,"html");
     }

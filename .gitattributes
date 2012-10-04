@@ -767,9 +767,12 @@ api/src/org/labkey/api/reader/ExcelFactory.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
 api/src/org/labkey/api/reader/FastaDataLoader.java -text
 api/src/org/labkey/api/reader/FastaLoader.java -text
+api/src/org/labkey/api/reader/HTMLDataLoader.java -text
+api/src/org/labkey/api/reader/JSONDataLoader.java -text
 api/src/org/labkey/api/reader/Loader.java -text
 api/src/org/labkey/api/reader/MapLoader.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text
+api/src/org/labkey/api/reader/TabFileType.java -text
 api/src/org/labkey/api/reader/TestRow.java -text
 api/src/org/labkey/api/reader/XMLStreamReaderWrapper.java -text
 api/src/org/labkey/api/reader/jxl/JxlCell.java -text

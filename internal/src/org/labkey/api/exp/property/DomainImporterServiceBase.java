@@ -108,7 +108,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
     {
         try
         {
-            return DataLoader.get().createLoader(getImportFile(), true, getContainer());
+            return DataLoader.get().createLoader(getImportFile(), null, true, getContainer());
         }
         catch (IOException e)
         {

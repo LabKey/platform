@@ -1,0 +1,310 @@
+package org.labkey.api.reader;
+
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
+import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.util.FileType;
+import org.labkey.api.util.TidyUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Reads data from an HTML table.
+ * The first html table element found will be used.
+ *
+ * Example:
+ * <pre>
+ *     &lt;html&gt;
+ *         &lt;body&gt;
+ *             &lt;table&gt;
+ *                 &lt;tr&gt;
+ *                     &lt;th&gt;Column Name 1&lt;/th&gt;
+ *                     &lt;th&gt;Column Name 2&lt;/th&gt;
+ *                     &lt;th&gt;...&lt;/th&gt;
+ *                 &lt;/tr&gt;
+ *                 &lt;tr&gt;
+ *                     &lt;td&gt;Row 1 Value 1&lt;/td&gt;
+ *                     &lt;td&gt;Row 1 Value 2&lt;/td&gt;
+ *                     &lt;td&gt;...&lt;/td&gt;
+ *                 &lt;/tr&gt;
+ *                 &lt;tr&gt;
+ *                     &lt;td&gt;Row 2 Value 1&lt;/td&gt;
+ *                     &lt;td&gt;Row 2 Value 2&lt;/td&gt;
+ *                     &lt;td&gt;...&lt;/td&gt;
+ *                 &lt;/tr&gt;
+ *             &lt;/table&gt;
+ *         &lt;/body&gt;
+ *     &lt;/html&gt;
+ * </pre>
+ *
+ * User: kevink
+ * Date: 10/1/12
+ */
+public class HTMLDataLoader extends DataLoader
+{
+    public static final FileType FILE_TYPE = new FileType(Arrays.asList("html", "xhtml"), "html")
+    {
+        @Override
+        public boolean isHeaderMatch(@NotNull byte[] header)
+        {
+            String s;
+            try
+            {
+                s = new String(header, "UTF-8");
+            }
+            catch (UnsupportedEncodingException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            List<String> errors = new ArrayList<String>();
+            Document doc = TidyUtil.convertHtmlToDocument(s, true, errors);
+            if (!errors.isEmpty() || doc == null)
+                return false;
+
+            // Look for a html>body>table element
+            return findTable(doc) != null;
+        }
+    };
+
+    public static class Factory extends AbstractDataLoaderFactory
+    {
+        @NotNull
+        @Override
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            return new HTMLDataLoader(is, hasColumnHeaders, mvIndicatorContainer);
+        }
+
+        @NotNull
+        @Override
+        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            return new HTMLDataLoader(file, hasColumnHeaders, mvIndicatorContainer);
+        }
+
+        @NotNull
+        @Override
+        public FileType getFileType()
+        {
+            return FILE_TYPE;
+        }
+    }
+
+    String _html;
+
+    public HTMLDataLoader(File inputFile, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    {
+        super(mvIndicatorContainer);
+        setSource(inputFile);
+        setHasColumnHeaders(hasColumnHeaders);
+
+        init(new FileInputStream(inputFile));
+    }
+
+    public HTMLDataLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    {
+        super(mvIndicatorContainer);
+        setHasColumnHeaders(hasColumnHeaders);
+
+        init(is);
+    }
+
+    protected void init(InputStream is) throws IOException
+    {
+        BufferedReader r = null;
+        try
+        {
+            r = new BufferedReader(new InputStreamReader(is));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while (null != (line = r.readLine()))
+                sb.append(line).append("\n");
+
+            _html = sb.toString();
+        }
+        finally
+        {
+            IOUtils.closeQuietly(r);
+        }
+    }
+
+    protected Collection<String[]> parse(int limit)
+    {
+        List<String> errors = new LinkedList<String>();
+        Document doc = TidyUtil.convertHtmlToDocument(_html, true, errors);
+        if (errors.size() > 0)
+            return null;
+
+        Element table = findTable(doc);
+        if (table == null)
+            return null;
+
+        return parseTable(table, limit);
+    }
+
+    protected static Element findTable(Document doc)
+    {
+        Element html = doc.getDocumentElement();
+        if (html == null || !"html".equalsIgnoreCase(html.getTagName()))
+            return null;
+
+        NodeList bodyNL = html.getElementsByTagName("body");
+        for (int bodyIdx = 0, bodyLen = bodyNL.getLength(); bodyIdx < bodyLen; bodyIdx++)
+        {
+            Element body = (Element)bodyNL.item(bodyIdx);
+            NodeList tableNL = body.getElementsByTagName("table");
+            for (int tableIdx = 0, tableLen = tableNL.getLength(); tableIdx < tableLen; tableIdx++)
+            {
+                Element table = (Element)tableNL.item(tableIdx);
+                return table;
+            }
+        }
+
+        return null;
+    }
+
+    protected Collection<String[]> parseTable(Element table, int limit)
+    {
+        List<String[]> rows = new ArrayList<String[]>();
+
+        boolean header = true;
+        NodeList trNL = table.getElementsByTagName("tr");
+        for (int trIdx = 0, trLen = trNL.getLength(); trIdx < trLen; trIdx++)
+        {
+            Element tr = (Element)trNL.item(trIdx);
+            String[] row;
+            if (header)
+                row = parseHeaderRow(tr);
+            else
+                row = parseRow(tr, "td");
+
+            if (row != null)
+            {
+                header = false;
+                rows.add(row);
+                if (limit > 0 && rows.size() == limit)
+                    break;
+            }
+
+        }
+
+        return rows;
+    }
+
+    protected String[] parseHeaderRow(Element tr)
+    {
+        String[] row = parseRow(tr, "th");
+        if (row.length == 0)
+            row = parseRow(tr, "td");
+        return row;
+    }
+
+    protected String[] parseRow(Element tr, String tag)
+    {
+        ArrayList<String> values = new ArrayList<String>();
+
+        NodeList tdNL = tr.getElementsByTagName(tag);
+        for (int tdIdx = 0, tdLen = tdNL.getLength(); tdIdx < tdLen; tdIdx++)
+        {
+            Element td = (Element)tdNL.item(tdIdx);
+            String value = getInnerText(td);
+            values.add(value);
+        }
+
+        return values.toArray(new String[values.size()]);
+    }
+
+    // XXX: Duplicateed from FlowJoWorkspace.  Refactor into DOMUtil or XMLUtil.
+    private String getInnerText(Element el)
+    {
+        NodeList nl = el.getChildNodes();
+        int len = nl.getLength();
+        if (len == 0)
+            return "";
+        if (len == 1)
+            return nl.item(0).getNodeValue();
+        StringBuilder ret = new StringBuilder();
+        for (int i = 0; i < nl.getLength(); i ++)
+            ret.append(nl.item(i).getNodeValue());
+        return ret.toString();
+    }
+
+
+    @Override
+    public String[][] getFirstNLines(int n) throws IOException
+    {
+        Collection<String[]> table = parse(n);
+        return table.toArray(new String[table.size()][]);
+    }
+
+    @Override
+    public CloseableIterator<Map<String, Object>> iterator()
+    {
+        try
+        {
+            return new Iter();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void close()
+    {
+        _html = null;
+    }
+
+    private class Iter extends DataLoaderIterator
+    {
+        Iterator<String[]> iter;
+
+        protected Iter() throws IOException
+        {
+            super(_skipLines, false);
+            assert _skipLines != -1;
+
+            Collection<String[]> table = parse(0);
+
+            iter = table.iterator();
+            for (int i = 0; i < lineNum(); i++)
+                iter.next();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            iter = null;
+            super.close();
+        }
+
+        @Override
+        protected Object[] readFields() throws IOException
+        {
+            if (!iter.hasNext())
+                return null;
+
+            String[] row = iter.next();
+            return row;
+        }
+    }
+}

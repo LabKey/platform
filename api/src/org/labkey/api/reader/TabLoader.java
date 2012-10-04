@@ -65,8 +65,8 @@ import java.util.regex.Pattern;
  */
 public class TabLoader extends DataLoader
 {
-    public static final FileType TSV_FILE_TYPE = new FileType(Arrays.asList("tsv", "txt"), "tsv");
-    public static final FileType CSV_FILE_TYPE = new FileType(Arrays.asList("csv"), "csv");
+    public static final FileType TSV_FILE_TYPE = new TabFileType(Arrays.asList("tsv", "txt"), "tsv");
+    public static final FileType CSV_FILE_TYPE = new TabFileType(Arrays.asList("csv"), "csv");
 
     private static final Logger _log = Logger.getLogger(TabLoader.class);
 
@@ -109,6 +109,8 @@ public class TabLoader extends DataLoader
         @NotNull @Override
         public FileType getFileType() { return CSV_FILE_TYPE; }
     }
+
+    protected static char COMMENT_CHAR = '#';
 
     // source data
     private CharSequence _stringData = null;
@@ -470,7 +472,7 @@ public class TabLoader extends DataLoader
                 if (null == s)
                     break;
 
-                if (s.length() == 0 || s.charAt(0) == '#')
+                if (s.length() == 0 || s.charAt(0) == COMMENT_CHAR)
                 {
                     _commentLines++;
 

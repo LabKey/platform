@@ -69,6 +69,10 @@ public class FileType implements Serializable
     private List<FileType> _antiTypes;
     /** The canonical suffix, will be used when creating new files from scratch */
     private String _defaultSuffix;
+
+    /** Mime content type. */
+    private String _contentType;
+    
     private Boolean _dir;
     /** If _preferGZ is true, assume suffix.gz for new files to support TPP's transparent .xml.gz useage.
      * When dealing with existing files, non-gz version is still assumed to be the target if found **/
@@ -93,12 +97,12 @@ public class FileType implements Serializable
      *          uniquely identify a file type
      *
      */
-
     public FileType(String suffix, gzSupportLevel supportGZ)
     {
         this(Arrays.asList(suffix), suffix, supportGZ);
     }
- /**
+
+    /**
      * Constructor to use when type is assumed to be a file, but a call to isDirectory()
      * is not necessary.
      *
@@ -136,19 +140,15 @@ public class FileType implements Serializable
     }
 
     /**
-        * @param suffixes list of what are usually the file extensions (but may be some other suffix to
-        *          uniquely identify a file type), in priority order. The first suffix that matches a file will be used
-        *          and files that match the rest of the suffixes will be ignored
-        * @param defaultSuffix the canonical suffix, will be used when creating new files from scratch
-        * @param dir true when the type must be a directory
-        * @param supportGZ for handling TPP's transparent use of .xml.gz
-        */
-       public FileType(List<String> suffixes, String defaultSuffix, boolean dir, gzSupportLevel supportGZ)
-       {
-           this(suffixes, defaultSuffix, supportGZ);
-           _dir = Boolean.valueOf(dir);
-       }
-
+     * @param suffixes list of what are usually the file extensions (but may be some other suffix to
+     *          uniquely identify a file type), in priority order. The first suffix that matches a file will be used
+     *          and files that match the rest of the suffixes will be ignored
+     * @param defaultSuffix the canonical suffix, will be used when creating new files from scratch
+     */
+    public FileType(List<String> suffixes, String defaultSuffix, String contentType)
+    {
+        this(suffixes, defaultSuffix, false, gzSupportLevel.NO_GZ, contentType);
+    }
 
     /**
      * @param suffixes list of what are usually the file extensions (but may be some other suffix to
@@ -161,6 +161,21 @@ public class FileType implements Serializable
     {
         this(suffixes, defaultSuffix, dir, gzSupportLevel.NO_GZ);
     }
+
+    /**
+     * @param suffixes list of what are usually the file extensions (but may be some other suffix to
+     *          uniquely identify a file type), in priority order. The first suffix that matches a file will be used
+     *          and files that match the rest of the suffixes will be ignored
+     * @param defaultSuffix the canonical suffix, will be used when creating new files from scratch
+     * @param dir true when the type must be a directory
+     * @param supportGZ for handling TPP's transparent use of .xml.gz
+     */
+    public FileType(List<String> suffixes, String defaultSuffix, boolean dir, gzSupportLevel supportGZ)
+    {
+        this(suffixes, defaultSuffix, dir, supportGZ, null);
+    }
+
+
     /**
      * @param suffixes list of what are usually the file extensions (but may be some other suffix to
      *          uniquely identify a file type), in priority order. The first suffix that matches a file will be used
@@ -170,14 +185,35 @@ public class FileType implements Serializable
      */
     public FileType(List<String> suffixes, String defaultSuffix, gzSupportLevel doSupportGZ)
     {
+        this(suffixes, defaultSuffix, false, doSupportGZ, null);
+    }
+
+    /**
+     * @param suffixes list of what are usually the file extensions (but may be some other suffix to
+     *          uniquely identify a file type), in priority order. The first suffix that matches a file will be used
+     *          and files that match the rest of the suffixes will be ignored
+     * @param defaultSuffix the canonical suffix, will be used when creating new files from scratch
+     * @param doSupportGZ for handling TPP's transparent use of .xml.gz
+     * @param contentType Content type for this file type.  If null, a content type will be guessed based on the extension.
+     */
+    public FileType(List<String> suffixes, String defaultSuffix, boolean dir, gzSupportLevel doSupportGZ, String contentType)
+    {
         _suffixes = suffixes;
         supportGZ(doSupportGZ);
         _defaultSuffix = defaultSuffix;
+        _dir = Boolean.valueOf(dir);
         _antiTypes = new Vector<FileType>(0);
         if (!suffixes.contains(defaultSuffix))
         {
             throw new IllegalArgumentException("List of suffixes " + _suffixes + " does not contain the preferred suffix:" + _defaultSuffix);
         }
+
+        if (contentType == null)
+        {
+            MimeMap mm = new MimeMap();
+            contentType = mm.getContentType(defaultSuffix);
+        }
+        _contentType = contentType;
     }
 
     /** helper for supporting TPP's use of .xml.gz */
@@ -388,15 +424,15 @@ public class FileType implements Serializable
 
     public boolean isType(File file)
     {
-        return isType(file, null);
+        return isType(file, null, null);
     }
 
-    public boolean isType(File file, byte[] header)
+    public boolean isType(File file, String contentType, byte[] header)
     {
         if ((file == null) || (_dir != null && _dir.booleanValue() != file.isDirectory()))
             return false;
 
-        return isType(file.getName(), header);
+        return isType(file.getName(), contentType, header);
     }
 
     /**
@@ -404,13 +440,13 @@ public class FileType implements Serializable
      */
     public boolean isType(String filePath)
     {
-        return isType(filePath, null);
+        return isType(filePath, null, null);
     }
 
     /**
      * Checks if the path matches any of the suffixes and the file header if provided.
      */
-    public boolean isType(@Nullable String filePath, @Nullable byte[] header)
+    public boolean isType(@Nullable String filePath, @Nullable String contentType, @Nullable byte[] header)
     {
         if (filePath == null && header == null)
             throw new IllegalArgumentException("filePath or header required");
@@ -421,9 +457,17 @@ public class FileType implements Serializable
             return false;
         }
 
+        // Attempt to match content type.
+        if (contentType != null && _contentType != null)
+        {
+            contentType = contentType.toLowerCase().trim();
+            if (contentType.equals(_contentType))
+                return true;
+        }
+
+        // Attempt to match by suffix and header.
         if (filePath != null)
         {
-            // Attempt to match by suffix and header.
             filePath = toLowerIfCaseInsensitive(filePath);
             for (String suffix : _suffixes)
             {
@@ -595,6 +639,16 @@ public class FileType implements Serializable
     public void setCaseSensitiveOnCaseSensitiveFileSystems(boolean caseSensitiveOnCaseSensitiveFileSystems)
     {
         _caseSensitiveOnCaseSensitiveFileSystems = caseSensitiveOnCaseSensitiveFileSystems;
+    }
+
+    public void setContentType(String contentType)
+    {
+        _contentType = contentType;
+    }
+
+    public String getContentType()
+    {
+        return _contentType;
     }
 
     public static class TestCase extends Assert

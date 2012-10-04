@@ -16,17 +16,35 @@
 package org.labkey.api.reader;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.search.AbstractDocumentParser;
+import org.labkey.api.util.FileType;
+import org.labkey.api.webdav.WebdavResource;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 /**
  * User: kevink
  * Date: 9/30/12
  */
-public abstract class AbstractDataLoaderFactory implements DataLoaderFactory
+public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser implements DataLoaderFactory
 {
+    public AbstractDataLoaderFactory()
+    {
+        this(false);
+    }
+    
+    public AbstractDataLoaderFactory(boolean indexable)
+    {
+        // NOTE: Disable all indexing for now
+        //if (indexable)
+        //    ServiceRegistry.get(SearchService.class).addDocumentParser(this);
+    }
+
     @NotNull
     public DataLoader createLoader(InputStream is, boolean hasColumnHeaders) throws IOException
     {
@@ -38,4 +56,64 @@ public abstract class AbstractDataLoaderFactory implements DataLoaderFactory
     {
         return createLoader(file, hasColumnHeaders, null);
     }
+
+    @Override
+    public String getMediaType()
+    {
+        return getFileType().getContentType();
+    }
+
+    @Override
+    public boolean detect(WebdavResource resource, String contentType, byte[] buf) throws IOException
+    {
+        FileType fileType = getFileType();
+        return fileType.isType(resource.getFile(), contentType, buf);
+    }
+
+    @Override
+    public void parseContent(InputStream stream, ContentHandler h) throws IOException, SAXException
+    {
+        DataLoader loader = createLoader(stream, true);
+        ColumnDescriptor[] cols = loader.getColumns();
+
+        startTag(h, "table");
+        newline(h);
+
+        startTag(h, "tr");
+        for (ColumnDescriptor cd : cols)
+        {
+            if (cd.load)
+                continue;
+            
+            tab(h);
+            startTag(h, "th");
+            write(h, cd.name);
+            endTag(h, "th");
+        }
+        endTag(h, "tr");
+        newline(h);
+
+        for (Map<String, Object> row : loader)
+        {
+            startTag(h, "tr");
+            for (ColumnDescriptor cd : cols)
+            {
+                if (cd.load)
+                    continue;
+
+                tab(h);
+                startTag(h, "td");
+                // XXX: format value
+                Object value = row.get(cd.name);
+                write(h, String.valueOf(value));
+                endTag(h, "td");
+            }
+
+            endTag(h, "tr");
+            newline(h);
+        }
+
+        endTag(h, "table");
+    }
+
 }

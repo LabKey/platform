@@ -312,7 +312,7 @@ public interface SearchService
     public interface DocumentParser
     {
         public String getMediaType();
-        public boolean detect(WebdavResource resource, byte[] buf) throws IOException;
+        public boolean detect(WebdavResource resource, String contentType, byte[] buf) throws IOException;
         public void parse(InputStream stream, ContentHandler handler) throws IOException, SAXException;
     }
     

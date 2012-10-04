@@ -70,8 +70,9 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
             throw new ExperimentException("Data file contained zero data rows");
         }
 
+        // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
         File dir = getFileTargetDir(context);
-        File file = createFile(protocol, dir, "tsv");
+        File file = createFile(protocol, dir, "tmp");
         ByteArrayInputStream bIn = new ByteArrayInputStream(data.getBytes(context.getRequest().getCharacterEncoding()));
 
         writeFile(bIn, file);
