@@ -17,6 +17,7 @@ package org.labkey.api.laboratory.assay;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
@@ -80,16 +81,22 @@ public interface AssayImportMethod
     abstract public String getPreviewPanelClass();
 
     /**
-     * A metadata config object that will be applied to the fields
+     * A metadata config object that will be applied to the fields on the import page
      * @return
      */
-    abstract public JSONObject getMetadata(ViewContext ctx);
+    abstract public JSONObject getMetadata(ViewContext ctx, ExpProtocol protocol);
+
+    /**
+     * A metadata config object that will be applied to the fields on the run template page
+     * @return
+     */
+    abstract public JSONObject getTemplateMetadata(ViewContext ctx, ExpProtocol protocol);
 
     /**
      * Serialized this import method to JSON, which is consumed by the client
      * @return
      */
-    abstract public JSONObject toJson(ViewContext ctx);
+    abstract public JSONObject toJson(ViewContext ctx, ExpProtocol protocol);
 
     /**
      * Returns the AssayParser used to process data imported through this pathway.
@@ -97,4 +104,10 @@ public interface AssayImportMethod
      */
     abstract public AssayParser getFileParser(Container c, User u, int assayId, JSONObject formData);
 
+    /**
+     * Returns true if this import method supports assay templates, which allow the user to proactively
+     * upload sample metadata and create an export to be read directly into an instrument
+     * @return
+     */
+    abstract public boolean supportsTemplates();
 }

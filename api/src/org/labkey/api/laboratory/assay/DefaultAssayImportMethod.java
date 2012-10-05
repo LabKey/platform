@@ -17,7 +17,10 @@ package org.labkey.api.laboratory.assay;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ViewContext;
 
 import java.text.SimpleDateFormat;
@@ -34,9 +37,12 @@ import java.util.List;
 public class DefaultAssayImportMethod implements AssayImportMethod
 {
     public static final String NAME = "Default Excel";
+    protected String _providerName;
+    protected AssayProvider _ap;
 
-    public DefaultAssayImportMethod()
+    public DefaultAssayImportMethod(String providerName)
     {
+        _providerName = providerName;
     }
 
     public AssayParser getFileParser(Container c, User u, int assayId, JSONObject formData)
@@ -84,7 +90,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return null;
     }
 
-    public JSONObject getMetadata(ViewContext ctx)
+    public JSONObject getMetadata(ViewContext ctx, ExpProtocol protocol)
     {
         JSONObject meta = new JSONObject();
 
@@ -100,7 +106,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         runMeta.put("Name", new JSONObject().put("value", ctx.getUser().getDisplayName(ctx.getUser()) + "_" + format.format(new Date())));
 
         JSONObject runDate = new JSONObject();
-        runDate.put("getInitialValue", "function(){return new Date().format('Y-m-d');}");
+        runDate.put("getInitialValue", "function(){return new Date();}");
         runDate.put("extFormat", "Y-m-d");
         runMeta.put("performedBy", new JSONObject().put("value", ctx.getUser().getDisplayName(ctx.getUser())));
         runMeta.put("runDate", runDate);
@@ -110,6 +116,46 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         JSONObject resultsMeta = new JSONObject();
         resultsMeta.put("sampleId", new JSONObject().put("lookups", false));
         resultsMeta.put("subjectId", new JSONObject().put("lookups", false));
+        meta.put("Results", resultsMeta);
+
+        return meta;
+    }
+
+    protected AssayProvider getAssayProvider()
+    {
+        if (_ap == null)
+            _ap = AssayService.get().getProvider(_providerName);
+
+        return _ap;
+    }
+
+    public JSONObject getTemplateMetadata(ViewContext ctx, ExpProtocol protocol)
+    {
+        JSONObject meta = new JSONObject();
+
+        JSONObject runMeta = new JSONObject();
+        runMeta.put("Name", new JSONObject().put("hidden", true));
+        runMeta.put("runDate", new JSONObject().put("hidden", true));
+        runMeta.put("comments", new JSONObject().put("hidden", true));
+        runMeta.put("performedBy", new JSONObject().put("hidden", true));
+        meta.put("Run", runMeta);
+
+        JSONObject resultsMeta = new JSONObject();
+        resultsMeta.put("sampleId", new JSONObject().put("lookups", false));
+        resultsMeta.put("subjectId", new JSONObject().put("lookups", false));
+
+//        UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), AssaySchema.NAME);
+//        TableInfo table = schema.getTable(protocol.getName() + " Data");
+//        for (ColumnInfo ci : table.getColumns())
+//        {
+//            if (LaboratoryService.ASSAYRESULT_CONCEPT_URI.equals(ci.getConceptURI()))
+//            {
+//                JSONObject json = getJsonObject(resultsMeta, ci.getColumnName());
+//                json.put("hidden", true);
+//                resultsMeta.put(ci.getColumnName(), json);
+//            }
+//        }
+
         meta.put("Results", resultsMeta);
 
         return meta;
@@ -125,11 +171,18 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return "Laboratory.ext.AssayPreviewPanel";
     }
 
-    public JSONObject toJson(ViewContext ctx)
+    public boolean supportsTemplates()
+    {
+        return false;
+    }
+
+    public JSONObject toJson(ViewContext ctx, ExpProtocol protocol)
     {
         JSONObject json = new JSONObject();
         json.put("name", getName());
         json.put("label", getLabel());
+        json.put("supportsTemplates", supportsTemplates());
+
         json.put("additionalFields", getAdditionalFields());
         json.put("hideTemplateDownload", hideTemplateDownload());
         json.put("tooltip", getTooltip());
@@ -138,7 +191,8 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         json.put("exampleDataUrl", getExampleDataUrl(ctx));
         json.put("templateInstructions", getTemplateInstructions());
         json.put("previewPanelClass", getPreviewPanelClass());
-        json.put("metadata", getMetadata(ctx));
+        json.put("metadata", getMetadata(ctx, protocol));
+        json.put("templateMetadata", getTemplateMetadata(ctx, protocol));
 
         return json;
     }

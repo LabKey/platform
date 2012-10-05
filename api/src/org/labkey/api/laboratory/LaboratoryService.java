@@ -15,15 +15,19 @@
  */
 package org.labkey.api.laboratory;
 
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.laboratory.assay.AssayDataProvider;
 import org.labkey.api.laboratory.assay.AssayImportMethod;
 import org.labkey.api.laboratory.assay.AssayParser;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
@@ -42,6 +46,9 @@ abstract public class LaboratoryService
 {
     static LaboratoryService instance;
 
+    static private final String URI = "http://cpas.labkey.com/laboratory#";
+    static public final String ASSAYRESULT_CONCEPT_URI = URI + "assayResult";
+
     public static LaboratoryService get()
     {
         return instance;
@@ -56,6 +63,12 @@ abstract public class LaboratoryService
 
     abstract public Set<Module> getRegisteredModules();
 
+    abstract public Set<AssayDataProvider> getRegisteredAssays();
+
+    abstract public AssayDataProvider getAssayDescriptorForPrototol(int protocolId);
+
+    abstract public void registerAssay(AssayDataProvider assay);
+
     abstract public void registerAssayImportMethods(String providerName, AssayImportMethod... methodList);
 
     abstract public List<AssayImportMethod> getImportMethods(AssayProvider ap);
@@ -64,7 +77,15 @@ abstract public class LaboratoryService
 
     abstract public Pair<ExpExperiment, ExpRun> saveAssayBatch(AssayParser parser, JSONObject json, File file, String fileName, ViewContext ctx) throws ValidationException, ExperimentException;
 
-    abstract public AssayImportMethod getManualEntryImportMethod();
+    abstract public AssayImportMethod getManualEntryImportMethod(AssayProvider ap);
 
     abstract public TableCustomizer getDefaultTableCustomizer();
+
+    abstract public void registerNavItems(NavItem... items);
+
+    abstract public List<NavItem>  getNavItems(@Nullable String category);
+
+    abstract public Set<SettingsItem> getSettingsItems(Container c, User u);
+
+    abstract public void registerSettingItems(SettingsItem... items);
 }

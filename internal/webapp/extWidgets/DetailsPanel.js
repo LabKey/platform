@@ -23,7 +23,6 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
     alias: 'widget.labkey-detailspanel',
     initComponent: function(){
         Ext4.apply(this, {
-            items: [{html: 'Loading...'}],
             bodyStyle: this.bodyStyle || 'padding:5px;',
             border: Ext4.isDefined(this.border) ? this.border : true,
             frame: false,
@@ -53,7 +52,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             this.store.load();
         }
         else
-            this.onStoreLoad();
+            this.onStoreLoad(this.store);
     },
 
     getStore: function(){
@@ -162,104 +161,5 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             bbar.removeAll();
 
         delete this.boundRecord;
-    }
-});
-
-
-/**
- * This panel can render a series of LABKEY.ext.DetailsPanels, one per record in the store.
- * @class LABKEY.ext.MultiRecordDetailsPanel
- * @cfg store
- * @cfg {string} titleField
- * @cfg {string} titlePrefix Defaults to 'Details'
- * @cfg {object} qwpConfig
- * @cfg {boolean} multiToGrid
- */
-Ext4.define('LABKEY.ext.MultiRecordDetailsPanel', {
-    extend: 'Ext.panel.Panel',
-    alias: 'widget.labkey-multirecorddetailspanel',
-    initComponent: function(){
-        Ext4.apply(this, {
-            border: false
-
-        });
-
-        this.callParent(arguments);
-
-        this.store = this.getStore();
-        this.mon(this.store, 'load', this.onStoreLoad, this);
-        if (!this.store.getCount() || this.store.isLoading)
-            this.store.load();
-        else
-            this.onStoreLoad();
-    },
-
-    getStore: function(){
-        if(!this.store.events){
-            this.store.autoLoad = false;
-            this.store = Ext4.create('LABKEY.ext4.Store', this.store);
-        }
-
-        return this.store;
-    },
-
-    onStoreLoad: function(store){
-        this.removeAll();
-
-        if (!this.store.getCount()){
-            this.add({html: 'No records found'});
-            return;
-        }
-
-        //TODO: rendering a QWP inside an Ext4 component does not currently work.  Need to figure out some type of solution...
-        if (this.store.getCount() > 1 && this.multiToGrid){
-            //TODO: would be cleaner just to drop an Ext grid in here
-
-            //cant render QWP unless the panel is rendered
-            if(!this.rendered){
-                this.on('render', this.onStoreLoad, this, {single: true});
-                return;
-            }
-
-            var config = this.store.getQueryConfig();
-            Ext4.applyIf(config, {
-                allowChooseQuery: false,
-                allowChooseView: true,
-                showInsertNewButton: false,
-                showDeleteButton: false,
-                showDetailsColumn: true,
-                showUpdateColumn: false,
-                showRecordSelectors: true,
-                buttonBarPosition: 'top',
-                title: this.titlePrefix,
-                timeout: 0
-            });
-
-            if(this.qwpConfig){
-                Ext4.apply(config, this.qwpConfig);
-            }
-
-            var target = this.add({tag: 'span'});
-            new LABKEY.QueryWebPart(config).render(target.id);
-            return;
-        }
-        else
-        {
-            var toAdd = [];
-            this.store.each(function(rec, idx){
-                toAdd.push(this.getDetailsPanelCfg(rec));
-            }, this);
-            this.add(toAdd);
-        }
-    },
-
-    getDetailsPanelCfg: function(rec){
-        return{
-            xtype: 'labkey-detailspanel',
-            store: this.store,
-            boundRecord: rec,
-            title: Ext4.isDefined(this.titlePrefix) ?  this.titlePrefix : 'Details',
-            style: 'margin-bottom: 10px'
-        };
     }
 });

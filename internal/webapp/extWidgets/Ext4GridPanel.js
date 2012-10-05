@@ -171,22 +171,12 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         this.plugins = this.plugins || [];
         if(this.editable)
             this.plugins.push(Ext4.create('Ext.grid.plugin.CellEditing', {pluginId: 'cellediting', clicksToEdit: 2}));
-
-        if(!this.selModel){
-            //NOTE: this is overridden in order to prevent the grid from focusing to itself on mouseclick.  Ext has bugs on this and it may be fixed in versions above 4.0.7
-            this.selModel = {
-                xtype: 'rowmodel',
-                //TODO: probably fixed in ext4.1 and can be removed then
-                //@Override
-                onRowMouseDown: function(view, record, item, index, e) {
-                    //view.el.focus();
-                    if (!this.allowRightMouseSelection(e)) {
-                        return;
-                    }
-                    this.selectWithEvent(record, e);
-                }
-            }
-        }
+//
+//        if(!this.selModel){
+//            this.selModel = {
+//                xtype: 'rowmodel'
+//            }
+//        }
     }
 
     ,setupColumnModel : function() {
@@ -345,9 +335,15 @@ LABKEY.ext4.GRIDBUTTONS = {
                 if(!grid.store || !LABKEY.ext.Ext4Helper.hasStoreLoaded(grid.store))
                     return;
 
-                grid.getPlugin('cellediting').completeEdit( );
-                grid.store.insert(grid.store.createModel({}), 0); //add a blank record in the first position
-                grid.getPlugin('cellediting').startEditByPosition({row: 0, column: this.firstEditableColumn || 0});
+                var cellEditing = grid.getPlugin('cellediting');
+                if(cellEditing)
+                    cellEditing.completeEdit();
+
+                var model = grid.store.createModel({});
+                grid.store.insert(0, [model]); //add a blank record in the first position
+
+                if(cellEditing)
+                    cellEditing.startEditByPosition({row: 0, column: this.firstEditableColumn || 0});
             }
         }, config);
     },

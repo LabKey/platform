@@ -812,7 +812,9 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
     },
     readRecords: function(data) {
         if(data.metaData){
-            this.idProperty = data.metaData.id || this.idProperty || 'id'; //NOTE: normalize which field holds the PK.
+            // NOTE: normalize which field holds the PK.  this is a little unfortunate b/c ext will automatically create this field if it doesnt exist,
+            // such as a query w/o a PK.  therefore we fall back to a standard name, which we can ignore when drawing grids
+            this.idProperty = data.metaData.id || this.idProperty || '_internalId';
             this.totalProperty = data.metaData.totalProperty; //NOTE: normalize which field holds total rows.
             if (this.model){
                 this.model.prototype.idProperty = this.idProperty;

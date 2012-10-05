@@ -206,6 +206,7 @@ LABKEY.ext.Ext4Helper = new function(){
             if (meta.hidden)
             {
                 field.xtype = 'hidden';
+                field.hidden = true;
             }
             else if (meta.editable === false)
             {
