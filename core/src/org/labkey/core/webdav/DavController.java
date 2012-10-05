@@ -541,7 +541,9 @@ public class DavController extends SpringActionController
                 {
                     if (ExceptionUtil.isClientAbortException(ex))
                         return null; // ignore
-                    throw new DavException(ex);
+                    DavException dex = new DavException(ex);
+                    getResponse().sendError(dex.getStatus(), dex.getMessage());
+                    ExceptionUtil.logExceptionToMothership(request, ex);
                 }
             }
             catch (UnauthorizedException uex)

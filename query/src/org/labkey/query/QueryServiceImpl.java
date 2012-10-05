@@ -73,6 +73,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -866,7 +867,8 @@ public class QueryServiceImpl extends QueryService
     @NotNull
     public LinkedHashMap<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields, @NotNull Collection<ColumnInfo> existingColumns)
     {
-        assert Table.checkAllColumns(table, existingColumns, "QueryServiceImpl.getColumns() existingColums");
+        assert null != (existingColumns = Collections.unmodifiableCollection(existingColumns));
+        assert Table.checkAllColumns(table, existingColumns, "QueryServiceImpl.getColumns() existingColums", false);
 
         AliasManager manager = new AliasManager(table, existingColumns);
         LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey,ColumnInfo>();
@@ -888,7 +890,7 @@ public class QueryServiceImpl extends QueryService
             }
         }
 
-        assert Table.checkAllColumns(table, ret.values(), "QueryServiceImpl.getColumns() ret");
+        assert Table.checkAllColumns(table, ret.values(), "QueryServiceImpl.getColumns() ret", true);
 
         return ret;
     }
@@ -1282,7 +1284,7 @@ public class QueryServiceImpl extends QueryService
             selectColumns = table.getColumns();
 
         // Check incoming columns to ensure they come from table
-        assert Table.checkAllColumns(table, selectColumns, "getSelectSQL() selectColumns");
+        assert Table.checkAllColumns(table, selectColumns, "getSelectSQL() selectColumns", true);
 
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
@@ -1290,7 +1292,7 @@ public class QueryServiceImpl extends QueryService
         allColumns = (List<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null);
 
         // Check columns again: ensureRequiredColumns() may have added new columns
-        assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()");
+        assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()", true);
 
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(table, allColumns);
         boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
@@ -1314,8 +1316,16 @@ public class QueryServiceImpl extends QueryService
         }
         else
         {
+            CaseInsensitiveHashMap<ColumnInfo> aliases = new CaseInsensitiveHashMap<ColumnInfo>();
+            ColumnInfo prev;
             for (ColumnInfo column : allColumns)
             {
+                if (null != (prev = aliases.put(column.getAlias(),column)))
+                {
+                    if (prev != column)
+                        ExceptionUtil.logExceptionToMothership(null, new Exception("Duplicate alias in column list: " + table.getSchema() + "." + table.getName() + "." + column.getFieldKey().toSQLString() + " as " + column.getAlias()));
+                    continue;
+                }
                 column.declareJoins(tableAlias, joins);
                 selectFrag.append(strComma);
                 selectFrag.append(column.getValueSql(tableAlias));
