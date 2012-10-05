@@ -27,10 +27,6 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     frame  : false,
     bubbleEvents : ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave', 'beforeInitGroupConfig', 'afterInitGroupConfig'],
 
-    statics : {
-        groupSelCache : {} // 15505
-    },
-
     initComponent : function() {
         Ext4.applyIf(this, {
             labelField: 'label',
@@ -39,7 +35,6 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         });
 
         this.addEvents('beforeInitGroupConfig', 'afterInitGroupConfig');
-        this.registerSelectionCache(this.sectionName);
         this.addEvents('initSelectionComplete');
 
         this.items = [];
@@ -192,30 +187,12 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         }
     },
 
-    registerSelectionCache : function(key, value) {
-        if (!LABKEY.ext4.filter.SelectList.groupSelCache[key]) {
-            LABKEY.ext4.filter.SelectList.groupSelCache[key] = value ? value : [];
-        }
-        else if (value) {
-            LABKEY.ext4.filter.SelectList.groupSelCache[key] = value;
-        }
-    },
-
-    inSelectionCache : function(key) {
-        return LABKEY.ext4.filter.SelectList.groupSelCache[key];
-    },
-
     initSelection: function() {
         var target = this.getGrid();
 
         if(!target.store.getCount() || !target.getView().viewReady){
             this.initSelection.defer(10, this);
             return;
-        }
-
-        var cachedSelection = this.inSelectionCache(this.sectionName);
-        if (cachedSelection && cachedSelection.length > 0) {
-            this.selection = cachedSelection;
         }
 
         // if there is not a default number of selection to make initially, set it to select all
@@ -225,47 +202,43 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         this.fireEvent('beforeInitGroupConfig', this, target.store);
 
         target.suspendEvents(); // queueing of events id depended on
-        if (!this.noSelection) {
-
-            if (!this.selection) {
-                if (this.maxInitSelection >= target.store.getCount()) {
-                    target.getSelectionModel().selectAll();
-                    if(this.allowAll){
-                        this.getSelectAllToogle().select(-1, true);
-                    }
-                }
-                else {
-                    for (var i = 0; i < this.maxInitSelection; i++)
-                        target.getSelectionModel().select(i, true);
+        if (!this.selection) {
+            if (this.maxInitSelection >= target.store.getCount()) {
+                target.getSelectionModel().selectAll();
+                if(this.allowAll){
+                    this.getSelectAllToogle().select(-1, true);
                 }
             }
             else {
-                target.getSelectionModel().deselectAll();
-                for (var s=0; s < this.selection.length; s++) {
-                    var rec = target.getStore().findRecord('id', this.selection[s].id);
+                for (var i = 0; i < this.maxInitSelection; i++)
+                    target.getSelectionModel().select(i, true);
+            }
+        }
+        else {
+            target.getSelectionModel().deselectAll();
+            for (var s=0; s < this.selection.length; s++) {
+                var rec = target.getStore().findRecord('id', this.selection[s].id);
 
-                    // if no matching record by id, try to find a matching record by label (just for initial selection)
-                    if (!rec)
-                    {
-                        var label = null;
-                        if (this.selection[s].data && this.selection[s].data.label)
-                            label = this.selection[s].data.label;
-                        else if (this.selection[s].label)
-                            label = this.selection[s].label;
+                // if no matching record by id, try to find a matching record by label (just for initial selection)
+                if (!rec)
+                {
+                    var label = null;
+                    if (this.selection[s].data && this.selection[s].data.label)
+                        label = this.selection[s].data.label;
+                    else if (this.selection[s].label)
+                        label = this.selection[s].label;
 
-                        if (label != null)
-                            rec = target.getStore().findRecord('label', label);
-                    }
-
-                    if (rec)
-                    {
-                        // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
-                        if (this.selection[s].id < 0 && (rec.data.label != this.selection[s].label))
-                            continue;
-                        target.getSelectionModel().select(rec, true);
-                    }
+                    if (label != null)
+                        rec = target.getStore().findRecord('label', label);
                 }
-                this.registerSelectionCache(this.sectionName, []); // clear cache
+
+                if (rec)
+                {
+                    // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
+                    if (this.selection[s].id < 0 && (rec.data.label != this.selection[s].label))
+                        continue;
+                    target.getSelectionModel().select(rec, true);
+                }
             }
         }
         this.allSelected();
@@ -308,18 +281,6 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         if (target)
             return target.getSelectionModel().getSelection();
         // return undefined -- same as getSelection()
-    },
-
-    isSelectionEmpty : function() {
-
-        var target = this.getGrid();
-        if (target)
-        {
-            var selections = target.getSelectionModel().getSelection();
-            return selections && selections.length == 0;
-        }
-
-        return true;
     },
 
     select : function(id, stopEvents) {
@@ -370,7 +331,6 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 this.getSelectAllToogle().deselect(-1, true);
             }
 
-            this.registerSelectionCache(this.sectionName, target.getSelectionModel().getSelection());
             return false;
         }
 
@@ -587,16 +547,6 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
 
     getSelectAllToogle: function(){
         return this.down('#globalSelectAll');
-    },
-
-    getNoSelectionSections : function() {
-        var filterPanels = this.getFilterPanels();
-        var empty = [];
-        for (var i=0; i < filterPanels.length; i++) {
-            if(filterPanels[i].isSelectionEmpty())
-                empty.push(filterPanels[i].sectionName);
-        }
-        return empty;
     },
 
     handleBeforeInitGroupConfig : function() {

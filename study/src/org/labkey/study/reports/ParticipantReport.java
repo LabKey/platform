@@ -58,7 +58,6 @@ public class ParticipantReport extends AbstractReport
     public static final String TYPE = "ReportService.ParticipantReport";
     public static final String MEASURES_PROP = "measures";
     public static final String GROUPS_PROP = "groups";
-    public static final String NONE_SELECTED = "noneSelected";
 
     @Override
     public String getType()
@@ -143,13 +142,6 @@ public class ParticipantReport extends AbstractReport
         if (groupsConfig != null)
         {
             json.put("groups", new JSONArray(groupsConfig));
-        }
-
-        // the list of filter sections that have all checkboxs cleared
-        String noneSelected = descriptor.getProperty(ParticipantReport.NONE_SELECTED);
-        if (noneSelected != null)
-        {
-            json.put("noneSelected", new JSONArray(noneSelected));
         }
         return json;
     }

@@ -763,11 +763,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             if (config.groups)
                 this.filterSet = config.groups;
 
-            var noneSelected = config.noneSelected || [];
-            this.noneSelected = {};
-            for (i=0; i < noneSelected.length; i++)
-                this.noneSelected[noneSelected[i]] = noneSelected[i];
-
             if (this.filterSet)
                 this.runFilterSet(this.filterSet);
             else
@@ -1010,7 +1005,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             if (!this.isNew())
             {
                 pConfig.selection = selection;
-                pConfig.noneSelected = this.noneSelected;
             }
 
             panel = Ext4.create('LABKEY.study.ParticipantFilterPanel', pConfig);
@@ -1284,8 +1278,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         if (this.filterPanel) {
             var groups = [];
 
-            // need to distinguish between all selected and none selected
-            config.noneSelected = this.filterPanel.getFilterPanel().getNoSelectionSections();
             var filters = this.filterPanel.getSelection(true, false);
             for (var f=0; f < filters.length; f++) {
                 groups.push(filters[f].data);

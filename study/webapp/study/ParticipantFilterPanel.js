@@ -290,7 +290,6 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 store       : store,
                 selection   : selections,
                 sectionName : 'participant',
-                noSelection : this.getIsEmptySelection('participant'),
                 maxInitSelection : this.maxInitSelection,
                 description : this.subjectNoun.plural
             }]
@@ -345,13 +344,6 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             }, this);
             return selections;
         }
-    },
-
-    getIsEmptySelection : function(type) {
-
-        if (this.noneSelected)
-            return this.noneSelected[type] !== undefined;
-        return false;
     },
 
     getFilterPanel : function() {
