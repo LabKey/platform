@@ -195,6 +195,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
     {
+        assert null != (displayColumns = Collections.unmodifiableList(displayColumns));
         Table.checkAllColumns(tinfo, tinfo.getColumns(), "RenderContext.getSelectColumns() tinfo.getColumns()");
 
         Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new LinkedHashSet<ColumnInfo>());

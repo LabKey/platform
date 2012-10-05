@@ -1892,11 +1892,26 @@ public class Table
 
     public static boolean checkAllColumns(TableInfo table, Collection<ColumnInfo> columns, String prefix)
     {
+        return checkAllColumns(table, columns, prefix, false);
+    }
+
+    public static boolean checkAllColumns(TableInfo table, Collection<ColumnInfo> columns, String prefix, boolean enforceUnique)
+    {
         int bad = 0;
 
+        Map<FieldKey, ColumnInfo> mapFK = new HashMap<FieldKey, ColumnInfo>(columns.size()*2);
+        Map<String, ColumnInfo> mapAlias = new HashMap<String, ColumnInfo>(columns.size()*2);
+        ColumnInfo prev;
+
         for (ColumnInfo column : columns)
+        {
             if (!checkColumn(table, column, prefix))
                 bad++;
+            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
+                bad++;
+            if (enforceUnique && null != (prev=mapAlias.put(column.getAlias(),column)) && prev != column)
+                bad++;
+        }
 
         // Check all the columns in the TableInfo to determine if the TableInfo is corrupt
         for (ColumnInfo column : table.getColumns())
