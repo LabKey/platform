@@ -1907,8 +1907,8 @@ public class Table
         {
             if (!checkColumn(table, column, prefix))
                 bad++;
-            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
-                bad++;
+//            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
+//                bad++;
             if (enforceUnique && null != (prev=mapAlias.put(column.getAlias(),column)) && prev != column)
                 bad++;
         }
