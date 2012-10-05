@@ -127,6 +127,13 @@ public class ContainerTable extends FilteredTable
         ExprColumn containerTypeColumn = new ExprColumn(this, "ContainerType", containerTypeSQL, JdbcType.VARCHAR);
         addColumn(containerTypeColumn);
 
+        SQLFragment containerDisplaySQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS + ".workbook = ? " +
+            "THEN " + getSqlDialect().concatenate(ExprColumn.STR_TABLE_ALIAS + ".rowid", "'. '", ExprColumn.STR_TABLE_ALIAS + ".title") +
+            " ELSE " + ExprColumn.STR_TABLE_ALIAS + ".name END");
+        containerDisplaySQL.add(true);
+        ExprColumn containerDisplayColumn = new ExprColumn(this, "IdPrefixedName", containerDisplaySQL, JdbcType.VARCHAR);
+        addColumn(containerDisplayColumn);
+
         col = getColumn("CreatedBy");
         col.setFk(new LookupForeignKey("UserId", "DisplayName")
         {
@@ -140,6 +147,7 @@ public class ContainerTable extends FilteredTable
         getColumn("Name").setURL(webURLExp);
         getColumn("Title").setURL(webURLExp);
         getColumn("DisplayName").setURL(webURLExp);
+        getColumn("IdPrefixedName").setURL(webURLExp);
 
         setTitleColumn("DisplayName");
     }
