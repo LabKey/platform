@@ -139,54 +139,36 @@ public class ParticipantTable extends FilteredTable
         return new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
     }
 
+
     public static class ParticipantCategoryColumn extends ExprColumn
     {
-        private ParticipantCategoryImpl _def;
-        private String PARTICIPANT_GROUP_ALIAS;
-        private String PARTICIPANT_GROUP_GROUPMAP_JOIN;
-        private String PARTICIPANT_GROUPMAP_JOIN_ALIAS;
+        private final ParticipantCategoryImpl _def;
 
         public ParticipantCategoryColumn(ParticipantCategoryImpl def, FilteredTable parent)
         {
             super(parent, def.getLabel(), new SQLFragment(), JdbcType.VARCHAR);
-
             _def = def;
-
-            // set up the join aliases
-            PARTICIPANT_GROUP_ALIAS = ColumnInfo.legalNameFromName(_def.getLabel()) + "$" + "ParticipantGroup$";
-            PARTICIPANT_GROUP_GROUPMAP_JOIN = ColumnInfo.legalNameFromName(_def.getLabel()) + "$" + "ParticipantListJoin$";
-            PARTICIPANT_GROUPMAP_JOIN_ALIAS = ColumnInfo.legalNameFromName(_def.getLabel()) + "$" + "ParticipantGroupJoin$";
-
-            SQLFragment sql = new SQLFragment();
-            sql.append(ExprColumn.STR_TABLE_ALIAS).append("$").append(PARTICIPANT_GROUPMAP_JOIN_ALIAS).append(".label\n");
-            setValueSQL(sql);
         }
 
         @Override
-        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+        public SQLFragment getValueSql(String parentAlias)
         {
-            super.declareJoins(parentAlias, map);
-
-            String tableAlias = parentAlias + "$" + PARTICIPANT_GROUP_GROUPMAP_JOIN;
-            String groupAlias = parentAlias + "$" + PARTICIPANT_GROUP_ALIAS;
-            String groupJoinAlias = parentAlias + "$" + PARTICIPANT_GROUPMAP_JOIN_ALIAS;
-            if (map.containsKey(tableAlias))
-                return;
-
             SQLFragment sql = new SQLFragment();
-
-            sql.append(" LEFT OUTER JOIN (SELECT ParticipantId, ").append(groupAlias).append(".Container, Label FROM ");
-            sql.append(" (SELECT * FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "");
-            sql.append(" WHERE CategoryId = ? ) ").append(groupAlias).append(" JOIN ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
-            sql.append(" ON GroupId = ").append(groupAlias).append(".RowId )").append(groupJoinAlias);
-            sql.append(" ON ").append(groupJoinAlias).append(".ParticipantId = ").append(parentAlias).append(".ParticipantId");
-            sql.append(" AND ").append(groupJoinAlias).append(".Container = ").append(parentAlias).append(".Container");
-
+            sql.appendComment("<ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
+            sql.append("(SELECT Label FROM ");
+            sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "_g" );
+            sql.append(" JOIN ");
+            sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "_m");
+            sql.append(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=? AND _m.Container=?\n");
+            sql.append("WHERE _m.ParticipantId = ").append(parentAlias).append(".ParticipantId)");
             sql.add(_def.getRowId());
-
-            map.put(tableAlias, sql);
+            sql.add(_def.getContainerId());
+            sql.add(_def.getContainerId());
+            sql.appendComment("</ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
+            return sql;
         }
     }
+
 
     @Override
     public ContainerContext getContainerContext()
