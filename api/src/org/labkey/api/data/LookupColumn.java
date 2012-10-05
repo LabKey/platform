@@ -196,8 +196,15 @@ public class LookupColumn extends ColumnInfo
      */
     public String getTableAlias(String baseAlias)
     {
-        String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + _foreignKey.getAlias() + "$";
-        alias = AliasManager.truncate(alias, 63);
+        return getTableAlias(baseAlias, _foreignKey.getAlias());
+    }
+
+    public static String getTableAlias(String baseAlias, String fkAlias)
+    {
+        String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + fkAlias + "$";
+        // 63 works, but save 2 chars for appending chars to
+        // create aliases for extra tables used in the lookup (e.g. junctionAlias = getTableAlias() + "_j")
+        alias = AliasManager.truncate(alias, 61);
         return alias;
     }
 
