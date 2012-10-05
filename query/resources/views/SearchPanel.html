@@ -9,9 +9,10 @@ Ext4.onReady(function(){
         ,viewName: LABKEY.ActionURL.getParameter('viewName')
         ,defaultViewName: LABKEY.ActionURL.getParameter('defaultViewName')
         ,columns: LABKEY.ActionURL.getParameter('columns')
-        ,title: 'Search '+LABKEY.ActionURL.getParameter('queryName')
+        //,title: 'Search '+LABKEY.ActionURL.getParameter('queryName')
         ,showContainerFilter: LABKEY.ActionURL.getParameter('showContainerFilter')
         ,defaultContainerFilter: LABKEY.ActionURL.getParameter('defaultContainerFilter')
+        ,border: false
     };
 
     Ext4.create('LABKEY.ext4.SearchPanel', config);

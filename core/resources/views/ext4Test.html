@@ -43,6 +43,10 @@ Ext4.onReady(function(){
     Ext4.create('LABKEY.ext4.GridPanel', {
         title: 'Grid Panel',
         renderTo: 'gridPanel',
+        tbar: [
+            LABKEY.ext4.GRIDBUTTONS.getButton('ADDRECORD'),
+            LABKEY.ext4.GRIDBUTTONS.getButton('DELETERECORD')
+        ],
         store: store
     });
 
