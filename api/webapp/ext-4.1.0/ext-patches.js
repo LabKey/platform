@@ -85,15 +85,6 @@ Ext4.override(Ext4.form.field.Base, {
     getLabelableRenderData: function(){
         var data = this.callOverridden();
 
-        //make label bold if required
-        data.allowBlank = this.allowBlank;
-        if(this.allowBlank === false){
-            data.labelStyle = data.labelStyle || '';
-            data.labelStyle = data.labelStyle.split(';');
-            data.labelStyle.push('font-weight:bold');
-            data.labelStyle = data.labelStyle.join(';');
-        }
-
         //support a tooltip
         data.helpPopup = this.helpPopup;
 

@@ -16,13 +16,12 @@
 package org.labkey.api.visualization;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -32,7 +31,6 @@ import org.labkey.api.view.ViewContext;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 9, 2012
  */
@@ -69,6 +67,11 @@ public abstract class GenericChartReport extends AbstractReport
             {
                 return AppProps.getInstance().getContextPath() + "/visualization/report/box_plot.gif";
             }
+            @Override
+            public String getThumbnailName()
+            {
+                return "box_plot.png";
+            }
         },
         SCATTER_PLOT()
         {
@@ -91,6 +94,11 @@ public abstract class GenericChartReport extends AbstractReport
             public String getIconPath()
             {
                 return AppProps.getInstance().getContextPath() + "/visualization/report/scatter_plot.gif";
+            }
+            @Override
+            public String getThumbnailName()
+            {
+                return "scatter_plot.png";
             }
         },
         AUTO_PLOT()
@@ -115,11 +123,17 @@ public abstract class GenericChartReport extends AbstractReport
             {
                 return AppProps.getInstance().getContextPath() + "/visualization/report/box_plot.gif";
             }
+            @Override
+            public String getThumbnailName()
+            {
+                return "box_plot.png";
+            }
         };
         public abstract String getId();
         public abstract String getName();
         public abstract String getDescription();
         public abstract String getIconPath();
+        public abstract String getThumbnailName();
     }
 
     public static RenderType getRenderType(String typeId)
@@ -132,6 +146,19 @@ public abstract class GenericChartReport extends AbstractReport
         return null;
     }
 
+    public @Nullable RenderType getRenderType()
+    {
+        ReportDescriptor descriptor = getDescriptor();
+
+        if (descriptor != null)
+        {
+            String id = descriptor.getProperty(GenericChartReportDescriptor.Prop.renderType);
+            return getRenderType(id);
+        }
+
+        return null;
+    }
+
     @Override
     public String getType()
     {
@@ -141,16 +168,9 @@ public abstract class GenericChartReport extends AbstractReport
     @Override
     public String getTypeDescription()
     {
-        ReportDescriptor descriptor = getDescriptor();
-        if (descriptor != null)
-        {
-            String id = descriptor.getProperty(GenericChartReportDescriptor.Prop.renderType);
-            RenderType type = getRenderType(id);
+        RenderType type = getRenderType();
 
-            if (type != null)
-                return type.getDescription();
-        }
-        return "Generic Chart Report";
+        return null != type ? type.getDescription() : "Generic Chart Report";
     }
 
     @Override

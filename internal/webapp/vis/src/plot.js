@@ -412,15 +412,15 @@ LABKEY.vis.Plot = function(config){
 	};
 
     var renderLegend = function(){
-        var xPadding = this.scales.yRight ? 25 : 0,
-            startY = 0,
-            defaultColor = function(){return '#333'},
-            // We default to a rectangle because it's not one of the shapes in the shape scale.
-            defaultShape = function(){
-                return function(paper, x, y, size){
-                    return paper.rect(x - size, y - (size/2), size*2, size);
-                }
-            };
+        var xPadding = this.scales.yRight && this.scales.yRight.scale ? 25 : 0,
+                startY = 0,
+                defaultColor = function(){return '#333'},
+                // We default to a rectangle because it's not one of the shapes in the shape scale.
+                defaultShape = function(){
+                    return function(paper, x, y, size){
+                        return paper.rect(x - size, y - (size/2), size*2, size);
+                    }
+                };
 
         var compareDomains = function(domain1, domain2){
             if(domain1.length != domain2.length){
@@ -440,15 +440,45 @@ LABKEY.vis.Plot = function(config){
         };
 
         var renderPartial = function(paper, grid, y, geomX, textX, domain, shapeFn, colorFn){
+            var legendWidth = paper.width - textX - 10;
+
             for(var i = 0; i < domain.length; i++){
                 var translatedY = parseInt(-(grid.topEdge - y)) +.5,
                     color = colorFn(domain[i]),
-                    shape = shapeFn(domain[i]);
+                    shape = shapeFn(domain[i]),
+                    words = domain[i].split(' '),
+                    tempText = '',
+                    newLines = 0;
+
+                var textObj = paper.text(textX, translatedY)
+                            .attr('text-anchor', 'start')
+                            .attr('title', domain[i])
+                            .attr({"font-family": "verdana, arial, helvetica, sans-serif"});
                 
                 shape(paper, geomX, translatedY, 5).attr('fill', color).attr('stroke', color);
-                paper.text(textX, translatedY, domain[i]).attr('text-anchor', 'start').attr('title', domain[i]);
 
-                y = y + 18;
+                for(var j = 0; j < words.length; j++){
+                    textObj.attr('text', tempText + ' ' + words[j]);
+                    if(textObj.getBBox().width > legendWidth && j > 0){
+                        tempText = tempText + '\n' + words[j];
+                        y = y + 12;
+                        newLines++;
+                    } else {
+                        tempText = tempText + ' ' + words[j];
+                    }
+                }
+                
+                // We need to adjust the tranlsatedY value based on newlines and re-draw the text object because
+                // Raphael / SVG centers text vertically.
+                translatedY = translatedY + (newLines * 6);
+
+                textObj.remove();
+                textObj = paper.text(textX, translatedY, tempText)
+                        .attr('text-anchor', 'start')
+                        .attr('title', domain[i])
+                        .attr({"font-family": "verdana, arial, helvetica, sans-serif"});
+
+                y = y + 16;
             }
 
             // returns the next available y position.
@@ -465,8 +495,8 @@ LABKEY.vis.Plot = function(config){
                         this.paper,
                         this.grid,
                         startY,
-                        this.grid.rightEdge + 50,
-                        this.grid.rightEdge + 75 + xPadding,
+                        this.grid.rightEdge + 50 + xPadding,
+                        this.grid.rightEdge + 68 + xPadding,
                         this.scales.shape.scale.domain(),
                         this.scales.shape.scale,
                         this.scales.color.scale
@@ -477,8 +507,8 @@ LABKEY.vis.Plot = function(config){
                         this.paper,
                         this.grid,
                         startY,
-                        this.grid.rightEdge + 50,
-                        this.grid.rightEdge + 75 + xPadding,
+                        this.grid.rightEdge + 50 + xPadding,
+                        this.grid.rightEdge + 68 + xPadding,
                         this.scales.color.scale.domain(),
                         defaultShape,
                         this.scales.color.scale
@@ -489,8 +519,8 @@ LABKEY.vis.Plot = function(config){
                         this.paper,
                         this.grid,
                         lastY + 18,
-                        this.grid.rightEdge + 50,
-                        this.grid.rightEdge + 75 + xPadding,
+                        this.grid.rightEdge + 50 + xPadding,
+                        this.grid.rightEdge + 68 + xPadding,
                         this.scales.shape.scale.domain(),
                         this.scales.shape.scale,
                         defaultColor
@@ -500,8 +530,8 @@ LABKEY.vis.Plot = function(config){
             renderPartial(
                     this.paper, this.grid,
                     startY,
-                    this.grid.rightEdge + 50,
-                    this.grid.rightEdge + 75 + xPadding,
+                    this.grid.rightEdge + 50 + xPadding,
+                    this.grid.rightEdge + 68 + xPadding,
                     this.scales.color.scale.domain(),
                     defaultShape,
                     this.scales.color.scale
@@ -511,8 +541,8 @@ LABKEY.vis.Plot = function(config){
                     this.paper,
                     this.grid,
                     startY,
-                    this.grid.rightEdge + 50,
-                    this.grid.rightEdge + 75 + xPadding,
+                    this.grid.rightEdge + 50 + xPadding,
+                    this.grid.rightEdge + 68 + xPadding,
                     this.scales.shape.scale.domain(),
                     this.scales.shape.scale,
                     defaultColor

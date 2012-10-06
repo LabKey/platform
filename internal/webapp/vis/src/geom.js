@@ -186,17 +186,17 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
         for(var group in groupedData){
             var groupData = groupedData[group];
             var color = this.color;
-
-            if(this.colorMap && this.colorMap.name == this.group.name){
-                // If we have a colorMap and it maps to the same thing as groupedData, then we pass in the group to get the desired color.
-                color = scales.color.scale(group + name);
-            }
-
-            if(this.sizeMap){
-                size = this.sizeMap.getValue(groupData);
-            }
             var path = LABKEY.vis.makePath(groupData, xAccessor, yAccessor);
+            
             if(path != ''){
+                if(this.colorMap && this.colorMap.name == this.group.name){
+                    // If we have a colorMap and it maps to the same thing as groupedData, then we pass in the group to get the desired color.
+                    color = scales.color.scale(group + name);
+                }
+
+                if(this.sizeMap){
+                    size = this.sizeMap.getValue(groupData);
+                }
                 paper.path(path).attr('stroke', color).attr('stroke-width', size).attr('opacity', this.opacity);
             }
         }

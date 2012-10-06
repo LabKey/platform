@@ -15,6 +15,7 @@
  */
 package org.labkey.api.visualization;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QuerySettings;
@@ -30,5 +31,5 @@ public interface VisualizationUrls extends UrlProvider
     public ActionURL getViewerURL(Container container, Report report);
 
     // generic chart urls
-    public ActionURL getGenericChartDesignerURL(Container container, User user, QuerySettings settings, GenericChartReport.RenderType type);
+    public ActionURL getGenericChartDesignerURL(Container container, User user, @Nullable QuerySettings settings, GenericChartReport.RenderType type);
 }

@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
@@ -63,6 +64,25 @@ public abstract class ContainerFilter
             // Revert to Current
         }
         return type.create(user);
+    }
+
+    /**
+     * The standard ContainerFilter SQL includes data from workbooks if the parent is already in the list via a join.
+     * Therefore, we can filter out any workbooks from the list so that we don't need to pass as many Ids in the SQL.
+     * This is important for servers that have lots and lots of workbooks, like the O'Conner server which has more than
+     * 10,000.
+     */
+    protected Collection<Container> removeWorkbooks(Collection<Container> containers)
+    {
+        Set<Container> result = new HashSet<Container>(containers.size());
+        for (Container c : containers)
+        {
+            if (!c.isWorkbook())
+            {
+                result.add(c);
+            }
+        }
+        return result;
     }
 
     /** Create a FilterClause that restiracts based on the containers that meet the filter */
@@ -419,7 +439,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            List<Container> containers = new ArrayList<Container>(ContainerManager.getAllChildren(currentContainer, _user, _perm));
+            List<Container> containers = new ArrayList<Container>(removeWorkbooks(ContainerManager.getAllChildren(currentContainer, _user, _perm)));
             containers.add(currentContainer);
             return toIds(containers);
         }
@@ -654,7 +674,7 @@ public abstract class ContainerFilter
             return Type.CurrentAndSiblings;
         }
     }
-    
+
     public static class StudyAndSourceStudy extends ContainerFilterWithUser
     {
         private boolean _skipPermissionChecks;
@@ -758,7 +778,7 @@ public abstract class ContainerFilter
                 // Don't allow anything
                 return Collections.emptySet();
             }
-            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(project, _user, _perm));
+            Set<Container> containers = new HashSet<Container>(removeWorkbooks(ContainerManager.getAllChildren(project, _user, _perm)));
             containers.add(project);
             return toIds(containers);
         }

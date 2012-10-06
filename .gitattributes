@@ -1222,6 +1222,7 @@ api/src/org/labkey/api/util/StringSubstitution.java -text
 api/src/org/labkey/api/util/StringUtilsLabKey.java -text
 api/src/org/labkey/api/util/SystemMaintenance.java -text
 api/src/org/labkey/api/util/Taintable.java -text
+api/src/org/labkey/api/util/ThumbnailUtil.java -text
 api/src/org/labkey/api/util/TidyUtil.java -text
 api/src/org/labkey/api/util/TimeOnlyDate.java -text
 api/src/org/labkey/api/util/Tuple.java -text
@@ -1318,6 +1319,7 @@ api/src/org/labkey/api/view/template/menuBar.jsp -text
 api/src/org/labkey/api/view/template/wizardTemplate.jsp -text
 api/src/org/labkey/api/visualization/GenericChartReport.java -text
 api/src/org/labkey/api/visualization/GenericChartReportDescriptor.java -text
+api/src/org/labkey/api/visualization/SvgThumbnailGenerator.java -text
 api/src/org/labkey/api/visualization/TimeChartReport.java -text
 api/src/org/labkey/api/visualization/TimeChartReportDescriptor.java -text
 api/src/org/labkey/api/visualization/VisualizationReportDescriptor.java -text

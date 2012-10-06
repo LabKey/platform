@@ -26,7 +26,7 @@ var renderStats = function(){
 
 var CD4PointLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Point({size: 5}),
-	name: 'CD4',
+	name: 'Really Long Name That Gets Truncated',
 	aes: {
 		y: function(row){return row.study_LabResults_CD4.value},
 		hoverText: function(row){return row.study_LabResults_ParticipantId.value + ' CD4, Day ' + row.Days.value + ", " + row.study_LabResults_CD4.value;}
@@ -35,7 +35,7 @@ var CD4PointLayer = new LABKEY.vis.Layer({
 
 var CD4PathLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Path({size: 3, opacity: .2}),
-	name: 'CD4',
+	name: 'Really Long Name That Gets Truncated',
 	aes: {
 		y: function(row){return row.study_LabResults_CD4.value}
 	}
@@ -90,6 +90,10 @@ var plotConfig = {
 			trans: 'linear',
             min: 400,
             max: 1000
+        },
+        yRight: {
+            min: null,
+            max: null
         },
         shape: {
             scaleType: 'discrete'
@@ -203,14 +207,14 @@ var coffeeData = [
     {"person":"Alan","time":"2:30","consumedCoffee":"No Coffee","efficiency":82},{"person":"Alan","time":"3:00","consumedCoffee":"No Coffee","efficiency":84},
     {"person":"Alan","time":"3:30","consumedCoffee":"No Coffee","efficiency":79},{"person":"Alan","time":"4:00","consumedCoffee":"No Coffee","efficiency":78},
     {"person":"Alan","time":"4:30","consumedCoffee":"No Coffee","efficiency":null},{"person":"Alan","time":"5:00","consumedCoffee":"No Coffee","efficiency":76},
-    {"person":"Josh","time":"9:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh","time":"10:00","consumedCoffee":"No Coffee","efficiency":300},
-    {"person":"Josh","time":"10:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh","time":"11:00","consumedCoffee":"No Coffee","efficiency":299},
-    {"person":"Josh","time":"11:30","consumedCoffee":"No Coffee","efficiency":297},{"person":"Josh","time":"12:00","consumedCoffee":"No Coffee","efficiency":300},
-    {"person":"Josh","time":"12:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh","time":"1:00","consumedCoffee":"No Coffee","efficiency":296},
-    {"person":"Josh","time":"1:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh","time":"2:00","consumedCoffee":"No Coffee","efficiency":300},
-    {"person":"Josh","time":"2:30","consumedCoffee":"No Coffee","efficiency":298},{"person":"Josh","time":"3:00","consumedCoffee":"No Coffee","efficiency":295},
-    {"person":"Josh","time":"3:30","consumedCoffee":"No Coffee","efficiency":294},{"person":"Josh","time":"4:00","consumedCoffee":"No Coffee","efficiency":295},
-    {"person":"Josh","time":"4:30","consumedCoffee":"No Coffee","efficiency":297},{"person":"Josh","time":"5:00","consumedCoffee":"No Coffee","efficiency":296}
+    {"person":"Josh Extra Super Duper Long Name","time":"9:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh Extra Super Duper Long Name","time":"10:00","consumedCoffee":"No Coffee","efficiency":300},
+    {"person":"Josh Extra Super Duper Long Name","time":"10:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh Extra Super Duper Long Name","time":"11:00","consumedCoffee":"No Coffee","efficiency":299},
+    {"person":"Josh Extra Super Duper Long Name","time":"11:30","consumedCoffee":"No Coffee","efficiency":297},{"person":"Josh Extra Super Duper Long Name","time":"12:00","consumedCoffee":"No Coffee","efficiency":300},
+    {"person":"Josh Extra Super Duper Long Name","time":"12:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh Extra Super Duper Long Name","time":"1:00","consumedCoffee":"No Coffee","efficiency":296},
+    {"person":"Josh Extra Super Duper Long Name","time":"1:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh Extra Super Duper Long Name","time":"2:00","consumedCoffee":"No Coffee","efficiency":300},
+    {"person":"Josh Extra Super Duper Long Name","time":"2:30","consumedCoffee":"No Coffee","efficiency":298},{"person":"Josh Extra Super Duper Long Name","time":"3:00","consumedCoffee":"No Coffee","efficiency":295},
+    {"person":"Josh Extra Super Duper Long Name","time":"3:30","consumedCoffee":"No Coffee","efficiency":294},{"person":"Josh Extra Super Duper Long Name","time":"4:00","consumedCoffee":"No Coffee","efficiency":295},
+    {"person":"Josh Extra Super Duper Long Name","time":"4:30","consumedCoffee":"No Coffee","efficiency":297},{"person":"Josh Extra Super Duper Long Name","time":"5:00","consumedCoffee":"No Coffee","efficiency":296}
 ];
 
 var coffeePointLayer = new LABKEY.vis.Layer({
@@ -473,9 +477,9 @@ var colorScatter = LABKEY.vis.Plot({
 });
 
 plot.render();
+boxPlot.render();
 errorPlot.render();
 coffeePlot.render();
-boxPlot.render();
 discreteScatter.render();
 scatterPlot.render();
 colorScatter.render();
