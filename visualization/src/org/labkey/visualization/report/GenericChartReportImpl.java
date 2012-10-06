@@ -15,9 +15,11 @@
  */
 package org.labkey.visualization.report;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.report.ReportUrls;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ThumbnailUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -25,15 +27,19 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
+import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.visualization.VisualizationController;
 
+import java.io.InputStream;
+
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 31, 2012
  */
-public class GenericChartReportImpl extends GenericChartReport
+public class GenericChartReportImpl extends GenericChartReport implements SvgThumbnailGenerator
 {
+    private String _svg = null;
+
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
@@ -56,5 +62,45 @@ public class GenericChartReportImpl extends GenericChartReport
         }
 
         return view;
+    }
+
+    // Note: This class should properly generate a dynamic thumbnail based on passed in SVG, however, SaveVisualizationAction
+    // is not invoked by generic charts yet, so this method is never called. TODO: Finish dynamic thumbnails for box/scatter
+    @Override
+    public void setSvg(String svg)
+    {
+        _svg = svg;
+    }
+
+    @Override
+    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
+    {
+        // SVG is provided by the client code at save time and then stashed in the report by the save action. That's
+        // the only way thumbnails can be generated from these reports.
+        return ThumbnailUtil.getThumbnailFromSvg(_svg);
+    }
+
+    @Override
+    public String getDynamicThumbnailCacheKey()
+    {
+        return "Reports:" + getReportId();
+    }
+
+    @Override
+    public String getStaticThumbnailCacheKey()
+    {
+        RenderType type = getRenderType();
+        String suffix = (null != type ? type.getId() : RenderType.AUTO_PLOT.getId());
+
+        return "Reports:" + suffix;
+    }
+
+    @Override
+    public Thumbnail getStaticThumbnail()
+    {
+        RenderType type = getRenderType();
+        String name = null != type ? type.getThumbnailName() : RenderType.AUTO_PLOT.getName();
+        InputStream is = GenericChartReportImpl.class.getResourceAsStream(name);
+        return new Thumbnail(is, "image/png");
     }
 }

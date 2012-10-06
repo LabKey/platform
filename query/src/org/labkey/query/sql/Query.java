@@ -259,13 +259,14 @@ public class Query
             return null;
 
         QuerySelect select = new QuerySelect(query, (QQuery)root, inFromClause);
+        QueryLookupWrapper wrapper;
 
         if (null == root.getChildOfType(QPivot.class))
-            return select;
+            return new QueryLookupWrapper(query, select, null);
 
         QueryPivot pivot = new QueryPivot(query, select, (QQuery)root);
         pivot.setAlias("_pivot");
-        QueryLookupWrapper wrapper = new QueryLookupWrapper(query, pivot, null);
+        wrapper = new QueryLookupWrapper(query, pivot, null);
 
         if (null == ((QQuery) root).getLimit() && null == ((QQuery) root).getOrderBy())
             return wrapper;
@@ -382,7 +383,10 @@ public class Query
 
     public Set<FieldKey> getFromTables()
     {
-		return isSelect() ? ((QuerySelect)_queryRoot).getFromTables() : null;
+        QuerySelect qs = getQuerySelect();
+        if (null != qs)
+            return qs.getFromTables();
+        return null;
     }
 
 
@@ -394,7 +398,8 @@ public class Query
 
     public boolean isAggregate()
     {
-		return isSelect() && ((QuerySelect)_queryRoot).isAggregate();
+        QuerySelect select = getQuerySelect();
+        return null != select && select.isAggregate();
     }
 
 
@@ -404,15 +409,24 @@ public class Query
     }
 
 
-    public boolean isSelect()
+    public QuerySelect getQuerySelect()
     {
-        return _queryRoot instanceof QuerySelect;
+        if (_queryRoot instanceof QuerySelect)
+            return (QuerySelect)_queryRoot;
+        if (_queryRoot instanceof QueryLookupWrapper)
+        {
+            if (((QueryLookupWrapper)_queryRoot)._source instanceof QuerySelect)
+                return (QuerySelect)((QueryLookupWrapper)_queryRoot)._source;
+        }
+        return null;
     }
+
 
 
     public boolean hasSubSelect()
     {
-		return isSelect() && ((QuerySelect)_queryRoot).hasSubSelect();
+        QuerySelect select = getQuerySelect();
+        return null != select && select.hasSubSelect();
     }
 
 
@@ -480,16 +494,17 @@ public class Query
 
     public QueryDocument getDesignDocument()
     {
-		return isSelect() ? ((QuerySelect)_queryRoot).getDesignDocument() : null;
+        QuerySelect select = getQuerySelect();
+		return null == select ? null :  select.getDesignDocument();
     }
 
 
     public void update(DgQuery query, List<QueryException> errors)
     {
-		if (isSelect())
-			((QuerySelect)_queryRoot).update(query, errors);
+        QuerySelect select = getQuerySelect();
+		if (null != select)
+			select.update(query, errors);
     }
-
 
 
     static QueryInternalException wrapRuntimeException(RuntimeException ex, String sql)
@@ -624,16 +639,18 @@ public class Query
 
             // merge parameter lists
             mergeParameters(query);
-            
+
+            // move relation to new outer query
             QueryRelation ret = query._queryRoot;
             ret.setQuery(this);
             this.getParseErrors().addAll(query.getParseErrors());
 
+            TableType tableType = null;
             if (query.getTablesDocument() != null && query.getTablesDocument().getTables().getTableArray().length > 0)
-            {
-                TableType tableType = query.getTablesDocument().getTables().getTableArray(0);
+                tableType = query.getTablesDocument().getTables().getTableArray(0);
+
+            if (null != tableType || !(query._queryRoot instanceof QueryLookupWrapper))
                 ret = new QueryLookupWrapper(this, query._queryRoot, tableType);
-            }
 
             ret.setAlias(alias);
             return ret;

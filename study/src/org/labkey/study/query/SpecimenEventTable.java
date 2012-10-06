@@ -76,6 +76,14 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("UpdateTimestamp"));
         addWrapColumn(_rootTable.getColumn("TotalCellCount"));
         addWrapColumn(_rootTable.getColumn("TubeType"));
+        addWrapColumn(_rootTable.getColumn("QualityComments"));
+        addWrapColumn(_rootTable.getColumn("DeviationCode1"));
+        addWrapColumn(_rootTable.getColumn("DeviationCode2"));
+        addWrapColumn(_rootTable.getColumn("DeviationCode3"));
+        addWrapColumn(_rootTable.getColumn("Concentration"));
+        addWrapColumn(_rootTable.getColumn("Integrity"));
+        addWrapColumn(_rootTable.getColumn("Ratio"));
+        addWrapColumn(_rootTable.getColumn("Yield"));
         addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addContainerColumn();
     }

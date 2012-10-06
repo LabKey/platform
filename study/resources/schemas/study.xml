@@ -678,6 +678,33 @@
         <ns:column columnName="TubeType">
           <ns:description>The type of vial.</ns:description>
         </ns:column>
+          <ns:column columnName="LatestComments">
+              <ns:description>Additional comments on processing quality from latest event.</ns:description>
+          </ns:column>
+          <ns:column columnName="LatestQualityComments">
+          <ns:description>Additional comments on processing quality from latest event.</ns:description>
+         </ns:column>
+          <ns:column columnName="LatestDeviationCode1">
+              <ns:description>Site-defined deviation code from latest event.</ns:description>
+          </ns:column>
+          <ns:column columnName="LatestDeviationCode2">
+              <ns:description>Site-defined deviation code from latest event.</ns:description>
+          </ns:column>
+          <ns:column columnName="LatestDeviationCode3">
+              <ns:description>Site-defined deviation code from latest event.</ns:description>
+          </ns:column>
+          <ns:column columnName="LatestConcentration">
+              <ns:description>Processing concentration value from latest event.</ns:description>
+          </ns:column>
+          <ns:column columnName="LatestIntegrity">
+              <ns:description>Processing integrity value from latest event.</ns:description>
+          </ns:column>
+          <ns:column columnName="LatestRatio">
+              <ns:description>Processing ratio value from latest event.</ns:description>
+          </ns:column>
+          <ns:column columnName="LatestYield">
+              <ns:description>Processing yield value from latest event.</ns:description>
+          </ns:column>
       </ns:columns>
     </ns:table>
   <ns:table tableName="Specimen" tableDbType="TABLE">
@@ -938,6 +965,33 @@
       <ns:column columnName="TubeType">
         <ns:description>The type of vial.</ns:description>
       </ns:column>
+        <ns:column columnName="LatestComments">
+            <ns:description>Additional comments on processing quality from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="LatestQualityComments">
+            <ns:description>Additional comments on processing quality from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="LatestDeviationCode1">
+            <ns:description>Site-defined deviation code from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="LatestDeviationCode2">
+            <ns:description>Site-defined deviation code from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="LatestDeviationCode3">
+            <ns:description>Site-defined deviation code from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="LatestConcentration">
+            <ns:description>Processing concentration value from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="LatestIntegrity">
+            <ns:description>Processing integrity value from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="LatestRatio">
+            <ns:description>Processing ratio value from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="LatestYield">
+            <ns:description>Processing yield value from latest event.</ns:description>
+        </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
@@ -1295,6 +1349,30 @@
       <ns:column columnName="TubeType">
         <ns:description>The type of vial.</ns:description>
       </ns:column>
+        <ns:column columnName="QualityComments">
+            <ns:description>Additional comments on processing quality.</ns:description>
+        </ns:column>
+        <ns:column columnName="DeviationCode1">
+            <ns:description>Site-defined deviation code.</ns:description>
+        </ns:column>
+        <ns:column columnName="DeviationCode2">
+            <ns:description>Site-defined deviation code.</ns:description>
+        </ns:column>
+        <ns:column columnName="DeviationCode3">
+            <ns:description>Site-defined deviation code.</ns:description>
+        </ns:column>
+        <ns:column columnName="Concentration">
+            <ns:description>Processing concentration value.</ns:description>
+        </ns:column>
+        <ns:column columnName="Integrity">
+            <ns:description>Processing integrity value.</ns:description>
+        </ns:column>
+        <ns:column columnName="Ratio">
+            <ns:description>Processing ratio value.</ns:description>
+        </ns:column>
+        <ns:column columnName="Yield">
+            <ns:description>Processing yield value.</ns:description>
+        </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">

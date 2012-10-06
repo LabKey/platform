@@ -199,6 +199,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.widthBox = Ext4.create('Ext.form.field.Number', {
             fieldLabel: 'Width',
+            labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             width: 293,
             allowDecimals: false,
@@ -215,6 +216,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.heightBox = Ext4.create('Ext.form.field.Number', {
             fieldLabel: 'Height',
+            labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             width: 293,
             allowDecimals: false,

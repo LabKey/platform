@@ -81,9 +81,15 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                     checked: this.filterType != 'participant'
                 }]
             },{
-                xtype: 'container',
-                itemId: 'filterArea',
-                items: [this.filterType == 'participant' ? this.getParticipantPanelCfg() : this.getGroupPanelCfg()]
+                xtype   : 'panel',
+                border  : false,
+                layout  : {
+                    type : 'card',
+                    deferredRender : true
+                },
+                itemId  : 'filterArea',
+                activeItem : this.filterType == 'participant' ? 0 : 1,
+                items: [this.getParticipantPanelCfg(), this.getGroupPanelCfg()]
             }];
         }
         else if (this.displayMode == 'PARTICIPANT'){
@@ -99,45 +105,53 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
 
     onFilterTypeChange: function(radioGroup, val, oldVal, event){
         var filterArea = this.down('#filterArea');
-        var cfg;
+        var activeItem;
         this.filterType = val.filterType;
 
         if(val.filterType == 'participant'){
-            cfg = this.getParticipantPanelCfg();
+            activeItem = 0;
         }
         else {
-            cfg = this.getGroupPanelCfg();
+            activeItem = 1;
         }
 
-        if(oldVal && oldVal.filterType != val.filterType){
-            if(val.filterType == 'participant'){
-                var selections = this.getSelection(true, true);
-                filterArea.removeAll(true);
-                filterArea.add(cfg);
+        if(oldVal && oldVal.filterType != val.filterType)
+        {
+            var selections = this.getSelection(true, false);
+            filterArea.getLayout().setActiveItem(activeItem);
 
+            if(val.filterType == 'participant')
+            {
                 var groups = [];
                 for (var i=0;i<selections.length;i++){
                     groups.push(selections[i].data);
                 }
-                Ext4.Ajax.request({
-                    url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
-                    method   : 'POST',
-                    jsonData : Ext4.encode({
-                        groups : groups
-                    }),
-                    success  : this.onResolveSubjects,
-                    failure  : LABKEY.Utils.displayAjaxErrorResponse,
-                    scope    : this
-                });
+                if (groups.length > 0)
+                {
+                    Ext4.Ajax.request({
+                        url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
+                        method   : 'POST',
+                        jsonData : Ext4.encode({
+                            groups : groups
+                        }),
+                        success  : this.onResolveSubjects,
+                        failure  : LABKEY.Utils.displayAjaxErrorResponse,
+                        scope    : this
+                    });
+                }
+                else
+                {
+                    this.getFilterPanel().deselectAll(true);
+                    this.setParticipantSelectionDirty(false);
+                }
             }
-            else {
+            else
+            {
                 if (this.participantSelectionChanged)
                 {
                     Ext4.Msg.confirm('Filter Change', 'By changing filter types, your selections will be lost.  Do you want to continue?', function(btn){
                         if(btn == 'yes'){
-                            filterArea.removeAll(true);
-                            filterArea.add(cfg);
-                            this.initSelection();
+                            this.getFilterPanel().deselectAll(true);
                             this.fireEvent('selectionchange');
                         }
                         else {
@@ -145,15 +159,9 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                             rg.suspendEvents();
                             rg.setValue({filterType: 'participant'});
                             rg.resumeEvents();
+                            filterArea.getLayout().setActiveItem(0);
                         }
                     }, this);
-                }
-                else
-                {
-                    filterArea.removeAll(true);
-                    filterArea.add(cfg);
-                    this.initSelection();
-                    this.fireEvent('selectionchange')
                 }
             }
         }
@@ -206,28 +214,44 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 var o = Ext4.decode(response.responseText);
                 var groups = o.groups || [];
 
+                // parse out the group types
+                var categories = {};
+                var categoryName = {};
+                for (var i=0; i < groups.length; i++)
+                {
+                    var row = groups[i];
+                    var key;
+
+                    if (row.type == 'cohort') {
+                        key = row.type;
+                        categoryName[key] = 'Cohorts';
+                    } else {
+                        key = row.categoryId;
+                        if (row.category)
+                            categoryName[key] = row.category.label;
+                    }
+
+                    var groupList = categories[key] || [];
+
+                    groupList.push({
+                        id          : row.id,
+                        categoryId  : row.categoryId,
+                        enrolled    : row.enrolled,
+                        label       : row.label,
+                        description : row.description,
+                        participantIds: row.participantIds,
+                        type        : row.type});
+
+                    categories[key] = groupList;
+                }
+
                 var storeConfig = {
                     pageSize : 100,
-                    model    : 'LABKEY.study.GroupCohort',
-                    autoLoad : true,
-                    proxy    : {
-                        type   : 'ajax',
-                        url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
-                        reader : {
-                            type : 'json',
-                            root : 'groups'
-                        }
-                    }
+                    model    : 'LABKEY.study.GroupCohort'
                 };
 
                 var cohortConfig = Ext4.clone(storeConfig);
-                Ext4.apply(cohortConfig.proxy, {
-                    extraParams : {
-                        type : 'cohort',
-                        includeParticipantIds : this.includeParticipantIds,
-                        includeUnassigned : this.includeUnassigned
-                    }
-                });
+                cohortConfig.data = categories['cohort'];
 
                 var groupSectionCfg = [{
                     normalWrap  : this.normalWrap,
@@ -236,25 +260,23 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                     description : 'Cohorts'
                 }];
 
-                for (var i=0; i < o.groups.length; i++)
-                {
-                    var category = o.groups[i];
-                    var groupConfig = Ext4.clone(storeConfig);
-                    Ext4.apply(groupConfig.proxy, {
-                        extraParams : {
-                            type : 'participantGroup',
-                            categoryId : category.rowId,
-                            includeParticipantIds : this.includeParticipantIds,
-                            includeUnassigned : this.includeUnassigned
-                        }
-                    });
-                    groupSectionCfg.push({
+                for (var type in categories) {
+                    if (categories.hasOwnProperty(type))
+                    {
+                        if (type == 'cohort')
+                            continue;
 
-                        normalWrap  : this.normalWrap,
-                        store       : Ext4.create('Ext.data.Store', groupConfig),
-                        selection   : this.getInitialSelection('participantGroup'),
-                        description : category.label
-                    });
+                        var groupConfig = Ext4.clone(storeConfig);
+                        groupConfig.data = categories[type];
+
+                        groupSectionCfg.push({
+
+                            normalWrap  : this.normalWrap,
+                            store       : Ext4.create('Ext.data.Store', groupConfig),
+                            selection   : this.getInitialSelection('participantGroup'),
+                            description : categoryName[type]
+                        });
+                    }
                 }
 
                 groupPanel.add({
@@ -266,7 +288,11 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                     sections : groupSectionCfg
                 })
             },
-            params : { type : 'participantCategory'},
+            params : {
+                includeParticipantIds   : this.includeParticipantIds,
+                includeUnassigned       : this.includeUnassigned,
+                type                    : ['participantGroup', 'cohort']
+            },
             failure : this.onFailure,
             scope   : this
         });
@@ -301,6 +327,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             panelName: 'participant',
             border   : false, frame : false,
             allowAll : true,
+            hidden   : this.displayMode == 'BOTH',
             sections : this.participantSectionCfg,
             schemaName: 'study',
             //TODO: this should be able to become a more generalized boundColumn-based filter panel
@@ -347,7 +374,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
     },
 
     getFilterPanel : function() {
-        return this.down('#filterPanel');
+        return this.down('#filterPanel[hidden=false]');
     },
 
     getFilterArray: function(){

@@ -493,7 +493,7 @@ public class SpecimenImporter
             new SpecimenColumn("expected_time_unit", "ExpectedTimeUnit", "VARCHAR(15)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("group_protocol", "GroupProtocol", "INT", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("sub_additive_derivative", "SubAdditiveDerivative", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("comments", "Comments", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("comments", "Comments", "VARCHAR(500)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("primary_specimen_type_id", "PrimaryTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenPrimaryType", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("derivative_type_id", "DerivativeTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("derivative_type_id_2", "DerivativeTypeId2", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
@@ -518,8 +518,16 @@ public class SpecimenImporter
             new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("tube_type", "TubeType", "VARCHAR(32)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("total_cell_count", "TotalCellCount", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS)
-    );
+            new SpecimenColumn("total_cell_count", "TotalCellCount", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
+            new SpecimenColumn("deviation_code1", "DeviationCode1", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("deviation_code2", "DeviationCode2", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("deviation_code3", "DeviationCode3", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("quality_comments", "QualityComments", "VARCHAR(500)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("yield", "Yield", "FLOAT", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("concentration", "Concentration", "FLOAT", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("ratio", "Ratio", "FLOAT", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("integrity", "Integrity", "FLOAT", TargetTable.SPECIMEN_EVENTS)
+            );
 
     public static final Collection<ImportableColumn> ADDITIVE_COLUMNS = Arrays.asList(
             new ImportableColumn("additive_id", "ExternalId", "INT NOT NULL", true),
@@ -1046,7 +1054,10 @@ public class SpecimenImporter
         Map<Integer, SiteImpl> siteMap = new HashMap<Integer, SiteImpl>();
         String vialPropertiesSql = "UPDATE " + StudySchema.getInstance().getTableInfoVial() +
                 " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
-                "FirstProcessedByInitials = ?, AtRepository = ? WHERE RowId = ?";
+                "FirstProcessedByInitials = ?, AtRepository = ?, " +
+                "LatestComments = ?, LatestQualityComments = ?, LatestDeviationCode1 = ?, LatestDeviationCode2 = ?, LatestDeviationCode3 = ?, " +
+                "LatestConcentration = CAST(? AS REAL), LatestIntegrity = CAST(? AS REAL), LatestRatio = CAST(? AS REAL), LatestYield = CAST(? AS REAL) " +
+                " WHERE RowId = ?";
         String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
                 " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
         do
@@ -1086,16 +1097,37 @@ public class SpecimenImporter
                         atRepository = site.isRepository() != null && site.isRepository().booleanValue();
                 }
 
+                // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
+                SpecimenEvent lastEvent = SampleManager.getInstance().getLastEvent(dateOrderedEvents);
+
                 if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()) ||
                     !safeIntegerEqual(processingLocation, specimen.getProcessingLocation()) ||
                     !safeObjectEquals(firstProcessedByInitials, specimen.getFirstProcessedByInitials()) ||
-                    atRepository != specimen.isAtRepository())
+                    atRepository != specimen.isAtRepository() ||
+                    !safeObjectEquals(specimen.getLatestComments(), lastEvent.getComments()) ||
+                    !safeObjectEquals(specimen.getLatestQualityComments(), lastEvent.getQualityComments()) ||
+                    !safeObjectEquals(specimen.getLatestDeviationCode1(), lastEvent.getDeviationCode1()) ||
+                    !safeObjectEquals(specimen.getLatestDeviationCode2(), lastEvent.getDeviationCode2()) ||
+                    !safeObjectEquals(specimen.getLatestDeviationCode3(), lastEvent.getDeviationCode3()) ||
+                    !safeObjectEquals(specimen.getLatestConcentration(), lastEvent.getConcentration()) ||
+                    !safeObjectEquals(specimen.getLatestIntegrity(), lastEvent.getIntegrity()) ||
+                    !safeObjectEquals(specimen.getLatestRatio(), lastEvent.getRatio()) ||
+                    !safeObjectEquals(specimen.getLatestYield(), lastEvent.getYield()))
                 {
                     List<Object> params = new ArrayList<Object>();
                     params.add(currentLocation);
                     params.add(processingLocation);
                     params.add(firstProcessedByInitials);
                     params.add(atRepository);
+                    params.add(lastEvent.getComments());
+                    params.add(lastEvent.getQualityComments());
+                    params.add(lastEvent.getDeviationCode1());
+                    params.add(lastEvent.getDeviationCode2());
+                    params.add(lastEvent.getDeviationCode3());
+                    params.add(lastEvent.getConcentration());
+                    params.add(lastEvent.getIntegrity());
+                    params.add(lastEvent.getRatio());
+                    params.add(lastEvent.getYield());
                     params.add(specimen.getRowId());
                     vialPropertiesParams.add(params);
                 }

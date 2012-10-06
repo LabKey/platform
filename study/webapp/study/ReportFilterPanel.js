@@ -344,18 +344,38 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         return this.down('#selectAllToggle');
     },
 
-    deselectAll : function() {
+    deselectAll : function(stopEvents) {
         if(!this.getGrid().getView().viewReady)
-            this.deselectAll.defer(100, this);
+            this.deselectAll.defer(100, this, [stopEvents]);
         else
+        {
+            if (stopEvents)
+                this.suspendEvents();
+
             this.getGrid().getSelectionModel().deselectAll();
+            if (this.allowAll)
+                this.getSelectAllToogle().deselect(-1, true);
+
+            if (stopEvents)
+                this.resumeEvents();
+        }
     },
 
-    selectAll : function() {
+    selectAll : function(stopEvents) {
         if(!this.getGrid().getView().viewReady)
-            this.selectAll.defer(100, this);
+            this.selectAll.defer(100, this, [stopEvents]);
         else
+        {
+            if (stopEvents)
+                this.suspendEvents();
+
             this.getGrid().getSelectionModel().selectAll();
+            if (this.allowAll)
+                this.getSelectAllToogle().select(-1, true);
+
+            if (stopEvents)
+                this.resumeEvents();
+        }
     }
 });
 
@@ -479,7 +499,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
      * @return An array of all filter sections in this panel.  Often this will only be a single panel.
      */
     getFilterPanels: function(){
-        var panels = this.query('labkey-filterselectlist');
+        var panels = this.query('labkey-filterselectlist[hidden=false]');
         var filterPanels = [];
         for (var i=0;i<panels.length;i++){
             if(panels[i].itemId != 'selectAllToggle')
@@ -501,17 +521,17 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
         }
     },
 
-    deselectAll : function() {
+    deselectAll : function(stopEvents) {
         var filterPanels = this.getFilterPanels();
         for (var i=0; i < filterPanels.length; i++) {
-            filterPanels[i].deselectAll();
+            filterPanels[i].deselectAll(stopEvents);
         }
     },
 
-    selectAll : function() {
-        var filterPanels = this.getFilterPanels();
+    selectAll : function(stopEvents) {
+        var filterPanels = this.getFilterPanels(stopEvents);
         for (var i=0; i < filterPanels.length; i++) {
-            filterPanels[i].selectAll();
+            filterPanels[i].selectAll(stopEvents);
         }
     },
 

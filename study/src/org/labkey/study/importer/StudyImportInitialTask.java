@@ -177,6 +177,24 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.getSubjectNounPlural() != null)
                     study.setSubjectNounPlural(studyXml.getSubjectNounPlural());
 
+                if (studyXml.isSetInvestigator())
+                    study.setInvestigator(studyXml.getInvestigator());
+
+                if (studyXml.isSetGrant())
+                    study.setGrant(studyXml.getGrant());
+
+                if (studyXml.isSetDescription())
+                    study.setDescription(studyXml.getDescription());
+                // Issue 15789: Carriage returns in protocol description are not round-tripped
+                else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetDescription())
+                    study.setDescription(studyXml.getStudyDescription().getDescription());
+
+                if (studyXml.isSetDescriptionRendererType())
+                    study.setDescriptionRendererType(studyXml.getDescriptionRendererType());
+                // Issue 15789: Carriage returns in protocol description are not round-tripped
+                else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetRendererType())
+                    study.setDescriptionRendererType(studyXml.getStudyDescription().getRendererType());
+
                 StudyManager.getInstance().updateStudy(ctx.getUser(), study);
             }
 

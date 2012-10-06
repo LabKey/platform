@@ -119,6 +119,16 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         // the old vial comments column
         boolean joinCommentsToSpecimens = true;
         addVialCommentsColumn(joinCommentsToSpecimens);
+
+        addWrapColumn(_rootTable.getColumn("LatestComments"));
+        addWrapColumn(_rootTable.getColumn("LatestQualityComments"));
+        addWrapColumn(_rootTable.getColumn("LatestDeviationCode1"));
+        addWrapColumn(_rootTable.getColumn("LatestDeviationCode2"));
+        addWrapColumn(_rootTable.getColumn("LatestDeviationCode3"));
+        addWrapColumn(_rootTable.getColumn("LatestConcentration"));
+        addWrapColumn(_rootTable.getColumn("LatestIntegrity"));
+        addWrapColumn(_rootTable.getColumn("LatestRatio"));
+        addWrapColumn(_rootTable.getColumn("LatestYield"));
     }
 
     @Override

@@ -378,6 +378,11 @@ public class SampleManager
         return null;
     }
 
+    public SpecimenEvent getLastEvent(List<SpecimenEvent> dateOrderedEvents)
+    {
+        return dateOrderedEvents.get(dateOrderedEvents.size() - 1);
+    }
+
     public Integer getProcessingSiteId(List<SpecimenEvent> dateOrderedEvents) throws SQLException
     {
         SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);

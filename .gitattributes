@@ -2669,6 +2669,7 @@ study/resources/schemas/dbscripts/postgresql/study-12.23-12.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.24-12.25.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.25-12.26.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.26-12.27.sql -text
+study/resources/schemas/dbscripts/postgresql/study-12.27-12.28.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -2856,6 +2857,7 @@ study/resources/schemas/dbscripts/sqlserver/study-12.23-12.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.24-12.25.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.25-12.26.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.26-12.27.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-12.27-12.28.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -3682,6 +3684,8 @@ visualization/src/org/labkey/visualization/VisualizationModule.java -text
 visualization/src/org/labkey/visualization/report/GenericChartReportImpl.java -text
 visualization/src/org/labkey/visualization/report/TimeChartReportImpl.java -text
 visualization/src/org/labkey/visualization/report/VisualizationUIProvider.java -text
+visualization/src/org/labkey/visualization/report/box_plot.png -text
+visualization/src/org/labkey/visualization/report/scatter_plot.png -text
 visualization/src/org/labkey/visualization/report/timechart.png -text
 visualization/src/org/labkey/visualization/sql/IVisualizationSourceQuery.java -text
 visualization/src/org/labkey/visualization/sql/OuterJoinSourceQuery.java -text

@@ -75,6 +75,14 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     private String _primaryVolumeUnits;
     private String _processedByInitials;
     private Date _processingDate;
+    private String _deviationCode1;
+    private String _deviationCode2;
+    private String _deviationCode3;
+    private String _qualityComments;
+    private Float _yield;
+    private Float _concentration;
+    private Float _ratio;
+    private Float _integrity;
 
     public String getComments()
     {
@@ -588,5 +596,93 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     public void setProcessingDate(Date processingDate)
     {
         _processingDate = processingDate;
+    }
+
+    public String getDeviationCode1()
+    {
+        return _deviationCode1;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setDeviationCode1(String deviationCode1)
+    {
+        _deviationCode1 = deviationCode1;
+    }
+
+    public String getDeviationCode2()
+    {
+        return _deviationCode2;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setDeviationCode2(String deviationCode2)
+    {
+        _deviationCode2 = deviationCode2;
+    }
+
+    public String getDeviationCode3()
+    {
+        return _deviationCode3;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setDeviationCode3(String deviationCode3)
+    {
+        _deviationCode3 = deviationCode3;
+    }
+
+    public String getQualityComments()
+    {
+        return _qualityComments;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setQualityComments(String qualityComments)
+    {
+        _qualityComments = qualityComments;
+    }
+
+    public Float getYield()
+    {
+        return _yield;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setYield(Float yield)
+    {
+        _yield = yield;
+    }
+
+    public Float getConcentration()
+    {
+        return _concentration;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setConcentration(Float concentration)
+    {
+        _concentration = concentration;
+    }
+
+    public Float getRatio()
+    {
+        return _ratio;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setRatio(Float ratio)
+    {
+        _ratio = ratio;
+    }
+
+    public Float getIntegrity()
+    {
+        return _integrity;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setIntegrity(Float integrity)
+    {
+        _integrity = integrity;
     }
 }

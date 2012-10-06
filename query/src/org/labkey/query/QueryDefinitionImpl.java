@@ -360,7 +360,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         Query query = getQuery(getSchema());
         Set<FieldKey> tables = query.getFromTables();
-        if (tables.size() != 1)
+        if (null==tables || tables.size() != 1)
             return null;
         return query.getFromTable(tables.iterator().next());
     }

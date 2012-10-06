@@ -26,10 +26,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.visualization.VisualizationUrls;
-import org.labkey.visualization.VisualizationModule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -112,8 +110,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
             return contextPath + "/visualization/report/timechart.gif";
         if (GenericChartReport.TYPE.equals(type))
         {
-            String id = report.getDescriptor().getProperty(GenericChartReportDescriptor.Prop.renderType);
-            GenericChartReport.RenderType renderType = GenericChartReport.getRenderType(id);
+            GenericChartReport.RenderType renderType = ((GenericChartReport)report).getRenderType();
 
             if (renderType != null)
                 return renderType.getIconPath();

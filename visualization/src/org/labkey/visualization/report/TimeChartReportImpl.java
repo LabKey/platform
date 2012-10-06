@@ -15,19 +15,16 @@
  */
 package org.labkey.visualization.report;
 
-import org.apache.batik.transcoder.TranscoderException;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.DocumentConversionService;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.thumbnail.ThumbnailOutputStream;
-import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.ThumbnailUtil;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.visualization.VisualizationController;
 
@@ -37,7 +34,7 @@ import java.io.InputStream;
  * User: brittp
  * Date: Feb 7, 2011 11:23:05 AM
  */
-public class TimeChartReportImpl extends TimeChartReport implements DynamicThumbnailProvider
+public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnailGenerator
 {
     private String _svg = null;
 
@@ -72,27 +69,15 @@ public class TimeChartReportImpl extends TimeChartReport implements DynamicThumb
     {
         // SVG is provided by the client code at save time and then stashed in the report by the save action. That's
         // the only way thumbnails can be generated from these reports.
-        if (null != _svg)
+        try
         {
-            try
-            {
-                DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
-
-                if (null != svc)
-                {
-                    ThumbnailOutputStream os = new ThumbnailOutputStream();
-                    svc.svgToPng(_svg, os, ImageUtil.THUMBNAIL_HEIGHT);
-
-                    return os.getThumbnail("image/png");
-                }
-            }
-            catch (TranscoderException e)
-            {
-                throw new RuntimeException(e);
-            }
+            _svg = VisualizationController.filterSVGSource(_svg);
+            return ThumbnailUtil.getThumbnailFromSvg(_svg);
         }
-
-        return null;
+        catch (NotFoundException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

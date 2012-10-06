@@ -288,6 +288,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         AuditQuerySchema schema = new AuditQuerySchema(context.getUser(), context.getContainer());
         QuerySettings settings = schema.getSettings(context, AuditQuerySchema.AUDIT_TABLE_NAME, viewFactoryName);
+        settings.setBaseFilter(filter);
+
         // if the user is an admin, they should see everything, else default to current folder
         if (context.getUser().isAdministrator())
             settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());

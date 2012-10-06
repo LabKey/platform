@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasManager;
@@ -52,12 +53,14 @@ public class QueryLookupWrapper extends QueryRelation
     Map<FieldKey, RelationColumn> _selectedColumns = new HashMap<FieldKey, RelationColumn>();
 
 
-    QueryLookupWrapper(Query query, QueryRelation relation, TableType md)
+    QueryLookupWrapper(Query query, QueryRelation relation, @Nullable TableType md)
     {
         super(query);
         _aliasManager = new AliasManager(query.getSchema().getDbSchema());
         _alias = relation.getAlias();
         _source = relation;
+        _inFromClause = relation._inFromClause;
+        relation._parent = this;
 
         org.labkey.data.xml.TableType.Columns cols = null==md ? null : md.getColumns();
         if (null != cols)

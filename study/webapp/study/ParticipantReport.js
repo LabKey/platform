@@ -825,8 +825,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 config.rowBreakInfo.push({name: this.response.measureToColumn[this.subjectVisitColumn + '/Visit/Label'], rowspans : true});
             }
 
-            if (this.response.measureToColumn[this.subjectVisitColumn + '/VisitDate'])
+            if (this.response.measureToColumn[this.subjectVisitColumn + '/VisitDate']) {
                 config.gridFields.push(this.response.measureToColumn[this.subjectVisitColumn + '/VisitDate']);
+                config.rowBreakInfo.push({name: this.response.measureToColumn[this.subjectVisitColumn + '/VisitDate'], rowspans : true});
+            }
 
             for (i=0; i < this.gridFieldStore.getCount(); i++) {
 

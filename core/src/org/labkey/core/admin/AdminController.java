@@ -241,8 +241,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderManagementAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root));
-        if (AppProps.getInstance().isDevMode())
-            AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root));
 
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));

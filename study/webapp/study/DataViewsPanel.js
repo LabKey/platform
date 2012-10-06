@@ -525,9 +525,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var nameTpl =
                 '<div height="16px" width="100%">' +
                     '<tpl if="icon != undefined && icon != \'\'">' +
-                        '<img height="16px" width="16px" src="{icon}" alt="{type}" style="vertical-align: bottom;">' +
+                        '<div style="float: left;">' +
+                        '<img height="16px" width="16px" src="{icon}" alt="{type}" style="vertical-align: bottom; margin-right: 5px;">' +
+                        '</div>' +
                     '</tpl>' +
+                    '<div style="padding-left: 20px; white-space:normal !important;">' +
                     '<a href="{runUrl}" {[ values.runTarget ? "target=\'" + values.runTarget + "\'" : "" ]} > {name:htmlEncode}</a>' +
+                    '</div>' +
                 '</div>';
 
         var _columns = [];
@@ -555,6 +559,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             flex     : 1,
             sortable : true,
             dataIndex: 'name',
+            minWidth : 200,
             tdCls    : 'x4-name-column-cell',
             tpl      :  nameTpl,
             scope    : this
@@ -573,7 +578,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             _columns.push({
                 xtype    : 'templatecolumn',
                 text     : 'Type',
-                width    : 105,
+                width    : 75,
                 sortable : true,
                 dataIndex: 'type',
                 tdCls    : 'type-column',
@@ -587,7 +592,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             _columns.push({
                 xtype    : 'templatecolumn',
                 text     : 'Details',
-                width    : 70,
+                width    : 60,
                 sortable : true,
                 dataIndex: 'detailsUrl',
                 tdCls    : 'type-column',
@@ -625,7 +630,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             _columns.push({
                 xtype    : 'templatecolumn',
                 text     : 'Status',
-                width    : 75,
+                width    : 60,
                 sortable : true,
                 tdCls    : 'type-column',
                 dataIndex: 'status',
@@ -648,7 +653,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         {
             _columns.push({
                 text     : 'Author',
-                width    : 150,
+                width    : 100,
                 sortable : false,
                 dataIndex: 'authorDisplayName',
                 scope    : this

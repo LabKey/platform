@@ -60,6 +60,15 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private Boolean _requestable;
     private String _firstProcessedByInitials;
     private String _availabilityReason;
+    private String _latestDeviationCode1;
+    private String _latestDeviationCode2;
+    private String _latestDeviationCode3;
+    private String _latestComments;
+    private String _latestQualityComments;
+    private Float _latestYield;
+    private Float _latestConcentration;
+    private Float _latestRatio;
+    private Float _latestIntegrity;
 
     public Integer getAdditiveTypeId()
     {
@@ -409,5 +418,104 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     public void setAvailabilityReason(String availabilityReason)
     {
         _availabilityReason = availabilityReason;
+    }
+
+    public String getLatestDeviationCode1()
+    {
+        return _latestDeviationCode1;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLatestDeviationCode1(String latestDeviationCode1)
+    {
+        _latestDeviationCode1 = latestDeviationCode1;
+    }
+
+    public String getLatestDeviationCode2()
+    {
+        return _latestDeviationCode2;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLatestDeviationCode2(String latestDeviationCode2)
+    {
+        _latestDeviationCode2 = latestDeviationCode2;
+    }
+
+    public String getLatestDeviationCode3()
+    {
+        return _latestDeviationCode3;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLatestDeviationCode3(String latestDeviationCode3)
+    {
+        _latestDeviationCode3 = latestDeviationCode3;
+    }
+
+    public String getLatestComments()
+    {
+        return _latestComments;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLatestComments(String comments)
+    {
+        _latestComments = comments;
+    }
+
+    public String getLatestQualityComments()
+    {
+        return _latestQualityComments;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLatestQualityComments(String latestQualityComments)
+    {
+        _latestQualityComments = latestQualityComments;
+    }
+
+    public Float getLatestYield()
+    {
+        return _latestYield;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLatestYield(Float latestYield)
+    {
+        _latestYield = latestYield;
+    }
+
+    public Float getLatestConcentration()
+    {
+        return _latestConcentration;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLatestConcentration(Float latestConcentration)
+    {
+        _latestConcentration = latestConcentration;
+    }
+
+    public Float getLatestRatio()
+    {
+        return _latestRatio;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLatestRatio(Float latestRatio)
+    {
+        _latestRatio = latestRatio;
+    }
+
+    public Float getLatestIntegrity()
+    {
+        return _latestIntegrity;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLatestIntegrity(Float latestIntegrity)
+    {
+        _latestIntegrity = latestIntegrity;
     }
 }
