@@ -25,6 +25,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class DetailsColumn extends UrlColumn
@@ -56,7 +57,10 @@ public class DetailsColumn extends UrlColumn
         {
             return false;
         }
-        return tinfo == null || getURLExpression().canRender(ctx.getFieldMap().keySet());
+        Map<FieldKey, ColumnInfo> fieldMap = ctx.getFieldMap();
+        if (fieldMap == null)
+            return false;
+        return tinfo == null || getURLExpression().canRender(fieldMap.keySet());
     }
 }
 

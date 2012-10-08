@@ -240,8 +240,9 @@ public class SimpleUserSchema extends UserSchema
                     //get the column name in the target FK table that it would have joined against.
                     ForeignKey fk = col.getFk();
                     String pkColName = fk.getLookupColumnName();
-                    if (null == pkColName && col.getFkTableInfo().getPkColumnNames().size() == 1)
-                        pkColName = col.getFkTableInfo().getPkColumnNames().get(0);
+                    TableInfo fkTable = col.getFkTableInfo();
+                    if (null == pkColName && fkTable != null && fkTable.getPkColumnNames().size() == 1)
+                        pkColName = fkTable.getPkColumnNames().get(0);
 
                     if (null != pkColName)
                     {
