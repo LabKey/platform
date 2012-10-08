@@ -12,9 +12,10 @@ Ext4.onReady(function(){
     }
 
     var queryName = LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName');
-    var queryName = LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName');
     var panelCfg = {
         xtype: 'labkey-detailspanel',
+        showTitle: false,
+        border: false,
         renderTo: webpart.wrapperDivId,
         store: {
             schemaName: LABKEY.ActionURL.getParameter('schemaName'),
