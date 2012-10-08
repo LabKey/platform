@@ -182,6 +182,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         this.parentTable = parentTable;
     }
     
+    public ColumnInfo(FieldKey key, TableInfo parentTable, JdbcType type)
+    {
+        this.fieldKey = key;
+        this.parentTable = parentTable;
+        this.setJdbcType(type);
+    }
 
     public ColumnInfo(ColumnInfo from)
     {
