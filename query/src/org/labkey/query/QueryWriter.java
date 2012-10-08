@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
@@ -84,7 +85,8 @@ public class QueryWriter extends BaseFolderWriter
 
                 if (null != query.getMetadataXml())
                 {
-                    XmlObject xObj = XmlObject.Factory.parse(query.getMetadataXml());
+                    XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+                    XmlObject xObj = XmlObject.Factory.parse(query.getMetadataXml(), options);
 
                     try
                     {
