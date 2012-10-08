@@ -68,6 +68,8 @@ public class StandardDialectStringHandler implements DialectStringHandler
      * Substitute the parameter values into the SQL statement.
      * Iterates through the SQL string
      */
+
+    // TODO: Ignore question marks inside comments... these currently cause the code below to blow up
     public String substituteParameters(SQLFragment frag)
     {
         CharSequence sql = frag.getSqlCharSequence();

@@ -94,7 +94,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
         {
             conn = getConnection();
 
-            if (tweakJdbcParameters && Table.isSelect(sql.toString()) && !scope.isTransactionActive())
+            if (tweakJdbcParameters && Table.isSelect(sql.getSQL()) && !scope.isTransactionActive())
             {
                 // Only fiddle with the Connection settings if we're not inside of a transaction so we won't mess
                 // up any state the caller is relying on. Also, only do this when we're fairly certain that it's
