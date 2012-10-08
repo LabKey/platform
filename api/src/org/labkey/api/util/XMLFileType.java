@@ -56,7 +56,7 @@ public class XMLFileType extends FileType
     public boolean isHeaderMatch(@NotNull byte[] header)
     {
         ByteArrayInputStream bais = null;
-        XMLInputFactory factory = XMLInputFactory.newFactory();
+        XMLInputFactory factory = XMLInputFactory.newInstance();
         XMLStreamReader reader = null;
         try
         {
