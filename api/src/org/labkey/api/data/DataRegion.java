@@ -53,7 +53,19 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.text.Format;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 // TODO: it seems to me that data region and its views (ParameterView) don't belong in this package (matt)
 
@@ -1194,7 +1206,7 @@ public class DataRegion extends AbstractDataRegion
 
         if (this.getAllowHeaderLock())
         {
-            out.write("\n<tr class=\"dataregion_column_header_row_spacer\" style=\"display: none; text-colo\" id=\"" + PageFlowUtil.filter("dataregion_column_header_row_spacer_" + getName()) +"\">");
+            out.write("\n<tr class=\"dataregion_column_header_row_spacer\" style=\"display: none;\" id=\"" + PageFlowUtil.filter("dataregion_column_header_row_spacer_" + getName()) +"\">");
 
             if (showRecordSelectors)
             {

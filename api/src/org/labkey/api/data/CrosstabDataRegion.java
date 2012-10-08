@@ -66,10 +66,6 @@ public class CrosstabDataRegion extends DataRegion
             //add an extra row for the column dimension members
             out.write("<tr>\n");
 
-            //if record selectors are enabled, add a blank column
-            if (showRecordSelectors)
-                out.write("<td></td>\n");
-
             List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
 
             // Output a group header for each column's crosstab member.
