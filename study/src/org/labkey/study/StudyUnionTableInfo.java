@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -215,11 +216,9 @@ public class StudyUnionTableInfo extends VirtualTable
             safeAddColumn(ci);
         }
 
-        ColumnInfo datasetColumn = new ColumnInfo("dataset", this);
-        datasetColumn.setSqlTypeName("VARCHAR");
+        ColumnInfo datasetColumn = new ColumnInfo(new FieldKey(null,"dataset"), this, JdbcType.VARCHAR);
         addColumn(datasetColumn);
-        ColumnInfo datasetIdColumn = new ColumnInfo("datasetid", this);
-        datasetColumn.setSqlTypeName("INT");
+        ColumnInfo datasetIdColumn = new ColumnInfo(new FieldKey(null, "datasetid"), this, JdbcType.INTEGER);
         addColumn(datasetIdColumn);
     }
 
