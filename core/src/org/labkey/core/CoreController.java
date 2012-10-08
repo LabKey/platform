@@ -995,18 +995,29 @@ public class CoreController extends SpringActionController
     @RequiresPermissionClass(DeletePermission.class)
     public class DeleteContainerAction extends ApiAction<SimpleApiJsonForm>
     {
+        private Container target;
+
+        @Override
+        public void validateForm(SimpleApiJsonForm form, Errors errors)
+        {
+            target = getContainer();
+
+            if (!ContainerManager.isDeletable(target))
+                errors.reject(ERROR_MSG, "The path " + target.getPath() + " is not deletable.");
+        }
+
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            if (!getContainer().isWorkbook())
+            if (!target.isWorkbook())
             {
-                if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+                if (!target.hasPermission(getUser(), AdminPermission.class))
                 {
                     throw new UnauthorizedException("You must have admin permissions to delete subfolders");
                 }
             }
 
-            ContainerManager.deleteAll(getContainer(), getUser());
+            ContainerManager.deleteAll(target, getUser());
 
             return new ApiSimpleResponse();
         }
@@ -1052,6 +1063,7 @@ public class CoreController extends SpringActionController
                 }
             }
 
+            // This covers /home and /shared
             if (target.isProject() || target.isRoot())
             {
                 errors.reject(ERROR_MSG, "Cannot move project/root Containers.");

@@ -597,14 +597,26 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
         var tool = this.getDockedItems('toolbar');
         if (this.dockedDefaults && tool && tool[0]) {
             if (nodes.length == 1)
+            {
+                // check to disable 'move'
                 tool[0].getComponent('move').setDisabled(nodes[0].data.isProject);
 
-            var isDisabled = (nodes.length > 1);
-            tool[0].getComponent('alias').setDisabled(isDisabled);
-            tool[0].getComponent('reorder').setDisabled(isDisabled);
-            tool[0].getComponent('create').setDisabled(isDisabled);
-            tool[0].getComponent('remove').setDisabled(isDisabled);
-            tool[0].getComponent('rename').setDisabled(isDisabled);
+                // check to disable 'delete'
+                var lowerPath = nodes[0].data.containerPath.toLowerCase();
+                tool[0].getComponent('remove').setDisabled(lowerPath == '/home' || lowerPath == '/shared' || lowerPath == '/');
+
+                // check to disable 'rename'
+                tool[0].getComponent('rename').setDisabled(lowerPath == '/home' || lowerPath == '/shared' || lowerPath == '/');
+            }
+
+            if (nodes.length > 1)
+            {
+                var nonMultiActions = ['alias', 'reorder', 'create', 'remove', 'rename'];
+                for (var i=0; i < nonMultiActions.length; i++)
+                {
+                    tool[0].getComponent(nonMultiActions[i]).setDisabled(true);
+                }
+            }
         }
     },
 

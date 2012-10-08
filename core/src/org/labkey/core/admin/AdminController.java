@@ -2754,25 +2754,9 @@ public class AdminController extends SpringActionController
         }
     }
 
-
-    // TODO: Check permissions, what if guests have read perm?, different containers?
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SetShowFoldersAction extends SimpleRedirectAction<UserPrefsForm>
-    {
-        public ActionURL getRedirectURL(UserPrefsForm form) throws Exception
-        {
-            PreferenceService.get().setProperty("showFolders", Boolean.toString(form.isShowFolders()), getUser());
-            if (null != form.getReturnActionURL())
-                return form.getReturnActionURL();
-            return new ActionURL();
-        }
-    }
-
-
     public static class UserPrefsForm extends ReturnUrlForm
     {
         private boolean adminMode;
-        private boolean showFolders;
 
         public boolean isAdminMode()
         {
@@ -2782,16 +2766,6 @@ public class AdminController extends SpringActionController
         public void setAdminMode(boolean adminMode)
         {
             this.adminMode = adminMode;
-        }
-
-        public boolean isShowFolders()
-        {
-            return showFolders;
-        }
-
-        public void setShowFolders(boolean showFolders)
-        {
-            this.showFolders = showFolders;
         }
     }
 
@@ -4353,8 +4327,14 @@ public class AdminController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
     {
-        public void validateCommand(ManageFoldersForm target, Errors errors)
+        private Container target;
+
+        public void validateCommand(ManageFoldersForm form, Errors errors)
         {
+            target = getContainer();
+
+            if (!ContainerManager.isDeletable(target))
+                errors.reject(ERROR_MSG, "The path " + target.getPath() + " is not deletable.");
         }
 
         public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
