@@ -1,6 +1,11 @@
 package org.labkey.api.laboratory;
 
+import org.json.JSONObject;
+import org.labkey.api.data.Container;
+import org.labkey.api.module.Module;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.List;
@@ -24,31 +29,43 @@ public interface DataProvider
      * Return the URL holding instructions / help information
      * @return
      */
-    public ActionURL getInstructionsUrl();
+    public ActionURL getInstructionsUrl(Container c, User u);
 
     /**
      * Return the list of NavItems that will appear in the list of data types
      * @return
      */
-    public List<NavItem> getDataNavItems();
+    public List<NavItem> getDataNavItems(Container c, User u);
+
+    /**
+     * Return the list of NavItems that will appear in the list of samples
+     * @return
+     */
+    public List<NavItem> getSampleNavItems(Container c, User u);
 
     /**
      * Return the list SettingsItems that will appear in the UI
      * @return
      */
-    public List<SettingsItem> getSettingsItems();
+    public List<NavItem> getSettingsItems(Container c, User u);
 
 //    /**
 //     * Return the list of ReportItems that will appear in the list of reports
 //     * @return
 //     */
-//    public List<ReportItem> getReportItems();
+//    public List<ReportItem> getReportItems(Container c, User u);
 
     /**
      * Return true if this import pathway can be used with assay templates, which allows runs to be prepared ahead of importing results
      * @return
      */
     public boolean supportsTemplates();
+
+    /**
+     * A metadata config object that will be applied to the fields on the run template page
+     * @return
+     */
+    public JSONObject getTemplateMetadata(ViewContext ctx);
 
 //    /**
 //     * If supported, this is the action use to proactively import sample information or create exports
@@ -57,14 +74,13 @@ public interface DataProvider
 //     */
 //    public ActionURL getPrepareExptUrl(Container c, User u, ExpProtocol protocol);
 
-//    /**
-//     * If this assay supports proactive run import, this metadata object will be passed to the import UI
-//     * @return
-//     */
-//    public JSONObject getPrepareExptMetadata();
-
     /**
      * @return Optional.  Returns a set of ClientDependencies that will be loaded on the request page for this assay
      */
     public Set<ClientDependency> getClientDependencies();
+
+    /**
+     * @return The module which provides this DataProvider
+     */
+    public Module getOwningModule();
 }

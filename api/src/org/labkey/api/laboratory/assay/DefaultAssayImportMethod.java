@@ -15,14 +15,20 @@
  */
 package org.labkey.api.laboratory.assay;
 
+import org.apache.poi.ss.usermodel.Workbook;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -129,38 +135,6 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return _ap;
     }
 
-    public JSONObject getTemplateMetadata(ViewContext ctx, ExpProtocol protocol)
-    {
-        JSONObject meta = new JSONObject();
-
-        JSONObject runMeta = new JSONObject();
-        runMeta.put("Name", new JSONObject().put("hidden", true));
-        runMeta.put("runDate", new JSONObject().put("hidden", true));
-        runMeta.put("comments", new JSONObject().put("hidden", true));
-        runMeta.put("performedBy", new JSONObject().put("hidden", true));
-        meta.put("Run", runMeta);
-
-        JSONObject resultsMeta = new JSONObject();
-        resultsMeta.put("sampleId", new JSONObject().put("lookups", false));
-        resultsMeta.put("subjectId", new JSONObject().put("lookups", false));
-
-//        UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), AssaySchema.NAME);
-//        TableInfo table = schema.getTable(protocol.getName() + " Data");
-//        for (ColumnInfo ci : table.getColumns())
-//        {
-//            if (LaboratoryService.ASSAYRESULT_CONCEPT_URI.equals(ci.getConceptURI()))
-//            {
-//                JSONObject json = getJsonObject(resultsMeta, ci.getColumnName());
-//                json.put("hidden", true);
-//                resultsMeta.put(ci.getColumnName(), json);
-//            }
-//        }
-
-        meta.put("Results", resultsMeta);
-
-        return meta;
-    }
-
     protected JSONObject getJsonObject(JSONObject parent, String key)
     {
         return parent.containsKey(key) ? parent.getJSONObject(key): new JSONObject();
@@ -192,8 +166,29 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         json.put("templateInstructions", getTemplateInstructions());
         json.put("previewPanelClass", getPreviewPanelClass());
         json.put("metadata", getMetadata(ctx, protocol));
-        json.put("templateMetadata", getTemplateMetadata(ctx, protocol));
 
         return json;
+    }
+
+    public void generateTemplate(JSONObject json, HttpServletResponse response)
+    {
+        try
+        {
+            String filename = json.optString("fileName");
+            JSONArray sheetsArray = new JSONArray();
+
+            ExcelWriter.ExcelDocumentType docType = filename.toLowerCase().endsWith(".xlsx") ? ExcelWriter.ExcelDocumentType.xlsx : ExcelWriter.ExcelDocumentType.xls;
+            Workbook workbook =  ExcelFactory.createFromArray(sheetsArray, docType);
+
+            response.setContentType(docType.getMimeType());
+            response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
+            response.setHeader("Pragma", "private");
+            response.setHeader("Cache-Control", "private");
+            workbook.write(response.getOutputStream());
+        }
+        catch (IOException e)
+        {
+
+        }
     }
 }

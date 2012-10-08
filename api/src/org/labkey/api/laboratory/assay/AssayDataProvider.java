@@ -1,6 +1,8 @@
 package org.labkey.api.laboratory.assay;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.laboratory.DataProvider;
+import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 
 import java.util.Collection;
@@ -28,4 +30,10 @@ public interface AssayDataProvider extends DataProvider
      * @return
      */
     abstract public Collection<AssayImportMethod> getImportMethods();
+
+    abstract public AssayImportMethod getImportMethodByName(String methodName);
+
+    abstract public String getDefaultImportMethodName(Container c, User u, int protocolId);
+
+    abstract public boolean isModuleEnabled(Container c);
 }

@@ -2,8 +2,11 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,6 +23,9 @@ abstract public class AbstractNavItem implements NavItem
         ret.put("label", getLabel());
         ret.put("category", getCategory());
         ret.put("importIntoWorkbooks", isImportIntoWorkbooks());
+        ret.put("rendererName", getRendererName());
+        ret.put("visible", isVisible(c, u));
+        ret.put("key", getPropertyManagerKey());
 
         ret.put("importUrl", getUrlObject(getImportUrl(c, u)));
         ret.put("searchUrl", getUrlObject(getSearchUrl(c, u)));
@@ -42,8 +48,29 @@ abstract public class AbstractNavItem implements NavItem
         return json;
     }
 
-    protected String getKey()
+    public boolean isVisible(Container c, User u)
     {
-        return this.getClass().getName() + "|" + getName();
+        if (getDataProvider() != null && getDataProvider().getOwningModule() != null)
+        {
+            if (!c.getActiveModules().contains(getDataProvider().getOwningModule()))
+                return false;
+        }
+
+        Map<String, String> map = PropertyManager.getProperties(c, NavItem.PROPERTY_CATEGORY);
+        if (map.containsKey(getPropertyManagerKey()))
+            return Boolean.parseBoolean(map.get(getPropertyManagerKey()));
+
+        return getDefaultVisibility(c, u);
+    }
+
+    public String getPropertyManagerKey()
+    {
+        return getDataProvider().getName() + "||" + getCategory() + "||" + getName();
+    }
+
+    public static String inferDataProviderNameFromKey(String key)
+    {
+        String[] tokens = key.split("\\|\\|");
+        return tokens[0];
     }
 }

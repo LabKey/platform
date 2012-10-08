@@ -23,7 +23,12 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.util.ExtUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -72,6 +77,7 @@ public class JsonWriter
         props.put("type", useFriendlyAsType ? friendlyTypeName : dc.getJsonTypeName());
         props.put("jsonType", dc.getJsonTypeName());
         props.put("sqlType", cinfo == null ? null : cinfo.getSqlTypeName());
+        props.put("defaultValue", cinfo == null ? null : cinfo.getDefaultValue());
 
         if (includeDomainFormat)
         {

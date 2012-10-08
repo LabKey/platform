@@ -15,7 +15,6 @@
  */
 package org.labkey.api.laboratory;
 
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
@@ -23,9 +22,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.laboratory.assay.AssayDataProvider;
-import org.labkey.api.laboratory.assay.AssayImportMethod;
 import org.labkey.api.laboratory.assay.AssayParser;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
@@ -59,33 +56,25 @@ abstract public class LaboratoryService
         LaboratoryService.instance = instance;
     }
 
-    abstract public void registerModule(Module module);
+    abstract public void registerDataProvider(DataProvider dp);
 
-    abstract public Set<Module> getRegisteredModules();
+    abstract public Set<DataProvider> getDataProviders();
 
-    abstract public Set<AssayDataProvider> getRegisteredAssays();
+    abstract public Set<AssayDataProvider> getRegisteredAssayProviders();
 
-    abstract public AssayDataProvider getAssayDescriptorForPrototol(int protocolId);
+    abstract public AssayDataProvider getDataProviderForAssay(int protocolId);
 
-    abstract public void registerAssay(AssayDataProvider assay);
-
-    abstract public void registerAssayImportMethods(String providerName, AssayImportMethod... methodList);
-
-    abstract public List<AssayImportMethod> getImportMethods(AssayProvider ap);
-
-    abstract public AssayImportMethod getImportMethodByName(String assayName, String methodName);
+    abstract public AssayDataProvider getDataProviderForAssay(AssayProvider ap);
 
     abstract public Pair<ExpExperiment, ExpRun> saveAssayBatch(AssayParser parser, JSONObject json, File file, String fileName, ViewContext ctx) throws ValidationException, ExperimentException;
 
-    abstract public AssayImportMethod getManualEntryImportMethod(AssayProvider ap);
-
     abstract public TableCustomizer getDefaultTableCustomizer();
 
-    abstract public void registerNavItems(NavItem... items);
+    abstract public List<NavItem> getSettingsItems(Container c, User u);
 
-    abstract public List<NavItem>  getNavItems(@Nullable String category);
+    abstract public List<NavItem> getSampleItems(Container c, User u);
 
-    abstract public Set<SettingsItem> getSettingsItems(Container c, User u);
+    abstract public DataProvider getDataProvider(String name);
 
-    abstract public void registerSettingItems(SettingsItem... items);
+    abstract public List<NavItem> getDataItems(Container c, User u);
 }

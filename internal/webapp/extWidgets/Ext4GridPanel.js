@@ -67,7 +67,9 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         editable: true,
         pageSize: 200,
         autoSave: false,
-        multiSelect: true
+        multiSelect: true,
+        clicksToEdit: 2,
+        editingPluginId: 'editingplugin'
     },
     initComponent: function(){
         this.initStore();
@@ -169,14 +171,16 @@ Ext4.define('LABKEY.ext4.GridPanel', {
     //separated to allow subclasses to override
     ,configurePlugins: function(){
         this.plugins = this.plugins || [];
+
         if(this.editable)
-            this.plugins.push(Ext4.create('Ext.grid.plugin.CellEditing', {pluginId: 'cellediting', clicksToEdit: 2}));
-//
-//        if(!this.selModel){
-//            this.selModel = {
-//                xtype: 'rowmodel'
-//            }
-//        }
+            this.plugins.push(this.getEditingPlugin());
+    }
+
+    ,getEditingPlugin: function(){
+        return Ext4.create('Ext.grid.plugin.CellEditing', {
+            pluginId: this.editingPluginId,
+            clicksToEdit: this.clicksToEdit
+        });
     }
 
     ,setupColumnModel : function() {

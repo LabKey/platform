@@ -444,7 +444,6 @@ LABKEY.ext.Ext4Helper = new function(){
             col.hidden = meta.hidden;
             col.format = meta.extFormat;
 
-
             //this.updatable can override col.editable
             col.editable = config.editable && col.editable && meta.userEditable;
 
@@ -480,7 +479,7 @@ LABKEY.ext.Ext4Helper = new function(){
                 var displayValue = value;
                 var cellStyles = [];
 
-                if(null === value || undefined === value || value.toString().length == 0)
+                if(Ext4.isEmpty(value))
                     return value;
 
                 //format value into a string
@@ -515,13 +514,7 @@ LABKEY.ext.Ext4Helper = new function(){
                     }
                 }
 
-    //            //TODO: consider supporting other attributes like style, class, align, etc.
-    //            //possibly allow a cellStyles object?
-    //            Ext4.each(['style', 'className', 'align', 'rowspan', 'width'], function(attr){
-    //
-    //            }, this);
-
-                if(meta.wordWrap){
+                if(meta.wordWrap && !col.hidden){
                     cellStyles.push('white-space:normal !important');
                 }
 
@@ -529,8 +522,8 @@ LABKEY.ext.Ext4Helper = new function(){
                     cellMetaData.css += ' x-grid3-cell-invalid';
 
                 if(cellStyles.length){
-                    cellMetaData.tdAttr = cellMetaData.tdAttr || '';
-                    cellMetaData.tdAttr += ' style="'+(cellStyles.join(';'))+'"';
+                    cellMetaData.style = cellMetaData.style || '';
+                    cellMetaData.style += (cellStyles.join(';'));
                 }
 
                 LABKEY.ext.Ext4Helper.buildQtip({
@@ -549,7 +542,7 @@ LABKEY.ext.Ext4Helper = new function(){
 
         //private
         getDisplayString: function(value, meta, record, store){
-            var displayType = Ext4.isObject(meta.type) ? meta.type.type : meta.type;
+            var displayType = meta.displayFieldJsonType || meta.jsonType
             var displayValue = value;
             var shouldCache;
 
@@ -582,7 +575,6 @@ LABKEY.ext.Ext4Helper = new function(){
             else {
                 if(!Ext4.isDefined(displayValue))
                     displayValue = '';
-
                 switch (displayType){
                     case "date":
                         var date = new Date(displayValue);
@@ -911,6 +903,17 @@ LABKEY.ext.Ext4Helper = new function(){
                 return null;
 
             return fields.get(fieldName);
+        },
+
+        /**
+         * A map to convert between jsonType and Ext type
+         */
+        EXT_TYPE_MAP: {
+            'string': 'STRING',
+            'int': 'INT',
+            'float': 'FLOAT',
+            'date': 'DATE',
+            'boolean': 'BOOL'
         }
     }
 };

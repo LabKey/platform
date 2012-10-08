@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -46,7 +47,7 @@ public interface AssayImportMethod
     abstract public List<String> getAdditionalFields();
 
     /**
-     * If true, no link to download a template will appear.  Defaults to false
+     * If true, no link to download an excel template will appear on the result upload page.  Defaults to false
      * @return
      */
     abstract public boolean hideTemplateDownload();
@@ -87,12 +88,6 @@ public interface AssayImportMethod
     abstract public JSONObject getMetadata(ViewContext ctx, ExpProtocol protocol);
 
     /**
-     * A metadata config object that will be applied to the fields on the run template page
-     * @return
-     */
-    abstract public JSONObject getTemplateMetadata(ViewContext ctx, ExpProtocol protocol);
-
-    /**
      * Serialized this import method to JSON, which is consumed by the client
      * @return
      */
@@ -110,4 +105,6 @@ public interface AssayImportMethod
      * @return
      */
     abstract public boolean supportsTemplates();
+
+    abstract public void generateTemplate(JSONObject json, HttpServletResponse response);
 }

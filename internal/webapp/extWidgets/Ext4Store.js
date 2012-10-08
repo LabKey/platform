@@ -837,8 +837,10 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
                     {
                         //this is potentially the sort of thing we'd want to log to mothership??
                     }
-
                 }
+
+                if (meta.jsonType)
+                    meta.extType = LABKEY.ext.Ext4Helper.EXT_TYPE_MAP[meta.jsonType];
             });
         }
 

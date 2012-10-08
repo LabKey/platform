@@ -1,9 +1,11 @@
 package org.labkey.api.laboratory;
 
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -11,21 +13,43 @@ import org.labkey.api.view.ActionURL;
  * Created with IntelliJ IDEA.
  * User: bimber
  * Date: 10/1/12
- * Time: 12:27 PM
+ * Time: 1:40 PM
  */
-public class SimpleQueryNavItem extends AbstractNavItem
+public class SimpleSettingsItem extends AbstractNavItem implements SettingsNavItem
 {
-    private String _schema;
-    private String _query;
-    private String _category;
-    private DataProvider _dataProvider;
+    String _schema;
+    String _query;
+    String _category;
+    String _title;
+    DataProvider _provider;
 
-    public SimpleQueryNavItem(DataProvider provider, String schema, String query, String category)
+
+    public SimpleSettingsItem(DataProvider provider, String schema, String query, String category, String title)
     {
         _schema = schema;
         _query = query;
         _category = category;
-        _dataProvider = provider;
+        _title = title;
+        _provider = provider;
+    }
+
+    public SimpleSettingsItem(DataProvider provider, String schema, String query, String category)
+    {
+        _schema = schema;
+        _query = query;
+        _category = category;
+        _title = query;
+        _provider = provider;
+    }
+
+    public String getSchema()
+    {
+        return _schema;
+    }
+
+    public String getQuery()
+    {
+        return _query;
     }
 
     public String getName()
@@ -35,7 +59,7 @@ public class SimpleQueryNavItem extends AbstractNavItem
 
     public String getLabel()
     {
-        return _query;
+        return _title;
     }
 
     public String getCategory()
@@ -50,7 +74,7 @@ public class SimpleQueryNavItem extends AbstractNavItem
 
     public boolean isImportIntoWorkbooks()
     {
-        return true;
+        return false;
     }
 
     public boolean getDefaultVisibility(Container c, User u)
@@ -60,7 +84,7 @@ public class SimpleQueryNavItem extends AbstractNavItem
 
     public ActionURL getImportUrl(Container c, User u)
     {
-        return QueryService.get().urlFor(u, c, QueryAction.importData, _schema, _query);
+        return c.hasPermission(u, AdminPermission.class) ? PageFlowUtil.urlProvider(LaboratoryUrls.class).getImportUrl(c, u, _schema, _query) : null;
     }
 
     public ActionURL getSearchUrl(Container c, User u)
@@ -78,8 +102,18 @@ public class SimpleQueryNavItem extends AbstractNavItem
         return null;
     }
 
+    public JSONObject toJSON(Container c, User u)
+    {
+        JSONObject json = super.toJSON(c, u);
+
+        json.put("schemaName", _schema);
+        json.put("queryName", _query);
+
+        return json;
+    }
+
     public DataProvider getDataProvider()
     {
-        return _dataProvider;
+        return _provider;
     }
 }
