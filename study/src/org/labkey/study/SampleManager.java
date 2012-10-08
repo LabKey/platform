@@ -2128,6 +2128,7 @@ public class SampleManager
         // columns are required in case there's a saved filter on a column outside the primary table:
         columns.add(FieldKey.fromParts("Container"));
         columns.add(FieldKey.fromParts("Visit"));
+        columns.add(FieldKey.fromParts("SequenceNum"));
         columns.add(FieldKey.fromParts("LockedInRequest"));
         columns.add(FieldKey.fromParts("GlobalUniqueId"));
         columns.add(FieldKey.fromParts(StudyService.get().getSubjectColumnName(container)));
@@ -2169,15 +2170,17 @@ public class SampleManager
         return new SpecimenDetailQueryHelper(viewSql, groupingColSql, aliasToTypeProperty);
     }
 
+
     public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, SimpleFilter specimenDetailFilter,
-                                                              boolean includeParticipantGroups, SpecimenTypeLevel level) throws SQLException
+            boolean includeParticipantGroups, SpecimenTypeLevel level) throws SQLException
     {
         return getSpecimenSummaryByVisitType(container, user, specimenDetailFilter, includeParticipantGroups, level, null);
     }
 
+
     public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, SimpleFilter specimenDetailFilter,
-                                                              boolean includeParticipantGroups, SpecimenTypeLevel level,
-                                                              CustomView baseView) throws SQLException
+        boolean includeParticipantGroups, SpecimenTypeLevel level,
+        CustomView baseView) throws SQLException
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -2388,43 +2391,47 @@ public class SampleManager
         }
         SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, null);
         String subjectCol = StudyService.get().getSubjectColumnName(container);
-        String cohortJoinClause = null;
+        SQLFragment cohortJoinClause = null;
         switch (cohortType)
         {
             case DATA_COLLECTION:
-                cohortJoinClause = "LEFT OUTER JOIN study.ParticipantVisit ON\n " +
-                        "\tSpecimenQuery.Visit = study.ParticipantVisit.SequenceNum AND\n" +
+                cohortJoinClause = new SQLFragment("LEFT OUTER JOIN study.ParticipantVisit ON\n " +
+                        "\tSpecimenQuery.SequenceNum = study.ParticipantVisit.SequenceNum AND\n" +
                         "\tSpecimenQuery." + subjectCol + " = study.ParticipantVisit.ParticipantId AND\n" +
                         "\tSpecimenQuery.Container = study.ParticipantVisit.Container\n" +
                         "LEFT OUTER JOIN study.Cohort ON \n" +
                         "\tstudy.ParticipantVisit.CohortId = study.Cohort.RowId AND\n" +
-                        "\tstudy.ParticipantVisit.Container = study.Cohort.Container\n";
+                        "\tstudy.ParticipantVisit.Container = study.Cohort.Container\n");
                 break;
             case PTID_CURRENT:
-                cohortJoinClause = "LEFT OUTER JOIN study.Cohort ON \n" +
+                cohortJoinClause = new SQLFragment("LEFT OUTER JOIN study.Cohort ON \n" +
                         "\tstudy.Participant.CurrentCohortId = study.Cohort.RowId AND\n" +
-                        "\tstudy.Participant.Container = study.Cohort.Container\n";
+                        "\tstudy.Participant.Container = study.Cohort.Container\n");
                 break;
             case PTID_INITIAL:
-                cohortJoinClause = "LEFT OUTER JOIN study.Cohort ON \n" +
+                cohortJoinClause = new SQLFragment("LEFT OUTER JOIN study.Cohort ON \n" +
                         "\tstudy.Participant.InitialCohortId = study.Cohort.RowId AND\n" +
-                        "\tstudy.Participant.Container = study.Cohort.Container\n";
+                        "\tstudy.Participant.Container = study.Cohort.Container\n");
                 break;
         }
 
-        String ptidSpecimenSQL = "SELECT SpecimenQuery.Visit AS Visit, SpecimenQuery." + subjectCol + " AS ParticipantId,\n" +
+        SQLFragment ptidSpecimenSQL = new SQLFragment();
+        ptidSpecimenSQL.append("SELECT SpecimenQuery.Visit AS Visit, SpecimenQuery." + subjectCol + " AS ParticipantId,\n" +
                 "COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(SpecimenQuery.Volume) AS TotalVolume\n" +
-                "FROM (" + sqlHelper.getViewSql().getSQL() + ") AS SpecimenQuery\n" +
+                "FROM (");
+        ptidSpecimenSQL.append(sqlHelper.getViewSql());
+        ptidSpecimenSQL.append(") AS SpecimenQuery\n" +
                 "LEFT OUTER JOIN study.Participant ON\n" +
                 "\tSpecimenQuery." + subjectCol + " = study.Participant.ParticipantId AND\n" +
-                "\tSpecimenQuery.Container = study.Participant.Container\n" +
-                cohortJoinClause +
-                "GROUP BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", Visit\n" +
-                "ORDER BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", Visit";
+                "\tSpecimenQuery.Container = study.Participant.Container\n");
+        ptidSpecimenSQL.append(cohortJoinClause);
+        ptidSpecimenSQL.append("GROUP BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", Visit\n" +
+                "ORDER BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", Visit");
 
         return Table.executeQuery(StudySchema.getInstance().getSchema(),
-                ptidSpecimenSQL, sqlHelper.getViewSql().getParamsArray(), SummaryByVisitParticipant.class);
+                ptidSpecimenSQL, SummaryByVisitParticipant.class);
     }
+
 
     public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, User user, SimpleFilter specimenDetailFilter, boolean includeParticipantGroups, SpecimenTypeLevel level, CustomView baseView, boolean completeRequestsOnly) throws SQLException
     {
