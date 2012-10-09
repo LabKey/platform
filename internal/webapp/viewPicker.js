@@ -372,7 +372,7 @@ function createCombo(fieldLabel, name, id, allowBlank, width)
     return combo;
 }
 
-function createFolderCombo(fieldLabel, name, id, allowBlank, width)
+function createFolderCombo(fieldLabel, name, id, allowBlank, width, usePath)
 {
     var combo = new Ext.form.ComboBox({
         typeAhead: false,
@@ -381,12 +381,13 @@ function createFolderCombo(fieldLabel, name, id, allowBlank, width)
                 name: dataFieldName,
                 sortType: function(value) { return value.toLowerCase(); }
             },{
-                name: 'path'
+                name: 'path',
+                sortType: function(value) { return value.toLowerCase(); }
             }],
-            sortInfo: { field: dataFieldName }
+            sortInfo: { field: usePath ? 'path' : dataFieldName, direction: 'ASC'}
         }),
         valueField: 'path',
-        displayField: dataFieldName,
+        displayField: usePath ? 'path' : dataFieldName,
         fieldLabel: fieldLabel,
         name: name,
         id: id,
@@ -421,7 +422,7 @@ function createViewCombo(width)
 
 function createBasicFolderCombo(width)
 {
-    return createFolderCombo("Folder", "folders", "userQuery_folders", true, width);
+    return createFolderCombo("Folder", "folders", "userQuery_folders", true, width, false);
 }
 
 function createColumnCombo(width)
@@ -431,7 +432,7 @@ function createColumnCombo(width)
 
 function createRootFolderCombo(width)
 {
-    return createFolderCombo("Root Folder", "rootFolder", "userQuery_rootFolder", true, width);
+    return createFolderCombo("Root Folder", "rootFolder", "userQuery_rootFolder", true, width, true);
 }
 
 function createFolderTypesCombo(width)
@@ -523,13 +524,13 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
     var columnName = "";
     var folderName = "";
     var url = "";
-    var urlBottom = "";
     var isChoiceListQuery = true;
     var includeAllDescendants = true;
     var rootFolder = "";
     var folderType = "";
     var pageId = null;
     var webPartIndex = 0;
+//    var includeRootFolder = false;
 
     if (currentValue)
     {
@@ -548,6 +549,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
 
         pageId = currentValue.pageId;
         webPartIndex = currentValue.webPartIndex;
+//        includeRootFolder = currentValue.includeRootFolder;
     }
 
     LABKEY.Security.getFolderTypes({
@@ -589,6 +591,22 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         width: 380
     });
 
+/*
+    var includeRootFolderCheckbox = new Ext.form.Checkbox({
+        name: 'includeRootFolder',
+        boxLabel: 'Include Root Folder',
+        height: 30,
+        value: false,
+        checked: includeRootFolder,
+        width: 380
+    });
+
+    var folderCheckboxPanel = new Ext.Panel({
+        borders: false,
+        vertical: false,
+        items: [includeAllDescendantsCheckbox, includeRootFolderCheckbox]
+    });
+*/
     var rootFolderCombo = createRootFolderCombo(380);
     var folderTypesCombo = createFolderTypesCombo(380);
 
