@@ -128,7 +128,7 @@ public class ContainerTable extends FilteredTable
         addColumn(containerTypeColumn);
 
         SQLFragment containerDisplaySQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS + ".workbook = ? " +
-            "THEN " + getSqlDialect().concatenate(ExprColumn.STR_TABLE_ALIAS + ".rowid", "'. '", ExprColumn.STR_TABLE_ALIAS + ".title") +
+            "THEN " + getSqlDialect().concatenate("CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowid as varchar)", "'. '", ExprColumn.STR_TABLE_ALIAS + ".title") +
             " ELSE " + ExprColumn.STR_TABLE_ALIAS + ".name END");
         containerDisplaySQL.add(true);
         ExprColumn containerDisplayColumn = new ExprColumn(this, "IdPrefixedName", containerDisplaySQL, JdbcType.VARCHAR);
