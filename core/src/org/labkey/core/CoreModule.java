@@ -378,6 +378,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ));
     }
 
+    private static final int MAX_PER_COLUMN = 15;
+
     private WebPartView createMenuQueryView(ViewContext context, String title, final CustomizeMenuForm form)
     {
         if (null != StringUtils.trimToNull(form.getFolderName()))
@@ -443,15 +445,25 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         {
                             renderContext.setResults(results);
                             ResultSet rs = results.getResultSet();
-                            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-                            while (rs.next())
+                            if (null != rs)
                             {
-                                out.write("<tr><td>");
-                                renderContext.setRow(factory.getRowMap(rs));
-                                dataColumn.renderGridCellContents(renderContext, out);
-                                out.write("</td></tr>");
-                                seenAtLeastOne = true;
+                                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+
+                                // To do columns, we'll write each cell into a StringBuilder, then we have the count and can go from there
+                                ArrayList<StringBuilder> cellStrings = new ArrayList<StringBuilder>();
+                                while (rs.next())
+                                {
+                                    StringBuilder stringBuilder = new StringBuilder();
+                                    cellStrings.add(stringBuilder);
+                                    StringBuilderWriter writer = new StringBuilderWriter(stringBuilder);
+                                    renderContext.setRow(factory.getRowMap(rs));
+                                    dataColumn.renderGridCellContents(renderContext, writer);
+                                    seenAtLeastOne = true;
+                                }
+
+                                writeCells(cellStrings, out);
                             }
+
                         }
                         finally
                         {
@@ -512,6 +524,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             containersTemp.add(rootFolder);
         }
 
+        if (!context.getContainer().getPolicy().hasPermission(user, AdminPermission.class))
+        {
+            // If user doesn't have Admin permission, don't show "_" containers
+            List<Container> adjustedContainers = new ArrayList<Container>();
+            for (Container container : containersTemp)
+            {
+                if (!container.getName().startsWith("_"))
+                    adjustedContainers.add(container);
+            }
+            containersTemp = adjustedContainers;
+        }
+
         Collections.sort(containersTemp, new Comparator<Container>()
         {
             @Override
@@ -537,6 +561,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
                 boolean seenAtLeastOne = false;
                 out.write("<table style='width:50'>");
+                ArrayList<StringBuilder> cells = new ArrayList<StringBuilder>();
                 for (Container container : containers)
                 {
                     if (null == StringUtils.trimToNull(filterFolderName) ||
@@ -544,7 +569,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                             container.getFolderType().getName().equals(filterFolderName))
                     {
                         String uri = null;
-
                         if (null != expr)
                         {
                             ActionURL actionURL = new ActionURL(expr.getSource());
@@ -557,25 +581,49 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                             if (null != actionURL)
                                 uri = actionURL.getURIString();
                         }
-
-                        if (null != uri)
+                        if (null != StringUtils.trimToNull(uri))
                         {
-                            out.write("<tr><td><a href=\"");
-                            out.write(uri);
-                            out.write("\">");
-                            out.write(container.getName());
-                            out.write("</a></td></tr>");
+                            String name = null != StringUtils.trimToNull(container.getName()) ? container.getName() : "[root]";
+                            StringBuilder cell = new StringBuilder("<a href=\"" + uri + "\">" + name + "</a>");
+                            cells.add(cell);
                             seenAtLeastOne = true;
                         }
                     }
                 }
 
+                writeCells(cells, out);
+
                 if (!seenAtLeastOne)
-                    out.write("<tr><td>No folders selected.</td></tr>");
+                    out.write("<tr><td style='vertical-align:top;padding:4px'>No folders selected.</td></tr>");
                 out.write("</table>");
             }
         };
         return view;
+    }
+
+    private void writeCells(ArrayList<StringBuilder> cells, PrintWriter out)
+    {
+        int countContainers = cells.size();
+        int countColumns = (int)Math.ceil((double)countContainers/MAX_PER_COLUMN);
+        int countRows =  (int)Math.ceil((double)countContainers/countColumns);
+
+        for (int i = 0; i < countRows; i += 1)
+        {
+            out.write("<tr>");
+
+            for (int k = 0; k < countColumns; k += 1)
+            {
+                int index = k * countRows + i;
+                if (index < cells.size())
+                {
+                    StringBuilder cell = cells.get(index);
+                    out.write("<td style='vertical-align:top;padding:0px 4px'>");
+                    out.write(cell.toString());
+                    out.write("</td>");
+                }
+            }
+            out.write("</tr>");
+        }
     }
 
     @Override
