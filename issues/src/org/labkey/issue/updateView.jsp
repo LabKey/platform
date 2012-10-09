@@ -275,15 +275,15 @@
 <script type="text/javascript" for="window" event="onload">try {document.getElementById("<%=focusId%>").focus();} catch (x) {}</script>
 <script type="text/javascript">
 
-var origComment = byId("comment").value;
-var origNotify = byId("notifyList").value;
+var origComment = document.getElementById("comment").value;
+var origNotify = document.getElementById("notifyList").value;
 
 function isDirty()
 {
-    var comment = byId("comment");
+    var comment = document.getElementById("comment");
     if (comment && origComment != comment.value)
         return true;
-    var notify = byId("notifyList");
+    var notify = document.getElementById("notifyList");
     if (notify && origNotify != notify.value)
         return true;
     return false;

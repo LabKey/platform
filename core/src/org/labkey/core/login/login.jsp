@@ -51,23 +51,6 @@
     LookAndFeelProperties props = LookAndFeelProperties.getInstance(context.getContainer());
     boolean agreeOnly = bean.agreeOnly;
 
-    // Next bit of code makes the enter button work on all browsers.
-    %>
-<script type="text/javascript">
-    LABKEY.ExtAdapter.onReady(function(){
-
-        var forms = document.getElementsByTagName('form');
-
-        for (var i=0;i < forms.length;i++)
-        {
-            addInputSubmitEvent(forms[i]); // from utils.js
-        }
-
-    });
-</script>
-    <%
-
-
     if (agreeOnly)
     {
         %><form name="login" method="POST" action="<%=buildURL(LoginController.AgreeToTermsAction.class)%>"><%
@@ -124,3 +107,14 @@
         </td></tr>
     </table>
 </form>
+<script type="text/javascript">
+    // Ensures enter button work on all browsers.
+    (function(){
+        var forms = document.getElementsByTagName('form');
+
+        for (var i=0;i < forms.length;i++)
+        {
+            addInputSubmitEvent(forms[i]); // from utils.js
+        }
+    })();
+</script>
