@@ -1,8 +1,16 @@
 // Set USE_NATIVE_JSON so Ext.decode and Ext.encode use JSON.parse and JSON.stringify instead of eval
 Ext.USE_NATIVE_JSON = true;
 
+// Utility call to reset the location of the blank image; otherwise we connect to extjs.com by default:
+Ext.BLANK_IMAGE_URL = LABKEY.contextPath + '/_.gif';  // 2.0
+
+// set csrf value for all requests
+Ext.Ajax.defaultHeaders = {'X-LABKEY-CSRF': LABKEY.CSRF};
+
 // set the default ajax timeout from 30's to 5 minutes
 Ext.Ajax.timeout = 5 * 60 * 1000;
+
+Ext.menu.Menu.prototype.addClass('extContainer');
 
 Ext.apply(Ext, {
     /**

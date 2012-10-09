@@ -230,12 +230,6 @@ var submit_onClick;
             if (hdrSearch.getEl().dom.value) {
                 form.dom.submit();
             }
-//            if (hdrSearch.getEl().hasCls(hdrSearch.emptyCls) && hdrSearch.getEl().dom.value == hdrSearch.emptyText) {
-//                hdrSearch.setRawValue(item.emptyText);
-//            }
-//            else {
-//                form.dom.submit();
-//            }
             hdrSearch.emptyText = item.emptyText;
         };
 

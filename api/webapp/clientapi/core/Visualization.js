@@ -55,7 +55,7 @@ LABKEY.Visualization = new function() {
             if (data && data.getResponseHeader && data.getResponseHeader('Content-Type')
                     && data.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = Ext4.decode(data.responseText);
+                json = LABKEY.ExtAdapter.decode(data.responseText);
                 if (json.visualizationConfig)
                     json.visualizationConfig = Ext4.decode(json.visualizationConfig);
             }

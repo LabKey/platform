@@ -21,21 +21,33 @@ LABKEY.initExtAdapter = function(LABKEY, Ext){
 
         decode: Ext.JSON ? Ext.JSON.decode : Ext.util.JSON.decode,
 
+        // TODO: Remove
         DomHelper: Ext.DomHelper,
 
+        /**
+         * Returns a boolean
+         * WARNING: Different method signatures in Ext JS 3.4 vs Ext JS 4.1.0
+         * 3.4.0 - ( iterable, fn, scope )
+         * 4.1.0 - ( iterable, fn, [scope], [reverse] )
+         */
         each: Ext.each,
 
         encode: Ext.JSON ? Ext.JSON.encode : Ext.util.JSON.encode,
 
+        // TODO: Remove
         EventManager: Ext.EventManager,
 
+        // TODO: Remove
         //note: this is still present in Ext4, but is deprecated
         extend: Ext.extend,
 
+        // TODO: Remove
         Format: Ext.util.Format,
 
+        // TODO: Remove
         get: Ext.get,
 
+        // Return Type : String
         htmlEncode: Ext.util.Format.htmlEncode,
 
         isArray: Ext.isArray,
@@ -56,12 +68,14 @@ LABKEY.initExtAdapter = function(LABKEY, Ext){
 
         isString: Ext.isString,
 
+        // TODO: Remove
         Msg: Ext.Msg,
 
         namespace: Ext.ns,
 
         ns: Ext.ns,
 
+        // TODO: Remove
         onReady: Ext.onReady,
 
         query: Ext.query

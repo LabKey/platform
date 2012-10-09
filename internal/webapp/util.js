@@ -282,12 +282,11 @@ function showHelpDiv(elem, titleText, bodyText, width)
         return;
 
     posTop += elem.offsetHeight;
-    //alert("posTop, posLeft: " +posTop + "," + posLeft);
 
     var div = getHelpDiv();
 
-    LABKEY.ExtAdapter.get("helpDivTitle").update(titleText);
-    LABKEY.ExtAdapter.get("helpDivBody").update(bodyText);
+    document.getElementById("helpDivTitle").innerHTML = titleText;
+    document.getElementById("helpDivBody").innerHTML = bodyText;
 
     var bd = LABKEY.ExtAdapter.get(document.body);
     var sz = bd.getViewSize();
@@ -303,12 +302,9 @@ function showHelpDiv(elem, titleText, bodyText, width)
 
     var table = document.getElementById("helpDivTable");
 
-    if (width)
-        table.style.width =  width;
-    else
-        table.style.width =  "250px";
+    table.style.width = (width ? width : '250px');
 
-    var maxWidth = document.getElementById("helpDivTable").offsetWidth;
+    var maxWidth = table.offsetWidth;
 
     if (viewportWidth + leftScroll < maxWidth + posLeft + 10)
     {
@@ -376,9 +372,8 @@ function addFilePicker(tblId, linkId)
 function twoDigit(num)
 {
 	if (num < 10)
-            return "0" + num;
-        else
-            return "" + num;
+        return "0" + num;
+    return "" + num;
 }
 
 function removeFilePicker(tblId, linkId, rowId)
@@ -653,18 +648,20 @@ function showMenu(parent, menuElementId, align) {
         align = "tl-bl?";
     }
 
-    var menu, oldExt = false;
+    var menu, oldExt = false, extPresent = false;
     if (typeof(Ext) != 'undefined') {
         oldExt = true;
+        extPresent = true;
         menu = Ext.menu.MenuMgr.get(menuElementId);
     }
 
     if (typeof(Ext4) != 'undefined' && !menu) {
         menu = Ext4.menu.Manager.get(menuElementId);
+        extPresent = true;
         oldExt = false;
     }
 
-    if (menu)
+    if (menu && extPresent)
     {
         // While the menu's open, highlight the button that caused it to open
         if (oldExt)
@@ -719,130 +716,135 @@ LABKEY.addMarkup(
 '</div>'
 );
 
-
-
 // generator function to create a function to call when flag field is clicked
+// This is used in FlagColumnRenderer
 function showFlagDialogFn(config)
 {
-    var EXT = window.Ext4||window.Ext;
-    config = EXT.apply({}, config, {
-        url : LABKEY.ActionURL.buildURL('experiment', 'setFlag.api'),
-        dataRegionName : null,
-        defaultComment : "Flagged for review",
-        dialogTitle : "Review",
-        imgTitle : "Flag for review",
-        imgSrcFlagged : LABKEY.contextPath + "/Experiment/flagDefault.gif",
-        imgClassFlagged : "",
-        imgSrcUnflagged : LABKEY.contextPath + "/Experiment/unflagDefault.gif",
-        imgClassUnflagged : "",
-        translatePrimaryKey : null
-    });
+    // TODO: Fix the explicit dependency on Ext 3 || 4.
+    if (typeof(Ext4) != 'undefined' || typeof(Ext) != 'undefined') {
 
-    function getDataRegion()
-    {
-        if (LABKEY.DataRegions && typeof config.dataRegionName == 'string')
-            return LABKEY.DataRegions[config.dataRegionName];
-        return null;
-    }
-
-    var setFlag = function(flagId)
-    {
-        EXT.QuickTips.init();
-
-        var clickedComment;
-        var flagImages = EXT.DomQuery.select("IMG[flagId='" + flagId + "']");
-        if (!flagImages || 0==flagImages.length)
-            return;
-        var img = flagImages[0];
-        if (img.title != config.imgTitle)
-            clickedComment = img.title;
-
-        var checkedLsids = [];
-        var dr = getDataRegion();
-        if (dr && typeof config.translatePrimaryKey == 'function')
-        {
-            var pks = dr.getChecked() || [];
-            for (var i=0 ; i<pks.length ; i++)
-                checkedLsids.push(config.translatePrimaryKey(pks[i]));
-        }
-
-        var msg = 'Enter a comment';
-        var comment = clickedComment || config.defaultComment;
-        if (checkedLsids.length > 0)
-        {
-            msg = "Enter comment for " + checkedLsids.length + " selected " + (checkedLsids.length==1?"row":"rows");
-            comment = config.defaultComment;        // consider inspect all for equal comments
-        }
-
-        var lsids = checkedLsids.length==0 ? [flagId] : checkedLsids;
-        var successFn = function(response, options)
-        {
-            var comment = options.params.comment;
-            for (var i=0 ; i<lsids.length ; i++)
-            {
-                var lsid = lsids[i];
-                var flagImages = EXT.DomQuery.select("IMG[flagId='" + lsid + "']");
-                if (!flagImages || 0==flagImages.length)
-                    continue;
-                el = EXT.get(flagImages[0]);
-                if (comment)
-                {
-                    el.dom.src = config.imgSrcFlagged;
-                    el.dom.title = comment;
-                    if (config.imgClassUnflagged)
-                        (el.removeCls||el.removeClass)(config.imgClassUnflagged);
-                    (el.addCls||el.addClass)(config.imgClassFlagged);
-                }
-                else
-                {
-                    el.dom.src = config.imgSrcUnflagged;
-                    el.dom.title = config.imgTitle;
-                    if (config.imgClassFlagged)
-                        (el.removeCls||el.removeClass)(config.imgClassFlagged);
-                    (el.addCls||el.addClass)(config.imgClassUnflagged);
-                }
-            }
-        };
-
-        var el = EXT.get(img);
-        var box = EXT.MessageBox.show(
-        {
-            title   : config.dialogTitle,
-            prompt  : true,
-            msg     : msg,
-            value   : comment,
-            width   : 300,
-            fn      : function(btnId, value)
-            {
-                if (btnId == 'ok')
-                {
-                    Ext.Ajax.request(
-                    {
-                        url    : config.url,
-                        params :
-                        {
-                            lsid    : lsids,
-                            comment : value,
-                            unique  : new Date().getTime()
-                        },
-                        success : successFn,
-                        failure : function()
-                        {
-                            alert("Failure!");
-                        }
-                    });
-                }
-            },
-            buttons : EXT.MessageBox.OKCANCEL
+        var EXT = window.Ext4||window.Ext;
+        config = EXT.apply({}, config, {
+            url            : LABKEY.ActionURL.buildURL('experiment', 'setFlag.api'),
+            dataRegionName : null,
+            defaultComment : "Flagged for review",
+            dialogTitle    : "Review",
+            imgTitle       : "Flag for review",
+            imgSrcFlagged  : LABKEY.contextPath + "/Experiment/flagDefault.gif",
+            imgClassFlagged : "",
+            imgSrcUnflagged : LABKEY.contextPath + "/Experiment/unflagDefault.gif",
+            imgClassUnflagged : "",
+            translatePrimaryKey : null
         });
 
-//        box.getDialog().setPosition(el.getAnchorXY()[0]-75, el.getAnchorXY()[1]-75);
-    };
-    if (EXT.isReady)
-        return setFlag;
-    else
+        function getDataRegion()
+        {
+            if (LABKEY.DataRegions && typeof config.dataRegionName == 'string')
+                return LABKEY.DataRegions[config.dataRegionName];
+            return null;
+        }
+
+        var setFlag = function(flagId)
+        {
+            EXT.QuickTips.init();
+
+            var clickedComment;
+            var flagImages = EXT.DomQuery.select("IMG[flagId='" + flagId + "']");
+            if (!flagImages || 0==flagImages.length)
+                return;
+            var img = flagImages[0];
+            if (img.title != config.imgTitle)
+                clickedComment = img.title;
+
+            var checkedLsids = [];
+            var dr = getDataRegion();
+            if (dr && typeof config.translatePrimaryKey == 'function')
+            {
+                var pks = dr.getChecked() || [];
+                for (var i=0 ; i<pks.length ; i++)
+                    checkedLsids.push(config.translatePrimaryKey(pks[i]));
+            }
+
+            var msg = 'Enter a comment';
+            var comment = clickedComment || config.defaultComment;
+            if (checkedLsids.length > 0)
+            {
+                msg = "Enter comment for " + checkedLsids.length + " selected " + (checkedLsids.length==1?"row":"rows");
+                comment = config.defaultComment;        // consider inspect all for equal comments
+            }
+
+            var lsids = checkedLsids.length==0 ? [flagId] : checkedLsids;
+            var successFn = function(response, options)
+            {
+                var comment = options.params.comment;
+                for (var i=0 ; i<lsids.length ; i++)
+                {
+                    var lsid = lsids[i];
+                    var flagImages = EXT.DomQuery.select("IMG[flagId='" + lsid + "']");
+                    if (!flagImages || 0==flagImages.length)
+                        continue;
+                    el = EXT.get(flagImages[0]);
+                    if (comment)
+                    {
+                        el.dom.src = config.imgSrcFlagged;
+                        el.dom.title = comment;
+                        if (config.imgClassUnflagged)
+                            (el.removeCls||el.removeClass)(config.imgClassUnflagged);
+                        (el.addCls||el.addClass)(config.imgClassFlagged);
+                    }
+                    else
+                    {
+                        el.dom.src = config.imgSrcUnflagged;
+                        el.dom.title = config.imgTitle;
+                        if (config.imgClassFlagged)
+                            (el.removeCls||el.removeClass)(config.imgClassFlagged);
+                        (el.addCls||el.addClass)(config.imgClassUnflagged);
+                    }
+                }
+            };
+
+            var el = EXT.get(img);
+            var box = EXT.MessageBox.show(
+                    {
+                        title   : config.dialogTitle,
+                        prompt  : true,
+                        msg     : msg,
+                        value   : comment,
+                        width   : 300,
+                        fn      : function(btnId, value)
+                        {
+                            if (btnId == 'ok')
+                            {
+                                Ext.Ajax.request(
+                                        {
+                                            url    : config.url,
+                                            params :
+                                            {
+                                                lsid    : lsids,
+                                                comment : value,
+                                                unique  : new Date().getTime()
+                                            },
+                                            success : successFn,
+                                            failure : function()
+                                            {
+                                                alert("Failure!");
+                                            }
+                                        });
+                            }
+                        },
+                        buttons : EXT.MessageBox.OKCANCEL
+                    });
+        };
+
+        if (EXT.isReady)
+            return setFlag;
+
         return function(flagId)
         {
-            Ext.onReady(function(){setFlag(flagId)});
-        }
+            EXT.onReady(function(){setFlag(flagId)});
+        };
+    }
+
+    console.warn('Unable to find ExtJS for use in showFlagDialogFn()');
+    return function() {};
 }

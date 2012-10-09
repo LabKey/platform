@@ -1,7 +1,6 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
         <script path="util.js"/>
-        <script path="internal/Utils.js"/>
     </library>
     <dependencies>
         <dependency path="Ext4" />

@@ -911,10 +911,7 @@ LABKEY.Utils.convertToTable(
             a = String(a);
             b = String(b);
 
-            if (a.toLowerCase() == b.toLowerCase())
-                return true;
-            else
-                return false;
+            return a.toLowerCase() == b.toLowerCase();
         },
 
         /**

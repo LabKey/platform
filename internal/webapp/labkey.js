@@ -490,26 +490,6 @@ LABKEY.beforeunload = function (dirtyCallback, scope)
     };
 };
 
-//
-// language extensions, global functions
-//
-
-function byId(id)
-{
-    return document.getElementById(id);
-}
-
-
-//trim added in ECMAScript5
-if(!String.prototype.trim) {
-    function trim(s)
-    {
-      return s.replace(/^\s+/, '').replace(/\s+$/, '');
-    }
-
-    String.prototype.trim = function () {return trim(this);};
-}
-
 LABKEY.createElement = function(tag, innerHTML, attributes)
 {
     var e = document.createElement(tag);

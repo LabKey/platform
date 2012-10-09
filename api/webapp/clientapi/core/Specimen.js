@@ -136,14 +136,6 @@ LABKEY.Specimen = new function()
                     containerPath : arguments[3]
                 };
             }
-            /*if (arguments.length > 1) {
-                config = {
-                    success : arguments[0],
-                    allUsers: arguments[1],
-                    failure : arguments[2],
-                    containerPath : arguments[3]
-                };
-            }*/
 
             // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
             // default callback and callback wrapper functions:

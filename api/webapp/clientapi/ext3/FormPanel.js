@@ -998,9 +998,6 @@ Ext.override(Ext.layout.FormLayout, {
     }
 });
 
-LABKEY.requiresScript('GuidedTip.js', true);
-
-//Ext.reg('datepicker', LABKEY.ext.DatePicker);
 Ext.reg('checkbox', LABKEY.ext.Checkbox);
 Ext.reg('combo', LABKEY.ext.ComboBox);
 Ext.reg('datefield',  LABKEY.ext.DateField);

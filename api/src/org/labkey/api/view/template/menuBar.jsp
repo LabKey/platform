@@ -25,7 +25,18 @@
 <%@ page import="org.labkey.api.view.template.MenuBarView" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("ext3"));
+      return resources;
+  }
+%>
 <%
     List<Portal.WebPart> menus = ((MenuBarView) HttpView.currentView()).getModelBean();
     ViewContext currentContext = HttpView.currentContext();
@@ -44,10 +55,7 @@
         homeLink = new NavTree(c.getProject().getName(), c.getProject().getFolderType().getStartURL(c.getProject(), currentContext.getUser()));
 %>
 <script type="text/javascript">
-    LABKEY.requiresClientAPI();
-</script>
-<script type="text/javascript">
-    LABKEY.ExtAdapter.onReady(function(){
+    Ext.onReady(function(){
         <%
         for (Portal.WebPart part : menus)
         {

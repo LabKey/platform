@@ -295,7 +295,7 @@ LABKEY.Assay = new function()
                 params : dataObject
             }
 
-            if(LABKEY.ExtAdapter.IsDefined(config.timeout))
+            if(LABKEY.ExtAdapter.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;
 
             LABKEY.Ajax.request(requestConfig);

@@ -106,13 +106,11 @@ LABKEY.ActionURL = new function()
         var dot = action.indexOf('.');
         if (0 < dot)
             action = action.substring(0,dot);
-        var o =
-        {
+        return {
             controller: decodeURIComponent(controller),
             action: decodeURIComponent(action),
             containerPath: decodeURI(path)
         };
-        return o;
     }
 
 
@@ -199,7 +197,7 @@ LABKEY.ActionURL = new function()
         /**
         * Returns an object mapping URL parameter names to parameter values. If a given parameter
         * appears more than once on the query string, the value in the map will be an array instead
-        * of a single value. Use Ext.isArray() to determine if the value is an array or not, or use
+        * of a single value. Use LABKEY.ExtAdapter.isArray() to determine if the value is an array or not, or use
         * getParameter() or getParameterArray() to retrieve a specific parameter name as a single value
         * or array respectively.
         * @param {String} [url] The URL to parse. If not specified, the browser's current location will be used.

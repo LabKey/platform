@@ -5,20 +5,22 @@
         <script path="clientapi/core/Ajax.js"/>
         <script path="clientapi/core/Chart.js"/>
         <script path="clientapi/core/Domain.js"/>
+        <script path="clientapi/core/Experiment.js"/>
         <script path="clientapi/core/FieldKey.js"/>
         <script path="clientapi/core/Filter.js"/>
-        <script path="clientapi/core/Form.js"/>
+        <script path="clientapi/core/Form.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.get -->
         <script path="clientapi/core/Message.js"/>
+        <script path="clientapi/core/MultiRequest.js"/>
         <script path="clientapi/core/NavTrail.js"/>
         <script path="clientapi/core/Pipeline.js"/>
-        <script path="clientapi/core/Portal.js"/>
-        <script path="clientapi/core/Query.js"/>
+        <script path="clientapi/core/Portal.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.Msg -->
+        <script path="clientapi/core/Query.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.DomHelper -->
         <script path="clientapi/core/Report.js"/>
         <script path="clientapi/core/Security.js"/>
         <script path="clientapi/core/Specimen.js"/>
-        <script path="clientapi/core/Utils.js"/>
+        <script path="clientapi/core/Utils.js"/> <!-- TODO: REQUIRES FIX: Depends explicitly on Ext.get (Ext 3) -->
         <script path="clientapi/core/Visualization.js"/>
-        <script path="clientapi/core/WebPart.js"/>
+        <script path="clientapi/core/WebPart.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.Msg && Ext.get -->
     </library>
     <dependencies>
         <dependency path="Ext4" />

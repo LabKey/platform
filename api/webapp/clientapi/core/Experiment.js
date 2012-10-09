@@ -38,7 +38,7 @@ LABKEY.Experiment = new function()
             if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = Ext.decode(response.responseText);
+                json = LABKEY.ExtAdapter.decode(response.responseText);
                 experiment = createExpFn(json);
             }
 
@@ -237,7 +237,8 @@ LABKEY.Experiment = new function()
 
 };
 
-Ext.namespace('LABKEY', 'LABKEY.Exp');
+if (typeof LABKEY.Exp == "undefined")
+    LABKEY.Exp = {};
 
 /**
  * This constructor isn't called directly, but is used by derived classes.
@@ -1163,7 +1164,7 @@ LABKEY.Exp.Data.prototype.getContent = function(config)
             if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                content = Ext.decode(response.responseText);
+                content = LABKEY.ExtAdapter.decode(response.responseText);
             }
             else
             {

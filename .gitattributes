@@ -1412,7 +1412,6 @@ api/webapp/clientapi/core/WebPart.js -text
 api/webapp/clientapi/ext3.lib.xml -text
 api/webapp/clientapi/ext3/DataRegion.js -text
 api/webapp/clientapi/ext3/EditorGridPanel.js -text
-api/webapp/clientapi/ext3/ExtJsConfig.js -text
 api/webapp/clientapi/ext3/ExtendedJsonReader.js -text
 api/webapp/clientapi/ext3/FieldKey.js -text
 api/webapp/clientapi/ext3/FileSystem.js -text
@@ -5607,7 +5606,6 @@ internal/webapp/gxt/images/gxt/tree/vnode_transparent.gif -text
 internal/webapp/index.html -text
 internal/webapp/index.jsp -text
 internal/webapp/internal.lib.xml -text
-internal/webapp/internal/Utils.js -text
 internal/webapp/js_color_picker_v2.css -text
 internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text

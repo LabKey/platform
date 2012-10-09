@@ -3,9 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresCss('GuidedTip.css', true);
-
-/* Initial Design work of Guided Tooltips */
 Ext.form.GuidedTip = Ext.extend(Ext.QuickTip, {
 
     // private
@@ -22,8 +19,6 @@ Ext.form.GuidedTip = Ext.extend(Ext.QuickTip, {
     },
 
     autoHeight : true,
-//    height : 200,
-//    width  : 200,
     baseCls : 'g-tip',
     showDelay : 0, // this tip type is click based
 

@@ -1,6 +1,5 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
-        <script path="clientapi/ext3/ExtJsConfig.js"/>
         <script path="clientapi/ext3/DataRegion.js"/>
         <script path="clientapi/ext3/EditorGridPanel.js"/>
         <script path="clientapi/ext3/ExtendedJsonReader.js"/>
@@ -15,13 +14,11 @@
         <script path="clientapi/ext3/SecurityPolicy.js"/>
         <script path="clientapi/ext3/Store.js"/>
         <script path="clientapi/ext3/Utils.js"/>
-        <script path="clientapi/core/Experiment.js"/>
-        <script path="clientapi/core/MultiRequest.js"/>
     </library>
     <dependencies>
         <dependency path="clientapi/core" />
         <dependency path="Ext3" />
-        <dependency path="GuidedTip.js"/>
+        <dependency path="GuidedTip.js"/> <!-- depended on by FormPanel.js -->
         <dependency path="GuidedTip.css"/>
     </dependencies>
 </libraries>
