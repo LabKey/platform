@@ -32,7 +32,9 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -63,7 +65,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
 
     public String getLabel()
     {
-        return "Default Excel Upload";
+        return "Default Excel Import";
     }
 
     public List<String> getAdditionalFields()
@@ -174,11 +176,27 @@ public class DefaultAssayImportMethod implements AssayImportMethod
     {
         try
         {
-            String filename = json.optString("fileName");
-            JSONArray sheetsArray = new JSONArray();
+            String filename = json.optString("templateName");
+            ExcelWriter.ExcelDocumentType docType = ExcelWriter.ExcelDocumentType.xlsx;
 
-            ExcelWriter.ExcelDocumentType docType = filename.toLowerCase().endsWith(".xlsx") ? ExcelWriter.ExcelDocumentType.xlsx : ExcelWriter.ExcelDocumentType.xls;
+            JSONObject resultDefaults = json.optJSONObject("Results");
+            JSONArray results = json.getJSONArray("ResultRows");
+            JSONArray rows = new JSONArray();
+            for (JSONObject row : results.toJSONObjectArray())
+            {
+                Map<String, Object> map = new HashMap<String, Object>();
+
+                rows.put(new JSONArray());
+            }
+
+            JSONObject sheet = new JSONObject();
+            sheet.put("name", "Data");
+            sheet.put("data", rows);
+
+            JSONArray sheetsArray = new JSONArray();
+            sheetsArray.put(sheet);
             Workbook workbook =  ExcelFactory.createFromArray(sheetsArray, docType);
+
 
             response.setContentType(docType.getMimeType());
             response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");

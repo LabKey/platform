@@ -17,6 +17,7 @@ public class SimpleQueryNavItem extends AbstractNavItem
 {
     private String _schema;
     private String _query;
+    private String _label;
     private String _category;
     private DataProvider _dataProvider;
 
@@ -24,8 +25,18 @@ public class SimpleQueryNavItem extends AbstractNavItem
     {
         _schema = schema;
         _query = query;
+        _label = query;
         _category = category;
         _dataProvider = provider;
+    }
+
+    public SimpleQueryNavItem(DataProvider provider, String schema, String query, String category, String label)
+    {
+        _schema = schema;
+        _query = query;
+        _category = category;
+        _dataProvider = provider;
+        _label = label;
     }
 
     public String getName()
@@ -35,7 +46,7 @@ public class SimpleQueryNavItem extends AbstractNavItem
 
     public String getLabel()
     {
-        return _query;
+        return _label;
     }
 
     public String getCategory()

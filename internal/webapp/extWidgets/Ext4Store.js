@@ -295,7 +295,6 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                     }
                 }
             }
-
             this.fireEvent('beforemetachange', this, meta);
         }
     },
@@ -313,6 +312,19 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
 
     //private
     setModel: function(model){
+        // NOTE: if the query lacks a PK, which can happen with queries that dont represent physical tables,
+        // Ext adds a column to hold an Id.  In order to differentiate this from other fields we set defaults
+        this.model.prototype.fields.each(function(field){
+            if (field.name == '_internalId'){
+                Ext4.apply(field, {
+                    hidden: true,
+                    calculatedField: true,
+                    shownInInsertView: false,
+                    shownInUpdateView: false,
+                    userEditable: false
+                });
+            }
+        });
         this.model = model;
         this.implicitModel = false;
     },

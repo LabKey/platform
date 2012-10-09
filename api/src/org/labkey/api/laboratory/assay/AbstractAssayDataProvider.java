@@ -7,10 +7,13 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.laboratory.AbstractDataProvider;
 import org.labkey.api.laboratory.NavItem;
+import org.labkey.api.laboratory.SimpleQueryNavItem;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -30,7 +33,7 @@ import java.util.Set;
  * Date: 10/1/12
  * Time: 1:52 PM
  */
-abstract public class AbstractAssayDataProvider implements AssayDataProvider
+abstract public class AbstractAssayDataProvider extends AbstractDataProvider implements AssayDataProvider
 {
     protected String _providerName = null;
     protected Collection<AssayImportMethod> _importMethods = new LinkedHashSet<AssayImportMethod>();
@@ -49,6 +52,17 @@ abstract public class AbstractAssayDataProvider implements AssayDataProvider
     public List<NavItem> getDataNavItems(Container c, User u)
     {
         List<NavItem> items = new ArrayList<NavItem>();
+        List<ExpProtocol> protocols = getProtocols(c);
+        for (ExpProtocol p : protocols)
+        {
+            items.add(new AssayNavItem(this, p));
+        }
+        return items;
+    }
+
+    private List<ExpProtocol> getProtocols(Container c)
+    {
+        List<ExpProtocol> list = new ArrayList<ExpProtocol>();
         ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(c, c.getProject(), ContainerManager.getSharedContainer());
         for (ExpProtocol p : protocols)
         {
@@ -56,9 +70,10 @@ abstract public class AbstractAssayDataProvider implements AssayDataProvider
             if (provider == null)
                 continue;
             if (provider.equals(getAssayProvider()))
-                items.add(new AssayNavItem(this, p));
+                list.add(p);
         }
-        return items;
+
+        return list;
     }
 
     public boolean isModuleEnabled(Container c)
@@ -150,6 +165,23 @@ abstract public class AbstractAssayDataProvider implements AssayDataProvider
         meta.put("domains", domainMeta);
 
         return meta;
+    }
+
+    @Override
+    public List<NavItem> getReportItems(Container c, User u)
+    {
+        List<NavItem> items = new ArrayList<NavItem>();
+        for (ExpProtocol p : getProtocols(c))
+        {
+            //TODO: better approach?
+            boolean visible = new AssayNavItem(this, p).isVisible(c, u);
+            if (visible)
+            {
+                String query = AssayService.get().getResultsTableName(p);
+                items.add(new SimpleQueryNavItem(this, AssaySchema.NAME, query, _providerName));
+            }
+        }
+        return items;
     }
 
     @NotNull

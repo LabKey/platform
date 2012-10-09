@@ -52,7 +52,7 @@ public interface NavItem
         samples(),
         misc(),
         settings(),
-        report(),
+        reports(),
         data();
 
         Category()

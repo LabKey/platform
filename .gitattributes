@@ -521,6 +521,7 @@ api/src/org/labkey/api/jsp/taglib/OptionsTag.java -text
 api/src/org/labkey/api/jsp/taglib/RadioTag.java -text
 api/src/org/labkey/api/jsp/taglib/SelectAll.java -text
 api/src/org/labkey/api/jsp/taglib/SimpleTagBase.java -text
+api/src/org/labkey/api/laboratory/AbstractDataProvider.java -text
 api/src/org/labkey/api/laboratory/AbstractNavItem.java -text
 api/src/org/labkey/api/laboratory/DataProvider.java -text
 api/src/org/labkey/api/laboratory/LaboratoryService.java -text

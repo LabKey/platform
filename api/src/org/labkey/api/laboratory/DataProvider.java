@@ -26,6 +26,11 @@ public interface DataProvider
     public String getName();
 
     /**
+     * Returns a key used to identify this provider
+     */
+    public String getKey();
+
+    /**
      * Return the URL holding instructions / help information
      * @return
      */
@@ -49,11 +54,11 @@ public interface DataProvider
      */
     public List<NavItem> getSettingsItems(Container c, User u);
 
-//    /**
-//     * Return the list of ReportItems that will appear in the list of reports
-//     * @return
-//     */
-//    public List<ReportItem> getReportItems(Container c, User u);
+    /**
+     * Return the list of ReportItems that will appear in the list of reports
+     * @return
+     */
+    public List<NavItem> getReportItems(Container c, User u);
 
     /**
      * Return true if this import pathway can be used with assay templates, which allows runs to be prepared ahead of importing results

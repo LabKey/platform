@@ -65,7 +65,7 @@ abstract public class AbstractNavItem implements NavItem
 
     public String getPropertyManagerKey()
     {
-        return getDataProvider().getName() + "||" + getCategory() + "||" + getName();
+        return getDataProvider().getKey() + "||" + getCategory() + "||" + getName();
     }
 
     public static String inferDataProviderNameFromKey(String key)

@@ -16,6 +16,18 @@ public class SimpleAssayDataProvider extends AbstractAssayDataProvider
     }
 
     @Override
+    public String getName()
+    {
+        return _providerName;
+    }
+
+    @Override
+    public String getKey()
+    {
+        return this.getClass().getName() + "||SimpleAssay||" + getName();
+    }
+
+    @Override
     public boolean supportsTemplates()
     {
         return false;
