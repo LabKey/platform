@@ -137,6 +137,7 @@
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
     <ns:description>Contains one row per study-affiliated location.  Locations can include labs, clinics, and repositories.</ns:description>
+    <ns:titleColumn>Label</ns:titleColumn>
     <ns:columns>
       <ns:column columnName="RowId">
         <ns:description>The unique identifier for each location.</ns:description>
