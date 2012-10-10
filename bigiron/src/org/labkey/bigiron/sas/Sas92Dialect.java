@@ -17,7 +17,7 @@
 package org.labkey.bigiron.sas;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 
@@ -34,7 +34,7 @@ import java.sql.SQLException;
 public class Sas92Dialect extends SasDialect
 {
     @Override
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
         return new Sas92ColumnMetaDataReader(rsCols);
     }

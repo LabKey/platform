@@ -152,7 +152,6 @@ import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
 
 import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -633,14 +632,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             CoreSchema core = CoreSchema.getInstance();
 
-            try
-            {
-                core.getSqlDialect().prepareNewDatabase(core.getSchema());
-            }
-            catch(ServletException e)
-            {
-                throw new RuntimeException(e);
-            }
+            core.getSqlDialect().prepareNewDatabase(core.getSchema());
         }
 
         super.beforeUpdate(moduleContext);

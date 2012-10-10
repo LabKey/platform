@@ -20,8 +20,8 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
@@ -127,7 +127,7 @@ public class MySqlDialect extends SimpleSqlDialect
     }
 
     @Override
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
         return new MySqlColumnMetaDataReader(rsCols);
     }

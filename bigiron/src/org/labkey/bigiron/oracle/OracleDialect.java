@@ -18,10 +18,10 @@ package org.labkey.bigiron.oracle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ConnectionWrapper;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.PkMetaDataReader;
@@ -55,7 +55,7 @@ public abstract class OracleDialect extends SimpleSqlDialect
     }
 
     @Override
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
         return new OracleColumnMetaDataReader(rsCols);
     }

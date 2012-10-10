@@ -870,7 +870,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
     @Override
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
         return new SqlServerColumnMetaDataReader(rsCols);
     }

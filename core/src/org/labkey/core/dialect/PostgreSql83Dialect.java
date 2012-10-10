@@ -83,7 +83,7 @@ class PostgreSql83Dialect extends SqlDialect
 {
     private static final Logger _log = Logger.getLogger(PostgreSql83Dialect.class);
 
-    private final Map<String, Integer> _userDefinedTypeScales = new ConcurrentHashMap<String, Integer>();
+    private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<String, Integer>();
     private InClauseGenerator _inClauseGenerator = null;
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
@@ -652,43 +652,21 @@ class PostgreSql83Dialect extends SqlDialect
     // once we require 8.1 we should consider using it here.
 
     @Override
-    public void prepareNewDatabase(DbSchema schema) throws ServletException
+    public void prepareNewDatabase(DbSchema schema)
     {
-        ResultSet rs = null;
+        if (new SqlSelector(schema, "SELECT * FROM pg_language WHERE lanname = 'plpgsql'").exists())
+            return;
 
-        try
-        {
-            rs = Table.executeQuery(schema, "SELECT * FROM pg_language WHERE lanname = 'plpgsql'", null);
+        String dbName = schema.getScope().getDatabaseName();
+        String message = "PL/pgSQL is not enabled in the \"" + dbName + "\" database because it is not enabled in your Template1 master database.";
+        String advice = "Use PostgreSQL's 'createlang' command line utility to enable PL/pgSQL in the \"" + dbName + "\" database then restart Tomcat.";
 
-            if (rs.next())
-                return;
-
-            String dbName = schema.getScope().getDatabaseName();
-            String message = "PL/pgSQL is not enabled in the \"" + dbName + "\" database because it is not enabled in your Template1 master database.";
-            String advice = "Use PostgreSQL's 'createlang' command line utility to enable PL/pgSQL in the \"" + dbName + "\" database then restart Tomcat.";
-
-            throw new ConfigurationException(message, advice);
-        }
-        catch (SQLException e)
-        {
-            throw new ServletException("Failure attempting to verify language PL/pgSQL", e);
-        }
-        finally
-        {
-            try
-            {
-                if (null != rs) rs.close();
-            }
-            catch (SQLException e)
-            {
-                _log.error("prepareNewDatabase", e);
-            }
-        }
+        throw new ConfigurationException(message, advice);
     }
 
 
     @Override
-    public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
+    public void prepareNewDbScope(DbScope scope)
     {
         initializeUserDefinedTypes(scope);
         initializeInClauseGenerator(scope);
@@ -702,20 +680,40 @@ class PostgreSql83Dialect extends SqlDialect
     // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
     private void initializeUserDefinedTypes(DbScope scope)
     {
-        Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
+        Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains");
         selector.forEach(new Selector.ForEachBlock<ResultSet>()
         {
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
+                String schemaName = rs.getString("domain_schema");
                 String domainName = rs.getString("domain_name");
+                String dataType = rs.getString("data_type");
+                int scale;
 
-                if ("integer".equals(rs.getString("data_type")))
-                    _userDefinedTypeScales.put(domainName, 4);
+                if (dataType.startsWith("character"))
+                {
+                    String maxLength = rs.getString("character_maximum_length");
+
+                    // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
+                    scale = Integer.valueOf(null != maxLength ? maxLength : rs.getString("character_octet_length"));
+                }
                 else
-                    _userDefinedTypeScales.put(domainName, Integer.parseInt(rs.getString("character_maximum_length")));
+                {
+                    // Assume everything else is an integer for now. We should support more types for better external schema handling.
+                    scale = 4;
+                }
+
+                String key = getDomainKey(schemaName, domainName);
+                _domainScaleMap.put(key, scale);
             }
         });
+    }
+
+
+    private String getDomainKey(String schemaName, String domainName)
+    {
+        return ("public".equals(schemaName) ? "" : schemaName + ".") + domainName;
     }
 
 
@@ -1129,23 +1127,22 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
         // Retrieve and pass in the previously queried scale values for this scope.
-        return new PostgreSQLColumnMetaDataReader(rsCols, schema);
+        return new PostgreSQLColumnMetaDataReader(rsCols, table);
     }
 
 
     private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
     {
-        private final DbSchema _schema;
+        private final TableInfo _table;
 
-        public PostgreSQLColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
+        public PostgreSQLColumnMetaDataReader(ResultSet rsCols, TableInfo table)
         {
             super(rsCols);
-            _schema = schema;
-            assert null != _userDefinedTypeScales;
 
+            _table = table;
             _nameKey = "COLUMN_NAME";
             _sqlTypeKey = "DATA_TYPE";
             _sqlTypeNameKey = "TYPE_NAME";
@@ -1178,36 +1175,52 @@ class PostgreSql83Dialect extends SqlDialect
         {
             int sqlType = super.getSqlType();
 
-            if (Types.DISTINCT == sqlType)
-            {
-                String typeName = getSqlTypeName();
-                Integer scale = _userDefinedTypeScales.get(typeName);
+            return Types.DISTINCT == sqlType ? getDomainScale(getSqlTypeName()) : super.getScale();
+        }
 
+        private int getDomainScale(String domainName) throws SQLException
+        {
+            DbSchema schema = _table.getSchema();
+            Integer scale = getDomainScale(schema, domainName);
+
+            if (null == scale)
+            {
+                // Some domain wasn't there when we initialized the datasource, so reload now.  This will happpen at bootstrap.
+                initializeUserDefinedTypes(schema.getScope());
+                scale = getDomainScale(schema, domainName);
+
+                // If scale is still null, then we have a problem. We've seen occassional exception reports showing this,
+                // but haven't had the information to track it down... so log additional info.
                 if (null == scale)
                 {
-                    // Some domain wasn't there when we initialized the datasource, so reload now.  This will happpen at bootstrap.
-                    initializeUserDefinedTypes(_schema.getScope());
-                    scale = _userDefinedTypeScales.get(typeName);
-
-                    // If scale is still null, then we have a problem. We've seen occassional exception reports showing this,
-                    // but haven't had the information to track it down... so log additional info.
-                    if (null == scale)
-                    {
-                        String message = "Null scale for \"" + typeName + "\" in column " + getName() + " in schema \"" + _schema.getName() + "\"";
-                        ExceptionUtil.logExceptionToMothership(null, new Exception(message));
-                        assert false : message;
-                    }
+                    String message = "Null scale for \"" + domainName + "\" in column \"" + _table.getName() + "." + getName() + "\" in schema \"" + schema.getName() + "\"";
+                    ExceptionUtil.logExceptionToMothership(null, new Exception(message));
+                    assert false : message;
+                    return 4;   // Return something on production servers so schema can continue to load
                 }
-
-                return scale.intValue();
             }
 
-            return super.getScale();
+            return scale.intValue();
+        }
+
+        // Domain could be defined in the current schema or in the "public" schema
+        private Integer getDomainScale(DbSchema schema, String domainName)
+        {
+            // Check the schema first
+            String key = getDomainKey(schema.getName(), domainName);
+            Integer scale = _domainScaleMap.get(key);
+
+            // Not there, check "public"
+            if (null == scale)
+                scale = _domainScaleMap.get(domainName);
+
+            return scale;
         }
 
         @Override
         public String getSequence() throws SQLException
         {
+            DbSchema schema = _table.getSchema();
             String src = _rsCols.getString("COLUMN_DEF");
 
             int start = src.indexOf('\'');
@@ -1216,8 +1229,8 @@ class PostgreSql83Dialect extends SqlDialect
             if (end > start)
             {
                 String sequence = src.substring(start + 1, end);
-                if (!sequence.toLowerCase().startsWith(_schema.getName().toLowerCase() + "."))
-                    sequence = _schema.getName() + "." + sequence;
+                if (!sequence.toLowerCase().startsWith(schema.getName().toLowerCase() + "."))
+                    sequence = schema.getName() + "." + sequence;
 
                 return sequence;
             }
@@ -1225,6 +1238,7 @@ class PostgreSql83Dialect extends SqlDialect
             return null;
         }
     }
+
 
     @Override
     public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
