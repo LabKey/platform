@@ -1225,7 +1225,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         else
             rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);
 
-        ColumnMetaDataReader reader = dialect.getColumnMetaDataReader(rsCols, parentTable.getSchema());
+        ColumnMetaDataReader reader = dialect.getColumnMetaDataReader(rsCols, parentTable);
 
         while (rsCols.next())
         {

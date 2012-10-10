@@ -16,8 +16,8 @@
 package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 
 import java.sql.ResultSet;
 import java.util.Collections;
@@ -55,7 +55,7 @@ public class MockSqlDialect extends SimpleSqlDialect
     }
 
     @Override
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

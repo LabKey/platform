@@ -213,9 +213,6 @@ public class RenderContext implements Map<String, Object>, Serializable
                 if (null == displayColumn)
                     continue;
                 displayColumn.addQueryColumns(ret);
-
-                // TODO: Remove this check -- it's overkill, but should help narrow down a TeamCity failure
-                assert Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns(), after adding " + displayColumn.getName());
             }
 
             // add any additional columns specified by FieldKey

@@ -302,7 +302,7 @@ public abstract class SqlDialect
 
 
     // Do dialect-specific work for this new data source.
-    public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
+    public void prepareNewDbScope(DbScope scope)
     {
         initialize();
     }
@@ -479,7 +479,7 @@ public abstract class SqlDialect
     public abstract boolean supportsRoundDouble();
 
     // Do nothing by default
-    public void prepareNewDatabase(DbSchema schema) throws ServletException
+    public void prepareNewDatabase(DbSchema schema)
     {
     }
 
@@ -1071,6 +1071,6 @@ public abstract class SqlDialect
     public abstract boolean isSqlServer();
     public abstract boolean isPostgreSQL();
     public abstract boolean isOracle();
-    public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema);
+    public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
 }

@@ -1811,7 +1811,7 @@ public class PageFlowUtil
     }
 
     /**
-     * Used by CombinedJavascriptAction only - it's possible this can be depreciated
+     * Used by CombinedJavascriptAction only - it's possible this can be deprecated
      */
     public static void getJavaScriptPaths(Set<String> scripts, Set<String> included)
     {

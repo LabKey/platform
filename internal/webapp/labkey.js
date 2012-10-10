@@ -307,7 +307,7 @@ LABKEY.requiresExt3 = function(immediate, callback, scope)
 };
 
 /**
- * Depreciated.  Use LABKEY.requiresExt3 instead.
+ * Deprecated.  Use LABKEY.requiresExt3 instead.
  * @private
  */
 LABKEY.requiresExtJs = LABKEY.requiresExt3;
