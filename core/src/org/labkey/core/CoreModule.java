@@ -569,19 +569,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                             "[all]".equals(filterFolderName) ||
                             container.getFolderType().getName().equals(filterFolderName))
                     {
-                        String uri = null;
+                        ActionURL actionURL = null;
                         if (null != expr)
                         {
-                            ActionURL actionURL = new ActionURL(expr.getSource());
+                            actionURL = new ActionURL(expr.getSource());
                             actionURL.setContainer(container);
-                            uri = actionURL.getURIString();
                         }
                         else
                         {
-                            ActionURL actionURL = container.getStartURL(user);
-                            if (null != actionURL)
-                                uri = actionURL.getURIString();
+                            actionURL = container.getStartURL(user);
                         }
+
+                        String uri = actionURL.getLocalURIString();
                         if (null != StringUtils.trimToNull(uri))
                         {
                             String name = null != StringUtils.trimToNull(container.getName()) ? container.getName() : "[root]";
