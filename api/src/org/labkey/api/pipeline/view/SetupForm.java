@@ -29,6 +29,9 @@ import org.springframework.validation.BindException;
  */
 public class SetupForm
 {
+    public static final String REVERT_OVERRIDE = "revertOverride";
+    public static final String SITE_DEFAULT = "siteDefault";
+
     private String _path;
     private String _supplementalPath;
     private String _keyPassword;
@@ -147,6 +150,11 @@ public class SetupForm
         return "siteDefault".equals(getPipelineRootOption());
     }
 
+    public boolean shouldRevertOverride()
+    {
+        return REVERT_OVERRIDE.equals(getPipelineRootOption());
+    }
+
     public static SetupForm init(Container c)
     {
         SetupForm form = new SetupForm();
@@ -175,8 +183,6 @@ public class SetupForm
 
     /**
      * Returns whether there is an inherited pipeline override in the hierarchy of this container.
-     * @param c
-     * @return
      */
     public static boolean hasInheritedOverride(Container c)
     {
