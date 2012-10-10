@@ -229,6 +229,12 @@ public class PipelineController extends SpringActionController
 
     public static boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception
     {
+        if (form.shouldRevertOverride())
+        {
+            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, null, false);
+            return true;
+        }
+
         String path = form.hasSiteDefaultPipelineRoot() ? null : form.getPath();
         URI root = validatePath(path, errors);
         String supplementalPath = form.hasSiteDefaultPipelineRoot() || form.getSupplementalPath() == null ? null : form.getSupplementalPath();

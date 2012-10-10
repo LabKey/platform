@@ -39,20 +39,13 @@
     String projectDefaultRoot = "";
     String folderRadioBtnLabel = "Set a pipeline override";
     boolean hasInheritedOverride = SetupForm.hasInheritedOverride(getViewContext().getContainer());
-/*
-    if (!getViewContext().getContainer().isProject())
-        folderRadioBtnLabel = "Use a folder specific pipeline root";
-*/
 
     File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
     if (siteRoot != null)
     {
         File projRoot = new File(siteRoot, getViewContext().getContainer().getProject().getName());
-        if (projRoot != null)
-        {
-            // Show the user the path that we'd point to if using the default location
-            projectDefaultRoot = projRoot.getAbsolutePath();
-        }
+        // Show the user the path that we'd point to if using the default location
+        projectDefaultRoot = projRoot.getAbsolutePath();
     }
 
     if (bean.getConfirmMessage() != null)
@@ -113,7 +106,7 @@
             to process, you can set a pipeline override to allow the data processing pipeline to operate on the
             files in your preferred directory instead of the one that LabKey creates for each folder.
 <%      if (bean.isShowAdditionalOptionsLink()) { %>
-            For additional pipeline options, <a href="<%=urlProvider(PipelineUrls.class).urlSetup(getViewContext().getContainer()).getLocalURIString()%>">click here</a>.
+            For additional pipeline options, <a href="<%=h(urlProvider(PipelineUrls.class).urlSetup(getViewContext().getContainer()))%>">click here</a>.
 <%      } %>
         </td></tr>
         <tr><td></td></tr>
@@ -125,8 +118,8 @@
             <td colspan="10">
                 <table>
                     <tr>
-                        <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="siteDefault" <%=hasInheritedOverride ? "disabled" : ""%>
-                            <%="siteDefault".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
+                        <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="<%= h(SetupForm.SITE_DEFAULT) %>" <%= text(hasInheritedOverride ? "disabled" : "") %>
+                            <%= text("siteDefault".equals(bean.getPipelineRootOption()) ? " checked" : "") %>
                                    onclick="updatePipelineSelection();">
 <%                      if (hasInheritedOverride) { %>
                             <label for="pipeOptionSiteDefault" class="labkey-disabled">Use a default based on the site-level root</label><%=
@@ -137,9 +130,17 @@
                         } %>
                         </td>
                     </tr>
-                    <tr></tr>
+                    <% if (hasInheritedOverride) { %>
+                        <tr>
+                            <td>
+                                <input type="radio" name="pipelineRootOption" id="revertOverride" value="<%= h(SetupForm.REVERT_OVERRIDE) %>" onclick="updatePipelineSelection();">
+                                <label for="revertOverride">Remove this pipeline override and inherit settings from parent</label>
+                            </td>
+                        </tr>
+                    <% } %>
+                    <tr>
                         <td><input type="radio" name="pipelineRootOption" id="pipeOptionProjectSpecified" value="projectSpecified"
-                                        <%="projectSpecified".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
+                                        <%= text("projectSpecified".equals(bean.getPipelineRootOption()) ? " checked" : "") %>
                                                onclick="updatePipelineSelection();">
                                         <label for="pipeOptionProjectSpecified"><%=h(folderRadioBtnLabel)%></label></td>
                     </tr>
@@ -152,13 +153,13 @@
                                 </tr>
                                 <tr>
                                     <td class="labkey-form-label"><label for="pipeOptionIndexable">Searchable</label></td>
-                                    <td id="pipeIndexTd"><input type="checkbox" name="searchable" id="pipeOptionIndexable" <%=bean.isSearchable() ? " checked" : ""%>>
+                                    <td id="pipeIndexTd"><input type="checkbox" name="searchable" id="pipeOptionIndexable" <%= text(bean.isSearchable() ? " checked" : "") %>>
                                         <label for="pipeOptionIndexable">Allow files to be indexed for full-text search</label>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="labkey-form-label"><label for="pipeOptionSupplementalPath">Supplemental directory</label></td>
-                                    <td id="pipeSupplementalPathTd"><input type="checkbox" id="pipeOptionSupplementalPath" <%=bean.getSupplementalPath() == null ? "" : " checked"%> onclick="Ext.get('supplementalPathDiv').dom.style.display = (Ext.get('pipeOptionSupplementalPath').dom.checked ? '' : 'none'); Ext.get('pipeProjectSupplementalPath').dom.disabled = (Ext.get('pipeOptionSupplementalPath').dom.checked ? false : true);">
+                                    <td id="pipeSupplementalPathTd"><input type="checkbox" id="pipeOptionSupplementalPath" <%= text(bean.getSupplementalPath() == null ? "" : " checked") %> onclick="Ext.get('supplementalPathDiv').dom.style.display = (Ext.get('pipeOptionSupplementalPath').dom.checked ? '' : 'none'); Ext.get('pipeProjectSupplementalPath').dom.disabled = (Ext.get('pipeOptionSupplementalPath').dom.checked ? false : true);">
                                         Include an additional directory for files. No files will be written to this directory.
                                         <div id="supplementalPathDiv" <% if (bean.getSupplementalPath() == null) { %>style="display:none"<% } %>>
                                             <input type="text" id="pipeProjectSupplementalPath" <% if (bean.getSupplementalPath() == null) { %>disabled<% } %> name="supplementalPath" size="50" value="<%=h(bean.getSupplementalPath())%>">
@@ -187,7 +188,7 @@
                                         { %>
                                             <tr>
                                                 <td class="labkey-form-label">Existing Globus cert expiration</td>
-                                                <td><%= DateUtil.formatDate(certs[0].getNotAfter())%></td>
+                                                <td><%= h(DateUtil.formatDate(certs[0].getNotAfter()))%></td>
                                             </tr><%
                                             if (certs[0].getSubjectX500Principal() != null) { %>
                                                 <tr>
@@ -206,15 +207,15 @@
                                     {
                                         %><input type="hidden" name="uploadNewGlobusKeys" value="true" /><%
                                     } %>
-                                    <tr id="keyFileRow" style="display: <%= showConfig ? "" : "none" %>">
+                                    <tr id="keyFileRow" style="display: <%= text(showConfig ? "" : "none") %>">
                                         <td class="labkey-form-label">Globus SSL private key<labkey:helpPopup title="Globus SSL private key"><p>This is typically stored in a file with a .pem extension. It should be in a BASE64 encoded PKCS#8 file format, and may be encrypted.</p><p>If you open the file in a text editor, the first line should be:</p><pre>-----BEGIN RSA PRIVATE KEY-----</pre></labkey:helpPopup></td>
                                         <td><input type="file" size="70" name="keyFile"></td>
                                     </tr>
-                                    <tr id="keyPasswordRow" style="display: <%= showConfig ? "" : "none" %>">
+                                    <tr id="keyPasswordRow" style="display: <%= text(showConfig ? "" : "none") %>">
                                         <td class="labkey-form-label">Private key password<labkey:helpPopup title="Private key password">If your private key has been encrypted, you must specify the password so that it can be decrypted.</labkey:helpPopup></td>
                                         <td><input type="text" size="20" name="keyPassword" value=""></td>
                                     </tr>
-                                    <tr id="certFileRow" style="display: <%= showConfig ? "" : "none" %>">
+                                    <tr id="certFileRow" style="display: <%= text(showConfig ? "" : "none") %>">
                                         <td class="labkey-form-label">Globus SSL certificate<labkey:helpPopup title="Globus SSL certificate"><p>This is typically stored in a file with a .pem extension. It should contain your BASE64 encoded X.509 certificatein a PKCS#8 file format.</p><p>If you open the file in a text editor, it should contain:</p><pre>-----BEGIN CERTIFICATE-----</pre></labkey:helpPopup></td>
                                         <td><input type="file" size="70" name="certFile"></td>
                                     </tr><%
@@ -227,7 +228,9 @@
             </td>
         </tr>
         <tr>
-            <td colspan="2"><labkey:button text="Save"/></td>
+            <td colspan="2">
+                <labkey:button text="Save"/>
+            </td>
         </tr>
     </table>
     <input type="hidden" name="pipelineRootForm" value="true">
