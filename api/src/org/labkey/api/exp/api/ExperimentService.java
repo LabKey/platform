@@ -282,7 +282,7 @@ public class ExperimentService
         HttpView createRunExportView(Container container, String defaultFilenamePrefix);
         HttpView createFileExportView(Container container, String defaultFilenamePrefix);
 
-        void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, String message);
+        void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
 
         ExpExperiment[] getMatchingBatches(String name, Container container, ExpProtocol protocol);
     }

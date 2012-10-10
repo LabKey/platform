@@ -21,6 +21,7 @@ import org.labkey.api.query.FieldKey;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -40,21 +41,31 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         super(ctx);
 
         // For each required column (e.g., display value, rowId), retrieve the concatenated values, split them, and
-        // create stash away an iterator of those values.
+        // stash away an iterator of those values.
+        int length = -1;
+        Set<FieldKey> nullFieldKeys = new HashSet<FieldKey>();
         for (FieldKey fieldKey : requiredFieldKeys)
         {
             String valueString = (String)ctx.get(fieldKey);
-            Iterator<String> i;
             if (valueString == null)
             {
-                i = Collections.<String>emptyList().iterator();
+                nullFieldKeys.add(fieldKey);
             }
             else
             {
                 String[] values = valueString.split(",");
-                i = new ArrayIterator<String>(values);
+                if (length != -1 && values.length != length)
+                {
+                    throw new IllegalStateException("Expected all columns to have the same number of values, but '" + fieldKey + "' has " + values.length + " and " + _iterators.keySet() + " had " + length);
+                }
+                length = values.length;
+                _iterators.put(fieldKey, new ArrayIterator<String>(values));
             }
-            _iterators.put(fieldKey, i);
+
+            for (FieldKey nullFieldKey : nullFieldKeys)
+            {
+                _iterators.put(nullFieldKey, new ArrayIterator<String>(new String[length == -1 ? 0 : length]));
+            }
         }
     }
 

@@ -299,7 +299,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     replacedRun.setReplacedByRun(run);
                     replacedRun.save(context.getUser());
                 }
-                ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
+                ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
 
                 moveFilesToArchivedDir(context, replacedRun);
             }

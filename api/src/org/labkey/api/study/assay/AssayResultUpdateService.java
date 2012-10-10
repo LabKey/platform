@@ -33,7 +33,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
@@ -109,7 +108,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 appendPropertyIfChanged(sb, col.getLabel(), oldValue, newValue);
             }
         }
-        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, sb.toString());
+        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString());
 
         return result;
     }
@@ -140,7 +139,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         ExpRun run = getRun(oldRowMap, user, DeletePermission.class);
         Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
-        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, "Deleted data row.");
+        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, "Deleted data row.");
 
         return result;
     }

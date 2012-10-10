@@ -287,14 +287,19 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
-    public ForeignKey getRunGroupIdForeignKey()
+    /** @param includeBatches if false, then filter out run groups of type batch when doing the join */
+    public ForeignKey getRunGroupIdForeignKey(final boolean includeBatches)
     {
         return new ExperimentLookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpTable result = getTable(TableType.RunGroups);
+                ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups);
                 result.setContainerFilter(new ContainerFilter.CurrentPlusProjectAndShared(getUser()));
+                if (!includeBatches)
+                {
+                    result.setBatchProtocol(null);
+                }
                 return result;
             }
         };
@@ -318,17 +323,6 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Materials);
-            }
-        };
-    }
-
-    public ForeignKey getRunLSIDForeignKey()
-    {
-        return new ExperimentLookupForeignKey("LSID")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return getTable(TableType.Runs);
             }
         };
     }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -24,7 +25,8 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
 {
     void addExperimentMembershipColumn(ExpRun run);
 
-    void setBatchProtocol(ExpProtocol protocol);
+    /** @param protocol if not null, the protocol for which the run group must be a batch. If null, then only include non-batches */
+    void setBatchProtocol(@Nullable ExpProtocol protocol);
 
     enum Column
     {
