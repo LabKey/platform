@@ -1333,35 +1333,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new Lsid(generateLSID(container, ExpSampleSet.class, sourceName));
     }
 
-    public void dropRunsFromExperiment(String expLSID, int... selectedRunIds)
-    {
-        if (selectedRunIds.length == 0)
-            return;
-        ExpExperiment exp = getExpExperiment(expLSID);
-        if (exp == null)
-        {
-            throw new NotFoundException("Attempting to remove Runs from an Experiment that does not exist");
-        }
-
-        String runIds = StringUtils.join(ArrayUtils.toObject(selectedRunIds), ",");
-
-        String sql = " DELETE FROM " + getTinfoRunList() + " WHERE ExperimentId = ? "
-                    + " AND ExperimentRunId IN ( " + runIds + " ) ; ";
-
-        try
-        {
-            ensureTransaction();
-
-            new SqlExecutor(getExpSchema(), new SQLFragment(sql, exp.getRowId())).execute();
-
-            commitTransaction();
-        }
-        finally
-        {
-            closeTransaction();
-        }
-    }
-
     public void deleteExperimentRunsByRowIds(Container container, User user, int... selectedRunIds)
     {
         if (selectedRunIds == null || selectedRunIds.length == 0)

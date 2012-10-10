@@ -16,21 +16,39 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
-import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.UnauthorizedException;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Column> implements ExpRunGroupMapTable
 {
     public ExpRunGroupMapTableImpl(String name, UserSchema schema)
     {
         super(name, ExperimentServiceImpl.get().getTinfoRunList(), schema, null);
+        addAllowablePermission(InsertPermission.class);
+        addAllowablePermission(DeletePermission.class);
     }
 
     @Override
@@ -39,10 +57,22 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         switch (column)
         {
             case RunGroup:
-                return wrapColumn(alias, _rootTable.getColumn("ExperimentId"));
+                ColumnInfo experimentId = wrapColumn(alias, _rootTable.getColumn("ExperimentId"));
+                experimentId.setFk(getExpSchema().getRunGroupIdForeignKey());
+                return experimentId;
 
             case Run:
-                return wrapColumn(alias, _rootTable.getColumn("ExperimentRunId"));
+                ColumnInfo experimentRunId = wrapColumn(alias, _rootTable.getColumn("ExperimentRunId"));
+                experimentRunId.setFk(getExpSchema().getRunIdForeignKey());
+                return experimentRunId;
+
+            case Created:
+                return wrapColumn(alias, _rootTable.getColumn("Created"));
+
+            case CreatedBy:
+                ColumnInfo createdBy = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
+                createdBy.setFk(new UserIdQueryForeignKey(_schema.getUser(),_schema.getContainer()));
+                return createdBy;
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -52,14 +82,21 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
     @Override
     public void populate()
     {
-        ExpSchema schema = getExpSchema();
-        addColumn(Column.RunGroup).setFk(schema.getRunGroupIdForeignKey());
-        addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
+        addColumn(Column.RunGroup);
+        addColumn(Column.Run);
+        addColumn(Column.Created);
+        addColumn(Column.CreatedBy);
 
         List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>();
         defaultVisibleColumns.add(FieldKey.fromParts(Column.RunGroup));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Run));
         setDefaultVisibleColumns(defaultVisibleColumns);
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return new RunGroupMapUpdateService(this);
     }
 
     /**
@@ -77,5 +114,110 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         sql.append(" WHERE er.RowId = ExperimentRunId)");
 
         addCondition(filter.getSQLFragment(getSchema(), sql, getContainer()), folderFieldKey);
+    }
+
+
+    private class RunGroupMapUpdateService extends AbstractQueryUpdateService
+    {
+        protected RunGroupMapUpdateService(ExpRunGroupMapTableImpl table)
+        {
+            super(table);
+        }
+
+        /**
+         * @return RunId is the first value, RunGroupId is the second
+         */
+        private Pair<Integer, Integer> getIds(Map<String, Object> values) throws InvalidKeyException
+        {
+            Integer runId = ConvertHelper.convert(values.get(Column.Run.toString()), Integer.class);
+            Integer runGroupId = ConvertHelper.convert(values.get(Column.RunGroup.toString()), Integer.class);
+
+            if (runId == null)
+            {
+                throw new InvalidKeyException("No value specified for column '" + Column.Run + "'");
+            }
+            if (runGroupId == null)
+            {
+                throw new InvalidKeyException("No value specified for column '" + Column.RunGroup + "'");
+            }
+
+            return new Pair<Integer, Integer>(runId, runGroupId);
+        }
+
+        private Pair<ExpRunImpl, ExpExperimentImpl> getObjects(Map<String, Object> values) throws InvalidKeyException, QueryUpdateServiceException
+        {
+            Pair<Integer, Integer> ids = getIds(values);
+            ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(ids.first);
+            if (run == null)
+            {
+                throw new QueryUpdateServiceException("No such run: " + ids.first);
+            }
+            ExpExperimentImpl runGroup = ExperimentServiceImpl.get().getExpExperiment(ids.second);
+            if (runGroup == null)
+            {
+                throw new QueryUpdateServiceException("No such run group: " + ids.second);
+            }
+            if (!runGroup.getContainer().hasPermission(getExpSchema().getUser(), ReadPermission.class))
+            {
+                throw new UnauthorizedException();
+            }
+            return new Pair<ExpRunImpl, ExpExperimentImpl>(run, runGroup);
+        }
+
+        @Override
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        {
+            Pair<Integer, Integer> ids = getIds(keys);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ExperimentId"), ids.second);
+            filter.addCondition(FieldKey.fromParts("ExperimentRunId"), ids.first);
+            Map<String, Object> row = new TableSelector(ExperimentServiceImpl.get().getTinfoRunList(), Table.ALL_COLUMNS, filter, null).getObject(Map.class);
+            if (row == null)
+            {
+                return null;
+            }
+            Map<String, Object> result = new CaseInsensitiveHashMap<Object>();
+            result.put(Column.Run.toString(), ids.first);
+            result.put(Column.RunGroup.toString(), ids.second);
+            result.put(Column.Created.toString(), row.get(Column.Created.toString()));
+            result.put(Column.CreatedBy.toString(), row.get(Column.CreatedBy.toString()));
+            return result;
+        }
+
+        @Override
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            try
+            {
+                Pair<ExpRunImpl, ExpExperimentImpl> objects = getObjects(row);
+                if (!objects.first.getContainer().hasPermission(getExpSchema().getUser(), InsertPermission.class))
+                {
+                    throw new UnauthorizedException();
+                }
+                objects.second.addRuns(getExpSchema().getUser(), objects.first);
+                return getRow(user, container, row);
+            }
+            catch (InvalidKeyException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
+        }
+
+        @Override
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            Pair<ExpRunImpl, ExpExperimentImpl> objects = getObjects(oldRow);
+            if (!objects.first.getContainer().hasPermission(getExpSchema().getUser(), DeletePermission.class))
+            {
+                throw new UnauthorizedException();
+            }
+            objects.second.removeRun(getExpSchema().getUser(), objects.first);
+            return oldRow;
+        }
     }
 }

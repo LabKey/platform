@@ -20,8 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -33,6 +33,7 @@ import org.labkey.api.util.URLHelper;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -112,9 +113,25 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         return Arrays.<ExpProtocol>asList(ExpProtocolImpl.fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql, getRowId()).getArray(Protocol.class)));
     }
 
-    public void removeRun(User user, ExpRun run) throws Exception
+    public void removeRun(User user, ExpRun run)
     {
-        ExperimentServiceImpl.get().dropRunsFromExperiment(getLSID(), run.getRowId());
+        SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList() +
+                " WHERE ExperimentId = ? AND ExperimentRunId = ?", getRowId(), run.getRowId());
+
+        try
+        {
+            ExperimentServiceImpl.get().ensureTransaction();
+
+            new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), sql).execute();
+
+            ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, "The run '" + run.getName() + "' was removed from the run group '" + getName() + "'");
+
+            ExperimentServiceImpl.get().commitTransaction();
+        }
+        finally
+        {
+            ExperimentServiceImpl.get().closeTransaction();
+        }
     }
 
     public void addRuns(User user, ExpRun... newRuns)
@@ -123,26 +140,31 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         {
             ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction();
 
-            ExpRun[] existingRunIds = getRuns();
-            Set<Integer> newRunIds = new HashSet<Integer>();
+            ExpRun[] existingRuns = getRuns();
+            Set<Integer> existingRunIds = new HashSet<Integer>();
             for (ExpRun run : newRuns)
             {
                 if (_object.getBatchProtocolId() != null && run.getProtocol().getRowId() != _object.getBatchProtocolId().intValue())
                 {
                     throw new IllegalArgumentException("Attempting to add a run of a different protocol to a batch.");
                 }
-                newRunIds.add(new Integer(run.getRowId()));
             }
 
-            for (ExpRun er : existingRunIds)
+            for (ExpRun er : existingRuns)
             {
-                newRunIds.remove(er.getRowId());
+                existingRunIds.add(er.getRowId());
             }
 
-            String sql = " INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId )  VALUES ( ? , ? ) ";
-            for (Integer runId : newRunIds)
+            String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId, Created, CreatedBy )  VALUES ( ? , ?, ? , ? )";
+            for (ExpRun run : newRuns)
             {
-                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, getRowId(), runId);
+                if (!existingRunIds.contains(run.getRowId()))
+                {
+                    SQLFragment fragment = new SQLFragment(sql, getRowId(), run.getRowId(), new Date(), user == null ? null : user.getUserId());
+                    new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), fragment).execute();
+
+                    ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, "The run '" + run.getName() + "' was added to the run group '" + getName() + "'");
+                }
             }
 
             ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
@@ -184,19 +206,19 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                     }
                 }
 
-                String sql = "DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList()
+                SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList()
                         + " WHERE ExperimentId IN ("
                         + " SELECT E.RowId FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
                         + " WHERE E.RowId = " + getRowId()
-                        + " AND E.Container = ? ); ";
-                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, getContainer().getId());
+                        + " AND E.Container = ? )", getContainer());
+                new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), sql).execute();
 
                 OntologyManager.deleteOntologyObjects(getContainer(), getLSID());
 
-                sql = "  DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
+                sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
                         + " WHERE RowId = " + getRowId()
-                        + " AND Container = ? ";
-                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, getContainer().getId());
+                        + " AND Container = ?", getContainer());
+                new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), sql).execute();
 
                 ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
             }

@@ -23,6 +23,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.AggregateColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CrosstabDimension;
 import org.labkey.api.data.CrosstabMeasure;
@@ -1016,7 +1017,7 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
-        public String getLookupContainerId()
+        public Container getLookupContainer()
         {
             return null;
         }

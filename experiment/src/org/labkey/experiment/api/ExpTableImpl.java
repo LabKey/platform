@@ -251,7 +251,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     @Override
     public String getPublicSchemaName()
     {
-        return _schema.getSchemaName();
+        return _publicSchemaName == null ? _schema.getSchemaName() : _publicSchemaName;
     }
 
 }

@@ -924,6 +924,12 @@
         <ns:column columnName="ExperimentRunId">
           <ns:description>Contains the unique identifier for the Run</ns:description>
         </ns:column>
+        <ns:column columnName="Created">
+          <ns:description>The time the run was added the run to the run group</ns:description>
+        </ns:column>
+        <ns:column columnName="CreatedBy">
+          <ns:description>The user who was added the run to the run group</ns:description>
+        </ns:column>
       </ns:columns>
       <ns:description>A junction table between Runs and RunGroups</ns:description>
     </ns:table>

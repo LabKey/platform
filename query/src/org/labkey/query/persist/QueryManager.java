@@ -616,7 +616,7 @@ public class QueryManager
         String displayColumn = o.getString("displayColumn");
         String keyColumn = o.getString("keyColumn");
         String containerPath = o.getString("containerPath");
-        String errorBase = "for column '" + col.getName() + "' in " + schemaName + "." + queryName + ": ";
+        String errorBase = "Column '" + col.getName() + "' in " + schemaName + "." + queryName + ": ";
 
         Container lookupContainer = containerPath == null ? container : ContainerManager.getForPath(containerPath);
         if (lookupContainer == null)
@@ -646,7 +646,7 @@ public class QueryManager
         TableInfo fkTable = userSchema.getTable(queryName);
         if(fkTable == null)
         {
-            queryErrors.add("ERROR: " + errorBase + " has a foreign key to a table that does not exist: " + schemaName + "." + queryName);
+            queryErrors.add("ERROR: " + errorBase + " has a lookup to a query that does not exist: " + schemaName + "." + queryName);
             return queryErrors;
         }
 

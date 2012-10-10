@@ -92,7 +92,7 @@ public class RunGroupWebPart extends QueryView
         }
         if (settings.getContainerFilterName() == null)
         {
-            settings.setContainerFilterName(ContainerFilter.Type.CurrentAndParents.name());
+            settings.setContainerFilterName(ContainerFilter.Type.CurrentPlusProjectAndShared.name());
         }
         settings.setQueryName(ExpSchema.TableType.RunGroups.toString());
         settings.getBaseSort().insertSortColumn("Name");

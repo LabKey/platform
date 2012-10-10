@@ -73,6 +73,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, new ExpMaterialImpl(new Material()));
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialAction.class, schema.getContainer()), Collections.singletonMap("rowId", "rowId")));
         setName(ExpSchema.TableType.Materials.name());
+        setPublicSchemaName(ExpSchema.SCHEMA_NAME);
     }
 
     @Override
@@ -204,6 +205,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         _ss = (ExpSampleSetImpl)ss;
         if (_ss != null)
         {
+            setPublicSchemaName(SamplesSchema.SCHEMA_NAME);
+            setName(ss.getName());
+
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowUploadMaterialsURL(getContainer());
             url.addParameter("name", _ss.getName());
             url.addParameter("importMoreSamples", true);
@@ -411,15 +415,6 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 super.renderDetailsData(ctx, out, span);
             }
         }
-    }
-
-    public String getPublicSchemaName()
-    {
-        if (_ss != null)
-        {
-            return SamplesSchema.SCHEMA_NAME;
-        }
-        return super.getPublicSchemaName();
     }
 
     @Override

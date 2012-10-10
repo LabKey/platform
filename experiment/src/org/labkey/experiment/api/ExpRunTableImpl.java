@@ -321,6 +321,26 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 col.setShownInInsertView(false);
                 col.setShownInUpdateView(false);
                 return col;
+//            case RunGroups2:
+//                ColumnInfo col2 = wrapColumn(alias, _rootTable.getColumn("RowId"));
+//                col2.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
+////                col2.setURL(new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, getExpSchema().getContainer()), "rowId", FieldKey.fromParts("RunGroup", "RowId")));
+//                col2.setFk(new MultiValuedForeignKey(new LookupForeignKey("Run")
+//                {
+//                    @Override
+//                    public TableInfo getLookupTableInfo()
+//                    {
+//                        return getExpSchema().getTable(ExpSchema.TableType.RunGroupMap);
+//                    }
+//
+//                    @Override
+//                    public StringExpression getURL(ColumnInfo parent)
+//                    {
+//                        return new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, getExpSchema().getContainer()), "rowId", FieldKey.fromParts("RunGroups2", "RunGroup", "RowId"));
+////                        return super.getURL(parent, true);
+//                    }
+//                }, "RunGroup"));
+//                return col2;
             case Input:
                 return createInputLookupColumn();
             case Output:
@@ -487,6 +507,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.LSID).setHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));
         addColumn(Column.RunGroups);
+//        addColumn(Column.RunGroups2);
         addColumn(Column.Input);
         addColumn(Column.Output);
         addColumn(Column.DataOutputs);
@@ -704,7 +725,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return null;
         }
 
-        public String getLookupContainerId()
+        public Container getLookupContainer()
         {
             return null;
         }
