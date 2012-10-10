@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.JdbcType;
@@ -109,7 +110,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 //            sql.append("))");
             SqlDialect d = getSqlDialect();
             sql = new SQLFragment("(CASE WHEN EXISTS (SELECT ExperimentId FROM ");
-            sql.append(ExperimentServiceImpl.get().getTinfoRunList());
+            sql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
             sql.append(" WHERE ExperimentRunId = " + run.getRowId() + " AND ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId) THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
         }
         else
@@ -124,7 +125,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(result);
     }
 
-    public void setBatchProtocol(ExpProtocol protocol)
+    public void setBatchProtocol(@Nullable ExpProtocol protocol)
     {
         SimpleFilter filter = new SimpleFilter();
         if (protocol != null)
@@ -164,8 +165,9 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(Column.LSID).setHidden(true);
         setTitleColumn("Name");
 
-        ActionURL detailsURL = new ActionURL(ExperimentController.DetailsAction.class, _schema.getContainer());
-        setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));
+        DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, _schema.getContainer()), Collections.singletonMap("rowId", "RowId"));
+        setDetailsURL(detailsURL);
+//        getColumn(Column.Name).setURL(detailsURL);
     }
 
     public ColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol)

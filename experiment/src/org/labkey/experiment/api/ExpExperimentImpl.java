@@ -124,7 +124,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
             new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), sql).execute();
 
-            ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, "The run '" + run.getName() + "' was removed from the run group '" + getName() + "'");
+            ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, this, "The run '" + run.getName() + "' was removed from the run group '" + getName() + "'");
 
             ExperimentServiceImpl.get().commitTransaction();
         }
@@ -163,7 +163,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                     SQLFragment fragment = new SQLFragment(sql, getRowId(), run.getRowId(), new Date(), user == null ? null : user.getUserId());
                     new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), fragment).execute();
 
-                    ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, "The run '" + run.getName() + "' was added to the run group '" + getName() + "'");
+                    ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, this, "The run '" + run.getName() + "' was added to the run group '" + getName() + "'");
                 }
             }
 

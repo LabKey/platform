@@ -21,9 +21,9 @@ import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.data.ExperimentAuditColumn;
 import org.labkey.api.audit.data.ProtocolColumn;
 import org.labkey.api.audit.data.RunColumn;
+import org.labkey.api.audit.data.RunGroupColumn;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.Sort;
@@ -100,6 +100,7 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
         columns.add(FieldKey.fromParts("ProjectId"));
         columns.add(FieldKey.fromParts("Key1"));
         columns.add(FieldKey.fromParts("Key2"));
+        columns.add(FieldKey.fromParts("IntKey1"));
         columns.add(FieldKey.fromParts("Comment"));
 
         return columns;
@@ -133,6 +134,16 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new RunColumn(colInfo, containerId, table.getColumn("Key3"));
+            }
+        });
+
+        ColumnInfo runGroupCol = table.getColumn("IntKey1");
+        runGroupCol.setLabel("Run Group");
+        runGroupCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new RunGroupColumn(colInfo, containerId, table.getColumn("Key3"));
             }
         });
     }

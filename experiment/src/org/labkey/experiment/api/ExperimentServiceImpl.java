@@ -117,7 +117,6 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -210,7 +209,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new JspView<ExperimentController.ExportBean>("/org/labkey/experiment/fileExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".zip", new ExperimentController.ExportOptionsForm(), roles, postURL));
     }
 
-    public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, String comment)
+    public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment)
     {
         AuditLogEvent event = new AuditLogEvent();
 
@@ -220,6 +219,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Container c = run != null ? run.getContainer() : protocol.getContainer();
         event.setContainerId(c.getId());
         event.setProjectId(c.getProject().getId());
+        event.setIntKey1(runGroup == null ? null : runGroup.getRowId());
 
         event.setKey1(protocol.getLSID());
         if (run != null)
@@ -955,7 +955,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         new SqlExecutor(getExpSchema(), sql).execute();
 
-        auditRunEvent(user, run.getProtocol(), run, "Run deleted");
+        auditRunEvent(user, run.getProtocol(), run, null, "Run deleted");
     }
 
 

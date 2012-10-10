@@ -48,8 +48,12 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.query.ExpExperimentTable;
+import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpTable;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
@@ -308,39 +312,26 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             }
             case RunGroups:
                 ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("RowId"));
-                col.setTextAlign("left");
-                final ExperimentsForeignKey fk = new ExperimentsForeignKey();
-                col.setFk(fk);
-                col.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new RunGroupListDisplayColumn(colInfo, fk);
-                    }
-                });
                 col.setShownInInsertView(false);
                 col.setShownInUpdateView(false);
+                col.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
+                col.setFk(new MultiValuedForeignKey(new LookupForeignKey(ExpRunGroupMapTable.Column.Run.toString())
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        ExpTable result = getExpSchema().getTable(ExpSchema.TableType.RunGroupMap);
+                        result.getColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(false));
+                        return result;
+                    }
+
+                    @Override
+                    public StringExpression getURL(ColumnInfo parent)
+                    {
+                        return new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, getExpSchema().getContainer()), "rowId", FieldKey.fromParts(Column.RunGroups, ExpExperimentTable.Column.RowId));
+                    }
+                }, ExpRunGroupMapTable.Column.RunGroup.toString()));
                 return col;
-//            case RunGroups2:
-//                ColumnInfo col2 = wrapColumn(alias, _rootTable.getColumn("RowId"));
-//                col2.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
-////                col2.setURL(new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, getExpSchema().getContainer()), "rowId", FieldKey.fromParts("RunGroup", "RowId")));
-//                col2.setFk(new MultiValuedForeignKey(new LookupForeignKey("Run")
-//                {
-//                    @Override
-//                    public TableInfo getLookupTableInfo()
-//                    {
-//                        return getExpSchema().getTable(ExpSchema.TableType.RunGroupMap);
-//                    }
-//
-//                    @Override
-//                    public StringExpression getURL(ColumnInfo parent)
-//                    {
-//                        return new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, getExpSchema().getContainer()), "rowId", FieldKey.fromParts("RunGroups2", "RunGroup", "RowId"));
-////                        return super.getURL(parent, true);
-//                    }
-//                }, "RunGroup"));
-//                return col2;
             case Input:
                 return createInputLookupColumn();
             case Output:
@@ -507,7 +498,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.LSID).setHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));
         addColumn(Column.RunGroups);
-//        addColumn(Column.RunGroups2);
         addColumn(Column.Input);
         addColumn(Column.Output);
         addColumn(Column.DataOutputs);
@@ -883,7 +873,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     }
                 }
                 run.save(user);
-                ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, sb.toString());
+                ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString());
             }
             return getRow(user, container, oldRow);
         }

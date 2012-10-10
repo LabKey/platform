@@ -58,7 +58,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         {
             case RunGroup:
                 ColumnInfo experimentId = wrapColumn(alias, _rootTable.getColumn("ExperimentId"));
-                experimentId.setFk(getExpSchema().getRunGroupIdForeignKey());
+                experimentId.setFk(getExpSchema().getRunGroupIdForeignKey(true));
                 return experimentId;
 
             case Run:
