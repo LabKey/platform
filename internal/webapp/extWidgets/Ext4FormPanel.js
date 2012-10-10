@@ -114,10 +114,17 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             ,bodyBorder: false
             ,bodyStyle: 'padding:5px'
             ,style: 'margin-bottom: 15px'
-            ,buttons: [
-                LABKEY.ext4.FORMBUTTONS.getButton('SUBMIT'),
-                LABKEY.ext4.FORMBUTTONS.getButton('CANCEL')
-            ]
+            //NOTE: using 'buttons' in Ext4 creates a bbar with a non-transparent background, so buttons are created using dockedItems
+            ,dockedItems: [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                ui: 'footer',
+                style: 'background-color: transparent;',
+                items: [
+                    LABKEY.ext4.FORMBUTTONS.getButton('SUBMIT'),
+                    LABKEY.ext4.FORMBUTTONS.getButton('CANCEL')
+                ]
+            }]
         });
 
         this.mon(this.store, 'exception', this.onCommitException, this);

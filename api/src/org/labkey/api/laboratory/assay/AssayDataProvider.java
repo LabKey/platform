@@ -31,6 +31,12 @@ public interface AssayDataProvider extends DataProvider
      */
     abstract public Collection<AssayImportMethod> getImportMethods();
 
+    /**
+     * Return true if this import pathway can be used with assay run templates, which allows runs to be prepared ahead of importing results
+     * @return
+     */
+    public boolean supportsRunTemplates();
+
     abstract public AssayImportMethod getImportMethodByName(String methodName);
 
     abstract public String getDefaultImportMethodName(Container c, User u, int protocolId);

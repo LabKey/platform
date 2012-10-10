@@ -100,11 +100,11 @@ public interface AssayImportMethod
     abstract public AssayParser getFileParser(Container c, User u, int assayId, JSONObject formData);
 
     /**
-     * Returns true if this import method supports assay templates, which allow the user to proactively
+     * Returns true if this import method supports assay run templates, which allow the user to proactively
      * upload sample metadata and create an export to be read directly into an instrument
      * @return
      */
-    abstract public boolean supportsTemplates();
+    abstract public boolean supportsRunTemplates();
 
     abstract public void generateTemplate(JSONObject json, HttpServletResponse response);
 }

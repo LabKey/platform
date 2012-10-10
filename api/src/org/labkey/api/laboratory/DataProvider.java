@@ -61,23 +61,10 @@ public interface DataProvider
     public List<NavItem> getReportItems(Container c, User u);
 
     /**
-     * Return true if this import pathway can be used with assay templates, which allows runs to be prepared ahead of importing results
-     * @return
-     */
-    public boolean supportsTemplates();
-
-    /**
      * A metadata config object that will be applied to the fields on the run template page
      * @return
      */
     public JSONObject getTemplateMetadata(ViewContext ctx);
-
-//    /**
-//     * If supported, this is the action use to proactively import sample information or create exports
-//     * for the instrument used to run the assay
-//     * @return
-//     */
-//    public ActionURL getPrepareExptUrl(Container c, User u, ExpProtocol protocol);
 
     /**
      * @return Optional.  Returns a set of ClientDependencies that will be loaded on the request page for this assay

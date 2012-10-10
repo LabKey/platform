@@ -132,11 +132,11 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         return this.getClass().getName() + "||DefaultImportMethods";
     }
 
-    public boolean supportsTemplates()
+    public boolean supportsRunTemplates()
     {
         for (AssayImportMethod im : getImportMethods())
         {
-            if (im.supportsTemplates())
+            if (im.supportsRunTemplates())
             {
                 return true;
             }
@@ -177,8 +177,8 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             boolean visible = new AssayNavItem(this, p).isVisible(c, u);
             if (visible)
             {
-                String query = AssayService.get().getResultsTableName(p);
-                items.add(new SimpleQueryNavItem(this, AssaySchema.NAME, query, _providerName));
+                String queryName = AssayService.get().getResultsTableName(p);
+                items.add(new SimpleQueryNavItem(this, AssaySchema.NAME, queryName, _providerName, "View " + queryName));
             }
         }
         return items;

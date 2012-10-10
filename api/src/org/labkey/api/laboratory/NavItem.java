@@ -41,8 +41,6 @@ public interface NavItem
 
     public ActionURL getBrowseUrl(Container c, User u);
 
-    public ActionURL getPrepareExptUrl(Container c, User u);
-
     public JSONObject toJSON(Container c, User u);
 
     public String getPropertyManagerKey();

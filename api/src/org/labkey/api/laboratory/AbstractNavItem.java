@@ -30,7 +30,6 @@ abstract public class AbstractNavItem implements NavItem
         ret.put("importUrl", getUrlObject(getImportUrl(c, u)));
         ret.put("searchUrl", getUrlObject(getSearchUrl(c, u)));
         ret.put("browseUrl", getUrlObject(getBrowseUrl(c, u)));
-        ret.put("prepareExptUrl", getUrlObject(getPrepareExptUrl(c, u)));
 
         return ret;
     }

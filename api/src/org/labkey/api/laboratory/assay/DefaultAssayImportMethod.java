@@ -147,7 +147,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return "Laboratory.ext.AssayPreviewPanel";
     }
 
-    public boolean supportsTemplates()
+    public boolean supportsRunTemplates()
     {
         return false;
     }
@@ -157,7 +157,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         JSONObject json = new JSONObject();
         json.put("name", getName());
         json.put("label", getLabel());
-        json.put("supportsTemplates", supportsTemplates());
+        json.put("supportsTemplates", supportsRunTemplates());
 
         json.put("additionalFields", getAdditionalFields());
         json.put("hideTemplateDownload", hideTemplateDownload());

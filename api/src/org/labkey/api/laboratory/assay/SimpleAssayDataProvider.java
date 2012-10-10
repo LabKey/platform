@@ -28,7 +28,7 @@ public class SimpleAssayDataProvider extends AbstractAssayDataProvider
     }
 
     @Override
-    public boolean supportsTemplates()
+    public boolean supportsRunTemplates()
     {
         return false;
     }

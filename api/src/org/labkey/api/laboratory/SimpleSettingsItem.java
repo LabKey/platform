@@ -97,11 +97,6 @@ public class SimpleSettingsItem extends AbstractNavItem implements SettingsNavIt
         return QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
     }
 
-    public ActionURL getPrepareExptUrl(Container c, User u)
-    {
-        return null;
-    }
-
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject json = super.toJSON(c, u);

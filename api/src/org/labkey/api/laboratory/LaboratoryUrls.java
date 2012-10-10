@@ -19,4 +19,6 @@ public interface LaboratoryUrls extends UrlProvider
     public ActionURL getImportUrl(Container c, User u, String schemaName, String queryName);
 
     public ActionURL getAssayRunTemplateUrl(Container c, ExpProtocol protocol);
+
+    public ActionURL getViewAssayRunTemplateUrl(Container c, User u, ExpProtocol protocol);
 }

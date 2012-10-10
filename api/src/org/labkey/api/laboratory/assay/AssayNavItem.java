@@ -85,11 +85,20 @@ public class AssayNavItem extends AbstractNavItem
         return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, _protocol);
     }
 
-    public ActionURL getPrepareExptUrl(Container c, User u)
+    public ActionURL getAssayRunTemplateUrl(Container c, User u)
     {
-        if (_ad != null && _ad.supportsTemplates())
+        if (_ad != null && _ad.supportsRunTemplates())
         {
             return PageFlowUtil.urlProvider(LaboratoryUrls.class).getAssayRunTemplateUrl(c, _protocol);
+        }
+        return null;
+    }
+
+    public ActionURL getViewAssayRunTemplateUrl(Container c, User u)
+    {
+        if (_ad != null && _ad.supportsRunTemplates())
+        {
+            return PageFlowUtil.urlProvider(LaboratoryUrls.class).getViewAssayRunTemplateUrl(c, u, _protocol);
         }
         return null;
     }
@@ -99,6 +108,9 @@ public class AssayNavItem extends AbstractNavItem
     {
         JSONObject json = super.toJSON(c, u);
         json.put("rowId", _protocol.getRowId());
+        json.put("supportsRunTemplates", _ad.supportsRunTemplates());
+        json.put("assayRunTemplateUrl", getUrlObject(getAssayRunTemplateUrl(c, u)));
+        json.put("viewRunTemplateUrl", getUrlObject(getViewAssayRunTemplateUrl(c, u)));
 
         return json;
     }
