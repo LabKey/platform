@@ -170,7 +170,7 @@ public class SequenceVisitManager extends VisitManager
             sqlInsertParticipantVisit.append("SELECT ParticipantId, SequenceNum FROM ").append(tableParticipantVisit, "PV").append("\n");
             sqlInsertParticipantVisit.append("WHERE Container = ? AND Specimen.Ptid = PV.ParticipantId AND Specimen.VisitValue = PV.SequenceNum)\n");
             sqlInsertParticipantVisit.add(getStudy().getContainer());
-            sqlInsertParticipantVisit.append("GROUP BY Container, ParticipantId, SequenceNum");
+            sqlInsertParticipantVisit.append("GROUP BY Container, Ptid, VisitValue");
             Table.execute(schema, sqlInsertParticipantVisit);
 
             //
