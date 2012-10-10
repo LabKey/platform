@@ -504,9 +504,14 @@ public class ContainerManager
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
+        return getChildren(parent, u, perm, true);
+    }
+
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, boolean includeWorkbooks)
+    {
         List<Container> children = new ArrayList<Container>();
         for (Container child : getChildrenMap(parent).values())
-            if (child.hasPermission(u, perm))
+            if (child.hasPermission(u, perm) && (includeWorkbooks || !child.isWorkbook()))
                 children.add(child);
 
         return children;
@@ -520,12 +525,17 @@ public class ContainerManager
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
+        return getAllChildren(parent, u, perm, true);
+    }
+
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, boolean includeWorkbooks)
+    {
         List<Container> result = new ArrayList<Container>();
         Container[] containers = getAllChildren(parent);
 
         for (Container container : containers)
         {
-            if (container.hasPermission(u, perm))
+            if (container.hasPermission(u, perm) && (includeWorkbooks || !container.isWorkbook()))
             {
                 result.add(container);
             }
