@@ -393,9 +393,9 @@ LABKEY.requiresExt3ClientAPI = function(immediate)
     if (LABKEY.devMode)
     {
         var scripts = [
-            "clientapi/ext3/ExtJsConfig.js",
             "clientapi/ext3/DataRegion.js",
             "clientapi/ext3/EditorGridPanel.js",
+            "clientapi/ext3/ExtendedJsonReader.js",
             "clientapi/ext3/FieldKey.js",
             "clientapi/ext3/FileSystem.js",
             "clientapi/ext3/FormPanel.js",
