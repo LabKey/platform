@@ -5200,7 +5200,9 @@ public class AdminController extends SpringActionController
         menuProps.put(CUSTOMMENU_FOLDER, form.getFolderName());
         menuProps.put(CUSTOMMENU_TITLE, form.getTitle());
         menuProps.put(CUSTOMMENU_URL, form.getUrl());
-        menuProps.put(CUSTOMMENU_ROOTFOLDER, form.getRootFolder());
+
+        // If root folder not specified, set as current container
+        menuProps.put(CUSTOMMENU_ROOTFOLDER, StringUtils.trimToNull(form.getRootFolder()) != null ? form.getRootFolder() : container.getPath());
         menuProps.put(CUSTOMMENU_FOLDERTYPES, form.getFolderTypes());
         menuProps.put(CUSTOMMENU_CHOICELISTQUERY, form.isChoiceListQuery() ? "true" : "false");
         menuProps.put(CUSTOMMENU_INCLUDEALLDESCENDANTS, form.isIncludeAllDescendants() ? "true" : "false");

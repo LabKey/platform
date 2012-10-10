@@ -516,12 +516,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         List<Container> containersTemp = null;
         if (form.isIncludeAllDescendants())
         {
-            containersTemp = ContainerManager.getAllChildren(rootFolder, user);
+            containersTemp = ContainerManager.getAllChildren(rootFolder, user, ReadPermission.class, false);    // no workbooks
+            containersTemp.remove(rootFolder);      // getAllChildren adds root, which we don't want
         }
         else
         {
-            containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class);
-            containersTemp.add(rootFolder);
+            containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class, false);   // no workbooks
+//            containersTemp.add(rootFolder);      // Don't add root folder; later we may add a checkbox to allow it to be added, if so, check root's permissions
         }
 
         if (!context.getContainer().getPolicy().hasPermission(user, AdminPermission.class))
