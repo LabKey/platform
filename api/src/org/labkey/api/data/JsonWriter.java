@@ -256,9 +256,9 @@ public class JsonWriter
                 && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(columnInfo))))
         {
             JSONObject lookupInfo = new JSONObject();
-            if (null != fk.getLookupContainerId())
+            if (null != fk.getLookupContainer())
             {
-                Container fkContainer = ContainerManager.getForId(fk.getLookupContainerId());
+                Container fkContainer = fk.getLookupContainer();
                 if (null != fkContainer)
                 {
                     lookupInfo.put("containerPath", fkContainer.getPath());

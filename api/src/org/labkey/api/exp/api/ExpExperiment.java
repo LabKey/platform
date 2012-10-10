@@ -42,7 +42,7 @@ public interface ExpExperiment extends ExpObject
      * @return all the parent protocols for all of the member runs 
      */
     List<ExpProtocol> getAllProtocols();
-    void removeRun(User user, ExpRun run) throws Exception;
+    void removeRun(User user, ExpRun run);
     void addRuns(User user, ExpRun... run);
     boolean isHidden();
 

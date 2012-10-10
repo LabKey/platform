@@ -145,15 +145,12 @@ public class TableInfoWriter
         {
             ColumnType.Fk fkXml = columnXml.addNewFk();
 
-            String fkContainerId = fk.getLookupContainerId();
+            Container fkContainer = fk.getLookupContainer();
 
             // Null means current container... which means don't set anything in the XML
-            if (null != fkContainerId)
+            if (null != fkContainer)
             {
-                Container fkContainer = ContainerManager.getForId(fkContainerId);
-
-                if (null != fkContainer)
-                    fkXml.setFkFolderPath(fkContainer.getPath());
+                fkXml.setFkFolderPath(fkContainer.getPath());
             }
 
             TableInfo tinfo = fk.getLookupTableInfo();

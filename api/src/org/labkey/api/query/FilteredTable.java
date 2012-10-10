@@ -40,7 +40,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     private String _innerAlias = null;
     protected TableInfo _rootTable;
     AliasManager _aliasManager = null;
-    private String _publicSchemaName = null;
+    protected String _publicSchemaName = null;
 
     private Container _container;
 

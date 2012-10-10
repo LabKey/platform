@@ -67,7 +67,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         _lookupSchemaName = lookupSchemaName;
     }
 
-    public String getLookupContainerId()
+    public Container getLookupContainer()
     {
         return null;
     }

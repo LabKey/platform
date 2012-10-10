@@ -72,4 +72,6 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
     public void setDescription(String description);
 
     public void setDomain(Domain domain);
+
+    public void setPublicSchemaName(String schemaName);
 }

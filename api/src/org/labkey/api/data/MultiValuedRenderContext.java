@@ -74,7 +74,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             if (null == previousHasNext)
                 previousHasNext = hasNext;
             else
-                assert previousHasNext == hasNext;
+                assert previousHasNext == hasNext : "Mismatch in number of values for " + entry.getKey() + " compared with other fields: " + _iterators.keySet();
         }
 
         return null != previousHasNext && previousHasNext;

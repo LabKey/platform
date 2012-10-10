@@ -28,6 +28,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
     User _user;
     PropertyDescriptor _pd;
     Container _currentContainer;
+    private Container _targetContainer;
 
     public PdLookupForeignKey(User user, PropertyDescriptor pd, @NotNull Container container)
     {
@@ -41,6 +42,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         setTableName(pd.getLookupQuery());
         assert container != null : "Container cannot be null";
         _currentContainer = container;
+        _targetContainer = _pd.getLookupContainer() == null ? null : ContainerManager.getForId(_pd.getLookupContainer());
     }
 
     @Override
@@ -56,23 +58,21 @@ public class PdLookupForeignKey extends AbstractForeignKey
     }
 
     @Override
-    public String getLookupContainerId()
+    public Container getLookupContainer()
     {
-        return _pd.getLookupContainer();
+        return _targetContainer;
     }
 
     public TableInfo getLookupTableInfo()
     {
         if (_pd.getLookupSchema() == null || _pd.getLookupQuery() == null)
             return null;
-        String containerId = _pd.getLookupContainer();
-        Container container;
 
         TableInfo table;
-        if (containerId != null)
+        if (_targetContainer != null)
         {
             // We're configured to target a specific container
-            table = findTableInfo(ContainerManager.getForId(containerId));
+            table = findTableInfo(_targetContainer);
         }
         else
         {
@@ -83,6 +83,11 @@ public class PdLookupForeignKey extends AbstractForeignKey
                 // Fall back to the property descriptor's container - useful for finding lists and other
                 // single-container tables
                 table = findTableInfo(_pd.getContainer());
+                if (table != null)
+                {
+                    // Remember that we had to get it from a different container
+                    _targetContainer = _pd.getContainer();
+                }
             }
         }
 

@@ -58,7 +58,7 @@ public interface ForeignKey
     /**
      * @return The container id of the foreign user schema table.  Null means current container.
      */
-    String getLookupContainerId();
+    Container getLookupContainer();
 
     /**
      * Just for introspection.

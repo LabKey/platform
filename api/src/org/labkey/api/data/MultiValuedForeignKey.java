@@ -53,9 +53,17 @@ public class MultiValuedForeignKey implements ForeignKey
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         TableInfo junction = _fk.getLookupTableInfo();
+        if (junction == null)
+        {
+            return null;
+        }
 
         ColumnInfo junctionKey = junction.getColumn(_junctionLookup);       // Junction join to value table
         ColumnInfo childKey = junction.getColumn(getLookupColumnName());    // Junction join to primary table
+        if (junctionKey == null)
+        {
+            throw new IllegalStateException("Could not find column '" + _junctionLookup + "' on table " + junction);
+        }
         ForeignKey fk = junctionKey.getFk();                                // Wrapped foreign key to value table (elided lookup)
 
         ColumnInfo lookupColumn = fk.createLookupColumn(junctionKey, displayField);
@@ -112,9 +120,9 @@ public class MultiValuedForeignKey implements ForeignKey
     }
 
     @Override
-    public String getLookupContainerId()
+    public Container getLookupContainer()
     {
-        return _fk.getLookupContainerId();
+        return _fk.getLookupContainer();
     }
 
     @Override

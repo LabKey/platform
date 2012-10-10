@@ -30,6 +30,8 @@ public class ExpSchema extends AbstractExpSchema
 {
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
 
+
+
     public enum TableType
     {
         Runs
@@ -60,7 +62,8 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
-                return expSchema.getSamplesSchema().getSampleTable(null);
+                ExpMaterialTable result = expSchema.getSamplesSchema().getSampleTable(null);
+                return result;
             }
         },
         MaterialInputs
@@ -123,9 +126,9 @@ public class ExpSchema extends AbstractExpSchema
         public abstract TableInfo createTable(ExpSchema expSchema, String queryName);
     }
 
-    public TableInfo getTable(TableType tableType)
+    public ExpTable getTable(TableType tableType)
     {
-        return getTable(tableType.toString());
+        return (ExpTable)getTable(tableType.toString());
     }
 
     public ExpExperimentTable createExperimentsTableWithRunMemberships(ExpRun run)
@@ -290,7 +293,9 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return getTable(TableType.RunGroups);
+                ExpTable result = getTable(TableType.RunGroups);
+                result.setContainerFilter(new ContainerFilter.CurrentPlusProjectAndShared(getUser()));
+                return result;
             }
         };
     }

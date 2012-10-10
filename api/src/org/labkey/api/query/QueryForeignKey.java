@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
@@ -95,7 +96,7 @@ public class QueryForeignKey implements ForeignKey
         return LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupTable.getColumn(displayField), false);
     }
 
-    public String getLookupContainerId()
+    public Container getLookupContainer()
     {
         return null;
     }

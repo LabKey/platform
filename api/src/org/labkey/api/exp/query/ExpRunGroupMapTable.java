@@ -27,6 +27,8 @@ public interface ExpRunGroupMapTable extends ExpTable<ExpRunGroupMapTable.Column
     {
         RunGroup,
         Run,
+        Created,
+        CreatedBy,
     }
 }
 

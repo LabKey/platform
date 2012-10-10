@@ -42,7 +42,6 @@ import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
-import java.net.URLEncoder;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -55,8 +54,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 {
@@ -1161,7 +1158,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return _joinWithContainer;
         }
 
-        public String getLookupContainerId()
+        public Container getLookupContainer()
         {
             return null;
         }

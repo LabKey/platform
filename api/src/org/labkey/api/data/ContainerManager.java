@@ -561,6 +561,13 @@ public class ContainerManager
 
         String[] childIds = (String[]) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
 
+        if (null == childIds && parent.isWorkbook())
+        {
+            // Optimization to avoid database query (important because some installs have tens of thousands of
+            // workbooks) when the container is a workbook, which is not allowed to have children
+            childIds = emptyStringArray;
+        }
+
         if (null == childIds)
         {
             try
