@@ -531,18 +531,20 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void setNotifyList(HString notifyList)
     {
+        if (null != notifyList)
+            notifyList = new HString(notifyList.replace(";","\n"));
         _notifyList = notifyList;
     }
 
 
     public void parseNotifyList(String notifyList)
     {
-        String[] names = StringUtils.trimToEmpty(notifyList).split(";");
+        String[] names = StringUtils.split(StringUtils.trimToEmpty(notifyList), ";\n");
         ArrayList<String> parsed = new ArrayList<String>();
         for (String name : names)
         {
-            name = StringUtils.trimToNull(name);
-            if (null == name) continue;
+            if (null == (name = StringUtils.trimToNull(name)))
+                continue;
             User u = null;
             try { u = UserManager.getUser(new ValidEmail(name)); } catch (ValidEmail.InvalidEmailException x) {}
             if (null == u)
@@ -562,9 +564,11 @@ public class Issue extends Entity implements Serializable, Cloneable
     public List<String> getNotifyListDisplayNames(User user)
     {
         ArrayList<String> ret = new ArrayList<String>();
-        String[] raw = StringUtils.trimToEmpty(null==_notifyList?"":_notifyList.getSource()).split(";");
+        String[] raw = StringUtils.split(null==_notifyList?"":_notifyList.getSource(), ";\n");
         for (String id : raw)
         {
+            if (null == (id = StringUtils.trimToNull(id)))
+                continue;
             ValidEmail v = null;
             User u = null;
             try
@@ -587,9 +591,11 @@ public class Issue extends Entity implements Serializable, Cloneable
     public List<ValidEmail> getNotifyListEmail()
     {
         ArrayList<ValidEmail> ret = new ArrayList<ValidEmail>();
-        String[] raw = StringUtils.trimToEmpty(null==_notifyList?"":_notifyList.getSource()).split(";");
+        String[] raw = StringUtils.split(null==_notifyList?"":_notifyList.getSource(), ";\n");
         for (String id : raw)
         {
+            if (null == (id=StringUtils.trimToNull(id)))
+                continue;
             ValidEmail v = null;
             User u = null;
             try { v = new ValidEmail(id); } catch (ValidEmail.InvalidEmailException x) { }

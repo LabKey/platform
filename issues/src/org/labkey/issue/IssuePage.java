@@ -25,6 +25,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
@@ -336,19 +337,37 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return select.toHString();
     }
 
-    public HString getNotifyListString()
+
+    public HString getNotifyListString(boolean asEmail)
     {
-        List<String> names = _issue.getNotifyListDisplayNames(_user);
-        if (names.isEmpty())
-            return HString.EMPTY;
-        return new HString(StringUtils.join(names, "\n"));
+        if (asEmail)
+        {
+            List<ValidEmail> names = _issue.getNotifyListEmail();
+            StringBuilder sb = new StringBuilder();
+            String nl = "";
+            for (ValidEmail e : names)
+            {
+                sb.append(nl);
+                sb.append(e.getEmailAddress());
+                nl = "\n";
+            }
+            return new HString(sb.toString(),false);
+        }
+        else
+        {
+            List<String> names = _issue.getNotifyListDisplayNames(_user);
+            if (names.isEmpty())
+                return HString.EMPTY;
+            return new HString(StringUtils.join(names, "\n"));
+        }
     }
+
 
     public HString getNotifyList()
     {
         if (!isEditable("notifyList"))
         {
-            return filter(getNotifyListString());
+            return filter(getNotifyListString(false));
         }
         final HStringBuilder sb = new HStringBuilder();
 
@@ -362,11 +381,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         sb.append(getIssue().getIssueId());
         sb.append("&amp;prefix=');\"");
         sb.append(">");
-        sb.append(filter(getNotifyListString()));
+        sb.append(filter(getNotifyListString(true)));
         sb.append("</textarea>");
-
         return sb.toHString();
     }
+
 
     public HString getLabel(ColumnType type)
     {

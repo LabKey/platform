@@ -1107,7 +1107,7 @@ public class IssuesController extends SpringActionController
 
     private void validateNotifyList(Issue issue, IssuesForm form, Errors errors)
     {
-        String[] rawEmails = _toString(form.getNotifyList()).split("\n");
+        String[] rawEmails = StringUtils.split(StringUtils.trimToEmpty(form.getNotifyList()), ";\n");
         List<String> invalidEmails = new ArrayList<String>();
         List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
 
