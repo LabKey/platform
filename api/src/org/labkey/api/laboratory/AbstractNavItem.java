@@ -70,6 +70,6 @@ abstract public class AbstractNavItem implements NavItem
     public static String inferDataProviderNameFromKey(String key)
     {
         String[] tokens = key.split("\\|\\|");
-        return tokens[0];
+        return tokens[0] + "||" + tokens[1] + "||" + tokens[2];
     }
 }

@@ -45,6 +45,7 @@ import java.util.Map;
 public class DefaultAssayImportMethod implements AssayImportMethod
 {
     public static final String NAME = "Default Excel";
+    protected static final String EMPTY_WELL_NAME = "empty";
     protected String _providerName;
     protected AssayProvider _ap;
 

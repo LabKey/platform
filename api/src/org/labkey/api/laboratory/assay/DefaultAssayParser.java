@@ -20,6 +20,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -28,6 +32,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.laboratory.LaboratoryService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
@@ -44,6 +49,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -304,6 +310,32 @@ public class DefaultAssayParser implements AssayParser
 
         _provider = provider;
         _protocol = protocol;
+    }
+
+    protected Map<String, Map<String, Object>> getTemplateRowMap(JSONObject json, String keyProperty){
+        Integer templateId = json.getInt("TemplateId");
+        Map<String, Map<String, Object>> ret = new HashMap<String, Map<String, Object>>();
+
+        //TODO: use constants
+        TableInfo ti = DbSchema.get("laboratory").getTable("assay_run_templates");
+
+        TableSelector ts = new TableSelector(ti, new SimpleFilter(FieldKey.fromString("rowid"), templateId), null);
+        Map<String, Object>[] maps = ts.getArray(Map.class);
+        if (maps.length == 0)
+        {
+            return ret;
+        }
+
+        Map<String, Object> map = maps[0];
+        JSONObject templateJson = new JSONObject((String)map.get("json"));
+        JSONArray rows = templateJson.getJSONArray("ResultRows");
+        for (JSONObject row : rows.toJSONObjectArray())
+        {
+            String key = row.getString(keyProperty);
+            ret.put(key, row);
+        }
+
+        return ret;
     }
 
     public ExpProtocol getProtocol()
