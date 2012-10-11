@@ -68,7 +68,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
 
     renderForm: function(){
         var toAdd = [{
-            html: 'This page allows you to view and set module properties.  Below are the properties that can be set.  If the property can have a separate value per folder, there will be a field for the current folder and each parent folder.  If the property can only be set side-wide, there will only be a single field.  If you do not have permission to edit this property in any of those folders, the property will appear read-only.  To see more detail about each property, hover over the question mark next to the property name.',
+            html: 'This page allows you to view and set module properties.  Below are the properties that can be set.  If the property can have a separate value per folder, there will be a field for the current folder and each parent folder.  If the property can only be set site-wide, there will only be a single field.  If you do not have permission to edit this property in any of those folders, the property will appear read-only.  To see more detail about each property, hover over the question mark next to the property name.',
             border: false,
             style: 'padding-bottom: 10px;'
         }];
@@ -112,7 +112,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             border: false,
             items: [{
                 name: pd.name,
-                html: '<b>Property: ' + pd.name + '</b><a href="#" data-qtip="' + tooltip + '"><span class="labkey-help-pop-up">?</span></a>',
+                html: '<b>Property: ' + pd.name + '</b><a data-qtip="' + tooltip + '"><span class="labkey-help-pop-up">?</span></a>',
                 border: false,
                 bodyStyle: 'padding-bottom: 10px;'
             },{
