@@ -52,8 +52,8 @@ img
 {
     background-color: #E7EFF4;
     height: 100%;
-    float: left;
-    width: 25%
+    width: 25%;
+    vertical-align: top;
 }
 
 .labkey-fullscreen-wizard-steps
@@ -1032,7 +1032,8 @@ span.labkey-help-pop-up
     height: 100%;
     width: 100%;
     background-color: #FFFFFF;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0;
+    border-collapse: collapse;
     border: 5px solid #e0e6ea;
 }
 
