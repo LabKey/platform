@@ -310,8 +310,27 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 });
                 return result;
             }
+            case RunGroupToggle:
+                ColumnInfo toggleCol = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                toggleCol.setKeyField(false);
+                toggleCol.setDescription("A lookup to individual columns that show if the run is a member of each run group that's in scope");
+                toggleCol.setTextAlign("left");
+                toggleCol.setIsUnselectable(true);
+                final ExperimentsForeignKey fk = new ExperimentsForeignKey();
+                toggleCol.setFk(fk);
+                toggleCol.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new RunGroupListDisplayColumn(colInfo, fk);
+                    }
+                });
+                toggleCol.setShownInInsertView(false);
+                toggleCol.setShownInUpdateView(false);
+                return toggleCol;
             case RunGroups:
                 ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                col.setKeyField(false);
                 col.setShownInInsertView(false);
                 col.setShownInUpdateView(false);
                 col.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
@@ -498,6 +517,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.LSID).setHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));
         addColumn(Column.RunGroups);
+        addColumn(Column.RunGroupToggle);
         addColumn(Column.Input);
         addColumn(Column.Output);
         addColumn(Column.DataOutputs);
@@ -509,6 +529,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Comments));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.JobId));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Folder));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.RunGroupToggle));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ReplacedByRun));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ReplacesRun));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.DataOutputs));
@@ -701,7 +722,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         }
                     };
                     FieldKey parentFieldKey = FieldKey.fromString(parent.getName());
-                    result.setLabel(parent.getLabel() + " " + exp.getName());
                     result.setDisplayColumnFactory(new ExperimentMembershipDisplayColumnFactory(exp.getRowId(), parentFieldKey.getParent()));
                     result.setFormat("Y;N");
                     return result;
