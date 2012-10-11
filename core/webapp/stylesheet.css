@@ -80,7 +80,8 @@ li.labkey-fullscreen-wizard-active-step
 {
     margin-left: 25%;
     max-width: 60em;
-    width: 75%
+    width: 75%;
+    vertical-align: top;
 }
 
 .labkey-ancillary-wizard-steps
