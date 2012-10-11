@@ -53,23 +53,25 @@
     } %>
     <tr>
         <td class="labkey-full-screen-background">
-            <div class="labkey-full-screen-table">
-                <div class="labkey-fullscreen-wizard-background">
-                    <ol class="labkey-fullscreen-wizard-steps">
-                        <% for (NavTree navTree : pageConfig.getNavTrail()) { %>
-                            <li <%= navTree.getText().equals(pageConfig.getTitle()) ? "class=\"labkey-fullscreen-wizard-active-step\"" : ""%>><%= navTree.getText() %></li>
-                        <% } %>
-                    </ol>
-                </div>
-                <div id="wizardBody" class="labkey-fullscreen-wizard-body">
-                    <div style="padding: 3em">
-                        <span class="labkey-nav-page-header"><%= h(pageConfig.getTitle()) %></span>
-                        <script type="text/javascript">
-                            LABKEY.requiresClientAPI();
-                        </script>
-                        <% me.include(me.getBody(), out);%>
-                    </div>
-                </div>
+            <table class="labkey-full-screen-table">
+                <tr>
+                    <td class="labkey-fullscreen-wizard-background">
+                        <ol class="labkey-fullscreen-wizard-steps">
+                            <% for (NavTree navTree : pageConfig.getNavTrail()) { %>
+                                <li <%= navTree.getText().equals(pageConfig.getTitle()) ? "class=\"labkey-fullscreen-wizard-active-step\"" : ""%>><%= navTree.getText() %></li>
+                            <% } %>
+                        </ol>
+                    </td>
+                    <td id="wizardBody" class="labkey-fullscreen-wizard-body">
+                        <div style="padding: 3em">
+                            <span class="labkey-nav-page-header"><%= h(pageConfig.getTitle()) %></span>
+                            <script type="text/javascript">
+                                LABKEY.requiresClientAPI();
+                            </script>
+                            <% me.include(me.getBody(), out);%>
+                        </div>
+                    </td>
+                </tr>
             </div>
         </td>
     </tr>
