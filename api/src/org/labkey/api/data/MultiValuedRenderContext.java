@@ -15,11 +15,13 @@
  */
 package org.labkey.api.data;
 
+import junit.framework.Assert;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.junit.Test;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.view.ViewContext;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -112,5 +114,107 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         }
 
         return value;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private FieldKey _fk1 = FieldKey.fromParts("Parent", "Child");
+        private FieldKey _fk2 = FieldKey.fromParts("Standalone");
+        private FieldKey _otherFK = FieldKey.fromParts("NotInRow");
+
+        @Test
+        public void testMatchingValues()
+        {
+            Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+            fieldKeys.add(_fk1);
+            fieldKeys.add(_fk2);
+            Map<FieldKey, String> values = new HashMap<FieldKey, String>();
+            values.put(_fk1, "1,2,3");
+            values.put(_fk2, "a,b,c");
+            MultiValuedRenderContext mvContext = new MultiValuedRenderContext(new TestRenderContext(values), fieldKeys);
+            assertTrue(mvContext.next());
+            assertEquals(1, mvContext.get(_fk1));
+            assertEquals("a", mvContext.get(_fk2));
+            assertTrue(mvContext.next());
+            assertEquals(2, mvContext.get(_fk1));
+            assertEquals("b", mvContext.get(_fk2));
+            assertTrue(mvContext.next());
+            assertEquals(3, mvContext.get(_fk1));
+            assertEquals("c", mvContext.get(_fk2));
+            assertFalse(mvContext.next());
+        }
+
+        @Test
+        public void testMissingColumn()
+        {
+            // Be sure that if there's a column that couldn't be found, we don't blow up
+            Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+            fieldKeys.add(_fk1);
+            fieldKeys.add(_fk2);
+            fieldKeys.add(_otherFK);
+            Map<FieldKey, String> values = new HashMap<FieldKey, String>();
+            values.put(_fk1, "1,2,3");
+            values.put(_fk2, "a,b,c");
+            MultiValuedRenderContext mvContext = new MultiValuedRenderContext(new TestRenderContext(values), fieldKeys);
+            assertTrue(mvContext.next());
+            assertEquals(1, mvContext.get(_fk1));
+            assertEquals("a", mvContext.get(_fk2));
+            assertNull(mvContext.get(_otherFK));
+            assertTrue(mvContext.next());
+            assertEquals(2, mvContext.get(_fk1));
+            assertEquals("b", mvContext.get(_fk2));
+            assertNull(mvContext.get(_otherFK));
+            assertTrue(mvContext.next());
+            assertEquals(3, mvContext.get(_fk1));
+            assertEquals("c", mvContext.get(_fk2));
+            assertNull(mvContext.get(_otherFK));
+            assertFalse(mvContext.next());
+        }
+
+        @Test
+        public void testMismatchedValues()
+        {
+            Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+            fieldKeys.add(_fk1);
+            fieldKeys.add(_fk2);
+            Map<FieldKey, String> values = new HashMap<FieldKey, String>();
+            values.put(_fk1, "1,2,3");
+            values.put(_fk2, "a,b,c,d");
+            try
+            {
+                new MultiValuedRenderContext(new TestRenderContext(values), fieldKeys);
+                fail("Should have gotten an exception");
+            }
+            catch (IllegalStateException ignored) {}
+        }
+
+        private class TestRenderContext extends RenderContext
+        {
+            private Map<FieldKey, String> _values;
+
+            public TestRenderContext(Map<FieldKey, String> values)
+            {
+                _values = values;
+            }
+
+            @Override
+            public Object get(Object key)
+            {
+                return _values.get(key);
+            }
+
+            @Override
+            public Map<FieldKey, ColumnInfo> getFieldMap()
+            {
+                Map<FieldKey, ColumnInfo> result = new HashMap<FieldKey, ColumnInfo>();
+                ColumnInfo col1 = new ColumnInfo(_fk1);
+                col1.setJdbcType(JdbcType.INTEGER);
+                result.put(_fk1, col1);
+                ColumnInfo col2 = new ColumnInfo(_fk2);
+                col2.setJdbcType(JdbcType.VARCHAR);
+                result.put(_fk2, col2);
+                return result;
+            }
+        }
     }
 }
