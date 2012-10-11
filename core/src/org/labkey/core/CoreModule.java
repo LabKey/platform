@@ -947,7 +947,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ExtUtil.TestCase.class,
                 JsonTest.class,
                 ExtUtil.TestCase.class,
-                ReplacedRunFilter.TestCase.class
+                ReplacedRunFilter.TestCase.class,
+                MultiValuedRenderContext.TestCase.class
         ));
     }
 
