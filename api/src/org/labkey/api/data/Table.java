@@ -495,6 +495,7 @@ public class Table
                 closeParameters(parameters);
             }
         }
+
         if (asyncRequest != null)
         {
             asyncRequest.setStatement(null);

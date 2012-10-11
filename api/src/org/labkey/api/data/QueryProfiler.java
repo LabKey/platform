@@ -21,6 +21,7 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ByteArrayHashKey;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
@@ -45,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -146,13 +148,13 @@ public class QueryProfiler
     {
     }
 
-    public static void track(String sql, long elapsed)
+    public static void track(String sql, @Nullable Collection<Object> parameters, long elapsed)
     {
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        boolean isRequestThread = ViewServlet.isRequestThread();
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();    // Wrong for async requests
+        boolean isRequestThread = ViewServlet.isRequestThread();                    // Wrong for async requests
 
         // Don't block if queue is full
-        QUEUE.offer(new Query(sql, elapsed, stackTrace, isRequestThread));
+        QUEUE.offer(new Query(sql, parameters, elapsed, stackTrace, isRequestThread));
     }
 
     public static void resetAllStatistics()
@@ -345,13 +347,15 @@ public class QueryProfiler
     private static class Query
     {
         private final String _sql;
+        private final @Nullable Collection<Object> _parameters;
         private final long _elapsed;
         private final StackTraceElement[] _stackTrace;
         private final boolean _isRequestThread;
 
-        private Query(String sql, long elapsed, StackTraceElement[] stackTrace, boolean isRequestThread)
+        private Query(String sql, @Nullable Collection<Object> parameters, long elapsed, StackTraceElement[] stackTrace, boolean isRequestThread)
         {
             _sql = sql;
+            _parameters = parameters;
             _elapsed = elapsed;
             _stackTrace = stackTrace;
             _isRequestThread = isRequestThread;
@@ -361,6 +365,12 @@ public class QueryProfiler
         {
             // Do any transformations on the SQL on the way out, in the background thread
             return transform(_sql);
+        }
+
+        @Nullable
+        private Collection<Object> getParameters()
+        {
+            return _parameters;  // TODO: Check parameters? Ignore InputStream, BLOBs, etc.?
         }
 
         private long getElapsed()
@@ -420,6 +430,7 @@ public class QueryProfiler
     private static class QueryTracker
     {
         private final String _sql;
+        private @Nullable Collection<Object> _parameters = null;  // Keep parameters from the longest running query
         private final long _firstInvocation;
         private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new HashMap<ByteArrayHashKey, AtomicInteger>();
 
@@ -455,6 +466,35 @@ public class QueryProfiler
         public String getSql()
         {
             return _sql;
+        }
+
+        public String getSqlAndParameters()
+        {
+            if (null == _parameters || _parameters.size() == 1)
+                return null;
+
+            List<Object> zeroBasedList = new LinkedList<Object>();
+            Iterator<Object> iter = _parameters.iterator();
+
+            iter.next();
+
+            while (iter.hasNext())
+                zeroBasedList.add(iter.next());
+
+            SQLFragment sql = new SQLFragment(getSql(), zeroBasedList);
+
+            return sql.toString();
+        }
+
+        private void setParameters(@Nullable Collection<Object> parameters)
+        {
+            _parameters = parameters;
+        }
+
+        @Nullable
+        public Collection<Object> getParameters()
+        {
+            return _parameters;
         }
 
         public long getCount()
@@ -574,7 +614,11 @@ public class QueryProfiler
             sb.append("Stack&nbsp;Traces");
             sb.append("</td><td style=\"padding-left:10;\">");
             sb.append("SQL");
-            sb.append("</td></tr>\n");
+            sb.append("</td>");
+            sb.append("<td>");
+            sb.append("SQL&nbsp;With&nbsp;Parameters");
+            sb.append("</td>");
+            sb.append("</tr>\n");
         }
 
         private static void appendColumnHeader(String name, boolean highlight, StringBuilder sb, ActionURLFactory factory)
@@ -610,6 +654,8 @@ public class QueryProfiler
 
             pw.print(tab);
             pw.println("SQL");
+            pw.print(tab);
+            pw.println("SQL With Parameters");
         }
 
         private void insertRow(StringBuilder sb, String className, ActionURLFactory factory)
@@ -624,6 +670,7 @@ public class QueryProfiler
             ActionURL url = factory.getActionURL(getSql());
             row.append("<td valign=top align=right><a href=\"").append(PageFlowUtil.filter(url.getLocalURIString())).append("\">").append(Formats.commaf0.format(getStackTraceCount())).append("</a></td>");
             row.append("<td style=\"padding-left:10;\">").append(PageFlowUtil.filter(getSql(), true)).append("</td>");
+            row.append("<td style=\"padding-left:10;\">").append(PageFlowUtil.filter(getSqlAndParameters(), true)).append("</td>");
             row.append("</tr>\n");
             sb.insert(0, row);
         }
@@ -642,7 +689,8 @@ public class QueryProfiler
                 }
             }
 
-            row.append(tab).append(getSql().trim().replaceAll("(\\s)+", " ")).append("\n");
+            row.append(tab).append(getSql().trim().replaceAll("(\\s)+", " "));
+            row.append(tab).append(getSqlAndParameters().trim().replaceAll("(\\s)+", " ")).append("\n");
             sb.insert(0, row);
         }
     }
@@ -686,6 +734,9 @@ public class QueryProfiler
                         {
                             tracker = new QueryTracker(query.getSql(), query.getElapsed(), query.getStackTrace());
 
+                            // First instance of this query, so always save its parameters
+                            tracker.setParameters(query.getParameters());
+
                             _uniqueQueryCountEstimate++;
 
                             for (QueryTrackerSet set : TRACKER_SETS)
@@ -702,6 +753,10 @@ public class QueryProfiler
 
                             for (QueryTrackerSet set : TRACKER_SETS)
                                 set.update(tracker);
+
+                            // Save the parameters of the longest running query
+                            if (tracker.getMax() == query.getElapsed())
+                                tracker.setParameters(query.getParameters());
                         }
                     }
                 }

@@ -52,6 +52,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 
 public class StatementWrapper implements Statement, PreparedStatement, CallableStatement
@@ -63,7 +64,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private long _msStart = 0;
     private boolean userCancelled = false;
     // NOTE: CallableStatement supports getObject(), but PreparedStatement doesn't
-    private ArrayList<Object> _parameters = null;
+    private List<Object> _parameters = null;
 
     String _sqlStateTestException = null;
 
@@ -1554,14 +1555,14 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         if (null != x)
             ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.DialectSQL, sql, true);
-        _logStatement(sql,x);
+        _logStatement(sql, x);
     }
     
 
     private void _logStatement(String sql, Exception x)
     {
         long elapsed = System.currentTimeMillis() - _msStart;
-        QueryProfiler.track(sql, elapsed);
+        QueryProfiler.track(sql, _parameters, elapsed);
 
         if (!_log.isEnabledFor(Level.DEBUG))
             return;
