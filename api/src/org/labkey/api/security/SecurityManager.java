@@ -2419,6 +2419,8 @@ public class SecurityManager
 
         for (String rawEmail : rawEmails)
         {
+            if (null == (rawEmail=StringUtils.trimToNull(rawEmail)))
+                continue;
             try
             {
                 emails.add(new ValidEmail(rawEmail));
