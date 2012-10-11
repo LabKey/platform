@@ -71,17 +71,27 @@ public class ExcelFactory
 
     public static Workbook create(File file) throws IOException, InvalidFormatException
     {
+        FileInputStream fIn = new FileInputStream(file);
         try
         {
-            return WorkbookFactory.create(new FileInputStream(file));
+            return WorkbookFactory.create(fIn);
         }
         catch (OldExcelFormatException e)
         {
-            return new JxlWorkbook(new FileInputStream(file));
+            try { fIn.close(); } catch (IOException ignored) {}
+            fIn = new FileInputStream(file);
+            return new JxlWorkbook(fIn);
         }
         catch (IllegalArgumentException e)
         {
             throw new InvalidFormatException("Unable to open file as an Excel document. " + e.getMessage() == null ? "" : e.getMessage());
+        }
+        finally
+        {
+            if (fIn != null)
+            {
+                try { fIn.close(); } catch (IOException ignored) {}
+            }
         }
     }
 
