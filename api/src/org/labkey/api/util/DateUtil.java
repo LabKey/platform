@@ -433,7 +433,7 @@ validNum:       {
                         {
                             monthexpected = true;
                         }
-                        else if (c != ',' && c > ' ' && c != '-' && c != 'Z' && c != 'T')
+                        else if (c > ' ' && -1 == ",-ZTaApP".indexOf(c))
                         {
                             throw new ConversionException(s);
                         }
@@ -1195,6 +1195,11 @@ Parse:
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/01 4:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06"));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06am"));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("03 feb 2001 04:05:06 am"));
+            assertEquals(datetimeExpected-6000, DateUtil.parseDateTime("03 feb 2001 04:05am"));
+            assertEquals(datetimeExpected-6000, DateUtil.parseDateTime("03 feb 2001 04:05 am"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2-03-2001 4:05:06"));
 
