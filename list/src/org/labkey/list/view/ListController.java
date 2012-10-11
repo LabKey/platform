@@ -1196,32 +1196,6 @@ public class ListController extends SpringActionController
         }
     }
 
-    // Rename list fields named Created, CreatedBy, Modified, ModfiedBy, appending _99 to each.
-    // TODO: Remove in 12.3...
-    @RequiresSiteAdmin
-    public class RenameReservedFieldsAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object form, BindException errors) throws Exception
-        {
-            DbSchema schema = ListManager.get().getSchema();
-            SQLFragment sql = new SQLFragment("UPDATE exp.PropertyDescriptor SET Name = ");
-            sql.append(schema.getSqlDialect().concatenate("Name", "'_99'"));
-            sql.append(" WHERE LOWER(Name) IN ('created', 'createdby', 'modified', 'modifiedby') AND\n");
-            sql.append("PropertyId IN (SELECT PropertyId FROM exp.PropertyDomain pdom INNER JOIN exp.List l ON pdom.DomainId = l.DomainId)");
-
-            new SqlExecutor(schema, sql).execute();
-
-            CacheManager.clearAllKnownCaches();
-
-            return new HtmlView("Done");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Rename Reserved Fields");
-        }
-    }
-
     @RequiresPermissionClass(ReadPermission.class)
     public class BrowseListsAction extends ApiAction<Object>
     {

@@ -832,7 +832,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    private String getUpgradeMessage(Integer rev) throws ServletException, SQLException
+    private String getUpgradeMessage(Integer rev)
     {
         int currentRevision = MothershipManager.get().getCurrentRevision(getContainer());
 

@@ -877,6 +877,8 @@ public class AssayPublishManager implements AssayPublishService.Service
             return false;
         }
 
+        // TODO: Shouldn't the rest of this method be a simple EXISTS query?
+        // I.e., add "<matchColumn> = FALSE" to filter and then return new TableSelector(tableInfo, filter, null).exists()
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.InClause(tableMetadata.getResultRowIdFieldKey().toString(), allObjects));
 

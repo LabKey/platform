@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -342,17 +343,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // if one is found, return that
         // if 0, it's legal to return null
         // if > 1, there is an integrity problem that should raise alarm
-        String[] lsids;
-        try
-        {
-            lsids = Table.executeArray(getQueryTable(), getQueryTable().getColumn("LSID"), new SimpleFilter(keyPropertyName, id), null, String.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        String[] lsids = new TableSelector(getQueryTable().getColumn("LSID"), new SimpleFilter(keyPropertyName, id), null).getArray(String.class);
 
-        if (lsids.length == 0) {
+        if (lsids.length == 0)
+        {
             return null;
         }
         else if (lsids.length > 1)
@@ -363,7 +357,5 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                     _dataset.getContainer().getPath());
         }
         else return lsids[0];
-
     }
-
 }
