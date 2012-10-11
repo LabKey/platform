@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2010 LabKey Corporation
+ * Copyright (c) 2008-2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.study.assay;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExpProtocol;
+package org.labkey.api.study.assay.plate;
+
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.study.PlateTemplate;
 
 import java.io.File;
 
 /**
- * User: jeckels
- * Date: Jan 15, 2009
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: 10/9/12
  */
-public interface PlateBasedAssayProvider extends AssayProvider
+public interface PlateReader
 {
-    public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template);
-    public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol);
-    public File getSampleMetadataFile(Container container, int runId);
-    public String getPlateReaderListName();
+    public String getType();
+
+    public double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException;
 }

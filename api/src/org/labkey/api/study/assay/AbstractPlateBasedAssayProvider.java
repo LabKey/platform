@@ -47,7 +47,7 @@ import java.util.Map;
  * Date: Sep 27, 2007
  * Time: 3:26:44 PM
  */
-public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvider implements PlateBasedAssayProvider
+public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayProvider implements PlateBasedAssayProvider
 {
     public static final String ASSAY_DOMAIN_SAMPLE_WELLGROUP = ExpProtocol.ASSAY_DOMAIN_PREFIX + "SampleWellGroup";
     public static final String SAMPLE_METADATA_INPUT_ROLE = "Sample Metadata";
@@ -172,6 +172,12 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
             helper.setDomainProperties(selectedSampleProperties);
         }
         return helper;
+    }
+
+    @Override
+    public String getPlateReaderListName()
+    {
+        return getName();
     }
 
     public static class SpecimenIDLookupResolverType extends StudyParticipantVisitResolverType
