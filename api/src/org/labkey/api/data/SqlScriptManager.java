@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
@@ -71,7 +72,7 @@ public class SqlScriptManager
         // script is run.  In either case, invalidate to force reloading schema from database meta data.
         if (_core.getTableInfoSqlScripts().getTableType() == DatabaseTableType.NOT_IN_DB)
         {
-            DbScope.invalidateAllIncompleteSchemas();
+            CacheManager.clearAllKnownCaches();
             return null;
         }
 

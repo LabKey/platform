@@ -548,25 +548,6 @@ public class DbScope
     }
 
 
-    // Invalidates all incomplete schemas in this scope (see below for details)
-    public void invalidateIncompleteSchemas()
-    {
-        _schemaCache.removeIncomplete();
-    }
-
-
-    @Deprecated // This method isn't 100% correct (e.g., it skips modules that aren't being upgraded but are still
-    // awaiting a create script); use CacheManager.clearAllKnownCaches() instead, which is much safer.
-
-    // Invalidates all incomplete schemas in all scopes.  Once a module is done with its upgrade then all database
-    // schemas it owns are upgraded.  This clears out only schemas of modules that are not upgraded, so we don't, for
-    // example, reload core, prop, etc. after they're complete.
-    public static void invalidateAllIncompleteSchemas()
-    {
-        for (DbScope scope : getDbScopes())
-            scope.invalidateIncompleteSchemas();
-    }
-
     /**
      * If a transaction is active, the task is run after it's committed. If not, it's run immediately and synchronously.
      *

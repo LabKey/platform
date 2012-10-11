@@ -82,12 +82,13 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
     }
 
     @Override
-    public <K, V> SimpleCache<K, V> getSimpleCache(String debugName, int limit, long defaultTimeToLive, boolean temporary)
+    public <K, V> SimpleCache<K, V> getSimpleCache(String debugName, int limit, long defaultTimeToLive, long defaultTimeToIdle, boolean temporary)
     {
         // Every Ehcache requires a unique name.  We create many temporary caches with overlapping names, so append a unique counter.
         // Consider: a cache pool for temporary caches?
         CacheConfiguration config = new CacheConfiguration(debugName + "_" + cacheCount.incrementAndGet(), limit == org.labkey.api.cache.CacheManager.UNLIMITED ? 0 : limit);
-        config.setTimeToLiveSeconds(defaultTimeToLive / 1000);
+        config.setTimeToLiveSeconds(defaultTimeToLive == org.labkey.api.cache.CacheManager.UNLIMITED ? 0 : defaultTimeToLive / 1000);
+        config.setTimeToIdleSeconds(defaultTimeToIdle == org.labkey.api.cache.CacheManager.UNLIMITED ? 0 : defaultTimeToIdle / 1000);
         Cache ehCache = new Cache(config);
         MANAGER.addCache(ehCache);
 

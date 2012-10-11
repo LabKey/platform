@@ -26,12 +26,13 @@ public interface CacheProvider
      * Creates a new SimpleCache.
      *
      * @param debugName          Name to display on admin screen and in logging
-     * @param limit              Maximum number of entries to hold in this cache; an integer value or CacheProvider.UNLIMITED
-     * @param defaultTimeToLive  TTL in milliseconds
+     * @param limit              Maximum number of entries to hold in this cache; an integer value or CacheManager.UNLIMITED
+     * @param defaultTimeToLive  TTL in milliseconds; an integer value or CacheManager.UNLIMITED
+     * @param defaultTimeToIdle  TTI in milliseconds; an integer value or CacheManager.UNLIMITED
      * @param temporary          True means temporary (not tracked by memtracker)
      * @param <K>                Key type
      * @param <V>                Value type
      * @return                   A new cache created by the provider
      */
-    <K, V> SimpleCache<K, V> getSimpleCache(String debugName, int limit, long defaultTimeToLive, boolean temporary);
+    <K, V> SimpleCache<K, V> getSimpleCache(String debugName, int limit, long defaultTimeToLive, long defaultTimeToIdle, boolean temporary);
 }

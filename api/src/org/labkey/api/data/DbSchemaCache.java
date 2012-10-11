@@ -22,11 +22,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.cache.Wrapper;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Filter;
 
 /*
 * User: adam
@@ -39,7 +35,6 @@ public class DbSchemaCache
 {
     private final DbScope _scope;
     private final StringKeyCache<DbSchema> _cache;
-    private final IncompleteSchemaFilter _incompleteFilter = new IncompleteSchemaFilter();
 
     public DbSchemaCache(DbScope scope)
     {
@@ -55,35 +50,6 @@ public class DbSchemaCache
     void remove(String schemaName)
     {
         _cache.remove(schemaName);
-    }
-
-    void removeIncomplete()
-    {
-        _cache.removeUsingFilter(_incompleteFilter);
-    }
-
-    
-    private class IncompleteSchemaFilter implements Filter<String>
-    {
-        @Override
-        public boolean accept(String schemaName)
-        {
-            Module module = ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
-
-            // We only care about schemas associated with a module (not external schemas)
-            if (null != module)
-            {
-                ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
-
-                if (null != context && !context.isInstallComplete())
-                {
-                    _scope.invalidateAllTables(schemaName);
-                    return true;
-                }
-            }
-
-            return false;
-        }
     }
 
 

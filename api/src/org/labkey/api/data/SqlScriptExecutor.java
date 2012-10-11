@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.ModuleContext;
 
 import java.lang.reflect.InvocationTargetException;
@@ -200,13 +201,17 @@ public class SqlScriptExecutor
                 }
                 assert null != _methodName;
 
-                DbScope.invalidateAllIncompleteSchemas();
+                // Make sure cached database meta data reflects all previously executed SQL
+                CacheManager.clearAllKnownCaches();
                 Method method = _upgradeCode.getClass().getMethod(_methodName, ModuleContext.class);
 
                 if (method.isAnnotationPresent(DeferredUpgrade.class))
                     _moduleContext.addDeferredUpgradeTask(method);
                 else
                     method.invoke(_upgradeCode, _moduleContext);
+
+                // Just to be safe
+                CacheManager.clearAllKnownCaches();
             }
             catch (NoSuchMethodException e)
             {

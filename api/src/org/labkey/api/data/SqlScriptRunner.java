@@ -93,7 +93,7 @@ public class SqlScriptRunner
             }
         }
 
-        // Clear caches to invalidate previously loaded DbSchemas (upgrade scripts we just ran may have changed them)
+        // Clear caches to invalidate previously loaded meta data (upgrade scripts we just ran may have changed them)
         // and invalidate potentially stale objects that have been cached.
         CacheManager.clearAllKnownCaches();
 
