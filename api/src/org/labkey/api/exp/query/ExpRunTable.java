@@ -42,6 +42,7 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         Flag,
         Links,
         RunGroups,
+        RunGroupToggle,
         Input,
         Output,
         DataOutputs,

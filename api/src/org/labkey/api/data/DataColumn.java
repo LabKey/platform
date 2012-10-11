@@ -370,7 +370,8 @@ public class DataColumn extends DisplayColumn
     @Override
     public String renderURL(RenderContext ctx)
     {
-        if (null == getDisplayValue(ctx))
+        Object displayValue = getDisplayValue(ctx);
+        if (null == displayValue || "".equals(displayValue))
             return null;
         return super.renderURL(ctx);
     }

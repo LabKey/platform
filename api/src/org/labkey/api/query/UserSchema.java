@@ -149,7 +149,7 @@ abstract public class UserSchema extends AbstractSchema
 
         Pair<String,Boolean> key = new Pair<String, Boolean>(name.toLowerCase(), includeExtraMetadata);
         boolean useCache = _cacheTableInfos && !forWrite;
-        Object torq = null;
+        Object torq;
 
         if (useCache)
         {
