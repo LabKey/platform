@@ -2987,6 +2987,7 @@ study/src/org/labkey/study/model/SampleRequestEvent.java -text
 study/src/org/labkey/study/model/SampleRequestRequirement.java -text
 study/src/org/labkey/study/model/SampleRequestStatus.java -text
 study/src/org/labkey/study/model/SecurityType.java -text
+study/src/org/labkey/study/model/SequenceNumImportHelper.java -text
 study/src/org/labkey/study/model/SiteImpl.java -text
 study/src/org/labkey/study/model/Specimen.java -text
 study/src/org/labkey/study/model/SpecimenComment.java -text
