@@ -16,6 +16,8 @@
 
 package org.labkey.api.study;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * User: kevink
  * Date: May 27, 2009
@@ -41,6 +43,8 @@ public interface Visit extends StudyEntity
     int getChronologicalOrder();
 
     void setChronologicalOrder(int chronologicalOrder);
+
+    SequenceHandling getSequenceHandling();
 
     public enum Type
     {
@@ -103,6 +107,27 @@ public interface Visit extends StudyEntity
         public String getSortColumns()
         {
             return _sortColumns;
+        }
+    }
+
+    public enum SequenceHandling
+    {
+        normal,             // as determined by TimepointType
+        logUniqueByDate    // append days since start of study in factional part of sequencenum
+        ;
+
+        static SequenceHandling from(String s)
+        {
+            if (StringUtils.isEmpty(s))
+                return normal;
+            try
+            {
+                return valueOf(s);
+            }
+            catch (IllegalArgumentException x)
+            {
+                return normal;
+            }
         }
     }
 }
