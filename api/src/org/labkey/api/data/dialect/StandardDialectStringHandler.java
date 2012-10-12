@@ -109,7 +109,10 @@ public class StandardDialectStringHandler implements DialectStringHandler
                 if (matchParam.start() < ichSkipTo)
                 {
                     ret.append(frag.getSqlCharSequence().subSequence(ich, matchParam.start()));
-                    ret.append(formatParameter(params.remove(0)));
+                    if (params.isEmpty())
+                        ret.append("NULL /*?missing?*/");
+                    else
+                        ret.append(formatParameter(params.remove(0)));
                     ich = matchParam.start() + 1;
                     continue;
                 }

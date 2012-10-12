@@ -470,16 +470,17 @@ public class QueryProfiler
 
         public String getSqlAndParameters()
         {
-            if (null == _parameters || _parameters.size() == 1)
-                return null;
-
             List<Object> zeroBasedList = new LinkedList<Object>();
-            Iterator<Object> iter = _parameters.iterator();
 
-            iter.next();
+            if (null != _parameters && _parameters.size() > 1)
+            {
+                Iterator<Object> iter = _parameters.iterator();
 
-            while (iter.hasNext())
-                zeroBasedList.add(iter.next());
+                iter.next();
+
+                while (iter.hasNext())
+                    zeroBasedList.add(iter.next());
+            }
 
             SQLFragment sql = new SQLFragment(getSql(), zeroBasedList);
 
