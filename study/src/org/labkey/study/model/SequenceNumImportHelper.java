@@ -1,10 +1,12 @@
 package org.labkey.study.model;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -13,8 +15,8 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,10 +29,10 @@ public class SequenceNumImportHelper
 {
     final TimepointType _timetype;
     final Date _startDate;
-    int _startDaysSinceEpoch;
-    Double _defaultSequenceNum = null;
-    Map<String,String> _translateMap = null;
-    SequenceVisitMap _sequenceNumMap = null;
+    final int _startDaysSinceEpoch;
+    final Double _defaultSequenceNum;
+    final CaseInsensitiveHashMap<String> _translateMap = new CaseInsensitiveHashMap<String>();
+    final SequenceVisitMap _sequenceNumMap;
 
 
     public SequenceNumImportHelper(@NotNull Study study, @Nullable DataSetDefinition def)
@@ -40,9 +42,14 @@ public class SequenceNumImportHelper
         _startDaysSinceEpoch = null==_startDate?0:convertToDaysSinceEpoch(_startDate);
         if (null != def && def.isDemographicData())
             _defaultSequenceNum =  VisitImpl.DEMOGRAPHICS_VISIT;
+        else
+            _defaultSequenceNum = null;
         for (Map.Entry<String, Double> entry : StudyManager.getInstance().getVisitImportMap(study, true).entrySet())
             _translateMap.put(entry.getKey(), String.valueOf(entry.getValue()));
-        _sequenceNumMap = new StudySequenceVisitMap(study);
+        if (_timetype.isVisitBased())
+            _sequenceNumMap = new StudySequenceVisitMap(study);
+        else
+            _sequenceNumMap = null;
     }
 
 
@@ -58,10 +65,36 @@ public class SequenceNumImportHelper
         _startDate = startDate;
         _startDaysSinceEpoch = null==_startDate?0:convertToDaysSinceEpoch(_startDate);
         _defaultSequenceNum = defaultSeqNum;
-        _translateMap = new HashMap<String, String>(visitNameMap.size() * 2);
         for (Map.Entry<String, Double> entry : visitNameMap.entrySet())
             _translateMap.put(entry.getKey(), String.valueOf(entry.getValue()));
         _sequenceNumMap = sequenceVisitMap;
+    }
+
+
+    public Callable<Double> getCallable(@NotNull final DataIterator it, @Nullable final Integer sequenceIndex, @Nullable final Integer dateIndex)
+    {
+        return new Callable<Double>()
+        {
+            @Override
+            public Double call() throws Exception
+            {
+                Object seq = null==sequenceIndex ? null : it.get(sequenceIndex);
+                Object d = null==dateIndex ? null : it.get(dateIndex);
+                Date date = null;
+                try
+                {
+                    if (null == d && d instanceof Date)
+                        date = (Date)d;
+                    else
+                        date = new Date(DateUtil.parseDateTime(String.valueOf(d)));
+                }
+                catch (ConversionException x)
+                {
+                    // ETL will catch this an report an error, and we shouldn't usually be getting strings here
+                }
+                return translateSequenceNum(seq, date);
+            }
+        };
     }
 
 
@@ -132,9 +165,7 @@ translateToDouble:
 
         // handle log-type events which can be unique'd by date
         Visit v = _sequenceNumMap.get(sequencenum);
-        // UNDONE 9999 for testing
-        boolean appendDateFraction = (null != v && v.getSequenceNumMin() == 9999.0000);
-        if (appendDateFraction)
+        if (null != v && v.getSequenceHandling() == Visit.SequenceHandling.logUniqueByDate)
         {
             int daysSinceEpoch = convertToDaysSinceEpoch(date);
             int offset = daysSinceEpoch - _startDaysSinceEpoch;
@@ -144,17 +175,12 @@ translateToDouble:
         return sequencenum;
     }
 
-    /*
-     * TESTS
-     */
 
-    // for testablity wrap VisitManager in a simple interface
 
     interface SequenceVisitMap
     {
         Visit get(Double d);
     }
-
 
     static class StudySequenceVisitMap implements SequenceVisitMap
     {
@@ -172,23 +198,33 @@ translateToDouble:
     }
 
 
+
+
+    /**
+     *  TESTS
+     **/
+
+
+
     static class TestSequenceVisitMap implements SequenceVisitMap
     {
         @Override
-        public Visit get(Double d)
+        public Visit get(final Double d)
         {
-            if (d == 9999.0000)
+            return new VisitImpl()
             {
-                return new VisitImpl()
+                @Override
+                public double getSequenceNumMin()
                 {
-                    @Override
-                    public double getSequenceNumMin()
-                    {
-                        return 9999.0000;
-                    }
-                };
-            }
-            return null;
+                    return Math.floor(d);
+                }
+
+                @Override
+                public SequenceHandling getSequenceHandling()
+                {
+                    return 9999.0==Math.floor(d) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
+                }
+            };
         }
     }
 

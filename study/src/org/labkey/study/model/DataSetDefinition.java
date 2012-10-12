@@ -1712,36 +1712,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             //
 
             Integer indexSequenceNum = fromMap.get(DataSetDefinition.getSequenceNumURI());
+            it.indexSequenceNumOutput = it.translateSequenceNum(indexSequenceNum, indexVisitDate);
 
-            if (null == indexSequenceNum)
-            {
-                if (!timetype.isVisitBased() && null != indexVisitDate)
-                {
-                    it.indexSequenceNumOutput = it.addSequenceNumFromDateColumn();
-                }
-                else if (isDemographicData())
-                {
-                    it.indexSequenceNumOutput = it.addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE),
-                        new Callable()
-                        {
-                            @Override
-                            public Object call() throws Exception
-                            {
-                                return VisitImpl.DEMOGRAPHICS_VISIT;
-                            }
-                        });
-                }
-            }
-            else
-            {
-                Map<String, Double> map = StudyManager.getInstance().getVisitImportMap(getStudy(), true);
-                Map<String, String> translateMap = new HashMap<String, String>(map.size() * 2);
-
-                for (Map.Entry<String, Double> entry : map.entrySet())
-                    translateMap.put(entry.getKey(), String.valueOf(entry.getValue()));
-
-                it.indexSequenceNumOutput = it.translateColumn(indexSequenceNum, translateMap, false);
-            }
 
             if (null == indexKeyProperty)
             {
@@ -1999,17 +1971,27 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return addColumn(qcCol, qcCall);
         }
 
-        int addSequenceNumFromDateColumn()
-        {
-            return addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
-        }
+//        int addSequenceNumFromDateColumn()
+//        {
+//            return addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
+//        }
+//
+//        int translateColumn(final int index, Map<?, ?> map, boolean strict)
+//        {
+//            ColumnInfo existing = getColumnInfo(index);
+//            Callable origCallable = this._outputColumns.get(index).getValue();
+//            RemapColumn remapColumn = new RemapColumn(origCallable, map, strict);
+//            return replaceOrAddColumn(index, existing, remapColumn);
+//        }
 
-        int translateColumn(final int index, Map<?, ?> map, boolean strict)
+        int translateSequenceNum(Integer indexSeq, Integer indexDate)
         {
-            ColumnInfo existing = getColumnInfo(index);
-            Callable origCallable = this._outputColumns.get(index).getValue();
-            RemapColumn remapColumn = new RemapColumn(origCallable, map, strict);
-            return replaceOrAddColumn(index, existing, remapColumn);
+            ColumnInfo col = null!=indexSeq ? getColumnInfo(indexSeq) : null;
+            if (null == col)
+                col = new ColumnInfo("SequenceNum", JdbcType.DOUBLE);
+            SequenceNumImportHelper snih = new SequenceNumImportHelper(_study, DataSetDefinition.this);
+            Callable call = snih.getCallable(getInput(), indexSeq, indexDate);
+            return replaceOrAddColumn(indexSeq, col, call);
         }
 
         int addLSID()
@@ -2045,18 +2027,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return _seqenceFormat.format(d);
         }
 
-        class SequenceNumFromDateColumn implements Callable
-        {
-            @Override
-            public Object call() throws Exception
-            {
-                Date date = getOutputDate(indexVisitDateOutput);
-                if (null != date)
-                    return StudyManager.sequenceNumFromDate(date);
-                else
-                    return VisitImpl.DEMOGRAPHICS_VISIT;
-            }
-        }
+//        class SequenceNumFromDateColumn implements Callable
+//        {
+//            @Override
+//            public Object call() throws Exception
+//            {
+//                Date date = getOutputDate(indexVisitDateOutput);
+//                if (null != date)
+//                    return StudyManager.sequenceNumFromDate(date);
+//                else
+//                    return VisitImpl.DEMOGRAPHICS_VISIT;
+//            }
+//        }
 
         class LSIDColumn implements Callable
         {
@@ -2609,7 +2591,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
 
-    private static class DataSetDefObjectFactory extends BeanObjectFactory
+    private static class DataSetDefObjectFactory extends BeanObjectFactory<DataSetDefinition>
     {
         DataSetDefObjectFactory()
         {
@@ -2811,8 +2793,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             // Property columns
-            for (ColumnInfo c : def.getDomain().getColumns(this, getColumn("LSID"), _container, null))
-                addColumn(c);
+            List<ColumnInfo> list = def.getDomain().getColumns(this, getColumn("LSID"), _container, null);
+            if (null != list)
+                for (ColumnInfo c : list)
+                    addColumn(c);
 
             _fromSql = new SQLFragment(
                     "SELECT *\n" +

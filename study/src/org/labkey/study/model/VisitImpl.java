@@ -99,6 +99,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 //    }
 
 
+    @Override
     public String getSequenceString()
     {
         if (_sequenceMin == _sequenceMax)
@@ -114,6 +115,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 //    }
 
 
+    @Override
     public String getDisplayString()
     {
         if (getLabel() != null)
@@ -141,6 +143,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
 
+    @Override
     public Type getType()
     {
         if (_typeCode == null)
@@ -149,6 +152,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
 
+    @Override
     public Integer getVisitDateDatasetId()
     {
         return _visitDateDatasetid;
@@ -168,6 +172,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();
@@ -179,6 +184,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return getRowId();
     }
 
+    @Override
     public double getSequenceNumMin()
     {
         return _sequenceMin;
@@ -227,6 +233,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return sequenceFormat.format(d);
     }
 
+    @Override
     public Integer getCohortId()
     {
         return _cohortId;
@@ -237,6 +244,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         _cohortId = cohortId;
     }
 
+    @Override
     public Cohort getCohort()
     {
         if (_cohortId == null)
@@ -244,16 +252,23 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, CohortImpl.class);
     }
 
+    @Override
     public int getChronologicalOrder()
     {
         return _chronologicalOrder;
     }
 
+    @Override
     public void setChronologicalOrder(int chronologicalOrder)
     {
         _chronologicalOrder = chronologicalOrder;
     }
 
+    @Override
+    public SequenceHandling getSequenceHandling()
+    {
+        return SequenceHandling.normal;
+    }
 
     static _BeanObjectFactory _f = new _BeanObjectFactory();
     static
