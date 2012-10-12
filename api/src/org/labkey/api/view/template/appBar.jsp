@@ -65,12 +65,15 @@
                         if (tabs.length > 1)
                         {
                             NavTree removeNode = new NavTree("Remove tab");
-                            int index = 1;
                             for (NavTree tab : tabs)
                             {
-                                ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID, index++, getViewContext().getActionURL());
-                                NavTree removeTab = new NavTree(tab.getText(), url);
-                                removeNode.addChild(removeTab);
+                                if (tab.getId().startsWith("portal:"))
+                                {
+                                    String pageId = tab.getId().substring("portal:".length());
+                                    ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getHidePortalPageURL(context.getContainer(), pageId, getViewContext().getActionURL());
+                                    NavTree removeTab = new NavTree(tab.getText(), url);
+                                    removeNode.addChild(removeTab);
+                                }
                             }
                             link.addChild(removeNode);
                         }

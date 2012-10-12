@@ -39,13 +39,14 @@ import java.util.Set;
 */
 public abstract class FolderTab
 {
-    public static final String FOLDER_TAB_PAGE_ID = "folderTab";
-    public static final String LOCATION = "tab";
+//    public static final String FOLDER_TAB_PAGE_ID = "folderTab";
+//    public static final String LOCATION = "tab";
 
     private final String _name;
     private final String _caption;
     private boolean _isDefaultTab = false;
     protected Set<String> _legacyNames = new HashSet<String>();
+    protected int _defaultIndex = -1;
 
     /** Controllers and their child actions (both are Spring Controller classes) claimed by this tab */
     private Set<Class<? extends Controller>> _controllersAndActions = new HashSet<Class<? extends Controller>>();
@@ -205,5 +206,10 @@ public abstract class FolderTab
     public void setIsDefaultTab(boolean isDefault)
     {
         _isDefaultTab = isDefault;
+    }
+
+    public int getDefaultIndex()
+    {
+        return _defaultIndex;
     }
 }

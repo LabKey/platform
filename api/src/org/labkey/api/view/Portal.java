@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanObjectFactory;
@@ -33,7 +34,9 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -41,6 +44,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.springframework.beans.MutablePropertyValues;
@@ -57,6 +61,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +102,12 @@ public class Portal
         return getSchema().getTable("PortalWebParts");
     }
 
+
+    public static TableInfo getTableInfoPages()
+    {
+        return getSchema().getTable("Pages");
+    }
+
     public static void containerDeleted(Container c)
     {
         WebPartCache.remove(c);
@@ -104,12 +115,14 @@ public class Portal
         try
         {
             Table.delete(getTableInfoPortalWebParts(), new SimpleFilter("Container", c.getId()));
+            Table.delete(getTableInfoPages(), new SimpleFilter("Container", c.getId()));
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
     }
+
 
     // Clear the properties of all webparts whose name contains nameSearchText and whose properties contain propertiesSearchText
     public static void clearWebPartProperties(String nameSearchText, String propertiesSearchText)
@@ -139,6 +152,7 @@ public class Portal
                 WebPartCache.remove(c);
         }
     }
+
 
     public static class WebPart implements Serializable
     {
@@ -332,6 +346,7 @@ public class Portal
         }
     }
 
+
     public static class WebPartBeanLoader extends BeanObjectFactory<WebPart>
     {
         public WebPartBeanLoader()
@@ -351,16 +366,57 @@ public class Portal
         return getParts(c, DEFAULT_PORTAL_PAGE_ID);
     }
 
+
+    public static Map<String,PortalPage> getPages(Container c)
+    {
+        return getPages(c, false);
+    }
+
+
+    public static Map<String,PortalPage> getPages(Container c, boolean showHidden)
+    {
+        Map<String,PortalPage> pages = WebPartCache.getPages(c, showHidden);
+        return Collections.unmodifiableMap(pages);
+    }
+
+
+    public static void resetPages(Container c, List<FolderTab> tabs)
+    {
+        try
+        {
+            getSchema().getScope().ensureTransaction();
+            ArrayList<PortalPage> existing = new ArrayList<PortalPage>(getPages(c).values());
+            for (FolderTab tab : tabs)
+                ensurePage(c, tab, existing);
+            getSchema().getScope().commitTransaction();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            getSchema().getScope().closeConnection();
+            WebPartCache.remove(c);
+        }
+    }
+
+
     public static List<WebPart> getParts(Container c, String pageId)
     {
-        return Collections.unmodifiableList(WebPartCache.getWebParts(c, pageId));
+        Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);
+        if (parts instanceof List)
+            return Collections.unmodifiableList((List)parts);
+        return Collections.unmodifiableList(new ArrayList<WebPart>(parts));
     }
+
 
     // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
     public static WebPart getPart(Container c, int webPartRowId)
     {
         return new TableSelector(getTableInfoPortalWebParts(), new SimpleFilter("Container", c), null).getObject(webPartRowId, WebPart.class);
     }
+
 
     @Nullable
     public static WebPart getPart(Container c, String pageId, int index)
@@ -482,8 +538,121 @@ public class Portal
         saveParts(c, pageId, newParts.toArray(new WebPart[newParts.size()]));
     }
 
+
+    private static FolderTab findFolderTab(Container c, String pageId)
+    {
+        FolderType ft = c.getFolderType();
+        if (null == ft)
+            return null;
+        List<FolderTab> list = ft.getDefaultTabs();
+        if (null == list)
+            return null;
+        for (FolderTab tab : list)
+        {
+            if (StringUtils.equals(tab.getName(),pageId))
+                return tab;
+        }
+        for (FolderTab tab : list)
+        {
+            if (null != tab.getLegacyNames())
+            {
+                for (String name : tab.getLegacyNames())
+                    if (StringUtils.equals(name,pageId))
+                        return tab;
+            }
+        }
+        return null;
+    }
+
+
+    private static void ensurePage(Container c, String pageId)
+    {
+        assert getSchema().getScope().isTransactionActive();
+
+        PortalPage find = WebPartCache.getPortalPage(c, pageId);
+        if (null != find)
+        {
+            _setHidden(find, false);
+            return;
+        }
+
+        int index = 0;
+        for (PortalPage p : WebPartCache.getPages(c,true).values())
+            index = Math.max(p.getIndex()+1,index);
+
+        PortalPage p = new PortalPage();
+        p.setEntityId(new GUID());
+        p.setContainer(new GUID(c.getId()));
+        p.setPageId(pageId);
+        p.setIndex(index);
+        p.setType("portal");
+        FolderTab tab = findFolderTab(c, pageId);
+        if (null != tab)
+        {
+            // TODO get any additional configuration info here???
+        }
+
+        try
+        {
+            Table.insert(null, getTableInfoPages(), p);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+
+    /* existing is used to optmize inserting multiple pages */
+    private static void ensurePage(Container c, FolderTab tab, List<PortalPage> existing)
+    {
+        assert getSchema().getScope().isTransactionActive();
+
+        PortalPage find = WebPartCache.getPortalPage(c, tab.getName());
+        if (null != find)
+        {
+            _setHidden(find, false);
+            return;
+        }
+
+        boolean available = 0 <= tab.getDefaultIndex();
+        int nextAvailableIndex = tab.getDefaultIndex();
+        for (PortalPage p : existing)
+        {
+            if (p.getIndex() == tab.getDefaultIndex())
+                available = false;
+            nextAvailableIndex = Math.max(p.getIndex()+1,nextAvailableIndex);
+        }
+        int index = available ? tab.getDefaultIndex() : nextAvailableIndex;
+        index = Math.max(0,index);
+
+        PortalPage p = new PortalPage();
+        p.setEntityId(new GUID());
+        p.setContainer(new GUID(c.getId()));
+        p.setPageId(tab.getName());
+        p.setIndex(index);
+        p.setType("portal");
+
+        if (null != tab)
+        {
+            // TODO get any additional configuration info here???
+        }
+
+        try
+        {
+            Table.insert(null, getTableInfoPages(), p);
+            existing.add(p);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+
     public static void saveParts(Container c, String pageId, WebPart[] newParts)
     {
+
         // make sure indexes are unique
         Arrays.sort(newParts, new Comparator<WebPart>()
         {
@@ -503,6 +672,10 @@ public class Portal
 
         try
         {
+            getSchema().getScope().ensureTransaction();
+
+            ensurePage(c, pageId);
+
             List<WebPart> oldParts = getParts(c, pageId);
             Set<Integer> oldPartIds = new HashSet<Integer>();
             for (WebPart oldPart : oldParts)
@@ -514,7 +687,6 @@ public class Portal
                     newPartIds.add(newPart.getRowId());
             }
 
-            getSchema().getScope().ensureTransaction();
 
             // delete any removed webparts:
             for (Integer oldId : oldPartIds)
@@ -548,9 +720,8 @@ public class Portal
         finally
         {
             getSchema().getScope().closeConnection();
+            WebPartCache.remove(c, pageId);
         }
-
-        WebPartCache.remove(c, pageId);
     }
 
     public static class AddWebParts
@@ -612,18 +783,21 @@ public class Portal
         ((VBox) region).addView(view);
     }
 
+
     public static void populatePortalView(ViewContext context, String id, HttpView template) throws Exception
     {
         populatePortalView(context, id, template, context.getContainer().hasPermission(context.getUser(), AdminPermission.class));
     }
 
+
     public static void populatePortalView(ViewContext context, String id, HttpView template, boolean canCustomize) throws Exception
     {
+        id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
         String contextPath = context.getContextPath();
         List<WebPart> parts = getParts(context.getContainer(), id);
 
         // Initialize content for non-default portal pages that are folder tabs
-        if (parts.isEmpty() && !DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(id))
+        if (parts.isEmpty() && !StringUtils.equalsIgnoreCase(DEFAULT_PORTAL_PAGE_ID,id))
         {
             for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
             {
@@ -699,6 +873,7 @@ public class Portal
     {
         return PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
+
 
     private static final boolean USE_ASYNC_PORTAL_ACTIONS = true;
     public static String getMoveURL(ViewContext context, Portal.WebPart webPart, int direction)
@@ -884,5 +1059,204 @@ public class Portal
         }
 
         return view;
+    }
+
+
+    private static void _setHidden(PortalPage page, boolean hidden)
+    {
+        if (page.isHidden() == hidden)
+            return;
+        page = page.copy();
+        page.setHidden(hidden);
+        try
+        {
+            Table.update(null, getTableInfoPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
+        }
+    }
+
+
+    public static void hidePage(Container c, String pageId)
+    {
+        PortalPage page = WebPartCache.getPortalPage(c,pageId);
+        if (null != page)
+            _setHidden(page,true);
+    }
+
+
+    public static void showPage(Container c, String pageId)
+    {
+        PortalPage page = WebPartCache.getPortalPage(c,pageId);
+        if (null != page)
+            _setHidden(page,false);
+    }
+
+
+    public static void hidePage(Container c, int index)
+    {
+        Map<String,PortalPage> pages = WebPartCache.getPages(c,true);
+        for (PortalPage page : pages.values())
+        {
+            if (page.getIndex() == index)
+                _setHidden(page,true);
+        }
+        return;
+    }
+
+
+    public static class PortalPage implements Cloneable
+    {
+        private GUID entityId;
+        private GUID containerId;
+        private String pageId;
+        private int index;
+        private String caption;
+        private boolean hidden;
+        private String type;
+        private String action;       // detailsurl (type==action)
+        private GUID targetFolder;   // continerId (type==folder)
+        private boolean permanent;   // may not rename,hide,delete
+        private String properties;
+        private LinkedHashMap<Integer,WebPart> webparts = new LinkedHashMap<Integer, WebPart>();
+
+        public GUID getEntityId()
+        {
+            return entityId;
+        }
+
+        public void setEntityId(GUID entityId)
+        {
+            this.entityId = entityId;
+        }
+
+        public GUID getContainer()
+        {
+            return containerId;
+        }
+
+        public void setContainer(GUID containerId)
+        {
+            this.containerId = containerId;
+        }
+
+        public String getPageId()
+        {
+            return pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            this.pageId = pageId;
+        }
+
+        public int getIndex()
+        {
+            return index;
+        }
+
+        public void setIndex(int index)
+        {
+            this.index = index;
+        }
+
+        public String getCaption()
+        {
+            return caption;
+        }
+
+        public void setCaption(String name)
+        {
+            this.caption = name;
+        }
+
+        public boolean isHidden()
+        {
+            return hidden;
+        }
+
+        public void setHidden(boolean hidden)
+        {
+            this.hidden = hidden;
+        }
+
+        public String getType()
+        {
+            return type;
+        }
+
+        public void setType(String type)
+        {
+            this.type = type;
+        }
+
+        public String getAction()
+        {
+            return action;
+        }
+
+        public void setAction(String action)
+        {
+            this.action = action;
+        }
+
+        public GUID getTargetFolder()
+        {
+            return targetFolder;
+        }
+
+        public void setTargetFolder(GUID targetFolder)
+        {
+            this.targetFolder = targetFolder;
+        }
+
+        public boolean isPermanent()
+        {
+            return permanent;
+        }
+
+        public void setPermanent(boolean permanent)
+        {
+            this.permanent = permanent;
+        }
+
+        public String getProperties()
+        {
+            return properties;
+        }
+
+        public void setProperties(String properties)
+        {
+            this.properties = properties;
+        }
+
+        public void addWebPart(WebPart part)
+        {
+            webparts.put(part.getIndex(),part);
+        }
+
+        @Transient
+        public LinkedHashMap<Integer,WebPart> getWebParts()
+        {
+            return webparts;
+        }
+
+        public PortalPage copy()
+        {
+            try
+            {
+                return (PortalPage)this.clone();
+            }
+            catch (CloneNotSupportedException x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
     }
 }

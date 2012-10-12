@@ -195,21 +195,11 @@ public class DefaultFolderType implements FolderType
         }
     }
 
-    public List<Portal.WebPart> resetDefaultTabs(Container c)
+
+    public List<Portal.PortalPage> resetDefaultTabs(Container c)
     {
-        List<Portal.WebPart> tabs = new ArrayList<Portal.WebPart>();
-
-        for (FolderTab p : getDefaultTabs())
-        {
-            Portal.WebPart tab = new Portal.WebPart();
-            tab.setLocation(FolderTab.LOCATION);
-            tab.setName(p.getName());
-            tabs.add(tab);
-        }
-
-        Portal.saveParts(c, FolderTab.FOLDER_TAB_PAGE_ID, tabs);
-
-        return Portal.getParts(c, FolderTab.FOLDER_TAB_PAGE_ID);
+        Portal.resetPages(c, getDefaultTabs());
+        return new ArrayList(Portal.getPages(c).values());
     }
 
 
@@ -415,12 +405,11 @@ public class DefaultFolderType implements FolderType
     protected FolderTab findTab(String caption)
     {
         for (FolderTab tab : getDefaultTabs())
-        {
-            if (tab.getName().equalsIgnoreCase(caption) || tab.getLegacyNames().contains(caption))
-            {
+            if (tab.getName().equalsIgnoreCase(caption))
                 return tab;
-            }
-        }
+        for (FolderTab tab : getDefaultTabs())
+            if (tab.getLegacyNames().contains(caption))
+                return tab;
         return null;
     }
 

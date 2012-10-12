@@ -16,21 +16,23 @@
 package org.labkey.api.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.util.Pair;
+import org.labkey.api.util.GUID;
 import org.labkey.api.view.Portal.WebPart;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * User: adam
@@ -39,58 +41,99 @@ import java.util.Map;
  */
 public class WebPartCache
 {
-    private static final BlockingStringKeyCache<Pair<ArrayList<WebPart>, Map<Integer, WebPart>>> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Webparts", null);
+    private static final BlockingStringKeyCache<LinkedHashMap<String,Portal.PortalPage>> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Webparts", null);
 
-    private static String getCacheKey(@NotNull Container c, @Nullable String id)
+    static public Portal.PortalPage getPortalPage(@NotNull Container c, @NotNull String pageId)
     {
-        String result = c.getId();
-        if (null != id)
-        {
-            result += "/" + id.toLowerCase();
-        }
-        return result;
+        LinkedHashMap<String,Portal.PortalPage> pages = get(c);
+        return null == pages ? null : pages.get(pageId);
     }
 
-    static List<WebPart> getWebParts(@NotNull Container c, @NotNull String pageId)
+
+    static LinkedHashMap<String,Portal.PortalPage> getPages(Container c, boolean showHidden)
     {
-        return get(c, pageId).getKey();
+        LinkedHashMap<String,Portal.PortalPage> pages = get(c);
+        if (null == pages)
+            new LinkedHashMap<String, Portal.PortalPage>();
+        if (showHidden)
+            return pages;
+        LinkedHashMap<String, Portal.PortalPage> ret = new LinkedHashMap<String, Portal.PortalPage>();
+        for (Portal.PortalPage page : pages.values())
+            if (!page.isHidden())
+                ret.put(page.getPageId(), page);
+        return ret;
     }
+
+
+    @NotNull
+    static Collection<WebPart> getWebParts(@NotNull Container c, @NotNull String pageId)
+    {
+        Portal.PortalPage page = getPortalPage(c,pageId);
+        return null == page ? new ArrayList<WebPart>() : page.getWebParts().values();
+    }
+
 
     static WebPart getWebPart(@NotNull Container c, @NotNull String pageId, int index)
     {
-        return get(c, pageId).getValue().get(index);
+        Portal.PortalPage page = getPortalPage(c, pageId);
+        if (null == page)
+            return null;
+        return page.getWebParts().get(index);
     }
 
-    private static Pair<ArrayList<WebPart>, Map<Integer, WebPart>> get(@NotNull final Container c, @NotNull final String pageId)
+
+    static CacheLoader _webpartLoader = new CacheLoader<String, LinkedHashMap<String,Portal.PortalPage>>()
     {
-        String key = getCacheKey(c, pageId);
-        return CACHE.get(key, null, new CacheLoader<String, Pair<ArrayList<WebPart>, Map<Integer, WebPart>>>()
+        @Override
+        public LinkedHashMap<String,Portal.PortalPage> load(String containerId, Object o)
         {
-            @Override
-            public Pair<ArrayList<WebPart>, Map<Integer, WebPart>> load(String key, Object argument)
+            DbSchema schema = Portal.getSchema();
+            LinkedHashMap<String,Portal.PortalPage> pages = new LinkedHashMap<String, Portal.PortalPage>();
+
+            SQLFragment selectPages = new SQLFragment("SELECT * FROM portal.pages where container=? ORDER BY \"index\"", containerId);
+            Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
+            for (Portal.PortalPage p : pagesSelect)
             {
-                SimpleFilter filter = new SimpleFilter("PageId", pageId);
-                filter.addCondition("Container", c.getId());
-                Map<Integer, WebPart> map = new LinkedHashMap<Integer, WebPart>();
-
-                ArrayList<WebPart> list = new ArrayList<WebPart>(new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).getCollection(WebPart.class));
-
-                // List order should match index, but use a map to be safe.  TODO: In 12.1, just index the list and switch map to RowId->WebPart
-                for (WebPart webPart : list)
-                    map.put(webPart.getIndex(), webPart);
-
-                return new Pair<ArrayList<WebPart>, Map<Integer, WebPart>>(list, map);
+                if (null == p.getEntityId())
+                {
+                    GUID g = new GUID();
+                    SQLFragment updateEntityId = new SQLFragment("UPDATE portal.pages SET entityid=? WHERE container=? and pageid=? and entityid IS NULL",
+                            g, containerId, p.getPageId());
+                    new SqlExecutor(schema,updateEntityId).execute();
+                    p.setEntityId(g);
+                }
+                pages.put(p.getPageId(), p);
             }
-        });
+
+            SimpleFilter filter = new SimpleFilter("Container", containerId);
+            ArrayList<WebPart> list = new ArrayList<WebPart>(new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).getCollection(WebPart.class));
+
+            for (WebPart wp : list)
+            {
+                Portal.PortalPage p = pages.get(wp.getPageId());
+                if (null != p)
+                    p.addWebPart(wp);
+            }
+
+            return pages;
+        }
+    };
+
+
+    private static LinkedHashMap<String,Portal.PortalPage> get(@NotNull final Container c)
+    {
+        return CACHE.get(c.getId(), c, _webpartLoader);
     }
+
 
     static void remove(Container c, String pageId)
     {
-        CACHE.remove(getCacheKey(c, pageId));
+        CACHE.remove(c.getId());
     }
+
 
     static void remove(Container c)
     {
-        CACHE.removeUsingPrefix(getCacheKey(c, null));
+        CACHE.remove(c.getId());
     }
 }
