@@ -165,6 +165,22 @@ public class ProjectController extends SpringActionController
             return url;
         }
 
+//        public ActionURL getHidePortalPageURL(Container c, int index, ActionURL returnURL)
+//        {
+//            ActionURL url = new ActionURL(HidePortalPageAction.class, c);
+//            url.addParameter("index", index);
+//            url.addReturnURL(returnURL);
+//            return url;
+//        }
+
+        public ActionURL getHidePortalPageURL(Container c, String pageId, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(HidePortalPageAction.class, c);
+            url.addParameter("pageId", pageId);
+            url.addReturnURL(returnURL);
+            return url;
+        }
+
         public ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
         {
             return getDeleteWebPartURL(c, webPart.getPageId(), webPart.getIndex(), returnURL);
@@ -444,6 +460,46 @@ public class ProjectController extends SpringActionController
         {
             setUseBasicAuthentication(true);
             super.checkPermissions();
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class HidePortalPageAction extends FormViewAction<CustomizePortletForm>
+    {
+        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
+        {
+            // UNDONE: this is used as a link, fix to make POST
+            handlePost(form, errors);
+            return HttpView.redirect(getSuccessURL(form));
+        }
+
+        @Override
+        public void validateCommand(CustomizePortletForm target, Errors errors)
+        {
+            if (null == target.getPageId() && 0 > target.getIndex())
+                throw new NotFoundException();
+        }
+
+        @Override
+        public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
+        {
+            if (null != form.getPageId())
+                Portal.hidePage(getContainer(), form.getPageId());
+            else if (0 <= form.getIndex())
+                Portal.hidePage(getContainer(), form.getIndex());
+            return true;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public URLHelper getSuccessURL(CustomizePortletForm form)
+        {
+            return form.getReturnURLHelper(beginURL());
         }
     }
 

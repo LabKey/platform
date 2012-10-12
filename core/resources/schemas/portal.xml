@@ -29,4 +29,19 @@
             <ns:column columnName="Permanent"/>
 		</ns:columns>
 	</ns:table>
-</ns:tables>
+      <ns:table tableName="pages" tableDbType="TABLE">
+        <ns:columns>
+          <ns:column columnName="entityid"/>
+          <ns:column columnName="container"/>
+          <ns:column columnName="pageid"/>
+          <ns:column columnName="index"/>
+          <ns:column columnName="caption"/>
+          <ns:column columnName="hidden"/>
+          <ns:column columnName="type"/>
+          <ns:column columnName="action"/>
+          <ns:column columnName="targetfolder"/>
+          <ns:column columnName="permanent"/>
+          <ns:column columnName="properties"/>
+        </ns:columns>
+      </ns:table>
+    </ns:tables>

@@ -20,7 +20,6 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.WebPartFactory;
@@ -62,7 +61,7 @@ public class PageWriterFactory implements FolderWriterFactory
             PagesDocument pagesDocXML = PagesDocument.Factory.newInstance();
             PagesDocument.Pages pagesXML = pagesDocXML.addNewPages();
 
-            List<WebPart> tabs = Portal.getParts(ctx.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID);
+            Map<String,Portal.PortalPage> tabs = Portal.getPages(ctx.getContainer());
             if (tabs.size() == 0)
             {
                 // if there are no tabs, try getting webparts for the default page ID
@@ -72,15 +71,15 @@ public class PageWriterFactory implements FolderWriterFactory
             }
             else
             {
-                for (WebPart tab : tabs)
+                for (Portal.PortalPage tab : tabs.values())
                 {
                     PagesDocument.Pages.Page pageXml = pagesXML.addNewPage();
                     pageXml.setIndex(tab.getIndex());
-                    pageXml.setName(tab.getName());
+                    pageXml.setName(tab.getPageId());
 
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
-                    List<WebPart> portalPageParts = Portal.getParts(ctx.getContainer(), tab.getName());
-                    if (tab.getName().equals("Overview") && portalPageParts.size() == 0)
+                    List<WebPart> portalPageParts = Portal.getParts(ctx.getContainer(), tab.getPageId());
+                    if (tab.getPageId().equals("Overview") && portalPageParts.size() == 0)
                         portalPageParts = Portal.getParts(ctx.getContainer(), Portal.DEFAULT_PORTAL_PAGE_ID);
 
                     addWebPartsToPage(ctx, pageXml, portalPageParts);
@@ -89,6 +88,7 @@ public class PageWriterFactory implements FolderWriterFactory
 
             root.saveXmlBean(FILENAME, pagesDocXML);
         }
+
 
         public void addWebPartsToPage(ImportContext ctx, PagesDocument.Pages.Page pageXml, List<WebPart> webpartsInPage)
         {
@@ -115,6 +115,7 @@ public class PageWriterFactory implements FolderWriterFactory
                 }
             }
         }
+
 
         @Override
         public boolean supportsVirtualFile()

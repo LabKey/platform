@@ -16,6 +16,7 @@
 
 package org.labkey.study.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.study.StudyFolderTabs;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -38,6 +39,7 @@ import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -117,18 +119,16 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
 
         private StudyToolsWebPart.Item getParticipantListItem(ViewContext context, String noun, String iconBase)
         {
-            // if the participants tab is showing, navigate to it
-            for (Portal.WebPart tab : Portal.getParts(context.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID))
+            Map<String,Portal.PortalPage> pages = Portal.getPages(context.getContainer());
+            Portal.PortalPage participantPage = pages.get(StudyFolderTabs.ParticipantsPage.PAGE_ID);
+            if (null != participantPage && !participantPage.isHidden())
             {
-                if (StudyFolderTabs.ParticipantsPage.PAGE_ID.equalsIgnoreCase(tab.getName()))
+                for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
                 {
-                    for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
+                    if (StringUtils.equalsIgnoreCase(folderTab.getName(),StudyFolderTabs.ParticipantsPage.PAGE_ID))
                     {
-                        if (folderTab.getName().equalsIgnoreCase(tab.getName()))
-                        {
-                            ActionURL url = folderTab.getURL(context.getContainer(), context.getUser());
-                            return new StudyToolsWebPart.Item(noun + " List", iconBase + "participant_list.png", url);
-                        }
+                        ActionURL url = folderTab.getURL(context.getContainer(), context.getUser());
+                        return new StudyToolsWebPart.Item(noun + " List", iconBase + "participant_list.png", url);
                     }
                 }
             }

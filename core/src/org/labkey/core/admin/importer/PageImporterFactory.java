@@ -21,10 +21,13 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
@@ -55,6 +58,22 @@ public class PageImporterFactory extends AbstractFolderImportFactory
     {
         return 80;
     }
+
+
+    private static class _FolderTab extends FolderTab
+    {
+        _FolderTab(String pageId, int index)
+        {
+            super(pageId);
+            _defaultIndex = index;
+        }
+        @Override
+        public ActionURL getURL(Container container, User user)
+        {
+            return null;
+        }
+    }
+
 
     public class PageImporter implements FolderImporter<FolderDocument.Folder>
     {
@@ -97,7 +116,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                 }
 
                 PagesDocument.Pages.Page[] pageXmls = pagesDocXml.getPages().getPageArray();
-                List<Portal.WebPart> tabs = new ArrayList<Portal.WebPart>();
+                List<FolderTab> tabs = new ArrayList<FolderTab>();
                 for (PagesDocument.Pages.Page pageXml : pageXmls)
                 {
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
@@ -107,10 +126,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                         pageId = Portal.DEFAULT_PORTAL_PAGE_ID;
                     }
 
-                    Portal.WebPart tab = new Portal.WebPart();
-                    tab.setLocation(FolderTab.LOCATION);
-                    tab.setName(pageXml.getName());
-                    tab.setIndex(pageXml.getIndex());
+                    FolderTab tab = new _FolderTab(pageXml.getName(), pageXml.getIndex());
                     tabs.add(tab);
 
                     PagesDocument.Pages.Page.Webpart[] webpartXmls = pageXml.getWebpartArray();
@@ -145,7 +161,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
 
                 if (tabs.size() > 1)
                 {
-                    Portal.saveParts(ctx.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID, tabs);
+                    Portal.resetPages(ctx.getContainer(), tabs);
                 }
 
                 ctx.getLogger().info("Done importing " + getDescription());
