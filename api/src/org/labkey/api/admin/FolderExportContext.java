@@ -32,6 +32,7 @@ public class FolderExportContext extends AbstractFolderContext
 {
     private final Set<String> _dataTypes;
     private String _format = "new";
+    private boolean _includeSubfolders = false;
     private boolean _removeProtected = false;
     private boolean _shiftDates = false;
     private boolean _alternateIds = false;
@@ -41,14 +42,20 @@ public class FolderExportContext extends AbstractFolderContext
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, Logger logger)
     {
-        this(user, c, dataTypes, format, false, false, false, logger);
+        this(user, c, dataTypes, format, false, false, false, false, logger);
     }
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean removeProtected, boolean shiftDates, boolean alternateIds, Logger logger)
     {
+        this(user, c, dataTypes, format, false, removeProtected, shiftDates, alternateIds, logger);
+    }
+
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removeProtected, boolean shiftDates, boolean alternateIds, Logger logger)
+    {
         super(user, c, getFolderDocument(), logger, null);
         _dataTypes = dataTypes;
         _format = format;
+        _includeSubfolders = includeSubfolders;
         _removeProtected = removeProtected;
         _shiftDates = shiftDates;
         _alternateIds = alternateIds;
@@ -62,6 +69,11 @@ public class FolderExportContext extends AbstractFolderContext
     public String getFormat()
     {
         return _format;
+    }
+
+    public boolean  isIncludeSubfolders()
+    {
+        return _includeSubfolders;
     }
 
     public boolean isRemoveProtected()

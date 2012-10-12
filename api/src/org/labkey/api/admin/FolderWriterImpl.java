@@ -73,6 +73,13 @@ public class FolderWriterImpl extends BaseFolderWriter
                 writer.write(c, ctx, vf);
         }
 
+        // include workbook and container tab children in the folder export (and optionally all other subfolders if the user chooses)
+        if (c.hasChildren())
+        {
+            SubfolderWriter subfolderWriter = new SubfolderWriter();
+            subfolderWriter.write(c, ctx, vf);
+        }
+
         writeFolderXml(c, ctx, vf);
 
         LOG.info("Done exporting folder to " + vf.getLocation());
@@ -87,7 +94,16 @@ public class FolderWriterImpl extends BaseFolderWriter
         XmlBeansUtil.addStandardExportComment(folderXml, ctx.getContainer(), ctx.getUser());
 
         folderXml.setArchiveVersion(ModuleLoader.getInstance().getCoreModule().getVersion());
-        folderXml.setLabel(c.getName()); // TODO: change to setName
+        folderXml.setLabel(c.getName());
+
+        if (c.isWorkbook())
+        {
+            folderXml.setIsWorkbook(true);
+            folderXml.setTitle(c.getTitle());
+            // include the description if it is not null
+            if (c.getDescription() != null)
+                folderXml.setDescription(c.getDescription());
+        }
 
         // Save the folder.xml file.  This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("folder.xml", ctx.getDocument());

@@ -33,6 +33,7 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     public Logger getLogger();
     public Set<String> getDataTypes();
     public String getFormat();
+    public boolean isIncludeSubfolders();
     public boolean isRemoveProtected();
     public boolean isShiftDates();
     public boolean isAlternateIds();

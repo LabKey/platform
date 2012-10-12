@@ -24,6 +24,7 @@ import java.util.Collection;
 public interface FolderSerializationRegistry
 {
     public void addFactories(FolderWriterFactory writerFactory, FolderImporterFactory importerFactory);
+    public void addImportFactory(FolderImporterFactory importerFactory);
     public Collection<FolderWriter> getRegisteredFolderWriters();
     public Collection<FolderImporter> getRegisteredFolderImporters();
 }

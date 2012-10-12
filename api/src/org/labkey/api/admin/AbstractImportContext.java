@@ -134,6 +134,12 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     }
 
     @Override
+    public boolean isIncludeSubfolders()
+    {
+        return false;
+    }
+
+    @Override
     public boolean isRemoveProtected()
     {
         return false;
