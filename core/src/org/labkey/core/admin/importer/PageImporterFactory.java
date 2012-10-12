@@ -100,9 +100,9 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                 List<Portal.WebPart> tabs = new ArrayList<Portal.WebPart>();
                 for (PagesDocument.Pages.Page pageXml : pageXmls)
                 {
+                    // for the study folder type(s), the Overview tab can have a pageId of portal.default
                     String pageId = pageXml.getName();
-                    // for the study folder type(s), the Overview tab should have a pageId of portal.default
-                    if (pageId.equals("Overview"))
+                    if (pageId.equals("Overview") && Portal.getParts(ctx.getContainer(), pageId).size() == 0)
                     {
                         pageId = Portal.DEFAULT_PORTAL_PAGE_ID;
                     }

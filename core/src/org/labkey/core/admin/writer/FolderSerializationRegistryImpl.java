@@ -93,9 +93,16 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
         return factories;
     }
 
+    @Override
     public void addFactories(FolderWriterFactory writerFactory, FolderImporterFactory importerFactory)
     {
         WRITER_FACTORIES.add(writerFactory);
+        IMPORTER_FACTORIES.add(importerFactory);
+    }
+
+    @Override
+    public void addImportFactory(FolderImporterFactory importerFactory)
+    {
         IMPORTER_FACTORIES.add(importerFactory);
     }
 }

@@ -249,7 +249,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         FolderWriterImpl writer = new FolderWriterImpl();
         FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()),
-                form.getFormat(), form.isRemoveProtected(), form.isShiftDates(), form.isAlternateIds(), Logger.getLogger(FolderWriterImpl.class));
+                form.getFormat(), form.isIncludeSubfolders(), form.isRemoveProtected(), form.isShiftDates(),
+                form.isAlternateIds(), Logger.getLogger(FolderWriterImpl.class));
 
         switch(form.getLocation())
         {
@@ -396,6 +397,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private int location;
         private String format;
         private String exportType;
+        private boolean includeSubfolders;
         private boolean removeProtected;
         private boolean shiftDates;
         private boolean alternateIds;
@@ -591,6 +593,16 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public void setRemoveProtected(boolean removeProtected)
         {
             this.removeProtected = removeProtected;
+        }
+
+        public boolean isIncludeSubfolders()
+        {
+            return includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            this.includeSubfolders = includeSubfolders;
         }
 
         public boolean isShiftDates()

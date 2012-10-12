@@ -33,6 +33,7 @@ import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.FastaDataLoader;
 import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
+import org.labkey.core.admin.importer.SubfolderImporterFactory;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
@@ -802,6 +803,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addFactories(new FolderTypeWriterFactory(), new FolderTypeImporterFactory());
             fsr.addFactories(new SearchSettingsWriterFactory(), new SearchSettingsImporterFactory());
             fsr.addFactories(new PageWriterFactory(), new PageImporterFactory());
+            fsr.addImportFactory(new SubfolderImporterFactory());
         }
 
         // Register the default DataLoaders.

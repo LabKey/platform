@@ -90,6 +90,7 @@ formItems.push(formatRadios);
 
 formItems.push({xtype: "spacer", height: 20});
 formItems.push({xtype: "label", text: "Options:"});
+formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
 formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove All Columns Tagged as Protected<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.")%>', name: 'removeProtected', objectType: 'otherOptions'});
 formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Shift All Participant Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift all date values associated with a participant by a random, participant specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
 formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Export Alternate Participant IDs<%=PageFlowUtil.helpPopup("Export Alternate Participant IDs", "Selecting this option will replace each participant id by an alternate randomly generated id.")%>', name: 'alternateIds', objectType: 'otherOptions'});
@@ -111,7 +112,17 @@ var exportForm = new LABKEY.ext.FormPanel({
     border: false,
     standardSubmit: true,
     items:formItems,
-    buttons:[{text:'Export', type:'submit', handler:submit}],
+    buttons:[{
+        text:'Export',
+        type:'submit',
+        handler: function(btn) {
+            // disable the export button if we are exporting to the pipeline root
+            if (exportForm.getForm().getValues().location != 2)
+                btn.disable();
+
+            submit();
+        }
+    }],
     buttonAlign:'left'
 });
 

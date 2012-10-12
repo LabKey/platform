@@ -22,6 +22,7 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
@@ -44,12 +45,15 @@ public class FolderListWriter extends BaseFolderWriter
     {
         Container c = ctx.getContainer();
 
-        VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
+        if (ListService.get().hasLists(c))
+        {
+            VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
 
-        ListWriter listWriter = new ListWriter();
+            ListWriter listWriter = new ListWriter();
 
-        if (listWriter.write(c, ctx.getUser(), listsDir, ctx))
-            ctx.getXml().addNewLists().setDir(DEFAULT_DIRECTORY);
+            if (listWriter.write(c, ctx.getUser(), listsDir, ctx))
+                ctx.getXml().addNewLists().setDir(DEFAULT_DIRECTORY);
+        }
     }
 
     @Override

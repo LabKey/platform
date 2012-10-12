@@ -78,9 +78,12 @@ public class PageWriterFactory implements FolderWriterFactory
                     pageXml.setIndex(tab.getIndex());
                     pageXml.setName(tab.getName());
 
-                    // for the study folder type(s), the Overview tab has a pageId of portal.default
-                    String pageId = tab.getName().equals("Overview") ? Portal.DEFAULT_PORTAL_PAGE_ID : tab.getName();
-                    addWebPartsToPage(ctx, pageXml, Portal.getParts(ctx.getContainer(), pageId));
+                    // for the study folder type(s), the Overview tab can have a pageId of portal.default
+                    List<WebPart> portalPageParts = Portal.getParts(ctx.getContainer(), tab.getName());
+                    if (tab.getName().equals("Overview") && portalPageParts.size() == 0)
+                        portalPageParts = Portal.getParts(ctx.getContainer(), Portal.DEFAULT_PORTAL_PAGE_ID);
+
+                    addWebPartsToPage(ctx, pageXml, portalPageParts);
                 }
             }
 
