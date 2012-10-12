@@ -71,12 +71,12 @@ public class SequenceNumImportHelper
     }
 
 
-    public Callable<Double> getCallable(@NotNull final DataIterator it, @Nullable final Integer sequenceIndex, @Nullable final Integer dateIndex)
+    public Callable<Object> getCallable(@NotNull final DataIterator it, @Nullable final Integer sequenceIndex, @Nullable final Integer dateIndex)
     {
-        return new Callable<Double>()
+        return new Callable<Object>()
         {
             @Override
-            public Double call() throws Exception
+            public Object call() throws Exception
             {
                 Object seq = null==sequenceIndex ? null : it.get(sequenceIndex);
                 Object d = null==dateIndex ? null : it.get(dateIndex);
@@ -92,7 +92,8 @@ public class SequenceNumImportHelper
                 {
                     // ETL will catch this an report an error, and we shouldn't usually be getting strings here
                 }
-                return translateSequenceNum(seq, date);
+                Double sequencenum = translateSequenceNum(seq, date);
+                return null==sequencenum ? seq : sequencenum;
             }
         };
     }
