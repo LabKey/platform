@@ -49,6 +49,13 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         super(name, ExperimentServiceImpl.get().getTinfoRunList(), schema, null);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(DeletePermission.class);
+
+        // Filter out hidden run groups
+        SQLFragment hiddenFilterSQL = new SQLFragment("ExperimentId IN (SELECT RowId FROM ");
+        hiddenFilterSQL.append(ExperimentServiceImpl.get().getTinfoExperiment(), "e");
+        hiddenFilterSQL.append(" WHERE Hidden = ?)");
+        hiddenFilterSQL.add(false);
+        addCondition(hiddenFilterSQL);
     }
 
     @Override
