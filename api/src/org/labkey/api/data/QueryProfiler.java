@@ -148,13 +148,13 @@ public class QueryProfiler
     {
     }
 
-    public static void track(String sql, @Nullable Collection<Object> parameters, long elapsed)
+    public static void track(String sql, @Nullable Collection<Object> parameters, long elapsed, @Nullable StackTraceElement[] stackTrace, boolean requestThread)
     {
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();    // Wrong for async requests
-        boolean isRequestThread = ViewServlet.isRequestThread();                    // Wrong for async requests
+        if (null == stackTrace)
+            stackTrace = Thread.currentThread().getStackTrace();
 
         // Don't block if queue is full
-        QUEUE.offer(new Query(sql, parameters, elapsed, stackTrace, isRequestThread));
+        QUEUE.offer(new Query(sql, parameters, elapsed, stackTrace, requestThread));
     }
 
     public static void resetAllStatistics()
@@ -355,7 +355,7 @@ public class QueryProfiler
         private Query(String sql, @Nullable Collection<Object> parameters, long elapsed, StackTraceElement[] stackTrace, boolean isRequestThread)
         {
             _sql = sql;
-            _parameters = parameters;
+            _parameters = null != parameters ? new ArrayList<Object>(parameters) : null;    // Make a copy... callers might modify the collection
             _elapsed = elapsed;
             _stackTrace = stackTrace;
             _isRequestThread = isRequestThread;
@@ -483,7 +483,14 @@ public class QueryProfiler
 
             SQLFragment sql = new SQLFragment(getSql(), zeroBasedList);
 
-            return sql.toString();
+            try
+            {
+                return sql.toString();
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
         }
 
         private void setParameters(@Nullable Collection<Object> parameters)

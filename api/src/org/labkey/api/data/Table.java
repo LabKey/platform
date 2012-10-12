@@ -32,6 +32,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Join;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.etl.AbstractDataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -517,6 +518,15 @@ public class Table
         if (asyncRequest != null)
         {
             asyncRequest.setStatement(statement);
+
+            // If this is a background request then push the original stack trace into the statement wrapper so it gets
+            // logged and stored in the query profiler.
+            if (statement instanceof StatementWrapper)
+            {
+                StatementWrapper sw = (StatementWrapper)statement;
+                sw.setStackTrace(asyncRequest.getCreationStackTrace());
+                sw.setRequestThread(true);      // AsyncRequests aren't really background threads; treat them as request threads.
+            }
         }
     }
 

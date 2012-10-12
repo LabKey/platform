@@ -19,6 +19,7 @@ package org.labkey.api.data.dialect;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.QueryProfiler;
@@ -26,6 +27,7 @@ import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.view.ViewServlet;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -65,6 +67,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private boolean userCancelled = false;
     // NOTE: CallableStatement supports getObject(), but PreparedStatement doesn't
     private List<Object> _parameters = null;
+    private @Nullable StackTraceElement[] _stackTrace = null;
+    private @Nullable Boolean _requestThread = null;
 
     String _sqlStateTestException = null;
 
@@ -81,6 +85,21 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         this(conn, stmt);
         _debugSql = sql;
+    }
+
+    public void setStackTrace(@Nullable StackTraceElement[] stackTrace)
+    {
+        _stackTrace = stackTrace;
+    }
+
+    public @Nullable Boolean isRequestThread()
+    {
+        return null != _requestThread ? _requestThread : ViewServlet.isRequestThread();
+    }
+
+    public void setRequestThread(@Nullable Boolean requestThread)
+    {
+        _requestThread = requestThread;
     }
 
     public void registerOutParameter(int parameterIndex, int sqlType)
@@ -1562,7 +1581,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private void _logStatement(String sql, Exception x)
     {
         long elapsed = System.currentTimeMillis() - _msStart;
-        QueryProfiler.track(sql, _parameters, elapsed);
+        QueryProfiler.track(sql, _parameters, elapsed, _stackTrace, isRequestThread());
 
         if (!_log.isEnabledFor(Level.DEBUG))
             return;

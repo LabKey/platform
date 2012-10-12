@@ -130,7 +130,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
                 @Override
                 public TableResultSet handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
                 {
-                    return Table.cacheResultSet(scope.getSqlDialect(), rs, _maxRows, getCreationStacktrace());
+                    return Table.cacheResultSet(scope.getSqlDialect(), rs, _maxRows, getLoggingStacktrace());
                 }
             }, true, scrollable, true);
         }

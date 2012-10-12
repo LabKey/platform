@@ -39,7 +39,7 @@ public abstract class JdbcCommand
     private Level _logLevel = Level.WARN;  // Log all warnings and errors by default
     private Logger _log = LOG;   // Passed to getConnection(), can be customized via getLogger()
     private @Nullable AsyncQueryRequest _asyncRequest = null;
-    private @Nullable StackTraceElement[] _creationStacktrace = null;
+    private @Nullable StackTraceElement[] _loggingStacktrace = null;
 
     protected JdbcCommand(@NotNull DbScope scope, @Nullable Connection conn)
     {
@@ -95,7 +95,7 @@ public abstract class JdbcCommand
         _asyncRequest = asyncRequest;
 
         if (null != asyncRequest)
-            _creationStacktrace = asyncRequest.getCreationStackTrace();
+            _loggingStacktrace = asyncRequest.getCreationStackTrace();
     }
 
     @Nullable
@@ -104,14 +104,14 @@ public abstract class JdbcCommand
         return _asyncRequest;
     }
 
-    public void setCreationStacktrace(@Nullable StackTraceElement[] creationStacktrace)
+    public void setLoggingStacktrace(@Nullable StackTraceElement[] loggingStacktrace)
     {
-        _creationStacktrace = creationStacktrace;
+        _loggingStacktrace = loggingStacktrace;
     }
 
     @Nullable
-    protected StackTraceElement[] getCreationStacktrace()
+    protected StackTraceElement[] getLoggingStacktrace()
     {
-        return _creationStacktrace;
+        return _loggingStacktrace;
     }
 }

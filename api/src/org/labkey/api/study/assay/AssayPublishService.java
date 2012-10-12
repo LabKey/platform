@@ -27,7 +27,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 
 import java.util.List;
 import java.util.Map;
