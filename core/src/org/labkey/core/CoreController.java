@@ -1229,9 +1229,9 @@ public class CoreController extends SpringActionController
                 throw new RedirectException(parentContainer.getStartURL(getViewContext().getUser()));
 
             MoveWorkbooksBean bean = new MoveWorkbooksBean();
-            for (int id : PageFlowUtil.toInts(ids))
+            for (String id : ids)
             {
-                Container wb = ContainerManager.getForRowId(id);
+                Container wb = ContainerManager.getForId(id);
                 if (null != wb)
                     bean.addWorkbook(wb);
             }
