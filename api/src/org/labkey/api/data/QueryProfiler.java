@@ -290,11 +290,16 @@ public class QueryProfiler
             StringBuilder sb = new StringBuilder();
 
             sb.append("<table>\n");
-            sb.append("<tr><td><b>SQL</b></td></tr>\n");
-            sb.append("<tr><td colspan=2>").append(PageFlowUtil.filter(tracker.getSql(), true)).append("<br><br></td></tr>");
+            sb.append("  <tr>\n    <td><b>SQL</b></td>\n    <td style=\"padding-left: 20px;\"><b>SQL&nbsp;With&nbsp;Parameters</b></td>\n  </tr>\n");
+            sb.append("  <tr>\n");
+            sb.append("    <td>").append(PageFlowUtil.filter(tracker.getSql(), true)).append("</td>\n");
+            sb.append("    <td style=\"padding-left: 20px;\">").append(PageFlowUtil.filter(tracker.getSqlAndParameters(), true)).append("</td>\n");
+            sb.append("  </tr>\n");
+            sb.append("</table>\n");
+            sb.append("<br>\n");
 
+            sb.append("<table>\n");
             tracker.appendStackTraces(sb);
-
             sb.append("</table>\n");
 
             return new HtmlView(sb.toString());
@@ -484,14 +489,7 @@ public class QueryProfiler
 
             SQLFragment sql = new SQLFragment(getSql(), zeroBasedList);
 
-            try
-            {
-                return sql.toString();
-            }
-            catch (Exception e)
-            {
-                return null;
-            }
+            return sql.toString();
         }
 
         private void setParameters(@Nullable Collection<Object> parameters)

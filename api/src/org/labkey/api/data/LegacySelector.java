@@ -16,9 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -63,18 +60,6 @@ abstract class LegacySelector<SELECTOR extends BaseSelector<? extends SqlFactory
     public LEGACYSELECTOR setNamedParamters(Map<String, Object> parameters)
     {
         _selector.setNamedParameters(parameters);
-        return getThis();
-    }
-
-    public LEGACYSELECTOR setAsyncRequest(@Nullable AsyncQueryRequest asyncRequest)
-    {
-        _selector.setAsyncRequest(asyncRequest);
-        return getThis();
-    }
-
-    public LEGACYSELECTOR setLogger(Logger log)
-    {
-        _selector.setLogger(log);
         return getThis();
     }
 

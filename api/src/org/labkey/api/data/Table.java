@@ -133,14 +133,15 @@ public class Table
         return new LegacyTableSelector(table, select, filter, sort).setMaxRows(maxRows).setOffset(offset).getArray(clss);
     }
 
+    // ================== These methods have been converted to Selector/Executor, but still have callers ==================
+
+    // 1 usages
     // return a result from a one column resultset. K should be a string or number type
     @Deprecated // Use TableSelector
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
     {
         return new LegacyTableSelector(col, filter, sort).getArray(c);
     }
-
-    // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
     // 21 usages
     @NotNull
@@ -263,6 +264,7 @@ public class Table
     }
 
 
+    // 3 usages
     @NotNull
     @Deprecated // Use TableSelector
     public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
@@ -272,6 +274,7 @@ public class Table
     }
 
 
+    // 2 usages
     @NotNull
     @Deprecated // Use TableSelector
     public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
@@ -437,26 +440,6 @@ public class Table
         return selector.getResults(scrollable, cache);
     }
 
-
-    @Deprecated // Use TableSelector instead
-    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters).setLogger(log);
-
-        if (null != asyncRequest)
-            selector.setAsyncRequest(asyncRequest);
-
-        return selector.getResults(scrollable, cache);
-    }
-
-    @Deprecated // Use TableSelector instead
-    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, Map<String, Object> parameters, final @Nullable Filter filter, final @Nullable Sort sort, final int maxRows, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setNamedParamters(parameters).setMaxRows(maxRows).setOffset(offset);
-        return selector.getResultsAsync(scrollable, cache, response);
-    }
 
     // ================== These methods have not been converted to Selector/Executor ==================
 
@@ -669,6 +652,11 @@ public class Table
         catch(SQLException e)
         {
             logException(sql, parameters, conn, e);
+            queryFailed = true;
+            throw(e);
+        }
+        catch(RuntimeException e)  // For example, AsyncQueryRequest.CancelledException
+        {
             queryFailed = true;
             throw(e);
         }

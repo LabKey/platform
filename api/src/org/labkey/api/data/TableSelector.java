@@ -119,6 +119,7 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
         AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response);
+        setAsyncRequest(asyncRequest);
 
         return asyncRequest.waitForResult(new Callable<Results>()
         {
@@ -178,7 +179,7 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
     public long getRowCount()
     {
         // TODO: Shouldn't actually need the sub-query in the TableSelector case... just use a "COUNT(*)" ExprColumn directly with the filter + table
-        // Produce "SELECT 1 FROM ..." in the sub-select and ignore the sort
+        // For now, produce "SELECT 1 FROM ..." in the sub-select and ignore the sort
         TableSqlFactory sqlFactory = new RowCountingSqlFactory(_table, _filter);
         return super.getRowCount(sqlFactory) - sqlFactory._scrollOffset;      // Corner case -- asking for rowCount with offset on a dialect that doesn't support offset
     }

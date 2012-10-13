@@ -90,6 +90,7 @@ public abstract class JdbcCommand
         _log = log;
     }
 
+    // TODO: Make this protected and/or remove... external callers should call setDetectClientAbort(@Nullable Response)
     public void setAsyncRequest(@Nullable AsyncQueryRequest asyncRequest)
     {
         _asyncRequest = asyncRequest;
