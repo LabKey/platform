@@ -37,7 +37,7 @@
     QuerySnapshotForm bean = me.getModelBean();
     ViewContext context = HttpView.currentContext();
 
-    QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName().toString(), bean.getSnapshotName());
+    QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName(), bean.getSnapshotName());
 
     boolean showHistory = BooleanUtils.toBoolean(context.getActionURL().getParameter("showHistory"));
     String historyLabel = showHistory ? "Hide History" : "Show History";

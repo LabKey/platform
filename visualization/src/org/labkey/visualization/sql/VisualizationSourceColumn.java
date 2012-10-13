@@ -135,8 +135,7 @@ public class VisualizationSourceColumn
         {
             throw new NullPointerException("No schema specified");
         }
-        DefaultSchema defSchema = DefaultSchema.get(context.getUser(), context.getContainer());
-        return (UserSchema) defSchema.getSchema(schemaName);
+        return QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
     }
 
     public String getSchemaName()

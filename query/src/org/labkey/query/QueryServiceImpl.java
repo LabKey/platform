@@ -65,6 +65,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -131,15 +132,21 @@ public class QueryServiceImpl extends QueryService
         return (QueryServiceImpl)QueryService.get();
     }
 
-    public UserSchema getUserSchema(User user, Container container, String schemaName)
+    public UserSchema getUserSchema(User user, Container container, String schemaPath)
     {
-        if (StringUtils.isEmpty(schemaName))
-            return null;
-        QuerySchema ret = DefaultSchema.get(user, container).getSchema(schemaName);
-        if (ret instanceof UserSchema)
-        {
-            return (UserSchema) ret;
-        }
+        QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
+        if (schema instanceof UserSchema && schema.getName() != null)
+            return (UserSchema)schema;
+
+        return null;
+    }
+
+    public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath)
+    {
+        QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
+        if (schema instanceof UserSchema && schema.getName() != null)
+            return (UserSchema)schema;
+
         return null;
     }
 

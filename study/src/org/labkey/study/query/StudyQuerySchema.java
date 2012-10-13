@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -54,7 +55,6 @@ public class StudyQuerySchema extends UserSchema
     final boolean _mustCheckPermissions;
 
     private Map<Integer, List<Double>> _datasetSequenceMap;
-    public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
     public static final String STUDY_DATA_TABLE_NAME = "StudyData";
     public static final String QCSTATE_TABLE_NAME = "QCState";
 
@@ -81,6 +81,16 @@ public class StudyQuerySchema extends UserSchema
     {
         super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, c, StudySchema.getInstance().getSchema());
         _study = null;
+        _mustCheckPermissions = true;
+    }
+
+    /**
+     * This c-tor is for derived schemas to appease StudyBaseTable.
+     */
+    protected StudyQuerySchema(StudyImpl study, String name, String description, User user, Container container)
+    {
+        super(name, description, user, container, StudySchema.getInstance().getSchema());
+        _study = study;
         _mustCheckPermissions = true;
     }
 
@@ -119,8 +129,40 @@ public class StudyQuerySchema extends UserSchema
         return !getMustCheckPermissions() || super.canReadSchema();
     }
 
+    @Override
+    public Set<String> getSchemaNames()
+    {
+        Set<String> ret = new HashSet<String>(super.getSchemaNames());
+        ret.add(SpecimenQuerySchema.NAME);
+        return ret;
+    }
 
+    @Override
+    public QuerySchema getSchema(String name)
+    {
+        if (_restricted)
+            return null;
+
+        if (SpecimenQuerySchema.NAME.equals(name))
+            return new SpecimenQuerySchema(this, _study, getUser(), getContainer());
+
+        return super.getSchema(name);
+    }
+
+
+    @Override
+    public Set<String> getVisibleTableNames()
+    {
+        return getTableNames(true);
+    }
+
+    @Override
     public Set<String> getTableNames()
+    {
+        return getTableNames(false);
+    }
+
+    private Set<String> getTableNames(boolean visible)
     {
         Set<String> ret = new LinkedHashSet<String>();
 
@@ -134,16 +176,26 @@ public class StudyQuerySchema extends UserSchema
             ret.add("Site");
             if (_study.getTimepointType() != TimepointType.CONTINUOUS)
                 ret.add("Visit");
-            ret.add("SpecimenEvent");
-            ret.add("SpecimenDetail");
-            ret.add("SpecimenSummary");
-            ret.add("SpecimenVialCount");
-            ret.add(SIMPLE_SPECIMEN_TABLE_NAME);
-            ret.add("SpecimenRequest");
-            ret.add("SpecimenRequestStatus");
-            ret.add("VialRequest");
+
             if (_study.getTimepointType() != TimepointType.CONTINUOUS)
                 ret.add(StudyService.get().getSubjectVisitTableName(getContainer()));
+
+            //if (!visible)
+            {
+                ret.add("SpecimenEvent");
+                ret.add("SpecimenDetail");
+                ret.add("SpecimenSummary");
+                ret.add("SpecimenVialCount");
+                ret.add(SpecimenQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+                ret.add("SpecimenRequest");
+                ret.add("SpecimenRequestStatus");
+                ret.add("VialRequest");
+                ret.add("SpecimenAdditive");
+                ret.add("SpecimenDerivative");
+                ret.add("SpecimenPrimaryType");
+                ret.add("SpecimenComment");
+            }
+
             ret.add("DataSets");
             ret.add("DataSetColumns");
 
@@ -152,10 +204,6 @@ public class StudyQuerySchema extends UserSchema
                 ret.add("Cohort");
 
             ret.add("QCState");
-            ret.add("SpecimenAdditive");
-            ret.add("SpecimenDerivative");
-            ret.add("SpecimenPrimaryType");
-            ret.add("SpecimenComment");
 
             // Subject category/group tables:
             ret.add(StudyService.get().getSubjectCategoryTableName(getContainer()));
@@ -249,7 +297,7 @@ public class StudyQuerySchema extends UserSchema
 
         // Expose the simplified specimen table even if there's no study in this container. The caller may
         // want to set a container filter to look at specimens across the entire site
-        if (SIMPLE_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
+        if (SpecimenQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
         {
             return createSimpleSpecimenTable();
         }

@@ -55,14 +55,14 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
         if ("root".equals(form.getNode()))
         {
-            Map<DbScope, JSONArray> map = new LinkedHashMap<DbScope, JSONArray>();
+            final Map<DbScope, JSONArray> map = new LinkedHashMap<DbScope, JSONArray>();
 
             // Initialize a JSONArray for each scope; later, we'll enumerate and skip the scopes that aren't actually
             // used in this folder.  This approach ensures we order the scopes naturally (i.e., labkey scope first).
             for (DbScope scope : DbScope.getDbScopes())
                 map.put(scope, new JSONArray());
 
-            //return list of schemas grouped by datasource
+            // return list of top-level schemas grouped by datasource
             for (String name : defSchema.getUserSchemaNames())
             {
                 QuerySchema schema = DefaultSchema.get(user, container).getSchema(name);
@@ -72,11 +72,8 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 DbScope scope = schema.getDbSchema().getScope();
                 JSONArray schemas = map.get(scope);
 
-                JSONObject schemaProps = new JSONObject();
-                schemaProps.put("text", PageFlowUtil.filter(name));
-                schemaProps.put("description", PageFlowUtil.filter(schema.getDescription()));
-                schemaProps.put("qtip", PageFlowUtil.filter(schema.getDescription()));
-                schemaProps.put("schemaName", name);
+                SchemaKey schemaName = new SchemaKey(null, schema.getName());
+                JSONObject schemaProps = getSchemaProps(schemaName, schema);
 
                 schemas.put(schemaProps);
             }
@@ -94,6 +91,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     ds.put("qtip", "Schemas in data source '" + dsName + "'");
                     ds.put("expanded", true);
                     ds.put("children", schemas);
+                    ds.put("name", dsName);
                     ds.put("dataSourceName", dsName);
 
                     respArray.put(ds);
@@ -104,12 +102,11 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         {
             if (null != form.getSchemaName())
             {
-                String schemaName = form.getSchemaName();
-                QuerySchema schema = defSchema.getSchema(schemaName);
+                SchemaKey schemaPath = form.getSchemaName();
+                UserSchema uschema = QueryService.get().getUserSchema(user, container, schemaPath);
 
-                if (null != schema && schema instanceof UserSchema)
+                if (null != uschema)
                 {
-                    UserSchema uschema = (UserSchema)schema;
                     JSONArray userDefined = new JSONArray();
                     JSONArray builtIn = new JSONArray();
 
@@ -129,12 +126,12 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         TableInfo tinfo = uschema.getTable(qname);
                         if (null == tinfo)
                             continue;
-                        addQueryToList(schemaName, qname, tinfo.getDescription(), builtIn);
+                        addQueryToList(schemaPath, qname, tinfo.getDescription(), builtIn);
                         addedQueryCount++;
                     }
 
                     if (addedQueryCount == MAX_TABLES_TO_LIST && addedQueryCount < queryNames.size())
-                        addMoreLinkToList(schemaName, builtIn);
+                        addMoreLinkToList(schemaPath, builtIn);
 
                     //get user-defined queries
                     Map<String, QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(user, container, uschema.getSchemaName());
@@ -153,13 +150,13 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         QueryDefinition qdef = queryDefMap.get(qname);
                         if (!qdef.isTemporary())
                         {
-                            addQueryToList(schemaName, qname, qdef.getDescription(), userDefined);
+                            addQueryToList(schemaPath, qname, qdef.getDescription(), userDefined);
                             addedQueryCount++;
                         }
                     }
 
                     if (addedQueryCount == MAX_TABLES_TO_LIST && addedQueryCount < queryNames.size())
-                        addMoreLinkToList(schemaName, userDefined);
+                        addMoreLinkToList(schemaPath, userDefined);
 
                     //group the user-defined and built-in queries into folders
                     if (userDefined.length() > 0)
@@ -169,7 +166,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         fldr.put("qtip", "Custom queries created by you and those shared by others.");
                         fldr.put("expanded", true);
                         fldr.put("children", userDefined);
-                        fldr.put("schemaName", schemaName);
+                        fldr.put("schemaName", schemaPath);
                         respArray.put(fldr);
                     }
 
@@ -180,8 +177,16 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         fldr.put("qtip", "Queries and tables that are part of the schema by default.");
                         fldr.put("expanded", true);
                         fldr.put("children", builtIn);
-                        fldr.put("schemaName", schemaName);
+                        fldr.put("schemaName", schemaPath);
                         respArray.put(fldr);
+                    }
+
+                    // Add any children schemas
+                    for (UserSchema child : uschema.getUserSchemas())
+                    {
+                        SchemaKey childPath = new SchemaKey(schemaPath, child.getName());
+                        JSONObject schemaProps = getSchemaProps(childPath, child);
+                        respArray.put(schemaProps);
                     }
                 }
             }
@@ -194,7 +199,18 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         return null;
     }
 
-    protected void addMoreLinkToList(String schemaName, JSONArray list)
+    protected JSONObject getSchemaProps(SchemaKey schemaName, QuerySchema schema)
+    {
+        JSONObject schemaProps = new JSONObject();
+        schemaProps.put("text", PageFlowUtil.filter(schema.getName()));
+        schemaProps.put("description", PageFlowUtil.filter(schema.getDescription()));
+        schemaProps.put("qtip", PageFlowUtil.filter(schema.getDescription()));
+        schemaProps.put("name", schema.getName());
+        schemaProps.put("schemaName", schemaName);
+        return schemaProps;
+    }
+
+    protected void addMoreLinkToList(SchemaKey schemaName, JSONArray list)
     {
         JSONObject props = new JSONObject();
         props.put("schemaName", schemaName);
@@ -208,7 +224,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
     }
 
 
-    protected void addQueryToList(String schemaName, String qname, String description, JSONArray list)
+    protected void addQueryToList(SchemaKey schemaName, String qname, String description, JSONArray list)
     {
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
@@ -226,7 +242,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
     public static class Form
     {
         private String _node;
-        private String _schemaName;
+        private SchemaKey _schemaName;
 
         public String getNode()
         {
@@ -238,12 +254,12 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
             _node = node;
         }
 
-        public String getSchemaName()
+        public SchemaKey getSchemaName()
         {
             return _schemaName;
         }
 
-        public void setSchemaName(String schemaName)
+        public void setSchemaName(SchemaKey schemaName)
         {
             _schemaName = schemaName;
         }

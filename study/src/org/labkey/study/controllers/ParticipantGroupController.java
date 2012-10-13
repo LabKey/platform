@@ -29,6 +29,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -365,21 +366,29 @@ public class ParticipantGroupController extends BaseStudyController
                 QuerySettings settings = form.getQuerySettings();
                 settings.setMaxRows(Table.ALL_ROWS);
 
-                QuerySchema querySchema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName().toString());
-                QueryView view = ((UserSchema)querySchema).createView(getViewContext(), settings, errors);
-
-                if (view != null)
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
+                if (schema == null)
                 {
-                    if (form.isSelectAll())
-                    {
-                        for (String ptid : StudyController.generateParticipantList(view))
-                            ptids.add(ptid);
-                    }
-                    else
-                    {
-                        List<String> participants = ParticipantGroupManager.getInstance().getParticipantsFromSelection(getContainer(), view, Arrays.asList(form.getSelections()));
-                        ptids.addAll(participants);
-                    }
+                    errors.reject(ERROR_MSG, "schema not found");
+                    return null;
+                }
+
+                QueryView view = schema.createView(getViewContext(), settings, errors);
+                if (view == null)
+                {
+                    errors.reject(ERROR_MSG, "view not found");
+                    return null;
+                }
+
+                if (form.isSelectAll())
+                {
+                    for (String ptid : StudyController.generateParticipantList(view))
+                        ptids.add(ptid);
+                }
+                else
+                {
+                    List<String> participants = ParticipantGroupManager.getInstance().getParticipantsFromSelection(getContainer(), view, Arrays.asList(form.getSelections()));
+                    ptids.addAll(participants);
                 }
                 resp.put("ptids", ptids);
                 resp.put("success", true);

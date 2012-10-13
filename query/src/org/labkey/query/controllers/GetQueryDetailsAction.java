@@ -72,7 +72,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
         Container container = getViewContext().getContainer();
         User user = getViewContext().getUser();
-        QuerySchema schema = DefaultSchema.get(user, container).getSchema(form.getSchemaName());
+        QuerySchema schema = DefaultSchema.get(user, container, form.getSchemaName());
         if (null == schema)
             throw new NotFoundException("Could not find the schema '" + form.getSchemaName() + "' in the folder '" + container.getPath() + "'!");
 

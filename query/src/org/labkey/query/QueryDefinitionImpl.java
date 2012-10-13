@@ -30,7 +30,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
@@ -40,6 +39,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ViewOptions;
 import org.labkey.api.security.User;
@@ -281,15 +281,21 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public UserSchema getSchema()
     {
         if (null == _schema)
-            _schema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(getSchemaName());
-        assert _schema.getSchemaName().equals(getSchemaName());
+            _schema = QueryService.get().getUserSchema(getUser(), getContainer(), getSchemaPath());
+        assert _schema.getSchemaPath().equals(getSchemaPath());
         return _schema;
     }
 
 
+    @Deprecated // Use .getSchemaPath()
     public String getSchemaName()
     {
-        return _queryDef.getSchema();
+        return _queryDef.getSchemaPath().toString();
+    }
+
+    public SchemaKey getSchemaPath()
+    {
+        return _queryDef.getSchemaPath();
     }
 
 

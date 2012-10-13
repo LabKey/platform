@@ -98,16 +98,10 @@ public abstract class VisualizationProvider
 
     protected UserSchema getUserSchema(Container container, User user)
     {
-        DefaultSchema defSchema = DefaultSchema.get(user, container);
-        QuerySchema schema = defSchema.getSchema(_schemaName);
-        if (!(schema instanceof UserSchema))
-        {
-            if (schema == null)
-                throw new IllegalStateException("No schema found with name " + _schemaName);
-            else
-                throw new IllegalStateException("Unexpected schema type: " + schema.getClass().getSimpleName());
-        }
-        return (UserSchema) schema;
+        UserSchema schema = QueryService.get().getUserSchema(user, container, _schemaName);
+        if (schema == null)
+            throw new IllegalStateException("No schema found with name " + _schemaName);
+        return schema;
     }
 
     protected Pair<QueryDefinition, TableInfo> getQueryDefinition(ViewContext context, ColumnMatchType matchType, String queryName)

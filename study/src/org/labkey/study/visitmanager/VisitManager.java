@@ -50,6 +50,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
+import org.labkey.study.query.SpecimenQuerySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletContextEvent;
@@ -646,7 +647,7 @@ public abstract class VisitManager
         if (study.isAncillaryStudy())
         {
             StudyQuerySchema studyQuerySchema = new StudyQuerySchema(study, null, false);
-            return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+            return studyQuerySchema.getTable(SpecimenQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
         }
         else
             return StudySchema.getInstance().getTableInfoSpecimen();

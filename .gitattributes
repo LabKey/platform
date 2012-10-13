@@ -2114,6 +2114,7 @@ query/src/org/labkey/query/QueryWebdavProvider.java -text
 query/src/org/labkey/query/QueryWriter.java -text
 query/src/org/labkey/query/TableQueryDefinition.java -text
 query/src/org/labkey/query/TableXML.java -text
+query/src/org/labkey/query/ValidateQueriesVisitor.java -text
 query/src/org/labkey/query/ViewFilterItemImpl.java -text
 query/src/org/labkey/query/audit/QueryAuditViewFactory.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
@@ -2131,6 +2132,7 @@ query/src/org/labkey/query/controllers/QueryController.java -text
 query/src/org/labkey/query/controllers/QueryPage.java -text
 query/src/org/labkey/query/controllers/SourceForm.java -text
 query/src/org/labkey/query/controllers/TableInfoForm.java -text
+query/src/org/labkey/query/controllers/ValidateQueriesAction.java -text
 query/src/org/labkey/query/controllers/ValidateQueryAction.java -text
 query/src/org/labkey/query/controllers/ViewQuerySourceAction.java -text
 query/src/org/labkey/query/controllers/admin.jsp -text
@@ -3088,6 +3090,7 @@ study/src/org/labkey/study/query/SpecimenEventTable.java -text
 study/src/org/labkey/study/query/SpecimenPivotByDerivativeType.java -text
 study/src/org/labkey/study/query/SpecimenPivotByPrimaryType.java -text
 study/src/org/labkey/study/query/SpecimenPivotByRequestingLocation.java -text
+study/src/org/labkey/study/query/SpecimenQuerySchema.java -text
 study/src/org/labkey/study/query/SpecimenQueryView.java -text
 study/src/org/labkey/study/query/SpecimenReportQuery.java -text
 study/src/org/labkey/study/query/SpecimenRequestDisplayColumn.java -text

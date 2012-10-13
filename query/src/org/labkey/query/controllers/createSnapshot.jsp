@@ -39,7 +39,7 @@
         columnMap.put(name, name);
 
     boolean isAutoUpdateable = QuerySnapshotService.get(bean.getSchemaName()) instanceof QuerySnapshotService.AutoUpdateable;
-    boolean isEdit = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName().toString(), bean.getSnapshotName()) != null;
+    boolean isEdit = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName(), bean.getSnapshotName()) != null;
 
     Map<String, String> updateDelay = new LinkedHashMap<String, String>();
     updateDelay.put("30", "30 seconds");

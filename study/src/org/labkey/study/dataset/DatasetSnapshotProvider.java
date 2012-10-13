@@ -273,32 +273,29 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     static QueryView createQueryView(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors)
     {
         QueryDefinition queryDef = qsDef.getQueryDefinition(context.getUser());
-        QuerySchema querySchema = DefaultSchema.get(context.getUser(), queryDef.getContainer()).getSchema(queryDef.getSchemaName());
+        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), queryDef.getSchemaName());
+        if (schema == null)
+            return null;
 
-        if (querySchema instanceof UserSchema)
+        DataSetQuerySettings settings = new DataSetQuerySettings(context.getBindPropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
+        settings.setQueryName(queryDef.getName());
+
+        QueryView view = schema.createView(context, settings, errors);
+
+        //if (!qsDef.getColumns().isEmpty() || !StringUtils.isBlank(qsDef.getFilter()))
         {
-            DataSetQuerySettings settings = new DataSetQuerySettings(context.getBindPropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
+            // create a temporary custom view to add additional display columns to the base query definition
+            CustomView custView = queryDef.createCustomView(context.getUser(), "tempCustomView");
 
-            settings.setQueryName(queryDef.getName());
+            if (!qsDef.getColumns().isEmpty())
+                custView.setColumns(qsDef.getColumns());
 
-            QueryView view = ((UserSchema)querySchema).createView(context, settings, errors);
+            if (!StringUtils.isBlank(qsDef.getFilter()))
+                custView.setFilterAndSort(qsDef.getFilter());
 
-            //if (!qsDef.getColumns().isEmpty() || !StringUtils.isBlank(qsDef.getFilter()))
-            {
-                // create a temporary custom view to add additional display columns to the base query definition
-                CustomView custView = queryDef.createCustomView(context.getUser(), "tempCustomView");
-
-                if (!qsDef.getColumns().isEmpty())
-                    custView.setColumns(qsDef.getColumns());
-
-                if (!StringUtils.isBlank(qsDef.getFilter()))
-                    custView.setFilterAndSort(qsDef.getFilter());
-
-                view.setCustomView(custView);
-            }
-            return view;
+            view.setCustomView(custView);
         }
-        return null;
+        return view;
     }
 
     public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
@@ -360,7 +357,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public synchronized ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors, boolean suppressVisitManagerRecalc) throws Exception
     {
-        QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
+        QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName(), form.getSnapshotName());
         if (def != null)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
@@ -475,7 +472,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     public HttpView createAuditView(QuerySnapshotForm form) throws Exception
     {
         ViewContext context = form.getViewContext();
-        QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
+        QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), form.getSchemaName(), form.getSnapshotName());
 
         if (def != null)
         {

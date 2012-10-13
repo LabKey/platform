@@ -599,13 +599,12 @@ public class VisualizationController extends SpringActionController
 
             if (form.getName() != null && form.getSchemaName() != null && form.getQueryName() != null)
             {
-                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName());
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
                 List<Map<String, String>> values = new ArrayList<Map<String, String>>();
 
-                if (schema instanceof UserSchema)
+                if (schema != null)
                 {
-                    UserSchema uschema = (UserSchema)schema;
-                    TableInfo tinfo = uschema.getTable(form.getQueryName());
+                    TableInfo tinfo = schema.getTable(form.getQueryName());
 
                     if (tinfo != null)
                     {
@@ -625,7 +624,7 @@ public class VisualizationController extends SpringActionController
                                 }
                                 SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
-                                rs = Table.executeQuery(uschema.getDbSchema(), sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParamsArray());
+                                rs = Table.executeQuery(schema.getDbSchema(), sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParamsArray());
 
                                 while (rs.next())
                                 {

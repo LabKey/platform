@@ -16,38 +16,59 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable,
         LABKEY.ext.QueryCache.superclass.constructor.apply(this, arguments);
     },
 
-    getSchemas : function(callback, scope)
+    getSchemas : function (callback, scope)
     {
-        if (this.schemasMap)
+        if (this.schemaTree)
         {
             if (callback)
-                callback.call(scope || this, this.schemasMap);
+                callback.call(scope || this, this.schemaTree);
             return;
         }
 
         LABKEY.Query.getSchemas({
             apiVersion: 9.3,
-            successCallback: function(schemasMap) {
-                this.schemasMap = schemasMap;
+            successCallback: function(schemaTree) {
+                this.schemaTree = {schemas: schemaTree};
                 this.getSchemas(callback, scope);
             },
             scope: this
         });
     },
 
-    getSchema : function(schemaName, callback, scope)
+    // Find the schema named by schemaPath in the schemaTree.
+    lookupSchema : function (schemaTree, schemaName)
+    {
+        if (!schemaTree)
+            return null;
+
+        if (!(schemaName instanceof LABKEY.SchemaKey))
+            schemaName = LABKEY.SchemaKey.fromString(schemaName);
+
+        var schema = schemaTree;
+        var parts = schemaName.getParts();
+        for (var i = 0; i < parts.length; i++)
+        {
+            schema = schema.schemas[parts[i]];
+            if (!schema)
+                break;
+        }
+
+        return schema;
+    },
+
+    getSchema : function (schemaName, callback, scope)
     {
         if (!callback)
-            return this.schemasMap ? this.schemasMap[schemaName] : null;
+            return this.lookupSchema(this.schemaTree, schemaName);
 
-        this.getSchemas(function(schemasMap){
-            callback.call(scope || this, schemasMap[schemaName]);
+        this.getSchemas(function(schemaTree){
+            callback.call(scope || this, this.lookupSchema(schemaTree, schemaName));
         }, this);
     },
 
-    getQueries : function(schemaName, callback, scope)
+    getQueries : function (schemaName, callback, scope)
     {
-        if (!this.schemasMap)
+        if (!this.schemaTree)
         {
             this.getSchemas(function(){
                 this.getQueries(schemaName, callback, scope);
@@ -55,7 +76,7 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable,
             return;
         }
 
-        var schema = this.schemasMap[schemaName];
+        var schema = this.lookupSchema(this.schemaTree, schemaName);
         if (!schema)
             throw "schema name '" + schemaName + "' does not exist!";
 
@@ -66,11 +87,11 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable,
         }
 
         LABKEY.Query.getQueries({
-            schemaName: schemaName,
+            schemaName: ""+schemaName, // stringify LABKEY.SchemaKey
             includeColumns: false,
             includeUserQueries: true,
             successCallback: function(data){
-                var schema = this.schemasMap[schemaName];
+                var schema = this.lookupSchema(this.schemaTree, schemaName);
                 schema.queriesMap = {};
                 var query;
                 for (var idx = 0; idx < data.queries.length; ++idx)
@@ -86,7 +107,7 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable,
 
     clearAll : function()
     {
-        delete this.schemasMap;
+        delete this.schemaTree;
     }
 });
 
@@ -116,7 +137,7 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable,
         }
 
         LABKEY.Query.getQueryDetails({
-            schemaName: schemaName,
+            schemaName: ""+schemaName, // stringify LABKEY.SchemaKey
             queryName: queryName,
             fk: fk,
             successCallback: function (json, response, options) {
@@ -175,6 +196,7 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
 
         this.root = new Ext.tree.AsyncTreeNode({
             id: 'root',
+            name: 'root',
             text: 'Schemas',
             expanded: true,
             expandable: false,
@@ -367,7 +389,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
     formatJumpToDefinitionLink : function(queryDetails) {
         var url = LABKEY.ActionURL.buildURL("query", "begin", queryDetails.containerPath, {
-            schemaName: queryDetails.schemaName,
+            schemaName: queryDetails.schemaName.toString(),
             queryName: queryDetails.name
         });
         return LABKEY.Utils.textLink({
@@ -1205,7 +1227,7 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel,
         this.queryCache.getSchemas(this.setSchemas, this);
     },
 
-    setSchemas : function(schemasMap) {
+    setSchemas : function(schemaTree) {
         //erase loading message
         this.body.update("");
 
@@ -1217,7 +1239,7 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel,
 
         //create a sorted list of schema names
         var sortedNames = [];
-        for (var schemaName in schemasMap)
+        for (var schemaName in schemaTree.schemas)
         {
             sortedNames.push(schemaName);
         }
@@ -1229,6 +1251,7 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel,
         var rows = [];
         for (var idx = 0; idx < sortedNames.length; ++idx)
         {
+            var schema = this.queryCache.lookupSchema(schemaTree, sortedNames[idx]);
             rows.push({
                 tag: 'tr',
                 children: [
@@ -1244,7 +1267,7 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel,
                     },
                     {
                         tag: 'td',
-                        html: Ext.util.Format.htmlEncode(schemasMap[sortedNames[idx]].description)
+                        html: Ext.util.Format.htmlEncode(schema.description)
                     }
                 ]
             });
@@ -1284,7 +1307,8 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel,
         for (idx = 0; idx < nameLinks.length; ++idx)
         {
             Ext.get(nameLinks[idx]).on("click", function(evt,t){
-                this.fireEvent("schemaclick", t.innerHTML);
+                var schemaName = LABKEY.SchemaKey.fromString(t.innerHTML);
+                this.fireEvent("schemaclick", schemaName);
             }, this);
         }
     }
@@ -1327,12 +1351,12 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel,
         this.body.createChild({
             tag: 'div',
             cls: 'lk-qd-name',
-            html: this.schemaName + " Schema"
+            html: Ext.util.Format.htmlEncode(this.schemaName.toDisplayString() + " Schema")
         });
         this.body.createChild({
             tag: 'div',
             cls: 'lk-qd-description',
-            html: this.cache.getSchema(this.schemaName).description
+            html: Ext.util.Format.htmlEncode(schema.description)
         });
 
         //create one list for user-defined and one for built-in
@@ -1606,7 +1630,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     schemaName: idMap.schemaName,
                     queryName: idMap.queryName,
                     id: id,
-                    title: Ext.util.Format.htmlEncode(idMap.schemaName) + "." + Ext.util.Format.htmlEncode(idMap.queryName),
+                    title: Ext.util.Format.htmlEncode(idMap.schemaName.toDisplayString()) + "." + Ext.util.Format.htmlEncode(idMap.queryName),
                     autoScroll: true,
                     listeners: {
                         lookupclick: {
@@ -1620,12 +1644,13 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             else if (this.sspPrefix == id.substring(0, this.sspPrefix.length))
             {
                 var schemaName = id.substring(this.sspPrefix.length);
+                var schemaPath = LABKEY.SchemaKey.fromString(schemaName);
                 panel = new LABKEY.ext.SchemaSummaryPanel(
                 {
                     cache: this._qcache,
-                    schemaName: schemaName,
+                    schemaName: schemaPath,
                     id: id,
-                    title: Ext.util.Format.htmlEncode(schemaName),
+                    title: Ext.util.Format.htmlEncode(schemaPath.toDisplayString()),
                     autoScroll: true,
                     listeners: {
                         queryclick: {
@@ -1650,14 +1675,18 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         if (id.indexOf(this.qdpPrefix) > -1)
             id = id.substring(this.qdpPrefix.length);
 
+        var ret = {};
         if (id.indexOf('&') > -1)
-            return {schemaName: decodeURIComponent(id.substring(0, id.indexOf('&'))), queryName: decodeURIComponent(id.substring(id.indexOf('&')+1))};
-        else
-            return {};
+        {
+            var schemaName = decodeURIComponent(id.substring(0, id.indexOf('&')));
+            ret.schemaName = LABKEY.SchemaKey.fromString(schemaName);
+            ret.queryName = decodeURIComponent(id.substring(id.indexOf('&')+1));
+        }
+        return ret;
     },
 
     buildQueryPanelId : function(schemaName, queryName) {
-        return this.qdpPrefix + encodeURIComponent(schemaName) + "&" + encodeURIComponent(queryName);
+        return this.qdpPrefix + encodeURIComponent(schemaName.toString()) + "&" + encodeURIComponent(queryName);
     },
 
     onHistoryChange : function(token) {
@@ -1687,7 +1716,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     getCreateQueryUrl : function(schemaName, queryName) {
-        var params = {schemaName: schemaName};
+        var params = {schemaName: schemaName.toString()};
         if (queryName)
             params.ff_baseTableName = queryName;
         return LABKEY.ActionURL.buildURL("query", "newQuery", undefined, params);
@@ -1756,29 +1785,69 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     selectSchema : function(schemaName) {
+        this.expandSchema(schemaName, function (success, schemaNode) {
+            if (success)
+                schemaNode.select();
+        });
+    },
+
+    expandSchema : function(schemaName, callback, scope) {
+        if (!(schemaName instanceof LABKEY.SchemaKey))
+            schemaName = LABKEY.SchemaKey.fromString(schemaName);
+
         var tree = this.getComponent("lk-sb-tree");
         var schemaNode = getSchemaNode(tree, schemaName);
-
         if (schemaNode)
         {
             tree.selectPath(schemaNode.getPath());
-            schemaNode.expand(false, false);
+            schemaNode.expand(false, false, function (schemaNode) {
+                if (callback)
+                    callback.call((scope || this), true, schemaNode);
+            });
         }
         else
-            Ext.Msg.alert("Missing Schema", "The schema '" + Ext.util.Format.htmlEncode(schemaName) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
+        {
+            // Attempt to expand along the schemaName path.
+            // Find the data source root node first
+            var parts = schemaName.getParts();
+            var root = tree.getRootNode();
+            var dataSourceNodes = root.childNodes;
+            var dataSourceRoot;
+            for (var i = 0; i < dataSourceNodes.length; i++) {
+                var node = dataSourceNodes[i];
+                var part = parts[0].toLowerCase();
+                var child = node.findChildBy(function (n) {
+                    return n.attributes.name && n.attributes.name.toLowerCase() == part;
+                });
 
+                if (child) {
+                    dataSourceRoot = node;
+                    break;
+                }
+            }
+
+            // Expand along the patch to fetch the schema data
+            if (dataSourceRoot) {
+                var schemaPathStr = "/root/" + dataSourceRoot.attributes.name + "/" + schemaName.toString();
+                tree.expandPath(schemaPathStr, "name", function (success, lastNode) {
+                    if (callback)
+                        callback.call((scope || this), true, lastNode);
+                    if (!success)
+                        Ext.Msg.alert("Missing Schema", "The schema '" + Ext.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
+                });
+            }
+            else {
+                Ext.Msg.alert("Missing Schema", "The schema '" + Ext.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
+            }
+        }
     },
 
     selectQuery : function(schemaName, queryName, callback, scope) {
-        var tree = this.getComponent("lk-sb-tree");
-        var schemaNode = getSchemaNode(tree, schemaName);
-        if (!schemaNode)
-        {
-            Ext.Msg.alert("Missing Schema", "The schema '" +  Ext.util.Format.htmlEncode(schemaName) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
-            return;
-        }
+        this.expandSchema(schemaName, function (success, schemaNode) {
+            if (!success)
+                return;
 
-        schemaNode.expand(false, false, function(schemaNode){
+            var tree = this.getComponent("lk-sb-tree");
             //look for the query node under both built-in and user-defined
             var queryNode;
             if (schemaNode.childNodes.length > 0)
@@ -1806,26 +1875,37 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             tree.selectPath(queryNode.getPath());
             if (callback)
                 callback.call((scope || this));
-        });
+
+        }, scope || this);
     }
 });
 
 function getSchemaNode(tree, schemaName)
 {
+    if (!(schemaName instanceof LABKEY.SchemaKey))
+        schemaName = LABKEY.SchemaKey.fromString(schemaName);
+
+    var parts = schemaName.getParts();
+
     var root = tree.getRootNode();
-
     var dataSourceNodes = root.childNodes;
-    var schemaToFind = schemaName.toLowerCase();
-    var schemaNode;
-
-    for (var i = 0; !schemaNode && i < dataSourceNodes.length; i++)
+    for (var i = 0; i < dataSourceNodes.length; i++)
     {
-        schemaNode = dataSourceNodes[i].findChildBy(function(node){
-            return node.attributes.schemaName && node.attributes.schemaName.toLowerCase() == schemaToFind;
-        });
+        var node = dataSourceNodes[i];
+        for (var j = 0; node && j < parts.length; j++)
+        {
+            var part = parts[j].toLowerCase();
+            node = node.findChildBy(function (n) {
+                return n.attributes.name && n.attributes.name.toLowerCase() == part;
+            });
+        }
+
+        // found node
+        if (node && j == parts.length)
+            return node;
     }
 
-    return schemaNode;
+    return null;
 }
 
 //adapted from http://www.extjs.com/deploy/dev/examples/tabs/tabs-adv.js

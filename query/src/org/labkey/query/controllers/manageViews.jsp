@@ -49,7 +49,7 @@
     QueryForm form = (QueryForm) HttpView.currentModel();
     User user = getViewContext().getUser();
     Container c = getViewContext().getContainer();
-    String schemaName = form.getSchemaName().toString().equals("") ? null : form.getSchemaName().toString();
+    String schemaName = form.getSchemaName().equals("") ? null : form.getSchemaName();
     String queryName = form.getQueryName();
     QueryManager mgr = QueryManager.get();
     List<CstmView> views = new ArrayList<CstmView>();

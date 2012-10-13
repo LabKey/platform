@@ -19,6 +19,7 @@ package org.labkey.query.persist;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CacheKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.UnexpectedException;
 
 public class QueryDef extends Entity implements Cloneable
@@ -72,7 +73,7 @@ public class QueryDef extends Entity implements Cloneable
     private int _flags;
     private String _name;
     private String _description;
-    private String _schema;
+    private SchemaKey _schema;
 
     public int getQueryDefId()
     {
@@ -129,12 +130,22 @@ public class QueryDef extends Entity implements Cloneable
 
     public String getSchema()
     {
-        return _schema;
+        return _schema.toString();
     }
 
     public void setSchema(String schema)
     {
-        _schema = schema;
+        _schema = SchemaKey.fromString(schema);
+    }
+
+    public SchemaKey getSchemaPath()
+    {
+        return _schema;
+    }
+
+    public void setSchemaPath(SchemaKey schemaName)
+    {
+        _schema = schemaName;
     }
 
     public String getDescription()

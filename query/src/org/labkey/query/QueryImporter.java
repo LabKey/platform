@@ -27,17 +27,15 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
-import org.labkey.query.persist.QueryManager;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -154,31 +152,27 @@ public class QueryImporter implements FolderImporter
         Container container = ctx.getContainer();
         User user = ctx.getUser();
         DefaultSchema defSchema = DefaultSchema.get(user, container);
-        QueryManager mgr = QueryManager.get();
 
-        for (String sname : defSchema.getUserSchemaNames())
-        {
-            QuerySchema qschema = defSchema.getSchema(sname);
-            if (!(qschema instanceof UserSchema))
-                continue;
-            UserSchema uschema = (UserSchema)qschema;
-            for (String qname : uschema.getTableAndQueryNames(true))
-            {
-                ctx.getLogger().info("Validating query " + sname + "." + qname + "...");
-
-                try
-                {
-                    mgr.validateQuery(sname, qname, user, container);
-                }
-                catch (Throwable e)
-                {
-                    ctx.getLogger().warn("VALIDATION ERROR: Query " + sname + "." + qname + " failed validation!", e);
-                    warnings.add(new PipelineJobWarning("Query " + sname + "." + qname + " failed validation!", e));
-                }
-            }
-        }
+        ValidateQueriesVisitor validator = new ValidateQueriesVisitor(true);
+        Boolean valid = validator.visitTop(defSchema, ctx.getLogger());
 
         ctx.getLogger().info("Finished validating queries.");
+        if (valid != null && valid)
+        {
+            assert validator.getTotalCount() == validator.getValidCount();
+            ctx.getLogger().info(String.format("Finished validating queries: All %d passed validation.", validator.getTotalCount()));
+        }
+        else
+        {
+            ctx.getLogger().info(String.format("Finished validating queries: %d of %d failed validation.", validator.getInvalidCount(), validator.getTotalCount()));
+        }
+
+
+        for (Pair<String, Throwable> warn : validator.getWarnings())
+        {
+            warnings.add(new PipelineJobWarning(warn.first, warn.second));
+        }
+
         ctx.getLogger().info("Done post-processing " + getDescription());
         return warnings;
     }

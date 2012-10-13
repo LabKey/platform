@@ -1643,9 +1643,10 @@ public class ReportsController extends BaseStudyController
 			ViewContext context = getViewContext();
 			if (StringUtils.isEmpty(form.getSchemaName()))
 				form.setSchemaName("study");
-			if (null == DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(form.getSchemaName()))
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), form.getSchemaName());
+			if (null == schema)
             {
-                throw new NotFoundException();
+                throw new NotFoundException("schema not found");
             }
 
             Map<String, String> props = new HashMap<String, String>();

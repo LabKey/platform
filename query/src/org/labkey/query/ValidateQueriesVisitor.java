@@ -1,0 +1,78 @@
+package org.labkey.query;
+
+import org.apache.log4j.Logger;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.SchemaTreeWalker;
+import org.labkey.api.util.Pair;
+import org.labkey.query.persist.QueryManager;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * User: kevink
+ * Date: 10/9/12
+ *
+ * Walks the entire schema tree and validates queries.
+ * The return value is true if all queries are valid.
+ */
+public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
+{
+    private List<Pair<String, Throwable>> _warnings = new ArrayList<Pair<String, Throwable>>();
+    private int _totalCount = 0;
+    private int _validCount = 0;
+    private QueryManager _mgr;
+    private boolean _testAllColumns;
+
+    public ValidateQueriesVisitor(boolean testAllColumns)
+    {
+        _mgr = QueryManager.get();
+        _testAllColumns = testAllColumns;
+    }
+
+    public List<Pair<String, Throwable>> getWarnings()
+    {
+        return _warnings;
+    }
+
+    public int getTotalCount()
+    {
+        return _totalCount;
+    }
+
+    public int getValidCount()
+    {
+        return _validCount;
+    }
+
+    public int getInvalidCount()
+    {
+        return _totalCount - _validCount;
+    }
+
+    @Override
+    public Boolean reduce(Boolean r1, Boolean r2)
+    {
+        return (r1 != null ? r1 : true) && (r2 != null ? r2 : true);
+    }
+
+    @Override
+    public Boolean visitTable(TableInfo table, Path path, Logger logger)
+    {
+        _totalCount++;
+        try
+        {
+            _mgr.validateQuery(table, _testAllColumns);
+            _validCount++;
+            return true;
+        }
+        catch (Throwable t)
+        {
+            String msg = String.format("Query %s failed validation!", path.schemaPath.toDisplayString());
+            if (logger != null)
+                logger.warn("VALIDATION ERROR: " + msg, t);
+            _warnings.add(Pair.of(msg, t));
+            return false;
+        }
+    }
+}

@@ -2163,7 +2163,7 @@ public class ReportsController extends SpringActionController
         Map<String, String> map = PageFlowUtil.mapFromQueryString(viewId);
         QueryForm form = new QueryForm();
 
-        form.setSchemaName(new IdentifierString(map.get(QueryParam.schemaName.name())));
+        form.setSchemaName(map.get(QueryParam.schemaName.name()));
         form.setQueryName(map.get(QueryParam.queryName.name()));
         form.setViewName(map.get(QueryParam.viewName.name()));
         form.setViewContext(context);

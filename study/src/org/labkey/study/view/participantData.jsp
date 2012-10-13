@@ -43,7 +43,7 @@
 
     QueryForm form = new QueryForm();
     form.setViewContext(context);
-    form.setSchemaName(new IdentifierString(StudyQuerySchema.SCHEMA_NAME, false));
+    form.setSchemaName(StudyQuerySchema.SCHEMA_NAME);
     form.setQueryName("StudyData");
 
     QueryView queryView = new QueryView(form, null)

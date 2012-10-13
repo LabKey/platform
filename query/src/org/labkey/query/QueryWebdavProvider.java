@@ -72,6 +72,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 	}
 
 
+    // UNDONE: expose nested schemas
 	class QueryResource extends AbstractWebdavResourceCollection
 	{
 		Container _c;

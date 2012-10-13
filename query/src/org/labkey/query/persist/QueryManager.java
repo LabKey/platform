@@ -39,6 +39,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
@@ -455,21 +456,26 @@ public class QueryManager
 
     };
 
-    public void validateQuery(String schemaName, String queryName, User user, Container container) throws SQLException, QueryParseException
+    public void validateQuery(SchemaKey schemaPath, String queryName, User user, Container container) throws SQLException, QueryParseException
     {
-        validateQuery(schemaName, queryName, user, container, true);
+        validateQuery(schemaPath, queryName, user, container, true);
     }
 
-    public void validateQuery(String schemaName, String queryName, User user, Container container, boolean testAllColumns) throws SQLException, QueryParseException
+    public void validateQuery(SchemaKey schemaPath, String queryName, User user, Container container, boolean testAllColumns) throws SQLException, QueryParseException
     {
-        UserSchema schema = (UserSchema) DefaultSchema.get(user, container).getSchema(schemaName);
+        UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
-            throw new IllegalArgumentException("Could not find the schema '" + schemaName + "'!");
+            throw new IllegalArgumentException("Could not find the schema '" + schemaPath.toDisplayString() + "'!");
 
         TableInfo table = schema.getTable(queryName);
         if (null == table)
-            throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaName + "'!");
+            throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.toDisplayString() + "'!");
 
+        validateQuery(table, testAllColumns);
+    }
+
+    public void validateQuery(TableInfo table, boolean testAllColumns) throws SQLException, QueryParseException
+    {
         Collection<QueryService.ParameterDecl> params = table.getNamedParameters();
         Map<String,Object> parameters = new HashMap<String,Object>();
         for (QueryService.ParameterDecl p : params)
@@ -609,12 +615,12 @@ public class QueryManager
             return queryErrors;
 
         boolean isPublic = o.getBoolean("isPublic");
-        String schemaName = o.getString("schemaName");
+        SchemaKey schemaPath = SchemaKey.fromString(o.getString("schemaName"));
         String queryName = o.getString("queryName");
         String displayColumn = o.getString("displayColumn");
         String keyColumn = o.getString("keyColumn");
         String containerPath = o.getString("containerPath");
-        String errorBase = "Column '" + col.getName() + "' in " + schemaName + "." + queryName + ": ";
+        String errorBase = "Column '" + col.getName() + "' in " + schemaPath.toDisplayString() + "." + queryName + ": ";
 
         Container lookupContainer = containerPath == null ? container : ContainerManager.getForPath(containerPath);
         if (lookupContainer == null)
@@ -630,31 +636,31 @@ public class QueryManager
 
         if (!isPublic)
         {
-            queryErrors.add("INFO: " + errorBase + " has a lookup to a non-public table: " + schemaName + "." + queryName);
+            queryErrors.add("INFO: " + errorBase + " has a lookup to a non-public table: " + schemaPath.toDisplayString() + "." + queryName);
             return queryErrors;
         }
 
-        UserSchema userSchema = QueryService.get().getUserSchema(user, lookupContainer, schemaName);
+        UserSchema userSchema = QueryService.get().getUserSchema(user, lookupContainer, schemaPath);
         if (userSchema == null)
         {
-            queryErrors.add("ERROR: " + errorBase + " unable to find the user schema: " + schemaName);
+            queryErrors.add("ERROR: " + errorBase + " unable to find the user schema: " + schemaPath.toDisplayString());
             return queryErrors;
         }
 
         TableInfo fkTable = userSchema.getTable(queryName);
         if(fkTable == null)
         {
-            queryErrors.add("ERROR: " + errorBase + " has a lookup to a query that does not exist: " + schemaName + "." + queryName);
+            queryErrors.add("ERROR: " + errorBase + " has a lookup to a table that does not exist: " + schemaPath.toDisplayString() + "." + queryName);
             return queryErrors;
         }
 
         //a FK can have a table non-visible to the client, so long as public is set to false
         if (fkTable.isPublic()){
-            String fkt = schemaName + "." + queryName;
+            String fkt = schemaPath.toDisplayString() + "." + queryName;
 
             try
             {
-                QueryManager.get().validateQuery(schemaName, queryName, user, lookupContainer);
+                QueryManager.get().validateQuery(schemaPath, queryName, user, lookupContainer);
             }
             catch (Exception e){
                 queryErrors.add("ERROR: " + errorBase + " has a foreign key to a table that fails query validation: " + fkt + ". The error was: " + e.getMessage());
@@ -666,14 +672,14 @@ public class QueryManager
                 Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(fkTable, Collections.singleton(displayFieldKey));
                 if (cols == null || !cols.containsKey(displayFieldKey))
                 {
-                    queryErrors.add("ERROR: " + errorBase + " reports a foreign key with displayColumn of " + displayColumn + " in the table " + schemaName + "." + queryName + ", but the column does not exist");
+                    queryErrors.add("ERROR: " + errorBase + " reports a foreign key with displayColumn of " + displayColumn + " in the table " + schemaPath.toDisplayString() + "." + queryName + ", but the column does not exist");
                 }
                 else
                 {
                     ColumnInfo ci = cols.get(displayFieldKey);
                     if (!displayColumn.equals(ci.getFieldKey().toString()))
                     {
-                        queryErrors.add("WARNING: " + errorBase + ", the lookup to " + schemaName + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + displayColumn + "'");
+                        queryErrors.add("WARNING: " + errorBase + ", the lookup to " + schemaPath.toDisplayString() + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + displayColumn + "'");
                     }
                 }
             }
@@ -684,14 +690,14 @@ public class QueryManager
                 Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(fkTable, Collections.singleton(keyFieldKey));
                 if (cols == null || !cols.containsKey(keyFieldKey))
                 {
-                    queryErrors.add("ERROR: " + errorBase + " reports a foreign key with keyColumn of " + keyColumn + " in the table " + schemaName + "." + queryName + ", but the column does not exist");
+                    queryErrors.add("ERROR: " + errorBase + " reports a foreign key with keyColumn of " + keyColumn + " in the table " + schemaPath.toDisplayString() + "." + queryName + ", but the column does not exist");
                 }
                 else
                 {
                     ColumnInfo ci = cols.get(keyFieldKey);
                     if (!keyColumn.equals(ci.getFieldKey().toString()))
                     {
-                        queryErrors.add("WARNING: " + errorBase + ", the lookup to " + schemaName + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + keyColumn + "'");
+                        queryErrors.add("WARNING: " + errorBase + ", the lookup to " + schemaPath.toDisplayString() + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + keyColumn + "'");
                     }
                 }
             }

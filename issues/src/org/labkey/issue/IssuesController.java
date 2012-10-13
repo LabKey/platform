@@ -2549,9 +2549,9 @@ public class IssuesController extends SpringActionController
     {
         @NotNull
         @Override
-        public IdentifierString getSchemaName()
+        public String getSchemaName()
         {
-            return new IdentifierString(IssuesQuerySchema.SCHEMA_NAME, false);
+            return IssuesQuerySchema.SCHEMA_NAME;
         }
 
         @Override

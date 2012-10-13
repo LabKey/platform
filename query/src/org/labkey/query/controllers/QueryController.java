@@ -135,6 +135,7 @@ public class QueryController extends SpringActionController
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
             ValidateQueryAction.class,
+            ValidateQueriesAction.class,
             GetSchemaQueryTreeAction.class,
             GetQueryDetailsAction.class,
             ViewQuerySourceAction.class);
@@ -271,7 +272,7 @@ public class QueryController extends SpringActionController
     {
         if (form.getSchema() == null)
         {
-            throw new NotFoundException("Could not find schema: " + form.getSchemaName().getSource());
+            throw new NotFoundException("Could not find schema: " + form.getSchemaName());
         }
 
         if (StringUtils.isEmpty(form.getQueryName()))
@@ -281,7 +282,7 @@ public class QueryController extends SpringActionController
 
         if (!queryExists(form))
         {
-            throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' doesn't exist.");
+            throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' doesn't exist.");
         }
     }
 
@@ -470,7 +471,7 @@ public class QueryController extends SpringActionController
             {
                 // Don't show the full query nav trail to non-admin/non-developer users as they almost certainly don't
                 // want it
-                String schemaName = _form.getSchemaName().toString();
+                String schemaName = _form.getSchemaName();
                 ActionURL url = new ActionURL(BeginAction.class, _form.getViewContext().getContainer());
                 url.addParameter("schemaName", _form.getSchemaName());
                 url.addParameter("queryName", _form.getQueryName());
@@ -507,7 +508,7 @@ public class QueryController extends SpringActionController
                 }
                 else
                 {
-                    throw new NotFoundException("Could not find schema: " + form.getSchemaName().getSource());
+                    throw new NotFoundException("Could not find schema: " + form.getSchemaName());
                 }
             }
             if (!form.getSchema().canCreate())
@@ -524,7 +525,7 @@ public class QueryController extends SpringActionController
         {
             if (form.getSchema() == null)
             {
-                throw new NotFoundException("Could not find schema: " + form.getSchemaName().getSource());
+                throw new NotFoundException("Could not find schema: " + form.getSchemaName());
             }
             if (!form.getSchema().canCreate())
             {
@@ -540,7 +541,7 @@ public class QueryController extends SpringActionController
 
                 UserSchema schema = form.getSchema();
                 String newQueryName = form.ff_newQueryName;
-                QueryDef existing = QueryManager.get().getQueryDef(getContainer(), form.getSchemaName().toString(), newQueryName, true);
+                QueryDef existing = QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), newQueryName, true);
                 if (existing != null)
                 {
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
@@ -558,7 +559,7 @@ public class QueryController extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists as a table");
                     return false;
                 }
-                QueryDefinition newDef = QueryService.get().createQueryDef(getUser(), getContainer(), form.getSchemaName().toString(), form.ff_newQueryName);
+                QueryDefinition newDef = QueryService.get().createQueryDef(getUser(), getContainer(), form.getSchemaName(), form.ff_newQueryName);
                 Query query = new Query(schema);
                 query.setRootTable(FieldKey.fromParts(form.ff_baseTableName));
                 newDef.setSql(query.getQueryText());
@@ -666,7 +667,7 @@ public class QueryController extends SpringActionController
                 query.setSql(form.ff_queryText);
                 if (query.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
                 {
-                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName().toString(), form.getQueryName(), false) != null)
+                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
                     {
                         // Remember the URL and redirect immediately because the form won't be able to create
                         // the URL again after the query definition is deleted
@@ -742,7 +743,7 @@ public class QueryController extends SpringActionController
 
                 if (query.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
                 {
-                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName().toString(), form.getQueryName(), false) != null)
+                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
                     {
                         // delete the query in order to reset the metadata over a built-in query
                         query.delete(getUser());
@@ -840,7 +841,7 @@ public class QueryController extends SpringActionController
             QueryDefinition query = form.getQueryDef();
             if (null == query)
             {
-                throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' not found");
+                throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' not found");
             }
 
             QueryView queryView = QueryView.create(form, errors);
@@ -879,7 +880,7 @@ public class QueryController extends SpringActionController
             QueryDefinition query = form.getQueryDef();
             if (null == query)
             {
-                throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' not found");
+                throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' not found");
             }
 
             QueryView queryView = QueryView.create(form, errors);
@@ -1135,7 +1136,7 @@ public class QueryController extends SpringActionController
             _print = true;
             String title = form.getQueryName();
             if (StringUtils.isEmpty(title))
-                title = form.getSchemaName().toString();
+                title = form.getSchemaName();
             getPageConfig().setTitle(title, true);
             return super.getView(form, errors);
         }
@@ -1387,7 +1388,7 @@ public class QueryController extends SpringActionController
             writer.println("1");
             writer.println(url.getURIString());
 
-            QueryService.get().addAuditEvent(getUser(), getContainer(), form.getSchemaName().toString(), form.getQueryName(), url, "Exported to Excel Web Query definition");
+            QueryService.get().addAuditEvent(getUser(), getContainer(), form.getSchemaName(), form.getQueryName(), url, "Exported to Excel Web Query definition");
             return null;
         }
 
@@ -1407,7 +1408,7 @@ public class QueryController extends SpringActionController
 
             if (name != null)
             {
-                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), name);
+                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), name);
                 if (def != null)
                     errors.reject("snapshotQuery.error", "A Snapshot with the same name already exists");
             }
@@ -1419,7 +1420,7 @@ public class QueryController extends SpringActionController
         {
             if (!reshow)
             {
-                List<DisplayColumn> columns = QuerySnapshotService.get(form.getSchemaName().toString()).getDisplayColumns(form, errors);
+                List<DisplayColumn> columns = QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors);
                 String[] columnNames = new String[columns.size()];
                 int i=0;
 
@@ -1432,7 +1433,7 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            _successURL = QuerySnapshotService.get(form.getSchemaName().toString()).createSnapshot(form, errors);
+            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errors);
             return !errors.hasErrors();
         }
 
@@ -1459,10 +1460,10 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!reshow)
-                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), form.getSnapshotName()), getUser());
+                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
 
             VBox box = new VBox();
-            QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName().toString());
+            QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName());
 
             if (provider != null)
             {
@@ -1484,12 +1485,12 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
+            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName());
             if (def != null)
             {
                 def.setColumns(form.getFieldKeyColumns());
 
-                _successURL = QuerySnapshotService.get(form.getSchemaName().toString()).updateSnapshotDefinition(getViewContext(), def, errors);
+                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def, errors);
                 if (errors.hasErrors())
                     return false;
             }
@@ -1515,7 +1516,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            ActionURL url = QuerySnapshotService.get(form.getSchemaName().toString()).updateSnapshot(form, errors);
+            ActionURL url = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form, errors);
             if (url != null)
                 return HttpView.redirect(url);
             return null;
@@ -1552,7 +1553,7 @@ public class QueryController extends SpringActionController
             _form = form;
             _query = _form.getQueryDef();
             Map<String, String> props = new HashMap<String, String>();
-            props.put("schemaName", form.getSchemaName().toString());
+            props.put("schemaName", form.getSchemaName());
             props.put("queryName", form.getQueryName());
             props.put(MetadataEditor.EDIT_SOURCE_URL, _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString() + "#metadata");
             props.put(MetadataEditor.VIEW_DATA_URL, _form.getQueryDef().urlFor(QueryAction.executeQuery, getContainer()).toString());
@@ -1878,7 +1879,7 @@ public class QueryController extends SpringActionController
 				copy.save(getUser(), copy.getContainer());
 				queryDef.delete(getUser());
 				// update form so getSuccessURL() works
-				_form = new PropertiesForm(form.getSchemaName().toString(), form.rename);
+				_form = new PropertiesForm(form.getSchemaName(), form.rename);
 				_form.setViewContext(form.getViewContext());
                 _queryName = form.rename;
 				return true;
@@ -2271,14 +2272,14 @@ public class QueryController extends SpringActionController
             if (getRequestedApiVersion() >= 9.1)
             {
                 ExtendedApiQueryResponse response = new ExtendedApiQueryResponse(view, getViewContext(), isEditable, true,
-                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
+                        form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
                 response.includeStyle(form.isIncludeStyle());
                 return response;
             }
             else
             {
                 return new ApiQueryResponse(view, getViewContext(), isEditable, true,
-                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
+                        form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
             }
         }
     }
@@ -2362,7 +2363,7 @@ public class QueryController extends SpringActionController
         {
             if (form.getSchema() == null)
             {
-                throw new NotFoundException("Could not find schema: " + form.getSchemaName().getSource());
+                throw new NotFoundException("Could not find schema: " + form.getSchemaName());
             }
 
             String schemaName = StringUtils.trimToNull(form.getQuerySettings().getSchemaName());
@@ -2457,7 +2458,7 @@ public class QueryController extends SpringActionController
             ApiResponseWriter writer = new ApiJsonWriter(getViewContext().getResponse());
             writer.startResponse();
 
-            writer.writeProperty("schemaName", form.getSchemaName().toString());
+            writer.writeProperty("schemaName", form.getSchemaName());
             writer.writeProperty("queryName", form.getQueryName());
             writer.startList("values");
 
@@ -4123,35 +4124,70 @@ public class QueryController extends SpringActionController
         return x.getMessage();
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    @ApiVersion(9.3)
-    public class GetSchemasAction extends ApiAction
+    public static class GetSchemasForm
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        private SchemaKey _schemaName;
+
+        public SchemaKey getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(SchemaKey schemaName)
+        {
+            _schemaName = schemaName;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    @ApiVersion(12.3)
+    public class GetSchemasAction extends ApiAction<GetSchemasForm>
+    {
+        public ApiResponse execute(GetSchemasForm form, BindException errors) throws Exception
         {
             if (getRequestedApiVersion() >= 9.3)
             {
-                ApiSimpleResponse resp = new ApiSimpleResponse();
+                final Container container = getViewContext().getContainer();
+                final User user = getViewContext().getUser();
 
-                Container container = getViewContext().getContainer();
-                User user = getViewContext().getUser();
-                DefaultSchema defSchema = DefaultSchema.get(user, container);
-
-                for (String name : defSchema.getUserSchemaNames())
+                SimpleSchemaTreeVisitor visitor = new SimpleSchemaTreeVisitor<Void, JSONObject>()
                 {
-                    QuerySchema schema = DefaultSchema.get(user, container).getSchema(name);
-                    if (null == schema)
-                        continue;
+                    @Override
+                    public Void visitUserSchema(UserSchema schema, Path path, JSONObject json)
+                    {
+                        JSONObject schemaProps = new JSONObject();
 
-                    JSONObject schemaProps = new JSONObject();
-                    schemaProps.put("description", schema.getDescription());
+                        schemaProps.put("schemaName", schema.getName());
+                        schemaProps.put("description", schema.getDescription());
+                        NavTree tree = schema.getSchemaBrowserLinks(user);
+                        if (tree != null && tree.hasChildren())
+                            schemaProps.put("menu", tree.toJSON());
 
-                    NavTree tree = schema instanceof UserSchema ? ((UserSchema)schema).getSchemaBrowserLinks(user) : null;
-                    if (null != tree && tree.hasChildren())
-                        schemaProps.put("menu", tree.toJSON());
-                    resp.put(schema.getName(), schemaProps);
-                }
+                        // Collect children schemas
+                        JSONObject children = new JSONObject();
+                        visit(schema.getSchemas(), path, children);
+                        if (children.size() > 0)
+                            schemaProps.put("schemas", children);
 
+                        // Add node's schemaProps to the parent's json.
+                        json.put(schema.getName(), schemaProps);
+                        return null;
+                    }
+                };
+
+                // By default, start from the root.
+                QuerySchema schema;
+                if (form.getSchemaName() != null)
+                    schema = DefaultSchema.get(user, container, form.getSchemaName());
+                else
+                    schema = DefaultSchema.get(user, container);
+
+                // Create the JSON response by visiting the schema children.  The parent schema information isn't included.
+                JSONObject ret = new JSONObject();
+                visitor.visitTop(schema.getSchemas(), ret);
+
+                ApiSimpleResponse resp = new ApiSimpleResponse();
+                resp.putAll(ret);
                 return resp;
             }
             else
@@ -4217,16 +4253,12 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("You must supply a value for the 'schemaName' parameter!");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
-            QuerySchema qschema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getSchema(form.getSchemaName());
-            if (null == qschema)
+            UserSchema uschema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), form.getSchemaName());
+            if (null == uschema)
                 throw new NotFoundException("The schema name '" + form.getSchemaName()
                         + "' was not found within the folder '" + getViewContext().getContainer().getPath() + "'");
 
-            if (!(qschema instanceof UserSchema))
-                throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
-
             response.put("schemaName", form.getSchemaName());
-            UserSchema uschema = (UserSchema) qschema;
 
             List<Map<String, Object>> qinfos = new ArrayList<Map<String, Object>>();
 
@@ -4371,15 +4403,12 @@ public class QueryController extends SpringActionController
             if (null == StringUtils.trimToNull(form.getQueryName()))
                 throw new IllegalArgumentException("You must pass a value for the 'queryName' parameter!");
 
-            QuerySchema qschema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getSchema(form.getSchemaName());
-            if (null == qschema)
+            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), form.getSchemaName());
+            if (null == schema)
                 throw new NotFoundException("The schema name '" + form.getSchemaName()
                         + "' was not found within the folder '" + getViewContext().getContainer().getPath() + "'");
 
-            if (!(qschema instanceof UserSchema))
-                throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
-
-            QueryDefinition querydef = QueryService.get().createQueryDefForTable((UserSchema)qschema, form.getQueryName());
+            QueryDefinition querydef = QueryService.get().createQueryDefForTable(schema, form.getQueryName());
             if (null == querydef)
                 throw new NotFoundException("The query '" + form.getQueryName() + "' was not found within the '"
                         + form.getSchemaName() + "' schema in the container '"
@@ -4402,7 +4431,7 @@ public class QueryController extends SpringActionController
                 else if (viewName == null)
                 {
                     // The default view was requested but it hasn't been customized yet. Create the 'default default' view.
-                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(getViewContext(), (UserSchema)qschema, form.getQueryName(), null, form.isMetadata(), true));
+                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(getViewContext(), schema, form.getQueryName(), null, form.isMetadata(), true));
                 }
             }
             else
@@ -4419,7 +4448,7 @@ public class QueryController extends SpringActionController
                 if (!foundDefault)
                 {
                     // The default view hasn't been customized yet. Create the 'default default' view.
-                    viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)qschema, form.getQueryName(), null, form.isMetadata(), true));
+                    viewInfos.add(CustomViewUtil.toMap(getViewContext(), schema, form.getQueryName(), null, form.isMetadata(), true));
                 }
             }
 
@@ -4668,7 +4697,9 @@ public class QueryController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            QueryManager.get().validateQuery(form.getSchema().getName(), form.getQueryName(), getUser(), getContainer(), true);
+            UserSchema schema = form.getSchema();
+            TableInfo table = schema.getTable(form.getQueryName());
+            QueryManager.get().validateQuery(table, true);
 
             Set<String> queryErrors = QueryManager.get().validateQueryMetadata(form.getSchema().getName(), form.getQueryName(), getUser(), getContainer());
             queryErrors.addAll(QueryManager.get().validateQueryViews(form.getSchema().getName(), form.getQueryName(), getUser(), getContainer()));
