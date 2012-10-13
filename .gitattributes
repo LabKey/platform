@@ -727,6 +727,13 @@ core/src/org/labkey/core/workbook/moveWorkbooks.jsp -text
 core/src/org/labkey/core/workbook/workbookDescription.jsp -text
 core/src/org/labkey/core/workbook/workbookSearch.jsp -text
 core/webapp/ModulePropertiesAdminPanel.js -text
+core/webapp/Permissions.lib.xml -text
+core/webapp/Security/field/PrincipalComboBox.js -text
+core/webapp/Security/panel/GroupPicker.js -text
+core/webapp/Security/panel/PermissionEditor.js -text
+core/webapp/Security/panel/PolicyEditor.js -text
+core/webapp/Security/util/SecurityCache.js -text
+core/webapp/Security/window/UserInfoPopup.js -text
 core/webapp/SecurityAdmin.css -text
 core/webapp/SecurityAdmin.js -text
 core/webapp/admin/FolderManagementPanel.js -text

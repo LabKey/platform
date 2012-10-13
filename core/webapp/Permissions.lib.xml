@@ -1,0 +1,14 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="Security/util/SecurityCache.js"/>
+        <script path="Security/field/PrincipalComboBox.js"/>
+        <script path="Security/window/UserInfoPopup.js"/>
+        <script path="Security/panel/GroupPicker.js"/>
+        <script path="Security/panel/PolicyEditor.js"/>
+        <script path="Security/panel/PermissionEditor.js"/>
+        <script path="SecurityAdmin.css"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4ClientApi"/>
+    </dependencies>
+</libraries>
