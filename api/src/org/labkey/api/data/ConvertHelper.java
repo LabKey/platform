@@ -25,6 +25,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.security.User;
@@ -120,6 +122,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new UserConverter(), User.class);
         _register(new ExpDataFileConverter(), File.class);
         _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
+        _register(new SchemaKey.Converter(), SchemaKey.class);
+        _register(new FieldKey.Converter(), FieldKey.class);
         _register(new JSONTypeConverter(), JSONObject.class);
         EnumConverter.registerEnum(DataSet.KeyManagementType.class);
         EnumConverter.registerEnum(TSVWriter.DELIM.class);

@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -79,6 +80,52 @@ final public class DefaultSchema extends AbstractSchema
         return new DefaultSchema(user, container);
     }
 
+    /**
+     * Get QuerySchema for SchemaKey encoded schema path.
+     *
+     * @param user
+     * @param container
+     * @param schemaPath SchemaKey encoded schema path.
+     * @return The QuerySchema resolved by the schema path.
+     * @see QueryService#getUserSchema(org.labkey.api.security.User, org.labkey.api.data.Container, String)
+     */
+    static public QuerySchema get(User user, Container container, String schemaPath)
+    {
+        if (schemaPath == null || schemaPath.length() == 0)
+            return null;
+
+        return get(user, container, SchemaKey.fromString(schemaPath));
+    }
+
+    /**
+     * Get QuerySchema for SchemaKey schema path.
+     *
+     * @param user
+     * @param container
+     * @param schemaPath SchemaKey schema path.
+     * @return The QuerySchema resolved by the schema path.
+     * @see QueryService#getUserSchema(org.labkey.api.security.User, org.labkey.api.data.Container, String)
+     */
+    static public QuerySchema get(User user, Container container, SchemaKey schemaPath)
+    {
+        if (schemaPath == null)
+            return null;
+
+        List<String> parts = schemaPath.getParts();
+        if (parts.size() == 0)
+            return null;
+
+        QuerySchema schema = DefaultSchema.get(user, container);
+        for (String part : parts)
+        {
+            schema = schema.getSchema(part);
+            if (schema == null)
+                return null;
+        }
+
+        return schema;
+    }
+
     private DefaultSchema(User user, Container container)
     {
         super(CoreSchema.getInstance().getSchema(), user, container);
@@ -87,6 +134,12 @@ final public class DefaultSchema extends AbstractSchema
     public TableInfo getTable(String name)
     {
         return null;
+    }
+
+    @Override
+    public Set<String> getTableNames()
+    {
+        return Collections.emptySet();
     }
 
     public QuerySchema getSchema(String name)
@@ -117,6 +170,10 @@ final public class DefaultSchema extends AbstractSchema
         return Collections.unmodifiableSet(ret);
     }
 
+    /**
+     * Get immediate UserSchema children names.
+     * @return
+     */
     public Set<String> getUserSchemaNames()
     {
         Set<String> ret = new CaseInsensitiveTreeSet();
@@ -129,12 +186,46 @@ final public class DefaultSchema extends AbstractSchema
                 continue;
             }
             UserSchema userSchema = (UserSchema) schema;
-            if (userSchema.getSchemaName() == null)
+            if (userSchema.getName() == null)
                 continue;
             ret.add(schemaName);
         }
 
         return ret;
+    }
+
+    /**
+     * Get recursive set of all schema paths as SchemaKeys in case-insensitive string order.
+     *
+     * @return Set of all schema paths.
+     */
+    public Set<SchemaKey> getUserSchemaPaths()
+    {
+        SimpleSchemaTreeVisitor<Set<SchemaKey>, Void> visitor = new SimpleSchemaTreeVisitor<Set<SchemaKey>, Void>()
+        {
+            @Override
+            public Set<SchemaKey> reduce(Set<SchemaKey> r1, Set<SchemaKey> r2)
+            {
+                if (r1 == null)
+                    return r2;
+                if (r2 == null)
+                    return r1;
+
+                Set<SchemaKey> names = new TreeSet<SchemaKey>(SchemaKey.CASE_INESNSITIVE_STRING_ORDER);
+                names.addAll(r1);
+                names.addAll(r2);
+                return names;
+            }
+
+            @Override
+            public Set<SchemaKey> visitUserSchema(UserSchema schema, Path path, Void param)
+            {
+                Set<SchemaKey> r = Collections.singleton(path.schemaPath);
+                return visitAndReduce(schema.getSchemas(), path, param, r);
+            }
+        };
+
+        return visitor.visitTop(getSchemas(), null);
     }
 
     public String getName()
@@ -146,4 +237,11 @@ final public class DefaultSchema extends AbstractSchema
     {
         return null;
     }
+
+    @Override
+    public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
+    {
+        return visitor.visitDefaultSchema(this, path, param);
+    }
+
 }

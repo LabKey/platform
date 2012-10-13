@@ -50,7 +50,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public static final String PARAMVAL_NOFILTER = "NONE";
     private ViewContext _context;
 
-    private IdentifierString _schemaName = null;
+    private SchemaKey _schemaName = null;
     private UserSchema _schema;
 
     private String _queryName;
@@ -86,7 +86,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     protected QueryForm(String schemaName, String queryName)
     {
-        _schemaName = new IdentifierString(schemaName);
+        _schemaName = new SchemaKey(null, schemaName);
         _queryName = queryName;
 
         _bindSchemaName = false;
@@ -95,7 +95,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     protected QueryForm(String schemaName, String queryName, String viewName)
     {
-        _schemaName = new IdentifierString(schemaName);
+        _schemaName = new SchemaKey(null, schemaName);
         _queryName = queryName;
         _viewName = viewName;
 
@@ -148,7 +148,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             bindParams.removePropertyValue(QueryParam.viewName.name());
 
         // don't override preset schemaName
-        IdentifierString schemaName = null;
+        SchemaKey schemaName = null;
         if (!_bindSchemaName)
             schemaName = _schemaName;
 
@@ -156,7 +156,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         BindException errors = BaseViewAction.springBindParameters(this, commandName, bindParams);
         _bindState = BindState.BOUND;
 
-        if (schemaName != null && !schemaName.isEmpty())
+        if (schemaName != null && schemaName.getName() != null && !schemaName.getName().isEmpty())
             _schemaName = schemaName;
 
         return errors;
@@ -201,11 +201,11 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         if (_bindState == BindState.BINDING)
             return null;
         UserSchema ret = null;
-        HString schemaName = getSchemaName();
+        String schemaName = getSchemaName();
 
-        if (null != schemaName && !schemaName.isEmpty())
+        if (null != schemaName)
         {
-            UserSchema baseSchema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName.toString());
+            UserSchema baseSchema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
             if (baseSchema == null)
             {
                 return null;
@@ -258,17 +258,23 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     }
 
 
-    public void setSchemaName(IdentifierString name)
+    public void setSchemaName(String name)
+    {
+        setSchemaName(SchemaKey.fromString(name));
+    }
+
+    public void setSchemaName(SchemaKey name)
     {
         if (_querySettings != null)
             throw new IllegalStateException();
         _schemaName = name;
     }
 
+    // UNDONE: Use SchemaKey instead of String
     @NotNull
-    public IdentifierString getSchemaName()
+    public String getSchemaName()
     {
-        return _schemaName == null ? new IdentifierString("", false) : _schemaName;
+        return _schemaName == null ? "" : _schemaName.toString();
     }
 
     public UserSchema getSchema()
@@ -301,7 +307,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             return null;
         if (_queryDef == null)
         {
-            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName().toString(), getQueryName());
+            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), getQueryName());
         }
         if (_queryDef == null)
         {

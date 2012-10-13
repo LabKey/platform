@@ -21,8 +21,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.Collections;
+import java.util.TreeSet;
 
 /**
  * Created by IntelliJ IDEA.
@@ -61,12 +65,42 @@ public class QuerySchemaWrapper implements QuerySchema
         return _schema.getTable(name);
     }
 
+    @Override
+    public Set<String> getTableNames()
+    {
+        Set<String> names = new TreeSet<String>(_schema.getTableNames());
+        return Collections.unmodifiableSet(names);
+    }
+
+    @Override
+    public Collection<TableInfo> getTables()
+    {
+        Set<String> tableNames = getTableNames();
+        if (tableNames.isEmpty())
+            return Collections.emptyList();
+
+        List<TableInfo> tables = new ArrayList<TableInfo>(tableNames.size());
+        for (String tableName : tableNames)
+        {
+            TableInfo table = getTable(tableName);
+            if (table != null)
+                tables.add(table);
+        }
+        return Collections.unmodifiableList(tables);
+    }
+
     public QuerySchema getSchema(String name)
     {
         return null;
     }
 
     public Set<String> getSchemaNames()
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<QuerySchema> getSchemas()
     {
         return Collections.emptySet();
     }
@@ -85,5 +119,12 @@ public class QuerySchemaWrapper implements QuerySchema
     public NavTree getSchemaBrowserLinks(User user)
     {
         return new NavTree();
+    }
+
+    @Override
+    public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
+    {
+        // Skip visiting
+        return null;
     }
 }

@@ -730,6 +730,7 @@ api/src/org/labkey/api/query/QueryException.java -text
 api/src/org/labkey/api/query/QueryForeignKey.java -text
 api/src/org/labkey/api/query/QueryForm.java -text
 api/src/org/labkey/api/query/QueryHelper.java -text
+api/src/org/labkey/api/query/QueryKey.java -text
 api/src/org/labkey/api/query/QueryMethod.java -text
 api/src/org/labkey/api/query/QueryNestingOption.java -text
 api/src/org/labkey/api/query/QueryParam.java -text
@@ -750,6 +751,11 @@ api/src/org/labkey/api/query/RExportScriptModel.java -text
 api/src/org/labkey/api/query/ReportDataRegion.java -text
 api/src/org/labkey/api/query/RowIdForeignKey.java -text
 api/src/org/labkey/api/query/RowIdQueryUpdateService.java -text
+api/src/org/labkey/api/query/SchemaKey.java -text
+api/src/org/labkey/api/query/SchemaTreeNode.java -text
+api/src/org/labkey/api/query/SchemaTreeVisitor.java -text
+api/src/org/labkey/api/query/SchemaTreeWalker.java -text
+api/src/org/labkey/api/query/SimpleSchemaTreeVisitor.java -text
 api/src/org/labkey/api/query/SimpleValidationError.java -text
 api/src/org/labkey/api/query/TitleForeignKey.java -text
 api/src/org/labkey/api/query/UserIdForeignKey.java -text

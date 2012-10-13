@@ -23,7 +23,6 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.NavTree;
 
 import java.util.*;
-import java.sql.SQLException;
 
 abstract public class AbstractSchema implements QuerySchema
 {
@@ -49,9 +48,67 @@ abstract public class AbstractSchema implements QuerySchema
         return null;
     }
 
+    /** Returns a UserSchema with a name (ie., ignores FolderSchema.) */
+    public final @Nullable UserSchema getUserSchema(String name)
+    {
+        QuerySchema schema = getSchema(name);
+        if ((schema instanceof UserSchema) && schema.getName() != null)
+            return (UserSchema)schema;
+
+        return null;
+    }
+
     public Set<String> getSchemaNames()
     {
         return Collections.emptySet();
+    }
+
+    public final Collection<QuerySchema> getSchemas()
+    {
+        Set<String> schemaNames = getSchemaNames();
+        if (schemaNames.isEmpty())
+            return Collections.emptyList();
+
+        List<QuerySchema> schemas = new ArrayList<QuerySchema>(schemaNames.size());
+        for (String schemaName : schemaNames)
+        {
+            QuerySchema schema = getSchema(schemaName);
+            if (schema != null)
+                schemas.add(schema);
+        }
+        return Collections.unmodifiableList(schemas);
+    }
+
+    public final Collection<UserSchema> getUserSchemas()
+    {
+        Set<String> schemaNames = getSchemaNames();
+        if (schemaNames.isEmpty())
+            return Collections.emptyList();
+
+        List<UserSchema> schemas = new ArrayList<UserSchema>(schemaNames.size());
+        for (String schemaName : schemaNames)
+        {
+            UserSchema schema = getUserSchema(schemaName);
+            if (schema != null)
+                schemas.add(schema);
+        }
+        return Collections.unmodifiableList(schemas);
+    }
+
+    public final Collection<TableInfo> getTables()
+    {
+        Set<String> tableNames = getTableNames();
+        if (tableNames.isEmpty())
+            return Collections.emptyList();
+
+        List<TableInfo> tables = new ArrayList<TableInfo>(tableNames.size());
+        for (String tableName : tableNames)
+        {
+            TableInfo table = getTable(tableName);
+            if (table != null)
+                tables.add(table);
+        }
+        return Collections.unmodifiableList(tables);
     }
 
     public User getUser()

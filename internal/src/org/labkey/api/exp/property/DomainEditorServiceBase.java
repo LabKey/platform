@@ -28,7 +28,8 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.GUID;
@@ -88,12 +89,16 @@ public class DomainEditorServiceBase extends BaseRemoteService
     {
         try
         {
-            DefaultSchema defSchema = getSchemaForContainer(containerId);
-            List<String> list = new ArrayList<String>();
-            if (null != defSchema.getUserSchemaNames())
-                for (String schemaName : defSchema.getUserSchemaNames())
-                    list.add(schemaName);
-            return list;
+            Container c = getContainer(containerId);
+            Set<SchemaKey> schemaPaths = DefaultSchema.get(getUser(), c).getUserSchemaPaths();
+
+            List<String> names = new ArrayList<String>();
+            for (SchemaKey schemaPath : schemaPaths)
+            {
+                names.add(schemaPath.toString());
+            }
+
+            return new ArrayList<String>(names);
         }
         catch (RuntimeException x)
         {
@@ -107,12 +112,11 @@ public class DomainEditorServiceBase extends BaseRemoteService
     {
         try
         {
-            DefaultSchema defSchema = getSchemaForContainer(containerId);
-            QuerySchema qSchema = defSchema.getSchema(schemaName);
-            if (qSchema == null || !(qSchema instanceof UserSchema))
+            Container c = getContainer(containerId);
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), c, schemaName);
+            if (schema == null)
                 return null;
-
-            UserSchema schema = (UserSchema) qSchema;
+            
             Map<String, GWTPropertyDescriptor> availableQueries = new HashMap<String, GWTPropertyDescriptor>();  //  GWT: TreeMap does not work
             for (String name : schema.getTableAndQueryNames(false))
             {
@@ -145,7 +149,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
     }
 
 
-    private DefaultSchema getSchemaForContainer(String containerId)
+    private Container getContainer(String containerId)
     {
         Container container = null;
         if (containerId == null || containerId.length() == 0)
@@ -167,7 +171,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
             throw new UnauthorizedException();
         }
 
-        return DefaultSchema.get(getUser(), container);
+        return container;
     }
 
     public GWTDomain getDomainDescriptor(String typeURI)

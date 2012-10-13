@@ -24,6 +24,7 @@ import org.jfree.chart.plot.Plot;
 import org.labkey.api.data.*;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.chart.ChartRenderer;
@@ -78,7 +79,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
 
         if (schemaName != null)
         {
-            UserSchema schema = (UserSchema)DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(schemaName);
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
 
             if (schema != null)
             {

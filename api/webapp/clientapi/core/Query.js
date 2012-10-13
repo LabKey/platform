@@ -55,7 +55,7 @@ LABKEY.Query = new function()
             headers : {
                 'Content-Type' : 'application/json'
             }
-        }
+        };
 
         if (LABKEY.ExtAdapter.isDefined(config.timeout))
             requestConfig.timeout = config.timeout;
@@ -868,6 +868,7 @@ LABKEY.Query = new function()
         /**
          * Returns the set of schemas available in the specified container.
          * @param config An object that contains the following configuration parameters
+         * @param {String} config.schemaName Get schemas under the given schemaName.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -891,6 +892,8 @@ LABKEY.Query = new function()
             var params = {};
             if (config.apiVersion)
                 params.apiVersion = config.apiVersion;
+            if (config.schemaName)
+                params.schemaName = config.schemaName;
 
             return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getSchemas', config.containerPath),

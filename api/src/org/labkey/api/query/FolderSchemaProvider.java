@@ -105,5 +105,12 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 
             return new FolderSchema(_user, child, fallback);
         }
+
+        @Override
+        public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
+        {
+            // Skip visiting.  Consider adding SchemaTreeVisitor.visitFolderSchema() if we need it.
+            return null;
+        }
     }
 }

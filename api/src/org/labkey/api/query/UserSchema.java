@@ -60,6 +60,7 @@ import java.util.TreeMap;
 abstract public class UserSchema extends AbstractSchema
 {
     protected String _name;
+    protected SchemaKey _path;
     protected String _description;
     protected boolean _cacheTableInfos = false;
     protected boolean _restricted = false;      // restricted schemas will return nul from getSchema()
@@ -68,12 +69,18 @@ abstract public class UserSchema extends AbstractSchema
     {
         super(dbSchema, user, container);
         _name = name;
+        _path = new SchemaKey(null, name);
         _description = description;
     }
 
     public String getName()
     {
         return _name;
+    }
+
+    public SchemaKey getPath()
+    {
+        return _path;
     }
 
     @Nullable
@@ -342,9 +349,15 @@ abstract public class UserSchema extends AbstractSchema
         return _container;
     }
 
+    /** Returns a SchemaKey encoded name for this schema. */
     public String getSchemaName()
     {
-        return _name;
+        return _path.toString();
+    }
+
+    public SchemaKey getSchemaPath()
+    {
+        return _path;
     }
 
     public Set<String> getSchemaNames()
@@ -577,4 +590,11 @@ abstract public class UserSchema extends AbstractSchema
 
         return null;
     }
+
+    @Override
+    public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
+    {
+        return visitor.visitUserSchema(this, path, param);
+    }
+
 }

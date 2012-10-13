@@ -38,6 +38,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
+import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
@@ -932,6 +933,7 @@ abstract public class AbstractTableInfo implements TableInfo
         return getName();
     }
 
+    // XXX: Change to SchemaKey
     public String getPublicSchemaName()
     {
         return getSchema().getName();
@@ -1320,5 +1322,11 @@ abstract public class AbstractTableInfo implements TableInfo
 
 
         _importTemplates = list;
+    }
+
+    @Override
+    public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
+    {
+        return visitor.visitTable(this, path, param);
     }
 }

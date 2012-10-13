@@ -25,6 +25,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
@@ -77,7 +78,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
 
         if (context != null && schemaName != null)
         {
-            UserSchema base = (UserSchema) DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(schemaName);
+            UserSchema base = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
             if (base != null)
             {
                 QuerySettings settings = base.getSettings(context, dataRegionName);

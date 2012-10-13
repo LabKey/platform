@@ -58,7 +58,7 @@ public abstract class ScriptReport extends AbstractReport
 
         if (context != null && schemaName != null)
         {
-            UserSchema base = (UserSchema) DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(schemaName);
+            UserSchema base = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
 
             if (base != null)
             {

@@ -16,17 +16,15 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.beanutils.ConversionException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -46,25 +44,26 @@ import java.util.Map;
  * FieldKey's should only ever be used for #3 and #4.
  *
  */
-public class FieldKey implements Comparable
+public class FieldKey extends QueryKey<FieldKey>
 {
+    private static final String DIVIDER = "/";
 
+    private static final QueryKey.Factory<FieldKey> FACTORY = new QueryKey.Factory<FieldKey>()
+    {
+        @Override
+        public FieldKey create(FieldKey parent, String name)
+        {
+            return new FieldKey(parent, name);
+        }
+    };
 
     /**
      * same as fromString() but URL encoded
      */
     static public FieldKey decode(String str)
     {
-        if (str == null)
-            return null;
-        String[] encodedParts = StringUtils.splitPreserveAllTokens(str, "/");
-        FieldKey ret = null;
-        for (String encodedPart : encodedParts)
-            ret = new FieldKey(ret, PageFlowUtil.decode(encodedPart));
-        return ret;
+        return QueryKey.decode(FACTORY, DIVIDER, str);
     }
-
-
 
 
     /**
@@ -77,33 +76,17 @@ public class FieldKey implements Comparable
      */
     static public FieldKey fromString(String str)
     {
-        if (str == null)
-            return null;
-        String[] encodedParts = StringUtils.splitPreserveAllTokens(str, "/");
-        FieldKey ret = null;
-        for (String encodedPart : encodedParts)
-        {
-            ret = new FieldKey(ret, decodePart(encodedPart));
-        }
-        return ret;
+        return QueryKey.fromString(FACTORY, DIVIDER, str);
     }
 
     static public FieldKey fromString(FieldKey parent, String str)
     {
-        List<String> parts = fromString(str).getParts();
-        for (String part : parts)
-        {
-            parent = new FieldKey(parent, part);
-        }
-        return parent;
+        return QueryKey.fromString(FACTORY, DIVIDER, parent, str);
     }
     
     static public FieldKey fromParts(List<String> parts)
     {
-        if (parts.size() == 0)
-            return null;
-        FieldKey parent = FieldKey.fromParts(parts.subList(0, parts.size() - 1));
-        return new FieldKey(parent, parts.get(parts.size() - 1));
+        return QueryKey.fromParts(FACTORY, parts);
     }
 
     static public FieldKey fromParts(String...parts)
@@ -124,22 +107,7 @@ public class FieldKey implements Comparable
 
     static public FieldKey fromParts(FieldKey ... parts)
     {
-        FieldKey cur = null;
-        for (FieldKey key : parts)
-        {
-            if (cur == null)
-            {
-                cur = key;
-            }
-            else
-            {
-                for (String part : key.getParts())
-                {
-                    cur = new FieldKey(cur, part);
-                }
-            }
-        }
-        return cur;
+        return QueryKey.fromParts(FACTORY, parts);
     }
 
 
@@ -154,150 +122,41 @@ public class FieldKey implements Comparable
     }
 
 
-    static public String encodePart(String str)
+    public FieldKey(FieldKey parent, @NotNull String name)
     {
-        str = StringUtils.replace(str, "$", "$D");
-        str = StringUtils.replace(str, "/", "$S");
-        str = StringUtils.replace(str, "&", "$A");
-        str = StringUtils.replace(str, "}", "$B");
-        str = StringUtils.replace(str, "~", "$T");
-        str = StringUtils.replace(str, ",", "$C");
-        return str;
-    }
-
-    static public String decodePart(String str)
-    {
-        str = StringUtils.replace(str, "$C", ",");
-        str = StringUtils.replace(str, "$T", "~");
-        str = StringUtils.replace(str, "$B", "}");
-        str = StringUtils.replace(str, "$A", "&");
-        str = StringUtils.replace(str, "$S", "/");
-        str = StringUtils.replace(str, "$D", "$");
-
-        return str;
-    }
-
-    final FieldKey _parent;
-    final String _name;
-
-    public FieldKey(FieldKey parent, String name)
-    {
-        _parent = parent;
-        _name = name;
+        super(parent, name);
     }
 
     public FieldKey(FieldKey parent, Enum name)
     {
-        this(parent, name.toString());
+        super(parent, name);
+    }
+
+    @Override
+    protected String getDivider()
+    {
+        return DIVIDER;
     }
 
     public FieldKey getTable()
     {
-        return _parent;
+        return (FieldKey)super.getParent();
     }
 
+    @Override
     public FieldKey getParent()
     {
-        return _parent;
+        return (FieldKey)super.getParent();
     }
 
-    public String getName()
-    {
-        return _name;
-    }
-
-    private boolean strEqualsIgnoreCase(String a, String b)
-    {
-        if (a == null && b == null)
-            return true;
-        if (a == null)
-            return false;
-        return a.equalsIgnoreCase(b);
-    }
-
-    public boolean equals(Object other)
-    {
-        if (!(other instanceof FieldKey))
-            return false;
-        FieldKey that = (FieldKey) other;
-        return strEqualsIgnoreCase(this._name, that._name) &&
-                ObjectUtils.equals(this._parent, that._parent);
-    }
-
-    public int hashCode()
-    {
-        return _name.toLowerCase().hashCode() ^ ObjectUtils.hashCode(_parent);
-    }
-
-    public List<String> getParts()
-    {
-        if (_parent == null)
-            return Collections.singletonList(_name);
-        List<String> ret = new ArrayList<String>(_parent.getParts());
-        ret.add(_name);
-        return ret;
-    }
-
-
-    /**
-     * generate a URL encoded string representing this field key
-     * may be parsed by FieldKey.parse()
-     */
-    public String encode()
-    {
-        List<String> encodedParts = new ArrayList<String>();
-        for (String part : getParts())
-        {
-            String encodedPart = PageFlowUtil.encode(part);
-            encodedParts.add(encodedPart);
-        }
-        return StringUtils.join(encodedParts.iterator(), "/");
-    }
-
-    public String toString()
-    {
-        List<String> encodedParts = new ArrayList<String>();
-        for (String part : getParts())
-        {
-            String encodedPart = encodePart(part);
-            encodedParts.add(encodedPart);
-        }
-
-        return StringUtils.join(encodedParts.iterator(), "/");
-    }
-
-    public String getLabel()
+    public @NotNull String getLabel()
     {
         return getName();
     }
 
-    public String getCaption()
+    public @NotNull String getCaption()
     {
         return ColumnInfo.labelFromName(getName());
-    }
-
-    /**
-     * Returns a string appropriate for display to the user.
-     */
-    public String toDisplayString()
-    {
-        return StringUtils.join(getParts().iterator(), ".");
-    }
-
-    /**
-     * Returns a string appropriate for usage in LabKey SQL.
-     */
-    public String toSQLString()
-    {
-        List<String> parts = getParts();
-        StringBuilder escapedColName = new StringBuilder();
-        String sep = "";
-        for (String part : parts)
-        {
-            escapedColName.append(sep).append("\"").append(part).append("\"");
-            sep = ".";
-        }
-        return escapedColName.toString();
     }
 
     public boolean isAllColumns()
@@ -306,11 +165,22 @@ public class FieldKey implements Comparable
         // return getName().equals("*");
     }
 
-
-    public int compareTo(Object o)
+    public int compareTo(FieldKey o)
     {
-        return CASE_INSENSITIVE_ORDER.compare(this,(FieldKey)o);
+        return CASE_INSENSITIVE_ORDER.compare(this, o);
     }
+
+    public static final Comparator<FieldKey> CASE_INESNSITIVE_STRING_ORDER = new Comparator<FieldKey>()
+    {
+        @Override
+        public int compare(FieldKey a, FieldKey b)
+        {
+            if (a==b) return 0;
+            if (null==a) return -1;
+            if (null==b) return 1;
+            return String.CASE_INSENSITIVE_ORDER.compare(a.toString(), b.toString());
+        }
+    };
 
 
     public static final Comparator<FieldKey> CASE_INSENSITIVE_ORDER = new Comparator<FieldKey>()
@@ -338,6 +208,32 @@ public class FieldKey implements Comparable
             return c!=0 ? c : a.getName().compareTo(b.getName());
         }
     };
+
+
+    public static final class Converter implements org.apache.commons.beanutils.Converter
+    {
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            if (value == null)
+                return null;
+
+            if (value instanceof FieldKey)
+                return value;
+
+            if (value instanceof String)
+                return FieldKey.fromString((String)value);
+            else if (value instanceof String[])
+                return FieldKey.fromParts((String[])value);
+            else if (value instanceof FieldKey[])
+                return FieldKey.fromParts((FieldKey[])value);
+            else if (value instanceof List)
+                // XXX: convert items in List?
+                return FieldKey.fromParts((List)value);
+
+            throw new ConversionException("Could not convert '" + value + "' to a FieldKey");
+        }
+    }
 
 
     public static class TestCase extends Assert

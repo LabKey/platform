@@ -56,7 +56,7 @@ public class QuerySnapshotForm extends QueryForm
             if (qDef != null)
             {
                 setQueryName(qDef.getName());
-                setSchemaName(new IdentifierString(qDef.getSchemaName()));
+                setSchemaName(qDef.getSchemaPath());
             }
 
             setUpdateDelay(def.getUpdateDelay());

@@ -205,7 +205,7 @@ public class DataRegionSelection
             throws SQLException, IOException
     {
         QueryForm form = new QueryForm();
-        form.setSchemaName(new IdentifierString(schemaName));
+        form.setSchemaName(schemaName);
         form.setQueryName(queryName);
         form.setViewName(viewName);
         ActionURL url = new ActionURL();

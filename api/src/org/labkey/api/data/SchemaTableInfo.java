@@ -38,6 +38,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
+import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -990,4 +991,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         ColumnInfo col = getColumn("container");
         return null==col ? null : col.getFieldKey();
     }
-}
+
+    @Override
+    public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
+    {
+        // Skip visiting
+        return null;
+    }
+ }

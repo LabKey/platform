@@ -30,6 +30,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SchemaTreeNode;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.HasPermission;
@@ -53,7 +54,7 @@ import java.util.Set;
  * Date: Apr 27, 2006
  * Time: 11:29:43 AM
  */
-public interface TableInfo extends HasPermission
+public interface TableInfo extends HasPermission, SchemaTreeNode
 {
 
     String getName();

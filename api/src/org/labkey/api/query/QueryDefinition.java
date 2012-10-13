@@ -30,7 +30,10 @@ import java.sql.SQLException;
 public interface QueryDefinition
 {
     String getName();
+
+    @Deprecated // Use .getSchemaPath() instead.
     String getSchemaName();
+    SchemaKey getSchemaPath();
 
     /** Returns the User this QueryDefinition was initialized with (ie, from the ViewContext).  QueryDefinitions do not have an owner. */
     User getUser();

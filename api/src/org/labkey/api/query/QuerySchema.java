@@ -23,9 +23,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
 
+import java.util.Collection;
 import java.util.Set;
 
-public interface QuerySchema
+public interface QuerySchema extends SchemaTreeNode
 {
     public User getUser();
 
@@ -35,10 +36,16 @@ public interface QuerySchema
 
     public TableInfo getTable(String name);
 
+    public Set<String> getTableNames();
+
+    public Collection<TableInfo> getTables();
+
     // Could be null if, for example, provider hides schema when module is inactive.
     public @Nullable QuerySchema getSchema(String name);
 
     public Set<String> getSchemaNames();
+
+    public Collection<QuerySchema> getSchemas();
 
     public String getName();
 

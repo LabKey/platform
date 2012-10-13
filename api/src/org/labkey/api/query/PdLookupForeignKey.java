@@ -108,12 +108,10 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (!container.hasPermission(_user, ReadPermission.class))
             return null;
 
-        QuerySchema qSchema = DefaultSchema.get(_user, container).getSchema(_pd.getLookupSchema());
-
-        if (!(qSchema instanceof UserSchema))
+        UserSchema schema = QueryService.get().getUserSchema(_user, container, _pd.getLookupSchema());
+        if (schema == null)
             return null;
 
-        UserSchema schema = (UserSchema) qSchema;
         return schema.getTable(_pd.getLookupQuery());
     }
 
