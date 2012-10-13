@@ -37,7 +37,7 @@
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags(me.getViewContext().getActionURL()) %>
-    <%= PageFlowUtil.getStandardIncludes(c,request.getHeader("User-Agent")) %>
+    <%= PageFlowUtil.getStandardIncludes(c,request.getHeader("User-Agent"), pageConfig.getClientDependencies()) %>
 </head>
 
 <body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %> class="<%=themeFont.getClassName()%>">
