@@ -34,7 +34,7 @@
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
     ReportDesignBean bean = me.getModelBean();
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = me.getViewContext();
     Report report = bean.getReport(context);
     ReportDescriptor reportDescriptor = report.getDescriptor();
 
@@ -45,7 +45,9 @@
     Date createdDate = reportDescriptor.getCreated();
     Date modifiedDate = reportDescriptor.getModified();
     Date refreshDate = null;
-    ActionURL reportURL = report.getRunReportURL(context);
+
+    ActionURL vewReportURL = report.getRunReportURL(context);
+    ActionURL editReportURL = report.getEditReportURL(context, context.getActionURL());
     Map<String, String> reportURLAttributes =  report.getRunReportTarget() != null ?
             Collections.singletonMap("target", report.getRunReportTarget()) :
             Collections.<String, String>emptyMap();
@@ -186,11 +188,13 @@
     </tr>
 
     <tr>
-        <td class="labkey-form-label">
-            Report URL:
-        </td>
-        <td>
-            <%=PageFlowUtil.textLink("View Report", reportURL, null, null, reportURLAttributes)%>
+        <td colspan="2">&nbsp;</td>
+    </tr>
+
+    <tr>
+        <td colspan="2">
+            <%=PageFlowUtil.generateButton("View Report", vewReportURL, null, reportURLAttributes)%>
+            <%=report.canEdit(context.getUser(), context.getContainer()) ? PageFlowUtil.generateButton("Edit Report", editReportURL) : ""%>
         </td>
     </tr>
 </table>

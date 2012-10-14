@@ -36,6 +36,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,15 +48,15 @@ import java.util.List;
  */
 public class QueryDataViewProvider implements DataViewProvider
 {
-    private static final DataViewProvider.Type _type = new ProviderType("queries", "Custom Views", true);
+    public static final DataViewProvider.Type TYPE = new ProviderType("queries", "Custom Views", true);
 
-    public static DataViewProvider.Type getType()
+    public DataViewProvider.Type getType()
     {
-        return _type;
+        return TYPE;
     }
 
     @Override
-    public void initialize(ViewContext context)
+    public void initialize(ContainerUser context)
     {
     }
     
@@ -72,7 +73,7 @@ public class QueryDataViewProvider implements DataViewProvider
             if (view.getName() == null)
                 continue;
 
-            DefaultViewInfo info = new DefaultViewInfo(_type, view.getEntityId(), view.getName(), view.getContainer());
+            DefaultViewInfo info = new DefaultViewInfo(TYPE, view.getEntityId(), view.getName(), view.getContainer());
 
             info.setType("Query");
 

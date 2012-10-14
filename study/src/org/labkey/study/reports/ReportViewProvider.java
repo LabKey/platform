@@ -44,6 +44,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -64,11 +65,11 @@ import java.util.Map;
  */
 public class ReportViewProvider implements DataViewProvider
 {
-    private static final DataViewProvider.Type _type = new ProviderType("reports", "Report Views", true);
+    public static final DataViewProvider.Type TYPE = new ProviderType("reports", "Report Views", true);
 
-    public static DataViewProvider.Type getType()
+    public DataViewProvider.Type getType()
     {
-        return _type;
+        return TYPE;
     }
 
     @Override
@@ -78,7 +79,7 @@ public class ReportViewProvider implements DataViewProvider
     }
 
     @Override
-    public void initialize(ViewContext context) throws Exception
+    public void initialize(ContainerUser context) throws Exception
     {
         Container c = context.getContainer();
         User user = context.getUser();
@@ -141,7 +142,7 @@ public class ReportViewProvider implements DataViewProvider
                     User author = authorId != null ? UserManager.getUser(((Double)authorId).intValue()) : null;
                     boolean inherited = descriptor.isInherited(c);
 
-                    DefaultViewInfo info = new DefaultViewInfo(_type, descriptor.getEntityId(), descriptor.getReportName(), descriptor.lookupContainer());
+                    DefaultViewInfo info = new DefaultViewInfo(TYPE, descriptor.getEntityId(), descriptor.getReportName(), descriptor.lookupContainer());
 
                     String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
                     String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);

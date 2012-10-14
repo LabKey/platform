@@ -19,8 +19,6 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.labkey.query.reports.ReportsController.AttachmentReportForm" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
@@ -35,12 +33,7 @@
 %>
 
 <table>
-<%
-    for (ObjectError e : (List<ObjectError>) me.getErrors().getAllErrors())
-    {
-%>      <tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
-    }
-%>
+    <%=formatMissedErrorsInTable("form", 1)%>
 </table>
 
 <div id="attachmentReportForm">
@@ -56,6 +49,8 @@
             fieldLabel: "Choose a file",
             allowBlank: false
         });
+
+        var extraItems;
 
         <% if (canUseDiskFile) { %>
         var serverFileTextField = Ext4.create('Ext.form.field.Text', {
@@ -99,15 +94,15 @@
             }
         };
 
-        var extraItems = [ fileUploadRadioGroup, fileUploadField, serverFileTextField ];
+        extraItems = [ fileUploadRadioGroup, fileUploadField, serverFileTextField ];
         <% } else { %>
 
         var attachmentTypeField = {
             xtype:'hidden',
             name:'attachmentType',
             value:'<%=AttachmentReportForm.AttachmentReportType.local.toString()%>'
-        }
-        var extraItems = [ attachmentTypeField, fileUploadField ];
+        };
+        extraItems = [ attachmentTypeField, fileUploadField ];
         <% } %>
 
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
@@ -126,7 +121,6 @@
             visibleFields   : {
                 author  : true,
                 status  : true,
-                modifieddate: true,
                 datacutdate : true,
                 category    : true,
                 description : true,

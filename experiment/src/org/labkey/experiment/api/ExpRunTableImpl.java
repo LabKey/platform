@@ -127,7 +127,17 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             {
                 condition.append(separator);
                 condition.append(_rootTable.getColumn("ProtocolLSID").getAlias());
-                condition.append(" LIKE ?");
+                // Only use LIKE if the pattern contains a wildcard, since the database can be more efficient
+                // for = instead of LIKE. In some cases we're passed the LSID for a specific protocol (assay design),
+                // and in other cases we're passed a pattern that matches against all assay designs of a given type
+                if (pattern.contains("%"))
+                {
+                    condition.append(" LIKE ?");
+                }
+                else
+                {
+                    condition.append(" = ?");
+                }
                 condition.add(pattern);
                 separator = " OR "; 
             }

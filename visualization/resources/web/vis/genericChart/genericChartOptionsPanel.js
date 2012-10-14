@@ -301,10 +301,10 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.setLineColor(initValues.lineColor);
         if (initValues.hasOwnProperty("fillColor"))
             this.setFillColor(initValues.fillColor);
-        if (initialValues.hasOwnProperty("width"))
-            this.setWidth(initialValues.width);
-        if (initialValues.hasOwnProperty("height"))
-            this.setHeight(initialValues.height);
+        if (initValues.hasOwnProperty("width"))
+            this.setWidth(initValues.width);
+        if (initValues.hasOwnProperty("height"))
+            this.setHeight(initValues.height);
 
         this.hasChanges = false;
     },

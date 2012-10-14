@@ -6910,7 +6910,7 @@ public class StudyController extends BaseStudyController
                 Map<String, Map<String, Object>> viewTypeProps = new HashMap<String, Map<String, Object>>();
                 for (DataViewProvider.Type type : visibleDataTypes)
                 {
-                    DataViewProvider provider = DataViewService.get().getProvider(type);
+                    DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
                     DataViewProvider.EditInfo editInfo = provider.getEditInfo();
                     if (editInfo != null)
                     {
@@ -6944,7 +6944,7 @@ public class StudyController extends BaseStudyController
 
                 for (DataViewProvider.Type type : visibleDataTypes)
                 {
-                    DataViewProvider provider = DataViewService.get().getProvider(type);
+                    DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
                     views.addAll(provider.getViews(getViewContext()));
                 }
 
@@ -7312,7 +7312,7 @@ public class StudyController extends BaseStudyController
             DataViewProvider.Type type = DataViewService.get().getDataTypeByName(form.getDataType());
             if (type != null)
             {
-                _provider = DataViewService.get().getProvider(type);
+                _provider = DataViewService.get().getProvider(type, getViewContext());
                 DataViewProvider.EditInfo editInfo = _provider.getEditInfo();
 
                 if (editInfo != null)
@@ -7367,7 +7367,7 @@ public class StudyController extends BaseStudyController
                 schedule.setVisits(StudyManager.getInstance().getVisits(study, null, getUser(), Visit.Order.DISPLAY));
                 schedule.setDatasets(
                         StudyManager.getInstance().getDataSetDefinitions(study, cohort, new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}),
-                        DataViewService.get().getViews(getViewContext(), Collections.singletonList(DatasetViewProvider.getType())));
+                        DataViewService.get().getViews(getViewContext(), Collections.singletonList(DatasetViewProvider.TYPE)));
 
                 response.put("schedule", schedule.toJSON(getUser()));
                 response.put("success", true);

@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.DateUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.query.reports.ReportsController.LinkReportForm" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
@@ -28,16 +27,12 @@
 </script>
 <%
     JspView<LinkReportForm> me = (JspView<LinkReportForm>) HttpView.currentView();
-    LinkReportForm bean = me.getModelBean();
+    LinkReportForm form = me.getModelBean();
+    String action = (form.isUpdate() ? "update" : "create") + "linkReport";
 %>
 
 <table>
-    <%
-        for (ObjectError e : (List<ObjectError>) me.getErrors().getAllErrors())
-        {
-    %>      <tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
-    }
-%>
+    <%=formatMissedErrorsInTable("form", 1)%>
 </table>
 
 <div id="linkReportForm">
@@ -73,8 +68,38 @@
             }
         });
 
+        var extraItems = [
+            targetNewWindowField,
+            hiddenTargetNewWindowField,
+            urlTextField
+        ];
+
+        <%
+
+        // Set additional field values if updating an existing report
+        if (form.isUpdate())
+        { %>
+
+        targetNewWindowField.checked = <%=form.isTargetNewWindow()%>;
+        urlTextField.setValue(<%=q(form.getLinkUrl())%>);
+
+        extraItems.push({
+            xtype: "hidden",
+            name: "viewName",
+            value: <%=q(form.getViewName())%>
+        });
+        extraItems.push({
+            xtype: "hidden",
+            name: "reportId",
+            value: <%=q(form.getReportId().toString())%>
+        });
+        <%
+
+        }
+        %>
+
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
-            url : LABKEY.ActionURL.buildURL('reports', 'createLinkReport', null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
+            url : LABKEY.ActionURL.buildURL('reports', <%=q(action)%>, null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
             standardSubmit  : true,
             bodyStyle       :'background-color: transparent;',
             bodyPadding     : 10,
@@ -89,17 +114,32 @@
             visibleFields   : {
                 author  : true,
                 status  : true,
-                modifieddate: true,
                 datacutdate : true,
                 category    : true,
                 description : true,
                 shared      : true
             },
-            extraItems : [
-                targetNewWindowField,
-                hiddenTargetNewWindowField,
-                urlTextField
-            ],
+ <%
+        if (form.isUpdate())
+        {
+            %>
+
+            record : {
+                data : {
+                    name: <%=q(form.getViewName())%>,
+                    authorUserId: <%=form.getAuthor()%>,
+                    status: <%=q(form.getStatus().name())%>,
+                    refreshDate: <%=q(DateUtil.formatDate(form.getRefreshDate()))%>,
+                    category: <%=q(form.getCategory())%>,
+                    description: <%=q(form.getDescription())%>,
+                    shared: <%=form.getShared()%>
+                }
+            },
+
+          <%
+        }
+%>
+            extraItems : extraItems,
             renderTo    : 'linkReportForm',
             dockedItems: [{
                 xtype: 'toolbar',

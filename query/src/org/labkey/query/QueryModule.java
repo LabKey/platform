@@ -136,7 +136,7 @@ public class QueryModule extends DefaultModule
         QueryView.register(new JavaScriptExportScriptFactory());
         QueryView.register(new PerlExportScriptFactory());
 //		WebdavService.addProvider(new QueryWebdavprovider());
-        DataViewService.get().registerProvider(QueryDataViewProvider.getType(), new QueryDataViewProvider());
+        DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
 
         AuditLogService.get().addAuditViewFactory(QueryAuditViewFactory.getInstance());
 

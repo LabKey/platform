@@ -16,9 +16,13 @@
 package org.labkey.query.reports;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
@@ -76,4 +80,30 @@ public class LinkReport extends BaseRedirectReport implements DynamicThumbnailPr
         return "Reports:" + getReportId();
     }
 
+    @Override
+    public ActionURL getEditReportURL(ViewContext context)
+    {
+        ActionURL url = new ActionURL(ReportsController.UpdateLinkReportAction.class, context.getContainer());
+        url.addParameter("reportId", getReportId().toString());
+
+        // Total hack because Manage Views page calls this from an API action, but we want to return to
+        // the page URL. TODO: Report gaterhing APIs should take a page URL
+        String currentAction = context.getActionURL().getAction();
+
+        if ("manageViewsSummary".equals(currentAction))
+        {
+            String currentController = context.getActionURL().getController();
+            ActionURL returnURL = null;
+
+            if ("study-reports".equals(currentController))
+                returnURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageViewsURL(context.getContainer());
+            else if ("reports".equals(currentController))
+                returnURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer());
+
+            if (null != returnURL)
+                url.addReturnURL(returnURL);
+        }
+
+        return url;
+    }
 }

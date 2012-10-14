@@ -603,7 +603,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             title: 'Grouping Options',
             hidden: true,
             border: 1,
-            width: 400,
+            width: 420,
             cls: 'data-window',
             resizable: false,
             modal: true,
@@ -957,7 +957,27 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if(!serialize){
             config.success = this.onSelectRowsSuccess;
-            config.failure = function(){this.viewPanel.getEl().unmask();};
+            config.failure = function(response, opts){
+                var error, errorDiv;
+
+                this.viewPanel.getEl().unmask();
+
+                if(response.exception){
+                    error = '<p>' + response.exception + '</p>';
+                    if(response.exceptionClass == 'org.labkey.api.view.NotFoundException'){
+                        error = error + '<p>The source dataset, list, or query may have been deleted.</p>'
+                    }
+                }
+
+                errorDiv = Ext4.create('Ext.container.Container', {
+                    border: 1,
+                    autoEl: {tag: 'div'},
+                    html: '<h3 style="color:red;">An unexpected error occurred while retrieving data.</h2>' + error,
+                    autoScroll: true
+                });
+
+                this.viewPanel.add(errorDiv);
+            };
             config.scope = this;
         }
 

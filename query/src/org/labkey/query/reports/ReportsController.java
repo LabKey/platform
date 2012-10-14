@@ -42,7 +42,9 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.views.DataViewProvider.EditInfo.Property;
 import org.labkey.api.data.views.DataViewProvider;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -1259,21 +1261,47 @@ public class ReportsController extends SpringActionController
 
     protected abstract class BaseReportAction<F extends DataViewEditForm, R extends AbstractReport & DynamicThumbnailProvider> extends FormViewAction<F>
     {
-        public void initializeForm(F form, boolean reshow, BindException errors) throws Exception
+        protected void initialize(F form) throws Exception
         {
             setHelpTopic(new HelpTopic("staticReports"));
 
             if (form.getReportId() != null)
             {
-                Report report = form.getReportId().getReport(getViewContext());
+                R report = (R)form.getReportId().getReport(getViewContext());
 
                 if (report != null)
                 {
-                    form.setViewName(report.getDescriptor().getReportName());
-                    form.setReportId(form.getReportId());
+                    initializeForm(form, report);
                 }
             }
         }
+
+        protected void initializeForm(F form, R report) throws Exception
+        {
+            form.setViewName(report.getDescriptor().getReportName());
+            form.setReportId(form.getReportId());
+            form.setDescription(report.getDescriptor().getReportDescription());
+            form.setShared(null == report.getDescriptor().getOwner());
+
+            if (null != report.getDescriptor().getCategory())
+                form.setCategory(report.getDescriptor().getCategory().getLabel());
+
+            Map<String, Object> map = new HashMap<String, Object>();
+
+            for (Pair<DomainProperty, Object> pair : ReportPropsManager.get().getProperties(report.getEntityId(), getContainer()))
+                map.put(pair.getKey().getName(), pair.getValue());
+
+            // TODO: Why are author IDs returned as doubles?
+            Object authorId = map.get(Property.author.name());
+            if (null != authorId)
+                form.setAuthor(((Number)authorId).intValue());
+
+            String status = (String)map.get(Property.status.name());
+            form.setStatus(null != status ? ViewInfo.Status.valueOf(status) : ViewInfo.Status.None);
+
+            form.setRefreshDate((Date)map.get(Property.refreshDate.name()));
+        }
+
 
         public void validateCommand(F form, Errors errors)
         {
@@ -1316,18 +1344,15 @@ public class ReportsController extends SpringActionController
                 if (form.getCategory() != null)
                     category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
 
-                R report = createReport(form);
+                R report = initializeReportForSave(form);
                 ReportDescriptor descriptor = report.getDescriptor();
 
                 descriptor.setContainer(getContainer().getId());
                 descriptor.setReportName(form.getViewName());
-                if (form.getModifiedDate() != null)
-                    descriptor.setModified(form.getModifiedDate());
+                descriptor.setModified(form.getModifiedDate());
 
                 descriptor.setReportDescription(form.getDescription());
-
-                if (category != null)
-                    descriptor.setCategory(category);
+                descriptor.setCategory(category);
 
                 if (!form.getShared())
                     descriptor.setOwner(getUser().getUserId());
@@ -1355,7 +1380,7 @@ public class ReportsController extends SpringActionController
             }
         }
 
-        abstract protected R createReport(F form);
+        abstract protected R initializeReportForSave(F form) throws Exception;
 
         protected void afterReportSave(F form, R report) throws Exception
         {
@@ -1366,11 +1391,11 @@ public class ReportsController extends SpringActionController
             // additional properties
             String entityId = report.getEntityId();
             if (author != null)
-                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), DataViewProvider.EditInfo.Property.author.name(), author.getUserId());
+                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), Property.author.name(), author.getUserId());
             if (status != null)
-                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), DataViewProvider.EditInfo.Property.status.name(), status.name());
+                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), Property.status.name(), status.name());
             if (form.getRefreshDate() != null)
-                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), DataViewProvider.EditInfo.Property.refreshDate.name(), form.getRefreshDate());
+                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), Property.refreshDate.name(), form.getRefreshDate());
         }
 
         public ActionURL getSuccessURL(F uploadForm)
@@ -1386,7 +1411,7 @@ public class ReportsController extends SpringActionController
         @Override
         public ModelAndView getView(AttachmentReportForm form, boolean reshow, BindException errors) throws Exception
         {
-            initializeForm(form, reshow, errors);
+            initialize(form);
             return new JspView<AttachmentReportForm>("/org/labkey/query/reports/view/createAttachmentReport.jsp", form, errors);
         }
 
@@ -1431,7 +1456,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        protected AttachmentReport createReport(AttachmentReportForm form)
+        protected AttachmentReport initializeReportForSave(AttachmentReportForm form)
         {
             AttachmentReport report = (AttachmentReport)ReportService.get().createReportInstance(AttachmentReport.TYPE);
 
@@ -1530,12 +1555,12 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class CreateLinkReportAction extends BaseReportAction<LinkReportForm, LinkReport>
+    public abstract class BaseLinkReportAction extends BaseReportAction<LinkReportForm, LinkReport>
     {
         public ModelAndView getView(LinkReportForm form, boolean reshow, BindException errors) throws Exception
         {
-            initializeForm(form, reshow, errors);
-            return new JspView<LinkReportForm>("/org/labkey/query/reports/view/createLinkReport.jsp", form, errors);
+            initialize(form);
+            return new JspView<LinkReportForm>("/org/labkey/query/reports/view/linkReport.jsp", form, errors);
         }
 
         @Override
@@ -1575,12 +1600,14 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        protected LinkReport createReport(LinkReportForm form)
+        protected LinkReport initializeReportForSave(LinkReportForm form) throws Exception
         {
-            LinkReport report = (LinkReport)ReportService.get().createReportInstance(LinkReport.TYPE);
+            LinkReport report = (LinkReport) (form.isUpdate() ? form.getReportId().getReport(getViewContext()) : ReportService.get().createReportInstance(LinkReport.TYPE));
 
-            if (form.isTargetNewWindow())
-                report.setRunReportTarget("_blank");
+            if (null == report)
+                throw new NotFoundException("Report does not exist");
+
+            report.setRunReportTarget(form.isTargetNewWindow() ? "_blank" : null);
 
             try
             {
@@ -1595,10 +1622,32 @@ public class ReportsController extends SpringActionController
 
             return report;
         }
+    }
 
+    @RequiresPermissionClass(InsertPermission.class)
+    public class CreateLinkReportAction extends BaseLinkReportAction
+    {
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create Link Report");
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class UpdateLinkReportAction extends BaseLinkReportAction
+    {
+        @Override
+        protected void initializeForm(LinkReportForm form, LinkReport report) throws Exception
+        {
+            super.initializeForm(form, report);
+
+            form.setLinkUrl(report.getURL().toString());
+            form.setTargetNewWindow(null != report.getRunReportTarget());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Update Link Report");
         }
     }
 
@@ -1655,15 +1704,15 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(QueryReportForm form, boolean reshow, BindException errors) throws Exception
         {
-            initializeForm(form, reshow, errors);
+            initialize(form);
             return new JspView<QueryReportForm>("/org/labkey/query/reports/view/createQueryReport.jsp", form, errors);
         }
 
         @Override
-        public void initializeForm(QueryReportForm form, boolean reshow, BindException errors) throws Exception
+        public void initialize(QueryReportForm form) throws Exception
         {
             form.setSrcURL(getViewContext().getActionURL());
-            super.initializeForm(form, reshow, errors);
+            super.initialize(form);
         }
 
         @Override
@@ -1692,7 +1741,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        protected QueryReport createReport(QueryReportForm form)
+        protected QueryReport initializeReportForSave(QueryReportForm form)
         {
             QueryReport report = (QueryReport)ReportService.get().createReportInstance(QueryReport.TYPE);
 

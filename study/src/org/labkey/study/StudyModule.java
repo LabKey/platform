@@ -261,8 +261,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
 
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
-        DataViewService.get().registerProvider(DatasetViewProvider.getType(), new DatasetViewProvider());
-        DataViewService.get().registerProvider(ReportViewProvider.getType(), new ReportViewProvider());
+        DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
+        DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
     }
 
     @Override

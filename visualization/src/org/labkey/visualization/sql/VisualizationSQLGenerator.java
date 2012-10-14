@@ -411,23 +411,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             // columns based on a dimension
             for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : query.getColumnNameToValueAliasMap(_columnFactory, true).entrySet())
             {
-                VisualizationSourceColumn col = entry.getValue().iterator().next();
-                String alias = col.getAlias();
-//                String label = col.getLabel();
-//                if (null != label)
-//                    label = StringUtils.replace(label,"'","''");
-
-                aggregatedSQL.append(", AVG(x.\"" + alias + "\") AS \"" + alias + "\"");
-//                if (null != label)
-//                    aggregatedSQL.append(" @title='mean(" + label + ")'");
-
-                aggregatedSQL.append(", STDDEV(x.\"" + alias + "\") AS \"" + alias + "_STDDEV\"");
-//                if (null != label)
-//                    aggregatedSQL.append(" @title='stddev(" + label + ")'");
-
-                aggregatedSQL.append(", STDERR(x.\"" + alias + "\") AS \"" + alias + "_STDERR\"");
-//                if (null != label)
-//                    aggregatedSQL.append(" @title='stderr(" + label + ")'");
+                for (VisualizationSourceColumn col : entry.getValue())
+                {
+                    String alias = col.getAlias();
+                    aggregatedSQL.append(", AVG(x.\"" + alias + "\") AS \"" + alias + "\"");
+                    aggregatedSQL.append(", STDDEV(x.\"" + alias + "\") AS \"" + alias + "_STDDEV\"");
+                    aggregatedSQL.append(", STDERR(x.\"" + alias + "\") AS \"" + alias + "_STDERR\"");
+                }
             }
         }
 

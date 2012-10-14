@@ -39,15 +39,15 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
 
         var categoricalRadio = {
             xtype: 'radio',
+            id: 'colorCategory',
             name: 'colorType',
             inputValue: 'measure',
-            boxLabel: 'By a measure',
+            boxLabel: 'By category',
             checked: this.colorType ? this.colorType === 'measure' : false,
             width: 150
         };
 
         this.colorTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
-            xtype: 'radiogroup',
             fieldLabel: 'Color Points',
             vertical: false,
             width: 300,
@@ -69,18 +69,17 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         groupingItems.push(this.colorTypeRadioGroup);
 
         this.colorCombo = Ext4.create('Ext.form.field.ComboBox', {
-            xtype: 'combo',
-            fieldLabel: 'Color Measure',
+            fieldLabel: 'Color Category',
             name: 'colorMeasure',
             store: this.store,
             disabled: this.colorType ? this.colorType === 'single' : true,
             editable: false,
-            allowBlank: false,
             valueField: 'name',
             displayField: 'label',
             value: this.colorMeasure ? this.colorMeasure : null,
             queryMode: 'local',
-            width: 365,
+            labelWidth: 105,
+            width: 385,
             listeners: {
                 change: function(combo, oldVal, newVal){
                     if(!this.suppressEvents){
@@ -107,14 +106,14 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         var categoricalPointRadio = {
             xtype: 'radio',
             name: 'pointType',
+            id: 'shapeCategory',
             inputValue: 'measure',
-            boxLabel: 'Per measure',
+            boxLabel: 'By category',
             checked: this.colorType ? this.colorType === 'measure' : false,
             width: 150
         };
 
         this.pointTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
-            xtype: 'radiogroup',
             fieldLabel: 'Point Shape',
             vertical: false,
             width: 300,
@@ -136,17 +135,17 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         groupingItems.push(this.pointTypeRadioGroup);
 
         this.pointCombo = Ext4.create('Ext.form.field.ComboBox', {
-            fieldLabel: 'Point Measure',
+            fieldLabel: 'Point Category',
             name: 'pointMeasure',
             store: this.store,
             disabled: this.pointType ? this.pointType === 'single' : true,
             editable: false,
-            allowBlank: false,
             valueField: 'name',
             displayField: 'label',
             value: this.pointMeasure ? this.pointMeasure : null,
             queryMode: 'local',
-            width: 365,
+            labelWidth: 105,
+            width: 385,
             listeners: {
                 change: function(combo, oldVal, newVal){
                     if(!this.suppressEvents){
@@ -158,7 +157,6 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         });
 
         groupingItems.push(this.pointCombo);
-
 
         this.items = groupingItems;
 

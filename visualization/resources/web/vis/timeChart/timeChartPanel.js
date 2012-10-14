@@ -1222,7 +1222,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             //ISSUE In multi-chart case, we need to precompute the default axis ranges so that all charts share them.
             var leftMeasures = [];
             var rightMeasures = [];
-            var min, max, tempMin, tempMax;
+            var xName, xFunc;
+            var min, max, tempMin, tempMax, errorBarType;
+            var leftAccessor, leftAccessorMax, leftAccessorMin, rightAccessorMax, rightAccessorMin, rightAccessor;
             var columnAliases = this.individualData ? this.individualData.columnAliases : this.aggregateData.columnAliases;
 
             for(var i = 0; i < seriesList.length; i++){
@@ -1234,8 +1236,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
             }
 
-            var xName;
-            var xFunc;
             if(this.editorXAxisPanel.getTime() == "date"){
                 xName = this.chartInfo.measures[0].dateOptions.interval;
                 xFunc = function(row){
@@ -1256,21 +1256,51 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 this.chartInfo.axis[xAxisIndex].range.max = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows, xFunc);
             }
 
+            if(this.chartInfo.errorBars !== 'None'){
+                errorBarType = this.chartInfo.errorBars == 'SD' ? '_STDDEV' : '_STDERR';
+            }
+
             if (leftAxisIndex > -1) {
                 // If we have a left axis then we need to find the min/max
                 min = null, max = null, tempMin = null, tempMax = null;
-                var leftAccessor = function(row){return row[leftMeasures[i]].value};
+                leftAccessor = function(row){return (row[leftMeasures[i]] ? row[leftMeasures[i]].value : null);};
+
+                if(errorBarType){
+                     // If we have error bars we need to calculate min/max with the error values in mind.
+                    leftAccessorMin = function(row){
+                        if (row[leftMeasures[i] + errorBarType])
+                        {
+                            var error = row[leftMeasures[i] + errorBarType].value;
+                            return row[leftMeasures[i]].value - error;
+                        }
+                        else
+                            return null;
+                    };
+
+                    leftAccessorMax = function(row){
+                        if (row[leftMeasures[i] + errorBarType])
+                        {
+                            var error = row[leftMeasures[i] + errorBarType].value;
+                            return row[leftMeasures[i]].value + error;
+                        }
+                        else
+                            return null;
+                    };
+                }
 
                 if(!this.chartInfo.axis[leftAxisIndex].range.min){
                     for(var i = 0; i < leftMeasures.length; i++){
-                        tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows, leftAccessor);
+                        tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows,
+                                leftAccessorMin ? leftAccessorMin : leftAccessor);
                         min = min == null ? tempMin : tempMin < min ? tempMin : min;
                     }
                     this.chartInfo.axis[leftAxisIndex].range.min = min;
                 }
+
                 if(!this.chartInfo.axis[leftAxisIndex].range.max){
                     for(var i = 0; i < leftMeasures.length; i++){
-                        tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows, leftAccessor);
+                        tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows,
+                                leftAccessorMax ? leftAccessorMax : leftAccessor);
                         max = max == null ? tempMax : tempMax > max ? tempMax : max;
                     }
                     this.chartInfo.axis[leftAxisIndex].range.max = max;
@@ -1280,18 +1310,34 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             if (rightAxisIndex > -1) {
                 // If we have a right axis then we need to find the min/max
                 min = null, max = null, tempMin = null, tempMax = null;
-                var rightAccessor = function(row){return row[rightMeasures[i]].value};
+                rightAccessor = function(row){
+                    return row[rightMeasures[i]].value
+                };
+
+                if(errorBarType){
+                    rightAccessorMin = function(row){
+                        var error = row[rightMeasures[i] + errorBarType].value;
+                        return row[rightMeasures[i]].value - error;
+                    };
+
+                    rightAccessorMax = function(row){
+                        var error = row[rightMeasures[i] + errorBarType].value;
+                        return row[rightMeasures[i]].value + error;
+                    };
+                }
 
                 if(!this.chartInfo.axis[rightAxisIndex].range.min){
                     for(var i = 0; i < rightMeasures.length; i++){
-                        tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows, rightAccessor);
+                        tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows,
+                                rightAccessorMin ? rightAccessorMin : rightAccessor);
                         min = min == null ? tempMin : tempMin < min ? tempMin : min;
                     }
                     this.chartInfo.axis[rightAxisIndex].range.min = min;
                 }
                 if(!this.chartInfo.axis[rightAxisIndex].range.max){
                     for(var i = 0; i < rightMeasures.length; i++){
-                        tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows, rightAccessor);
+                        tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows,
+                                rightAccessorMax ? rightAccessorMax : rightAccessor);
                         max = max == null ? tempMax : tempMax > max ? tempMax : max;
                     }
                     this.chartInfo.axis[rightAxisIndex].range.max = max;
@@ -1560,16 +1606,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var generateLayerAes = function(name, yAxisSide, columnName){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
-            aes[yName] = function(row){return parseFloat(row[columnName].value)}; // Have to parseFlot because for some reason ObsCon from Luminex was returning strings not floats/ints.
+            aes[yName] = function(row){return (row[columnName] ? parseFloat(row[columnName].value) : null)}; // Have to parseFlot because for some reason ObsCon from Luminex was returning strings not floats/ints.
             return aes;
         };
 
         var generateAggregateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, errorColumn){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
-            aes[yName] = function(row){return parseFloat(row[columnName].value)}; // Have to parseFloat because for some reason ObsCon from Luminex was returning strings not floats/ints.
+            aes[yName] = function(row){return (row[columnName] ? parseFloat(row[columnName].value) : null)}; // Have to parseFloat because for some reason ObsCon from Luminex was returning strings not floats/ints.
             aes.group = aes.color = aes.shape = function(row){return row[subjectColumn].displayValue};
-            aes.error = function(row){return row[errorColumn].value};
+            aes.error = function(row){return (row[errorColumn] ? row[errorColumn].value : null)};
             return aes;
         };
 
@@ -1637,7 +1683,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         if(studyType == 'date'){
             intervalKey = chartInfo.measures[seriesList[0].measureIndex].dateOptions.interval;
-            xAes = function(row){return row[intervalKey].value}
+            xAes = function(row){return (row[intervalKey] ? row[intervalKey].value : null)}
         } else {
             intervalKey = individualColumnAliases ?
                     this.getColumnAlias(individualColumnAliases, viewInfo.subjectNounSingular + "Visit/Visit") :
@@ -1850,10 +1896,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             layers: layers,
             aes: {
                 x: xAes,
-                color: function(row){return row[individualSubjectColumn].value},
-                group: function(row){return row[individualSubjectColumn].value},
+                color: function(row){return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null)},
+                group: function(row){return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null)},
                 shape: function(row){
-                    return row[individualSubjectColumn].value
+                    return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null);
                 }
             },
             scales: {
@@ -2021,7 +2067,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 renderTo: qwpPanelDiv.getId(),
                 schemaName: this.tempGridInfo.schema,
                 queryName: this.tempGridInfo.query,
-                sort: this.tempGridInfo.subjectCol + ', ' + this.tempGridInfo.sortCols.join(", "),
+                sort: this.tempGridInfo.sortCols ? this.tempGridInfo.subjectCol + ', ' + this.tempGridInfo.sortCols.join(", ") : null,
                 allowChooseQuery: false,
                 allowChooseView: false,
                 title: "",

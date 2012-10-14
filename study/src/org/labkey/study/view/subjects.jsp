@@ -434,7 +434,7 @@ li.ptid a.unhighlight
                     }
                     filterTask.delay(400, null, null, [json]);
                 },
-                beginInitSelection: function(list, store)
+                initSelectionComplete: function(count, list)
                 {
                     // setup our initial selection list to only
                     // included enrolled cohorts.  If all cohorts
@@ -442,28 +442,42 @@ li.ptid a.unhighlight
                     // in default behavior
 
                     var hasUnenrolled = false;
+                    var filterPanels = list.getFilterPanels();
                     var select = [];
 
-                    for (var i = 0; i < store.getCount(); i++)
+                    for (var i = 0; i < filterPanels.length; i++)
                     {
-                        var rec = store.getAt(i);
+                        var store = filterPanels[i].getGrid().store;
 
-                        if (rec.data.type == 'cohort')
+                        for (var j = 0; j < store.getCount(); j++)
                         {
-                            if (rec.data.enrolled)
+                            var rec = store.getAt(j);
+
+                            if (rec.data.type == 'cohort')
                             {
-                                select.push(rec.data);
+                                if (rec.data.enrolled)
+                                {
+                                    select.push(rec.data);
+                                }
+                                else
+                                {
+                                    hasUnenrolled = true;
+                                }
                             }
-                            else
-                            {
-                                hasUnenrolled = true;
-                            }
+                        }
+
+                        if (select.length > 0)
+                        {
+                            filterPanels[i].getGrid().selection = select;
+                            filterPanels[i].deselectAll();
+
+                            for (var k = 0; k < select.length; k++)
+                                filterPanels[i].select(select[k].id, true)
                         }
                     }
 
                     if (hasUnenrolled)
                     {
-                        list.selection = select;
                         // ensure we apply the group filter as well
                         filterTask.delay(50, null, null, [select])
                     }

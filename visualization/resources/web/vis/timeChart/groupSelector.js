@@ -86,34 +86,6 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             this.fireEvent('chartDefinitionChanged', true);            
         }, this);
 
-        this.selectionChangeTask = new Ext4.util.DelayedTask(function(){
-
-            var groups = [];
-            var selected = this.groupFilterList.getSelection(true);
-            for (var i = 0; i < selected.length; i++) {
-                groups.push(selected[i].data);
-            }
-
-            Ext4.Ajax.request({
-                url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
-                method   : 'POST',
-                jsonData : Ext4.encode({
-                    groups : groups
-                }),
-                success  : function(response)
-                {
-                    var json = Ext4.decode(response.responseText);
-
-                    this.subjects = json.subjects || [];
-                    this.fireEvent('chartDefinitionChanged', true);
-                },
-                failure  : function(response){
-                    Ext4.Msg.alert('Failure', Ext4.decode(response.responseText));
-                },
-                scope : this
-            });
-        }, this);
-
         this.groupFilterList = Ext4.create('LABKEY.study.ParticipantFilterPanel', {
             itemId   : 'filterPanel',
             flex     : 1,
@@ -124,7 +96,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             selection : this.selection,
             listeners : {
                 selectionchange : function(){
-                    this.selectionChangeTask.delay(1000);
+                    this.fireChangeTask.delay(1000);
                 },
                 beforerender : function(){
                     this.fireEvent('measureMetadataRequestPending');
@@ -159,7 +131,12 @@ Ext4.define('LABKEY.vis.GroupSelector', {
     },
 
     getUniqueGroupSubjectValues: function(groups){
-        return this.subjects || [];
+        var values = [];
+        for (var i = 0; i < groups.length; i++)
+        {
+            values = Ext4.Array.unique(values.concat(groups[i].participantIds));
+        }
+        return values.sort();
     },
 
     getSubject: function(){

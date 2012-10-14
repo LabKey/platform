@@ -547,7 +547,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
         this.allSelected();
 
         // fire event to tell the panel the initial selection is compelete, return the number of selected records
-        this.fireEvent('initSelectionComplete', count);
+        this.fireEvent('initSelectionComplete', count, this);
     },
 
     allSelected : function() {
@@ -572,6 +572,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     handleBeforeInitGroupConfig : function() {
 
         if (!this.panelsToInit){
+            this.fireEvent('beginInitSelection', this);
 
             this.panelsToInit = [];
             this.panelSelectCount = 0;
@@ -590,7 +591,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                 this.panelsToInit = null;
                 this.allSelected();
 
-                this.fireEvent('initSelectionComplete', this.panelSelectCount);
+                this.fireEvent('initSelectionComplete', this.panelSelectCount, this);
             }
         }
     }

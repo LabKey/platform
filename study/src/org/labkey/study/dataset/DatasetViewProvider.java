@@ -38,6 +38,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -55,11 +56,11 @@ import java.util.Map;
  */
 public class DatasetViewProvider implements DataViewProvider
 {
-    private static final DataViewProvider.Type _type = new ProviderType("datasets", "Provides a view of Study Datasets", true);
+    public static final DataViewProvider.Type TYPE = new ProviderType("datasets", "Provides a view of Study Datasets", true);
 
-    public static DataViewProvider.Type getType()
+    public DataViewProvider.Type getType()
     {
-        return _type;
+        return TYPE;
     }
 
     @Override
@@ -71,7 +72,7 @@ public class DatasetViewProvider implements DataViewProvider
     }
 
     @Override
-    public void initialize(ViewContext context) throws Exception
+    public void initialize(ContainerUser context) throws Exception
     {
         Container c = context.getContainer();
         User user = context.getUser();
@@ -95,7 +96,7 @@ public class DatasetViewProvider implements DataViewProvider
             {
                 if (ds.canRead(user))
                 {
-                    DefaultViewInfo view = new DefaultViewInfo(_type, ds.getEntityId(), ds.getLabel(), container);
+                    DefaultViewInfo view = new DefaultViewInfo(TYPE, ds.getEntityId(), ds.getLabel(), container);
 
                     if (ds.getCategory() != null)
                     {
