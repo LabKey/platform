@@ -50,11 +50,14 @@ LABKEY.vis.Stat.Q3 = function(numbers){
 
 LABKEY.vis.Stat.sortNumericAscending = function(data, accessor){
     /*
-        Sorts an array of data in ascending order.
+        Sorts an array of data in ascending order. Removes null/undefined values.
      */
     var numbers = [];
     for(var i = 0; i < data.length; i++){
-        numbers.push(accessor(data[i]));
+        var value = accessor(data[i]);
+        if(value !== null && value !== undefined){
+            numbers.push(value);
+        }
     }
     numbers.sort(function(a, b){return a-b;});
     return numbers;
@@ -62,11 +65,14 @@ LABKEY.vis.Stat.sortNumericAscending = function(data, accessor){
 
 LABKEY.vis.Stat.sortNumericDescending = function(data, accessor){
     /*
-        Sorts an array of data in descending order.
+        Sorts an array of data in descending order. Removes null/undefined values.
      */
     var numbers = [];
     for(var i = 0; i < data.length; i++){
-        numbers.push(accessor(data[i]));
+        var value = accessor(data[i]);
+        if(value !== null && value !== undefined){
+            numbers.push(value);
+        }
     }
     numbers.sort(function(a, b){return b-a;});
     return numbers;

@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,11 @@ public interface DataViewProvider
         String getDescription();
         boolean isShowByDefault();
     }
+
+    /**
+     * Returns the provider type
+     */
+    Type getType();
 
     /**
      * Returns the list of viewInfos for this provider
@@ -59,7 +65,7 @@ public interface DataViewProvider
      *
      * @param context
      */
-    void initialize(ViewContext context) throws Exception;
+    void initialize(ContainerUser context) throws Exception;
 
     public interface EditInfo
     {

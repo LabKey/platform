@@ -21,7 +21,6 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import java.util.Date;
 
 /**
-* Created by IntelliJ IDEA.
 * User: klum
 * Date: Mar 16, 2012
 */
@@ -158,5 +157,10 @@ public class DataViewEditForm extends ReturnUrlForm
     public void setShared(Boolean shared)
     {
         _shared = shared;
+    }
+
+    public boolean isUpdate()
+    {
+        return null != _reportId;
     }
 }

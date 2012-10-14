@@ -27,6 +27,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -106,13 +107,7 @@ public class DataViewService
             if (_providers.containsKey(type))
             {
                 DataViewProvider provider = _providers.get(type);
-                String key = getCacheKey(context.getContainer(), type);
-
-                if (!_providerInitialized.containsKey(key))
-                {
-                    provider.initialize(context);
-                    _providerInitialized.put(key, true);
-                }
+                initializeProvider(provider, context);
 
                 if (provider.isVisible(context.getContainer(), context.getUser()))
                     views.addAll(provider.getViews(context));
@@ -123,15 +118,40 @@ public class DataViewService
         return views;
     }
 
+    private void initializeProvider(DataViewProvider provider, ContainerUser context)
+    {
+        if (provider != null)
+        {
+            try {
+                String key = getCacheKey(context.getContainer(), provider.getType());
+
+                if (!_providerInitialized.containsKey(key))
+                {
+                    provider.initialize(context);
+                    _providerInitialized.put(key, true);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     private String getCacheKey(Container c, DataViewProvider.Type type)
     {
         return c.getId() + "-" + type.getName();
     }
 
-    public DataViewProvider getProvider(DataViewProvider.Type type)
+    public DataViewProvider getProvider(DataViewProvider.Type type, ContainerUser context)
     {
         if (_providers.containsKey(type))
-            return _providers.get(type);
+        {
+            DataViewProvider provider = _providers.get(type);
+            initializeProvider(provider, context);
+
+            return provider;
+        }
         else
             throw new IllegalStateException("Provider type: " + type.getName() + " not found.");
     }

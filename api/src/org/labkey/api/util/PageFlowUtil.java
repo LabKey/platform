@@ -1231,7 +1231,7 @@ public class PageFlowUtil
     {
         return generateButtonHtml(filter(text), href, onClick, attributes);
     }
-    
+
     public static String generateButtonHtml(String html, String href, String onClick, String attributes)
     {
         return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" +
@@ -1251,6 +1251,11 @@ public class PageFlowUtil
         if (href == null)
             return generateButton(text, "", onClick);
         return generateButton(text, href.toString(), onClick);
+    }
+
+    public static String generateButton(String text, URLHelper href, @Nullable String onClick, Map<String, String> attributes)
+    {
+        return generateButton(text, href, onClick, getAttributes(attributes));
     }
 
     public static String generateButton(String text, URLHelper href, @Nullable String onClick, String attributes)
@@ -1440,12 +1445,7 @@ public class PageFlowUtil
     @Deprecated
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
-        String additions = "";
-
-        for (Map.Entry<String, String> entry : properties.entrySet())
-        {
-            additions += entry.getKey() + "=\"" + entry.getValue() + "\" ";
-        }
+        String additions = getAttributes(properties);
 
         return "<a class='labkey-text-link' " + additions + "href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
@@ -1455,17 +1455,31 @@ public class PageFlowUtil
 
     public static String textLink(String text, ActionURL url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
-        String additions = "";
-
-        for (Map.Entry<String, String> entry : properties.entrySet())
-        {
-            additions += entry.getKey() + "=\"" + entry.getValue() + "\" ";
-        }
+        String additions = getAttributes(properties);
 
         return "<a class='labkey-text-link' " + additions + "href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                 ">" + filter(text) + "</a>";
+    }
+
+    // TODO: Why no HTML filtering?
+    private static String getAttributes(Map<String, String> properties)
+    {
+        if (properties.isEmpty())
+            return "";
+
+        StringBuilder attributes = new StringBuilder();
+
+        for (Map.Entry<String, String> entry : properties.entrySet())
+        {
+            attributes.append(entry.getKey());
+            attributes.append("=\"");
+            attributes.append(entry.getValue());
+            attributes.append("\" ");
+        }
+
+        return attributes.toString();
     }
 
     public static String textLink(String text, ActionURL url)
@@ -1509,7 +1523,7 @@ public class PageFlowUtil
         return helpPopup(title, helpText, htmlHelpText, linkHtml, width, null);
     }
 
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width, String onClickScript)
+    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
     {
         if (title == null && !htmlHelpText)
         {

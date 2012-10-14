@@ -138,7 +138,8 @@ var errorBarLayer = new LABKEY.vis.Layer({
     aes: {
         error: function(row){return row.study_PhysicalExam_Weight_kg_STDDEV.value},
 //        error: function(row){return row.study_PhysicalExam_Weight_kg_STDERR.value},
-        color: function(row){return row.GroupId.displayValue}
+        color: function(row){return row.GroupId.displayValue},
+        yLeft: function(row){return row.study_PhysicalExam_Weight_kg.value;}
     }
 });
 
@@ -169,10 +170,16 @@ var errorPlotConfig = {
         yLeft: {value: 'Temperature (C)'},
         x: {value: 'Sequence Number'}
     },
-    data: individualData.rows,
-    layers: [individualPathLayer, individualPointLayer, errorPathLayer, errorBarLayer, errorPointLayer],
+    data: aggregateData.rows,
+//    data: individualData.rows,
+    layers: [/*individualPathLayer, individualPointLayer,*/ errorPathLayer, errorBarLayer, errorPointLayer],
     aes: {
-        yLeft: function(row){return row.study_PhysicalExam_Weight_kg.value},
+        yLeft: function(row){
+            if(row.study_PhysicalExam_Weight_kg.value < 40){
+                console.log(row.study_PhysicalExam_Weight_kg.value);
+            }
+            return row.study_PhysicalExam_Weight_kg.value;
+        },
         x: function(row){return row.study_PhysicalExam_ParticipantVisitsequencenum.value}
     },
     scales: {

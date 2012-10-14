@@ -122,6 +122,14 @@ public abstract class AbstractReport implements Report
         return null;
     }
 
+    // Callers should pass in the "after save" redirect location; report might not be able to figure this out
+    // (e.g., when manage views call this method, context.getActionURL() is a JSON API action)
+    public ActionURL getEditReportURL(ViewContext context, ActionURL returnURL)
+    {
+        ActionURL url = getEditReportURL(context);
+        return url.addReturnURL(returnURL);
+    }
+
     public HttpView renderDataView(ViewContext context) throws Exception
     {
         return new HtmlView("No Data view available for this report");

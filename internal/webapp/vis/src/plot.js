@@ -175,11 +175,19 @@ LABKEY.vis.Plot = function(config){
 
             for(var scale in scales){
                 if(aes[scale]){
+                    var acc;
                     if(scales[scale].scaleType == 'continuous'){
                         if(origScales[scale] && origScales[scale].min != null && origScales[scale].min != undefined){
                             scales[scale].min = origScales[scale].min;
                         } else {
-                            var tempMin = d3.min(data, aes[scale].getValue);
+                            if(aes.error){
+                                acc = function(row){return aes[scale].getValue(row) - aes.error.getValue(row);}
+                            } else {
+                                acc = aes[scale].getValue;
+                            }
+
+                            var tempMin = d3.min(data, acc);
+
                             if(scales[scale].min == null || scales[scale].min == undefined || tempMin < scales[scale].min){
                                 scales[scale].min = tempMin;
                             }
@@ -188,7 +196,14 @@ LABKEY.vis.Plot = function(config){
                         if(origScales[scale] && origScales[scale].max != null && origScales[scale].max != undefined){
                             scales[scale].max = origScales[scale].max;
                         } else {
-                            var tempMax = d3.max(data, aes[scale].getValue);
+                            if(aes.error){
+                                acc = function(row){return aes[scale].getValue(row) + aes.error.getValue(row);}
+                            } else {
+                                acc = aes[scale].getValue;
+                            }
+                                                        
+                            var tempMax = d3.max(data, acc);
+
                             if(scales[scale].max == null || scales[scale].max == undefined || tempMax > scales[scale].max){
                                 scales[scale].max = tempMax;
                             }

@@ -16,6 +16,7 @@
 package org.labkey.api.reports.report;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
@@ -59,7 +60,7 @@ public abstract class RedirectReport extends AbstractReport
         return getDescriptor().getProperty(TARGET);
     }
 
-    public void setRunReportTarget(String target)
+    public void setRunReportTarget(@Nullable String target)
     {
         if (!(target == null || "_blank".equals(target)))
             throw new IllegalArgumentException("target must either be '_blank' or null");
