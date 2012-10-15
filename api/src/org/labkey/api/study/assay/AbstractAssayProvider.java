@@ -446,7 +446,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return addProperty(domain, name, label, type, null);
     }
 
-    protected DomainProperty addProperty(Domain domain, String name, String label, PropertyType type, String description)
+    protected DomainProperty addProperty(Domain domain, String name, String label, PropertyType type, @Nullable String description)
     {
         DomainProperty prop = domain.addProperty();
         prop.setLabel(label);
@@ -489,20 +489,29 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user)
     {
+        return createBatchDomain(c, user, true);
+    }
+
+    protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user, boolean includeStandardProperties)
+    {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH), "Batch Fields");
-        List<ParticipantVisitResolverType> resolverTypes = getParticipantVisitResolverTypes();
-        if (resolverTypes != null && resolverTypes.size() > 0)
-        {
-            DomainProperty resolverProperty = addProperty(domain, PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, PARTICIPANT_VISIT_RESOLVER_PROPERTY_CAPTION, PropertyType.STRING);
-            resolverProperty.setHidden(true);
-        }
-
-        DomainProperty studyProp = addProperty(domain, TARGET_STUDY_PROPERTY_NAME, TARGET_STUDY_PROPERTY_CAPTION, PropertyType.STRING);
-        studyProp.setShownInInsertView(true);
-
         domain.setDescription("The user is prompted for batch properties once for each set of runs they import. The batch " +
                 "is a convenience to let users set properties that seldom change in one place and import many runs " +
                 "using them. This is the first step of the import process.");
+
+        if (includeStandardProperties)
+        {
+            List<ParticipantVisitResolverType> resolverTypes = getParticipantVisitResolverTypes();
+            if (resolverTypes != null && resolverTypes.size() > 0)
+            {
+                DomainProperty resolverProperty = addProperty(domain, PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, PARTICIPANT_VISIT_RESOLVER_PROPERTY_CAPTION, PropertyType.STRING);
+                resolverProperty.setHidden(true);
+            }
+
+            DomainProperty studyProp = addProperty(domain, TARGET_STUDY_PROPERTY_NAME, TARGET_STUDY_PROPERTY_CAPTION, PropertyType.STRING);
+            studyProp.setShownInInsertView(true);
+        }
+
         return new Pair<Domain, Map<DomainProperty, Object>>(domain, Collections.<DomainProperty, Object>emptyMap());
     }
 

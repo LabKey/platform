@@ -53,7 +53,7 @@ public class PropertyService
         Domain createDomain(Container container, String typeURI, String name);
 
         /** Same as QueryService.get().getUserSchema(user, container, schemaName).getDomainURI(queryName) */
-        String getDomainURI(String schemaName, String queryName, Container container, User user);
+        @Nullable String getDomainURI(String schemaName, String queryName, Container container, User user);
 
         /**
          * Create a Domain from the DomainDescriptorType xmlbean.

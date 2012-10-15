@@ -773,13 +773,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         for (PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> propeditor : _domainEditors)
         {
             List<String> domainErrors = propeditor.validate();
-            numProps += propeditor.getPropertyCount(false);
             if (domainErrors.size() > 0)
                 errors.addAll(domainErrors);
         }
-
-        if (0 == numProps)
-            errors.add("You must create at least one field.");
 
         if (_isPlateBased && _assay.getSelectedPlateTemplate() == null)
             errors.add("You must select a plate template from the list, or create one first.");

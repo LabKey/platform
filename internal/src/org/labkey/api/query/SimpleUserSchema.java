@@ -271,6 +271,10 @@ public class SimpleUserSchema extends UserSchema
                         if (_objectUriCol == null && isObjectUriLookup(pkColName, fk.getLookupTableName(), fk.getLookupSchemaName()))
                         {
                             _objectUriCol = wrap;
+                            wrap.setShownInInsertView(false);
+                            wrap.setShownInUpdateView(false);
+                            wrap.setShownInDetailsView(false);
+                            wrap.setHidden(true);
                         }
                     }
                 }
@@ -346,7 +350,7 @@ public class SimpleUserSchema extends UserSchema
             return (SimpleTableDomainKind)PropertyService.get().getDomainKindByName(SimpleModule.NAMESPACE_PREFIX);
         }
 
-        protected String getDomainURI()
+        public String getDomainURI()
         {
             if (_objectUriCol == null)
                 return null;

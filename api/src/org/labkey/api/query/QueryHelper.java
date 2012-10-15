@@ -15,7 +15,6 @@
  */
 package org.labkey.api.query;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -25,12 +24,6 @@ import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
@@ -180,12 +173,12 @@ public class QueryHelper
         return ContainerFilter.getContainerFilterByName(view.getContainerFilterName(), _user);
     }
 
-    public Results select(List<FieldKey> columns, SimpleFilter filter) throws SQLException
+    public Results select(List<FieldKey> columns, @Nullable SimpleFilter filter) throws SQLException
     {
         return select(columns, filter, null);
     }
 
-    public Results select(List<FieldKey> columns, SimpleFilter filter, @Nullable Sort sort) throws SQLException
+    public Results select(List<FieldKey> columns, @Nullable SimpleFilter filter, @Nullable Sort sort) throws SQLException
     {
         QueryService qs = QueryService.get();
         TableInfo ti = getTableInfo();
