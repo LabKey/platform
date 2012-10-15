@@ -41,6 +41,8 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 
 public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 {
+    public static final int DEFAULT_WEB_PART_ID = -1;
+
     private Throwable _prepareException = null;
     private boolean _isPrepared = false;
     private boolean _isEmbedded = false;
@@ -48,7 +50,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     private boolean _isWebpart  = true;
     private String _helpPopup;
     private FrameType _frame = FrameType.PORTAL;
-    private int _webPartRowId = -1;
+    private int _webPartRowId = DEFAULT_WEB_PART_ID;
     private NavTree _navMenu = null;
     private List<NavTree> _customMenus = null;
     private String _defaultLocation;

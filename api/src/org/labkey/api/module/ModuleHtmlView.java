@@ -81,7 +81,7 @@ public class ModuleHtmlView extends HtmlView
             return null;
 
         String wrapperDivId = "ModuleHtmlView_" + UniqueID.getServerSessionScopedUID();
-        int id = null == webpart ? 0 : webpart.getRowId();
+        int id = null == webpart ? DEFAULT_WEB_PART_ID : webpart.getRowId();
 
         JSONObject config = new JSONObject();
         config.put("wrapperDivId", wrapperDivId);
