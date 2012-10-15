@@ -14,6 +14,7 @@ commons-httpclient-3.1.jar|Commons HTTP Client|3.1|{link:Apache|http://jakarta.a
 commons-io-2.3.jar|Commons I/O|2.3|{link:Apache|http://jakarta.apache.org/commons/io/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|I/O utility classes
 commons-lang3-3.1.jar|Commons Lang|3.1|{link:Apache|http://jakarta.apache.org/commons/lang/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Language helpers
 commons-logging-1.1.1.jar|Commons Logging|1.1.1|{link:Apache|http://jakarta.apache.org/commons/logging/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Bridge API to different logging implementations
+commons-math3-3.0.jar|Commons Math|3.0|{link:Apache|http://commons.apache.org/math/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Lightweight, self-contained mathematics and statistics components
 commons-net-3.1.jar|Commons Net|3.1|{link:Apache|http://jakarta.apache.org/commons/net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|FTPClient used to retrieve resources from other servers (e.g., GO annotations)
 commons-validator.jar|Commons Validator|1.0.4|{link:Apache|http://jakarta.apache.org/commons/validator/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Data validation and error messages
 core-renderer.jar|FlyingSaucer|R8|{link:FlyingSaucer|http://code.google.com/p/flying-saucer/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|kevink|XHTML/CSS rendering library
