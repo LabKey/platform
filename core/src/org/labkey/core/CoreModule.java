@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
@@ -950,7 +951,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 JsonTest.class,
                 ExtUtil.TestCase.class,
                 ReplacedRunFilter.TestCase.class,
-                MultiValuedRenderContext.TestCase.class
+                MultiValuedRenderContext.TestCase.class,
+                SubfolderWriter.TestCase.class
         ));
     }
 
