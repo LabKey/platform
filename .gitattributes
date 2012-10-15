@@ -1055,7 +1055,9 @@ api/src/org/labkey/api/study/actions/DeleteAction.java -text
 api/src/org/labkey/api/study/actions/DesignerAction.java -text
 api/src/org/labkey/api/study/actions/ImportAction.java -text
 api/src/org/labkey/api/study/actions/ParticipantVisitResolverChooser.java -text
+api/src/org/labkey/api/study/actions/PlateBasedUploadWizardAction.java -text
 api/src/org/labkey/api/study/actions/PlateUploadForm.java -text
+api/src/org/labkey/api/study/actions/PlateUploadFormImpl.java -text
 api/src/org/labkey/api/study/actions/ProtocolIdForm.java -text
 api/src/org/labkey/api/study/actions/PublishConfirmAction.java -text
 api/src/org/labkey/api/study/actions/PublishStartAction.java -text

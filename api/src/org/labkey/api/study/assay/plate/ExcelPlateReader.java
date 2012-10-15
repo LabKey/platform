@@ -81,7 +81,7 @@ public class ExcelPlateReader implements PlateReader
 
         if (startRow == -1 || startCol == -1)
         {
-            throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file: unable to locate spot counts");
+            throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file: unable to locate cell values");
         }
 
         if ((template.getRows() + startRow > (plateSheet.getLastRowNum() + 1)) || (template.getColumns() + startCol > (plateSheet.getRow(startRow).getLastCellNum())))
@@ -103,7 +103,7 @@ public class ExcelPlateReader implements PlateReader
         return cellValues;
     }
 
-    private static int getStartColumn(Row row)
+    protected int getStartColumn(Row row)
     {
         for (Cell cell : row)
         {
@@ -126,38 +126,46 @@ public class ExcelPlateReader implements PlateReader
         return -1;
     }
 
-    private static int getStartRow(Sheet sheet, int row)
+    protected int getStartRow(Sheet sheet, int row)
     {
         while (row <= sheet.getLastRowNum())
         {
-            Row sheetRow = sheet.getRow(row);
-            if (sheetRow != null)
-            {
-                for (Cell cell : sheetRow)
-                {
-                    if (cell.getCellType() == Cell.CELL_TYPE_STRING && StringUtils.equalsIgnoreCase(cell.getStringCellValue(), "A"))
-                    {
-                        int col = cell.getColumnIndex();
-                        char start = 'B';
-                        for (int i=1; i < 8; i++)
-                        {
-                            String val = String.valueOf(start++);
-                            Row r = sheet.getRow(row+i);
-                            if (r != null)
-                            {
-                                Cell c = r.getCell(col);
-                                if (c == null || c.getCellType() != Cell.CELL_TYPE_STRING || !StringUtils.equalsIgnoreCase(c.getStringCellValue(), val))
-                                    return -1;
-                            }
-                            else
-                                return -1;
-                        }
-                        return row;
-                    }
-                }
-            }
+            if (isValidStartRow(sheet, row))
+                return row;
+
             row++;
         }
         return -1;
+    }
+
+    protected boolean isValidStartRow(Sheet sheet, int row)
+    {
+        Row sheetRow = sheet.getRow(row);
+        if (sheetRow != null)
+        {
+            for (Cell cell : sheetRow)
+            {
+                if (cell.getCellType() == Cell.CELL_TYPE_STRING && StringUtils.equalsIgnoreCase(cell.getStringCellValue(), "A"))
+                {
+                    int col = cell.getColumnIndex();
+                    char start = 'B';
+                    for (int i=1; i < 8; i++)
+                    {
+                        String val = String.valueOf(start++);
+                        Row r = sheet.getRow(row+i);
+                        if (r != null)
+                        {
+                            Cell c = r.getCell(col);
+                            if (c == null || c.getCellType() != Cell.CELL_TYPE_STRING || !StringUtils.equalsIgnoreCase(c.getStringCellValue(), val))
+                                return false;
+                        }
+                        else
+                            return false;
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
