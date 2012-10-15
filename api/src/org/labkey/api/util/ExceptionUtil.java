@@ -385,7 +385,8 @@ public class ExceptionUtil
         if (ex != null)
         {
             String className = ex.getClass().getName();
-            if (className.endsWith("CancelledException") ||
+            if (className.endsWith("SocketTimeoutException") ||
+                className.endsWith("CancelledException") ||
                 className.endsWith("ClientAbortException") ||
                 className.endsWith("FileUploadException"))
             {
@@ -635,7 +636,6 @@ public class ExceptionUtil
     {
         response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
         response.setDateHeader("Expires", 0);
-        response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Location", url);
         response.setContentType("text/html; charset=UTF-8");
 
