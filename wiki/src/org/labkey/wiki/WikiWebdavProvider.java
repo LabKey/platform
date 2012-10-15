@@ -358,6 +358,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
         public synchronized WebdavResource find(String name)
         {
+            if (null == _wiki)
+                return null;
             String docName = getDocumentName(_wiki);
             if (docName.equalsIgnoreCase(name))
             {
