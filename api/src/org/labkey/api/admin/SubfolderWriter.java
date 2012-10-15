@@ -1,6 +1,8 @@
 package org.labkey.api.admin;
 
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -11,6 +13,7 @@ import org.labkey.folder.xml.SubfoldersDocument;
 import org.labkey.folder.xml.SubfoldersType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -26,16 +29,9 @@ public class SubfolderWriter extends BaseFolderWriter
     public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         // start with just those child containers that the user has Admin permissions
-        List<Container> potentialChildren = ContainerManager.getChildren(container, ctx.getUser(), AdminPermission.class, true);
-
-        // only include subfolders if reguested by user (otherwise just workbooks and container tabs)
+        List<Container> allChildren = ContainerManager.getChildren(container, ctx.getUser(), AdminPermission.class, true);
         List<Container> childrenToExport = new ArrayList<Container>();
-        for (Container child : potentialChildren)
-        {
-            // TODO: support container tabs
-            if (child.isWorkbook() || ctx.isIncludeSubfolders())
-                childrenToExport.add(child);
-        }
+        getChildrenToExport(ctx, allChildren, childrenToExport);
 
         if (childrenToExport.size() > 0)
         {
@@ -64,6 +60,49 @@ public class SubfolderWriter extends BaseFolderWriter
             }
 
             subfoldersDir.saveXmlBean(SUBFOLDERS_FILENAME, subfoldersDoc);
+        }
+    }
+
+    public static void getChildrenToExport(ImportContext context, List<Container> potentialChildren, List<Container> childrenToExport)
+    {
+        for (Container child : potentialChildren)
+        {
+            // only include subfolders if reguested by user (otherwise just workbooks and container tabs)
+            // TODO: support container tabs
+            if (child.isWorkbook() || context.isIncludeSubfolders())
+                childrenToExport.add(child);
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGetChildrenToExport()
+        {
+            // fake root with children of different types
+            Container fakeRoot = ContainerManager.createFakeContainer("fakeRoot", null);
+            Container c1 = ContainerManager.createFakeContainer("subfolder", fakeRoot);
+            Container c2 = ContainerManager.createFakeContainer("nestedsubfolder", c1);
+            Container c3 = ContainerManager.createFakeContainer("containertab", fakeRoot);
+            // c3.setContainerTab(true);// TODO: add test case for container tab type container
+            Container c4 = ContainerManager.createFakeContainer("workbook", fakeRoot);
+            c4.setWorkbook(true);
+
+            List<Container> childList = Arrays.asList(c1, c2, c3, c4);
+            FolderExportContext fec = new FolderExportContext(null, fakeRoot, null, null, null);
+
+            // test including all subfolders
+            fec.setIncludeSubfolders(true);
+            List<Container> allSubfolders = new ArrayList<Container>();
+            getChildrenToExport(fec, childList, allSubfolders);
+            assertEquals(childList.size(), allSubfolders.size());
+
+            // test not including subfolders
+            fec.setIncludeSubfolders(false);
+            List<Container> noSubfolders = new ArrayList<Container>();
+            getChildrenToExport(fec, childList, noSubfolders);
+            assertEquals("Expected only one workbook child container", 1, noSubfolders.size());// TODO: this should be 2 once we have container tab included
+            assertEquals("workbook", noSubfolders.get(0).getName());
         }
     }
 }

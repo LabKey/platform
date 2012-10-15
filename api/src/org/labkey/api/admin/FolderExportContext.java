@@ -71,6 +71,11 @@ public class FolderExportContext extends AbstractFolderContext
         return _format;
     }
 
+    public void setIncludeSubfolders(boolean includeSubfolders)
+    {
+        _includeSubfolders = includeSubfolders;
+    }
+
     public boolean  isIncludeSubfolders()
     {
         return _includeSubfolders;
