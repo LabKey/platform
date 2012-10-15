@@ -23,12 +23,15 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.module.SimpleModule;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
@@ -266,5 +269,18 @@ public class UsersDomainKind extends SimpleTableDomainKind
     public Set<String> getMandatoryPropertyNames(Domain domain)
     {
         return getWrappedColumns();
+    }
+
+    @Override
+    public Priority getPriority(String domainURI)
+    {
+        Lsid lsid = new Lsid(domainURI);
+        String namespacePrefix = lsid.getNamespacePrefix();
+        String objectId = lsid.getObjectId();
+        if (namespacePrefix == null || objectId == null)
+        {
+            return null;
+        }
+        return (namespacePrefix.equalsIgnoreCase(SimpleModule.NAMESPACE_PREFIX + "-core") && objectId.equalsIgnoreCase("users")) ? Handler.Priority.MEDIUM : null;
     }
 }

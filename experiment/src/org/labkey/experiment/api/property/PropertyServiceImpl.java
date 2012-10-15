@@ -19,6 +19,7 @@ package org.labkey.experiment.api.property;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.fhcrc.cpas.exp.xml.*;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -32,6 +33,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.NotFoundException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -73,6 +75,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return new DomainImpl(container, typeURI, name);
     }
 
+    @Nullable
     public String getDomainURI(String schemaName, String queryName, Container container, User user)
     {
         if (schemaName == null || queryName == null)
@@ -80,13 +83,9 @@ public class PropertyServiceImpl implements PropertyService.Interface
 
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
         if (schema == null)
-            throw new IllegalArgumentException("Schema '" + schemaName + "' does not exist.");
+            throw new NotFoundException("Schema '" + schemaName + "' does not exist.");
 
-        String domainURI = schema.getDomainURI(queryName);
-        if (domainURI == null)
-            throw new UnsupportedOperationException(queryName + " in " + schemaName + " does not support reading domain information");
-
-        return domainURI;
+        return schema.getDomainURI(queryName);
     }
 
     public DomainKind getDomainKindByName(String name)

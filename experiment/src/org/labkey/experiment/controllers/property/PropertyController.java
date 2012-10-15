@@ -24,11 +24,14 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.*;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -88,6 +91,11 @@ public class PropertyController extends SpringActionController
                 if (domainURI == null && form.getSchemaName() != null && form.getQueryName() != null)
                 {
                     domainURI = PropertyService.get().getDomainURI(form.getSchemaName(), form.getQueryName(), getContainer(), getUser());
+
+                    if (domainURI == null)
+                    {
+                        throw new NotFoundException("The query '" + form.getQueryName() + "' in the '" + form.getSchemaName() + "' schema does not support editable fields.");
+                    }
                 }
 
                 if (domainURI == null)
@@ -105,8 +113,8 @@ public class PropertyController extends SpringActionController
                 {
                     throw new UnauthorizedException();
                 }
-
-                _domain = PropertyService.get().createDomain(getContainer(), domainURI, form.getQueryName() != null ? form.getQueryName() : "");
+                Lsid domainLSID = new Lsid(domainURI);
+                _domain = PropertyService.get().createDomain(getContainer(), domainURI, form.getQueryName() != null ? form.getQueryName() : domainLSID.getObjectId());
             }
             else
             {
@@ -117,9 +125,13 @@ public class PropertyController extends SpringActionController
             }
 
             Map<String, String> props = new HashMap<String, String>();
-            ActionURL returnURL = _domain.getDomainKind().urlShowData(_domain, getViewContext());
+            ActionURL defaultReturnURL = _domain.getDomainKind().urlShowData(_domain, getViewContext());
+            ActionURL returnURL = form.getReturnActionURL(defaultReturnURL);
             props.put("typeURI", _domain.getTypeURI());
-            props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
+            if (returnURL != null)
+            {
+                props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
+            }
             props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
             props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
             props.put("showDefaultValueSettings", String.valueOf(form.isShowDefaultValueSettings()));

@@ -215,7 +215,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable
     }
 
     @Override
-    protected String getDomainURI()
+    public String getDomainURI()
     {
         if (getObjectUriColumn() == null)
             return null;
