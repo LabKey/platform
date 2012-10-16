@@ -114,6 +114,22 @@ public class SequenceNumImportHelper
     }
 
 
+    private static Date parseDate(String s)
+    {
+        try
+        {
+            if (StringUtils.isEmpty(s))
+                return null;
+            return new Date(DateUtil.parseDate(s));
+        }
+        catch (ConversionException x)
+        {
+            return null;
+        }
+    }
+
+
+
     // we want to be timezone safe here
     static final long epochLocal = DateUtil.parseDate("1970-01-01");
 
@@ -123,9 +139,18 @@ public class SequenceNumImportHelper
     }
 
 
-    Double translateSequenceNum(@Nullable Object seq, @Nullable Date date)
+    public Double translateSequenceNum(@Nullable Object seq, @Nullable Object d)
     {
         Double sequencenum = null;
+        Date date = null;
+
+        if (null != d)
+        {
+            if (d instanceof Date)
+                date = (Date)d;
+            else
+                date = parseDate(String.valueOf(d));
+        }
 
 translateToDouble:
         {

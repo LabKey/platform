@@ -16,8 +16,6 @@
 
 package org.labkey.study.importer;
 
-import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.Converter;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -611,7 +609,7 @@ public class SpecimenImporter
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
 
-        Table.execute(tableParticipant.getSchema(), "INSERT INTO " + tableParticipant + " (container, participantid)\n" +
+        executeSQL(tableParticipant.getSchema(), "INSERT INTO " + tableParticipant + " (container, participantid)\n" +
                 "SELECT DISTINCT ?, ptid AS participantid\n" +
                 "FROM " + tableSpecimen + "\n" +
                 "WHERE container = ? AND ptid IS NOT NULL AND " +
@@ -692,7 +690,7 @@ public class SpecimenImporter
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around
             // if an exception is thrown during loading, but this is probably okay- the DB will clean it up eventually.
-            Table.execute(schema, "DROP TABLE " + loadInfo.getTempTableName());
+            executeSQL(schema, "DROP TABLE " + loadInfo.getTempTableName());
 
             if (!DEBUG)
                 scope.commitTransaction();
@@ -754,7 +752,7 @@ public class SpecimenImporter
         if (merge)
         {
             // Delete any orphaned specimen rows without vials
-            Table.execute(StudySchema.getInstance().getSchema(), "DELETE FROM " + StudySchema.getInstance().getTableInfoSpecimen() +
+            executeSQL(StudySchema.getInstance().getSchema(), "DELETE FROM " + StudySchema.getInstance().getTableInfoSpecimen() +
                     " WHERE Container=? " +
                     " AND RowId NOT IN (SELECT SpecimenId FROM " + StudySchema.getInstance().getTableInfoVial() + ")", info.getContainer());
         }
@@ -1400,7 +1398,7 @@ public class SpecimenImporter
                 SQLFragment deleteFragment = new SQLFragment(deleteSQL, cpasType, info.getContainer().getId());
                 if (DEBUG)
                     logSQLFragment(deleteFragment);
-                affected = Table.execute(info.getSchema(), deleteFragment);
+                affected = executeSQL(info.getSchema(), deleteFragment);
                 if (affected >= 0)
                     info("exp.Material: " + affected + " rows removed.");
             }
@@ -1410,7 +1408,7 @@ public class SpecimenImporter
             SQLFragment insertFragment = new SQLFragment(insertSQL, info.getContainer().getId(), cpasType, createdTimestamp);
             if (DEBUG)
                 logSQLFragment(insertFragment);
-            affected = Table.execute(info.getSchema(), insertFragment);
+            affected =  executeSQL(info.getSchema(), insertFragment);
             if (affected >= 0)
                 info("exp.Material: " + affected + " rows inserted.");
             info("exp.Material: Update complete.");
@@ -1511,7 +1509,7 @@ public class SpecimenImporter
 
             assert cpuInsertSpecimens.start();
             info("Specimens: Inserting new rows...");
-            Table.execute(info.getSchema(), insertSql);
+            executeSQL(info.getSchema(), insertSql);
             info("Specimens: Insert complete.");
             assert cpuInsertSpecimens.stop();
         }
@@ -1610,7 +1608,7 @@ public class SpecimenImporter
 
             assert cpuInsertSpecimens.start();
             info("Vials: Inserting new rows...");
-            Table.execute(info.getSchema(), insertSql);
+            executeSQL(info.getSchema(), insertSql);
             info("Vials: Insert complete.");
             assert cpuInsertSpecimens.stop();
         }
@@ -1677,7 +1675,7 @@ public class SpecimenImporter
                 logSQLFragment(insertSql);
             assert cpuInsertSpecimenEvents.start();
             info("Specimen Events: Inserting new rows.");
-            Table.execute(info.getSchema(), insertSql);
+            executeSQL(info.getSchema(), insertSql);
             info("Specimen Events: Insert complete.");
             assert cpuInsertSpecimenEvents.stop();
         }
@@ -1957,14 +1955,14 @@ public class SpecimenImporter
      * @param tableName Fully qualified table name, e.g., "study.Vials"
      * @param potentialColumns List of columns to be inserted/updated on the table.
      * @param values The data values to be inserted or updated.
-     * @param idCol The computed column.
+     * @param computedColumns The computed column.
      * @return A pair of the columns actually found in the data values and a total row count.
      * @throws SQLException
      */
     private <T extends ImportableColumn> Pair<List<T>, Integer> replaceTable(
             DbSchema schema, Container container, String tableName,
             Collection<T> potentialColumns, Iterable<Map<String, Object>> values,
-            ComputedColumn idCol)
+            ComputedColumn... computedColumns)
         throws IOException, SQLException
     {
         if (values == null)
@@ -1977,8 +1975,16 @@ public class SpecimenImporter
         assert cpuMergeTable.start();
         info(tableName + ": Starting replacement of all data...");
 
-        Table.execute(schema, "DELETE FROM " + tableName + " WHERE Container = ?", container.getId());
+        executeSQL(schema, "DELETE FROM " + tableName + " WHERE Container = ?", container.getId());
+
+        // boundColumns is the same as availableColumns, skipping any columns that are computed
         List<T> availableColumns = new ArrayList<T>();
+        List<T> boundColumns = new ArrayList<T>();
+        LinkedHashMap<String,ComputedColumn> computedColumnsMap = new LinkedHashMap<String,ComputedColumn>();
+        for (ComputedColumn cc: computedColumns)
+            if (null != cc)
+                computedColumnsMap.put(cc.getName(), cc);
+
         StringBuilder insertSql = new StringBuilder();
 
         List<List<Object>> rows = new ArrayList<List<Object>>();
@@ -1996,30 +2002,33 @@ public class SpecimenImporter
                     for (T column : potentialColumns)
                     {
                         if (row.containsKey(column.getTsvColumnName()) || row.containsKey(column.getDbColumnName()))
+                        {
                             availableColumns.add(column);
+                            if (!computedColumnsMap.containsKey(column.getDbColumnName()))
+                                boundColumns.add(column);
+                        }
                     }
 
                     insertSql.append("INSERT INTO ").append(tableName).append(" (Container");
-                    if (idCol != null)
-                        insertSql.append(", ").append(idCol.getName());
-                    for (ImportableColumn col : availableColumns)
+                    for (ComputedColumn cc : computedColumnsMap.values())
+                        insertSql.append(", ").append(cc.getName());
+                    for (ImportableColumn col : boundColumns)
                         insertSql.append(", ").append(col.getDbColumnName());
                     insertSql.append(") VALUES (?");
-                    if (idCol != null)
-                        insertSql.append(", ?");
-                    insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
+                    insertSql.append(StringUtils.repeat(", ?", computedColumnsMap.size() + boundColumns.size()));
                     insertSql.append(")");
 
                     if (DEBUG)
                         info(insertSql.toString());
                 }
 
-                List<Object> params = new ArrayList<Object>(availableColumns.size() + 1 + (idCol != null ? 1 : 0));
+                List<Object> params = new ArrayList<Object>(computedColumnsMap.size() + boundColumns.size() + 1);
                 params.add(container.getId());
-                if (idCol != null)
-                    params.add(idCol.getValue(row));
 
-                for (ImportableColumn col : availableColumns)
+                for (ComputedColumn cc : computedColumns)
+                    if (null != cc) params.add(cc.getValue(row));
+
+                for (ImportableColumn col : boundColumns)
                 {
                     Object value = getValueParameter(col, row);
                     params.add(value);
@@ -2052,6 +2061,7 @@ public class SpecimenImporter
         return new Pair<List<T>, Integer>(availableColumns, rowCount);
     }
 
+
     private TabLoader loadTsv(Container container, Collection<? extends ImportableColumn> columns, InputStream tsvIS, String tableName) throws IOException, SQLException
     {
         if (tsvIS == null)
@@ -2076,35 +2086,8 @@ public class SpecimenImporter
             if (expectedColumnDescriptor != null)
             {
                 column.clazz = expectedColumnDescriptor.clazz;
-
                 if (VISIT_COL.equals(column.name))
-                {
-                    // Map visit names to sequence numbers using poor man's ETL
-                    // TODO: convert this pipeline to new ETL framework
-                    final Converter conv = ConvertUtils.lookup(column.clazz);
-                    final Study study = StudyManager.getInstance().getStudy(container);
-
-                    column.converter = new Converter() {
-                        private final Map<String, Double> map = StudyManager.getInstance().getVisitImportMap(study, true);
-
-                        @Override
-                        public Object convert(Class type, Object value)
-                        {
-                            if (value instanceof String)
-                            {
-                                String key = (String)value;
-                                Double mapValue = map.get(key);
-
-                                if (null != mapValue)
-                                    return mapValue;
-                            }
-
-                            return conv.convert(type, value);
-                        }
-                    };
-
-                    ConvertUtils.lookup(column.clazz);
-                }
+                    column.clazz = String.class;
             }
             else
             {
@@ -2115,6 +2098,7 @@ public class SpecimenImporter
         info(tableName + ": Parsing complete.");
         return loader;
     }
+
 
     private Pair<List<SpecimenColumn>, Integer> populateTempTable(
             DbSchema schema, final Container container, String tempTable,
@@ -2141,7 +2125,47 @@ public class SpecimenImporter
             }
         };
 
-        Pair<List<SpecimenColumn>, Integer> pair = replaceTable(schema, container, tempTable, SPECIMEN_COLUMNS, iter, lsidCol);
+        // remove VISIT_COL since that's a computed column
+        // 1) should that be removed from SPECIMEN_COLUMNS?
+        // 2) convert this to ETL?
+        SpecimenColumn _visitCol = null;
+        SpecimenColumn _dateCol = null;
+        for (SpecimenColumn sc : SPECIMEN_COLUMNS)
+        {
+            if (StringUtils.equals("VisitValue",sc.getDbColumnName()))
+                _visitCol = sc;
+            else if (StringUtils.equals("DrawTimestamp", sc.getDbColumnName()))
+                _dateCol = sc;
+        }
+
+        Study study = StudyManager.getInstance().getStudy(container);
+        final SequenceNumImportHelper h = new SequenceNumImportHelper(study, null);
+        final SpecimenColumn visitCol = _visitCol;
+        final SpecimenColumn dateCol = _dateCol;
+        final Parameter.TypedValue nullDouble = Parameter.nullParameter(JdbcType.DOUBLE);
+        ComputedColumn sequencenumCol = new ComputedColumn()
+        {
+            @Override
+            public String getName()
+            {
+                return visitCol.getDbColumnName();
+            }
+
+            @Override
+            public Object getValue(Map<String, Object> row)
+            {
+                Object s = SpecimenImporter.this.getValue(visitCol, row);
+                Object d = SpecimenImporter.this.getValue(dateCol, row);
+                Double sequencenum = h.translateSequenceNum(s,d);
+//                if (sequencenum == null)
+//                    throw new org.apache.commons.beanutils.ConversionException("No visit_value provided: visit_value=" + String.valueOf(s) + " draw_timestamp=" + String.valueOf(d));
+                if (null == sequencenum)
+                    return nullDouble;
+                return sequencenum;
+            }
+        };
+
+        Pair<List<SpecimenColumn>, Integer> pair = replaceTable(schema, container, tempTable, SPECIMEN_COLUMNS, iter, lsidCol, sequencenumCol);
 
         loadedColumns = pair.first;
         rowCount = pair.second;
@@ -2197,7 +2221,7 @@ public class SpecimenImporter
         info("Remapping lookup indexes in temp table...");
         if (DEBUG)
             info(remapExternalIdsSql.toString());
-        Table.execute(schema, remapExternalIdsSql);
+        executeSQL(schema, remapExternalIdsSql);
         info("Update complete.");
     }
 
@@ -2214,7 +2238,7 @@ public class SpecimenImporter
             visitValueSql.append(");");
             if (DEBUG)
                 info(visitValueSql.toString());
-            Table.execute(schema, visitValueSql);
+            executeSQL(schema, visitValueSql);
             info("Update complete.");
         }
     }
@@ -2374,19 +2398,27 @@ public class SpecimenImporter
         info("Updating specimen hash values in temp table...");
         if (DEBUG)
             info(updateHashSql.toString());
-        Table.execute(schema, updateHashSql);
+        executeSQL(schema, updateHashSql);
         info("Update complete.");
         info("Temp table populated.");
     }
 
-    private Parameter.TypedValue getValueParameter(ImportableColumn col, Map tsvRow)
-            throws SQLException
+
+    private Object getValue(ImportableColumn col, Map tsvRow)
     {
         Object value = null;
         if (tsvRow.containsKey(col.getTsvColumnName()))
             value = tsvRow.get(col.getTsvColumnName());
         else if (tsvRow.containsKey(col.getDbColumnName()))
             value = tsvRow.get(col.getDbColumnName());
+        return value;
+    }
+
+
+    private Parameter.TypedValue getValueParameter(ImportableColumn col, Map tsvRow)
+            throws SQLException
+    {
+        Object value = getValue(col, tsvRow);
 
         if (value == null)
             return Parameter.nullParameter(col.getSQLType());
@@ -2439,9 +2471,7 @@ public class SpecimenImporter
             for (SpecimenColumn col : SPECIMEN_COLUMNS)
                 sql.append(",\n    ").append(col.getDbColumnName()).append(" ").append(col.getDbType());
             sql.append("\n);");
-            if (DEBUG)
-                info(sql.toString());
-            Table.execute(schema, sql.toString());
+            executeSQL(schema, sql.toString());
 
             String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_RowId ON " + tableName + "(RowId)";
             String globalUniqueIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_GlobalUniqueId ON " + tableName + "(GlobalUniqueId)";
@@ -2454,10 +2484,10 @@ public class SpecimenImporter
                 info(lsidIndexSql);
                 info(hashIndexSql);
             }
-            Table.execute(schema, globalUniqueIdIndexSql);
-            Table.execute(schema, rowIdIndexSql);
-            Table.execute(schema, lsidIndexSql);
-            Table.execute(schema, hashIndexSql);
+            executeSQL(schema, globalUniqueIdIndexSql);
+            executeSQL(schema, rowIdIndexSql);
+            executeSQL(schema, lsidIndexSql);
+            executeSQL(schema, hashIndexSql);
             info("Created temporary table " + tableName);
 
             return tableName;
@@ -2606,5 +2636,21 @@ public class SpecimenImporter
                 if (rs != null) try { rs.close(); } catch (SQLException e) { }
             }
         }
+    }
+
+
+    private int executeSQL(DbSchema schema, String sql, Object... params) throws SQLException
+    {
+        if (DEBUG && _logger != null)
+            _logger.debug(sql);
+        return Table.execute(schema, sql, params);
+    }
+
+
+    private int executeSQL(DbSchema schema, SQLFragment sql) throws SQLException
+    {
+        if (DEBUG && _logger != null)
+            _logger.debug(sql.toString());
+        return Table.execute(schema, sql);
     }
 }
