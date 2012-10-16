@@ -40,14 +40,10 @@
         folderTitle = "Home";
 %>
 <div class="labkey-app-bar">
-<div class="labkey-folder-header">
-<table class="labkey-folder-header" id="labkey-app-bar-table">
-    <tr>
-        <td class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(folderTitle)%></a></td>
-        <td class="button-bar">
+    <div class="labkey-folder-header">
+        <div class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(folderTitle)%></a></div>
+        <div class="button-bar">
             <ul class="labkey-tab-strip">
-                <table cellpadding="0" cellspacing="0">
-                    <tr>
                 <%
                     NavTree[] tabs = bean.getButtons();
                     for (NavTree navTree : tabs)
@@ -55,7 +51,7 @@
                         if (null != navTree.getText() && navTree.getText().length() > 0)
                         {
                 %>
-                        <td><li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a></td>
+                        <li class="<%=text(navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive")%>"><a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a>
                 <%
                         }
                     }
@@ -86,51 +82,56 @@
                         org.labkey.api.view.PopupMenuView popup = new org.labkey.api.view.PopupMenuView(menu);
                         popup.setButtonStyle(org.labkey.api.view.PopupMenu.ButtonStyle.IMAGE);
                 %>
-                    <td><li class="labkey-tab-inactive"><% me.include(popup, out); %></td>
+                    <li class="labkey-tab-inactive"><% me.include(popup, out); %>
                 <%
                     }
                 %>
-                    </tr>
-                </table>
             </ul>
-        </td>
-    </tr>
-</table>
-</div>
-<table class="labkey-nav-trail">
-    <%if (null != bean.getNavTrail() && bean.getNavTrail().size() > 0) {
+        </div>
+        <div style="clear:both;"></div>
+    </div>
+    
+    <div class="labkey-nav-trail">
+        <%if (null != bean.getNavTrail() && bean.getNavTrail().size() > 0) {
         %>
-        <tr>
-            <td colspan=1 class="labkey-crumb-trail"><span id="navTrailAncestors" style="visibility:hidden">
+            <div colspan=1 class="labkey-crumb-trail">
+                <span id="navTrailAncestors" style="visibility:hidden">
                 <% for(NavTree curLink : bean.getNavTrail()) {%>
-                    <% if (curLink.getHref() != null) { %><a href="<%=h(curLink.getHref())%>"><% } %><%=h(curLink.getText())%><% if (curLink.getHref() != null) { %></a><% } %>&nbsp;&gt;&nbsp;
+                <% if (curLink.getHref() != null) { %><a href="<%=h(curLink.getHref())%>"><% } %><%=h(curLink.getText())%><% if (curLink.getHref() != null) { %></a><% } %>&nbsp;&gt;&nbsp;
                 <%
                     }%>
-            </span></td></tr>
+                </span>
+            </div>
 
-    <%}%>
-    <tr>
-    <td class="labkey-nav-page-header-container">
-        <span class="labkey-nav-page-header" id="labkey-nav-trail-current-page" style="visibility:hidden"><%=h(bean.getPageTitle())%></span>
-    </td>
-</tr>
-    </table>
+        <%}%>
+            <div class="labkey-nav-page-header-container">
+                <span class="labkey-nav-page-header" id="labkey-nav-trail-current-page" style="visibility:hidden"><%=h(bean.getPageTitle())%></span>
+            </div>
+    </div>
 </div>
 
 <script type="text/javascript">
     (function(){
-        var resizeTask = new Ext4.util.DelayedTask(function(){
-            var bodyWidth = Ext4.getBody().getWidth();
-            var leftMenuWidth = Ext4.getDom("leftmenupanel") ? Ext4.getDom("leftmenupanel").offsetWidth : 0;
-            Ext4.getDom("labkey-app-bar-table").style.width = (bodyWidth - leftMenuWidth) + "px";
-        });
-
-        Ext4.EventManager.on(window, 'resize', function(){
-            resizeTask.delay(100);
-        });
-
         Ext4.onReady(function(){
-            resizeTask.delay(0);
+            var buttonBar = Ext4.get(Ext4.query('.labkey-folder-header .button-bar')[0]);
+            var folderTitle = Ext4.get(Ext4.query('.labkey-folder-title')[0]);
+            var appBar = Ext4.get(Ext4.query('.labkey-app-bar')[0]);
+            var tabAnchors = Ext4.query('.labkey-app-bar ul.labkey-tab-strip li a');
+            var totalWidth = 0;
+
+            for(var i = 0; i < tabAnchors.length; i++){
+                var anchor = Ext4.get(tabAnchors[i]);
+                totalWidth = totalWidth + anchor.getWidth() + 2; // add two for tab margin.
+            }
+
+            // Add 60 for padding and margins.
+            appBar.dom.setAttribute('style', 'min-width: ' + (totalWidth + folderTitle.getWidth() + 60 ) + 'px;');
+
+            if(Ext4.isIE7){
+                // We add a few more px for IE7 be
+//                appBar.setWidth(totalWidth + 20);
+                buttonBar.setWidth(totalWidth+10);
+            }
         });
     })();
 </script>
