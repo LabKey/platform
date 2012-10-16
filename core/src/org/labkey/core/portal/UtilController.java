@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.portal;
+package org.labkey.core.portal;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.CSRF;
-import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;

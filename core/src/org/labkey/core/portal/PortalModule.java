@@ -13,23 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.portal;
+package org.labkey.core.portal;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.security.User;
-import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 
-import java.beans.PropertyChangeEvent;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
 
 /**
  * User: migra
@@ -45,13 +38,6 @@ public class PortalModule extends DefaultModule
         return "Portal";
     }
 
-    @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
-    {
-        return Collections.singleton((Class) PortalJUnitTest.class);
-    }
-
     // NOTE: the version number of the portal module does not govern the scripts run for the
     // portal schema.  Bump the core module version number to cause a portal-xxx.sql script to run
     public double getVersion()
@@ -61,8 +47,6 @@ public class PortalModule extends DefaultModule
 
     protected void init()
     {
-        addController("project", ProjectController.class);
-        addController("util", UtilController.class);
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -84,32 +68,5 @@ public class PortalModule extends DefaultModule
 
     public void doStartup(ModuleContext context)
     {
-        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
-        {
-            public void containerCreated(Container c, User user)
-            {
-            }
-
-            public void containerDeleted(Container c, User user)
-            {
-                try
-                {
-                    Portal.containerDeleted(c);
-                }
-                catch (Exception e)
-                {
-                    _log.error("Unable to delete WebParts for container " + c.getPath() + " Error:  " + e.getMessage());
-                }
-            }
-
-            @Override
-            public void containerMoved(Container c, Container oldParent, User user)
-            {                
-            }
-
-            public void propertyChange(PropertyChangeEvent evt)
-            {
-            }
-        });
     }
 }

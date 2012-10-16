@@ -273,7 +273,7 @@
                                 data: (function(hasLoaded, selectedModules){
                                     var items = [];
                                     if(!hasLoaded)
-                                        return [{module: 'Portal'}];
+                                        return [{module: 'Core'}];
                                     else {
                                         if(selectedModules && selectedModules.length){
                                             items = Ext4.Array.map(selectedModules, function(e){
@@ -351,9 +351,9 @@
                         }
                     ]);
 
-                    //default to portal if none selected
+                    //default to portal (i.e., "Core" module) if none selected
                     if(!hasLoaded && (!this.getForm().getValues().activeModules || !this.getForm().getValues().activeModules.length)){
-                        this.getForm().findField('activeModules').setValue({activeModules: ['Portal']});
+                        this.getForm().findField('activeModules').setValue({activeModules: ['Core']});
                     }
                 },
                 renderTemplateInfo : function() {

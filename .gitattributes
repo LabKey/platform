@@ -383,6 +383,7 @@ core/resources/schemas/dbscripts/postgresql/portal-0.00-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-11.10-11.20.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-12.23-12.24.sql -text
+core/resources/schemas/dbscripts/postgresql/portal-12.24-12.25.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-10.20-10.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-12.10-12.20.sql -text
@@ -522,6 +523,7 @@ core/resources/schemas/dbscripts/sqlserver/portal-0.00-10.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-11.10-11.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-12.23-12.24.sql -text
+core/resources/schemas/dbscripts/sqlserver/portal-12.24-12.25.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-10.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-10.20-10.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-12.10-12.20.sql -text
@@ -670,6 +672,11 @@ core/src/org/labkey/core/login/login.jsp -text
 core/src/org/labkey/core/login/pickAuthLogo.jsp -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
+core/src/org/labkey/core/portal/PortalJUnitTest.java -text
+core/src/org/labkey/core/portal/PortalModule.java -text
+core/src/org/labkey/core/portal/UtilController.java -text
+core/src/org/labkey/core/portal/customizeErrors.jsp -text
+core/src/org/labkey/core/portal/testsvg.jsp -text
 core/src/org/labkey/core/project/modulePropertiesAdmin.jsp -text
 core/src/org/labkey/core/project/projects.jsp -text
 core/src/org/labkey/core/query/AttachmentAuditViewFactory.java -text
@@ -1975,12 +1982,6 @@ pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup.wsdl -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup.xsd -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_bindings.wsdl -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -text
-portal/module.properties -text
-portal/src/org/labkey/portal/PortalJUnitTest.java -text
-portal/src/org/labkey/portal/PortalModule.java -text
-portal/src/org/labkey/portal/UtilController.java -text
-portal/src/org/labkey/portal/customizeErrors.jsp -text
-portal/src/org/labkey/portal/testsvg.jsp -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTTableInfo.java -text

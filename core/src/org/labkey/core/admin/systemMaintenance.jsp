@@ -103,7 +103,7 @@ function validateForm()
     {
         if (task.canDisable())
         {
-            %><tr><td><input name="enable" value="<%=h(task.getName())%>" type="checkbox"<%=!disabled.contains(task.getName()) ? " checked" : ""%>/><%=textLink(task.getDescription(), "javascript:submitSystemMaintenance(" + q(task.getName()) + ")")%></td></tr><%
+            %><tr><td><input name="enable" value="<%=h(task.getName())%>" type="checkbox"<%=checked(!disabled.contains(task.getName()))%>/><%=textLink(task.getDescription(), "javascript:submitSystemMaintenance(" + q(task.getName()) + ")")%></td></tr><%
         }
     }
 %>
@@ -130,7 +130,7 @@ function validateForm()
 <%
     if (AppProps.getInstance().isDevMode())
     {
-        %><tr><td colspan="2"><table><tr><td><input name="enableSystemMaintenance" type="checkbox"<%=(!SystemMaintenance.isTimerDisabled() ? " checked" : "")%>/>Enable daily system maintenance (dev mode only; system maintenance is re-enabled after every server restart)</td></tr></table></td></tr><%
+        %><tr><td colspan="2"><table><tr><td><input name="enableSystemMaintenance" type="checkbox"<%=checked(!SystemMaintenance.isTimerDisabled())%>/>Enable daily system maintenance (dev mode only; system maintenance is re-enabled after every server restart)</td></tr></table></td></tr><%
     }
 
 %>

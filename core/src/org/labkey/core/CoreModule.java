@@ -23,19 +23,12 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.reader.DataLoaderService;
-import org.labkey.api.reader.FastaDataLoader;
-import org.labkey.api.reader.HTMLDataLoader;
-import org.labkey.api.reader.JSONDataLoader;
-import org.labkey.core.admin.importer.SubfolderImporterFactory;
-import org.labkey.core.query.UsersDomainKind;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
@@ -65,8 +58,12 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.FastaDataLoader;
+import org.labkey.api.reader.HTMLDataLoader;
+import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -80,9 +77,7 @@ import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -126,6 +121,7 @@ import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
 import org.labkey.core.admin.importer.PageImporterFactory;
 import org.labkey.core.admin.importer.SearchSettingsImporterFactory;
+import org.labkey.core.admin.importer.SubfolderImporterFactory;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
@@ -138,11 +134,15 @@ import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.portal.PortalJUnitTest;
+import org.labkey.core.portal.ProjectController;
+import org.labkey.core.portal.UtilController;
 import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.labkey.core.query.ContainerAuditViewFactory;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
+import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
@@ -190,7 +190,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public double getVersion()
     {
-        return 12.24;
+        return 12.25;
     }
 
     @Override
@@ -222,6 +222,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("core", CoreController.class);
         addController("test", TestController.class);
         addController("analytics", AnalyticsController.class);
+        addController("project", ProjectController.class);
+        addController("util", UtilController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.register(new AttachmentServiceImpl());
@@ -354,7 +356,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         if (form.getTitle() != null && !form.getTitle().equals(""))
                             title = form.getTitle();
 
-                        WebPartView view = null;
+                        WebPartView view;
                         if (form.isChoiceListQuery())
                         {
                             view = createMenuQueryView(portalCtx, title, form);
@@ -514,7 +516,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         String rootPath = form.getRootFolder();
         Container rootFolder = (0 == rootPath.compareTo("")) ? context.getContainer() : ContainerManager.getForPath(rootPath);
         final User user = context.getUser();
-        List<Container> containersTemp = null;
+        List<Container> containersTemp;
         if (form.isIncludeAllDescendants())
         {
             containersTemp = ContainerManager.getAllChildren(rootFolder, user, ReadPermission.class, false);    // no workbooks
@@ -843,7 +845,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public String getTabName(ViewContext context)
     {
-        return "Admin";
+        return "Portal";
     }
 
 
@@ -854,24 +856,29 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             return AppProps.getInstance().getHomePageActionURL();
         }
-        else if (c != null && "/".equals(c.getPath()) && user.isAdministrator())
-        {
-            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
-        }
-        else if (c != null && c.hasPermission(user, AdminPermission.class))
-        {
-            return PageFlowUtil.urlProvider(SecurityUrls.class).getProjectURL(c);
-        }
         else
         {
-            return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), AppProps.getInstance().getHomePageActionURL());
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c);
+
         }
+//        else if (c != null && "/".equals(c.getPath()) && user.isAdministrator())
+//        {
+//            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+//        }
+//        else if (c != null && c.hasPermission(user, AdminPermission.class))
+//        {
+//            return PageFlowUtil.urlProvider(SecurityUrls.class).getProjectURL(c);
+//        }
+//        else
+//        {
+//            return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), AppProps.getInstance().getHomePageActionURL());
+//        }
     }
 
     @Override
     public TabDisplayMode getTabDisplayMode()
     {
-        return Module.TabDisplayMode.DISPLAY_NEVER;
+        return TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT;
     }
 
 
@@ -906,6 +913,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 TableSelectorTestCase.class,
                 NestedGroupsTest.class,
                 CoreModule.TestCase.class,
+                PortalJUnitTest.class,
                 ContainerDisplayColumn.TestCase.class,
                 SimpleFilter.InClauseTestCase.class
                 //,RateLimiter.TestCase.class
@@ -963,7 +971,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return PageFlowUtil.set
         (
             CoreSchema.getInstance().getSchema(),       // core
-            Portal.getSchema(),                         // portal
             PropertyManager.getSchema(),                // prop
             TestSchema.getInstance().getSchema()        // test
         );
@@ -976,7 +983,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return PageFlowUtil.set
             (
                 CoreSchema.getInstance().getSchemaName(),       // core
-                Portal.getSchemaName(),                         // portal
                 PropertyManager.getSchemaName(),                // prop
                 TestSchema.getInstance().getSchemaName()        // test
             );

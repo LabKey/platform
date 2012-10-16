@@ -546,4 +546,31 @@
       <ns:column columnName="DisplayOrder"/>
     </ns:columns>
   </ns:table>
+  <ns:table tableName="PortalWebParts" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="PageId"/>
+      <ns:column columnName="Index"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="Location"/>
+      <ns:column columnName="Properties"/>
+      <ns:column columnName="Permanent"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="PortalPages" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="entityid"/>
+      <ns:column columnName="container"/>
+      <ns:column columnName="pageid"/>
+      <ns:column columnName="index"/>
+      <ns:column columnName="caption"/>
+      <ns:column columnName="hidden"/>
+      <ns:column columnName="type"/>
+      <ns:column columnName="action"/>
+      <ns:column columnName="targetfolder"/>
+      <ns:column columnName="permanent"/>
+      <ns:column columnName="properties"/>
+    </ns:columns>
+  </ns:table>
 </ns:tables>

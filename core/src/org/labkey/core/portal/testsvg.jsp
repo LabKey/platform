@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.portal.UtilController" %>
+<%@ page import="org.labkey.core.portal.UtilController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%

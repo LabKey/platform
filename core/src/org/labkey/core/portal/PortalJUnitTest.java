@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.portal;
+package org.labkey.core.portal;
 
 import org.apache.commons.collections15.MultiMap;
 import org.junit.Assert;
@@ -44,7 +44,6 @@ public class PortalJUnitTest extends Assert
     @Test
     public void testPortal() throws SQLException
     {
-
         User user = TestContext.get().getUser();
         assertTrue(null != user);
 
