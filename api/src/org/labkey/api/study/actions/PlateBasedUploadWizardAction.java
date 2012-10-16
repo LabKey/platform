@@ -56,7 +56,7 @@ public class PlateBasedUploadWizardAction <FormType extends PlateUploadFormImpl<
 
     protected class PlateBasedRunStepHandler extends RunStepHandler
     {
-        private Map<String, Map<DomainProperty, String>> _postedSampleProperties = null;
+        protected Map<String, Map<DomainProperty, String>> _postedSampleProperties = null;
 
         @Override
         protected boolean validatePost(FormType form, BindException errors) throws ExperimentException
