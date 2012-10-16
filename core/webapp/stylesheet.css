@@ -823,13 +823,10 @@ div.labkey-pagination
 }
 
 
-table.labkey-nav-trail
+.labkey-nav-trail
 {
-    width: 100%;
     padding: 10px 20px 0 20px;
     border-spacing: 0;
-    *border-collapse: collapse;
-    *margin: 5px 0 20px 0;
 }
 
 
@@ -842,33 +839,23 @@ table.labkey-nav-trail
         TODO: this will be overridden by the themeStylesheet.  We need to add another background color to the theme.
         This is included for now to allow the other changes to be added.
     */
+    padding: 10px 20px 0 20px;
+	height: 27px;
 	background: #8abede;
-    /*background: #008000;*/
-	width: 100%;
-	
 	box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);
 	-moz-box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);
 	-webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);
 }
 
-.labkey-app-bar table.labkey-folder-header
-{
-    padding:0 20px;
-    border-spacing: 0; *border-collapse: collapse;
-    width:100%;
-	height: 40px;
-}
-
-.labkey-app-bar td.labkey-folder-title { /* this should map to the link and top border color in theme */
-	font-family: Arial, Helvetica, sans serif;
+.labkey-app-bar div.labkey-folder-title { /* this should map to the link and top border color in theme */
+	float: left;
+    font-family: Arial, Helvetica, sans serif;
     font-size: 14pt;
     line-height: 22px;
-	*padding-left: 30px;
-	*padding-top: 0px;
     white-space: nowrap;
 }
 
-.labkey-app-bar td.labkey-folder-title a:hover { /* this is new, should be same across themes */
+.labkey-app-bar div.labkey-folder-title a:hover { /* this is new, should be same across themes */
 	color: #fff;
 }
 
@@ -876,17 +863,7 @@ table.labkey-nav-trail
 /* tabs */
 
 .labkey-app-bar ul.labkey-tab-strip a { /* map bottom border to Primary background color */
-/*
-    border-color: 0 none !important;
-    border-style: 0 none !important;
-    border-width: 0 none !important;
-	border: none !important;
-*/
-	border-color: none;
     border-style: none none none;
-    border-width: 1px 1px medium;
-	border-bottom: 1px solid #f8f8f8;
-	
     float: left;
     line-height: 14px;
     margin-right: 2px;
@@ -915,16 +892,12 @@ table.labkey-nav-trail
 }
 
 
-.labkey-app-bar td.button-bar {
-	padding: 0;
-	margin: 0;
-	vertical-align: bottom;
-	*padding-right: 30px;
+.labkey-app-bar div.button-bar {
+    float: right;
 }
 
 .labkey-app-bar ul.labkey-tab-strip {
 	border-bottom: none;
-    float:right;
 }
 
 
