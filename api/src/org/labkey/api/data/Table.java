@@ -287,6 +287,7 @@ public class Table
     }
 
 
+    // 35 usages
     @Deprecated // Use TableSelector
     public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
     {
@@ -294,6 +295,7 @@ public class Table
     }
 
 
+    // 24 usages
     @Deprecated // Use TableSelector
     public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
     {
@@ -301,6 +303,7 @@ public class Table
     }
 
 
+    // 5 usages
     @Deprecated // Use TableSelector
     public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
     {
@@ -308,6 +311,7 @@ public class Table
     }
 
 
+    // 38 usages
     @Deprecated // Use TableSelector
     public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
@@ -315,6 +319,7 @@ public class Table
     }
 
 
+    // 16 usages
     @Deprecated // Use TableSelector
     public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
@@ -330,6 +335,7 @@ public class Table
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
+    // 64 usages
     @Deprecated // Use TableSelector
     public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {
@@ -344,6 +350,7 @@ public class Table
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
+    // 42 usages
     @Deprecated // Use TableSelector
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
     {
@@ -359,6 +366,7 @@ public class Table
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
+    // 3 usages
     @Deprecated // Use TableSelector
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
     {
@@ -373,6 +381,7 @@ public class Table
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
+    // 10 usages
     @Deprecated // Use TableSelector
     public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows, boolean cache, boolean scrollable) throws SQLException
     {
@@ -387,6 +396,7 @@ public class Table
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
+    // 7 usages
     @Deprecated // Use TableSelector
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
             throws SQLException
@@ -394,21 +404,7 @@ public class Table
         return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(false, cache);
     }
 
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    @Deprecated // Use TableSelector
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache, boolean scrollable)
-            throws SQLException
-    {
-        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(scrollable, cache);
-    }
-
+    // 6 usages
     @Deprecated // Use TableSelector instead
     public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
             throws SQLException
@@ -420,6 +416,7 @@ public class Table
     }
 
 
+    // 6 usages
     @Deprecated // Use TableSelector instead
     public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
             throws SQLException
@@ -429,17 +426,6 @@ public class Table
 
         return selector.getResults();
     }
-
-    @Deprecated // Use TableSelector instead
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean cache, boolean scrollable)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
-
-        return selector.getResults(scrollable, cache);
-    }
-
 
     // ================== These methods have not been converted to Selector/Executor ==================
 
@@ -1412,7 +1398,7 @@ public class Table
     }
 
 
-    static Map<String,ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
+    static Map<String, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
     {
         Map<String, ColumnInfo> columns = new LinkedHashMap<String, ColumnInfo>();
         ColumnInfo existing;

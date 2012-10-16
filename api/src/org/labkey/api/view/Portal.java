@@ -25,6 +25,7 @@ import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -76,20 +77,14 @@ public class Portal
     public static final int MOVE_DOWN = 1;
 
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
-    private static final String SCHEMA_NAME = "portal";
 
     private static HashMap<String, WebPartFactory> _viewMap = null;
     private static MultiHashMap<String, String> _regionMap = null;
 
 
-    public static String getSchemaName()
-    {
-        return SCHEMA_NAME;
-    }
-
     public static DbSchema getSchema()
     {
-        return DbSchema.get(SCHEMA_NAME);
+        return CoreSchema.getInstance().getSchema();
     }
 
     public static SqlDialect getSqlDialect()
@@ -102,10 +97,9 @@ public class Portal
         return getSchema().getTable("PortalWebParts");
     }
 
-
-    public static TableInfo getTableInfoPages()
+    public static TableInfo getTableInfoPortalPages()
     {
-        return getSchema().getTable("Pages");
+        return getSchema().getTable("PortalPages");
     }
 
     public static void containerDeleted(Container c)
@@ -115,7 +109,7 @@ public class Portal
         try
         {
             Table.delete(getTableInfoPortalWebParts(), new SimpleFilter("Container", c.getId()));
-            Table.delete(getTableInfoPages(), new SimpleFilter("Container", c.getId()));
+            Table.delete(getTableInfoPortalPages(), new SimpleFilter("Container", c.getId()));
         }
         catch (SQLException e)
         {
@@ -594,7 +588,7 @@ public class Portal
 
         try
         {
-            Table.insert(null, getTableInfoPages(), p);
+            Table.insert(null, getTableInfoPortalPages(), p);
         }
         catch (SQLException x)
         {
@@ -640,7 +634,7 @@ public class Portal
 
         try
         {
-            Table.insert(null, getTableInfoPages(), p);
+            Table.insert(null, getTableInfoPortalPages(), p);
             existing.add(p);
         }
         catch (SQLException x)
@@ -1070,7 +1064,7 @@ public class Portal
         page.setHidden(hidden);
         try
         {
-            Table.update(null, getTableInfoPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+            Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
         }
         catch (SQLException x)
         {

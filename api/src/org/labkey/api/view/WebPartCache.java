@@ -20,6 +20,7 @@ import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -87,17 +88,17 @@ public class WebPartCache
         @Override
         public LinkedHashMap<String,Portal.PortalPage> load(String containerId, Object o)
         {
-            DbSchema schema = Portal.getSchema();
+            DbSchema schema = CoreSchema.getInstance().getSchema();
             LinkedHashMap<String,Portal.PortalPage> pages = new LinkedHashMap<String, Portal.PortalPage>();
 
-            SQLFragment selectPages = new SQLFragment("SELECT * FROM portal.pages where container=? ORDER BY \"index\"", containerId);
+            SQLFragment selectPages = new SQLFragment("SELECT * FROM " + Portal.getTableInfoPortalPages().getSelectName() + " WHERE Container = ? ORDER BY \"index\"", containerId);
             Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
             for (Portal.PortalPage p : pagesSelect)
             {
                 if (null == p.getEntityId())
                 {
                     GUID g = new GUID();
-                    SQLFragment updateEntityId = new SQLFragment("UPDATE portal.pages SET entityid=? WHERE container=? and pageid=? and entityid IS NULL",
+                    SQLFragment updateEntityId = new SQLFragment("UPDATE " + Portal.getTableInfoPortalPages().getSelectName() + " SET EntityId = ? WHERE Container = ? AND PageId = ? AND EntityId IS NULL",
                             g, containerId, p.getPageId());
                     new SqlExecutor(schema,updateEntityId).execute();
                     p.setEntityId(g);

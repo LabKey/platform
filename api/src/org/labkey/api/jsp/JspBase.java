@@ -83,7 +83,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     /**
      * No-op encoding
-     * Indicate that you explicit want to include a string in the page WITHOUT encoding
+     * Indicate that you explicitly want to include a string in the page WITHOUT encoding
      */
     public String text(String s)
     {
@@ -180,6 +180,13 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public String u(String str)
     {
         return PageFlowUtil.encode(str);
+    }
+
+
+    // Returns " checked" (if true) or "" (false)
+    public String checked(boolean checked)
+    {
+        return checked ? " checked" : "";
     }
 
 

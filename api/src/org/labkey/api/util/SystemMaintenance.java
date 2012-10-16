@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -201,11 +202,11 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
         Set<String> disabled = new HashSet<String>();
 
         for (MaintenanceTask task : getTasks())
-            if (!enabled.contains(task.getName()))
+            if (task.canDisable() && !enabled.contains(task.getName()))
                 disabled.add(task.getName());
 
         writableProps.put(TIME_PROPERTY_NAME, time);
-        writableProps.put(DISABLED_TASKS_PROPERTY_NAME, org.apache.commons.lang3.StringUtils.join(disabled, ","));
+        writableProps.put(DISABLED_TASKS_PROPERTY_NAME, StringUtils.join(disabled, ","));
 
         PropertyManager.saveProperties(writableProps);
         setTimer();

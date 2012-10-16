@@ -263,7 +263,7 @@ public class DefaultFolderType implements FolderType
 
     public ActionURL getStartURL(Container c, User user)
     {
-        return ModuleLoader.getInstance().getModule("Portal").getTabURL(c, user);
+        return ModuleLoader.getInstance().getModule("Core").getTabURL(c, user);
     }
 
     public String getStartPageLabel(ViewContext ctx)
@@ -335,7 +335,6 @@ public class DefaultFolderType implements FolderType
             defaultModules.add(getModule("FileContent"));
             defaultModules.add(getModule("Wiki"));
             defaultModules.add(getModule("Query"));
-            defaultModules.add(getModule("Portal"));
             defaultModules.add(getModule("Issues"));
             s_defaultModules = Collections.unmodifiableSet(defaultModules);
         }

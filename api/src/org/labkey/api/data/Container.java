@@ -57,7 +57,6 @@ import org.labkey.api.view.WebPartFactory;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -648,7 +647,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             boolean initRequired = false;
             if (null == defaultModuleName || null == ModuleLoader.getInstance().getModule(defaultModuleName))
             {
-                defaultModuleName = "Portal";
+                defaultModuleName = "Core";
                 initRequired = true;
             }
             Module defaultModule = ModuleLoader.getInstance().getModule(defaultModuleName);
@@ -658,8 +657,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 setDefaultModule(defaultModule);
 
             //ensure that default module is included in active module set
-            //should be there already if it's not portal, but if it is portal, we have to add it for upgrade
-            if (defaultModuleName.compareToIgnoreCase("Portal") == 0)
+            //should be there already if it's not portal, but if it is core, we have to add it for upgrade
+            if (defaultModuleName.compareToIgnoreCase("Core") == 0)
             {
                 Set<Module> modules = new HashSet<Module>(getActiveModules());
                 if (!modules.contains(defaultModule))
@@ -686,7 +685,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         ContainerManager.setFolderType(this, folderType, user);
 
-        if(isWorkbook())
+        if (isWorkbook())
             appendWorkbookModulesToParent();
     }
 

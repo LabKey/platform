@@ -56,7 +56,7 @@ public class TableSelectorTestCase extends Assert
     {
         int count = (int) selector.getRowCount();
 
-        if (count >= 5)
+        if (count > 5)
         {
             int rowCount = 3;
             int offset = 2;
@@ -71,7 +71,7 @@ public class TableSelectorTestCase extends Assert
             selector.setMaxRows(count);
             K[] sortedArray = selector.getArray(clazz);
             List<K> sortedList = new ArrayList<K>(selector.getCollection(clazz));
-            verifyResultSet(selector, count, true);
+            verifyResultSets(selector, count, true);
 
             // Set a row count, verify the lengths and contents against the expected array & list subsets
             selector.setMaxRows(rowCount);
@@ -82,7 +82,7 @@ public class TableSelectorTestCase extends Assert
             List<K> rowCountList = new ArrayList<K>(selector.getCollection(clazz));
             assertEquals(rowCount, rowCountList.size());
             assertEquals(sortedList.subList(0, rowCount), rowCountList);
-            verifyResultSet(selector, rowCount, false);
+            verifyResultSets(selector, rowCount, false);
 
             // Set an offset, verify the lengths and contents against the expected array & list subsets
             selector.setOffset(offset);
@@ -93,7 +93,7 @@ public class TableSelectorTestCase extends Assert
             List<K> offsetList = new ArrayList<K>(selector.getCollection(clazz));
             assertEquals(rowCount, offsetList.size());
             assertEquals(sortedList.subList(offset, offset + rowCount), offsetList);
-            verifyResultSet(selector, rowCount, false);
+            verifyResultSets(selector, rowCount, false);
 
             // Back to all rows and verify
             selector.setMaxRows(Table.ALL_ROWS);
@@ -101,30 +101,31 @@ public class TableSelectorTestCase extends Assert
             assertEquals(count, (int) selector.getRowCount());
             assertEquals(count, selector.getArray(clazz).length);
             assertEquals(count, selector.getCollection(clazz).size());
-            verifyResultSet(selector, count, true);
+            verifyResultSets(selector, count, true);
         }
     }
 
-    private void verifyResultSet(TableSelector selector, int expectedRowCount, boolean expectedComplete) throws SQLException
+    private void verifyResultSets(TableSelector selector, int expectedRowCount, boolean expectedComplete) throws SQLException
     {
         // Test normal cached ResultSet, uncached ResultSet, and Results
-        for (Table.TableResultSet rs : new Table.TableResultSet[]{
-                selector.getResultSet(),
-                selector.getResultSet(false, false),
-                selector.getResults()})
+        verifyResultSet(selector.getResultSet(), expectedRowCount, expectedComplete);
+        verifyResultSet(selector.getResultSet(false, false), expectedRowCount, expectedComplete);
+        verifyResultSet(selector.getResults(), expectedRowCount, expectedComplete);
+    }
+
+    private void verifyResultSet(Table.TableResultSet rs, int expectedRowCount, boolean expectedComplete) throws SQLException
+    {
+        try
         {
-            try
-            {
-                int rsCount = 0;
-                while(rs.next())
-                    rsCount++;
-                assertEquals(expectedRowCount, rsCount);
-                assertEquals(expectedComplete, rs.isComplete());
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
+            int rsCount = 0;
+            while(rs.next())
+                rsCount++;
+            assertEquals(expectedRowCount, rsCount);
+            assertEquals(expectedComplete, rs.isComplete());
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
         }
     }
 
@@ -163,7 +164,7 @@ public class TableSelectorTestCase extends Assert
             }
         }, clazz);
 
-        verifyResultSet(selector, array.length, true);
+        verifyResultSets(selector, array.length, true);
 
         assertTrue
         (

@@ -1805,7 +1805,7 @@ public class OntologyManager
         if (null==proj)
                 proj=c;
 
-        //TODO: Currently no way to edit these descriptors. But once there is need to invalidate the cache.
+        //TODO: Currently no way to edit these descriptors. But once there is, need to invalidate the cache.
         String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
         PropertyDescriptor[] pdArray = new SqlSelector(getExpSchema(),  sql, propertyURI,
                                                                 proj.getId(),
