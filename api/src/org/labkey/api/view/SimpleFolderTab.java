@@ -15,9 +15,13 @@
  */
 package org.labkey.api.view;
 
-import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.FolderType;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleFolderType;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.data.xml.PermissionType;
 import org.labkey.data.xml.folderType.FolderTabDocument;
@@ -39,6 +43,16 @@ public class SimpleFolderTab extends FolderTab.PortalPage
     private List<Portal.WebPart> _preferredWebParts = new ArrayList<Portal.WebPart>();
     private List<TabSelector> _selectors = new ArrayList<TabSelector>();
 
+    private TAB_TYPE _tabType = TAB_TYPE.Portal;        // default to Portal type
+    private String _folderTypeName;
+    private FolderType _folderType = null;
+
+    @Override
+    public TAB_TYPE getTabType()
+    {
+        return _tabType;
+    }
+
     public SimpleFolderTab(String name, String caption)
     {
         super(name, caption);
@@ -49,6 +63,23 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         super(tab.getName(), tab.getCaption());
 
         //initialize from XML:
+        if (tab.getTabType() != null)
+        {
+            String tabTypeString = tab.getTabType();
+            if (tabTypeString.equalsIgnoreCase("container"))
+            {
+                _tabType = TAB_TYPE.Container;
+                if (tab.getFolderType() != null)
+                {
+                    _folderTypeName = tab.getFolderType();
+                }
+            }
+            else if (tabTypeString.equalsIgnoreCase("link"))
+                _tabType = TAB_TYPE.Link;
+            else
+                _tabType = TAB_TYPE.Portal;
+        }
+
         if (tab.getPreferredWebParts() != null)
         {
             _preferredWebParts = SimpleFolderType.createWebParts(tab.getPreferredWebParts().getWebPartArray());
@@ -150,4 +181,34 @@ public class SimpleFolderTab extends FolderTab.PortalPage
             return true;
         }
     }
+
+    public Container getContainer(Container parent, User user)
+    {
+        if (TAB_TYPE.Container == getTabType())
+        {
+            Container container = ContainerManager.getChild(parent, getName());
+            if (null == container)
+            {
+                container = ContainerManager.createContainer(parent, getName(), null, null, Container.TYPE.tab, user);
+                container.setFolderType(getFolderType(), user);
+            }
+            return container;
+        }
+        return null;
+    }
+
+    public String getFolderTypeName()
+    {
+        return _folderTypeName;
+    }
+
+    public FolderType getFolderType()
+    {
+        if (null == _folderType && null != getFolderTypeName())
+        {
+            return ModuleLoader.getInstance().getFolderType(getFolderTypeName());
+        }
+        return _folderType;
+    }
+
 }

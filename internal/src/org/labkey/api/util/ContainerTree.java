@@ -107,7 +107,7 @@ public class ContainerTree
     protected boolean renderChildren(StringBuilder html, MultiMap<Container, Container> mm, Container parent, int level)
     {
         // Hide hidden folders, unless you're an administrator
-        if (!parent.shouldDisplay(_user) || parent.isWorkbook())
+        if (!parent.shouldDisplay(_user) || parent.isWorkbookOrTab())
             return false;
 
         // Retrieve children first so we can prune the tree if we don't have permission to any of the children

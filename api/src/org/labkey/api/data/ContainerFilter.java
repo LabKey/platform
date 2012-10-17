@@ -174,8 +174,7 @@ public abstract class ContainerFilter
             result.append(" AS Id");
         }
         // Filter based on the container's ID, or the container is a child of the ID and of type workbook
-        result.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Workbook = ?))");
-        result.add(Boolean.TRUE);
+        result.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = 'workbook'))");
         return result;
     }
 

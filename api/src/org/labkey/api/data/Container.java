@@ -91,8 +91,26 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
 
-    //is this container a workbook?
-    private boolean _workbook;
+    public enum TYPE
+    {
+        normal,
+        workbook,
+        tab;
+
+        public static TYPE typeFromString(String s)
+        {
+            if (null != s)
+            {
+                if (s.equalsIgnoreCase("workbook")) return workbook;
+                if (s.equalsIgnoreCase("tab")) return tab;
+            }
+            return normal;
+        }
+
+    }
+
+    //is this container a workbook, tab or normal?
+    private TYPE _type;
 
     // include in results from searches outside this container?
     private final boolean _searchable;
@@ -337,7 +355,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean shouldDisplay(User user)
     {
-        if (isWorkbook())
+        if (isWorkbookOrTab())
             return false;
 
         String name = _path.getName();
@@ -357,7 +375,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean isWorkbook()
     {
-        return _workbook;
+        return _type == TYPE.workbook;
+    }
+
+    public boolean isWorkbookOrTab()
+    {
+        return TYPE.workbook == _type || TYPE.tab == _type;
     }
 
     Boolean hasWorkbookChildren = null;
@@ -377,11 +400,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
             }
         }
         return hasWorkbookChildren;
-    }
-
-    public void setWorkbook(boolean workbook)
-    {
-        _workbook = workbook;
     }
 
     public boolean isSearchable()
@@ -1011,7 +1029,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         containerProps.put("effectivePermissions", getPolicy().getPermissionNames(user));
         if (null != getDescription())
             containerProps.put("description", getDescription());
-        containerProps.put("isWorkbook", isWorkbook());
+        containerProps.put("isWorkbook", isWorkbook());                   // TODO: anything needed for container Tab?
         containerProps.put("type", getContainerNoun());
         JSONArray activeModuleNames = new JSONArray();
         for (Module module : getActiveModules())
@@ -1030,6 +1048,26 @@ public class Container implements Serializable, Comparable<Container>, Securable
             containerProps.put("title", getTitle());
 
         return containerProps;
+    }
+
+    public boolean isContainerTab()
+    {
+        return _type == TYPE.tab;
+    }
+
+    public TYPE getType()
+    {
+        return _type;
+    }
+
+    public void setType(TYPE type)
+    {
+        _type = type;
+    }
+
+    public void setType(String typeString)
+    {
+        _type = TYPE.typeFromString(typeString);
     }
 
     public static class ContainerException extends Exception

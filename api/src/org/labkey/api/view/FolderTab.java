@@ -48,6 +48,18 @@ public abstract class FolderTab
     protected Set<String> _legacyNames = new HashSet<String>();
     protected int _defaultIndex = -1;
 
+    public enum TAB_TYPE
+    {
+        Portal,
+        Container,
+        Link
+    }
+
+    public TAB_TYPE getTabType()
+    {
+        return TAB_TYPE.Portal;         // Default is Portal; derived classes can override
+    }
+
     /** Controllers and their child actions (both are Spring Controller classes) claimed by this tab */
     private Set<Class<? extends Controller>> _controllersAndActions = new HashSet<Class<? extends Controller>>();
 

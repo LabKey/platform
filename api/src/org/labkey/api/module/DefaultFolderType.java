@@ -33,6 +33,7 @@ import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
+import org.labkey.api.view.SimpleFolderTab;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
@@ -192,6 +193,11 @@ public class DefaultFolderType implements FolderType
         for (FolderTab folderTab : getDefaultTabs())
         {
             folderTab.initializeContent(c);
+            if (FolderTab.TAB_TYPE.Container == folderTab.getTabType() && !c.isContainerTab())
+            {
+                // Force container to be created
+                Container containerDummy = ((SimpleFolderTab)folderTab).getContainer(c, user);
+            }
         }
     }
 

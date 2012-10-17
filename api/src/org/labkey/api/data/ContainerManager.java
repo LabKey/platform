@@ -182,20 +182,20 @@ public class ContainerManager
     // TODO: Handle root creation here?
     public static Container createContainer(Container parent, String name)
     {
-        return createContainer(parent, name, null, null, false, null);
+        return createContainer(parent, name, null, null, Container.TYPE.normal, null);
     }
 
     // TODO: Pass in folder type and transact it with container creation?
-    public static Container createContainer(Container parent, String name, String title, String description, boolean workbook, User user)
+    public static Container createContainer(Container parent, String name, String title, String description, Container.TYPE type, User user)
     {
         if (CORE.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
 
         boolean createWorkbookName = false;
-        if (workbook)
+        if (Container.TYPE.workbook == type)
         {
-            //parent must not be a workbook
-            if (parent.isWorkbook())
+            //parent must be normal
+            if (Container.TYPE.normal != parent.getType())
                 throw new IllegalArgumentException("Parent of a workbook must be a non-workbook container!");
 
             if (name == null)
@@ -206,6 +206,13 @@ public class ContainerManager
                 createWorkbookName = true;
                 name = GUID.makeGUID();
             }
+        }
+
+        if (Container.TYPE.tab == type)
+        {
+            //parent must be normal
+            if (Container.TYPE.normal != parent.getType())
+                throw new IllegalArgumentException("Parent of a container tab must not be a container tab container!");
         }
 
         StringBuilder error = new StringBuilder();
@@ -228,7 +235,7 @@ public class ContainerManager
             m.put("SortOrder", getNewChildSortOrder(parent));
             if (null != description)
                 m.put("Description", description);
-            m.put("Workbook", workbook);
+            m.put("Type", type);
             insertMap = Table.insert(user, CORE.getTableInfoContainers(), m);
         }
         catch (SQLException x)
@@ -274,8 +281,8 @@ public class ContainerManager
         if (null == c)
             throw new RuntimeException("Container for path '" + path + "' was not created properly.");
 
-        //workbooks inherit perms from their parent so don't create a policy if this is a workbook
-        if (!workbook)
+        //workbooks  inherit perms from their parent so don't create a policy if this is a workbook     TODO; and container tabs???
+        if (Container.TYPE.normal == type)
             SecurityManager.setAdminOnlyPermissions(c);
 
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
@@ -562,7 +569,7 @@ public class ContainerManager
 
     public static Map<String, Container> getChildrenMap(Container parent)
     {
-        if (parent.isWorkbook())
+        if (parent.getType() != Container.TYPE.normal)
         {
             // Optimization to avoid database query (important because some installs have tens of thousands of
             // workbooks) when the container is a workbook, which is not allowed to have children
@@ -939,7 +946,7 @@ public class ContainerManager
         Map<String, NavTree> m = new HashMap<String, NavTree>();
         for (Container f : folders)
         {
-            if (f.isWorkbook())
+            if (f.isWorkbookOrTab())
                 continue;
 
             SecurityPolicy policy = f.getPolicy();
@@ -2084,7 +2091,7 @@ public class ContainerManager
             Date created = rs.getTimestamp("Created");
             // _ts, createdby
             String description = rs.getString("Description");
-            boolean workbook = rs.getBoolean("Workbook");
+            String type = rs.getString("Type");
             String title = rs.getString("Title");
             boolean searchable = rs.getBoolean("Searchable");
 
@@ -2094,7 +2101,7 @@ public class ContainerManager
 
             d = new Container(dirParent, name, id, rowId, sortOrder, created, searchable);
             d.setDescription(description);
-            d.setWorkbook(workbook);
+            d.setType(type);
             d.setTitle(title);
             return d;
         }

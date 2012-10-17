@@ -86,7 +86,7 @@ public class SubfolderWriter extends BaseFolderWriter
             Container c3 = ContainerManager.createFakeContainer("containertab", fakeRoot);
             // c3.setContainerTab(true);// TODO: add test case for container tab type container
             Container c4 = ContainerManager.createFakeContainer("workbook", fakeRoot);
-            c4.setWorkbook(true);
+            c4.setType(Container.TYPE.workbook);
 
             List<Container> childList = Arrays.asList(c1, c2, c3, c4);
             FolderExportContext fec = new FolderExportContext(null, fakeRoot, null, null, null);

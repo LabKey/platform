@@ -18,7 +18,9 @@ package org.labkey.api.view.template;
 import org.apache.commons.collections15.ArrayStack;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
@@ -116,11 +118,15 @@ public class HomeTemplate extends PrintTemplate
     protected HttpView getAppBarView(ViewContext context, PageConfig page)
     {
         AppBar appBar;
-        if (context.getContainer().isWorkbook())
+        if (context.getContainer().isWorkbookOrTab())
         {
             ViewContext parentContext = new ViewContext(context);
             parentContext.setContainer(context.getContainer().getParent());
-            appBar = parentContext.getContainer().getFolderType().getAppBar(parentContext, page);
+            FolderType folderType =  parentContext.getContainer().getFolderType();
+            if (folderType instanceof MultiPortalFolderType)
+                appBar = ((MultiPortalFolderType)folderType).getAppBar(parentContext, page, context.getContainer());
+            else
+                appBar = folderType.getAppBar(parentContext, page);
         }
         else
         {

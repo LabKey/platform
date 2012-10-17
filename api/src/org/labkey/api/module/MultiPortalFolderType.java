@@ -25,6 +25,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.SimpleFolderTab;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.AppBar;
@@ -61,7 +62,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     }
 
 
-    private Collection<Portal.PortalPage> getTabs(Container container)
+    private Collection<Portal.PortalPage> getPortalPages(Container container)
     {
         Map<String,Portal.PortalPage> tabs = Portal.getPages(container, false);
 
@@ -89,33 +90,91 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         return filtered;
     }
 
+    private static List<FolderTab> getFolderTabs(Container container, FolderType folderType)
+    {
+        Map<String,Portal.PortalPage> portalPages = Portal.getPages(container, false);
+        List<FolderTab> folderTabs = new ArrayList<FolderTab>();
+        for (FolderTab folderTab : folderType.getDefaultTabs())
+        {
+            if (portalPages.containsKey(folderTab.getName()))
+                folderTabs.add(folderTab);
+        }
+
+        if (folderTabs.isEmpty())
+        {
+            folderType.resetDefaultTabs(container);
+            folderTabs = folderType.getDefaultTabs();
+        }
+        return folderTabs;
+    }
 
     @Override @NotNull
     public AppBar getAppBar(ViewContext ctx, PageConfig pageConfig)
     {
-        Collection<Portal.PortalPage> tabs = getTabs(ctx.getContainer());
+        return getAppBar(ctx, pageConfig, null);
+    }
 
+    @NotNull
+    public AppBar getAppBar(ViewContext ctx, PageConfig pageConfig, Container childContainer)
+    {
+        Container container = ctx.getContainer();
+        List<FolderTab> folderTabs = getFolderTabs(container, this);
+        Map<String,Portal.PortalPage> portalPages = Portal.getPages(container, false);
         List<NavTree> buttons = new ArrayList<NavTree>();
 
         _activePortalPage = null;
         Map<String, NavTree> navMap = new LinkedHashMap<String, NavTree>();
-        Map<String, Portal.PortalPage> tabMap = new HashMap<String, Portal.PortalPage>();
-        for (Portal.PortalPage tab : tabs)
+        for (FolderTab folderTab : folderTabs)
         {
-            FolderTab folderTab = findTab(tab.getPageId());
-            tabMap.put(tab.getPageId(), tab);
-            if (folderTab != null && folderTab.isVisible(ctx.getContainer(), ctx.getUser()))
+            if (folderTab != null && folderTab.isVisible(container, ctx.getUser()))
             {
+                Portal.PortalPage portalPage = portalPages.get(folderTab.getName());
                 String label = folderTab.getCaption(ctx);
-                NavTree nav = new NavTree(label, folderTab.getURL(ctx.getContainer(), ctx.getUser()));
-                nav.setId("portal:" + tab.getPageId());
+                NavTree nav = new NavTree(label, folderTab.getURL(container, ctx.getUser()));
+                nav.setId("portal:" + portalPage.getPageId());
                 buttons.add(nav);
-                navMap.put(tab.getPageId(), nav);
+                navMap.put(portalPage.getPageId(), nav);
                 // Stop looking for a tab to select if we've already found one
-                if (_activePortalPage == null && folderTab.isSelectedPage(ctx))
+                if (_activePortalPage == null &&
+                        (null == childContainer && (folderTab.isSelectedPage(ctx)) ||
+                        (null != childContainer && childContainer.getName().equalsIgnoreCase(folderTab.getName()))))
                 {
                     nav.setSelected(true);
                     _activePortalPage = folderTab.getName();
+
+                    // If container tab, add tabs for its folderType as children
+                    if (FolderTab.TAB_TYPE.Container == folderTab.getTabType())
+                    {
+                        // Container Tab must be SimpleFolderType
+                        SimpleFolderTab simpleFolderTab = (SimpleFolderTab)folderTab;
+                        Container folderContainer = simpleFolderTab.getContainer(container, ctx.getUser());
+                        if (null != folderContainer)
+                        {
+                            FolderType folderType = simpleFolderTab.getFolderType();
+                            if (null != folderType)
+                            {
+                                boolean foundSelected = false;
+                                List<FolderTab> subTabs = getFolderTabs(folderContainer, folderType);
+                                for (FolderTab subTab : subTabs)
+                                {
+                                    if (FolderTab.TAB_TYPE.Container == subTab.getTabType())
+                                        continue;       // Don't add container tabs at the second level
+                                    if (!subTab.isVisible(folderContainer, ctx.getUser()))
+                                        continue;
+                                    NavTree subNav = new NavTree(subTab.getCaption(ctx), subTab.getURL(folderContainer, ctx.getUser()));
+                                    nav.addChild(subNav);
+                                    if (subTab.isSelectedPage(ctx))         // Use original context to determine whether to select
+                                    {
+                                        subNav.setSelected(true);
+                                        foundSelected = true;
+                                    }
+                                }
+
+                                if (!foundSelected && nav.getChildCount() > 0)
+                                    nav.getChildren()[0].setSelected(true);
+                            }
+                        }
+                   }
                 }
             }
         }
@@ -128,7 +187,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             entry.getValue().setSelected(true);
         }
 
-        migrateLegacyPortalPage(ctx.getContainer());
+        migrateLegacyPortalPage(null != childContainer ? childContainer : ctx.getContainer());
 
         return new AppBar(getFolderTitle(ctx), ctx.getContainer().getStartURL(ctx.getUser()), buttons);
     }
@@ -137,7 +196,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     @Override
     public ActionURL getStartURL(Container c, User user)
     {
-        Collection<Portal.PortalPage> tabs = getTabs(c);
+        Collection<Portal.PortalPage> tabs = getPortalPages(c);
         for (Portal.PortalPage tab : tabs)
         {
             FolderTab folderTab = findTab(tab.getPageId());
@@ -155,8 +214,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         List<Portal.WebPart> legacyPortalParts = new ArrayList<Portal.WebPart>(Portal.getParts(container));
         if (!legacyPortalParts.isEmpty())
         {
+            FolderType folderType = container.getFolderType();
             // Check if there's a tab that has the legacy portal page ID
-            for (FolderTab folderTab : getDefaultTabs())
+            for (FolderTab folderTab : folderType.getDefaultTabs())
             {
                 if (Portal.DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(folderTab.getName()))
                 {
@@ -165,7 +225,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 }
             }
 
-            String defaultTabName = getDefaultTab().getName();
+            String defaultTabName = folderType.getDefaultTab().getName();
             List<Portal.WebPart> mergedParts = new ArrayList<Portal.WebPart>(Portal.getParts(container, defaultTabName));
             Iterator<Portal.WebPart> i = legacyPortalParts.iterator();
             boolean changed = false;
@@ -209,7 +269,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
         else
         {
-            Collection<Portal.PortalPage> activeTabs = getTabs(ctx.getContainer());
+            Collection<Portal.PortalPage> activeTabs = getPortalPages(ctx.getContainer());
             if (activeTabs.isEmpty())
             {
                 // No real tabs exist for this folder type, so just use the default portal page

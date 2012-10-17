@@ -66,7 +66,7 @@ public class AssayNavItem extends AbstractNavItem
     {
         //by default, we only enable assays if they were created in the current folder
         //if the DataProvider registered an associated module, also only turn on by default if that module is enabled
-        Container toCompare = c.isWorkbook() ? c.getParent() : c;
+        Container toCompare = c.isWorkbookOrTab() ? c.getParent() : c;
         return _protocol.getContainer().equals(toCompare) && getDataProvider().isModuleEnabled(c);
     }
 

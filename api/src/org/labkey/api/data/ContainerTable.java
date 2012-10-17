@@ -117,20 +117,18 @@ public class ContainerTable extends FilteredTable
         });
         addColumn(folderPathCol);
 
-        SQLFragment containerTypeSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".workbook = ? THEN 'workbook' " +
+        SQLFragment containerTypeSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN 'workbook' " +
             "WHEN "+ExprColumn.STR_TABLE_ALIAS+".entityid = ? THEN 'root' " +
             "WHEN "+ExprColumn.STR_TABLE_ALIAS+".parent = ? THEN 'project' " +
             "ELSE 'folder' END");
-        containerTypeSQL.add(true);
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         ExprColumn containerTypeColumn = new ExprColumn(this, "ContainerType", containerTypeSQL, JdbcType.VARCHAR);
         addColumn(containerTypeColumn);
 
-        SQLFragment containerDisplaySQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS + ".workbook = ? " +
+        SQLFragment containerDisplaySQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS + ".Type = 'workbook' " +
             "THEN " + getSqlDialect().concatenate("CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowid as varchar)", "'. '", ExprColumn.STR_TABLE_ALIAS + ".title") +
             " ELSE " + ExprColumn.STR_TABLE_ALIAS + ".name END");
-        containerDisplaySQL.add(true);
         ExprColumn containerDisplayColumn = new ExprColumn(this, "IdPrefixedName", containerDisplaySQL, JdbcType.VARCHAR);
         addColumn(containerDisplayColumn);
 
