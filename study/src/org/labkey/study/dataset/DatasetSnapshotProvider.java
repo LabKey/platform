@@ -273,7 +273,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     static QueryView createQueryView(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors)
     {
         QueryDefinition queryDef = qsDef.getQueryDefinition(context.getUser());
-        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), queryDef.getSchemaName());
+        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), queryDef.getContainer(), queryDef.getSchemaName());
         if (schema == null)
             return null;
 
