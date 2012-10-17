@@ -698,7 +698,12 @@ groupByLoop:
             {
                 RelationColumn ret = super.declareField(declareKey, location);
                 if (null == ret)
-                    parseError("Could not resolve column: " + declareKey, location);
+                {
+                    if (location instanceof QIfDefined)
+                        ((QIfDefined)location).isDefined = false;
+                    else
+                        parseError("Could not resolve column: " + declareKey, location);
+                }
                 return ret;
             }
 
@@ -719,7 +724,10 @@ groupByLoop:
             RelationColumn relColumn = table.getColumn(key.getName());
             if (relColumn == null)
             {
-                parseError("Unknown field " + key.toDisplayString(), location);
+                if (location instanceof QIfDefined)
+                    ((QIfDefined)location).isDefined = false;
+                else
+                    parseError("Unknown field " + key.toDisplayString(), location);
                 return null;
             }
             _declaredFields.put(key, relColumn);
@@ -734,7 +742,10 @@ groupByLoop:
                 nextColumn = table.getLookupColumn(colParent, key.getName());
                 if (nextColumn == null)
                 {
-                    parseError("Unknown field " + key.toDisplayString(), location);
+                    if (location instanceof QIfDefined)
+                        ((QIfDefined)location).isDefined = false;
+                    else
+                        parseError("Unknown field " + key.toDisplayString(), location);
                     return null;
                 }
 
@@ -793,7 +804,7 @@ groupByLoop:
             if (null != resolveParameter(key))
                 return;
             RelationColumn column = declareField(key, expr);
-            assert null!=column || getParseErrors().size() > 0;
+            assert null!=column || expr instanceof QIfDefined || getParseErrors().size() > 0;
             return;
         }
         for (QNode child : expr.children())
@@ -883,6 +894,10 @@ groupByLoop:
             return new QQuery(subquery);
         }
         if (expr instanceof QRowStar)
+        {
+            return expr;
+        }
+        if (expr instanceof QIfDefined && !((QIfDefined)expr).isDefined)
         {
             return expr;
         }

@@ -507,6 +507,7 @@ public class SqlParser
             case FULL: return "FULL";
             case GROUP: return "GROUP";
             case HAVING: return "HAVING";
+            case IFDEFINED: return "IFDEFINED";
             case IN: return "IN";
             case INNER: return "INNER";
             case INSERT: return "INSERT";
@@ -910,6 +911,9 @@ public class SqlParser
             case QUOTED_IDENTIFIER:
                 q = new QIdentifier();
 				break;
+            case IFDEFINED:
+                q = new QIfDefined(node);
+                break;
             case DOT:
                 q = new QDot();
 				break;

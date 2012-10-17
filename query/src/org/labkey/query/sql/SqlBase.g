@@ -145,6 +145,7 @@ FROM : 'from';
 FULL : 'full';
 GROUP : 'group';
 HAVING : 'having';
+IFDEFINED : 'ifdefined';
 IN : 'in';
 INNER : 'inner';
 INSERT : 'insert';
@@ -604,8 +605,7 @@ primaryExpression
 // NOTE: handleDotIdent() is called immediately after the first IDENT is recognized because
 // the method looks ahead to find keywords after DOT and turns them into identifiers.
 identPrimary
-	: identifier { handleDotIdent(); }
-        ( options { greedy=true; } : (DOT^ identifier) )*
+	: dottedIdentifier
         ( options { greedy=true; } : op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE! )?
     | escapeFn
 	| aggregate
@@ -613,7 +613,14 @@ identPrimary
 // UNDONE: figure out the weakKeywords thing
 	| l=LEFT  {$l.tree.getToken().setType(IDENT);} op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
 	| r=RIGHT {$r.tree.getToken().setType(IDENT);} op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
+	| IFDEFINED^ OPEN! dottedIdentifier CLOSE!
 	;
+
+
+dottedIdentifier
+    : identifier { handleDotIdent(); }
+        ( options { greedy=true; } : (DOT^ identifier) )*;
+
 
 escapeFn
     : '{fn'! identifier op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE! '}'!

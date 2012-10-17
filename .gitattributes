@@ -2224,6 +2224,7 @@ query/src/org/labkey/query/sql/QFieldKey.java -text
 query/src/org/labkey/query/sql/QFrom.java -text
 query/src/org/labkey/query/sql/QGroupBy.java -text
 query/src/org/labkey/query/sql/QIdentifier.java -text
+query/src/org/labkey/query/sql/QIfDefined.java -text
 query/src/org/labkey/query/sql/QInternalExpr.java -text
 query/src/org/labkey/query/sql/QJoin.java -text
 query/src/org/labkey/query/sql/QJoinOrTable.java -text
