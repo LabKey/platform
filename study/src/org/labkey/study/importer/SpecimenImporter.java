@@ -1208,8 +1208,10 @@ public class SpecimenImporter
             {
                 reader = new BufferedReader(new InputStreamReader(vf.getInputStream(fileName)));
                 String line = reader.readLine();
-                line = line.trim();
-                if (line.charAt(0) != '#')
+                if (null == line)
+                    continue;
+                line = StringUtils.trimToEmpty(line);
+                if (!line.startsWith("#"))
                     throw new IllegalStateException("Import files are expected to start with a comment indicating table name");
                 fileNameMap.put(line.substring(1).trim().toLowerCase(), vf.getInputStream(fileName));
             }

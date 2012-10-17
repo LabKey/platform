@@ -16,17 +16,20 @@
 
 package org.labkey.study.pipeline;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -42,6 +45,7 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -49,7 +53,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -155,7 +158,7 @@ public class SampleMindedTransformTask
             }
 
             ExcelLoader loader = new ExcelLoader(input, true);
-            List<Map<String, Object>> inputRows = loader.load();
+            List<Map<String, Object>> inputRows = loader.loadSAXY();
             List<Map<String, Object>> outputRows = transformRows(labIds, primaryIds, derivativeIds, inputRows);
 
             getJob().info("After removing duplicates, there are " + outputRows.size() + " rows of data");
@@ -213,8 +216,55 @@ public class SampleMindedTransformTask
         return outputRows;
     }
 
+
+    private void toDate(String key, Map<String,Object> row)
+    {
+        Object d = row.get(key);
+        if (null == d || d instanceof Date)
+            return;
+        try
+        {
+            Date date = new Date(DateUtil.parseDateTime(String.valueOf(d)));
+            row.put(key,date);
+        }
+        catch (ConversionException x)
+        {
+            /* */
+        }
+    }
+
+
+    private void toInt(String key, Map<String,Object> row)
+    {
+        Object i = row.get(key);
+        if (null == i || i instanceof Integer)
+            return;
+        try
+        {
+            if (i instanceof Number)
+                i = ((Number)i).intValue();
+            else
+                i = Integer.parseInt(String.valueOf(i));
+            row.put(key,i);
+        }
+        catch (NumberFormatException x)
+        {
+            /* */
+        }
+    }
+
+
     private Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
     {
+        toDate("CollectionDate", inputRow);
+        toDate("ActivitySaveDateTime", inputRow);
+        toDate("LabRecievedTime", inputRow);
+        toInt("sitecode", inputRow);
+
+        String vesselDomainType = (String)inputRow.get("VesselDomainType");
+        if (null != vesselDomainType && vesselDomainType.length() > 32)
+            inputRow.put("VesselDomainType", vesselDomainType.substring(0,32));
+
         // Get the barcode and strip off the "-INVALID" suffix, if present
         String barcode = inputRow.get("barcode") == null ? null : inputRow.get("barcode").toString();
         if (barcode != null && barcode.toLowerCase().endsWith(INVALID_SUFFIX))
@@ -366,10 +416,12 @@ public class SampleMindedTransformTask
         return outputRow;
     }
 
+
     private String getNonNullValue(Map<String, Object> inputRow, String name)
     {
         return inputRow.get(name) == null ? "" : inputRow.get(name).toString();
     }
+
 
     /**
      * Parse a TSV file with lab names and IDs. First column is assumed to be lab ID. Second column is the name.
@@ -411,8 +463,11 @@ public class SampleMindedTransformTask
             tsvWriter.setFileHeader(Collections.singletonList("# " + baseName));
             // Set the writer separately from the call to write() so that the underlying stream doesn't get closed
             // when it's finished writing the TSV - we need to keep writing to the ZIP
-            tsvWriter.setPrintWriter(writer);
-            tsvWriter.write();
+            if (!outputRows.isEmpty())
+            {
+                tsvWriter.setPrintWriter(writer);
+                tsvWriter.write();
+            }
         }
         finally
         {
@@ -421,19 +476,21 @@ public class SampleMindedTransformTask
         }
     }
 
+
     private String hashRow(Map<String, Object> inputRow) throws IOException
     {
-        // Use a TreeMap to ensure we have consistent key ordering
-        Map<String, Object> treeMap = new TreeMap<String, Object>(inputRow);
-        // Build up a string with all of the values that we care about, concatentated together
+        // Check that Map is a type that has consistent key ordering
+        if (!(inputRow instanceof ArrayListMap))
+            throw new IllegalStateException();
+
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, Object> entry : treeMap.entrySet())
+        for (String key : inputRow.keySet())
         {
-            if (!IGNORED_HASH_COLUMNS.contains(entry.getKey()))
+            if (!IGNORED_HASH_COLUMNS.contains(key))
             {
-                sb.append(entry.getKey());
+                sb.append(key);
                 sb.append(": ");
-                sb.append(entry.getValue());
+                sb.append(String.valueOf(inputRow.get(key)));
                 sb.append(";");
             }
         }
@@ -441,6 +498,7 @@ public class SampleMindedTransformTask
         // Hash the row to reduce the size in memory
         return FileUtil.sha1sum(sb.toString().getBytes());
     }
+
 
     /** Write out an empty additives.tsv, since we aren't using them */
     private void writeAdditives(ZipOutputStream file) throws IOException
@@ -549,7 +607,7 @@ public class SampleMindedTransformTask
             labs.put("TestLabB", 502);
 
             // Try a row that uses the lab's ID
-            Map<String, Object> row1 = new HashMap<String, Object>();
+            Map<String, Object> row1 = new ArrayListMap<String, Object>();
             row1.put("participant", "ptid1");
             row1.put("barcode", "barcode-1");
             row1.put("collectiondate", "May 5, 2012");
@@ -562,7 +620,7 @@ public class SampleMindedTransformTask
             assertEquals(502, outputRow1.get("lab_id"));
 
             // Try another row that uses the lab's name
-            Map<String, Object> row2 = new HashMap<String, Object>();
+            Map<String, Object> row2 = new ArrayListMap<String, Object>();
             row2.put("participant", "ptid1");
             row2.put("barcode", "barcode-1");
             row2.put("collectiondate", "May 5, 2012");
@@ -591,18 +649,24 @@ public class SampleMindedTransformTask
             assertEquals("Wrong lab name", 23, labs.get("FAKE (12)"));
         }
 
+
         @Test
         public void testDeduplication() throws IOException
         {
+            ArrayListMap<String,Object> template = new ArrayListMap<String,Object>();
+
             List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
-            Map<String, Object> row1 = new HashMap<String, Object>();
+            ArrayListMap<String, Object> row1 = new ArrayListMap(template.getFindMap());
             row1.put("participant", "ptid1");
             row1.put("barcode", "barcode-1");
             row1.put("collectiondate", "May 5, 2012");
             row1.put("visitname", "Visit 01");
             inputRows.add(row1);
-            inputRows.add(new HashMap<String, Object>(row1));
-            Map<String, Object> row3 = new HashMap<String, Object>(row1);
+            ArrayListMap<String, Object> row2 = new ArrayListMap(template.getFindMap());
+            row2.putAll(row1);
+            inputRows.add(row2);
+            ArrayListMap<String, Object> row3 = new ArrayListMap(template.getFindMap());
+            row3.putAll(row1);
             row3.put("participant", "ptid2");
             inputRows.add(row3);
 
@@ -610,10 +674,11 @@ public class SampleMindedTransformTask
             assertEquals(2, outputRows.size());
         }
 
+
         @Test
         public void testInvalidBarcodeDetection()
         {
-            Map<String, Object> row1 = new HashMap<String, Object>();
+            Map<String, Object> row1 = new ArrayListMap<String, Object>();
             row1.put("participant", "ptid1");
             row1.put("collectiondate", "May 5, 2012");
             row1.put("visitname", "Visit 01");
@@ -651,14 +716,14 @@ public class SampleMindedTransformTask
                 oneOf(_job).warn("Skipping data row missing 'barcode' value, row number 1");
             }});
 
-            Map<String, Object> row1 = new HashMap<String, Object>();
+            Map<String, Object> row1 = new ArrayListMap<String, Object>();
             assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
         }
 
         @Test
         public void testCollectionDateBucketing()
         {
-            Map<String, Object> row = new HashMap<String, Object>();
+            Map<String, Object> row = new ArrayListMap<String, Object>();
             row.put("participant", "ptid1");
             row.put("barcode", "barcode");
             String date = "May 5, 2012";
@@ -691,7 +756,7 @@ public class SampleMindedTransformTask
                 oneOf(_job).warn("Skipping data row missing 'collectiondate' value, row number 1");
             }});
 
-            Map<String, Object> row1 = new HashMap<String, Object>();
+            Map<String, Object> row1 = new ArrayListMap<String, Object>();
             row1.put("participant", "ptid1");
             row1.put("barcode", "barcode-1");
             row1.put("collectiondate", "");
@@ -703,31 +768,44 @@ public class SampleMindedTransformTask
         @Test
         public void testPrimaryAndDerivatives() throws IOException
         {
-            Map<String, Object> row1 = new HashMap<String, Object>();
+            ArrayListMap<String,Object> template = new ArrayListMap<String,Object>();
+            List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
+
+            ArrayListMap<String,Object> row1 = new ArrayListMap<String, Object>(template.getFindMap());
             row1.put("participant", "ptid1");
             row1.put("barcode", "barcode-1");
             row1.put("collectiondate", "May 5 2001");
             row1.put("visitname", "Visit 01");
             row1.put("specimentype", "PBMC");
-
-            List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
             inputRows.add(row1);
-            Map<String, Object> row2 = new HashMap<String, Object>(row1);
+
+            ArrayListMap<String,Object> row2 = new ArrayListMap<String, Object>(template.getFindMap());
+            row2.putAll(row1);
             row2.put("specimentype", "Blood");
             inputRows.add(row2);
-            Map<String, Object> row3 = new HashMap<String, Object>(row1);
+
+            ArrayListMap<String,Object> row3 = new ArrayListMap<String, Object>(template.getFindMap());
+            row3.putAll(row1);
             row3.put("specimentype", "NewType!");
             inputRows.add(row3);
-            Map<String, Object> row4 = new HashMap<String, Object>(row3);
+
+            ArrayListMap<String,Object> row4 = new ArrayListMap<String, Object>(template.getFindMap());
+            row4.putAll(row3);
             row4.put("participant", "ptid2");
             inputRows.add(row4);
-            Map<String, Object> row5 = new HashMap<String, Object>(row3);
+
+            ArrayListMap<String,Object> row5 = new ArrayListMap<String, Object>(template.getFindMap());
+            row5.putAll(row3);
             row5.put("specimentype", "Tissue Slide");
             inputRows.add(row5);
-            Map<String, Object> row6 = new HashMap<String, Object>(row3);
+
+            ArrayListMap<String,Object> row6 = new ArrayListMap<String, Object>(template.getFindMap());
+            row6.putAll(row3);
             row6.put("specimentype", "Urine Supernatant");
             inputRows.add(row6);
-            Map<String, Object> row7 = new HashMap<String, Object>(row3);
+
+            ArrayListMap<String,Object> row7 = new ArrayListMap<String, Object>(template.getFindMap());
+            row7.putAll(row3);
             row7.put("specimentype", "Urine Pellet");
             inputRows.add(row7);
 
