@@ -123,7 +123,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         {
             return _map.entrySet();
         }
-    };
+    }
 
 
     private final FindMap<K> _findMap;
@@ -131,13 +131,13 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public ArrayListMap()
     {
-        this(new FindMap(new HashMap<K, Integer>()), new ArrayList<V>());
+        this(new FindMap<K>(new HashMap<K, Integer>()), new ArrayList<V>());
     }
 
 
     public ArrayListMap(int columnCount)
     {
-        this(new FindMap(new HashMap<K, Integer>(columnCount * 2)), new ArrayList<V>(columnCount));
+        this(new FindMap<K>(new HashMap<K, Integer>(columnCount * 2)), new ArrayList<V>(columnCount));
     }
 
 
@@ -147,13 +147,13 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    protected ArrayListMap(FindMap<K> findMap)
+    public ArrayListMap(FindMap<K> findMap)
     {
         this(findMap, new ArrayList<V>(findMap.size()));
     }
 
 
-    public ArrayListMap(FindMap findMap, List<V> row)
+    public ArrayListMap(FindMap<K> findMap, List<V> row)
     {
         _findMap = findMap;
         _row = (List<Object>)row;
@@ -234,7 +234,10 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public Set<K> keySet()
     {
-        return _findMap.keySet();
+        Set<K> ret = _findMap.keySet();
+        assert null != (ret = Collections.unmodifiableSet(ret));
+        return ret;
+
     }
 
 

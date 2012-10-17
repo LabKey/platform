@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -47,9 +48,13 @@ public class TSVMapWriter extends TSVWriter
     {
         _rows = rows;
 
-        Map<String, Object> firstRow = _rows.iterator().next();
-        if (firstRow != null)
-            _columns = firstRow.keySet();
+        Iterator<Map<String, Object>> it = _rows.iterator();
+        if (it.hasNext())
+        {
+            Map<String, Object> firstRow = it.next();
+            if (firstRow != null)
+                _columns = firstRow.keySet();
+        }
     }
 
     /**
