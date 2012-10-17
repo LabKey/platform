@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2012 LabKey Corporation
  *
@@ -30,8 +31,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This is designed to parse the FASTQ files produced by a single run on an illumina instructment and produce one gzipped FASTQ
@@ -46,32 +49,30 @@ import java.util.Map;
 public class IlluminaFastqParser
 {
     private String _outputPrefix;
-    private List<Integer> _sampleList;
+    private Map<Integer, Object> _sampleMap;
     private File _destinationDir;
     private File[] _files;
-    private Map<Pair<Integer, Integer>, Pair<File, net.sf.picard.fastq.FastqWriter>> _fileMap;
-    private Map<Pair<Integer, Integer>, Integer> _sequenceTotals;
+    private Map<Pair<Object, Integer>, Pair<File, net.sf.picard.fastq.FastqWriter>> _fileMap;
+    private Map<Pair<Object, Integer>, Integer> _sequenceTotals;
+    private Set<Integer> _skippedSampleIdx = new HashSet<Integer>();
     private FastqWriterFactory _writerFactory = new FastqWriterFactory();
     private Logger _logger;
     private static FileType FASTQ_FILETYPE = new FileType(Arrays.asList("fastq", "fq"), "fastq", FileType.gzSupportLevel.SUPPORT_GZ);
 
-    public IlluminaFastqParser (@Nullable String outputPrefix, List<Integer> sampleList, Logger logger, File... files)
+    public IlluminaFastqParser (@Nullable String outputPrefix, Map<Integer, Object> sampleMap, Logger logger, File... files)
     {
         _outputPrefix = outputPrefix;
-        _sampleList = sampleList;
+        _sampleMap = sampleMap;
         _files = files;
         _logger = logger;
     }
 
-    public IlluminaFastqParser (String outputPrefix, List<Integer> sampleList, Logger logger, String sourcePath)
-    {
-        this(outputPrefix, sampleList, logger, sourcePath, null);
-    }
-
-    public IlluminaFastqParser (String outputPrefix, List<Integer> sampleList, Logger logger, String sourcePath, String fastqPrefix)
+    // NOTE: sampleMap maps the sample index used internally within illumina (ie. the order of this sample in the CSV), to a sampleId used
+    // by the callee
+    public IlluminaFastqParser (String outputPrefix, Map<Integer, Object> sampleMap, Logger logger, String sourcePath, String fastqPrefix)
     {
         _outputPrefix = outputPrefix;
-        _sampleList = sampleList;
+        _sampleMap = sampleMap;
         _logger = logger;
 
         List<File> files = inferIlluminaInputsFromPath(sourcePath, fastqPrefix);
@@ -102,10 +103,10 @@ public class IlluminaFastqParser
 
     //this returns a map connecting samples with output FASTQ files.
     // the key of the map is a pair where the first item is the sampleId and the second item indicated whether this file is the forward (1) or reverse (2) reads
-    public Map<Pair<Integer, Integer>, File> parseFastqFiles () throws PipelineJobException
+    public Map<Pair<Object, Integer>, File> parseFastqFiles () throws PipelineJobException
     {
-        _fileMap = new HashMap<Pair<Integer, Integer>, Pair<File, net.sf.picard.fastq.FastqWriter>>();
-        _sequenceTotals = new HashMap<Pair<Integer, Integer>, Integer>();
+        _fileMap = new HashMap<Pair<Object, Integer>, Pair<File, net.sf.picard.fastq.FastqWriter>>();
+        _sequenceTotals = new HashMap<Pair<Object, Integer>, Integer>();
 
         FastqReader reader;
         int _parsedReads;
@@ -131,13 +132,15 @@ public class IlluminaFastqParser
 
                     writer = getWriter(sampleIdx, targetDir, pairNumber);
                     if(writer != null)
+                    {
                         writer.write(fq);
 
-                    _parsedReads++;
-                    updateCount(sampleIdx, pairNumber);
+                        _parsedReads++;
+                        updateCount(sampleIdx, pairNumber);
 
-                    if (0 == _parsedReads % 25000)
-                        logReadsProgress(_parsedReads);
+                        if (0 == _parsedReads % 25000)
+                            logReadsProgress(_parsedReads);
+                    }
                 }
 
                 if (0 != _parsedReads % 25000)
@@ -148,7 +151,7 @@ public class IlluminaFastqParser
             }
             catch (Exception e)
             {
-                for (Pair<Integer, Integer> key :_fileMap.keySet())
+                for (Pair<Object, Integer> key :_fileMap.keySet())
                 {
                     _fileMap.get(key).getValue().close();
                 }
@@ -157,8 +160,8 @@ public class IlluminaFastqParser
             }
         }
 
-        Map<Pair<Integer, Integer>, File> outputs = new HashMap<Pair<Integer, Integer>, File>();
-        for (Pair<Integer, Integer> key :_fileMap.keySet())
+        Map<Pair<Object, Integer>, File> outputs = new HashMap<Pair<Object, Integer>, File>();
+        for (Pair<Object, Integer> key :_fileMap.keySet())
         {
             _fileMap.get(key).getValue().close();
             outputs.put(key, _fileMap.get(key).getKey());
@@ -175,32 +178,43 @@ public class IlluminaFastqParser
 
     private void updateCount(int sampleIdx, int pairNumber)
     {
-        Pair<Integer, Integer> key = Pair.of(_sampleList.get(sampleIdx), pairNumber);
+        if (_sampleMap.containsKey(sampleIdx))
+        {
+            Pair<Object, Integer> key = Pair.of(_sampleMap.get(sampleIdx), pairNumber);
 
-        if(!_sequenceTotals.containsKey(key))
-            _sequenceTotals.put(key, 0);
+            Integer total = _sequenceTotals.get(key);
+            if (total == null)
+                total = 0;
 
-        _sequenceTotals.put(key, (_sequenceTotals.get(key) + 1));
+            total++;
+
+            _sequenceTotals.put(key, total);
+        }
     }
 
     private net.sf.picard.fastq.FastqWriter getWriter (int sampleIdx, File targetDir, int pairNumber) throws IOException, PipelineJobException
     {
-        if(sampleIdx > _sampleList.size())
+        if(!_sampleMap.containsKey(sampleIdx))
         {
-            throw new PipelineJobException("The CSV input has more samples than expected");
+            if (!_skippedSampleIdx.contains(sampleIdx))
+            {
+                _logger.warn("The CSV input does not contain sample info for a sample with index: " + sampleIdx);
+                _skippedSampleIdx.add(sampleIdx);
+            }
+            return null;
         }
 
-        //NOTE: sampleIdx is 1-based and the arrayList is 0-based, so we need to subtract 1
-        //the element at position 0 represent control reads and those not mapped to a sample
-        int sampleId = _sampleList.get(sampleIdx);
-        Pair<Integer, Integer> sampleKey = Pair.of(sampleId, pairNumber);
+        // NOTE: sampleIdx is the index of the sample according to the Illumina CSV file, and the number assigned
+        // by the illumina barcode callers.  Sample 0 always refers to control reads
+        Object sampleId = _sampleMap.get(sampleIdx);
+        Pair<Object, Integer> sampleKey = Pair.of(sampleId, pairNumber);
         if (_fileMap.containsKey(sampleKey))
         {
             return _fileMap.get(sampleKey).getValue();
         }
         else
         {
-            String name = (_outputPrefix == null ? "Reads" : _outputPrefix) + "-R" + pairNumber + "-" + (sampleId == 0 ? "Control" : sampleId) + ".fastq";
+            String name = (_outputPrefix == null ? "Reads" : _outputPrefix) + "-R" + pairNumber + "-" + (sampleIdx == 0 ? "Control" : sampleId) + ".fastq";
             File newFile = new File(targetDir, name);
             newFile.createNewFile();
             net.sf.picard.fastq.FastqWriter writer = _writerFactory.newWriter(newFile);
@@ -220,7 +234,7 @@ public class IlluminaFastqParser
         _destinationDir = destinationDir;
     }
 
-    public Map<Pair<Integer, Integer>, Integer> getReadCounts()
+    public Map<Pair<Object, Integer>, Integer> getReadCounts()
     {
         return _sequenceTotals;
     }
