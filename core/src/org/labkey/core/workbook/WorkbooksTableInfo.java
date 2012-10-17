@@ -54,7 +54,7 @@ public class WorkbooksTableInfo extends ContainerTable
         this.setDefaultVisibleColumns(defCols);
 
         //workbook true
-        this.addCondition(new SQLFragment("Workbook=?", true));
+        this.addCondition(new SQLFragment("Type='workbook'"));
 
         setInsertURL(new DetailsURL(new ActionURL(CoreController.CreateWorkbookAction.class, coreSchema.getContainer())));
     }

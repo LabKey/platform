@@ -5,13 +5,11 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
-import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.UnauthorizedException;
@@ -104,7 +102,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
                             String title = folderXml.getFolder().getTitle();
                             String description = folderXml.getFolder().getDescription();
                             boolean isWorkbook = folderXml.getFolder().getIsWorkbook();
-                            childContainer = ContainerManager.createContainer(ctx.getContainer(), subfolderNode.getName(), title, description, isWorkbook, ctx.getUser());
+                            childContainer = ContainerManager.createContainer(ctx.getContainer(), subfolderNode.getName(), title, description, (isWorkbook ? Container.TYPE.workbook : Container.TYPE.normal), ctx.getUser());
 
                             // set the child container to inherit permissions from the parent by default
                             SecurityManager.setInheritPermissions(childContainer);

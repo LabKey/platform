@@ -190,7 +190,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public double getVersion()
     {
-        return 12.25;
+        return 12.26;
     }
 
     @Override
@@ -1145,7 +1145,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
             }
 
-            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, false, _user);
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
             _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
 
             Map<String, ModuleProperty> props = _module.getModuleProperties();

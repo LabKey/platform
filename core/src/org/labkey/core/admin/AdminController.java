@@ -113,7 +113,6 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.PreferenceService;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.BreakpointThread;
@@ -3998,7 +3997,7 @@ public class AdminController extends SpringActionController
                             return false;
                         }
                             
-                        c = ContainerManager.createContainer(parent, folderName, null, null, false, getUser());
+                        c = ContainerManager.createContainer(parent, folderName, null, null, Container.TYPE.normal, getUser());
 
                         MemoryVirtualFile vf = new MemoryVirtualFile();
 
@@ -4039,7 +4038,7 @@ public class AdminController extends SpringActionController
                             }
                         }
 
-                        c = ContainerManager.createContainer(parent, folderName, null, null, false, getUser());
+                        c = ContainerManager.createContainer(parent, folderName, null, null, Container.TYPE.normal, getUser());
                         c.setFolderType(type, getUser());
 
                         if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))

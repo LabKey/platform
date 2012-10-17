@@ -339,6 +339,14 @@ public class ProjectController extends SpringActionController
             if (null == url || url.getExtraPath().equals("/"))
                 return HttpView.redirect(homeURL());
 
+            String pageId1 = url.getParameter("pageId");
+            if (null != pageId1)
+            {
+                Container childContainer = ContainerManager.getChild(c, pageId1);
+                if (null != childContainer && childContainer.isContainerTab())
+                    throw new RedirectException(new ActionURL(BeginAction.class, childContainer));
+            }
+
             PageConfig page = getPageConfig();
             if (title != null)
                 page.setTitle(title, appendPath);

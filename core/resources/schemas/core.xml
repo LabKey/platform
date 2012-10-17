@@ -29,7 +29,7 @@
       <ns:column columnName="Name"/>
       <ns:column columnName="SortOrder"/>
       <ns:column columnName="Description"/>
-      <ns:column columnName="Workbook"/>
+      <ns:column columnName="Type"/>
       <ns:column columnName="Title"/>
       <ns:column columnName="Searchable"/>
     </ns:columns>

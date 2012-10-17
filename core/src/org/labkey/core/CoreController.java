@@ -966,7 +966,7 @@ public class CoreController extends SpringActionController
 
             try
             {
-                Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, workbook, getUser());
+                Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, (workbook ? Container.TYPE.workbook : Container.TYPE.normal), getUser());
 
                 String folderTypeName = json.getString("folderType");
                 if (folderTypeName == null && workbook)
