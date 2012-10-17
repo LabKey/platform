@@ -589,7 +589,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         this.loadError = loadError;
 
         //TODO: is this the right behavior?
-        if(response && response.status === 0){
+        if(response && response.status === 200){
             return;
         }
 
