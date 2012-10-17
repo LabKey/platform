@@ -120,7 +120,7 @@ Ext4.define('Security.util.SecurityCache', {
             return this.principalsStore;
 
         this.principalsStore = Ext4.create('Security.store.SecurityCache', {
-            id         : 'UserId',
+//            id         : 'UserId',
             schemaName : 'core',
             queryName  : 'Principals',
             columns    : '*',
@@ -304,16 +304,18 @@ Ext4.define('Security.util.SecurityCache', {
         return record;
     },
 
-    createGroup : function(project, name, callback,scope)
+    createGroup : function(projectId, name, callback, scope)
     {
         var me = this;
-        LABKEY.Security.createGroup({containerPath:project, groupName:name, successCallback:function(obj,response,options)
-        {
-            var container = project == '/' ? null : project;
-            var group = {UserId:obj.id, Name:obj.name, Container:container, Type:'g'};
-            me._addPrincipal(group);
-            if (typeof callback == 'function')
-                callback.call(scope || this, group);
+        LABKEY.Security.createGroup({
+            containerPath : projectId,
+            groupName     : name,
+            success       : function(group) {
+                var container = projectId,
+                    group     = {UserId:group.id, Name:group.name, Container:container, Type:'g'};
+                me._addPrincipal(group);
+                if (typeof callback == 'function')
+                    callback.call(scope || this, group);
         }});
     },
 
@@ -336,7 +338,7 @@ Ext4.define('Security.util.SecurityCache', {
                     if (errorDisplay.indexOf("Group id " + group.UserId) == 0)
                         errorDisplay = errorDisplay.replace("Group id " + group.UserId, "Group " + group.Name)
 
-                    Ext.Msg.alert("Error", errorDisplay);
+                    Ext4.Msg.alert("Error", errorDisplay);
                 }
             });
         }
@@ -451,10 +453,10 @@ Ext4.define('Security.util.SecurityCache', {
         }
         var r = this.principalsStore.getById(groupid);
         if (r)
-            this.principalsStore.fireEvent("update", this.principalsStore, r, Ext.data.Record.EDIT);
+            this.principalsStore.fireEvent('update', this.principalsStore, r, Ext4.data.Model.EDIT);
         r = this.principalsStore.getById(userid);
         if (r)
-            this.principalsStore.fireEvent("update", this.principalsStore, r, Ext.data.Record.EDIT);
+            this.principalsStore.fireEvent('update', this.principalsStore, r, Ext4.data.Model.EDIT);
     },
 
     _removeMembership : function(groupid,userid)
@@ -468,10 +470,10 @@ Ext4.define('Security.util.SecurityCache', {
         }
         var r = this.principalsStore.getById(groupid);
         if (r)
-            this.principalsStore.fireEvent("update", this.principalsStore, r, Ext.data.Record.EDIT);
+            this.principalsStore.fireEvent('update', this.principalsStore, r, Ext4.data.Model.EDIT);
         r = this.principalsStore.getById(userid);
         if (r)
-            this.principalsStore.fireEvent("update", this.principalsStore, r, Ext.data.Record.EDIT);
+            this.principalsStore.fireEvent('update', this.principalsStore, r, Ext4.data.Model.EDIT);
     },
 
     _computeMembershipMaps : function()
@@ -503,11 +505,17 @@ Ext4.define('Security.util.SecurityCache', {
             && this.rolesReady
             && this.membershipStore.ready
             && this.resourcesReady
-            )
+           )
         {
-            this.ready = true;
-            this.fireEvent('ready');
+            if (!this.ready)
+            {
+                this.ready = true;
+                this.fireEvent('ready');
+            }
+            return true;
         }
+
+        return false;
     },
 
     onReady : function(fn, scope)
@@ -590,58 +598,6 @@ Ext4.define('Security.util.SecurityCache', {
         this.checkReady();
     },
 
-    _makeRecord : function(c)
-    {
-        c.project = c.path != '/' && 0 == c.path.lastIndexOf('/');
-        return this.containersStore.model.create(c,c.id);
-    },
-
-    _errorContainersCallback : function(e,resp,req)
-    {
-        alert(e.exception);
-        this.containersReady = true;
-        this.checkReady();
-    },
-
-    _loadContainersResponse :function(r)
-    {
-        var map = this._mapContainers(null, [r], {});
-        var records = [];
-        for (var id in map)
-            records.push(this._makeRecord(map[id]));
-        this.containersStore.add(records);
-        this.containersReady = true;
-        this.checkReady();
-    },
-
-
-    _errorProjectsCallback : function(e,resp,req)
-    {
-        alert(e.exception);
-        this.projectsReady = true;
-        this.checkReady();
-    },
-
-
-    _loadProjectsResponse : function(r)
-    {
-        var map = this._mapContainers(null, [r], {});
-        var records = [];
-        for (var id in map)
-        {
-            var c = map[id];
-            if (c.path=='/')
-            {
-                this.rootContainer = c;
-                this.rootId = c.id;
-            }
-            records.push(this._makeRecord(c));
-        }
-        this.containersStore.add(records);
-        this.projectsReady = true;
-        this.checkReady();
-    },
-
     _mapContainers : function(parent, list, map)
     {
         if (!list || list.length == 0)
@@ -666,6 +622,14 @@ Ext4.define('Security.store.SecurityCache', {
     extend: 'LABKEY.ext4.Store',
 
     statics : {
+        /**
+         * Static method to generate principal stores based on a given type. Takes into
+         * account the set of excludedPrincipals so they are not included either.
+         * @param store - The store to be filtered
+         * @param type
+         * @param container
+         * @param excludedPrincipals
+         */
         filterPrincipalsStore : function(store, type, container, excludedPrincipals) {
 
             if (!excludedPrincipals)
@@ -681,10 +645,10 @@ Ext4.define('Security.store.SecurityCache', {
                     continue;
                 switch (type)
                 {
-                    case 'users': if (d.Type != 'u') continue; break;
-                    case 'groups': if (d.Type != 'g' && d.Type != 'r') continue; break;
+                    case 'users'   : if (d.Type != 'u') continue; break;
+                    case 'groups'  : if (d.Type != 'g' && d.Type != 'r') continue; break;
                     case 'project' : if (d.Type != 'g' || d.Container != container) continue; break;
-                    case 'site' : if ((d.Type != 'g' && d.Type != 'r') || d.Container) continue; break;
+                    case 'site'    : if ((d.Type != 'g' && d.Type != 'r') || d.Container) continue; break;
                 }
                 data.push(d);
             }

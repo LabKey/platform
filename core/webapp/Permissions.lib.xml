@@ -1,6 +1,7 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
         <script path="Security/util/SecurityCache.js"/>
+        <script path="Security/util/Policy.js"/>
         <script path="Security/field/PrincipalComboBox.js"/>
         <script path="Security/window/UserInfoPopup.js"/>
         <script path="Security/panel/GroupPicker.js"/>

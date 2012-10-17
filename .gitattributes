@@ -739,6 +739,7 @@ core/webapp/Security/field/PrincipalComboBox.js -text
 core/webapp/Security/panel/GroupPicker.js -text
 core/webapp/Security/panel/PermissionEditor.js -text
 core/webapp/Security/panel/PolicyEditor.js -text
+core/webapp/Security/util/Policy.js -text
 core/webapp/Security/util/SecurityCache.js -text
 core/webapp/Security/window/UserInfoPopup.js -text
 core/webapp/SecurityAdmin.css -text

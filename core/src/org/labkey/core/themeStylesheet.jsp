@@ -681,6 +681,13 @@ li.labkey-tab-inactive a
 
 .participant-filter-panel div.x4-panel-header {
     background-color: #<%= webpart %> !important;
+    background-image: none;
+}
+
+.participant-filter-panel .x4-panel-header-default-top {
+    -webkit-box-shadow: #<%= webpart %> 0 1px 0px 0 inset;
+    -moz-box-shadow: #<%= webpart %> 0 1px 0px 0 inset;
+    box-shadow: #<%= webpart %> 0 1px 0px 0 inset;
 }
 
 .ext-el-mask-msg,

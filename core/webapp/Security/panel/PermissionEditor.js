@@ -33,17 +33,7 @@ Ext4.define('Security.panel.PermissionEditor', {
 
     getItems : function() {
 
-        var items = [{
-            xtype      : 'tabpanel',
-            id         : 'folderPermissionsTabPanel',
-            region     : 'center',
-            activeItem : 0,
-            autoHeight : false,
-            border     : true,
-            defaults   : {style : {padding:'5px'}},
-            plain      : true,
-            items      : this.getTabItems()
-        }];
+        var items = [this.getTabPanel()];
 
         if (!this.isRoot && this.treeConfig) {
 
@@ -67,7 +57,6 @@ Ext4.define('Security.panel.PermissionEditor', {
                         expandable : true,
                         text       : Ext4.String.htmlEncode(this.treeConfig.project.name),
                         href       : Ext4.String.htmlEncode(this.treeConfig.project.securityHref)
-//                        ,cls : 'x-tree-node-current'
                     }
                 },
                 enableDrag : false,
@@ -76,7 +65,16 @@ Ext4.define('Security.panel.PermissionEditor', {
                 width      : 220,
                 region     : 'west',
                 split      : true,
-                border     : true
+                border     : true,
+                listeners  : {
+                    load : function(tree, node, recs) {
+                        for (var r=0; r < recs.length; r++) {
+                            if (recs[r].data.cls != '')
+                                return;
+                        }
+                        tree.getRootNode().set('cls', 'x-tree-node-current');
+                    }
+                }
             });
 
         }
@@ -84,16 +82,35 @@ Ext4.define('Security.panel.PermissionEditor', {
         return items;
     },
 
+    getTabPanel : function() {
+
+        if (this.tabPanel)
+            return this.tabPanel;
+
+        this.tabPanel = Ext4.create('Ext.tab.Panel', {
+            xtype      : 'tabpanel',
+            region     : 'center',
+            activeItem : 0,
+            autoHeight : false,
+            border     : true,
+            defaults   : {style : {padding:'5px'}},
+            plain      : true,
+            items      : this.getTabItems()
+        });
+
+        return this.tabPanel;
+    },
+
     getTabItems : function() {
 
         var items = [this.getPolicyEditor()];
 
-        if (this.isProjectRoot) {
-            items.push(this.getGroupTabConfig('', true));
+        if (LABKEY.Security.currentUser.isSystemAdmin) {
+            items.push(this.getGroupTabConfig(this.securityCache.projectId, true));
         }
 
-        if (LABKEY.Security.currentUser.isSystemAdmin) {
-            items.push(this.getGroupTabConfig(LABKEY.Security.currentContainer.path, true));
+        if (this.isSiteAdmin) {
+            items.push(this.getGroupTabConfig('', true));
         }
 
         return items;
@@ -117,22 +134,22 @@ Ext4.define('Security.panel.PermissionEditor', {
         return this.policyEditor;
     },
 
-    getGroupTabConfig : function(project, canEdit, ct) {
+    getGroupTabConfig : function(projectId, canEdit) {
 
-        var items = [];
+        var items = [], groupList;
 
         var showPopup = function(group) {
             var edit = (!group.Container && LABKEY.Security.currentUser.isSystemAdmin) || (group.Container && LABKEY.Security.currentUser.isAdmin);
             var w = Ext4.create('Security.window.UserInfoPopup', {
                 userId  : group.UserId,
                 cache   : this.securityCache,
-                policy  : this.getPolicyEditor(),
+                policy  : this.getPolicyEditor().getPolicy(),
                 modal   : true,
                 canEdit : edit,
                 listeners: {
-                    close: function(){
-                        if (groupsList)
-                            groupsList.onDataChanged();
+                    close: function() {
+                        if (groupList)
+                            groupList.onDataChanged();
                     },
                     scope: this
                 },
@@ -147,10 +164,11 @@ Ext4.define('Security.panel.PermissionEditor', {
                 border : false,
                 style  : 'padding-bottom: 10px;',
                 items  : [{
-                    xtype : 'textfield',
-                    emptyText: 'New group name',
-                    width : 310,
-                    padding: '10 10 10 0'
+                    xtype     : 'textfield',
+                    name      : projectId === '' ? 'sitegroupsname' : 'projectgroupsname',
+                    emptyText : 'New group name',
+                    width     : 310,
+                    padding   : '10 10 10 0'
                 },{
                     xtype : 'button',
                     text  : 'Create New Group',
@@ -160,7 +178,9 @@ Ext4.define('Security.panel.PermissionEditor', {
                         if (!groupName)
                             return;
 
-                        this.securityCache.createGroup((project||'/'), groupName, showPopup);
+                        this.securityCache.createGroup(projectId, groupName, showPopup, this);
+
+                        btn.up('panel').down('textfield').reset();
                     },
                     scope : this
                 }],
@@ -168,25 +188,27 @@ Ext4.define('Security.panel.PermissionEditor', {
             });
         }
 
-        items.push({
-            xtype  : 'labkey-grouppicker',
+        groupList = Ext4.create('Security.panel.GroupPicker', {
             cache  : this.securityCache,
             width  : 550,
             style  : 'padding-top: 10px; background: transparent;',
             border : false,
             autoHeight     : true,
-            projectId      : project,
+            projectId      : projectId,
             deferredRender : true,
             listeners      : {
                 select: function(list,group){
-                    showPopup(group);
+                    showPopup.call(this, group);
                 },
                 scope: this
-            }
+            },
+            scope : this
         });
 
+        items.push(groupList);
+
         return {
-            title  : project === '' ? 'Site Groups' : 'Project Groups',
+            title  : projectId === '' ? 'Site Groups' : 'Project Groups',
             border : false,
             deferredRender : false,
             items  : items

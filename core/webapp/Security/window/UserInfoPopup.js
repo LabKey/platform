@@ -51,8 +51,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                 hdrHtml += LABKEY.Utils.textLink({
                     text : 'manage group',
                     href : LABKEY.ActionURL.buildURL('security', 'group', this.user.Container || '/', {id: this.user.UserId}),
-                    style: 'float: right',
-                    target : '_blank'
+                    style: 'float: right'
                 });
             }
             if (this.user.UserId != Security.util.SecurityCache.groupDevelopers)
@@ -80,7 +79,7 @@ Ext4.define('Security.window.UserInfoPopup', {
 
         var i, user,
             id = Ext4.id(),
-            html,
+            html = '',
             groups = this.cache.getGroupsFor(this.userId),
             principalWrapper,
             removeWrappers = [],
@@ -95,9 +94,6 @@ Ext4.define('Security.window.UserInfoPopup', {
                 var A = a.Type + (a.Container == null ? "1" : "2") + a.Name.toUpperCase(), B = b.Type + (b.Container == null ? "1" : "2") + b.Name.toUpperCase();
                 return A > B ? 1 : A < B ? -1 : 0;
             });
-
-//            if (deleteGroup)
-//                Ext.fly(deleteGroup).dom.onclick = this.DeleteGroup_onClick.createDelegate(this);
 
             toAdd.push({
                 xtype  : 'labkey-principalcombo',
@@ -116,7 +112,7 @@ Ext4.define('Security.window.UserInfoPopup', {
 
         if (groups.length)
         {
-            html = '<b>member of</b><ul style="list-style-type: none;">';
+            html = '<p class="userinfoHdr">Members of</p><ul style="list-style-type: none;">';
 
             for (var g=0; g < groups.length; g++)
             {
@@ -138,7 +134,7 @@ Ext4.define('Security.window.UserInfoPopup', {
 
             if (allRoles.length > 0)
             {
-                html += '<b>effective roles</b><ul style="list-style-type: none;">';
+                html += '<p class="userinfoHdr">Effective Roles</p><ul style="list-style-type: none;">';
 
                 for (r=0; r < allRoles.length; r++)
                 {
@@ -153,15 +149,13 @@ Ext4.define('Security.window.UserInfoPopup', {
 
         if (isGroup)
         {
-            html = '<b>members</b>';
-
             if (this.userId == Security.util.SecurityCache.groupUsers)
             {
                 html += '<p>Site Users represents all signed-in users.</p>';
             }
             else
             {
-                html += '<table class="userinfo">';
+                html += '<p class="userinfoHdr">Members</p><table class="userinfo">';
                 if (this.canEdit)
                 {
                     principalWrapper = '$p$' + id;
@@ -181,8 +175,8 @@ Ext4.define('Security.window.UserInfoPopup', {
                     html += '<tr><td width="100">';
                     if (isMemberGroup)
                     {
-                        var url = LABKEY.ActionURL.buildURL('security', 'group',(user.Container ? this.cache.projectId : this.cache.rootId),{id:user.UserId});
-                        html += '<a style="font-size: 95%; font-weight: bold;" href="' + url + '">' + (user.Container ? "" : "Site: ") + Ext4.String.htmlEncode(user.Name) + '</a>';
+                        var url = LABKEY.ActionURL.buildURL('security', 'group',(user.Container ? this.cache.projectId : '/'),{id:user.UserId});
+                        html += '<a style="font-size: 95%; font-weight: bold;" href="' + url + '">' + (user.Container ? "" : "Site:&nbsp;") + Ext4.String.htmlEncode(user.Name) + '</a>';
                     }
                     else
                     {
@@ -225,7 +219,18 @@ Ext4.define('Security.window.UserInfoPopup', {
                         el = Ext4.fly(removeWrappers[r][0]);
                         if (el)
                         {
+                            // listeners for removing group members
                             el.dom.onclick = Ext4.bind(this.RemoveMember_onClick, this, [removeWrappers[r][1]]);
+                        }
+                    }
+
+                    // listener for deleting group
+                    if (deleteGroup)
+                    {
+                        el = Ext4.fly(deleteGroup);
+                        if (el)
+                        {
+                            el.dom.onclick = Ext4.bind(this.DeleteGroup_onClick, this);
                         }
                     }
                 },
@@ -257,7 +262,7 @@ Ext4.define('Security.window.UserInfoPopup', {
     DeleteGroup_onClick : function()
     {
         var groupid = this.user.UserId;
-        this.cache.deleteGroup(groupid, this.close.createDelegate(this));
+        this.cache.deleteGroup(groupid, this.close, this);
     },
 
     RemoveMember_onClick : function(userid)

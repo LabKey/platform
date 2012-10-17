@@ -24,28 +24,32 @@
 <div id="unconnected" style="padding:5px;"></div>
 <div id="groupDiagram"></div>
 <script type="text/javascript">
-    Ext.onReady(function() {
-        if (Ext.isIE && (Ext.isIE6 || Ext.isIE7 || Ext.isIE8))
+    Ext4.onReady(function() {
+        if (Ext4.isIE && (Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8))
         {
             render("This feature is not supported on older versions of Internet Explorer. " +
                 "Please upgrade to the latest version of Internet Explorer, or switch to using Firefox, Chrome, or Safari. " +
                 "See <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=supportedBrowsers' target='browserVersions'>this page</a> for more information.");
         }
-        else if (Ext.isGecko2 || Ext.isGecko3)
+        else if (Ext4.isGecko2 || Ext4.isGecko3)
         {
             render("This feature is not supported on older versions of Firefox; please upgrade to the latest version of Firefox. " +
                 "See <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=supportedBrowsers' target='browserVersions'>this page</a> for more information.");
         }
         else
         {
-            this.hideUnconnectedCheckbox = new Ext.form.Checkbox({id:'hideUnconnectedCheckbox', style:{display:'inline'}, boxLabel:"Hide unconnected nodes"});
+            this.hideUnconnectedCheckbox = new Ext4.form.Checkbox({id:'hideUnconnectedCheckbox', style:{display:'inline'}, boxLabel:"Hide unconnected nodes"});
             this.hideUnconnectedCheckbox.render('unconnected');
             this.hideUnconnectedCheckbox.on("check", refreshDiagram, this);
 
             refreshDiagram();
-            securityCache.principalsStore.on("add", refreshDiagram, this);
-            securityCache.principalsStore.on("remove", refreshDiagram, this);
-            securityCache.principalsStore.on("update", refreshDiagram, this);
+            var cache = Ext4.getCmp('securityCache1');
+            if (cache)
+            {
+                cache.principalsStore.on('add', refreshDiagram, this);
+                cache.principalsStore.on('remove', refreshDiagram, this);
+                cache.principalsStore.on('update', refreshDiagram, this);
+            }
         }
     });
 
@@ -58,7 +62,7 @@
             urlString = <%=q(groupDiagramURL.addParameter("hideUnconnected", true).toString())%>;
         }
 
-        Ext.Ajax.request({
+        Ext4.Ajax.request({
             url: urlString,
             success: renderGroupDiagram,
             failure: onError
@@ -67,7 +71,7 @@
 
     function renderGroupDiagram(response)
     {
-        var bean = Ext.util.JSON.decode(response.responseText);
+        var bean = Ext4.JSON.decode(response.responseText);
 
         render(bean.html);
     }
@@ -76,7 +80,7 @@
     {
         if (response.responseText)
         {
-            var bean = Ext.util.JSON.decode(response.responseText);
+            var bean = Ext4.JSON.decode(response.responseText);
 
             if (bean.exception)
             {
@@ -90,6 +94,6 @@
 
     function render(html)
     {
-        Ext.fly("groupDiagram").update(html);
+        Ext4.fly("groupDiagram").update(html);
     }
 </script>

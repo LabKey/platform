@@ -25,12 +25,23 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("Permissions"));
+      return resources;
+  }
+%>
 <%
     SecurityController.FolderPermissionsView me = (SecurityController.FolderPermissionsView)HttpView.currentView();
     Container c = getViewContext().getContainer();
@@ -47,43 +58,10 @@
     User user = getViewContext().getUser();
 %>
 <style type="text/css">
-    .x-tree-node-leaf .x-tree-node-icon{
-        background-image:url(<%=getViewContext().getContextPath()%>/<%=PageFlowUtil.extJsRoot()%>/resources/images/default/tree/folder.gif);
-    }
-    .x-tree-node-current {
+    td.x-tree-node-current a {
         font-weight: bold;
     }
 </style>
-<script type="text/javascript">
-LABKEY.requiresCss("SecurityAdmin.css");
-LABKEY.requiresScript("SecurityAdmin.js", true);
-Ext.QuickTips.init();
-</script>
-<script type="text/javascript">
-var isFolderAdmin = <%=c.hasPermission(user, AdminPermission.class) ? "true" : "false"%>;
-var isProjectAdmin = <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>;
-var isSiteAdmin = <%= user.isAdministrator() ? "true" : "false" %>;
-var isRoot = <%= c.isRoot() ? "true" : "false" %>;
-
-var $ = Ext.get;
-var $h = Ext.util.Format.htmlEncode;
-var $dom = Ext.DomHelper;
-
-//$('bodypanel').addClass('extContainer');
-
-var securityCache = null;
-
-Ext.onReady(function(){
-    securityCache = new SecurityCache({
-        root:<%=PageFlowUtil.jsString(root.getId())%>,
-        project:<%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
-        folder:<%=PageFlowUtil.jsString(c.getId())%>
-    });
-});
-
-var policyEditor = null;
-</script>
-
 <%--
     TABS
 --%>
@@ -91,212 +69,99 @@ var policyEditor = null;
 <div id="titleDiv" class="labkey-nav-page-header" style="padding: 5px">Permissions for <%=h(c.getPath())%></div>
 <% } %>
 <div id="buttonDiv" style="padding:5px;"></div>
-<div id="tabBoxDiv" class="extContainer"><i>Loading...</i></div>
-<div style="font-style:italic">* indicates permissions are inherited</div>
+
+<div id="tabBoxDiv"></div>
+<div style="font-style:italic;">* indicates permissions are inherited</div>
 <script type="text/javascript">
 
-var tabItems = [];
-var tabPanel = null;
-var borderPanel = null;
-var doneURL = <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>;
+var viewTabs = [];
+ee = null;
 
-function done()
-{
-    window.location = doneURL;
-}
+Ext4.onReady(function(){
+    Ext4.QuickTips.init();
 
-var autoScroll = true;
+    var isFolderAdmin  = <%=c.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
+        isProjectAdmin = <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
+        isSiteAdmin    = <%= user.isAdministrator() ? "true" : "false" %>,
+        isRoot         = <%= c.isRoot() ? "true" : "false" %>,
+        doneURL        = <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>;
 
-Ext.onReady(function(){
-
-    var doneBtn = new Ext.Button({
-        text: 'Done',
-        handler: done,
-        renderTo: 'buttonDiv'
-    });
-
-    for (var i=0 ; i<tabItems.length ; i++)
-        tabItems[i].contentEl = $(tabItems[i].contentEl);
-
-    var items = [];
-    items.push(
+    var done = function() {
+        var policyEditor = editor.getPolicyEditor();
+        if (!policyEditor || !policyEditor.isDirty())
+            window.location = doneURL;
+        else
         {
-            activeItem : isRoot ? 1 :   0,
-            autoHeight : false,
-            border:true,
-            defaults: {style : {padding:'5px'}},
-            id : 'folderPermissionsTabPanel',
-            items : tabItems,
-            plain:true,
-            region:'center',
-            xtype:'tabpanel'
-        });
-<% if (!c.isRoot()) { %>
-    items.push(new Ext.tree.TreePanel({
-            loader: new Ext.tree.TreeLoader({
-                dataUrl: LABKEY.ActionURL.buildURL("core", "getExtSecurityContainerTree.api"),
-                baseParams: {requiredPermission: '<%=RoleManager.getPermission(AdminPermission.class).getUniqueName()%>'}
-            }),
-            root: new Ext.tree.AsyncTreeNode({
-                id: '<%=project.getRowId()%>',
-                expanded: true,
-                expandable: false,
-                text: <%=PageFlowUtil.qh(project.getName())%>,
-                href: <%=PageFlowUtil.qh(new ActionURL(SecurityController.ProjectAction.class, project).getLocalURIString())%>,
-                cls: '<%=project.equals(c) ? "x-tree-node-current" : ""%>'
-            }),
-            enableDrag: false,
-            useArrows: true,
-            autoScroll: true,
-            width: 140,
-            region: 'west',
-            split: true,
-            title: 'Folders',
-            border: true
-        }));
-<% } %>
+            policyEditor.save(false, policyEditor.cancel);
+        }
+    };
 
-    borderPanel = new Ext.Panel({
-        layout:'border',
-        border:false,
-        items:items
+    var doneBtn = Ext4.create('Ext.Button', {
+        renderTo : 'buttonDiv',
+        text     : 'Done',
+        handler  : done,
+        scope    : this
     });
 
-    $('tabBoxDiv').update('');
-    borderPanel.render('tabBoxDiv');
+    var save = function() {
+        var policyEditor = editor.getPolicyEditor();
+        if (policyEditor)
+            policyEditor.save();
+    };
 
-    tabPanel = Ext.ComponentMgr.get('folderPermissionsTabPanel');
-    tabPanel.strip.applyStyles({'background':'#ffffff'});
-    tabPanel.stripWrap.applyStyles({'background':'#ffffff'});
+    var securityCache = Ext4.create('Security.util.SecurityCache', {
+        id      : 'securityCache1',
+        root    : <%=PageFlowUtil.jsString(root.getId())%>,
+        project : <%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
+        folder  : <%=PageFlowUtil.jsString(c.getId())%>
+    });
 
-    Ext.EventManager.onWindowResize(function(w,h)
-    {
-        if (!borderPanel.rendered || !borderPanel.el)
+    var editor = Ext4.create('Security.panel.PermissionEditor', {
+        renderTo       : 'tabBoxDiv',
+        isSiteRoot     : isRoot,
+        isSiteAdmin    : isSiteAdmin,
+        isProjectRoot  : <%=(c.isProject())?"true":"false"%>, //LABKEY.Security.currentContainer.path == '/',
+        isProjectAdmin : isProjectAdmin,
+        canInherit     : <%=(!c.isProject() && !c.isRoot())?"true":"false"%>,
+        securityCache  : securityCache,
+        doneURL        : doneURL
+    <% if (!c.isRoot()) { %>
+        ,treeConfig     : {
+           requiredPermission: '<%=RoleManager.getPermission(AdminPermission.class).getUniqueName()%>',
+           project : {
+               id   : '<%=project.getRowId()%>',
+               name : <%=PageFlowUtil.qh(project.getName())%>,
+               securityHref : <%=PageFlowUtil.qh(new ActionURL(SecurityController.ProjectAction.class, project).getLocalURIString())%>
+           }
+        }
+    <% } %>
+    });
+
+    ee = editor;
+
+    editor.on('afterlayout', function() {
+        var tPanel = editor.getTabPanel();
+        tPanel.add({contentEl:'impersonateFrame', title:'Impersonate', autoHeight:true, deferredRender:false});
+        for (var v=0; v < viewTabs.length; v++)
+        {
+            tPanel.add(viewTabs[v]);
+        }
+    }, this, {single: true});
+
+    Ext4.EventManager.onWindowResize(function(w,h){
+        if (!editor.rendered || !editor.el)
             return;
-        var xy = borderPanel.el.getXY();
+        var xy = editor.el.getXY();
         var size = {
-            width : Math.max(400,w-xy[0]-60),
-            height : Math.max(300,h-xy[1]-80)};
-        borderPanel.setSize(size.width, autoScroll ? size.height : undefined);
-        borderPanel.doLayout();
-    });
-    Ext.EventManager.fireWindowResize();
-});
-</script>
-
-<%--
-    PERMISSIONS
---%>
-    <div id="permissionsFrame" class="extContainer x-hide-display"></div>
-    <script type="text/javascript">
-    tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoScroll:autoScroll, autoHeight: !autoScroll});
-    Ext.onReady(function()
-    {
-        policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isProjectAdmin,
-            canInherit:<%=(!c.isProject() && !c.isRoot())?"true":"false"%>,
-            resourceId:LABKEY.container.id,
-            doneURL:doneURL});
-        policyEditor.render($('permissionsFrame'));
-    });
-    </script>
-
-<%--
-    GROUPS
---%>
-
-    <div id="groupsFrame" class="x-hide-display"></div>
-    <div id="siteGroupsFrame" class="x-hide-display"></div>
-    <script type="text/javascript">
-    function showPopupId(groupId)
-    {
-        showPopup(securityCache.getPrincipal(groupId), null);
-    }
-
-    function showPopup(group, groupsList)
-    {
-        var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
-        var w = new UserInfoPopup({userId:group.UserId, cache:securityCache, policy:null, modal:true, canEdit:canEdit});
-        w.on("close", function(){if (groupsList) groupsList.onDataChanged();});
-        w.show();
-    }
-
-    function makeGroupsPanel(project,canEdit,ct)
-    {
-        var formId = 'newGroupForm' + (project?'':'Site');
-        var groupsList = new GroupPicker({cache:securityCache, width:460, style: 'padding-top: 10px; background: transparent;', border:false, autoHeight:true, projectId:project});
-        groupsList.on("select", function(list,group){
-            showPopup(group, groupsList);
-        });
-
-        var items = [];
-        if (canEdit) {
-            items.push({border:false, style : 'float: left; padding-right: 5px;', html:'<input id="' + (formId + '$input')+ '" placeholder="New group name" type="text" size="50" name="name">'});
-            items.push(new Ext.Button({text: 'Create New Group', id: formId + '$submit'}));
-        }
-        items.push(groupsList);
-        
-        var groupsPanel = new Ext.Panel({
-            border : false,
-            autoScroll:autoScroll,
-            autoHeight:!autoScroll,
-            items : items
-        });
-        groupsPanel._adjustSize = function()
-        {
-            if (!this.rendered)
-                return;
-            if (!this.autoHeight)
-            {
-                var sz = tabPanel.body.getSize();
-                this.setSize(sz.width-20,sz.height-20);
-                var btm = sz.height + tabPanel.body.getX();
-                groupsList.setSize(460,btm-groupsList.el.getX());
-                this.doLayout();
-            }
+            width  : Math.max(400,w-xy[0]-60),
+            height : Math.max(300,h-xy[1]-80)
         };
-        groupsPanel.render(ct);
-
-        if (autoScroll)
-        {
-            groupsPanel._adjustSize();
-            tabPanel.on("bodyresize", groupsPanel._adjustSize, groupsPanel);
-            tabPanel.on("activate", groupsPanel._adjustSize, groupsPanel);
-        }
-
-        if (canEdit)
-        {
-            var inputEl = $(formId + '$input');
-            var btnEl = $(formId + '$submit');
-            var submit = function()
-            {
-                securityCache.createGroup((project||'/'), inputEl.getValue(), function(group)
-                {
-                    showPopup(group, groupsList);
-                });
-            };
-            inputEl.addKeyListener(13, submit);
-            btnEl.on("click", submit);
-        }
-        return groupsPanel;
-    }
-
-    if (<%=c.isRoot() ? "false" : "true"%>)
-        tabItems.push({contentEl:'groupsFrame', title:'Project Groups', autoScroll:autoScroll, autoHeight: !autoScroll});
-    if (isSiteAdmin)
-        tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoScroll:autoScroll, autoHeight: !autoScroll});
-
-    Ext.onReady(function()
-    {
-        securityCache.onReady(function()
-        {
-            if (<%=c.isRoot() ? "false" : "true"%>)
-                makeGroupsPanel(<%=PageFlowUtil.jsString(null == project ? "" : project.getId())%>, isProjectAdmin, 'groupsFrame');
-            if (isSiteAdmin)
-                makeGroupsPanel(null, isSiteAdmin, 'siteGroupsFrame');
-        });
+        editor.setSize(size.width, size.height);
     });
+    Ext4.EventManager.fireResize();
+});
 
-    </script>
+</script>
 
 <%--
     IMPERSONATE
@@ -307,10 +172,8 @@ Ext.onReady(function(){
         UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(user.isAdministrator() ? root : null!=project ? project : c, user, false);
         if (impersonateView.hasUsers())
         {
-            %><script type="text/javascript">
-            tabItems.push({contentEl:'impersonateFrame', title:'Impersonate', autoHeight:true});
-            </script>
-            <div id="impersonateFrame" class="x-hide-display"><%
+            %>
+            <div id="impersonateFrame" class="x4-hide-display"><%
             impersonateView.setFrame(WebPartView.FrameType.NONE);
             me.include(impersonateView,out);
             %></div><%
@@ -334,12 +197,12 @@ Ext.onReady(function(){
             continue;
         counter++;
         String id = "moduleSecurityView" + counter;
-        %><div id='<%=id%>' class="x-hide-display"><%
+        %><div id='<%=id%>' class="x4-hide-display"><%
         view.setFrame(WebPartView.FrameType.NONE);
         me.include(view,out);
         %></div>
         <script type="text/javascript">
-            tabItems.push({contentEl:<%=PageFlowUtil.jsString(id)%>, title:<%=PageFlowUtil.jsString(view.getTitle())%>, autoScroll:autoScroll, autoHeight: !autoScroll});
+            viewTabs.push({contentEl:<%=PageFlowUtil.jsString(id)%>, title:<%=PageFlowUtil.jsString(view.getTitle())%>, autoScroll:true, autoHeight: false});
         </script>
         <%
     }

@@ -72,8 +72,9 @@ Ext4.define('Security.field.PrincipalComboBox', {
         }
         var type = this.groupsOnly ? 'groups' : this.usersOnly ? 'users' : null;
         store = Security.store.SecurityCache.filterPrincipalsStore(store, type, null, this.excludedPrincipals);
-        //TODO
+
         this.callParent([store, false]);
+        this.bindStore(store);
     },
 
     bindStore : function(store, initial)

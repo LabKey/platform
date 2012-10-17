@@ -1,26 +1,32 @@
-/* principals button */
-.pclose {
-    overflow:hidden;
-    width:15px;
-    height:15px;
-    float:right;
-    cursor:pointer;
-    background: url(ext-3.4.0/resources/images/default/panel/tool-sprites.gif) no-repeat 0 -0;
-    margin-left:2px;
-}
-
-.pSite button, div.pSite {font-weight:bold;}
-.pGroup button, div.pGroup {font-weight:bold;}
+.pSite button,
+li.pSite, div.pSite {font-weight:bold;}
+.pGroup button,
+li.pGroup, div.pGroup {font-weight:bold;}
 .pUser button, div.pUser {}
 
-/* roles */
-.rh {}
-.rd {}
+span.closeicon {
+    background-image: url(http://localhost:8080/labkey/ext-4.1.0/resources/themes/images/default/tools/tool-sprites.gif);
+    background-position: 0 0 !important;
+    height: 15px !important; width: 15px !important;
+}
 
-/* permissions table layout */
-tr.permissionsTR {}
-tr.spacerTR {height:6px;}
-td.roleTD, td.groupsTD{padding:5px; border-top:solid 1px #333333; border-bottom:solid 1px #aaaaaa; }
-td.roleTD {border-left:solid 1px #aaaaaa;}
-td.groupsTD {border-right:solid 1px #aaaaaa;}
+table.userinfo tr {
+    line-height: 19px;
+}
 
+table.userinfo td {
+    padding-right: 5px;
+}
+
+p.userinfoHdr {
+    font-weight: bold;
+    margin: 6px 0px !important;
+}
+
+.participant-filter-panel span.x4-panel-header-text-default {
+    color: black;
+}
+
+.participant-filter-panel a {
+    color: black;
+}

@@ -19,6 +19,8 @@ Ext4.define('Security.panel.PolicyEditor', {
             autoScroll: true
         });
 
+        this.firstRender = true;
+
         this.callParent(arguments);
 
 //        this.on('afterlayout', function(){
@@ -35,7 +37,8 @@ Ext4.define('Security.panel.PolicyEditor', {
         this.cache.principalsStore.on('remove',this.Principals_onRemove,this);
 
         this.cache.onReady(function(){
-            this._redraw();
+            if (!this.roles)
+                this.add({html: '<i>Loading...</i>', border: false});
         }, this);
     },
 
@@ -78,8 +81,7 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     isDirty : function()
     {
-        var cb = this.down('#inheritedCheckbox');
-        if (cb && cb.getValue() != this.inheritedOriginally)
+        if (this.getInheritCheckboxValue() != this.inheritedOriginally)
             return true;
         return this.policy && this.policy.isDirty();
     },
@@ -89,7 +91,7 @@ Ext4.define('Security.panel.PolicyEditor', {
     {
         this.cache.onReady(function(){
             this.resource = this.cache.getResource(id);
-            LABKEY.Security.getPolicy({resourceId:id, successCallback:this.setPolicy , scope:this});
+            Security.util.Policy.getPolicy({resourceId:id, successCallback:this.setPolicy , scope:this});
         },this);
     },
 
@@ -99,31 +101,37 @@ Ext4.define('Security.panel.PolicyEditor', {
         this.inheritedPolicy = policy;
         if (this.getInheritCheckboxValue())
             this._redraw();
-        if (this.down('#inheritedCheckbox'))
-            this.down('#inheritedCheckbox').enable();
+        if (this.canInherit)
+        {
+            this.getInheritCheckbox().enable();
+        }
     },
 
 
     setPolicy : function(policy, roles)
     {
         this.inheritedOriginally = policy.isInherited();
-        if (this.down('#inheritedCheckbox'))
-            this.down('#inheritedCheckbox').setValue(this.inheritedOriginally);
+        if (this.canInherit)
+        {
+            this.getInheritCheckbox().setValue(this.inheritedOriginally);
+        }
 
         if (policy.isInherited())
         {
             this.inheritedPolicy = policy;
             this.policy = policy.copy(this.resource.id);
             this.policy.policy.modified = null; // UNDONE: make overwrite explicit in savePolicy
-            if (this.down('#inheritedCheckbox'))
-                this.down('#inheritedCheckbox').enable();
+            if (this.canInherit)
+            {
+                this.getInheritCheckbox().enable();
+            }
         }
         else
         {
             this.policy = policy;
             // we'd still like to get the inherited policy
             if (this.resource.parentId && this.resource.parentId != this.cache.rootId)
-                LABKEY.Security.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy,
+                Security.util.Policy.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy,
                     errorCallback: function(errorInfo, response){
                         if (response.status != 401)
                             Ext4.Msg.alert("Error", "Error getting parent policy: " + errorInfo.exception);
@@ -142,12 +150,7 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     getPolicy : function()
     {
-        if (this.getInheritCheckboxValue())
-            return null;
-        var policy = this.policy.copy();
-        if (policy.isEmpty())
-            policy.addRoleAssignment(this.cache.groupGuests, this.policy.noPermissionsRole);
-        return policy;
+        return (this.getInheritCheckboxValue() ? this.inheritedPolicy : this.policy);
     },
 
     _eachItem : function(fn)
@@ -171,74 +174,90 @@ Ext4.define('Security.panel.PolicyEditor', {
         this._eachItem('enable');
     },
 
+    getInheritCheckbox : function() {
+        if (this.ibox)
+            return this.ibox;
+
+        this.ibox = Ext4.create('Ext.form.field.Checkbox', {
+            id       : 'inheritedCheckbox',
+            itemId   : 'inheritedCheckbox',
+            name     : 'inheritedCheckbox',
+            boxLabel : 'Inherit permissions from parent',
+            style    : 'margin: 3px 0 0 5px;',
+            disabled : !this.inheritedPolicy,
+            checked  : this.inheritedOriginally,
+            listeners: {
+                change : this.Inherited_onChange,
+                scope  : this
+            }
+        });
+
+        return this.ibox;
+    },
+
     _redraw : function()
     {
-        if (!this.rendered)
+        if (!this.rendered || !this.roles)
             return;
-        if (!this.roles)
-        {
-            this.add({html: "<i>Loading...</i>"});
-            return;
-        }
 
-        var r, role, ct;
+        var toAdd = [];
 
-        var toAdd = [{
-            layout: 'hbox',
-            hidden: this.saveButton === false,
-            border: false,
-            defaults: {
-                style: {margin:'5px'}
-            },
-            items: [{
-                xtype: 'button',
-                text: 'Save and Finish',
-                handler: function(){
-                    this.save(false, function(){
-                        LABKEY.setSubmit(true);
-                        window.location = this.doneURL;
-                    })
-                },
-                scope: this
-            },{
-                xtype: 'button',
-                text: 'Save',
-                handler: this.SaveButton_onClick,
-                scope: this
-            },{
-                xtype: 'button',
-                text: 'Cancel',
-                handler: this.cancel,
-                scope: this
-            }]
-        },{
-            xtype: 'labkey-linkbutton',
-            href: LABKEY.ActionURL.buildURL('security', 'folderAccess', LABKEY.ActionURL.getContainer()),
-            style: 'margin-left:5px;',
-            linkCls: 'labkey-text-link',
-            text: 'view permissions report'
-        }];
+        if (this.firstRender) {
 
-        if (this.canInherit)
-        {
+            this.firstRender = false;
+            this.removeAll();
+
             toAdd.push({
-                xtype: 'checkbox',
-                itemId: 'inheritedCheckbox',
-                boxLabel: "Inherit permissions from " + (this.parentName || 'parent'),
-                listeners: {
-                    check: this.Inherited_onChange,
-                    scope: this
+                layout: 'hbox',
+                itemId: 'savebar',
+                hidden: this.saveButton === false,
+                border: false,
+                defaults: {
+                    style: {margin:'5px'}
                 },
-                style: {display:'inline', 'margin-left':5},
-                disabled: !this.inheritedPolicy,
-                checked: this.inheritedOriginally
+                items: [{
+                    xtype : 'button',
+                    text  : 'Save and Finish',
+                    handler: function(){
+                        this.save(false, this.cancel);
+                    },
+                    scope : this
+                },{
+                    xtype : 'button',
+                    text  : 'Save',
+                    handler: function(){
+                        this.save(false, function() {
+                            this.saveSuccess();
+                        }, this);
+                    },
+                    scope : this
+                },{
+                    xtype   : 'button',
+                    text    : 'Cancel',
+                    handler : this.cancel,
+                    scope   : this
+                }]
             });
+            toAdd.push({
+                xtype   : 'labkey-linkbutton',
+                text    : 'view permissions report',
+                href    : LABKEY.ActionURL.buildURL('security', 'folderAccess'),
+                style   : 'margin-left:5px;',
+                linkCls : 'labkey-text-link'
+            });
+
+            if (this.canInherit)
+            {
+                toAdd.push(this.getInheritCheckbox());
+            }
         }
+
+        var r, role;
 
         var roleRows = [{
-            layout: 'hbox',
-            defaults: {border: false},
-            itemId: 'header',
+            layout   : 'hbox',
+            defaults : {border: false},
+            itemId   : 'header',
             items: [{
                 html: '<h3>Roles</h3>',
                 width: 300
@@ -247,13 +266,14 @@ Ext4.define('Security.panel.PolicyEditor', {
             }]
         }];
 
-        for (r=0 ; r<this.roles.length ; r++){
+        for (r=0; r < this.roles.length; r++){
             role = this.roles[r];
             roleRows.push({
                 layout: 'hbox',
                 itemId: role.uniqueName.replace(/\./g, '_'),
                 roleId: role.uniqueName,
                 border: true,
+                cls   : 'rolepanel',
                 bodyStyle: 'padding: 5px',
                 defaults: {border: false},
                 items: [{
@@ -262,10 +282,11 @@ Ext4.define('Security.panel.PolicyEditor', {
                     cls: 'rn',
                     width: 300
                 },{
-                    xtype: 'container',
+                    xtype: 'panel',
+                    flex : 1,
                     items: [{
-                        xtype  : 'container',
-                        layout : 'hbox',
+                        xtype  : 'panel',
+                        border : false,
                         itemId : 'buttonArea'
                     },{
                         xtype  : 'labkey-principalcombo',
@@ -279,12 +300,12 @@ Ext4.define('Security.panel.PolicyEditor', {
                         },
                         scope : this
                     }],
-                    listeners: {
-                        render: function(panel) {
-                            this.addDD(panel.getEl(), role);
-                        },
-                        scope: this
-                    },
+//                    listeners: {
+//                        render: function(panel) {
+//                            this.addDD(panel.getEl(), role);
+//                        },
+//                        scope: this
+//                    },
                     scope : this
                 }],
                 scope : this
@@ -303,18 +324,17 @@ Ext4.define('Security.panel.PolicyEditor', {
             items: roleRows
         });
 
-        Ext4.suspendLayouts();
-        this.removeAll();
+        if (this.down('#roles'))
+            this.remove(this.down('#roles'));
         this.add(toAdd);
-        Ext4.resumeLayouts(true);
 
         // DropSource (whole editor)
-        Ext4.create('Security.dd.ButtonsDragDropZone', {
-            container: this
-        });
+//        Ext4.create('Security.dd.ButtonsDragDropZone', {
+//            container: this
+//        });
 
         // render security policy
-        var policy = this.getInheritCheckboxValue() ? this.inheritedPolicy : this.policy;
+        var policy = this.getPolicy();
         if (policy)
         {
             // render the security policy buttons
@@ -324,12 +344,11 @@ Ext4.define('Security.panel.PolicyEditor', {
                 var groupIds = policy.getAssignedPrincipals(role.uniqueName);
 
                 //resolve groupids into group objects
-                var groups = [];
-                var group;
-                var idx;
-                for (idx=0; idx < groupIds.length; idx++)
+                var groups = [], group, i;
+
+                for (i=0; i < groupIds.length; i++)
                 {
-                    group = this.cache.getPrincipal(groupIds[idx]);
+                    group = this.cache.getPrincipal(groupIds[i]);
                     if (!group) continue;
                     groups.push(group);
                 }
@@ -340,19 +359,29 @@ Ext4.define('Security.panel.PolicyEditor', {
                 });
 
                 //add button for each group
-                for (idx=0 ; idx<groups.length ; idx++)
+                for (i=0; i<groups.length ; i++)
                 {
-                    this.addButton(groups[idx],role,false);
+                    this.addButton(groups[i],role,false);
                 }
             }
-//            // make selenium testing easiers
-//            if (!Ext4.get('policyRendered'))
-//                Ext4.DomHelper.insertHtml('beforeend', document.body, '<input type=hidden id="policyRendered" value="1">');
+
+            // make it easier for Selenium to recognize when permissions is loaded
+            if (!Ext4.get('policyRendered'))
+                Ext4.DomHelper.insertHtml('beforeend', document.body, '<input type=hidden id="policyRendered" value="1">');
         }
-        if (this.getInheritCheckboxValue())
-            this.disable();
-        else
-            this.enable();
+
+        this.disableRoles(this.getInheritCheckboxValue());
+    },
+
+    disableRoles : function(isDisabled)
+    {
+        // mask the roles
+        var roles = this.down('#roles');
+        roles.setDisabled(isDisabled);
+
+        // hide the buttons
+        var buttonArea = this.down('#savebar');
+        buttonArea.setVisible(!isDisabled);
     },
 
     addDD: function(el, role)
@@ -382,7 +411,6 @@ Ext4.define('Security.panel.PolicyEditor', {
             notifyDrop  : function(ddSource, e, data)
             {
                 this.el.stopFx();
-                console.log('drop ' + (e.shiftKey?'SHIFT ':'') + data.text + ' ' + data.groupId + ' ' + data.roleId);
                 if (data.roleId == this.role.uniqueName || !this.role.accept(data.groupId))
                 {
                     // add for fail animation
@@ -403,7 +431,7 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     getInheritCheckboxValue : function()
     {
-        return this.canInherit && this.down('#inheritedCheckbox').getValue();
+        return this.canInherit && this.getInheritCheckbox().getValue();
     },
 
     // expects button to have roleId and groupId attribute
@@ -423,12 +451,18 @@ Ext4.define('Security.panel.PolicyEditor', {
         }
 
         var id = btn.groupId;
-        var policy = this.getInheritCheckboxValue() ? this.inheritedPolicy : this.policy;
+        var policy = this.getPolicy();
         // is this a user or a group
         var principal = this.cache.getPrincipal(id);
         // can edit?
         var canEdit = !principal.Container && this.isSiteAdmin || principal.Container && this.isProjectAdmin;
-        var w = Ext4.create('Security.window.UserInfoPopup', {userId:id, cache:this.cache, policy:policy, modal:true, canEdit:canEdit});
+        var w = Ext4.create('Security.window.UserInfoPopup', {
+            userId : id,
+            cache  : this.cache,
+            policy : policy,
+            modal  : true,
+            canEdit: canEdit
+        });
         w.show();
     },
 
@@ -462,7 +496,7 @@ Ext4.define('Security.panel.PolicyEditor', {
             this._removeInvalidRoles(copy, this.roles);
             this.policy = copy;
         }
-//        this._redraw();
+        this.disableRoles(this.getInheritCheckboxValue());
     },
 
 
@@ -513,30 +547,23 @@ Ext4.define('Security.panel.PolicyEditor', {
         // really add the button
         var tooltip = (group.Type == 'u' ? 'User: ' : group.Container ? 'Group: ' : 'Site group: ') + group.Name;
         button = buttonArea.add({
-            xtype : 'button',
-//            xtype   : 'labkey-closebutton',
-//            cls     : 'principalButton',
+            xtype : 'labkey-closebutton',
             iconCls   : 'closeicon',
             iconAlign : 'right',
-            margin  : '5 5 5 0',
+            margin  : '2 5 5 0',
             text    : groupName,
             itemId  : btnId,
             groupId : groupId,
             roleId  : roleId,
             tooltip : tooltip,
-            closing : false,
-            closeTooltip: 'Remove ' + groupName + ' from' + (roleName ? (' ' + roleName) : '') + ' role',
             listeners : {
                 afterrender : function(b) {
                     Ext4.DomQuery.select('span.closeicon', b.getEl().id)[0].onclick = Ext4.bind(this.Button_onClose, this, [b]);
-                    zz = b;
                 },
+                click : this.Button_onClick,
                 scope : this
             }
         });
-
-        button.on("close", this.Button_onClose, this);
-        button.on("click", this.Button_onClick, this);
 //
 //        if (typeof animate == 'string')
 //            b.el[animate]();
@@ -570,7 +597,6 @@ Ext4.define('Security.panel.PolicyEditor', {
         var safeRoleId = roleId.replace(/\./g, "_");
         var button = buttonArea.getComponent(safeRoleId+ '$' + groupId);
         if (!button) {
-            console.error('unable to find button');
             return;
         }
 //        if (animate)
@@ -620,11 +646,6 @@ Ext4.define('Security.panel.PolicyEditor', {
      * SAVE
      */
 
-    SaveButton_onClick : function(e)
-    {
-        this.save(false);
-    },
-
     save : function(overwrite, success, scope)
     {
         Ext4.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
@@ -632,11 +653,18 @@ Ext4.define('Security.panel.PolicyEditor', {
         success = success || this.saveSuccess;
         scope = scope || this;
 
-        var policy = this.getPolicy();
-        this.disable();
+        var policy;
+        if (!this.getInheritCheckboxValue())
+        {
+            policy = this.policy.copy();
+            if (policy.isEmpty())
+                policy.addRoleAssignment(this.cache.groupGuests, this.policy.noPermissionsRole);
+        }
+
+        this.getEl().mask();
         if (!policy)
         {
-            LABKEY.Security.deletePolicy({resourceId:this.resource.id, successCallback:success, errorCallback:this.saveFail, scope:scope});
+            Security.util.Policy.deletePolicy({resourceId:this.resource.id, successCallback:success, errorCallback:this.saveFail, scope:scope});
         }
         else
         {
@@ -645,19 +673,19 @@ Ext4.define('Security.panel.PolicyEditor', {
                 policy.addRoleAssignment(this.cache.groupGuests, this.policy.noPermissionsRole);
             if (overwrite)
                 policy.setModified(null);
-            LABKEY.Security.savePolicy({policy:policy, successCallback:success, errorCallback:this.saveFail, scope:scope});
+            Security.util.Policy.savePolicy({policy:policy, successCallback:success, errorCallback:this.saveFail, scope:scope});
         }
     },
 
 
     _removeInvalidRoles : function(policy, roles)
     {
-        var i;
-        var validUniqueRoles = {};
+        var i, validUniqueRoles = {};
         for (i=0 ; i<roles.length; i++)
             validUniqueRoles[roles[i].uniqueName] = true;
+
         var a = [], from = policy.policy.assignments;
-        for (i=0 ; i<from.length ; i++)
+        for (i=0 ; i < from.length; i++)
         {
             if (validUniqueRoles[from[i].role])
                 a.push(from[i]);
@@ -670,13 +698,17 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     saveSuccess : function()
     {
+        this.getEl().unmask();
         // reload policy
-        LABKEY.Security.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
+        Security.util.Policy.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
         // feedback
-        var mb = Ext4.MessageBox.show({title : 'Save', msg:'<div align=center><span style="color:green; font-weight:bold; font-size:133%;">save successful</span></div>', width:150, animEl:this.saveButton});
-        var save = mb.getEl().getStyles();
-        mb.getEl().pause(1);
-        mb.getEl().fadeOut({callback:function(){mb.hide(); mb.getEl().applyStyles(save);}, scope:mb});
+        var mb = Ext4.MessageBox.show({
+            title  : 'Save',
+            msg:'<div align=center><span style="color:green; font-weight:bold; font-size:133%;">save successful</span></div>',
+            width  : 150
+        });
+
+        Ext4.defer(mb.hide, 1000, mb);
     },
 
     saveFail : function(json, response, options)
@@ -691,7 +723,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         {
             // UNDONE: prompt for overwrite
             Ext4.MessageBox.alert("Error", (json.exception || response.statusText || 'save failed'));
-            LABKEY.Security.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
+            Security.util.Policy.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
             return;
         }
 
@@ -705,26 +737,6 @@ Ext4.define('Security.panel.PolicyEditor', {
         window.location = this.doneURL;
     }
 });
-
-//function _link(text,href)
-//{
-//    return LABKEY.Utils.textLink({
-//        href : href || '#',
-//        text : text
-//    });
-//}
-//function $open(href)
-//{
-//    window.open(href+'&_print=1','_blank','location=1,scrollbars=1,resizable=1,width=500,height=500');
-//}
-//function _open(text,href)
-//{
-//    return LABKEY.Utils.textLink({
-//        href : '#',
-//        onClick : "$open('" + href + "')",
-//        text : text
-//    });
-//}
 
 var ButtonGroup = function()
 {
@@ -824,105 +836,18 @@ Ext4.define('Security.dd.ButtonsDragDropZone', {
 
 Ext4.define('Security.button.Close', {
 
-    extend: 'Ext.button.Button',
+    extend : 'Ext.button.Button',
 
-    alias: 'widget.labkey-closebutton',
+    alias : 'widget.labkey-closebutton',
 
-//    tpl [
-//        '<span id="{4}" class="{3}"><table cellpadding="0" cellspacing="0" class="x-btn x-btn-noicon" width="auto" style="float:left; margin-right:5px;"><tbody>',
-//        '<tr><td class="x-btn-tl"><i>&nbsp;</i></td><td class="x-btn-tc" colspan="2"></td><td class="x-btn-tr"><i>&nbsp;</i></td></tr>',
-//        '<tr><td class="x-btn-ml"><i>&nbsp;</i></td><td class="x-btn-mc"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em><td class="x-btn-mc"><i class="pclose">&#160;</i></td><td class="x-btn-mr"><i>&nbsp;</i></td></tr>',
-//        '<tr><td class="x-btn-bl"><i>&nbsp;</i></td><td class="x-btn-bc" colspan="2"></td><td class="x-btn-br"><i>&nbsp;</i></td></tr>',
-//        "</tbody></table><span>"
-//    ]
-//    // add &nbsp;
-//    templateIE : new Ext4.Template(
-//            '<span id="{4}" class="{3}"><table cellpadding="0" cellspacing="0" class="x-btn x-btn-noicon" width="auto" style="float:left; margin-right:5px;"><tbody>',
-//            '<tr><td class="x-btn-tl"><i>&nbsp;</i></td><td class="x-btn-tc" colspan="2"></td><td class="x-btn-tr"><i>&nbsp;</i></td></tr>',
-//            '<tr><td class="x-btn-ml"><i>&nbsp;</i></td><td class="x-btn-mc"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em><td class="x-btn-mc"><i class="pclose">&#160;</i></td><td class="x-btn-mr"><i>&nbsp;</i></td></tr>',
-//            '<tr><td class="x-btn-bl"><i>&nbsp;</i></td><td class="x-btn-bc" colspan="2"></td><td class="x-btn-br"><i>&nbsp;</i></td></tr>',
-//            "</tbody></table>&nbsp;<span>"),
-
-//    renderTpl: [
-//        '<em id="{id}-btnWrap"<tpl if="splitCls"> class="{splitCls}"</tpl>>',
-//        '<button id="{id}-btnEl" type="{type}" class="{btnCls}" hidefocus="true"',
-//            // the autocomplete="off" is required to prevent Firefox from remembering
-//            // the button's disabled state between page reloads.
-//            '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>',
-//            '<tpl if="disabled"> disabled="disabled"</tpl>',
-//            ' role="button" autocomplete="off">',
-//            '<span id="{id}-btnInnerEl" class="{baseCls}-inner">',
-//                '{text}',
-//            '</span>',
-//            '<i id="{id}-btnIconEl" class="{baseCls}-icon {iconCls}"></i>',
-//        '</button>',
-//        '</em>'
-//    ],
-//
-//    childEls: [
-//        'btnEl', 'btnWrap', 'btnInnerEl', 'btnIconEl', 'closeEl'
-//    ],
-
-    stoppedEvent : null,
-
-    initComponent : function()
-    {
-        Ext4.apply(this, {
-            closable: true,
-            closeText: "Close",
-            iconCls: 'pClose'
-        });
-
-        this.callParent();
-        this.addEvents('close');
-    },
-
-    getTemplateArgs: function() {
-        var me = this,
-            result = me.callParent();
-
-        result.closable = true;
-        result.closeText = me.closeText;
-
-        return result;
-    },
-
-    onRender : function(ct, position)
-    {
-        this.callParent(arguments);
-        // find the close element
-//        var close = this.el.child('I[class=pclose]');
-//        if (close)
-//        {
-//            close.on("click",this.onClose,this);
-//            if (this.tooltip)
-//            {
-//                if (typeof this.closeTooltip == 'object')
-//                {
-//                    Ext4.QuickTips.register(Ext4.apply({target: close}, this.closeTooltip));
-//                }
-//                else
-//                {
-//                    close.dom[this.tooltipType] = this.closeTooltip;
-//                }
-//            }
-//        }
-    },
-
-    onClose : function(event)
-    {
-        if (this.disabled)
-            return;
-        // can't seem to actually stop mousedown events, but we can disable the button
-        //        event.stopEvent();
-        this.stoppedEvent = event;
-        this.fireEvent('close', this, event);
-    },
-
-    onClick : function(event)
-    {
-        if (!this.stoppedEvent || event.type != 'click')
-            this.callParent(arguments);
-        this.stoppedEvent = null;
-    }
+    renderTpl: [
+        '<em id="{id}-btnWrap">',
+            '<div id="{id}-btnEl" type="{type}" class="{btnCls}" role="button">',
+                '<span id="{id}-btnInnerEl" class="{baseCls}-inner" style="{innerSpanStyle}">',
+                    '{text}',
+                '</span>',
+                '<span id="{id}-btnIconEl" style="position: absolute; background-repeat: no-repeat; top: 2px; right: 2px;" class="{baseCls}-icon {iconCls}"<tpl if="iconUrl"> style="background-image:url({iconUrl})"</tpl>></span>',
+            '</div>',
+        '</em>'
+    ]
 });
