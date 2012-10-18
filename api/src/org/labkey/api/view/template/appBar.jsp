@@ -38,6 +38,9 @@
     String folderTitle = bean.getFolderTitle();
     if (folderTitle.equals("home"))
         folderTitle = "Home";
+
+    NavTree[] tabs = bean.getButtons();
+    NavTree[] portalTabs = bean.getSelected().getChildren();
 %>
 <div class="labkey-app-bar">
     <div class="labkey-folder-header">
@@ -45,13 +48,14 @@
         <div class="button-bar">
             <ul class="labkey-tab-strip">
                 <%
-                    NavTree[] tabs = bean.getButtons();
                     for (NavTree navTree : tabs)
                     {
                         if (null != navTree.getText() && navTree.getText().length() > 0)
                         {
                 %>
-                        <li class="<%=text(navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive")%>"><a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a>
+                        <li class="<%=text(navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive")%>">
+                            <a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a>
+                        </li>
                 <%
                         }
                     }
@@ -82,7 +86,7 @@
                         org.labkey.api.view.PopupMenuView popup = new org.labkey.api.view.PopupMenuView(menu);
                         popup.setButtonStyle(org.labkey.api.view.PopupMenu.ButtonStyle.IMAGE);
                 %>
-                    <li class="labkey-tab-inactive"><% me.include(popup, out); %>
+                    <li class="labkey-tab-inactive"><% me.include(popup, out); %></li>
                 <%
                     }
                 %>
@@ -90,6 +94,35 @@
         </div>
         <div style="clear:both;"></div>
     </div>
+</div>
+
+<%
+    if (portalTabs.length > 0)
+    {
+%>
+        <div class="labkey-sub-container-tab-strip">
+            <ul>
+                <%
+                    for (NavTree portalTab : portalTabs)
+                    {
+                        String liClasses = "";
+
+                        if (portalTab.isSelected())
+                            liClasses ="selected";
+                %>
+                        <li>
+                            <a href="<%=h(portalTab.getHref())%>" class="<%=text(liClasses)%>">
+                                <%=h(portalTab.getText())%>
+                            </a>
+                        </li>
+                <%
+                    }
+                %>
+            </ul>
+        </div>
+<%
+    }
+%>
     
     <div class="labkey-nav-trail">
         <%if (null != bean.getNavTrail() && bean.getNavTrail().size() > 0) {
@@ -108,7 +141,6 @@
                 <span class="labkey-nav-page-header" id="labkey-nav-trail-current-page" style="visibility:hidden"><%=h(bean.getPageTitle())%></span>
             </div>
     </div>
-</div>
 
 <script type="text/javascript">
     (function(){
