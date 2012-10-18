@@ -183,6 +183,7 @@ Ext4.onReady(function(){
                 }
                 Ext4.create('Ext.window.Window', {
                     title: 'Customize Webpart',
+                    modal: true,
                     width: 400,
                     border: false,
                     layout: 'fit',
@@ -254,18 +255,24 @@ Ext4.onReady(function(){
                                 initialValue: panel.store.containerPath,
                                 value: panel.store.containerPath,
                                 store: Ext4.create('LABKEY.ext4.Store', {
-                                    //containerPath: '/home',
                                     schemaName: 'core',
                                     queryName: 'Containers',
                                     containerFilter: 'AllFolders',
                                     columns: 'Name,Path,EntityId',
                                     autoLoad: true,
-                                    sort: 'Name',
+                                    //sort: '-Path',
                                     filterArray: [
-                                        LABKEY.Filter.create('workbook', false, LABKEY.Filter.Types.EQUAL),
+                                        LABKEY.Filter.create('type', 'workbook', LABKEY.Filter.Types.NOT_EQUAL),
                                         LABKEY.Filter.create('name', LABKEY.Security.getHomeContainer(), LABKEY.Filter.Types.NOT_EQUAL),
                                         LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL)
-                                    ]
+                                    ],
+                                    listeners: {
+                                        load: function(store){
+                                            //NOTE: the raw value of the path column is name, so we sort locally
+                                            store.sort('Path', 'ASC');
+                                            store.fireEvent('datachanged');
+                                        }
+                                    }
                                 })
                             },{
                                 xtype: 'checkbox',
