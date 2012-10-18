@@ -165,9 +165,9 @@ public class ExternalSchema extends SimpleUserSchema
         {
             String schemaName = def.getDbSchemaName();
 
-            // Don't uncache the built-in LabKey schemas, even those pointed at by external schemas.  Reloading
-            // these schemas is unnecessary (they don't change) and causes us to leak DbCaches.  See #10508.
-            if (scope != DbScope.getLabkeyScope() || !DbSchema.getModuleSchemaNames().contains(schemaName))
+            // Don't uncache module schemas, even those pointed at by external schemas.  Reloading these schemas is
+            // unnecessary (they don't change) and causes us to leak DbCaches.  See #10508.
+            if (!scope.isModuleSchema(schemaName))
                 scope.invalidateSchema(def.getDbSchemaName());
         }
     }

@@ -677,7 +677,6 @@ core/src/org/labkey/core/login/pickAuthLogo.jsp -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
 core/src/org/labkey/core/portal/PortalJUnitTest.java -text
-core/src/org/labkey/core/portal/PortalModule.java -text
 core/src/org/labkey/core/portal/UtilController.java -text
 core/src/org/labkey/core/portal/customizeErrors.jsp -text
 core/src/org/labkey/core/portal/testsvg.jsp -text
@@ -2168,7 +2167,6 @@ query/src/org/labkey/query/persist/ExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/QueryDef.java -text
 query/src/org/labkey/query/persist/QueryManager.java -text
 query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
-query/src/org/labkey/query/persist/SchemaReloadMaintenanceTask.java -text
 query/src/org/labkey/query/reports/AttachmentReport.java -text
 query/src/org/labkey/query/reports/BaseRedirectReport.java -text
 query/src/org/labkey/query/reports/LinkReport.java -text

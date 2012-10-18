@@ -56,13 +56,11 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.query.persist.SchemaReloadMaintenanceTask;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
 import org.labkey.query.reports.ReportImporter;
@@ -181,7 +179,6 @@ public class QueryModule extends DefaultModule
             studyRegistry.addImportFactory(new ReportImporter.Factory());
         }
 
-        SystemMaintenance.addTask(new SchemaReloadMaintenanceTask());
         if (null != ServiceRegistry.get(SearchService.class))
         {
             ServiceRegistry.get(SearchService.class).addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());

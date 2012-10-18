@@ -3211,12 +3211,9 @@ public class QueryController extends SpringActionController
                 Connection con = null;
                 ResultSet rs = null;
                 SqlDialect dialect = scope.getSqlDialect();
-                boolean isLabKeyScope = (scope.equals(DbScope.getLabkeyScope()));
 
                 try
                 {
-                    Set<String> labkeySchemaNames = DbSchema.getModuleSchemaNames();
-
                     con = scope.getConnection();
                     DatabaseMetaData dbmd = con.getMetaData();
 
@@ -3237,7 +3234,7 @@ public class QueryController extends SpringActionController
                         if (dialect.isSystemSchema(schemaName))
                             continue;
 
-                        if (isLabKeyScope && labkeySchemaNames.contains(schemaName))
+                        if (scope.isModuleSchema(schemaName))
                             continue;
 
                         schemaNames.add(schemaName);
