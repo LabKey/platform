@@ -213,13 +213,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                 return _table;
             }
         }
-        TableInfo table = schema.getTable(getName(), includeMetadata);
-//        if (table != null)
-            return table;
-
-        // UserSchema.getTable() calls _getTableOrQuery(),
-        // I don't think we need to call super.getTable()
-        // return super.getTable(errors, includeMetadata);
+        return schema.getTable(getName(), includeMetadata);
     }
 
 

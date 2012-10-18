@@ -17,6 +17,7 @@
 package org.labkey.study.assay.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -168,12 +169,15 @@ public class AssaySchemaImpl extends AssaySchema
             String prefix = protocol.getName().toLowerCase() + " ";
             if (name.toLowerCase().startsWith(prefix))
             {
+                // Cut off the prefix part that's no longer a part of the table name and is
+                // now part of the schema name
+                String newName = name.substring(prefix.length());
                 AssayProtocolSchema protocolSchema = getProtocolSchema(protocol, provider);
-                if (protocolSchema != null)
+
+                // We only need to check this for tables in the schema, not custom queries since they didn't get
+                // moved as part of the refactor
+                if (protocolSchema != null && new CaseInsensitiveHashSet(protocolSchema.getTableNames()).contains(newName))
                 {
-                    // Cut off the prefix part that's no longer a part of the table name and is
-                    // now part of the schema name
-                    String newName = name.substring(prefix.length());
                     return protocolSchema.getTable(newName);
                 }
             }
@@ -197,12 +201,17 @@ public class AssaySchemaImpl extends AssaySchema
                 if (name.toLowerCase().startsWith(prefix))
                 {
                     AssayProtocolSchema protocolSchema = getProtocolSchema(protocol, provider);
+                    // Cut off the prefix part that's no longer a part of the table name and is
+                    // now part of the schema name
+                    String newName = name.substring(prefix.length());
 
-                    if (protocolSchema != null)
+                    // We only need to check this for tables in the schema, not custom queries since they didn't get
+                    // moved as part of the refactor
+                    if (protocolSchema != null && new CaseInsensitiveHashSet(protocolSchema.getTableNames()).contains(newName))
                     {
                         // Switch the name to reflect the new, preferred location for these queries
                         settings.setSchemaName(protocolSchema.getSchemaPath().toString());
-                        settings.setQueryName(name.substring(prefix.length()));
+                        settings.setQueryName(newName);
                         return protocolSchema.createView(context, settings, errors);
                     }
                 }
