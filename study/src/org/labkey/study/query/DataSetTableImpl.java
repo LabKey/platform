@@ -18,17 +18,43 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.OORDisplayColumnFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.StudyService;
@@ -50,7 +76,15 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
 public class DataSetTableImpl extends FilteredTable implements DataSetTable
@@ -68,6 +102,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 dsd.getKeyTypeDescription() + " combination.");
         _schema = schema;
         _dsd = dsd;
+        _title = dsd.getLabel();
 
         List<FieldKey> defaultVisibleCols = new ArrayList<FieldKey>();
 
