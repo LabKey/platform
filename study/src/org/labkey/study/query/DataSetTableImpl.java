@@ -34,8 +34,8 @@ import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.util.ContainerContext;
@@ -538,8 +538,8 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             // Provider must have been in a module that's no longer available
             return null;
         }
-        AssaySchema schema = AssayService.get().createSchema(_schema.getUser(), protocol.getContainer());
-        ContainerFilterable result = provider.createDataTable(schema, protocol, false);
+        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(_schema.getUser(), protocol.getContainer(), protocol, null);
+        ContainerFilterable result = provider.createDataTable(schema, false);
         if (result != null)
         {
             result.setContainerFilter(ContainerFilter.EVERYTHING);

@@ -48,7 +48,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.actions.ProtocolIdForm;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AbstractTsvAssayProvider;
-import org.labkey.api.study.assay.AssaySchema;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.query.ResultsQueryView;
@@ -145,7 +145,8 @@ public class CBCAssayController extends SpringActionController
             _protocol = form.getProtocol(true);
             int runId = form.getRunId();
 
-            AssaySchema schema = AssayService.get().createSchema(form.getUser(), form.getContainer());
+            CBCAssayProvider provider = (CBCAssayProvider)AssayService.get().getProvider(_protocol);
+            AssayProtocolSchema schema = provider.createProtocolSchema(form.getUser(), form.getContainer(), _protocol, null);
 
             String name = AssayService.get().getResultsTableName(_protocol);
             QuerySettings settings = schema.getSettings(form.getViewContext(), name, name); //provider.getResultsQuerySettings();

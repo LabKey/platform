@@ -1828,13 +1828,29 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
             // Expand along the patch to fetch the schema data
             if (dataSourceRoot) {
-                var schemaPathStr = "/root/" + dataSourceRoot.attributes.name + "/" + schemaName.toString();
-                tree.expandPath(schemaPathStr, "name", function (success, lastNode) {
-                    if (callback)
-                        callback.call((scope || this), true, lastNode);
+                var partIndex = 0;
+                var schemaPathStr = "/root/" + dataSourceRoot.attributes.name + "/" + parts[partIndex];
+                var expandCallback = function (success, lastNode) {
                     if (!success)
+                    {
                         Ext.Msg.alert("Missing Schema", "The schema '" + Ext.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
-                });
+                        if (callback)
+                            callback.call((scope || this), true, lastNode);
+                    }
+
+                    // Might need to recurse to expand child schemas
+                    if (!success || ++partIndex == parts.length)
+                    {
+                        if (callback)
+                            callback.call((scope || this), true, lastNode);
+                    }
+                    else
+                    {
+                        schemaPathStr += "/" + parts[partIndex];
+                        tree.expandPath(schemaPathStr, "name", expandCallback);
+                    }
+                };
+                tree.expandPath(schemaPathStr, "name", expandCallback);
             }
             else {
                 Ext.Msg.alert("Missing Schema", "The schema '" + Ext.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");

@@ -62,10 +62,10 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.DateUtil;
@@ -859,13 +859,13 @@ public class AssayPublishManager implements AssayPublishService.Service
         return study.getTimepointType();
     }
 
-    public boolean hasMismatchedInfo(AssayProvider provider, ExpProtocol protocol, List<Integer> allObjects, AssaySchema schema)
+    public boolean hasMismatchedInfo(List<Integer> allObjects, AssayProtocolSchema schema)
     {
-        TableInfo tableInfo = provider.createDataTable(schema, protocol, true);
+        TableInfo tableInfo = schema.getProvider().createDataTable(schema, true);
         if (tableInfo == null)
             return false;
 
-        AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+        AssayTableMetadata tableMetadata = schema.getProvider().getTableMetadata(schema.getProtocol());
 
         FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
 
@@ -937,10 +937,10 @@ public class AssayPublishManager implements AssayPublishService.Service
                         FieldKey objectIdFK = provider.getTableMetadata(protocol).getResultRowIdFieldKey();
                         FieldKey runFK = provider.getTableMetadata(protocol).getRunRowIdFieldKeyFromResults();
 
-                        AssaySchema schema = AssayService.get().createSchema(user, container);
+                        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(user, container, protocol, null);
 
                         // Do a query to get all the info we need to do the copy
-                        TableInfo resultTable = provider.createDataTable(schema, protocol, false);
+                        TableInfo resultTable = provider.createDataTable(schema, false);
                         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(resultTable, Arrays.asList(ptidFK, visitFK, objectIdFK, runFK));
                         ColumnInfo ptidColumn = cols.get(ptidFK);
                         ColumnInfo visitColumn = cols.get(visitFK);

@@ -36,7 +36,7 @@ public class AssayListQueryView extends QueryView
 {
     public AssayListQueryView(ViewContext context, QuerySettings settings)
     {
-        super(new AssaySchemaImpl(context.getUser(), context.getContainer()), settings);
+        super(new AssaySchemaImpl(context.getUser(), context.getContainer(), null), settings);
         setShowExportButtons(false);
         setShowDetailsColumn(false);
         setShowRecordSelectors(false);

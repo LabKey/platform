@@ -41,10 +41,4 @@ public class CBCAssayManager
     {
         return (CBCAssayProvider) AssayService.get().getProvider(CBCAssayProvider.NAME);
     }
-
-    public TableInfo getDataTable(User user, Container container, ExpProtocol protocol)
-    {
-        AssaySchema schema = AssayService.get().createSchema(user, container);
-        return getProvider().createDataTable(schema, protocol, true);
-    }
 }

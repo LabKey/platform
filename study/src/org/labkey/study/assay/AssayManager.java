@@ -146,30 +146,42 @@ public class AssayManager implements AssayService.Interface
 
     public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container)
     {
-        return (ExpRunTable)new AssaySchemaImpl(user, container).getTable(getRunsTableName(protocol));
+        return (ExpRunTable) createProtocolSchema(user, container, protocol, null).createRunsTable();
     }
 
-    public AssaySchema createSchema(User user, Container container)
+    public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy)
     {
-        return new AssaySchemaImpl(user, container);
+        return new AssaySchemaImpl(user, container, targetStudy);
     }
 
-    public String getBatchesTableName(ExpProtocol protocol)
+    public AssayProviderSchema createProviderSchema(User user, Container container, AssayProvider provider, @Nullable Container targetStudy)
     {
-        return AssaySchemaImpl.getBatchesTableName(protocol);
+        return provider.createProviderSchema(user, container, targetStudy);
+    }
+
+    public AssayProtocolSchema createProtocolSchema(User user, Container container, ExpProtocol protocol, @Nullable Container targetStudy)
+    {
+        return AssayService.get().getProvider(protocol).createProtocolSchema(user, container, protocol, targetStudy);
     }
 
     public String getRunsTableName(ExpProtocol protocol)
     {
-        return AssaySchemaImpl.getRunsTableName(protocol);
+        return AssaySchemaImpl.getRunsTableName(protocol, false);
     }
 
     public String getResultsTableName(ExpProtocol protocol)
     {
-        return AssaySchemaImpl.getResultsTableName(protocol);
+        return AssaySchemaImpl.getResultsTableName(protocol, false);
     }
 
     public List<ExpProtocol> getAssayProtocols(Container container)
+    {
+        return getAssayProtocols(container, null);
+    }
+
+    // CONSIDER: Cache ExpProtocol by container
+    // CONSIDER: Add provider LIKE filter to .getExpProtocols() query.
+    public List<ExpProtocol> getAssayProtocols(Container container, AssayProvider provider)
     {
         // Build up a set of containers so that we can query them all at once
         Set<Container> containers = new HashSet<Container>();
@@ -191,7 +203,8 @@ public class AssayManager implements AssayService.Interface
         // Filter to just the ones that have an AssayProvider associated with them
         for (ExpProtocol protocol : protocols)
         {
-            if (AssayService.get().getProvider(protocol) != null)
+            AssayProvider p = AssayService.get().getProvider(protocol);
+            if (p != null && (provider == null || provider.equals(p)))
                 result.add(protocol);
         }
 
@@ -201,7 +214,7 @@ public class AssayManager implements AssayService.Interface
     public WebPartView createAssayListView(ViewContext context, boolean portalView)
     {
         String name = AssaySchema.ASSAY_LIST_TABLE_NAME;
-        UserSchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer());
+        UserSchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer(), null);
         QuerySettings settings = schema.getSettings(context, name, name);
         QueryView queryView;
         if (portalView)

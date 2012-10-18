@@ -26,7 +26,7 @@
     JspView<ModuleAssayProvider.AssayPageBean> me = (JspView<ModuleAssayProvider.AssayPageBean>) HttpView.currentView();
     ModuleAssayProvider.AssayPageBean bean = me.getModelBean();
 
-    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser(), null);
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser());
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();

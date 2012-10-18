@@ -95,16 +95,16 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public QueryDefinitionImpl(User user, Container container, UserSchema schema, String name)
     {
-        this(user, container, schema.getName(), name);
+        this(user, container, schema.getSchemaPath(), name);
         _schema = schema;
     }
 
-    public QueryDefinitionImpl(User user, Container container, String schema, String name)
+    public QueryDefinitionImpl(User user, Container container, SchemaKey schema, String name)
     {
         _user = user;
         _queryDef = new QueryDef();
         _queryDef.setName(name);
-        _queryDef.setSchema(schema);
+        _queryDef.setSchemaPath(schema);
         _queryDef.setContainer(container.getId());
         _dirty = true;
     }
@@ -282,7 +282,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         if (null == _schema)
             _schema = QueryService.get().getUserSchema(getUser(), getContainer(), getSchemaPath());
-        assert _schema.getSchemaPath().equals(getSchemaPath());
+        assert _schema.getSchemaPath().equals(getSchemaPath()) : "Paths were not equal: " + _schema.getSchemaPath() + " vs " + getSchemaPath();
         return _schema;
     }
 

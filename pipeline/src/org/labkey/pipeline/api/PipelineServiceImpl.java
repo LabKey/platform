@@ -523,7 +523,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public TableInfo getJobsTable(User user, Container container)
     {
-        return new PipelineQuerySchema(user, container).createTable(PipelineQuerySchema.JOB_TABLE_NAME);
+        return new PipelineQuerySchema(user, container).getTable(PipelineQuerySchema.JOB_TABLE_NAME);
     }
 
     public int getJobId(User u, Container c, String jobGUID)

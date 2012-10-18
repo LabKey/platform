@@ -471,7 +471,7 @@ public class QueryController extends SpringActionController
             {
                 // Don't show the full query nav trail to non-admin/non-developer users as they almost certainly don't
                 // want it
-                String schemaName = _form.getSchemaName();
+                String schemaName = _form.getSchema().getSchemaPath().toDisplayString();
                 ActionURL url = new ActionURL(BeginAction.class, _form.getViewContext().getContainer());
                 url.addParameter("schemaName", _form.getSchemaName());
                 url.addParameter("queryName", _form.getQueryName());

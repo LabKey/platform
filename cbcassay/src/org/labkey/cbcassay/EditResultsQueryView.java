@@ -23,6 +23,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.query.AssayBaseQueryView;
@@ -42,7 +43,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
     private CBCAssayProvider _provider;
     private String _returnURL;
 
-    public EditResultsQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings, int runId, String returnURL)
+    public EditResultsQueryView(ExpProtocol protocol, AssayProtocolSchema schema, QuerySettings settings, int runId, String returnURL)
     {
         super(protocol, schema, settings);
         _runId = runId;
@@ -50,7 +51,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
         _returnURL = returnURL;
     }
 
-    public EditResultsQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings, int runId, ReturnURLString returnURL)
+    public EditResultsQueryView(ExpProtocol protocol, AssayProtocolSchema schema, QuerySettings settings, int runId, ReturnURLString returnURL)
     {
         super(protocol, schema, settings);
         _runId = runId;

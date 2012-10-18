@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.query.persist.QueryDef;
@@ -38,7 +39,7 @@ public class CustomQueryDefinitionImpl extends QueryDefinitionImpl
 
     public CustomQueryDefinitionImpl(User user, Container container, String schema, String name)
     {
-        super(user, container, schema, name);
+        super(user, container, SchemaKey.fromString(schema), name);
     }
 
     public void setSql(String sql)

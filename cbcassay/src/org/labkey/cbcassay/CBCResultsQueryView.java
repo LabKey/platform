@@ -45,7 +45,7 @@ import java.util.ListIterator;
  */
 public final class CBCResultsQueryView extends ResultsQueryView
 {
-    public CBCResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
+    public CBCResultsQueryView(CBCAssayProvider provider, ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
         super(protocol, context, settings);
         setShowInsertNewButton(false);

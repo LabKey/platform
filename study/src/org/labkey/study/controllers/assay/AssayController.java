@@ -70,6 +70,7 @@ import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AbstractAssayView;
 import org.labkey.api.study.assay.AssayFileWriter;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayResultTable;
 import org.labkey.api.study.assay.AssayRunsView;
@@ -101,7 +102,6 @@ import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
-import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
@@ -256,13 +256,12 @@ public class AssayController extends SpringActionController
 
     public static ApiResponse serializeAssayDefinitions(HashMap<ExpProtocol, AssayProvider> assayProtocols, Container c, User user)
     {
-        AssaySchemaImpl schema = new AssaySchemaImpl(user, c, assayProtocols);
         List<Map<String, Object>> assayList = new ArrayList<Map<String, Object>>();
         for (Map.Entry<ExpProtocol, AssayProvider> entry : assayProtocols.entrySet())
         {
             ExpProtocol protocol = entry.getKey();
             AssayProvider provider = entry.getValue();
-            Map<String, Object> assayProperties = serializeAssayDefinition(protocol, provider, c, user, schema);
+            Map<String, Object> assayProperties = serializeAssayDefinition(protocol, provider, c, user);
             assayList.add(assayProperties);
         }
         ApiSimpleResponse response = new ApiSimpleResponse();
@@ -270,7 +269,7 @@ public class AssayController extends SpringActionController
         return response;
     }
 
-    public static Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user, @Nullable AssaySchemaImpl schema)
+    public static Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user)
     {
         Map<String, Object> assayProperties = new HashMap<String, Object>();
         assayProperties.put("type", provider.getName());
@@ -285,9 +284,8 @@ public class AssayController extends SpringActionController
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
-        if (schema == null)
-            schema = new AssaySchemaImpl(user, c);
-        Set<String> tableNames = schema.getTableNames(provider, protocol);
+        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(user, c, protocol, null);
+        Set<String> tableNames = schema.getTableNames(true);
         Map<String, TableInfo> tableInfoMap = new HashMap<String, TableInfo>();
         for (String tableName : tableNames)
         {
@@ -949,7 +947,7 @@ public class AssayController extends SpringActionController
                         tableMetadata.getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
             }
             if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
-                result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.getType().name());
+                result.addParameter("Data." + QueryParam.containerFilterName, containerFilter.getType().name());
             return result;
         }
 
@@ -1151,7 +1149,7 @@ public class AssayController extends SpringActionController
             form.setContainer(getContainer());
             ExpProtocol protocol = form.getProtocol();
             String tableName = AssayService.get().getResultsTableName(protocol);
-            AssaySchema schema = AssayService.get().createSchema(getUser(), getContainer());
+            AssaySchema schema = AssayService.get().createProtocolSchema(getUser(), getContainer(), protocol, null);
             TableInfo table = schema.getTable(tableName);
             if (!(table instanceof AssayResultTable))
                 throw new NotFoundException();

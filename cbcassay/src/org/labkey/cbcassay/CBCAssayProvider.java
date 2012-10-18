@@ -153,6 +153,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
                 FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
     }
 
+    @Override
     public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context)
     {
         List<AssayDataCollector> result = super.getDataCollectors(uploadedFiles, context);
@@ -160,18 +161,19 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         return result;
     }
 
-    public FilteredTable createDataTable(final AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns)
+    @Override
+    public FilteredTable createDataTable(final AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
     {
-        AssayResultTable table = new AssayResultTable(schema, protocol, this, includeCopiedToStudyColumns);
+        AssayResultTable table = new AssayResultTable(schema, includeCopiedToStudyColumns);
 
         ActionURL showDetailsUrl = new ActionURL(AssayResultDetailsAction.class, schema.getContainer());
-        showDetailsUrl.addParameter("rowId", protocol.getRowId());
+        showDetailsUrl.addParameter("rowId", schema.getProtocol().getRowId());
         Map<String, String> params = new HashMap<String, String>();
         params.put("dataRowId", AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
         table.setDetailsURL(new DetailsURL(showDetailsUrl, params));
 
         ActionURL updateUrl = new ActionURL(CBCAssayController.UpdateAction.class, null);
-        updateUrl.addParameter("rowId", protocol.getRowId());
+        updateUrl.addParameter("rowId", schema.getProtocol().getRowId());
         Map<String, Object> updateParams = new HashMap<String, Object>();
         updateParams.put("dataRowId", FieldKey.fromString(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
         table.setUpdateURL(new DetailsURL(updateUrl, updateParams));
@@ -306,7 +308,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
     QuerySettings getResultsQuerySettings(ViewContext context, ExpProtocol protocol)
     {
-        AssaySchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer());
+        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(context.getUser(), context.getContainer(), protocol, null);
         String name = AssayService.get().getResultsTableName(protocol);
         QuerySettings settings = schema.getSettings(context, name, name);
         return settings;
@@ -322,7 +324,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     public ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol)
     {
         QuerySettings settings = getResultsQuerySettings(context, protocol);
-        return new CBCResultsQueryView(protocol, context, settings);
+        return new CBCResultsQueryView(this, protocol, context, settings);
     }
 
     @Override

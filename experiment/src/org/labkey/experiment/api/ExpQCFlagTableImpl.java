@@ -32,6 +32,7 @@ import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 
 import java.util.Map;
@@ -123,7 +124,8 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return AssayService.get().createSchema(_schema.getUser(), _schema.getContainer()).getTable(AssayService.get().getRunsTableName(_assayProtocol));
+                AssayProvider provider = AssayService.get().getProvider(_assayProtocol);
+                return AssayService.get().createProtocolSchema(_schema.getUser(), _schema.getContainer(), _assayProtocol, null).createRunsTable();
             }
         });
         SQLFragment protocolSQL = new SQLFragment("RunId IN (SELECT er.RowId FROM ");

@@ -161,9 +161,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return Arrays.asList(new StudyParticipantVisitResolverType(), new ThawListResolverType());
     }
 
-    public AssayResultTable createDataTable(AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns)
+    public AssayResultTable createDataTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
     {
-        return new _AssayResultTable(schema, protocol, this, includeCopiedToStudyColumns);
+        return new _AssayResultTable(schema, includeCopiedToStudyColumns);
     }
 
 
@@ -172,15 +172,15 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
      */
     private class _AssayResultTable extends AssayResultTable
     {
-        _AssayResultTable(AssaySchema schema, ExpProtocol protocol, AssayProvider assayProvider, boolean includeCopiedToStudyColumns)
+        _AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
         {
-            super(schema, protocol, assayProvider, includeCopiedToStudyColumns);
+            super(schema, includeCopiedToStudyColumns);
             String flagConceptURI = org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI();
             for (ColumnInfo col : getColumns())
             {
                 if (col.getJdbcType() == JdbcType.VARCHAR && flagConceptURI.equals(col.getConceptURI()))
                 {
-                    col.setDisplayColumnFactory(new _FlagDisplayColumnFactory(protocol, this.getName()));
+                    col.setDisplayColumnFactory(new _FlagDisplayColumnFactory(schema.getProtocol(), this.getName()));
                 }
             }
         }

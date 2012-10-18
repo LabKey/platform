@@ -398,7 +398,7 @@ public class QueryServiceImpl extends QueryService
         }
 
         // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
-        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getName(), qd.getName(), user, inheritable))
+        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getSchemaPath().toString(), qd.getName(), user, inheritable))
             views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
 
         return views;
@@ -1124,9 +1124,14 @@ public class QueryServiceImpl extends QueryService
     public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, boolean allModules, Path dir)
     {
         if (dir == null)
-            dir = new Path(QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(schema.getName()));
+        {
+            List<String> subDirs = new ArrayList<String>(schema.getSchemaPath().getParts().size() + 1);
+            subDirs.add(QueryService.MODULE_QUERIES_DIRECTORY);
+            subDirs.addAll(schema.getSchemaPath().getParts());
+            dir = new Path(subDirs.toArray(new String[subDirs.size()]));
+        }
 
-        String schemaName = schema.getName();
+        String schemaName = schema.getSchemaPath().toString();
         Container container = schema.getContainer();
         QueryDef queryDef;
         do
