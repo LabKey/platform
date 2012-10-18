@@ -840,7 +840,6 @@ div.labkey-pagination
         This is included for now to allow the other changes to be added.
     */
     padding: 10px 20px 0 20px;
-	height: 27px;
 	background: #8abede;
 	box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);
 	-moz-box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);
@@ -3727,3 +3726,25 @@ input[type="checkbox"], input[type="radio"] {
     padding-top: 1px;
 }
 /* end of filter dialog*/
+
+.labkey-sub-container-tab-strip {
+    float: right;
+    clear:both;
+}
+
+.labkey-sub-container-tab-strip ul {
+    margin: 5px 25px 0 0;
+    padding: 0;
+    list-style-type : none;
+}
+
+.labkey-sub-container-tab-strip ul li {
+    display : inline;
+    margin-left: 10px;
+    list-style-type : none;
+    padding: 0 5px 0 5px;
+}
+
+.labkey-sub-container-tab-strip a.selected {
+    color: black;
+}
