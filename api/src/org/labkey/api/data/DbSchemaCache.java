@@ -39,7 +39,7 @@ public class DbSchemaCache
     public DbSchemaCache(DbScope scope)
     {
         _scope = scope;
-        _cache = new DbSchemaBlockingCache(_scope.getDisplayName());
+        _cache = new DbSchemaBlockingCache(_scope.getDisplayName(), _scope.getCacheDefaultTimeToLive());
     }
 
     @NotNull DbSchema get(String schemaName)
@@ -72,9 +72,9 @@ public class DbSchemaCache
 
     private class DbSchemaBlockingCache extends BlockingStringKeyCache<DbSchema>
     {
-        public DbSchemaBlockingCache(String name)
+        public DbSchemaBlockingCache(String name, long defaultTimeToLive)
         {
-            super(CacheManager.<String, Wrapper<DbSchema>>getCache(10000, CacheManager.YEAR, "DbSchemas for " + name), new DbSchemaLoader());
+            super(CacheManager.<String, Wrapper<DbSchema>>getCache(10000, defaultTimeToLive, "DbSchemas for " + name), new DbSchemaLoader());
         }
 
         @Override

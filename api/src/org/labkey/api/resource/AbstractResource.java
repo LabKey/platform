@@ -15,6 +15,7 @@
  */
 package org.labkey.api.resource;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Path;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ abstract public class AbstractResource implements Resource
     final Resolver _resolver;
     protected final StackTraceElement[] _creationStackTrace;
 
-    protected AbstractResource(Path path, Resolver resolver)
+    protected AbstractResource(Path path, @Nullable Resolver resolver)
     {
         _path = path;
         _resolver = resolver;

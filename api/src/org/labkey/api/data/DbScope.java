@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.CacheTimeChooser;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
@@ -506,6 +508,19 @@ public class DbScope
     }
 
 
+    // Default value of HOUR allows regular updates to external schemas; LabKey scope overrides this with a much longer expiration
+    protected long getCacheDefaultTimeToLive()
+    {
+        return CacheManager.HOUR;
+    }
+
+
+    protected @Nullable CacheTimeChooser<String> getCacheTimeChooser()
+    {
+        return null;
+    }
+
+
     public @NotNull DbSchema getSchema(String schemaName)
     {
         return _schemaCache.get(schemaName);
@@ -541,7 +556,7 @@ public class DbScope
         _tableCache.removeAllTables(schemaName);
     }
 
-    // Invalidates all tables in this schema
+    // Invalidates a single table in this schema
     public void invalidateTable(DbSchema schema, String table)
     {
         _tableCache.remove(schema, table);
@@ -768,6 +783,12 @@ public class DbScope
     public boolean isLabKeyScope()
     {
         return this == getLabkeyScope();
+    }
+
+
+    public boolean isModuleSchema(String name)
+    {
+        return false;
     }
 
 

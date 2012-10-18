@@ -60,8 +60,9 @@ public class DbSchema
 {
     private static final Logger _log = Logger.getLogger(DbSchema.class);
 
-    private final DbScope _scope;
     private final String _name;
+    private final DbScope _scope;
+    private final boolean _moduleSchema;
     private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<TableType>();
     private final Map<String, String> _metaDataTableNames = new CaseInsensitiveHashMap<String>();  // Union of all table names from database and schema.xml
 
@@ -98,6 +99,14 @@ public class DbSchema
         scope.invalidateAllTables(schemaName); // Need to invalidate the table cache
 
         return schema;
+    }
+
+
+    private DbSchema(String name, DbScope scope)
+    {
+        _name = name;
+        _scope = scope;
+        _moduleSchema = scope.isModuleSchema(name);
     }
 
 
@@ -205,6 +214,7 @@ public class DbSchema
         if (null == metaDataTableName)
             return null;
 
+        _log.info("Loading table " + _scope.getDatabaseName() + "." + getName() + "." + tableName);
         SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
         TableType xmlTable = _tableXmlMap.get(tableName);
 
@@ -291,25 +301,6 @@ public class DbSchema
     }
 
 
-    // Get the names of all schemas claimed by modules
-    public static Set<String> getModuleSchemaNames()
-    {
-        Set<String> schemaNames = new LinkedHashSet<String>();
-
-        for (Module module : ModuleLoader.getInstance().getModules())
-            for (String schemaName : module.getSchemaNames())
-                schemaNames.add(schemaName);
-
-        return schemaNames;
-    }
-
-
-    private DbSchema(String name, DbScope scope)
-    {
-        _name = name;
-        _scope = scope;
-    }
-
     public String getName()
     {
         return _name;
@@ -324,6 +315,11 @@ public class DbSchema
     {
         assert _resourceRef != null;
         return _resourceRef.isStale() && _resourceRef.getResource().exists();
+    }
+
+    public boolean isModuleSchema()
+    {
+        return _moduleSchema;
     }
 
     Resource getResource()

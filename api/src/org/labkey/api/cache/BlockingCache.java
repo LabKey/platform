@@ -37,6 +37,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
 {
     protected final Cache<K, Wrapper<V>> _cache;
     protected final CacheLoader<K, V> _loader;
+    protected CacheTimeChooser<K> _cacheTimeChooser;
 
     public static final Object UNINITIALIZED = new Object() {public String toString() { return "UNINITIALIZED";}};
 
@@ -51,6 +52,12 @@ public class BlockingCache<K, V> implements Cache<K, V>
     {
         _cache = cache;
         _loader = loader;
+    }
+
+
+    public void setCacheTimeChooser(CacheTimeChooser<K> cacheTimeChooser)
+    {
+        _cacheTimeChooser = cacheTimeChooser;
     }
 
 
@@ -83,7 +90,17 @@ public class BlockingCache<K, V> implements Cache<K, V>
         {
             w = _cache.get(key);
             if (null == w)
-                _cache.put(key, w = createWrapper());
+            {
+                w = createWrapper();
+                Long ttl;
+
+
+                // Override the default TTL if a CacheTimeChooser is present and provides a custom value
+                if (null == _cacheTimeChooser || null == (ttl = _cacheTimeChooser.getTimeToLive(key, arg)))
+                    _cache.put(key, w);
+                else
+                    _cache.put(key, w, ttl);
+            }
         }
 
         // there is a chance the wrapper can be removed from the cache

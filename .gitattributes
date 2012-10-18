@@ -135,6 +135,7 @@ api/src/org/labkey/api/cache/CacheLoader.java -text
 api/src/org/labkey/api/cache/CacheManager.java -text
 api/src/org/labkey/api/cache/CacheProvider.java -text
 api/src/org/labkey/api/cache/CacheStats.java -text
+api/src/org/labkey/api/cache/CacheTimeChooser.java -text
 api/src/org/labkey/api/cache/CacheType.java -text
 api/src/org/labkey/api/cache/CacheWrapper.java -text
 api/src/org/labkey/api/cache/DbCache.java -text
