@@ -97,6 +97,7 @@ abstract public class AbstractTableInfo implements TableInfo
     protected final Map<String, ColumnInfo> _columnMap;
     private Map<String, MethodInfo> _methodMap;
     protected String _name;
+    protected String _title = null;
     protected String _description;
     protected String _importMsg;
     protected List<Pair<String, StringExpression>> _importTemplates;
@@ -390,6 +391,11 @@ abstract public class AbstractTableInfo implements TableInfo
         return _name;
     }
 
+    public String getTitle()
+    {
+        return _title == null ? _name : _title;
+    }
+
     public String getDescription()
     {
         return _description;
@@ -441,6 +447,12 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         checkLocked();
         _name = name;
+    }
+
+    public void setTitle(String title)
+    {
+        checkLocked();
+        _title = title;
     }
 
     public ActionURL getGridURL(Container container)
@@ -715,6 +727,8 @@ abstract public class AbstractTableInfo implements TableInfo
             setTitleColumn(xmlTable.getTitleColumn());
         if (xmlTable.getDescription() != null)
             setDescription(xmlTable.getDescription());
+        if (xmlTable.getTableTitle() != null)
+            setTitle(xmlTable.getTableTitle());
         if (xmlTable.getGridUrl() != null)
             _gridURL = parseDetailsURL(schema.getContainer(), xmlTable.getGridUrl(), errors);
 

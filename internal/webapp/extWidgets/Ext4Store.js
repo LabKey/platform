@@ -278,6 +278,9 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                 fields.push(f.name);
             }, this);
 
+            if (meta.title)
+                this.queryTitle = meta.title;
+
             //allow mechanism to add new fields via metadata
             if(this.metadata){
                 var field;
@@ -796,6 +799,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
             schemaName: this.schemaName,
             queryName: this.queryName,
             viewName: this.viewName,
+            queryTitle: this.queryTitle,
             sql: this.sql,
             columns: this.columns,
             filterArray: this.filterArray,

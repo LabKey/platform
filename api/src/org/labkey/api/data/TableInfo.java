@@ -24,7 +24,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
@@ -58,6 +57,9 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 {
 
     String getName();
+
+
+    String getTitle();
 
     /**
      * simple name that can be used directly in SQL statement

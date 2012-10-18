@@ -19,17 +19,31 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.MVDisplayColumn;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * API response class for a query view
@@ -239,6 +253,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         metaData.put("fields", fields);
 
         metaData.put("description", _tinfo.getDescription());
+        metaData.put("title", _tinfo == null ? _queryName : _tinfo.getTitle());
         metaData.put("importMessage", _tinfo.getImportMessage());
 
         JSONArray templates = new JSONArray();

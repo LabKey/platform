@@ -19,7 +19,15 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -57,6 +65,8 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _filter = new SimpleFilter();
         _rootTable = table;
         _name = _rootTable.getName();
+        //getTitle() reverts to _name, so if the getTitle() matches getName(), we assume it was not explicitly set.
+        _title = _rootTable.getName().equals(_rootTable.getTitle()) ? null : _rootTable.getTitle();
         _description = _rootTable.getDescription();
         _importMsg = _rootTable.getImportMessage();
         _importTemplates = _rootTable.getRawImportTemplates();
