@@ -12,8 +12,7 @@ Ext4.onReady(function(){
     }
 
     var queryName = LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName');
-    var panelCfg = {
-        xtype: 'labkey-detailspanel',
+    Ext4.create('LABKEY.ext.DetailsPanel', {
         showTitle: false,
         border: false,
         renderTo: webpart.wrapperDivId,
@@ -21,17 +20,19 @@ Ext4.onReady(function(){
             schemaName: LABKEY.ActionURL.getParameter('schemaName'),
             queryName: queryName,
             viewName: LABKEY.ActionURL.getParameter('viewName') || LABKEY.ActionURL.getParameter('query.viewName'),
-            columns: LABKEY.ActionURL.getParameter('columns') || LABKEY.ActionURL.getParameter('query.columns'),
+            columns: LABKEY.ActionURL.getParameter('columns') || LABKEY.ActionURL.getParameter('query.columns') || '*',
             maxRows: 2,
+            listeners: {
+                load: function(store){
+                    LABKEY.Utils.setWebpartTitle(store.queryTitle || LABKEY.ActionURL.getParameter('title') || LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'), webpart.id);
+                }
+            },
             filterArray: [
                 LABKEY.Filter.create(LABKEY.ActionURL.getParameter('keyField'), LABKEY.ActionURL.getParameter('key'), LABKEY.Filter.Types.EQUALS)
             ]
         },
         showViewGridBtn: true
-    };
-
-    Ext4.ComponentMgr.create(panelCfg);
-    LABKEY.NavTrail.setTrail(LABKEY.ActionURL.getParameter('title') || queryName);
+    });
 });
 
 </script>

@@ -1,4 +1,4 @@
-<view xmlns="http://labkey.org/data/xml/view">
+<view xmlns="http://labkey.org/data/xml/view" frame="portal">
     <permissions>
         <permission name="insert" />
     </permissions>

@@ -4,24 +4,26 @@ Ext4.onReady(function(){
     var webpart = <%=webpartContext%>;
     Ext4.create('LABKEY.ext4.FormPanel', {
         renderTo: webpart.wrapperDivId,
-        title: LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'),
+        border: false,
         store: Ext4.create('LABKEY.ext4.Store', {
             schemaName: LABKEY.ActionURL.getParameter('schemaName'),
             queryName: LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'),
+            columns: LABKEY.ActionURL.getParameter('columns') || LABKEY.ActionURL.getParameter('query.columns') || '*',
             filterArray: [
                 LABKEY.Filter.create(LABKEY.ActionURL.getParameter('keyField'), LABKEY.ActionURL.getParameter('key'), LABKEY.Filter.Types.EQUALS)
             ],
+            listeners: {
+                load: function(store){
+                    LABKEY.Utils.setWebpartTitle(store.queryTitle || LABKEY.ActionURL.getParameter('title') || LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'), webpart.id);
+                }
+            },
             autoLoad: true
         }),
         bindConfig: {
             autoCreateRecordOnChange: true,
             autoBindFirstRecord: true
-        },
-        columns: '*'
+        }
     });
-
-    LABKEY.NavTrail.setTrail(LABKEY.ActionURL.getParameter('title') || LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'));
-
 });
 
 </script>
