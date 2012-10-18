@@ -20,6 +20,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
@@ -36,12 +38,11 @@ import java.util.List;
 */
 public class AssayRunType extends ExperimentRunType
 {
-    public static final String SCHEMA_NAME = "assay";
     private final ExpProtocol _protocol;
 
     public AssayRunType(ExpProtocol protocol, Container c)
     {
-        super(protocol.getName(), SCHEMA_NAME, AssayService.get().getRunsTableName(protocol));
+        super(protocol.getName(), SchemaKey.fromParts(AssaySchema.NAME, AssayService.get().getProvider(protocol).getResourceName(), protocol.getName()).toString(), AssayService.get().getRunsTableName(protocol));
         _protocol = protocol;
     }
 

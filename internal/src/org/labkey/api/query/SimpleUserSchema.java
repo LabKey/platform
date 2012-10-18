@@ -460,7 +460,7 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
         {
-            throw new UnsupportedOperationException();
+            return StatementUtils.updateStatement(conn, getRealTable(), null, user, false, true);
         }
 
         @Override

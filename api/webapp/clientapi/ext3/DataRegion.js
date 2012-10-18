@@ -3837,7 +3837,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             if(i < fieldKey.length - 1)
                 sql += '.';
         }
-        sql += ' AS value FROM "' + dataRegion.schemaName.replace("\"", "\"\"") + '"."' + dataRegion.queryName.replace("\"", "\"\"") + '" t';
+        sql += ' AS value FROM "' + dataRegion.queryName.replace("\"", "\"\"") + '" t';
         sql += ') s';
 
         return sql;

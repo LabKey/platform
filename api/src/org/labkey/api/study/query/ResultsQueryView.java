@@ -21,7 +21,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -49,10 +48,10 @@ public class ResultsQueryView extends AssayBaseQueryView
 
     public ResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
-        this(protocol, AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);
+        this(protocol, AssayService.get().createProtocolSchema(context.getUser(), context.getContainer(), protocol, null), settings);
     }
 
-    public ResultsQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings)
+    public ResultsQueryView(ExpProtocol protocol, AssayProtocolSchema schema, QuerySettings settings)
     {
         super(protocol, schema, settings);
 

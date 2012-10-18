@@ -59,8 +59,10 @@ import java.util.Map;
  */
 public interface AssayProvider extends Handler<ExpProtocol>
 {
-    /** Get a schema for any additional TableInfos. */
-    AssaySchema getProviderSchema(User user, Container container, ExpProtocol protocol);
+    AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy);
+
+    /** Get a schema for Batch, Run, Results, and any additional tables. */
+    AssayProtocolSchema createProtocolSchema(User user, Container container, ExpProtocol protocol, Container targetStudy);
 
     Domain getBatchDomain(ExpProtocol protocol);
 
@@ -74,7 +76,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     String getName();
 
-    /** Get the root resource name.  Usually this is the same as the AssayProvider name. */
+    /** Get the root resource name.  Usually this is the same as the AssayProvider name, but may be shorter or not contain special characters. */
     String getResourceName();
 
     @NotNull
@@ -95,11 +97,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /** @return may return null if no results/data are tracked by this assay type */
     @Nullable
-    ContainerFilterable createDataTable(AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns);
+    ContainerFilterable createDataTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns);
 
-    ExpQCFlagTable createQCFlagTable(AssaySchema assaySchema, ExpProtocol protocol);
+    ExpQCFlagTable createQCFlagTable(AssayProtocolSchema assaySchema, ExpProtocol protocol);
 
-    ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol);
+    ExpRunTable createRunTable(AssayProtocolSchema schema, ExpProtocol protocol);
 
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
     ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);

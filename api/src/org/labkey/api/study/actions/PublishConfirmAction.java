@@ -31,10 +31,10 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.query.PublishResultsQueryView;
@@ -242,16 +242,15 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids);
         }
 
-        AssaySchema schema = AssayService.get().createSchema(context.getUser(), getContainer());
-        schema.setTargetStudy(targetStudy);
+        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(context.getUser(), getContainer(), _protocol, targetStudy);
 
-        boolean mismatched = AssayPublishService.get().hasMismatchedInfo(provider, _protocol, allObjects, schema);
+        boolean mismatched = AssayPublishService.get().hasMismatchedInfo(allObjects, schema);
 
         // Show the form
         String name = AssayService.get().getResultsTableName(_protocol);
         QuerySettings settings = schema.getSettings(context, name, name);
         settings.setAllowChooseView(false);
-        PublishResultsQueryView queryView = new PublishResultsQueryView(_protocol, schema, settings,
+        PublishResultsQueryView queryView = new PublishResultsQueryView(provider, _protocol, schema, settings,
                 allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
 
         if (publishConfirmForm.getContainerFilterName() != null)

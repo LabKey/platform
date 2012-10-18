@@ -63,13 +63,18 @@ abstract public class UserSchema extends AbstractSchema
     protected SchemaKey _path;
     protected String _description;
     protected boolean _cacheTableInfos = false;
-    protected boolean _restricted = false;      // restricted schemas will return nul from getSchema()
+    protected boolean _restricted = false;      // restricted schemas will return null from getSchema()
 
     public UserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
     {
+        this(SchemaKey.fromParts(name), description, user, container, dbSchema);
+    }
+
+    public UserSchema(SchemaKey path, @Nullable String description, User user, Container container, DbSchema dbSchema)
+    {
         super(dbSchema, user, container);
-        _name = name;
-        _path = new SchemaKey(null, name);
+        _name = path.getName();
+        _path = path;
         _description = description;
     }
 
@@ -562,8 +567,14 @@ abstract public class UserSchema extends AbstractSchema
     public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
     {
         // Look under <ROOT>/queries/<SCHEMA_NAME>/<QUERY_NAME> for custom views (.qview.xml) files
-        Path path = new Path(QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(getName()), FileUtil.makeLegalName(qd.getName()));
-        return QueryService.get().getModuleCustomViews(container, qd, path);
+        List<String> parts = new ArrayList<String>();
+        parts.add(QueryService.MODULE_QUERIES_DIRECTORY);
+        for (String schemaPart : getSchemaPath().getParts())
+        {
+            parts.add(FileUtil.makeLegalName(schemaPart));
+        }
+        parts.add(FileUtil.makeLegalName(qd.getName()));
+        return QueryService.get().getModuleCustomViews(container, qd, new Path(parts));
     }
 
     /**

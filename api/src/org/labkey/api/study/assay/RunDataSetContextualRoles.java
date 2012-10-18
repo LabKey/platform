@@ -106,12 +106,12 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         if (provider == null)
             return null;
 
-        AssaySchema schema = AssayService.get().createSchema(user, container);
+        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(user, container, protocol, null);
         if (schema == null)
             return null;
 
         // get the results table and the set of dataset columns
-        TableInfo resultsTable = provider.createDataTable(schema, protocol, true);
+        TableInfo resultsTable = provider.createDataTable(schema, true);
         if (resultsTable == null)
             return null;
 

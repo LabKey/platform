@@ -77,7 +77,7 @@ public class AssayPublishService
         public List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container);
 
         /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
-        boolean hasMismatchedInfo(AssayProvider provider, ExpProtocol protocol, List<Integer> allObjects, AssaySchema schema);
+        boolean hasMismatchedInfo(List<Integer> allObjects, AssayProtocolSchema schema);
     }
 
     public static void register(Service serviceImpl)

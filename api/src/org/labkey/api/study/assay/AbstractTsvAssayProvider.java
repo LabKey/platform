@@ -96,7 +96,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     }
 
     @Override
-    public abstract FilteredTable createDataTable(AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns);
+    public abstract FilteredTable createDataTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns);
 
     public void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException
     {
@@ -164,7 +164,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         }
 
         Container container = protocol.getContainer();
-        AssaySchema schema = AssayService.get().createSchema(user, container);
+        AssaySchema schema = AssayService.get().createSchema(user, container, null);
 
         @SuppressWarnings({"deprecation"})
         RunDataTable fromTable = new RunDataTable(schema, protocol, true);

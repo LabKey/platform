@@ -171,15 +171,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
         _runLSIDPrefix = runLSIDPrefix;
     }
 
-    public AssaySchema getProviderSchema(User user, Container container, ExpProtocol protocol)
+    public AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy)
     {
-        return null;
+        return new AssayProviderSchema(user, container, this, targetStudy);
     }
 
-    @Override
-    public String getResourceName()
+    public AssayProtocolSchema createProtocolSchema(User user, Container container, ExpProtocol protocol, Container targetStudy)
     {
-        return getName();
+        return new AssayProtocolSchema(user, container, protocol, targetStudy);
     }
 
     public ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
@@ -189,8 +188,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
             SimpleFilter filter = new SimpleFilter();
             filter.addInClause(getTableMetadata(protocol).getResultRowIdFieldKey().toString(), dataKeys.keySet());
 
-            AssaySchema schema = AssayService.get().createSchema(user, assayDataContainer);
-            ContainerFilterable dataTable = createDataTable(schema, protocol, true);
+            AssayProtocolSchema schema = createProtocolSchema(user, assayDataContainer, protocol, study);
+            ContainerFilterable dataTable = createDataTable(schema, true);
             dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(user));
 
             FieldKey objectIdFK = getTableMetadata(protocol).getResultRowIdFieldKey();
@@ -543,6 +542,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getDataCollectors(uploadedFiles, context, true);
     }
 
+    @Override
+    public String getResourceName()
+    {
+        return getName();
+    }
+
     public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context, boolean allowFileReuseOnReRun)
     {
         List<AssayDataCollector> result = new ArrayList<AssayDataCollector>();
@@ -676,18 +681,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public ExpQCFlagTable createQCFlagTable(AssaySchema schema, ExpProtocol protocol)
+    public ExpQCFlagTable createQCFlagTable(AssayProtocolSchema schema, ExpProtocol protocol)
     {
-        ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(AssaySchema.getQCFlagTableName(protocol), schema);
+        ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(AssaySchema.getQCFlagTableName(protocol, false), schema);
         table.populate();
         table.setAssayProtocol(protocol);
         
         return table;
     }
 
-    public ExpRunTable createRunTable(final AssaySchema schema, ExpProtocol protocol)
+    public ExpRunTable createRunTable(final AssayProtocolSchema schema, ExpProtocol protocol)
     {
-        final String tableName = AssaySchema.getRunsTableName(protocol);
+        final String tableName = schema.getRunsTableName(false);
         ExpRunTable runTable = ExperimentService.get().createRunTable(tableName, schema);
         if (isEditableRuns(protocol))
         {

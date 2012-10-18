@@ -16,10 +16,12 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
@@ -29,61 +31,65 @@ import org.labkey.api.security.User;
  */
 public abstract class AssaySchema extends UserSchema
 {
-    private final ExpProtocol _protocol;
-    protected Container _targetStudy;
-
     public static final String ASSAY_LIST_TABLE_NAME = "AssayList";
     public static String NAME = "assay";
-    public static final String DESCR = "Contains data about the set of defined assays and their associated batches and runs.";
+    private static final String DESCR = "Contains data about the set of defined assays and their associated batches and runs.";
 
-    public AssaySchema(String name, User user, Container container, DbSchema dbSchema, ExpProtocol protocol)
+    @Nullable
+    protected Container _targetStudy;
+
+    public AssaySchema(String name, User user, Container container, DbSchema dbSchema, @Nullable Container targetStudy)
     {
-        super(name, DESCR, user, container, dbSchema);
-        _protocol = protocol;
+        this(SchemaKey.fromParts(name), DESCR, user, container, dbSchema, targetStudy);
     }
 
-    public void setTargetStudy(Container studyContainer)
+    protected AssaySchema(SchemaKey path, String description, User user, Container container, DbSchema dbSchema, @Nullable Container targetStudy)
     {
-        _targetStudy = studyContainer;
+        super(path, description, user, container, dbSchema);
+        _targetStudy = targetStudy;
     }
 
+    @Nullable
     public Container getTargetStudy()
     {
         return _targetStudy;
     }
 
-    public ExpProtocol getProtocol()
-    {
-        return _protocol;
-    }
-    
     /** Make it public - protected in superclass */
     public abstract TableInfo createTable(String name);
 
-    public static String getBatchesTableName(ExpProtocol protocol)
+    public static String getBatchesTableName(ExpProtocol protocol, boolean protocolPrefixed)
     {
-        return getProviderTableName(protocol, "Batches");
+        return getProviderTableName(protocol, "Batches", protocolPrefixed);
     }
 
-    public static String getRunsTableName(ExpProtocol protocol)
+    public static String getRunsTableName(ExpProtocol protocol, boolean protocolPrefixed)
     {
-        return getProviderTableName(protocol, "Runs");
+        return getProviderTableName(protocol, "Runs", protocolPrefixed);
     }
 
-    public static String getResultsTableName(ExpProtocol protocol)
+    public static String getResultsTableName(ExpProtocol protocol, boolean protocolPrefixed)
     {
-        return getProviderTableName(protocol, "Data");
+        return getProviderTableName(protocol, "Data", protocolPrefixed);
     }
 
-    public static String getQCFlagTableName(ExpProtocol protocol)
+    public static String getQCFlagTableName(ExpProtocol protocol, boolean protocolPrefixed)
     {
-        return getProviderTableName(protocol, "QCFlags");
+        return getProviderTableName(protocol, "QCFlags", protocolPrefixed);
     }
 
     /** Tack the table type onto the protocol name to create the full table name */
+    public static String getProviderTableName(ExpProtocol protocol, @NotNull String tableType, boolean protocolPrefixed)
+    {
+        if (protocolPrefixed)
+            return protocol.getName() + " " + tableType;
+        else
+            return tableType;
+    }
+
     public static String getProviderTableName(ExpProtocol protocol, @NotNull String tableType)
     {
-        return protocol.getName() + " " + tableType;
+        return getProviderTableName(protocol, tableType, false);
     }
 
     /** Strip off the provider name to determine the specific assay table type (runs, batches, etc) */
@@ -97,6 +103,14 @@ public abstract class AssaySchema extends UserSchema
         }
         
         // This wasn't a table associated with the given protocol
+        // XXX: maybe?
         return null;
+    }
+
+        // UNDONE: need to check permissions here 8449
+    @Override
+    protected boolean canReadSchema()
+    {
+        return true;
     }
 }

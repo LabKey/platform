@@ -20,17 +20,16 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.ReimportRedirectAction;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
@@ -52,7 +51,7 @@ public class RunListQueryView extends ExperimentRunListView
     protected final ExpProtocol _protocol;
     private final ReplacedRunFilter _replacedRunFilter;
 
-    public RunListQueryView(ExpProtocol protocol, UserSchema schema, QuerySettings settings, AssayRunType assayRunFilter)
+    public RunListQueryView(ExpProtocol protocol, AssayProtocolSchema schema, QuerySettings settings, AssayRunType assayRunFilter)
     {
         super(schema, settings, assayRunFilter);
         _protocol = protocol;
@@ -65,14 +64,14 @@ public class RunListQueryView extends ExperimentRunListView
 
     // Here so that we can use the same schema object for both the QueryView and QuerySettings. This is important
     // so that TableQueryDefinition.getTable() doesn't think that it's being asked for a table from a different schema
-    private RunListQueryView(ExpProtocol protocol, UserSchema schema, ViewContext context)
+    private RunListQueryView(ExpProtocol protocol, AssayProtocolSchema schema, ViewContext context)
     {
         this(protocol, schema, getDefaultQuerySettings(protocol, schema, context), getDefaultAssayRunFilter(protocol, context));
     }
 
     public RunListQueryView(ExpProtocol protocol, ViewContext context)
     {
-        this(protocol, getDefaultUserSchema(context), context);
+        this(protocol, AssayService.get().createProtocolSchema(context.getUser(), context.getContainer(), protocol, null), context);
     }
 
     public static AssayRunType getDefaultAssayRunFilter(ExpProtocol protocol, ViewContext context)
@@ -83,11 +82,6 @@ public class RunListQueryView extends ExperimentRunListView
     public static QuerySettings getDefaultQuerySettings(ExpProtocol protocol, UserSchema schema, ViewContext context)
     {
         return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayService.get().getRunsTableName(protocol), true);
-    }
-
-    public static UserSchema getDefaultUserSchema(ViewContext context)
-    {
-        return QueryService.get().getUserSchema(context.getUser(), context.getContainer(), AssayRunType.SCHEMA_NAME);
     }
 
     @Override

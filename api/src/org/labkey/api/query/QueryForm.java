@@ -211,7 +211,17 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
                 return null;
             }
             QuerySettings settings = createQuerySettings(baseSchema);
-            return baseSchema.createView(getViewContext(), settings).getSchema();
+            QueryView view = baseSchema.createView(getViewContext(), settings);
+            // In cases of backwards compatibility for legacy names, the schema may have resolved the QueryView based
+            // on some other schema or query name. Therefore, remember the correct names so that we're using them
+            // consistently within this request
+            _schemaName = view.getSchema().getSchemaPath();
+            // Will be null in the case of executing LabKey SQL directly without a saved custom query
+            if (view.getQueryDef() != null)
+            {
+                _queryName = view.getQueryDef().getName();
+            }
+            return view.getSchema();
         }
 
         return ret;

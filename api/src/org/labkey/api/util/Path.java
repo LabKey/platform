@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -75,6 +76,10 @@ public class Path implements Serializable, Iterable<String>
         this._isDirectory = dir;
     }
 
+    public Path(Collection<String> names)
+    {
+        this(names.toArray(new String[names.size()]));
+    }
 
     public Path(String ... names)
     {

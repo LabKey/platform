@@ -44,9 +44,9 @@ import java.util.Map;
  */
 public class AssayResultUpdateService extends DefaultQueryUpdateService
 {
-    private final AssaySchema _schema;
+    private final AssayProtocolSchema _schema;
 
-    public AssayResultUpdateService(AssaySchema schema, FilteredTable table)
+    public AssayResultUpdateService(AssayProtocolSchema schema, FilteredTable table)
     {
         super(table, table.getRealTable());
         if (!(table instanceof AssayResultTable))

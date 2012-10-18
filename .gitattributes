@@ -1086,7 +1086,9 @@ api/src/org/labkey/api/study/assay/AssayDataLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/AssayDataType.java -text
 api/src/org/labkey/api/study/assay/AssayFileWriter.java -text
 api/src/org/labkey/api/study/assay/AssayPipelineProvider.java -text
+api/src/org/labkey/api/study/assay/AssayProtocolSchema.java -text
 api/src/org/labkey/api/study/assay/AssayProvider.java -text
+api/src/org/labkey/api/study/assay/AssayProviderSchema.java -text
 api/src/org/labkey/api/study/assay/AssayPublishKey.java -text
 api/src/org/labkey/api/study/assay/AssayPublishService.java -text
 api/src/org/labkey/api/study/assay/AssayQCFlagColumn.java -text

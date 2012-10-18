@@ -53,6 +53,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.actions.StudyPickerColumn;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssaySchema;
@@ -147,7 +148,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         public abstract FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type);
     }
 
-    public PublishResultsQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings,
+    public PublishResultsQueryView(AssayProvider provider, ExpProtocol protocol, AssayProtocolSchema schema, QuerySettings settings,
                                    List<Integer> objectIds,
                                    @Nullable Container targetStudyContainer,
                                    Map<Object, String> reshowTargetStudies,
@@ -165,7 +166,6 @@ public class PublishResultsQueryView extends ResultsQueryView
         else
             _timepointType = null;
         _filter = new SimpleFilter();
-        AssayProvider provider = AssayService.get().getProvider(protocol);
         _filter.addInClause(provider.getTableMetadata(protocol).getResultRowIdFieldKey().toString(), objectIds);
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;

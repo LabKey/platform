@@ -39,8 +39,8 @@ public class AssayBatchesView extends AbstractAssayView
         AssayProvider provider = AssayService.get().getProvider(protocol);
         ViewContext context = getViewContext();
 
-        AssaySchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer());
-        String tableName = AssayService.get().getBatchesTableName(protocol);
+        AssayProtocolSchema schema = provider.createProtocolSchema(context.getUser(), context.getContainer(), protocol, null);
+        String tableName = schema.getBatchesTableName(false);
         QuerySettings settings = schema.getSettings(context, tableName, tableName);
         settings.setAllowChooseQuery(false);
 
@@ -48,7 +48,7 @@ public class AssayBatchesView extends AbstractAssayView
 
         // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
         ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, context.getContainer());
-        fakeURL.addFilter(AssayService.get().getRunsTableName(protocol),
+        fakeURL.addFilter(schema.getRunsTableName(false),
                 AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
         String key = fakeURL.getParameters()[0].getKey();
 

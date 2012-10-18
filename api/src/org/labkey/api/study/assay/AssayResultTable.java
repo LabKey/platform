@@ -37,6 +37,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -47,7 +48,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -68,22 +68,22 @@ import java.util.Set;
  */
 public class AssayResultTable extends FilteredTable implements UpdateableTableInfo
 {
-    protected final AssaySchema _schema;
+    protected final AssayProtocolSchema _schema;
     private final ExpProtocol _protocol;
     private final AssayProvider _provider;
     private final Domain _resultsDomain;
 
-    public AssayResultTable(AssaySchema schema, ExpProtocol protocol, AssayProvider assayProvider, boolean includeCopiedToStudyColumns)
+    public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
     {
-        super(StorageProvisioner.createTableInfo(assayProvider.getResultsDomain(protocol), schema.getDbSchema()), schema.getContainer());
+        super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol()), schema.getDbSchema()), schema.getContainer());
         _schema = schema;
-        _protocol = protocol;
-        _provider = assayProvider;
+        _protocol = _schema.getProtocol();
+        _provider = _schema.getProvider();
 
-        _resultsDomain = _provider.getResultsDomain(protocol);
+        _resultsDomain = _provider.getResultsDomain(_protocol);
 
-        setDescription("Contains all of the results (and may contain raw data as well) for the " + protocol.getName() + " assay definition");
-        setName(AssayService.get().getResultsTableName(protocol));
+        setDescription("Contains all of the results (and may contain raw data as well) for the " + _protocol.getName() + " assay definition");
+        setName(AssayService.get().getResultsTableName(_protocol));
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 
@@ -198,7 +198,10 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
 
         getColumn("RowId").setShownInUpdateView(false);
 
-        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment("(SELECT RunId FROM exp.Data WHERE RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)"), JdbcType.INTEGER);
+        SQLFragment runIdSQL = new SQLFragment("(SELECT RunId FROM ");
+        runIdSQL.append(ExperimentService.get().getTinfoData(), "d");
+        runIdSQL.append(" WHERE d.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)");
+        ExprColumn runColumn = new ExprColumn(this, "Run", runIdSQL, JdbcType.INTEGER);
         runColumn.setFk(new LookupForeignKey("RowID")
         {
             public TableInfo getLookupTableInfo()
@@ -213,14 +216,14 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         runColumn.setShownInUpdateView(false);
         addColumn(runColumn);
 
-        Domain runDomain = _provider.getRunDomain(protocol);
+        Domain runDomain = _provider.getRunDomain(_protocol);
         for (DomainProperty prop : runDomain.getProperties())
         {
             if (!prop.isHidden())
                 visibleColumns.add(FieldKey.fromParts("Run", prop.getName()));
         }
 
-        for (DomainProperty prop : _provider.getBatchDomain(protocol).getProperties())
+        for (DomainProperty prop : _provider.getBatchDomain(_protocol).getProperties())
         {
             if (!prop.isHidden())
                 visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
@@ -228,7 +231,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
 
         if (includeCopiedToStudyColumns)
         {
-            Set<String> studyColumnNames = ((AbstractAssayProvider)_provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), false);
+            Set<String> studyColumnNames = ((AbstractAssayProvider)_provider).addCopiedToStudyColumns(this, _protocol, schema.getUser(), false);
             for (String columnName : studyColumnNames)
             {
                 visibleColumns.add(new FieldKey(null, columnName));
@@ -310,7 +313,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    return new AssayResultTable(_schema, _protocol, _provider, false);
+                    return new AssayResultTable(_schema, false);
                 }
             };
             fk.setPrefixColumnCaption(false);
