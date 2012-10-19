@@ -285,7 +285,7 @@ public class AssayController extends SpringActionController
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
         AssayProtocolSchema schema = AssayService.get().createProtocolSchema(user, c, protocol, null);
-        Set<String> tableNames = schema.getTableNames(true);
+        Set<String> tableNames = schema.getTableNames();
         Map<String, TableInfo> tableInfoMap = new HashMap<String, TableInfo>();
         for (String tableName : tableNames)
         {

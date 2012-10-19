@@ -75,7 +75,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
@@ -255,50 +254,12 @@ public class QueryServiceImpl extends QueryService
         // look in all the active modules in this container to see if they contain any query definitions
         if (null != schemaName)
         {
-            Collection<Module> modules = container.getActiveModules();
-
-            for (Module module : modules)
+            Path path = new Path(MODULE_QUERIES_DIRECTORY, schemaName);
+            for (QueryDefinition queryDef : getFileBasedQueryDefs(user, container, schemaName, path))
             {
-                Collection<? extends Resource> queries;
-
-                //always scan the file system in dev mode
-                if (AppProps.getInstance().isDevMode())
-                {
-                    Resource schemaDir = module.getModuleResolver().lookup(new Path(MODULE_QUERIES_DIRECTORY, schemaName));
-                    queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
-                }
-                else
-                {
-                    //in production, cache the set of query defs for each module on first request
-                    String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString() + "." + schemaName;
-                    //noinspection unchecked
-                    queries = (Collection<? extends Resource>) MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
-
-                    if (null == queries)
-                    {
-                        Resource schemaDir = module.getModuleResolver().lookup(new Path(MODULE_QUERIES_DIRECTORY, schemaName));
-                        queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
-                        MODULE_RESOURCES_CACHE.put(fileSetCacheKey, queries);
-                    }
-                }
-
-                if (null != queries)
-                {
-                    for (Resource query : queries)
-                    {
-                        String cacheKey = query.getPath().toString();
-                        ModuleQueryDef moduleQueryDef = (ModuleQueryDef) MODULE_RESOURCES_CACHE.get(cacheKey);
-                        if (null == moduleQueryDef || moduleQueryDef.isStale())
-                        {
-                            moduleQueryDef = new ModuleQueryDef(query, schemaName, module.getName());
-                            MODULE_RESOURCES_CACHE.put(cacheKey, moduleQueryDef);
-                        }
-
-                        Map.Entry<String, String> key = new Pair<String,String>(schemaName, moduleQueryDef.getName());
-                        if (!ret.containsKey(key))
-                            ret.put(key, new ModuleCustomQueryDefinition(moduleQueryDef, user, container));
-                    }
-                }
+                Map.Entry<String, String> key = new Pair<String, String>(schemaName, queryDef.getName());
+                if (!ret.containsKey(key))
+                    ret.put(key, queryDef);
             }
         }
 
@@ -338,6 +299,54 @@ public class QueryServiceImpl extends QueryService
                 ret.put(key, new CustomQueryDefinitionImpl(user, queryDef));
         }
 
+        return ret;
+    }
+
+    public List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path)
+    {
+        Collection<Module> modules = container.getActiveModules();
+        List<QueryDefinition> ret = new ArrayList<QueryDefinition>();
+        for (Module module : modules)
+        {
+            Collection<? extends Resource> queries;
+
+            //always scan the file system in dev mode
+            if (AppProps.getInstance().isDevMode())
+            {
+                Resource schemaDir = module.getModuleResolver().lookup(path);
+                queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
+            }
+            else
+            {
+                //in production, cache the set of query defs for each module on first request
+                String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString() + "." + schemaName + "." + path;
+                //noinspection unchecked
+                queries = (Collection<? extends Resource>) MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
+
+                if (null == queries)
+                {
+                    Resource schemaDir = module.getModuleResolver().lookup(path);
+                    queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
+                    MODULE_RESOURCES_CACHE.put(fileSetCacheKey, queries);
+                }
+            }
+
+            if (null != queries)
+            {
+                for (Resource query : queries)
+                {
+                    String cacheKey = query.getPath().toString();
+                    ModuleQueryDef moduleQueryDef = (ModuleQueryDef) MODULE_RESOURCES_CACHE.get(cacheKey);
+                    if (null == moduleQueryDef || moduleQueryDef.isStale())
+                    {
+                        moduleQueryDef = new ModuleQueryDef(query, schemaName, module.getName());
+                        MODULE_RESOURCES_CACHE.put(cacheKey, moduleQueryDef);
+                    }
+
+                    ret.add(new ModuleCustomQueryDefinition(moduleQueryDef, user, container));
+                }
+            }
+        }
         return ret;
     }
 
@@ -449,11 +458,11 @@ public class QueryServiceImpl extends QueryService
         return new ArrayList<CustomView>(getCustomViewMap(user, container, schemaName, queryName).values());
     }
 
-    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, Path path)
+    public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path)
     {
         List<CustomView> customViews = new ArrayList<CustomView>();
 
-        String schema = qd.getSchema().getName();
+        String schema = qd.getSchema().getSchemaName();
         String query = qd.getName();
 
         for (Module module : container.getActiveModules())

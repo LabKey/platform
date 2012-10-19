@@ -37,13 +37,12 @@ import java.util.Set;
  */
 public class ModuleAssayLoader implements ModuleResourceLoader
 {
-    public static final String ASSAY_DIR_NAME = "assay";
     public static final String DOMAINS_DIR_NAME = "domains";
 
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
         // NOTE: Can't use Module's resource resolver yet since the module hasn't been initialized.
-        File assayDir = new File(explodedModuleDir, ASSAY_DIR_NAME);
+        File assayDir = new File(explodedModuleDir, AssayService.ASSAY_DIR_NAME);
         if (assayDir.exists())
             return Collections.singleton(StudyModule.MODULE_NAME);
         return Collections.emptySet();
@@ -51,7 +50,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 
     public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException
     {
-        Resource assayDir = module.getModuleResource(ASSAY_DIR_NAME);
+        Resource assayDir = module.getModuleResource(AssayService.ASSAY_DIR_NAME);
         if (assayDir != null && assayDir.exists() && assayDir.isCollection())
         {
             for (Resource assayProviderDir : assayDir.list())

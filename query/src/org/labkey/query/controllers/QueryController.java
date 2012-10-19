@@ -4263,7 +4263,7 @@ public class QueryController extends SpringActionController
             //user-defined queries
             if (form.isIncludeUserQueries())
             {
-                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getUser(), getContainer(), uschema.getSchemaName());
+                Map<String,QueryDefinition> queryDefMap = uschema.getQueryDefs();
                 for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
                 {
                     QueryDefinition qdef = entry.getValue();

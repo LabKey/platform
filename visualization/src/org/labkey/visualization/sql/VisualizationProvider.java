@@ -136,7 +136,7 @@ public abstract class VisualizationProvider
         UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
         if (queryType == VisualizationController.QueryType.all || queryType == VisualizationController.QueryType.custom)
         {
-            Map<String, QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(context.getUser(), context.getContainer(), _schemaName);
+            Map<String, QueryDefinition> queryDefMap = schema.getQueryDefs();
             for (Map.Entry<String, QueryDefinition> entry : queryDefMap.entrySet())
             {
                 QueryDefinition qdef = entry.getValue();

@@ -134,7 +134,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         addMoreLinkToList(schemaPath, builtIn);
 
                     //get user-defined queries
-                    Map<String, QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(user, container, uschema.getSchemaName());
+                    Map<String, QueryDefinition> queryDefMap = uschema.getQueryDefs();
                     queryNames = new ArrayList<String>(queryDefMap.keySet());
                     Collections.sort(queryNames, new Comparator<String>(){
                         public int compare(String name1, String name2)
