@@ -46,6 +46,8 @@ public class AssayService
 
     public static final String BATCH_COLUMN_NAME = "Batch";
 
+    public static final String ASSAY_DIR_NAME = "assay";
+
     static public synchronized Interface get()
     {
         return INSTANCE;

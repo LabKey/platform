@@ -90,6 +90,22 @@ public class AssayProtocolSchema extends AssaySchema
         return _protocol;
     }
 
+    @Override
+    public Map<String, QueryDefinition> getQueryDefs()
+    {
+        Map<String, QueryDefinition> result = super.getQueryDefs();
+        Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
+        List<QueryDefinition> providerQueryDefs = QueryService.get().getFileBasedQueryDefs(getUser(), getContainer(), getSchemaName(), providerPath);
+        for (QueryDefinition providerQueryDef : providerQueryDefs)
+        {
+            if (!result.containsKey(providerQueryDef.getName()))
+            {
+                result.put(providerQueryDef.getName(), providerQueryDef);
+            }
+        }
+        return result;
+    }
+
     @NotNull
     public AssayProvider getProvider()
     {
@@ -98,34 +114,21 @@ public class AssayProtocolSchema extends AssaySchema
 
     @Override
     // NOTE: Subclasses should override to add any additional provider specific tables.
-    public final Set<String> getTableNames()
-    {
-        return getTableNames(false);
-    }
-
-    // Tables names prefixed with the protocol name are for backwards compatibility <12.3.
-    // The prefixed tables are only available under the top-level assay schema.
-    // Unprefixed tables are relocated under assay.<provider>.<protocol>
-    public Set<String> getTableNames(boolean protocolPrefixed)
+    public Set<String> getTableNames()
     {
         Set<String> names = new HashSet<String>();
-        names.add(getBatchesTableName(_protocol, protocolPrefixed));
-        names.add(getRunsTableName(_protocol, protocolPrefixed));
-        names.add(getResultsTableName(_protocol, protocolPrefixed));
-        names.add(getQCFlagTableName(_protocol, protocolPrefixed));
+        names.add(getBatchesTableName(_protocol, false));
+        names.add(getRunsTableName(_protocol, false));
+        names.add(getResultsTableName(_protocol, false));
+        names.add(getQCFlagTableName(_protocol, false));
 
         return names;
     }
 
     @Override
-    public final TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
-        return createTable(name, false);
-    }
-
-    protected final TableInfo createTable(String name, boolean protocolPrefixed)
-    {
-        TableInfo table = createProviderTable(name, protocolPrefixed);
+        TableInfo table = createProviderTable(name);
         if (table != null)
             overlayMetadata(table, name);
 
@@ -133,15 +136,15 @@ public class AssayProtocolSchema extends AssaySchema
     }
 
     // NOTE: Subclasses should override to add any additional provider specific tables.
-    protected TableInfo createProviderTable(String name, boolean protocolPrefixed)
+    protected TableInfo createProviderTable(String name)
     {
-        if (name.equals(getBatchesTableName(getProtocol(), protocolPrefixed)))
+        if (name.equalsIgnoreCase(getBatchesTableName(getProtocol(), false)))
             return createBatchesTable();
-        else if (name.equals(getRunsTableName(getProtocol(), protocolPrefixed)))
+        else if (name.equalsIgnoreCase(getRunsTableName(getProtocol(), false)))
             return createRunsTable();
-        else if (name.equals(getResultsTableName(getProtocol(), protocolPrefixed)))
+        else if (name.equalsIgnoreCase(getResultsTableName(getProtocol(), false)))
             return createResultsTable();
-        else if (name.equals(getQCFlagTableName(getProtocol(), protocolPrefixed)))
+        else if (name.equalsIgnoreCase(getQCFlagTableName(getProtocol(), false)))
             return createQCFlagTable();
 
         return null;
@@ -157,9 +160,9 @@ public class AssayProtocolSchema extends AssaySchema
         return createRunTable(getProtocol(), getProvider(), false);
     }
 
-    public TableInfo createResultsTable()
+    public FilteredTable createResultsTable()
     {
-        TableInfo table = getProvider().createDataTable(this, true);
+        FilteredTable table = getProvider().createDataTable(this, true);
         if (table != null && table.getColumn("Properties") != null)
             fixupPropertyURLs(table.getColumn("Properties"));
         return table;
@@ -198,7 +201,7 @@ public class AssayProtocolSchema extends AssaySchema
         fixupRenderers(table);
 
         ArrayList<QueryException> errors = new ArrayList<QueryException>();
-        Path dir = new Path("assay"/*ModuleAssayLoader.ASSAY_DIR_NAME*/, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
+        Path dir = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
         TableType metadata = QueryService.get().findMetadataOverride(this, name, false, true, errors, dir);
         if (errors.isEmpty())
             table.overlayMetadata(metadata, this, errors);
@@ -347,14 +350,14 @@ public class AssayProtocolSchema extends AssaySchema
 
         // Look for <MODULE>/assay/<ASSAY_TYPE>/queries/<TABLE_TYPE>/*.qview.xml files
         // where TABLE_TYPE is Runs, Batches, Data, etc
-        Path providerPath = new Path(/*ModuleAssayLoader.ASSAY_DIR_NAME*/"assay", getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getName()));
-        result.addAll(QueryService.get().getModuleCustomViews(container, qd, providerPath));
+        Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getName()));
+        result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerPath));
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
         String legacyQueryName = _protocol.getName() + " " + qd.getName();
         String legacySchemaName = AssaySchema.NAME;
         Path legacyPath = new Path(QueryService.MODULE_QUERIES_DIRECTORY, legacySchemaName, FileUtil.makeLegalName(legacyQueryName));
-        result.addAll(QueryService.get().getModuleCustomViews(container, qd, legacyPath));
+        result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, legacyPath));
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
         result.addAll(QueryService.get().getCustomViews(getUser(), container, legacySchemaName, legacyQueryName));

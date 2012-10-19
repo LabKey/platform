@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.pipeline.AssayRunAsyncContext;
@@ -97,7 +98,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /** @return may return null if no results/data are tracked by this assay type */
     @Nullable
-    ContainerFilterable createDataTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns);
+    FilteredTable createDataTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns);
 
     ExpQCFlagTable createQCFlagTable(AssayProtocolSchema assaySchema, ExpProtocol protocol);
 

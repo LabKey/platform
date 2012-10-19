@@ -63,6 +63,10 @@ abstract public class QueryService
         instance = impl;
     }
 
+    /**
+     * Most usages should call UserSchema.getQueryDefs() instead, which allows the schema to include other queries that
+     * may be stored in schema-specific places, such as queries associated with an assay provider.
+     */
     abstract public Map<String, QueryDefinition> getQueryDefs(User user, Container container, String schema);
     abstract public List<QueryDefinition> getQueryDefs(User user, Container container);
     abstract public QueryDefinition createQueryDef(User user, Container container, String schema, String name);
@@ -181,7 +185,9 @@ abstract public class QueryService
      * @param qd the query for which views should be fetched
      * @param path the relative path within the module to check for custom views
      */
-    public abstract List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, Path path);
+    public abstract List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path);
+
+    public abstract List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path);
 
     public interface QueryListener
     {

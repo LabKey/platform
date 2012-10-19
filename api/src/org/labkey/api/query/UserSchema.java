@@ -183,7 +183,7 @@ abstract public class UserSchema extends AbstractSchema
         }
         else
         {
-            QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), name);
+            QueryDefinition def = getQueryDefs().get(name);
 
             if (def == null)
                 return null;
@@ -482,7 +482,7 @@ abstract public class UserSchema extends AbstractSchema
         for (String tableName : visibleOnly ? getVisibleTableNames() : getTableNames())
             set.put(tableName, QueryService.get().createQueryDefForTable(this, tableName));
 
-        Map<String, QueryDefinition> queryDefs = QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName());
+        Map<String, QueryDefinition> queryDefs = getQueryDefs();
         for (QueryDefinition query : queryDefs.values())
         {
             if (!visibleOnly || !query.isHidden())
@@ -490,6 +490,11 @@ abstract public class UserSchema extends AbstractSchema
         }
 
         return set;
+    }
+
+    public Map<String, QueryDefinition> getQueryDefs()
+    {
+        return new CaseInsensitiveHashMap<QueryDefinition>(QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName()));
     }
 
     /** override this method to return schema specific QuerySettings object */
@@ -574,7 +579,7 @@ abstract public class UserSchema extends AbstractSchema
             parts.add(FileUtil.makeLegalName(schemaPart));
         }
         parts.add(FileUtil.makeLegalName(qd.getName()));
-        return QueryService.get().getModuleCustomViews(container, qd, new Path(parts));
+        return QueryService.get().getFileBasedCustomViews(container, qd, new Path(parts));
     }
 
     /**
