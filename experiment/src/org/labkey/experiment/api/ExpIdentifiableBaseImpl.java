@@ -104,4 +104,10 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
             throw new RuntimeSQLException(e);
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + ": " + _object.getName() + " - " + _object.getLSID();
+    }
 }
