@@ -96,14 +96,11 @@ public class FolderWriterImpl extends BaseFolderWriter
         folderXml.setArchiveVersion(ModuleLoader.getInstance().getCoreModule().getVersion());
         folderXml.setLabel(c.getName());
 
-        if (c.isWorkbook())
-        {
-            folderXml.setIsWorkbook(true);
+        folderXml.setType(c.getType().name());
+        if (c.getTitle() != null)
             folderXml.setTitle(c.getTitle());
-            // include the description if it is not null
-            if (c.getDescription() != null)
-                folderXml.setDescription(c.getDescription());
-        }
+        if (c.getDescription() != null)
+            folderXml.setDescription(c.getDescription());
 
         // Save the folder.xml file.  This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("folder.xml", ctx.getDocument());
