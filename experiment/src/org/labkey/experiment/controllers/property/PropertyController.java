@@ -30,12 +30,9 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
-import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -337,7 +334,7 @@ public class PropertyController extends SpringActionController
                 error(writer, UNRECOGNIZED_FILE_TYPE_ERROR);
                 return null;
             }
-            String suffix = filename.substring(dotIndex + 1).toLowerCase();
+            String suffix = filename.substring(dotIndex).toLowerCase();
             String prefix = filename.substring(0, dotIndex);
 
             File tempFile = File.createTempFile(prefix, suffix);

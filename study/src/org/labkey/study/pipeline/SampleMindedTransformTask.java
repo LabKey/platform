@@ -158,7 +158,7 @@ public class SampleMindedTransformTask
             }
 
             ExcelLoader loader = new ExcelLoader(input, true);
-            List<Map<String, Object>> inputRows = loader.loadSAXY();
+            List<Map<String, Object>> inputRows = loader.load();
             List<Map<String, Object>> outputRows = transformRows(labIds, primaryIds, derivativeIds, inputRows);
 
             getJob().info("After removing duplicates, there are " + outputRows.size() + " rows of data");
