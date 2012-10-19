@@ -75,7 +75,6 @@
 <script type="text/javascript">
 
 var viewTabs = [];
-ee = null;
 
 Ext4.onReady(function(){
     Ext4.QuickTips.init();

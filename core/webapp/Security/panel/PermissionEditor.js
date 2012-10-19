@@ -46,10 +46,10 @@ Ext4.define('Security.panel.PermissionEditor', {
                     autoLoad : true,
                     proxy    : {
                         type : 'ajax',
-                        url  : LABKEY.ActionURL.buildURL('core', 'getExtSecurityContainerTree.api')
-                    },
-                    baseParams : {
-                        requiredPermission : this.treeConfig.permissionCls
+                        url  : LABKEY.ActionURL.buildURL('core', 'getExtSecurityContainerTree.api'),
+                        extraParams : {
+                            requiredPermission : this.treeConfig.requiredPermission
+                        }
                     },
                     root : {
                         id : this.treeConfig.project.id,
