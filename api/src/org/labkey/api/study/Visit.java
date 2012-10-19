@@ -44,7 +44,7 @@ public interface Visit extends StudyEntity
 
     void setChronologicalOrder(int chronologicalOrder);
 
-    SequenceHandling getSequenceHandling();
+    SequenceHandling getSequenceNumHandlingEnum();
 
     public enum Type
     {
