@@ -292,7 +292,11 @@ public class FileContentController extends SpringActionController
                                 InputStream fis = null;
                                 try
                                 {
+                                    if (null == _resource || !_resource.isFile())
+                                        throw new FileNotFoundException();
                                     fis = _resource.getInputStream(getUser());
+                                    if (null == fis)
+                                        throw new FileNotFoundException();
                                     IOUtils.copy(new InputStreamReader(fis), out);
                                 }
                                 catch (FileNotFoundException x)
