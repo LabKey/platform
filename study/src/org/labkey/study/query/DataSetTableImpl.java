@@ -574,7 +574,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             return null;
         }
         AssayProtocolSchema schema = AssayService.get().createProtocolSchema(_schema.getUser(), protocol.getContainer(), protocol, null);
-        ContainerFilterable result = provider.createDataTable(schema, false);
+        ContainerFilterable result = schema.createDataTable(false);
         if (result != null)
         {
             result.setContainerFilter(ContainerFilter.EVERYTHING);

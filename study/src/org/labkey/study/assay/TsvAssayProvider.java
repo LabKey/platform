@@ -161,101 +161,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return Arrays.asList(new StudyParticipantVisitResolverType(), new ThawListResolverType());
     }
 
-    public AssayResultTable createDataTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
+    @Override
+    public AssayProtocolSchema createProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
-        return new _AssayResultTable(schema, includeCopiedToStudyColumns);
+        return new TSVProtocolSchema(user, container, protocol, targetStudy);
     }
 
-
-    /* the FlagColumn functionality should be in AssayResultTable
-     * need to refactor FlagColumn into [API] or AssayResultTable into [Internal] (or new Assay module?)
-     */
-    private class _AssayResultTable extends AssayResultTable
-    {
-        _AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
-        {
-            super(schema, includeCopiedToStudyColumns);
-            String flagConceptURI = org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI();
-            for (ColumnInfo col : getColumns())
-            {
-                if (col.getJdbcType() == JdbcType.VARCHAR && flagConceptURI.equals(col.getConceptURI()))
-                {
-                    col.setDisplayColumnFactory(new _FlagDisplayColumnFactory(schema.getProtocol(), this.getName()));
-                }
-            }
-        }
-    }
-
-
-    class _FlagDisplayColumnFactory implements RemappingDisplayColumnFactory
-    {
-        FieldKey rowId = new FieldKey(null, "RowId");
-        final ExpProtocol protocol;
-        final String dataregion;
-
-        _FlagDisplayColumnFactory(ExpProtocol protocol, String dataregionName)
-        {
-            this.protocol = protocol;
-            this.dataregion = dataregionName;
-        }
-
-        @Override
-        public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
-        {
-            rowId = FieldKey.remap(rowId, parent, remap);
-        }
-
-        @Override
-        public DisplayColumn createRenderer(ColumnInfo colInfo)
-        {
-            return new _FlagColumnRenderer(colInfo, rowId, protocol, dataregion);
-        }
-    }
-
-
-    /**
-     * NOTE: The base class FlagColumnRenderer usually wraps an lsid and uses the
-     * display column to find the comment.
-     * This class turns that around.  It wraps a flag/comment column and uses
-     * run/lsid and rowid to generate a fake lsid
-     */
-    class _FlagColumnRenderer extends FlagColumnRenderer
-    {
-        final FieldKey rowId;
-        final ExpProtocol protocol;
-        final String dataregion;
-
-        _FlagColumnRenderer(ColumnInfo col, FieldKey rowId, ExpProtocol protocol, String dataregion)
-        {
-            super(col);
-            this.rowId = rowId;
-            this.protocol = protocol;
-            ActionURL url = new ActionURL(AssayController.SetResultFlagAction.class, protocol.getContainer());
-            url.addParameter("rowId", protocol.getRowId());
-            url.addParameter("columnName", col.getName());
-            this.endpoint = url.getLocalURIString();
-            this.dataregion = dataregion;
-            this.jsConvertPKToLSID = "function(pk){return " +
-                    PageFlowUtil.jsString("protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() + ":") + " + pk}";
-        }
-
-        @Override
-        protected void renderFlag(RenderContext ctx, Writer out) throws IOException
-        {
-            renderFlagScript(ctx, out);
-            Integer id = ctx.get(rowId, Integer.class);
-            Object comment = getValue(ctx);
-            String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() +  ":" + String.valueOf(id);
-            _renderFlag(ctx, out, lsid, null==comment?null:String.valueOf(comment));
-        }
-
-        @Override
-        public void addQueryFieldKeys(Set<FieldKey> keys)
-        {
-            super.addQueryFieldKeys(keys);
-            keys.add(rowId);
-        }
-    }
 
 
     protected Map<String, Set<String>> getRequiredDomainProperties()

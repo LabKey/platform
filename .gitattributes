@@ -249,6 +249,7 @@ cbcassay/src/org/labkey/cbcassay/CBCAssayModule.java -text
 cbcassay/src/org/labkey/cbcassay/CBCAssayProvider.java -text
 cbcassay/src/org/labkey/cbcassay/CBCAssaySchema.java -text
 cbcassay/src/org/labkey/cbcassay/CBCDataHandler.java -text
+cbcassay/src/org/labkey/cbcassay/CBCProtocolSchema.java -text
 cbcassay/src/org/labkey/cbcassay/CBCResultsQueryView.java -text
 cbcassay/src/org/labkey/cbcassay/CBCRunUploadForm.java -text
 cbcassay/src/org/labkey/cbcassay/EditResultsQueryView.java -text
@@ -2865,6 +2866,7 @@ study/src/org/labkey/study/assay/ModuleAssayLoader.java -text
 study/src/org/labkey/study/assay/ModuleAssayProvider.java -text
 study/src/org/labkey/study/assay/ModuleDataExchangeHandler.java -text
 study/src/org/labkey/study/assay/ModuleRunUploadContext.java -text
+study/src/org/labkey/study/assay/TSVProtocolSchema.java -text
 study/src/org/labkey/study/assay/TsvAssayProvider.java -text
 study/src/org/labkey/study/assay/TsvDataHandler.java -text
 study/src/org/labkey/study/assay/TsvImportAction.java -text

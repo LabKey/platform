@@ -861,7 +861,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     public boolean hasMismatchedInfo(List<Integer> allObjects, AssayProtocolSchema schema)
     {
-        TableInfo tableInfo = schema.getProvider().createDataTable(schema, true);
+        TableInfo tableInfo = schema.createDataTable();
         if (tableInfo == null)
             return false;
 
@@ -940,7 +940,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                         AssayProtocolSchema schema = AssayService.get().createProtocolSchema(user, container, protocol, null);
 
                         // Do a query to get all the info we need to do the copy
-                        TableInfo resultTable = provider.createDataTable(schema, false);
+                        TableInfo resultTable = schema.createDataTable(false);
                         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(resultTable, Arrays.asList(ptidFK, visitFK, objectIdFK, runFK));
                         ColumnInfo ptidColumn = cols.get(ptidFK);
                         ColumnInfo visitColumn = cols.get(visitFK);

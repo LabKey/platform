@@ -16,6 +16,8 @@
 
 package org.labkey.cbcassay;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -142,8 +144,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         return "Imports Complete Blood Count data files.";
     }
 
+    @NotNull
     @Override
-    public AssayTableMetadata getTableMetadata(ExpProtocol protocol)
+    public AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol)
     {
         return new CBCAssayTableMetadata(
                 this,
@@ -162,23 +165,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public FilteredTable createDataTable(final AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
+    public AssayProtocolSchema createProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
-        AssayResultTable table = new AssayResultTable(schema, includeCopiedToStudyColumns);
-
-        ActionURL showDetailsUrl = new ActionURL(AssayResultDetailsAction.class, schema.getContainer());
-        showDetailsUrl.addParameter("rowId", schema.getProtocol().getRowId());
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("dataRowId", AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
-        table.setDetailsURL(new DetailsURL(showDetailsUrl, params));
-
-        ActionURL updateUrl = new ActionURL(CBCAssayController.UpdateAction.class, null);
-        updateUrl.addParameter("rowId", schema.getProtocol().getRowId());
-        Map<String, Object> updateParams = new HashMap<String, Object>();
-        updateParams.put("dataRowId", FieldKey.fromString(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
-        table.setUpdateURL(new DetailsURL(updateUrl, updateParams));
-
-        return table;
+        return new CBCProtocolSchema(user, container, protocol, targetStudy);
     }
 
     @Override
