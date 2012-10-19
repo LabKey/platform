@@ -371,7 +371,8 @@ public class Query
 
     public TableInfo getFromTable(FieldKey key)
     {
-		return _queryRoot instanceof QuerySelect ? ((QuerySelect)_queryRoot).getFromTable(key) : null;
+        QuerySelect qs = getQuerySelect();
+        return qs != null ? qs.getFromTable(key) : null;
     }
 
 
