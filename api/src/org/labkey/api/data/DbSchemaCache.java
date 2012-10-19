@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.CacheTimeChooser;
 import org.labkey.api.cache.Wrapper;
 import org.labkey.api.settings.AppProps;
 
@@ -34,12 +34,17 @@ import org.labkey.api.settings.AppProps;
 public class DbSchemaCache
 {
     private final DbScope _scope;
-    private final StringKeyCache<DbSchema> _cache;
+    private final BlockingStringKeyCache<DbSchema> _cache;
 
     public DbSchemaCache(DbScope scope)
     {
         _scope = scope;
         _cache = new DbSchemaBlockingCache(_scope.getDisplayName(), _scope.getCacheDefaultTimeToLive());
+
+        CacheTimeChooser<String> cacheTimeChooser = scope.getSchemaCacheTimeChooser();
+
+        if (null != cacheTimeChooser)
+            _cache.setCacheTimeChooser(cacheTimeChooser);
     }
 
     @NotNull DbSchema get(String schemaName)

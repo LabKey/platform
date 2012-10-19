@@ -270,7 +270,8 @@ public class SimpleFolderType extends MultiPortalFolderType
             Module module = getModule(moduleName);
             if (module == null)
                 LOGGER.error("Unable to load folder type: module " + moduleName + " does not exist.");
-            activeModules.add(module);
+            else
+                activeModules.add(module);
         }
         _activeModules = activeModules;
         if (type.getDefaultModule() != null)

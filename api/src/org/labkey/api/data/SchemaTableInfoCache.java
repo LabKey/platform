@@ -71,6 +71,7 @@ public class SchemaTableInfoCache
         {
             try
             {
+                @SuppressWarnings({"unchecked"})
                 Pair<DbSchema, String> pair = (Pair<DbSchema, String>)argument;
                 DbSchema schema = pair.first;
                 String tableName = pair.second;
@@ -91,7 +92,7 @@ public class SchemaTableInfoCache
         {
             super(createCache(scope), new SchemaTableLoader());
 
-            CacheTimeChooser<String> cacheTimeChooser = scope.getCacheTimeChooser();
+            CacheTimeChooser<String> cacheTimeChooser = scope.getTableCacheTimeChooser();
 
             if (null != cacheTimeChooser)
                 setCacheTimeChooser(cacheTimeChooser);

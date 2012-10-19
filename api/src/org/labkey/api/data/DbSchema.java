@@ -214,7 +214,6 @@ public class DbSchema
         if (null == metaDataTableName)
             return null;
 
-        _log.info("Loading table " + _scope.getDatabaseName() + "." + getName() + "." + tableName);
         SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
         TableType xmlTable = _tableXmlMap.get(tableName);
 

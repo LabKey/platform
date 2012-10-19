@@ -72,7 +72,7 @@ public class LabKeyScope extends DbScope
     }
 
     @Override
-    protected CacheTimeChooser<String> getCacheTimeChooser()
+    protected CacheTimeChooser<String> getTableCacheTimeChooser()
     {
         return new CacheTimeChooser<String>()
         {
@@ -83,6 +83,20 @@ public class LabKeyScope extends DbScope
                 DbSchema schema = ((Pair<DbSchema, String>)argument).first;
 
                 return schema.isModuleSchema() ? null : CacheManager.HOUR;
+            }
+        };
+    }
+
+    @Override
+    protected CacheTimeChooser<String> getSchemaCacheTimeChooser()
+    {
+        return new CacheTimeChooser<String>()
+        {
+            @Override
+            public Long getTimeToLive(String key, Object argument)
+            {
+                // Module schemas are cached forever; external schemas in the LabKey database are cached for an hour.
+                return _moduleSchemaNames.contains(key) ? null : CacheManager.HOUR;
             }
         };
     }

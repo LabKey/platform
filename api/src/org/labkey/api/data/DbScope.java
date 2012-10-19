@@ -515,7 +515,13 @@ public class DbScope
     }
 
 
-    protected @Nullable CacheTimeChooser<String> getCacheTimeChooser()
+    protected @Nullable CacheTimeChooser<String> getTableCacheTimeChooser()
+    {
+        return null;
+    }
+
+
+    protected @Nullable CacheTimeChooser<String> getSchemaCacheTimeChooser()
     {
         return null;
     }
