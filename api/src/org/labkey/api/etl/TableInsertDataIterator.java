@@ -77,8 +77,13 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
-            _stmt = StatementUtils.insertStatement(_conn, _table, _c, null, true, false);
+            boolean forImport = _context.isForImport();
+            boolean hasTriggers = _table.hasTriggers(_c);
+            boolean selectIds = !forImport || hasTriggers;
+            _stmt = StatementUtils.insertStatement(_conn, _table, _c, null, selectIds, false);
             super.init();
+            if (selectIds)
+                _batchSize = 1;
         }
         catch (SQLException x)
         {

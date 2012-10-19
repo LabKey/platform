@@ -33,6 +33,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -179,6 +180,21 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     @Override
     public final ApiResponse execute(FORM form, BindException errors) throws Exception
+    {
+        CPUTimer t = new CPUTimer("upload");
+        try
+        {
+            assert t.start();
+            return _execute(form, errors);
+        }
+        finally
+        {
+            assert t.stop();
+//            System.err.println("upload complete: " + t.getDuration());
+        }
+    }
+
+    public final ApiResponse _execute(FORM form, BindException errors) throws Exception
     {
         initRequest(form);
 

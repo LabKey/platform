@@ -503,9 +503,7 @@ public class StatementUtils
             String fnName = d.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
             fn.append("CREATE FUNCTION ").append(fnName).append("(");
             // TODO d.execute() doesn't handle temp schema
-            SQLFragment call = new SQLFragment("SELECT ");
-            if (countReturnIds > 0)
-                call.append("* FROM ");
+            SQLFragment call = new SQLFragment();
             call.append(fnName).append("(");
             final SQLFragment drop = new SQLFragment("DROP FUNCTION " + fnName + "(");
             comma = "";
@@ -532,14 +530,22 @@ public class StatementUtils
             fn.append(" AS $$\n");
             drop.append(");");
             call.append(")");
+
+
             if (countReturnIds > 0)
             {
+                call.insert(0, "SELECT * FROM ");
                 if (countReturnIds == 1)
                     call.append(" AS x(A int)");
                 else
                     call.append(" AS x(A int, B int)");
+                call.append(";");
             }
-            call.append(";");
+            else
+            {
+                call.insert(0, "{call ");
+                call.append("}");
+            }
 
             // Append these by hand -- don't want ; in the middle of the function
             fn.append(sqlfDeclare);
@@ -552,7 +558,11 @@ public class StatementUtils
             fn.appendStatement(sqlfDelete, d);
             fn.appendStatement(sqlfInsertInto, d);
             fn.appendStatement(sqlfObjectProperty, d);
-            if (null != sqlfSelectIds)
+            if (null == sqlfSelectIds)
+            {
+                fn.appendStatement(new SQLFragment("RETURN"), d);
+            }
+            else
             {
                 sqlfSelectIds.insert(0, "RETURN QUERY ");
                 fn.appendStatement(sqlfSelectIds, d);

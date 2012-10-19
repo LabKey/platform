@@ -363,7 +363,11 @@ public class Parameter
          */
         public ParameterMap(DbScope scope, Connection conn, SQLFragment sql, Map<String, String> remap) throws SQLException
         {
-            PreparedStatement stmt = conn.prepareStatement(sql.getSQL());
+            PreparedStatement stmt;
+            if (sql.getSQL().startsWith("{call"))
+                stmt = conn.prepareCall(sql.getSQL());
+            else
+                stmt= conn.prepareStatement(sql.getSQL());
 
             IdentityHashMap<Parameter, IntegerArray> paramMap = new IdentityHashMap<Parameter,IntegerArray>();
             List<Object> paramList = sql.getParams();
@@ -450,6 +454,14 @@ public class Parameter
             return _map.get(name);
         }
         
+
+        public void executeBatch() throws SQLException
+        {
+            _objectId = null;
+            _rowId = null;
+            _stmt.executeBatch();
+        }
+
 
         public boolean execute() throws SQLException
         {

@@ -23,9 +23,11 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.io.IOException;
+import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,7 +38,6 @@ class StatementDataIterator extends AbstractDataIterator
 {
     protected Parameter.ParameterMap _stmt;
     DataIterator _data;
-    int _executeCount = 0;
 
     Triple[] _bindings = null;
 
@@ -45,6 +46,10 @@ class StatementDataIterator extends AbstractDataIterator
     ArrayList<Object> _keyValues;
     Integer _rowIdIndex = null;
     Integer _objectIdIndex = null;
+    int _batchSize = -1;
+    int _currentBatchSize = 0;
+    CPUTimer _elapsed = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".elapsed");
+    CPUTimer _execute = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".execute()");
 
     protected StatementDataIterator(DataIterator data, Parameter.ParameterMap map, DataIteratorContext context)
     {
@@ -104,11 +109,9 @@ class StatementDataIterator extends AbstractDataIterator
             }
         }
         _bindings = bindings.toArray(new Triple[bindings.size()]);
-    }
 
-    public int getExecuteCount()
-    {
-        return _executeCount;
+        if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex)
+            _batchSize = Math.max(10, 2000/Math.max(2,_bindings.length));
     }
 
     private static class Triple
@@ -143,6 +146,7 @@ class StatementDataIterator extends AbstractDataIterator
 
     protected void onFirst()
     {
+        init();
     }
 
     @Override
@@ -152,14 +156,24 @@ class StatementDataIterator extends AbstractDataIterator
         {
             _firstNext = false;
             onFirst();
+            assert _elapsed.start();
         }
-
-        if (!_data.next())
-            return false;
 
         ResultSet rs = null;
         try
         {
+            if (!_data.next())
+            {
+                if (_currentBatchSize > 0)
+                {
+                    assert _execute.start();
+                    _stmt.executeBatch();
+                    assert _execute.stop();
+                    assert _elapsed.stop();
+                }
+                return false;
+            }
+
             _stmt.clearParameters();
             for (Triple binding : _bindings)
             {
@@ -180,18 +194,31 @@ class StatementDataIterator extends AbstractDataIterator
 
             checkShouldCancel();
 
-            _stmt.execute();
+            if (_batchSize > 1)
+                _stmt.addBatch();
+            _currentBatchSize++;
+            if (_currentBatchSize == _batchSize)
+            {
+                _currentBatchSize = 0;
+                assert _execute.start();
+                if (_batchSize > 1)
+                    _stmt.executeBatch();
+                else
+                    _stmt.execute();
+                assert _execute.stop();
+            }
 
             if (null != _rowIdIndex)
                 _keyValues.set(_rowIdIndex, _stmt.getRowId());
             if (null != _objectIdIndex)
                 _keyValues.set(_objectIdIndex, _stmt.getObjectId());
 
-            _executeCount++;
             return true;
         }
         catch (SQLException x)
         {
+            if (x instanceof BatchUpdateException && null != x.getNextException())
+                x = x.getNextException();
             if (StringUtils.startsWith(x.getSQLState(), "22") || SqlDialect.isConstraintException(x))
             {
                 getRowError().addGlobalError(x);

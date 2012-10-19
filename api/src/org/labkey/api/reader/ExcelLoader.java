@@ -17,6 +17,7 @@ package org.labkey.api.reader;
 
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.usermodel.Cell;
@@ -224,6 +225,17 @@ public class ExcelLoader extends DataLoader
     {
         try
         {
+            if (null != _file)
+            {
+                try
+                {
+                    return new XlsxIterator();
+                }
+                catch (InvalidFormatException x)
+                {
+                    /* fall through */
+                }
+            }
             return new ExcelIterator();
         }
         catch (IOException e)
@@ -249,11 +261,38 @@ public class ExcelLoader extends DataLoader
     }
 
 
-    public List<Map<String, Object>> loadSAXY() throws IOException
+//    public List<Map<String, Object>> loadSAXY() throws IOException
+//    {
+//        try
+//        {
+//            LinkedList<ArrayList<Object>> output = loadSheetFromXLSX();
+//
+//            // arrays to maps
+//            if (output.isEmpty())
+//                return Collections.emptyList();
+//            ArrayListMap.FindMap<String> findMap = new ArrayListMap.FindMap<String>(new CaseInsensitiveHashMap<Integer>());
+//            List<Object> firstRow = output.removeFirst();
+//            for (int index=0 ; index<firstRow.size() ; index++)
+//                findMap.put(String.valueOf(firstRow.get(index)),index);
+//            ArrayList<Map<String,Object>> maps = new ArrayList<Map<String, Object>>(output.size());
+//            for (ArrayList<Object> row : output)
+//                maps.add(new _ArrayListMap(findMap,row));
+//            return maps;
+//        }
+//        catch (InvalidFormatException x)
+//        {
+//            // maybe .xls
+//            return load();
+//        }
+//    }
+
+
+    private LinkedList<ArrayList<Object>> loadSheetFromXLSX() throws IOException, InvalidFormatException
     {
-        LinkedList<ArrayList<Object>> output = new LinkedList<ArrayList<Object>>();
         try
         {
+            LinkedList<ArrayList<Object>> output = new LinkedList<ArrayList<Object>>();
+
             OPCPackage xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
             ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(xlsxPackage);
             XSSFReader xssfReader = new XSSFReader(xlsxPackage);
@@ -269,34 +308,46 @@ public class ExcelLoader extends DataLoader
                 sheetParser.setContentHandler(handler);
                 sheetParser.parse(sheetSource);
             }
-
-            // arrays to maps
-            if (output.isEmpty())
-                return Collections.emptyList();
-            ArrayListMap.FindMap<String> findMap = new ArrayListMap.FindMap<String>(new CaseInsensitiveHashMap<Integer>());
-            List<Object> firstRow = output.removeFirst();
-            for (int index=0 ; index<firstRow.size() ; index++)
-                findMap.put(String.valueOf(firstRow.get(index)),index);
-            ArrayList<Map<String,Object>> maps = new ArrayList<Map<String, Object>>(output.size());
-            for (ArrayList<Object> row : output)
-                maps.add(new _ArrayListMap(findMap,row));
-            return maps;
+            return output;
+        }
+        catch (InvalidOperationException x)
+        {
+            throw new InvalidFormatException("File is not an xlsx file: " + _file.getPath());
         }
         catch (InvalidFormatException x)
         {
-            // maybe .xls
-            return load();
+            throw x;
         }
-        catch (IOException e)
+        catch (IOException x)
         {
-            throw e;
+            throw x;
         }
-        catch (Exception e)
+        catch (Exception x)
         {
-            throw new IOException(e.getMessage());
+            throw new IOException(x);
         }
     }
 
+
+    private class XlsxIterator extends DataLoaderIterator
+    {
+        final List<ArrayList<Object>> grid;
+
+        public XlsxIterator() throws IOException, InvalidFormatException
+        {
+            super(_skipLines == -1 ? 1 : _skipLines, true);
+            grid = loadSheetFromXLSX();
+        }
+
+        @Override
+        protected Object[] readFields() throws IOException
+        {
+            if (lineNum() >= grid.size())
+                return null;
+            ArrayList row = grid.get(lineNum());
+            return row.toArray();
+        }
+    }
 
 
     private class ExcelIterator extends DataLoader.DataLoaderIterator
@@ -367,6 +418,7 @@ public class ExcelLoader extends DataLoader
             super.close();       // TODO: Shouldn't this close the workbook?
         }
     }
+
 
     public static class ExcelLoaderTestCase extends Assert
     {
