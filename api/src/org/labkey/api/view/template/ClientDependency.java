@@ -15,18 +15,15 @@
  */
 package org.labkey.api.view.template;
 
-import org.apache.commons.collections15.map.AbstractReferenceMap;
-import org.apache.commons.collections15.map.ReferenceIdentityMap;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.Container;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
@@ -40,8 +37,6 @@ import org.labkey.clientLibrary.xml.ModeTypeEnum;
 import org.labkey.clientLibrary.xml.RequiredModuleType;
 import org.labkey.clientLibrary.xml.ScriptType;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -58,7 +53,6 @@ import java.util.Set;
 public class ClientDependency
 {
     private static Logger _log = Logger.getLogger(ClientDependency.class);
-    private static final Map<String, ClientDependency> _references = new ReferenceIdentityMap<String, ClientDependency>(AbstractReferenceMap.WEAK, AbstractReferenceMap.WEAK, true);
 
     public static enum TYPE {
         js(".js"),
@@ -341,49 +335,88 @@ public class ClientDependency
         }
     }
 
-    public void processJsb(Path filePath)
-    {
-        try
-        {
-            File jsonFile = new File(ModuleLoader.getInstance().getWebappDir(), _resource.getPath().toString());
-            String json = FileUtils.readFileToString(jsonFile);
-            JSONObject o = new JSONObject(json);
-            JSONArray pkgs = o.getJSONArray("pkgs");
-
-            if (pkgs != null)
-            {
-                for(int i = 0 ; i < pkgs.length(); i++)
-                {
-                    JSONObject pkg = (JSONObject)pkgs.get(i);
-                    if (pkg.getString("name").equals("Ext Core") || pkg.getString("name").equals("Ext Base"))
-                    {
-                        JSONArray files = pkg.getJSONArray("fileIncludes");
-                        for(int j = 0 ; i < files.length(); i++)
-                        {
-                            JSONObject fileInfo = (JSONObject)pkgs.get(j);
-                            File script = new File(jsonFile.getParentFile(), fileInfo.getString("path") + fileInfo.getString("text"));
-                            if (script.exists())
-                            {
-                                ClientDependency d = ClientDependency.fromFilePath(script.getPath(), ModeTypeEnum.DEV);
-                                _children.add(d);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            _log.error("Unable to read file: " + _resource.getPath());
-        }
-    }
+//    public void processJsb(Path filePath)
+//    {
+//        try
+//        {
+//            File jsonFile = new File(ModuleLoader.getInstance().getWebappDir(), _resource.getPath().toString());
+//            String json = FileUtils.readFileToString(jsonFile);
+//            JSONObject o = new JSONObject(json);
+//            JSONArray pkgs = o.getJSONArray("pkgs");
+//
+//            if (pkgs != null)
+//            {
+//                for(int i = 0 ; i < pkgs.length(); i++)
+//                {
+//                    JSONObject pkg = (JSONObject)pkgs.get(i);
+//                    if (pkg.getString("name").equals("Ext Core") || pkg.getString("name").equals("Ext Base"))
+//                    {
+//                        JSONArray files = pkg.getJSONArray("fileIncludes");
+//                        for(int j = 0 ; i < files.length(); i++)
+//                        {
+//                            JSONObject fileInfo = (JSONObject)pkgs.get(j);
+//                            File script = new File(jsonFile.getParentFile(), fileInfo.getString("path") + fileInfo.getString("text"));
+//                            if (script.exists())
+//                            {
+//                                ClientDependency d = ClientDependency.fromFilePath(script.getPath(), ModeTypeEnum.DEV);
+//                                _children.add(d);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        catch (IOException e)
+//        {
+//            _log.error("Unable to read file: " + _resource.getPath());
+//        }
+//    }
 
     public TYPE getPrimaryType()
     {
         return _primaryType;
     }
 
-    private LinkedHashSet<ClientDependency> getUniqueDependencySet()
+//    private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c, User u)
+//    {
+//        return getUniqueDependencySet(c, u, new LinkedHashSet<ClientDependency>());
+//    }
+
+    /**
+     * Returns an ordered set of ClientDependencies, recursively including children
+     */
+//    private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c, User u, LinkedHashSet<ClientDependency> set)
+//    {
+//        if (set.contains(this))
+//            return set;
+//
+//        set.add(this);
+//
+//        if (_children != null)
+//        {
+//            for (ClientDependency cd : _children)
+//            {
+//                LinkedHashSet<ClientDependency> toAdd = cd.getUniqueDependencySet(c, u, set);
+//                set.add(cd);
+//                //set.addAll(toAdd);
+//            }
+//        }
+//
+//        if(TYPE.context.equals(_primaryType))
+//        {
+//            Set<ClientDependency> md = _module.getClientDependencies(c, u);
+//            for (ClientDependency cd : md)
+//            {
+//                LinkedHashSet<ClientDependency> toAdd = cd.getUniqueDependencySet(c, u, set);
+//                set.add(cd);
+//                //set.addAll(toAdd);
+//            }
+//        }
+//
+//        return set;
+//    }
+
+    private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c, User u)
     {
         LinkedHashSet<ClientDependency> cd = new LinkedHashSet<ClientDependency>();
 
@@ -392,64 +425,62 @@ public class ClientDependency
 
         if(TYPE.context.equals(_primaryType))
         {
-            cd.addAll(_module.getClientDependencies());
+            cd.addAll(_module.getClientDependencies(c, u));
         }
 
         return cd;
     }
 
-    private LinkedHashSet<String> getProductionScripts(TYPE type)
+    private LinkedHashSet<String> getProductionScripts(Container c, User u, TYPE type)
     {
-        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet();
-
         LinkedHashSet<String> scripts = new LinkedHashSet<String>();
         if (_primaryType.equals(type) && _prodModePath != null)
             scripts.add(_prodModePath);
 
+        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c, u);
         for (ClientDependency r : cd)
-            scripts.addAll(r.getProductionScripts(type));
+            scripts.addAll(r.getProductionScripts(c, u, type));
 
         return scripts;
     }
 
-    private LinkedHashSet<String> getDevModeScripts(TYPE type)
+    private LinkedHashSet<String> getDevModeScripts(Container c, User u, TYPE type)
     {
-        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet();
-
         LinkedHashSet<String> scripts = new LinkedHashSet<String>();
         if (_primaryType.equals(type) && _devModePath != null)
             scripts.add(_devModePath);
 
+        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c, u);
         for (ClientDependency r : cd)
-            scripts.addAll(r.getDevModeScripts(type));
+            scripts.addAll(r.getDevModeScripts(c, u, type));
 
         return scripts;
     }
 
-    public LinkedHashSet<String> getCssPaths(boolean devMode)
+    public LinkedHashSet<String> getCssPaths(Container c, User u, boolean devMode)
     {
         if (devMode)
-            return getDevModeScripts(TYPE.css);
+            return getDevModeScripts(c, u, TYPE.css);
         else
-            return getProductionScripts(TYPE.css);
+            return getProductionScripts(c, u, TYPE.css);
     }
 
-    public LinkedHashSet<String> getJsPaths(boolean devMode)
+    public LinkedHashSet<String> getJsPaths(Container c, User u, boolean devMode)
     {
         if (devMode)
-            return getDevModeScripts(TYPE.js);
+            return getDevModeScripts(c, u, TYPE.js);
         else
-            return getProductionScripts(TYPE.js);
+            return getProductionScripts(c, u, TYPE.js);
     }
 
-    public Set<Module> getRequiredModuleContexts()
+    public Set<Module> getRequiredModuleContexts(Container c, User u)
     {
         HashSet<Module> modules = new HashSet<Module>();
         if(_module != null)
             modules.add(_module);
 
-        for (ClientDependency r : getUniqueDependencySet())
-            modules.addAll(r.getRequiredModuleContexts());
+        for (ClientDependency r : getUniqueDependencySet(c, u))
+            modules.addAll(r.getRequiredModuleContexts(c, u));
 
         return modules;
     }
@@ -462,5 +493,14 @@ public class ClientDependency
     public void setMode(ModeTypeEnum.Enum mode)
     {
         _mode = mode;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (o == null || !(o instanceof ClientDependency))
+            return false;
+
+        return ((ClientDependency)o).getUniqueKey().equals(getUniqueKey());
     }
 }

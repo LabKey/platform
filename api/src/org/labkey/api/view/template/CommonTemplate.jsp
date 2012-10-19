@@ -79,7 +79,7 @@
     <!-- <%=h(url.getURIString())%> -->
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags(url) %>
-<%= PageFlowUtil.getStandardIncludes(c, userAgent, bean.getClientDependencies()) %><%
+<%= PageFlowUtil.getStandardIncludes(c, user, userAgent, bean.getClientDependencies()) %><%
 if (null != bean.getStyleSheet())
 {
     %>

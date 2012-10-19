@@ -16,16 +16,18 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.template.DialogTemplate" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DialogTemplate me = (DialogTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
     Container c = me.getViewContext().getContainer();
+    User u = me.getViewContext().getUser();
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
 
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
@@ -37,7 +39,7 @@
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags(me.getViewContext().getActionURL()) %>
-    <%= PageFlowUtil.getStandardIncludes(c,request.getHeader("User-Agent"), pageConfig.getClientDependencies()) %>
+    <%= PageFlowUtil.getStandardIncludes(c, u, request.getHeader("User-Agent"), pageConfig.getClientDependencies()) %>
 </head>
 
 <body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %> class="<%=themeFont.getClassName()%>">

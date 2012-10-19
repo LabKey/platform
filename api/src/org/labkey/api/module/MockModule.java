@@ -356,7 +356,7 @@ public class MockModule implements Module
         return new JSONObject();
     }
 
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u)
     {
         return new LinkedHashSet<ClientDependency>();
     }

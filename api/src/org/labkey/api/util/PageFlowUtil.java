@@ -1611,23 +1611,18 @@ public class PageFlowUtil
     }
 
 
-    public static String getStandardIncludes(Container c)
+    public static String getStandardIncludes(Container c, User u)
     {
-        return getStandardIncludes(c, null, null);
-    }
-
-    public static String getStandardIncludes(Container c, @Nullable String userAgent)
-    {
-        return getStandardIncludes(c, userAgent, null);
+        return getStandardIncludes(c, u, null, null);
     }
 
     // UNDONE: use a user-agent parsing library
-    public static String getStandardIncludes(Container c, @Nullable String userAgent, LinkedHashSet<ClientDependency> resources)
+    public static String getStandardIncludes(Container c, User u, @Nullable String userAgent, LinkedHashSet<ClientDependency> resources)
     {
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(resources));
-        sb.append(getStylesheetIncludes(c, userAgent, resources));
-        sb.append(getJavaScriptIncludes(resources));
+        sb.append(getStylesheetIncludes(c, u, userAgent, resources));
+        sb.append(getJavaScriptIncludes(c, u, resources));
         return sb.toString();
     }
 
@@ -1650,18 +1645,18 @@ public class PageFlowUtil
     }
 
 
-    public static String getStylesheetIncludes(Container c)
+    public static String getStylesheetIncludes(Container c, User u)
     {
-        return getStylesheetIncludes(c, null);
+        return getStylesheetIncludes(c, u, null, null);
     }
 
-    public static String getStylesheetIncludes(Container c, @Nullable String userAgent)
+    public static String getStylesheetIncludes(Container c, User u, @Nullable String userAgent)
     {
-        return getStylesheetIncludes(c, userAgent, null);
+        return getStylesheetIncludes(c, u, userAgent, null);
     }
 
     /** */
-    public static String getStylesheetIncludes(Container c, @Nullable String userAgent, @Nullable LinkedHashSet<ClientDependency> resources)
+    public static String getStylesheetIncludes(Container c, User u, @Nullable String userAgent, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
         WebTheme theme = WebThemeManager.getTheme(c);
@@ -1717,19 +1712,19 @@ public class PageFlowUtil
         sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
 
         if (resources != null)
-            writeCss(sb, resources);
+            writeCss(c, u, sb, resources);
 
         return sb.toString();
     }
 
-    public static void writeCss(StringBuilder sb, LinkedHashSet<ClientDependency> resources)
+    public static void writeCss(Container c, User u, StringBuilder sb, LinkedHashSet<ClientDependency> resources)
     {
         Set<String> cssFiles = new HashSet<String>();
         if (resources != null)
         {
             for (ClientDependency r : resources)
             {
-                for (String script : (r.getCssPaths(AppProps.getInstance().isDevMode())))
+                for (String script : (r.getCssPaths(c, u, AppProps.getInstance().isDevMode())))
                 {
                     sb.append("<link href=\"");
                     sb.append(AppProps.getInstance().getContextPath() + "/");
@@ -1827,7 +1822,7 @@ public class PageFlowUtil
     /**
      * Used by CombinedJavascriptAction only - it's possible this can be deprecated
      */
-    public static void getJavaScriptPaths(Set<String> scripts, Set<String> included)
+    public static void getJavaScriptPaths(Container c, User u, Set<String> scripts, Set<String> included)
     {
         LinkedHashSet<ClientDependency> resources = getDefaultJavaScriptPaths();
         if (resources != null)
@@ -1835,15 +1830,15 @@ public class PageFlowUtil
             for (ClientDependency r : resources) {
                 if(AppProps.getInstance().isDevMode())
                 {
-                    scripts.addAll(r.getJsPaths(true));
-                    included.addAll(r.getJsPaths(true));
+                    scripts.addAll(r.getJsPaths(c, u, true));
+                    included.addAll(r.getJsPaths(c, u, true));
                 }
                 else
                 {
-                    scripts.addAll(r.getJsPaths(false));
+                    scripts.addAll(r.getJsPaths(c, u, false));
                     //include both production and devmode scripts for requiresScript()
-                    included.addAll(r.getJsPaths(true));
-                    included.addAll(r.getJsPaths(false));
+                    included.addAll(r.getJsPaths(c, u, true));
+                    included.addAll(r.getJsPaths(c, u, false));
                 }
             }
         }
@@ -1877,12 +1872,12 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-    public static String getJavaScriptIncludes(LinkedHashSet<ClientDependency> extraResources)
+    public static String getJavaScriptIncludes(Container c, User u, LinkedHashSet<ClientDependency> extraResources)
     {
-        return getJavaScriptIncludes(extraResources, true);
+        return getJavaScriptIncludes(c, u, extraResources, true);
     }
 
-    public static String getJavaScriptIncludes(LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources)
+    public static String getJavaScriptIncludes(Container c, User u, LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources)
     {
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
@@ -1901,7 +1896,7 @@ public class PageFlowUtil
         if (extraResources != null)
             resources.addAll(extraResources);
 
-        getJavaScriptFiles(resources, includes, implicitIncludes);
+        getJavaScriptFiles(c, u, resources, includes, implicitIncludes);
 
         StringBuilder sb = new StringBuilder();
 
@@ -2508,7 +2503,7 @@ public class PageFlowUtil
             Set<Module> modules = new HashSet<Module>();
             for (ClientDependency cd : resources)
             {
-                modules.addAll(cd.getRequiredModuleContexts());
+                modules.addAll(cd.getRequiredModuleContexts(c, u));
             }
 
             for (Module m : modules)
@@ -2519,20 +2514,20 @@ public class PageFlowUtil
         return ret;
     }
 
-    public static void getJavaScriptFiles(LinkedHashSet<ClientDependency> dependencies, LinkedHashSet<String> includes, LinkedHashSet<String> implicitIncludes)
+    public static void getJavaScriptFiles(Container c, User u, LinkedHashSet<ClientDependency> dependencies, LinkedHashSet<String> includes, LinkedHashSet<String> implicitIncludes)
     {
         for (ClientDependency r : dependencies) {
             if(AppProps.getInstance().isDevMode())
             {
-                includes.addAll(r.getJsPaths(true));
-                implicitIncludes.addAll(r.getJsPaths(true));
+                includes.addAll(r.getJsPaths(c, u, true));
+                implicitIncludes.addAll(r.getJsPaths(c, u, true));
             }
             else
             {
-                includes.addAll(r.getJsPaths(false));
+                includes.addAll(r.getJsPaths(c, u, false));
                 //include both production and devmode scripts for requiresScript()
-                implicitIncludes.addAll(r.getJsPaths(true));
-                implicitIncludes.addAll(r.getJsPaths(false));
+                implicitIncludes.addAll(r.getJsPaths(c, u, true));
+                implicitIncludes.addAll(r.getJsPaths(c, u, false));
             }
         }
     }

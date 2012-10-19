@@ -16,16 +16,18 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.WizardTemplate" %>
-<%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.api.view.template.WizardTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     WizardTemplate me = (WizardTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
     Container c = me.getViewContext().getContainer();
+    User u = me.getViewContext().getUser();
 
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", pageConfig.getFrameOption().name());
@@ -36,7 +38,7 @@
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags(me.getViewContext().getActionURL()) %>
-    <%= PageFlowUtil.getStandardIncludes(c,request.getHeader("User-Agent"), pageConfig.getClientDependencies()) %>
+    <%= PageFlowUtil.getStandardIncludes(c, u, request.getHeader("User-Agent"), pageConfig.getClientDependencies()) %>
 </head>
 
 <body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>

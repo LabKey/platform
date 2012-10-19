@@ -303,5 +303,5 @@ public interface Module extends Comparable<Module>
      */
     public JSONObject getPageContextJson(User u, Container c);
 
-    public LinkedHashSet<ClientDependency> getClientDependencies();
+    public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u);
 }
