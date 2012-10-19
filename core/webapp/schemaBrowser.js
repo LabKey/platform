@@ -412,10 +412,11 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         if (_qd.exception)
             viewDataUrl = LABKEY.ActionURL.buildURL('query', 'sourceQuery', null, {schemaName : _qd.schemaName, 'query.queryName' : _qd.name});
 
+        var schemaKey = LABKEY.SchemaKey.fromString(_qd.schemaName);
         var children = [{
             tag: 'a',
             href: viewDataUrl,
-            html: Ext.util.Format.htmlEncode(_qd.schemaName) + "." + Ext.util.Format.htmlEncode(_qd.name)
+            html: Ext.util.Format.htmlEncode(schemaKey.toDisplayString()) + "." + Ext.util.Format.htmlEncode(_qd.name)
         }];
         if (_qd.isUserDefined && _qd.moduleName) {
             var _tip = '' +

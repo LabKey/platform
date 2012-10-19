@@ -41,7 +41,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.model.*;
-import org.labkey.study.query.SpecimenQuerySchema;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
@@ -1857,7 +1856,7 @@ public class SampleManager
         try
         {
             StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
-            TableInfo tinfo = schema.getTable(SpecimenQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+            TableInfo tinfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
 
             FieldKey visitKey = FieldKey.fromParts("Visit");
             Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singleton(visitKey));

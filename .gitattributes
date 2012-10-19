@@ -3099,7 +3099,6 @@ study/src/org/labkey/study/query/SpecimenEventTable.java -text
 study/src/org/labkey/study/query/SpecimenPivotByDerivativeType.java -text
 study/src/org/labkey/study/query/SpecimenPivotByPrimaryType.java -text
 study/src/org/labkey/study/query/SpecimenPivotByRequestingLocation.java -text
-study/src/org/labkey/study/query/SpecimenQuerySchema.java -text
 study/src/org/labkey/study/query/SpecimenQueryView.java -text
 study/src/org/labkey/study/query/SpecimenReportQuery.java -text
 study/src/org/labkey/study/query/SpecimenRequestDisplayColumn.java -text
