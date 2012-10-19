@@ -94,8 +94,7 @@ public class AssayProtocolSchema extends AssaySchema
     public Map<String, QueryDefinition> getQueryDefs()
     {
         Map<String, QueryDefinition> result = super.getQueryDefs();
-        Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
-        List<QueryDefinition> providerQueryDefs = QueryService.get().getFileBasedQueryDefs(getUser(), getContainer(), getSchemaName(), providerPath);
+        List<QueryDefinition> providerQueryDefs = getFileBasedAssayProviderScopedQueries();
         for (QueryDefinition providerQueryDef : providerQueryDefs)
         {
             if (!result.containsKey(providerQueryDef.getName()))
@@ -104,6 +103,16 @@ public class AssayProtocolSchema extends AssaySchema
             }
         }
         return result;
+    }
+
+    /**
+     * @return all of the custom query definitions associated with the assay provider/type,
+     * which will be exposed for each assay design
+     */
+    public List<QueryDefinition> getFileBasedAssayProviderScopedQueries()
+    {
+        Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
+        return QueryService.get().getFileBasedQueryDefs(getUser(), getContainer(), getSchemaName(), providerPath);
     }
 
     @NotNull
