@@ -191,7 +191,7 @@ translateToDouble:
 
         // handle log-type events which can be unique'd by date
         Visit v = _sequenceNumMap.get(sequencenum);
-        if (null != v && v.getSequenceHandling() == Visit.SequenceHandling.logUniqueByDate)
+        if (null != v && v.getSequenceNumHandlingEnum() == Visit.SequenceHandling.logUniqueByDate)
         {
             int daysSinceEpoch = convertToDaysSinceEpoch(date);
             int offset = daysSinceEpoch - _startDaysSinceEpoch;
@@ -246,7 +246,7 @@ translateToDouble:
                 }
 
                 @Override
-                public SequenceHandling getSequenceHandling()
+                public SequenceHandling getSequenceNumHandlingEnum()
                 {
                     return 9999.0==Math.floor(d) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
                 }

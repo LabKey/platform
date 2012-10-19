@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import org.apache.axis.utils.StringUtils;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
@@ -51,6 +52,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     private Integer _visitDateDatasetid = 0;
     private Integer _cohortId;
     private int _chronologicalOrder;
+    private SequenceHandling _sequenceHandling = SequenceHandling.normal;
     
     public VisitImpl()
     {
@@ -265,9 +267,22 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     @Override
-    public SequenceHandling getSequenceHandling()
+    public SequenceHandling getSequenceNumHandlingEnum()
     {
-        return SequenceHandling.normal;
+        return null==_sequenceHandling ? SequenceHandling.normal : _sequenceHandling;
+    }
+
+    public String getSequenceNumHandling()
+    {
+        return getSequenceNumHandlingEnum().name();
+    }
+
+    public void setSequenceNumHandling(String name)
+    {
+        if (StringUtils.isEmpty(name))
+            _sequenceHandling = SequenceHandling.normal;
+        else
+            _sequenceHandling = SequenceHandling.valueOf(name);
     }
 
     static _BeanObjectFactory _f = new _BeanObjectFactory();

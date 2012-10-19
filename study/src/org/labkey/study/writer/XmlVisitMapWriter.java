@@ -95,6 +95,9 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
                 if (visit.getChronologicalOrder() > 0)
                     visitXml.setChronologicalOrder(visit.getChronologicalOrder());
 
+                if (null != visit.getSequenceNumHandling())
+                    visitXml.setSequenceNumHandling(visit.getSequenceNumHandling());
+
                 List<VisitDataSet> vds = visit.getVisitDataSets();
 
                 if (!vds.isEmpty())

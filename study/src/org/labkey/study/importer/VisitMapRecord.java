@@ -53,10 +53,11 @@ class VisitMapRecord
     private final String _cohort;
     private final int _displayOrder;
     private final int _chronologicalOrder;
+    private final String _sequenceNumHandling;
 
     public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, String visitType, String visitLabel,
                           String cohort, int visitDatePlate, int[] requiredPlates, int[] optionalPlates, boolean showByDefault,
-                          int displayOrder, int chronologicalOrder)
+                          int displayOrder, int chronologicalOrder, String sequenceNumHandling)
     {
         _sequenceNumberMin = sequenceNumberMin;
         _sequenceNumberMax = sequenceNumberMax;
@@ -76,6 +77,7 @@ class VisitMapRecord
         _visitOverdueAllowance = -1;
         _missedNotificationPlate = -1;
         _terminationWindow = null;
+        _sequenceNumHandling = sequenceNumHandling;
     }
 
     private VisitMapRecord(Map record)
@@ -106,6 +108,7 @@ class VisitMapRecord
 
         _displayOrder = defaultInt((Integer)record.get("displayOrder"), 0);
         _chronologicalOrder = defaultInt((Integer)record.get("chronologicalOrder"), 0);
+        _sequenceNumHandling = (String)record.get("sequenceNumHandling");
     }
 
     private static int defaultInt(Integer i, int defaultInt)

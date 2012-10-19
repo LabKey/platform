@@ -108,7 +108,7 @@ public class XmlVisitMapReader implements VisitMapReader
                     visitXml.getLabel(), visitXml.getCohort(), visitXml.getVisitDateDatasetId(),
                     ArrayUtils.toPrimitive(required.toArray(new Integer[required.size()])),
                     ArrayUtils.toPrimitive(optional.toArray(new Integer[optional.size()])), visitXml.getShowByDefault(),
-                    visitXml.getDisplayOrder(), visitXml.getChronologicalOrder());
+                    visitXml.getDisplayOrder(), visitXml.getChronologicalOrder(), visitXml.getSequenceNumHandling());
 
             visits.add(record);
         }
