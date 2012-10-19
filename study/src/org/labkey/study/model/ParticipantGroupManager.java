@@ -372,12 +372,16 @@ public class ParticipantGroupManager
         sb.append("                 dataRegionEl.unmask();");
         sb.append("                 var o = eval('var $=' + res.responseText + ';$;');");
         sb.append("                 if (o.success && o.ptids) {");
-        sb.append("                     var dlg = new LABKEY.study.ParticipantGroupDialog({");
+        sb.append("                     var stringPtids = '';");
+        sb.append("                       for(var i = 0; i < o.ptids.length; i++){" +
+                "                              if(i != o.ptids.length-1) stringPtids += o.ptids[i] + ', ';" +
+                "                              else stringPtids += o.ptids[i]; }");
+        sb.append("                     var dlg = Ext4.create('Study.window.ParticipantGroup', {");
         sb.append("                             subject: {");
         sb.append("                                 nounSingular:").append(PageFlowUtil.jsString(study.getSubjectNounSingular())).append(',');
         sb.append("                                 nounPlural:").append(PageFlowUtil.jsString(study.getSubjectNounPlural()));
         sb.append("                             },");
-        sb.append("                             categoryParticipantIds: o.ptids,");
+        sb.append("                             categoryParticipantIds: stringPtids,");
         sb.append("                             canEdit:true, hideDataRegion:true,");
         sb.append("                             isAdmin:").append(isAdmin);
         sb.append("                     });");

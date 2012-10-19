@@ -31,7 +31,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
-        resources.add(ClientDependency.fromFilePath("Ext3"));
+        resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
         resources.add(ClientDependency.fromFilePath("study/ParticipantGroup.js"));
         return resources;
     }
@@ -48,215 +48,167 @@
 
 <p><%= PageFlowUtil.filter(subjectNounSingular) %> groups allow you to quickly filter data in a study to groups of <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> you define.
     Use this page to define a group and add <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> to it.</p>
-<div id="participantCategoriesGrid" class="extContainer"></div>
+<div id="participantCategoriesGrid"></div>
 
 <script type="text/javascript">
 
-var _grid;
-
 (function(){
 
-    var $h = Ext.util.Format.htmlEncode;
+    Ext4.onReady(function() {
 
-    function renderParticipantCategoriesGrid()
-    {
-        Ext.QuickTips.init();
+        var editParticipantGroup = function(row){
+            var dialog = Ext4.create('Study.window.ParticipantGroup', {
+                subject: {
+                    nounSingular: <%=q(subjectNounSingular)%>,
+                    nounPlural: <%=q(subjectNounPlural)%>,
+                    nounColumnName: <%=q(subjectNounColName)%>
+                },
+                isAdmin: <%=isAdmin%>,
+                grid : grid,
+                category: (row ? row.get("category") : null),
+                groupRowId: (row ? row.get("rowId") : null),
+                groupLabel: (row ? row.get("label") : null),
+                categoryParticipantIds: (row ? row.get("participantIds") : null),
+                categoryShared : (row ? row.get("shared") : false),
+                canEdit : (row ? row.get("canEdit") :  true) // TODO: Modify this to adhere to API to check (participant) group permission
+            });
 
-        Ext.data.Types.PARTICIPANTCATEGORY = {
-            convert: function(v, rec) {
-                return v;
-            },
-            sortType: function(v) {
-                return v.type == "list" ? "" : v.label;
-            },
-            type: 'ParticpantCategory'
-        };
+            dialog.show();
 
-        this.groupStore = new Ext.data.JsonStore({
-            proxy: new Ext.data.HttpProxy({
+        }
+
+        var deleteParticipantGroup = function(row){
+            // todo: do we need to handle deletion of a shared/public group differently?
+
+            Ext4.Msg.show({
+                title : 'Delete Group',
+                msg : 'Delete Selected Group:<br/>' + (row.get("label")),
+                buttons: Ext4.Msg.YESNO,
+                icon: Ext4.Msg.QUESTION,
+                fn: function(btn, text) {
+                    if (btn == 'yes')
+                    {
+                        Ext4.Ajax.request({
+                            url: LABKEY.ActionURL.buildURL("participant-group", "deleteParticipantGroup"),
+                            method: "POST",
+                            success: function(){
+                                grid.getStore().load();
+                            },
+                            failure: function(response, options){
+                                LABKEY.Utils.displayAjaxErrorResponse(response, options);
+                            },
+                            jsonData: {rowId: row.get("rowId")}
+                        });
+                    }},
+                id: 'delete_categories'
+            });
+        }
+
+        Ext4.define('ParticipantGroup', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'rowId',            type : 'int',       mapping : 'id'},
+                {name : 'label',            type : 'string'},
+                {name : 'type',             type : 'string'},
+                {name : 'category',         type : 'string',    convert : function(v) { return v; }, sortType: function(v) { return v.type == 'list' ? '' : v.label; }},
+                {name : 'shared',           type : 'boolean',   mapping : 'category.shared'},
+                {name : 'createdBy',        type : 'string',    convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
+                {name : 'modifiedBy',       type : 'string',    convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
+                {name : 'participantIds',   type : 'string',    convert : function(v, record){return v.join(', ');}},
+                {name : 'canEdit',          type : 'boolean',   mapping : 'category.canEdit'},
+                {name : 'canDelete',        type : 'boolean',   mapping : 'category.canDelete'},
+                {name : 'categoryLabel',    type : 'string',    mapping : 'category.label'}
+
+
+            ]
+        });
+
+        var createButton = Ext4.create('Ext.button.Button',
+            {
+                text : 'Create',
+                handler: function(){
+                    editParticipantGroup(null);
+                },
+                scope: this
+            });
+
+         var editButton = Ext4.create('Ext.button.Button',
+            {
+                id : 'editSelectedButtonExt4',
+                text : 'Edit Selected',
+                disabled : true,
+              handler: function(){
+                  if (grid.getSelectionModel().hasSelection()){
+                      editParticipantGroup(grid.getSelectionModel().getLastSelected());
+                  }
+              }
+            });
+        var deleteButton = Ext4.create('Ext.button.Button',
+            {
+                id : 'deleteSelectedButtonExt4',
+                text : 'Delete Selected',
+                disabled : 'true',
+                handler: function(){
+                    if (grid.getSelectionModel().hasSelection())
+                    {
+                        deleteParticipantGroup(grid.getSelectionModel().getLastSelected());
+                    }
+                },
+                scope : this
+            });
+
+
+
+        var participantStore = Ext4.create('Ext.data.Store', {
+            model : 'ParticipantGroup',
+            proxy: {
+                type: 'ajax',
                 url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups"),
-                method : 'POST'
-            }),
-            baseParams: { type : 'participantGroup', includeParticipantIds: true, includeUnassigned : false},
-            root: 'groups',
-            fields: [
-                {name: 'rowId', type: 'integer', mapping: 'id'},
-                {name: 'label', type: 'string'},
-                {name: 'type', type: 'string'},
-                {name: 'createdBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
-                {name: 'modifiedBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
-                {name: 'shared', type: 'boolean', mapping: 'category.shared'},
-                {name: 'participantIds', type: 'string', convert: function(v, record){return v.join(', ');}},
-                {name: 'canEdit', type: 'boolean', mapping: 'category.canEdit'},
-                {name: 'canDelete', type: 'boolean', mapping: 'category.canDelete'},
-                {name: 'categoryLabel', type: 'string', mapping: 'category.label'},
-                {name: 'category', type: Ext.data.Types.PARTICIPANTCATEGORY}
-            ],
-            listeners: {
-                'load': function(store){
-                    store.sort([{field: 'category', direction: 'ASC'}, {field:'label', direction: 'ASC'}]);
+                extraParams : {
+                    type : 'participantGroup',
+                    includeParticipantIds: true,
+                    includeUnassigned : false
+                },
+                reader: {
+                    type: 'json',
+                    root: 'groups'
                 }
             },
             autoLoad: true
         });
-        this.groupStore.on('load', toggleEditDeleteButtons);
 
         var categoryRenderer = function(value){
-            if(value.type == "list"){
+            if (value.type == "list")
                 return '';
-            } else {
-                return value.label;
-            }
+            return value.label;
         };
 
-        var columnModel = new Ext.grid.ColumnModel({
-            defaults: {
-                width: 200,
-                sortable: true
-            },
+        var grid = Ext4.create('Ext.grid.Panel', {
+            store: participantStore,
             columns: [
-                {header:'Label', dataIndex:'label', width: 300, renderer: $h},
-                {header:'Category', dataIndex:'category', width: 300, renderer: categoryRenderer},
-                {header:'Shared', dataIndex:'shared'},
-                {header:'Created By', dataIndex:'createdBy'},
+                {header:'Label',       dataIndex:'label',    width: 300},
+                {header:'Category',    dataIndex:'category', width: 300, renderer: categoryRenderer},
+                {header:'Shared',      dataIndex:'shared'},
+                {header:'Created By',  dataIndex:'createdBy'},
                 {header:'Modified By', dataIndex:'modifiedBy'}
-            ]
+            ],
+            tbar : [createButton, editButton, deleteButton],
+            renderTo: 'participantCategoriesGrid'
         });
 
-        var tbarButtons = [{
-            text: 'Create',
-            handler: function(){
-                editParticipantGroup(null);
-            },
-            scope: this
-        },{
-            id: 'editSelectedButton',
-            text: 'Edit Selected',
-            disabled: true,
-            handler: function(){
-                if (_grid.getSelectionModel().hasSelection())
-                {
-                    editParticipantGroup(_grid.getSelectionModel().getSelected());
-                }
-            },
-            scope: this
-        },{
-            id: 'deleteSelectedButton',
-            text: 'Delete Selected',
-            disabled: true,
-            handler: function(){
-                if (_grid.getSelectionModel().hasSelection())
-                {
-                    deleteParticipantGroup(_grid.getSelectionModel().getSelected());
-                }
-            },
-            scope: this
-        }];
-
-        // create a gridpanel with the list of categories (one per row)
-        _grid = new Ext.grid.GridPanel({
-            renderTo: 'participantCategoriesGrid',
-            cls:'participantCategoriesGrid',
-            autoScroll:false,
-            autoHeight:true,
-            width:800,
-            loadMask:{msg:"Loading, please wait..."},
-            store: this.groupStore,
-            colModel: columnModel,
-            selModel: new Ext.grid.RowSelectionModel({singleSelect:true}),
-            viewConfig: {forceFit: true},
-            tbar: tbarButtons
-        });
-
-        _grid.on('rowclick', toggleEditDeleteButtons);
-        _grid.on('rowdblclick', function(g, idx, e){
-            if (_grid.getSelectionModel().hasSelection())
-            {
-                editParticipantGroup(_grid.getSelectionModel().getSelected());
+        grid.on('itemclick', function(g, rec){
+            var row = grid.getSelectionModel().getLastSelected();
+            editButton.setDisabled(false);
+            if(row.get("canEdit"))   {
+                editButton.setText("Edit Selected");
             }
-        });
-    }
+            else editButton.setText("View Selected");
+            if(row.get("canDelete")) {
+                deleteButton.setDisabled(false);
+            }
+            else deleteButton.setDisabled(true);
+        }, this);
 
-    // enable/disable the edit and delete buttons based on selection
-    function toggleEditDeleteButtons(){
-        // exit if the grid has not yet been created
-        if (!_grid)
-            return;
-
-        var topTB = _grid.getTopToolbar();
-
-        if (_grid.getSelectionModel().getCount() == 1)
-        {
-            var row = _grid.getSelectionModel().getSelected();
-
-            // enable the view/edit button and set the text based on the user's perms for the given selection
-            topTB.findById('editSelectedButton').enable();
-            if (row.get("canEdit"))
-                topTB.findById('editSelectedButton').setText("Edit Selected");
-            else
-                topTB.findById('editSelectedButton').setText("View Selected");
-
-            // enable/disable the delete button based on the user's perms for the given selection
-            if (row.get("canDelete"))
-                topTB.findById('deleteSelectedButton').enable();
-            else
-                topTB.findById('deleteSelectedButton').disable();
-        }
-        else
-        {
-            topTB.findById('editSelectedButton').disable();
-            topTB.findById('deleteSelectedButton').disable();
-        }
-    }
-
-    function editParticipantGroup(row){
-        var dialog = new LABKEY.study.ParticipantGroupDialog({
-            subject: {
-                nounSingular: <%=q(subjectNounSingular)%>,
-                nounPlural: <%=q(subjectNounPlural)%>,
-                nounColumnName: <%=q(subjectNounColName)%>
-            },
-            isAdmin: <%=isAdmin%>,
-            category: (row ? row.get("category") : null),
-            groupRowId: (row ? row.get("rowId") : null),
-            groupLabel: (row ? row.get("label") : null),
-            categoryParticipantIds: (row ? row.get("participantIds") : null),
-            categoryShared : (row ? row.get("shared") : false),
-            canEdit : (row ? row.get("canEdit") :  true) // TODO: Modify this to adhere to API to check (participant) group permission
-        });
-        dialog.show(this);
-
-    }
-
-    function deleteParticipantGroup(row){
-        // todo: do we need to handle deletion of a shared/public group differently?
-
-        Ext.Msg.show({
-            title : 'Delete Group',
-            msg : 'Delete Selected Group:<br/>' + $h(row.get("label")),
-            buttons: Ext.Msg.YESNO,
-            icon: Ext.Msg.QUESTION,
-            fn: function(btn, text) {
-                if (btn == 'yes')
-                {
-                    Ext.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL("participant-group", "deleteParticipantGroup"),
-                        method: "POST",
-                        success: function(){
-                            _grid.getStore().reload();
-                        },
-                        failure: function(response, options){
-                            LABKEY.Utils.displayAjaxErrorResponse(response, options);
-                        },
-                        jsonData: {rowId: row.get("rowId")},
-                        headers : {'Content-Type' : 'application/json'}
-                    });
-                }},
-            id: 'delete_categories'
-        });
-    }
-
-    Ext.onReady(renderParticipantCategoriesGrid);
-
+    });
 })();
 </script>
