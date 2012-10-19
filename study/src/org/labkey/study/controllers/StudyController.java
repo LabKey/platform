@@ -99,7 +99,6 @@ import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.*;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -1887,7 +1886,8 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
-            return root.addChild(_v.getLabel());
+            root.addChild(_v.getDisplayString());
+            return root;
         }
     }
 
