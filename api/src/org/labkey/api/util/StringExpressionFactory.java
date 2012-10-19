@@ -22,7 +22,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
@@ -35,6 +37,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -255,10 +258,86 @@ public class StringExpressionFactory
     }
     private static class RenderContextPart extends SubstitutePart
     {
+        public enum Substitution
+        {
+            schemaName
+            {
+                @Override
+                public String getValue(RenderContext context)
+                {
+                    DataRegion region = context.getCurrentRegion();
+                    if (region != null)
+                    {
+                        TableInfo table = region.getTable();
+                        if (table != null)
+                        {
+                            return table.getPublicSchemaName();
+                        }
+                    }
+                    return "";
+                }
+            },
+            queryName
+            {
+                @Override
+                public String getValue(RenderContext context)
+                {
+                    DataRegion region = context.getCurrentRegion();
+                    if (region != null)
+                    {
+                        TableInfo table = region.getTable();
+                        if (table != null)
+                        {
+                            return table.getPublicName();
+                        }
+                    }
+                    return "";
+                }
+            },
+            containerPath
+            {
+                @Override
+                public String getValue(RenderContext context)
+                {
+                    return context.getContainerPath();
+                }
+            },
+            contextPath
+            {
+                @Override
+                public String getValue(RenderContext context)
+                {
+                    return context.getContextPath();
+                }
+            },
+            selectionKey
+            {
+                @Override
+                public String getValue(RenderContext context)
+                {
+                    return context.getSelectionKey();
+                }
+            };
+
+            public abstract String getValue(RenderContext context);
+        }
+
+        public static final Set<String> SUPPORTED_SUBSTITUTIONS;
+
+        static
+        {
+            Set<String> s = new HashSet<String>(Substitution.values().length);
+            for (Substitution substitution : Substitution.values())
+            {
+                s.add(substitution.toString());
+            }
+            SUPPORTED_SUBSTITUTIONS = Collections.unmodifiableSet(s);
+        }
+
         public RenderContextPart(String value)
         {
             super(value);
-            assert "containerPath".equals(value) || "contextPath".equals(value) || "selectionKey".equals(value);
+            assert SUPPORTED_SUBSTITUTIONS.contains(value);
         }
 
         @Override
@@ -267,13 +346,7 @@ public class StringExpressionFactory
             if (!(map instanceof RenderContext))
                 return "";
 
-            if ("containerPath".equals(_value))
-                return ((RenderContext)map).getContainerPath();
-            if ("contextPath".equals(_value))
-                return ((RenderContext)map).getContextPath();
-            if ("selectionKey".equals(_value))
-                return ((RenderContext)map).getSelectionKey();
-            return "";
+            return Substitution.valueOf(_value).getValue((RenderContext)map);
         }
 
         @Override
@@ -565,7 +638,7 @@ public class StringExpressionFactory
         protected StringPart parsePart(String expr)
         {
             // HACK
-            if ("containerPath".equals(expr) || "contextPath".equals(expr) || "selectionKey".equals(expr))
+            if (RenderContextPart.SUPPORTED_SUBSTITUTIONS.contains(expr))
                 return new RenderContextPart(expr);
             return new FieldPart(expr, _urlEncodeSubstitutions);
         }

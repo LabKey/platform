@@ -208,6 +208,8 @@ public class SchemaKey extends QueryKey<SchemaKey>
             // shorter sorts first, don't really care but that's easier given the datastructure
             assertTrue(SchemaKey.fromParts("z").compareTo(fromParts("a","b")) < 0);
             assertTrue(SchemaKey.fromParts("a","b").compareTo(fromParts("z")) > 0);
+
+            assertEquals(SchemaKey.fromParts("assay","Viral Loads", "Viral Loads").toString(), "assay.Viral Loads.Viral Loads");
         }
     }
 }
