@@ -1,11 +1,13 @@
 package org.labkey.api.laboratory.assay;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.laboratory.DataProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -36,6 +38,8 @@ public interface AssayDataProvider extends DataProvider
      * @return
      */
     public boolean supportsRunTemplates();
+
+    public List<ExpProtocol> getProtocols(Container c);
 
     abstract public AssayImportMethod getImportMethodByName(String methodName);
 

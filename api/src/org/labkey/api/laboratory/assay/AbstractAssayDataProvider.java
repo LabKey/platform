@@ -13,6 +13,7 @@ import org.labkey.api.laboratory.SimpleQueryNavItem;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
@@ -35,6 +36,8 @@ import java.util.Set;
  */
 abstract public class AbstractAssayDataProvider extends AbstractDataProvider implements AssayDataProvider
 {
+    public static final String PROPERTY_CATEGORY = "laboratory.importMethodDefaults";
+
     protected String _providerName = null;
     protected Collection<AssayImportMethod> _importMethods = new LinkedHashSet<AssayImportMethod>();
     protected Module _module = null;
@@ -60,7 +63,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         return items;
     }
 
-    private List<ExpProtocol> getProtocols(Container c)
+    public List<ExpProtocol> getProtocols(Container c)
     {
         List<ExpProtocol> list = new ArrayList<ExpProtocol>();
         ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(c, c.getProject(), ContainerManager.getSharedContainer());
@@ -118,18 +121,17 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
 
     public String getDefaultImportMethodName(Container c, User u, int protocolId)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, getDefaultMethodPropertyKey());
-        if (props == null || props.size() == 0)
-            return _importMethods.size() == 0 ?  null : _importMethods.iterator().next().getName();
+        Container targetContainer = c.isWorkbook() ? c.getParent() : c;
+        Map<String, String> props = PropertyManager.getProperties(targetContainer, PROPERTY_CATEGORY);
+        if (props.containsKey(getDefaultMethodPropertyKey(protocolId)))
+            return props.get(getDefaultMethodPropertyKey(protocolId));
         else
-        {
-            return props.get(_providerName + "|" + protocolId);
-        }
+            return _importMethods.size() == 0 ?  null : _importMethods.iterator().next().getName();
     }
 
-    private String getDefaultMethodPropertyKey()
+    private String getDefaultMethodPropertyKey(int protocolId)
     {
-        return this.getClass().getName() + "||DefaultImportMethods";
+        return getKey() + "||" + protocolId;
     }
 
     public boolean supportsRunTemplates()
@@ -177,8 +179,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             boolean visible = new AssayNavItem(this, p).isVisible(c, u);
             if (visible)
             {
-                String queryName = AssayService.get().getResultsTableName(p);
-                items.add(new SimpleQueryNavItem(this, AssaySchema.NAME, queryName, _providerName, "View " + queryName));
+                items.add(new SimpleQueryNavItem(this, AssaySchema.NAME + "." + getAssayProvider().getName() + "." + p.getName(), AssayProviderSchema.getResultsTableName(p, false), _providerName, "View " + p.getName() + " Raw Data"));
             }
         }
         return items;

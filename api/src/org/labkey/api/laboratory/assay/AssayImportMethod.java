@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
@@ -106,5 +107,5 @@ public interface AssayImportMethod
      */
     abstract public boolean supportsRunTemplates();
 
-    abstract public void generateTemplate(JSONObject json, HttpServletResponse response);
+    abstract public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws Exception;
 }

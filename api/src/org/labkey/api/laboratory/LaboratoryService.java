@@ -18,11 +18,11 @@ package org.labkey.api.laboratory;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.laboratory.assay.AssayDataProvider;
-import org.labkey.api.laboratory.assay.AssayParser;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
@@ -31,6 +31,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,6 +57,10 @@ abstract public class LaboratoryService
         LaboratoryService.instance = instance;
     }
 
+    abstract public void registerModule(Module module);
+
+    abstract public Set<Module> getRegisteredModules();
+
     abstract public void registerDataProvider(DataProvider dp);
 
     abstract public Set<DataProvider> getDataProviders();
@@ -66,7 +71,7 @@ abstract public class LaboratoryService
 
     abstract public AssayDataProvider getDataProviderForAssay(AssayProvider ap);
 
-    abstract public Pair<ExpExperiment, ExpRun> saveAssayBatch(AssayParser parser, JSONObject json, File file, String fileName, ViewContext ctx) throws ValidationException, ExperimentException;
+    abstract public Pair<ExpExperiment, ExpRun> saveAssayBatch(List<Map<String, Object>> results, JSONObject json, File file, String fileName, ViewContext ctx, AssayProvider provider, ExpProtocol protocol) throws ValidationException;
 
     abstract public TableCustomizer getDefaultTableCustomizer();
 

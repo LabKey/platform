@@ -253,6 +253,8 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         //create the field
         var theField = LABKEY.ext.Ext4Helper.getFormEditorConfig(meta);
         theField.fieldLabel = null;
+        theField.defaultValue = null;
+        theField.value = null;
         theField.disabled = false;
         theField.hidden = false;
 

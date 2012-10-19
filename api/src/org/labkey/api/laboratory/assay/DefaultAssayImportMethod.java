@@ -18,15 +18,21 @@ package org.labkey.api.laboratory.assay;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -173,7 +179,22 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return json;
     }
 
-    public void generateTemplate(JSONObject json, HttpServletResponse response)
+    public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        try
+        {
+            doGenerateTemplate(json, request, response);
+        }
+        catch (BatchValidationException e)
+        {
+            response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
+
+            HttpView errorView = ExceptionUtil.getErrorView(HttpServletResponse.SC_BAD_REQUEST, e.getMessage(), e, null, false);
+            errorView.render(request, response);
+        }
+    }
+
+    public void doGenerateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws BatchValidationException
     {
         try
         {
@@ -207,7 +228,9 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         }
         catch (IOException e)
         {
-
+            BatchValidationException bve = new BatchValidationException();
+            bve.addRowError(new ValidationException(e.getMessage()));
+            throw bve;
         }
     }
 }

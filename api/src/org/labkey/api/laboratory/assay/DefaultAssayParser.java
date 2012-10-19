@@ -24,7 +24,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -32,6 +31,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.laboratory.LaboratoryService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -44,7 +44,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -109,7 +108,7 @@ public class DefaultAssayParser implements AssayParser
         return map;
     }
 
-    public List<Map<String, Object>> parseResultFile(File inputFile, ExpProtocol protocol) throws ExperimentException, ValidationException
+    public List<Map<String, Object>> parseResultFile(File inputFile, ExpProtocol protocol) throws BatchValidationException
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain dataDomain = provider.getResultsDomain(protocol);
@@ -127,11 +126,13 @@ public class DefaultAssayParser implements AssayParser
         }
         catch (IOException e)
         {
-            throw new ExperimentException(e);
+            BatchValidationException ex = new BatchValidationException();
+            ex.addRowError(new ValidationException(e.getMessage()));
+            throw ex;
         }
     }
 
-    protected List<Map<String, Object>> processRowsFromFile(List<Map<String, Object>> rows) throws ValidationException
+    protected List<Map<String, Object>> processRowsFromFile(List<Map<String, Object>> rows) throws BatchValidationException
     {
         ListIterator<Map<String, Object>> rowsIter = rows.listIterator();
         while (rowsIter.hasNext())
@@ -159,10 +160,8 @@ public class DefaultAssayParser implements AssayParser
      * Reads the raw input file and provides some basic normalization before passing to TabLoader
      * @param inputFile
      * @return
-     * @throws FileNotFoundException
-     * @throws ExperimentException
      */
-    protected String readRawFile(File inputFile) throws FileNotFoundException, ExperimentException
+    protected String readRawFile(File inputFile) throws BatchValidationException
     {
         Reader fileReader = null;
         try
@@ -186,7 +185,9 @@ public class DefaultAssayParser implements AssayParser
         }
         catch (IOException e)
         {
-            throw new ExperimentException(e);
+            BatchValidationException ex = new BatchValidationException();
+            ex.addRowError(new ValidationException(e.getMessage()));
+            throw ex;
         }
         finally
         {
@@ -206,15 +207,17 @@ public class DefaultAssayParser implements AssayParser
                 if (!columnName.equals(pd.getName()))
                     column.name = pd.getName();
             }
-            else
-            {
-                _log.info("skipping column: " + column.name);
-            }
+//            else
+//            {
+//                _log.info("skipping column: " + column.name);
+//            }
         }
     }
 
-    public JSONObject getPreview(JSONObject json, File file, String fileName, ViewContext ctx) throws ValidationException, ExperimentException
+    public JSONObject getPreview(JSONObject json, File file, String fileName, ViewContext ctx) throws BatchValidationException
     {
+        BatchValidationException errors = new BatchValidationException();
+
         List<Map<String, Object>> rows = parseResults(json, file);
 
         JSONObject ret = new JSONObject();
@@ -233,18 +236,20 @@ public class DefaultAssayParser implements AssayParser
         ret.put("batches", batches);
         ret.put("importMethod", _method.getName());
 
+        if (errors.hasErrors())
+        {
+            ValidationException err = new ValidationException("Error parsing rows");
+            errors.addRowError(err);
+            throw errors;
+        }
+
         return ret;
     }
 
     /**
      * This is the primary method where the JSON and raw results file are parsed to produce a list of row maps
-     * @param json
-     * @param file
-     * @return
-     * @throws ValidationException
-     * @throws ExperimentException
      */
-    public List<Map<String, Object>> parseResults(JSONObject json, File file) throws ValidationException, ExperimentException
+    protected List<Map<String, Object>> parseResults(JSONObject json, File file) throws BatchValidationException
     {
         List<Map<String, Object>> rows;
         if (json.has("ResultRows"))
@@ -267,25 +272,66 @@ public class DefaultAssayParser implements AssayParser
      * @param json
      * @return
      */
-    public List<Map<String, Object>> processRowsFromJson(List<Map<String, Object>> rows, JSONObject json)
+    protected List<Map<String, Object>> processRowsFromJson(List<Map<String, Object>> rows, JSONObject json)
     {
         return rows;
     }
 
     /**
      * Override this method to transform rows after the file/json has been processed
-     * @param rows
-     * @param json
-     * @return
      */
-    public List<Map<String, Object>> processRows(List<Map<String, Object>> rows, JSONObject json)
+    protected List<Map<String, Object>> processRows(List<Map<String, Object>> rows, JSONObject json) throws BatchValidationException
     {
+        validateRows(rows, json);
         return rows;
     }
 
-    public void saveBatch(JSONObject json, File file, String fileName, ViewContext ctx) throws ValidationException, ExperimentException
+    /**
+     * Provides simple validation of rows based on field properties
+     */
+    protected void validateRows(List<Map<String, Object>> rows, JSONObject json) throws BatchValidationException
     {
-        LaboratoryService.get().saveAssayBatch(this, json, file, fileName, ctx);
+        BatchValidationException errors = new BatchValidationException();
+
+        Domain resultDomain = _provider.getResultsDomain(_protocol);
+        int idx = 0;
+        for (Map<String, Object> row : rows)
+        {
+            idx++; //1-based counter
+            CaseInsensitiveHashMap map = new CaseInsensitiveHashMap(row);
+            for (DomainProperty dp : resultDomain.getProperties())
+            {
+                if (dp.isRequired() && (!map.containsKey(dp.getName()) || map.get(dp.getName()) == null))
+                {
+                    errors.addRowError(new ValidationException("Row " + idx + ": Missing required field " + dp.getLabel()));
+                }
+            }
+        }
+
+        if (errors.hasErrors())
+        {
+            throw errors;
+        }
+    }
+
+    public void saveBatch(JSONObject json, File file, String fileName, ViewContext ctx) throws BatchValidationException
+    {
+        try
+        {
+            LaboratoryService.get().saveAssayBatch(parseResults(json, file), json, file, fileName, ctx, _provider, _protocol);
+        }
+//        catch (ExperimentException e)
+//        {
+//            BatchValidationException ex = new BatchValidationException();
+//            ex.addRowError(new ValidationException(e.getMessage()));
+//            throw ex;
+//        }
+        catch (ValidationException e)
+        {
+            BatchValidationException ex = new BatchValidationException();
+            ex.addRowError(new ValidationException(e.getMessage()));
+            throw ex;
+        }
     }
 
     protected void populateProtocolProvider(int assayId)
