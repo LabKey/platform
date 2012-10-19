@@ -11,6 +11,7 @@ import org.labkey.api.laboratory.AbstractDataProvider;
 import org.labkey.api.laboratory.NavItem;
 import org.labkey.api.laboratory.SimpleQueryNavItem;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayProviderSchema;
@@ -179,7 +180,14 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             boolean visible = new AssayNavItem(this, p).isVisible(c, u);
             if (visible)
             {
-                items.add(new SimpleQueryNavItem(this, AssaySchema.NAME + "." + getAssayProvider().getName() + "." + p.getName(), AssayProviderSchema.getResultsTableName(p, false), _providerName, "View " + p.getName() + " Raw Data"));
+                items.add(new SimpleQueryNavItem(this, AssaySchema.NAME + "." + getAssayProvider().getName() + "." + p.getName(), AssayProviderSchema.getResultsTableName(p, false), _providerName, p.getName() + ": Raw Data"));
+
+                //for file-based assays, append any associated queries
+                List<QueryDefinition> queries = getAssayProvider().createProtocolSchema(u, c, p, null).getFileBasedAssayProviderScopedQueries();
+                for (QueryDefinition qd : queries)
+                {
+                    items.add(new SimpleQueryNavItem(this, qd.getSchema().getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + qd.getName()));
+                }
             }
         }
         return items;
