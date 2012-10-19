@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
@@ -176,11 +177,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new AssayProviderSchema(user, container, this, targetStudy);
     }
 
-    public AssayProtocolSchema createProtocolSchema(User user, Container container, ExpProtocol protocol, Container targetStudy)
-    {
-        return new AssayProtocolSchema(user, container, protocol, targetStudy);
-    }
-
     public ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
         try
@@ -189,7 +185,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             filter.addInClause(getTableMetadata(protocol).getResultRowIdFieldKey().toString(), dataKeys.keySet());
 
             AssayProtocolSchema schema = createProtocolSchema(user, assayDataContainer, protocol, study);
-            ContainerFilterable dataTable = createDataTable(schema, true);
+            ContainerFilterable dataTable = schema.createDataTable();
             dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(user));
 
             FieldKey objectIdFK = getTableMetadata(protocol).getResultRowIdFieldKey();
@@ -333,7 +329,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return null;
     }
 
-    public abstract AssayTableMetadata getTableMetadata(ExpProtocol protocol);
+    @NotNull
+    public abstract AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol);
 
     public static String getDomainURIForPrefix(ExpProtocol protocol, String domainPrefix)
     {
@@ -680,53 +677,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, UploadWizardAction.class);
     }
 
-    @Override
-    public ExpQCFlagTable createQCFlagTable(AssayProtocolSchema schema, ExpProtocol protocol)
-    {
-        ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(AssaySchema.getQCFlagTableName(protocol, false), schema);
-        table.populate();
-        table.setAssayProtocol(protocol);
-        
-        return table;
-    }
-
-    public ExpRunTable createRunTable(final AssayProtocolSchema schema, ExpProtocol protocol)
-    {
-        final String tableName = schema.getRunsTableName(false);
-        ExpRunTable runTable = ExperimentService.get().createRunTable(tableName, schema);
-        if (isEditableRuns(protocol))
-        {
-            runTable.addAllowablePermission(UpdatePermission.class);
-        }
-        runTable.populate();
-        LookupForeignKey assayRunFK = new LookupForeignKey()
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return schema.getTable(tableName);
-            }
-        };
-        runTable.getColumn(ExpRunTable.Column.ReplacedByRun).setFk(assayRunFK);
-        runTable.getColumn(ExpRunTable.Column.ReplacesRun).setFk(assayRunFK);
-
-        runTable.addColumn(new AssayQCFlagColumn(runTable, protocol.getName()));
-        ColumnInfo qcEnabled = runTable.addColumn(new ExprColumn(runTable, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(runTable.getSqlDialect(), "Enabled"), JdbcType.VARCHAR));
-        qcEnabled.setLabel("QC Flags Enabled State");
-        qcEnabled.setHidden(true);
-
-        ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
-        dataLinkColumn.setLabel("Assay Id");
-        dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
-        dataLinkColumn.setURL(new DetailsURL(new ActionURL(AssayDetailRedirectAction.class, schema.getContainer()), Collections.singletonMap("runId", "rowId")));
-
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
-        visibleColumns.remove(FieldKey.fromParts(ExpRunTable.Column.Protocol));
-        runTable.setDefaultVisibleColumns(visibleColumns);
-        
-        return runTable;
-    }
-    
     public static ParticipantVisitResolverType findType(String name, List<ParticipantVisitResolverType> types)
     {
         if (name == null)
@@ -1106,80 +1056,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // default to assay designer, except in the case of tsv where the assay can support inferring the data domain
         return DesignerAction.class;
         //return ImportAction.class;
-    }
-
-    /**
-     * Adds columns to an assay data table, providing a link to any datasets that have
-     * had data copied into them.
-     * @return The names of the added columns that should be visible
-     */
-    protected Set<String> addCopiedToStudyColumns(AbstractTableInfo table, ExpProtocol protocol, User user, boolean setVisibleColumns)
-    {
-        Set<String> visibleColumnNames = new HashSet<String>();
-        int datasetIndex = 0;
-        Set<String> usedColumnNames = new HashSet<String>();
-        for (final DataSet assayDataSet : StudyService.get().getDatasetsForAssayProtocol(protocol.getRowId()))
-        {
-            if (!assayDataSet.getContainer().hasPermission(user, ReadPermission.class) || !assayDataSet.canRead(user))
-            {
-                continue;
-            }
-
-            String datasetIdColumnName = "dataset" + datasetIndex++;
-            final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table,
-                datasetIdColumnName, this, assayDataSet, user);
-            datasetColumn.setHidden(true);
-            datasetColumn.setUserEditable(false);
-            datasetColumn.setShownInInsertView(false);
-            datasetColumn.setShownInUpdateView(false);
-            datasetColumn.setReadOnly(true);
-            table.addColumn(datasetColumn);
-
-            String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
-                "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
-
-            String studyName = assayDataSet.getStudy().getLabel();
-            if (studyName == null)
-                continue; // No study in that folder
-            String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);
-
-            // column names must be unique. Prevent collisions
-            while (usedColumnNames.contains(studyColumnName))
-                studyColumnName = studyColumnName + datasetIndex;
-            usedColumnNames.add(studyColumnName);
-
-            final ExprColumn studyCopiedColumn = new ExprColumn(table,
-                studyColumnName,
-                new SQLFragment(studyCopiedSql),
-                JdbcType.VARCHAR,
-                datasetColumn);
-            final String copiedToStudyColumnCaption = "Copied to " + studyName;
-            studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
-            studyCopiedColumn.setUserEditable(false);
-            studyCopiedColumn.setReadOnly(true);
-            studyCopiedColumn.setShownInInsertView(false);
-            studyCopiedColumn.setShownInUpdateView(false);
-            studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataSet.getContainer(), assayDataSet.getDataSetId())));
-
-            table.addColumn(studyCopiedColumn);
-
-            visibleColumnNames.add(studyCopiedColumn.getName());
-        }
-        if (setVisibleColumns)
-        {
-            List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
-            for (FieldKey key : table.getDefaultVisibleColumns())
-            {
-                visibleColumns.add(key);
-            }
-            for (String columnName : visibleColumnNames)
-            {
-                visibleColumns.add(new FieldKey(null, columnName));
-            }
-            table.setDefaultVisibleColumns(visibleColumns);
-        }
-
-        return visibleColumnNames;
     }
 
     /** Adds the materials as inputs to the run as a whole, plus as inputs for the "work" node for the run. */

@@ -2,6 +2,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.CompareType;
@@ -18,7 +19,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpExperimentTable;
+import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.gwt.client.ui.PropertiesEditorUtil;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
@@ -33,6 +36,11 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.actions.AssayDetailRedirectAction;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
@@ -46,6 +54,7 @@ import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -55,12 +64,8 @@ import java.util.Set;
 /**
  * User: kevink
  * Date: 9/15/12
- *
- * TODO:
- * - find custom queries and custom views based on old assay schema and old "protocol table" name (see NabAssayController.CUSTOM_DETAILS_VIEW_NAME)
- * -
  */
-public class AssayProtocolSchema extends AssaySchema
+public abstract class AssayProtocolSchema extends AssaySchema
 {
     /** Legacy location for PropertyDescriptor columns is under a separate node. New location is as a top-level member of the table */
     private static final String RUN_PROPERTIES_COLUMN_NAME = "RunProperties";
@@ -152,7 +157,7 @@ public class AssayProtocolSchema extends AssaySchema
         else if (name.equalsIgnoreCase(getRunsTableName(getProtocol(), false)))
             return createRunsTable();
         else if (name.equalsIgnoreCase(getResultsTableName(getProtocol(), false)))
-            return createResultsTable();
+            return createDataTable();
         else if (name.equalsIgnoreCase(getQCFlagTableName(getProtocol(), false)))
             return createQCFlagTable();
 
@@ -164,22 +169,22 @@ public class AssayProtocolSchema extends AssaySchema
         return createBatchesTable(getProtocol(), getProvider(), null, false);
     }
 
-    public TableInfo createRunsTable()
+    /** @return may return null if no results/data are tracked by this assay type */
+    @Nullable
+    public final FilteredTable createDataTable()
     {
-        return createRunTable(getProtocol(), getProvider(), false);
-    }
-
-    public FilteredTable createResultsTable()
-    {
-        FilteredTable table = getProvider().createDataTable(this, true);
+        FilteredTable table = createDataTable(true);
         if (table != null && table.getColumn("Properties") != null)
             fixupPropertyURLs(table.getColumn("Properties"));
         return table;
     }
 
-    public TableInfo createQCFlagTable()
+    public ExpQCFlagTable createQCFlagTable()
     {
-        return getProvider().createQCFlagTable(this, getProtocol());
+        ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(AssaySchema.getQCFlagTableName(getProtocol(), false), this);
+        table.populate();
+        table.setAssayProtocol(getProtocol());
+        return table;
     }
 
     public String getBatchesTableName(boolean protocolPrefixed)
@@ -271,12 +276,41 @@ public class AssayProtocolSchema extends AssaySchema
         return result;
     }
 
-    private ExpRunTable createRunTable(final ExpProtocol protocol, final AssayProvider provider, final boolean protocolPrefixed)
-    {
-        final ExpRunTable runTable = provider.createRunTable(this, protocol);
-        runTable.setProtocolPatterns(protocol.getLSID());
+    public abstract FilteredTable createDataTable(boolean includeCopiedToStudyColumns);
 
-        Domain runDomain = provider.getRunDomain(protocol);
+    public ExpRunTable createRunsTable()
+    {
+        final String tableName = getRunsTableName(false);
+        final ExpRunTable runTable = ExperimentService.get().createRunTable(tableName, this);
+        if (getProvider().isEditableRuns(getProtocol()))
+        {
+            runTable.addAllowablePermission(UpdatePermission.class);
+        }
+        runTable.populate();
+        LookupForeignKey assayRunFK = new LookupForeignKey()
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return getTable(tableName);
+            }
+        };
+        runTable.getColumn(ExpRunTable.Column.ReplacedByRun).setFk(assayRunFK);
+        runTable.getColumn(ExpRunTable.Column.ReplacesRun).setFk(assayRunFK);
+
+        runTable.addColumn(new AssayQCFlagColumn(runTable, getProtocol().getName()));
+        ColumnInfo qcEnabled = runTable.addColumn(new ExprColumn(runTable, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(runTable.getSqlDialect(), "Enabled"), JdbcType.VARCHAR));
+        qcEnabled.setLabel("QC Flags Enabled State");
+        qcEnabled.setHidden(true);
+
+        ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
+        dataLinkColumn.setLabel("Assay Id");
+        dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
+        dataLinkColumn.setURL(new DetailsURL(new ActionURL(AssayDetailRedirectAction.class, getContainer()), Collections.singletonMap("runId", "rowId")));
+
+        runTable.setProtocolPatterns(getProtocol().getLSID());
+
+        Domain runDomain = getProvider().getRunDomain(getProtocol());
         if (runDomain != null)
         {
             ColumnInfo propsCol = runTable.addColumns(runDomain, RUN_PROPERTIES_COLUMN_NAME);
@@ -292,6 +326,7 @@ public class AssayProtocolSchema extends AssaySchema
         }
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
+        visibleColumns.remove(FieldKey.fromParts(ExpRunTable.Column.Protocol));
         visibleColumns.remove(FieldKey.fromParts(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME));
 
         SQLFragment batchSQL = new SQLFragment("(SELECT MIN(ExperimentId) FROM ");
@@ -301,14 +336,14 @@ public class AssayProtocolSchema extends AssaySchema
         batchSQL.append(" WHERE e.RowId = rl.ExperimentId AND rl.ExperimentRunId = ");
         batchSQL.append(ExprColumn.STR_TABLE_ALIAS);
         batchSQL.append(".RowId AND e.BatchProtocolId = ");
-        batchSQL.append(protocol.getRowId());
+        batchSQL.append(getProtocol().getRowId());
         batchSQL.append(")");
         ExprColumn batchColumn = new ExprColumn(runTable, AssayService.BATCH_COLUMN_NAME, batchSQL, JdbcType.INTEGER, runTable.getColumn(ExpRunTable.Column.RowId));
         batchColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpExperimentTable batchesTable = createBatchesTable(protocol, provider, runTable.getContainerFilter(), protocolPrefixed);
+                ExpExperimentTable batchesTable = createBatchesTable(getProtocol(), getProvider(), runTable.getContainerFilter(), false);
                 fixupRenderers(batchesTable);
                 return batchesTable;
             }
@@ -317,7 +352,7 @@ public class AssayProtocolSchema extends AssaySchema
 
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());
-        Domain batchDomain = provider.getBatchDomain(protocol);
+        Domain batchDomain = getProvider().getBatchDomain(getProtocol());
         if (batchDomain != null)
         {
             for (DomainProperty col : batchDomain.getProperties())
@@ -328,7 +363,7 @@ public class AssayProtocolSchema extends AssaySchema
         }
         runTable.setDefaultVisibleColumns(visibleColumns);
 
-        runTable.setDescription("Contains a row per " + protocol.getName() + " run.");
+        runTable.setDescription("Contains a row per " + getProtocol().getName() + " run.");
 
         return runTable;
     }
@@ -402,6 +437,80 @@ public class AssayProtocolSchema extends AssaySchema
         if (map.isEmpty())
             return;
         col.setURL(fkse.remapFieldKeys(null, map));
+    }
+
+
+    /**
+     * Adds columns to an assay data table, providing a link to any datasets that have
+     * had data copied into them.
+     * @return The names of the added columns that should be visible
+     */
+    public Set<String> addCopiedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
+    {
+        Set<String> visibleColumnNames = new HashSet<String>();
+        int datasetIndex = 0;
+        Set<String> usedColumnNames = new HashSet<String>();
+        for (final DataSet assayDataSet : StudyService.get().getDatasetsForAssayProtocol(getProtocol().getRowId()))
+        {
+            if (!assayDataSet.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataSet.canRead(getUser()))
+            {
+                continue;
+            }
+
+            String datasetIdColumnName = "dataset" + datasetIndex++;
+            final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table, datasetIdColumnName, getProvider(), assayDataSet, getUser());
+            datasetColumn.setHidden(true);
+            datasetColumn.setUserEditable(false);
+            datasetColumn.setShownInInsertView(false);
+            datasetColumn.setShownInUpdateView(false);
+            datasetColumn.setReadOnly(true);
+            table.addColumn(datasetColumn);
+
+            String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
+                "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
+
+            String studyName = assayDataSet.getStudy().getLabel();
+            if (studyName == null)
+                continue; // No study in that folder
+            String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);
+
+            // column names must be unique. Prevent collisions
+            while (usedColumnNames.contains(studyColumnName))
+                studyColumnName = studyColumnName + datasetIndex;
+            usedColumnNames.add(studyColumnName);
+
+            final ExprColumn studyCopiedColumn = new ExprColumn(table,
+                studyColumnName,
+                new SQLFragment(studyCopiedSql),
+                JdbcType.VARCHAR,
+                datasetColumn);
+            final String copiedToStudyColumnCaption = "Copied to " + studyName;
+            studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
+            studyCopiedColumn.setUserEditable(false);
+            studyCopiedColumn.setReadOnly(true);
+            studyCopiedColumn.setShownInInsertView(false);
+            studyCopiedColumn.setShownInUpdateView(false);
+            studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataSet.getContainer(), assayDataSet.getDataSetId())));
+
+            table.addColumn(studyCopiedColumn);
+
+            visibleColumnNames.add(studyCopiedColumn.getName());
+        }
+        if (setVisibleColumns)
+        {
+            List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+            for (FieldKey key : table.getDefaultVisibleColumns())
+            {
+                visibleColumns.add(key);
+            }
+            for (String columnName : visibleColumnNames)
+            {
+                visibleColumns.add(new FieldKey(null, columnName));
+            }
+            table.setDefaultVisibleColumns(visibleColumns);
+        }
+
+        return visibleColumnNames;
     }
 
 

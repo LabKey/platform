@@ -23,7 +23,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
@@ -95,9 +94,6 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         return null;
     }
 
-    @Override
-    public abstract FilteredTable createDataTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns);
-
     public void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException
     {
         // Due to a bug in the original implementation, this upgrade is handled in two separate pieces.
@@ -164,10 +160,10 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         }
 
         Container container = protocol.getContainer();
-        AssaySchema schema = AssayService.get().createSchema(user, container, null);
+        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(user, container, protocol, null);
 
         @SuppressWarnings({"deprecation"})
-        RunDataTable fromTable = new RunDataTable(schema, protocol, true);
+        RunDataTable fromTable = new RunDataTable(schema, true);
         fromTable.setContainerFilter(ContainerFilter.EVERYTHING);
 
         // Build up a list of all the columns we need from the source table

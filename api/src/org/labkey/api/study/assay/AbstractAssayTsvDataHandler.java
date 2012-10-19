@@ -158,7 +158,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
-            insertRowData(data, user, container, dataDomain, fileData, provider.createDataTable(AssayService.get().createProtocolSchema(user, container, protocol, null), true));
+            insertRowData(data, user, container, dataDomain, fileData, AssayService.get().createProtocolSchema(user, container, protocol, null).createDataTable());
 
             if (shouldAddInputMaterials())
             {

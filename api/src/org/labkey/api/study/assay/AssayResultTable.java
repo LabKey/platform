@@ -231,7 +231,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
 
         if (includeCopiedToStudyColumns)
         {
-            Set<String> studyColumnNames = ((AbstractAssayProvider)_provider).addCopiedToStudyColumns(this, _protocol, schema.getUser(), false);
+            Set<String> studyColumnNames = schema.addCopiedToStudyColumns(this, false);
             for (String columnName : studyColumnNames)
             {
                 visibleColumns.add(new FieldKey(null, columnName));

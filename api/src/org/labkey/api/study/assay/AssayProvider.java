@@ -20,15 +20,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.ExpQCFlagTable;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
@@ -63,7 +59,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy);
 
     /** Get a schema for Batch, Run, Results, and any additional tables. */
-    AssayProtocolSchema createProtocolSchema(User user, Container container, ExpProtocol protocol, Container targetStudy);
+    AssayProtocolSchema createProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy);
 
     Domain getBatchDomain(ExpProtocol protocol);
 
@@ -95,14 +91,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /** @return the URL used to import data when the user still needs to upload data files */
     ActionURL getImportURL(Container container, ExpProtocol protocol);
-
-    /** @return may return null if no results/data are tracked by this assay type */
-    @Nullable
-    FilteredTable createDataTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns);
-
-    ExpQCFlagTable createQCFlagTable(AssayProtocolSchema assaySchema, ExpProtocol protocol);
-
-    ExpRunTable createRunTable(AssayProtocolSchema schema, ExpProtocol protocol);
 
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
     ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);

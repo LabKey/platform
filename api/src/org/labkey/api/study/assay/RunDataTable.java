@@ -21,7 +21,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
@@ -45,22 +44,21 @@ import java.util.Set;
 {
     private Domain _resultsDomain;
 
-    public RunDataTable(final AssaySchema schema, final ExpProtocol protocol, boolean forUpgrade)
+    public RunDataTable(final AssayProtocolSchema schema, boolean forUpgrade)
     {
-        super(new ProtocolFilteredObjectTable(schema.getContainer(), protocol.getLSID()), schema.getContainer());
-        setDescription("Contains all of the results (and may contain raw data as well) for the " + protocol.getName() + " assay definition");
+        super(new ProtocolFilteredObjectTable(schema.getContainer(), schema.getProtocol().getLSID()), schema.getContainer());
+        setDescription("Contains all of the results (and may contain raw data as well) for the " + schema.getProtocol().getName() + " assay definition");
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));
         objectIdColumn.setKeyField(true);
         ColumnInfo column = wrapColumn("Properties", _rootTable.getColumn("ObjectId"));
         column.setKeyField(false);
         column.setIsUnselectable(true);
-        final AssayProvider provider = AssayService.get().getProvider(protocol);
-        _resultsDomain = provider.getResultsDomain(protocol);
+        _resultsDomain = schema.getProvider().getResultsDomain(schema.getProtocol());
         DomainProperty[] resultsDPs = _resultsDomain.getProperties();
         QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(resultsDPs, this, schema);
         fk.setParentIsObjectId(true);
-        fk.addDecorator(new SpecimenPropertyColumnDecorator(provider, protocol, schema));
+        fk.addDecorator(new SpecimenPropertyColumnDecorator(schema.getProvider(),schema.getProtocol(), schema));
 
         Set<String> hiddenCols = new HashSet<String>();
         for (PropertyDescriptor pd : fk.getDefaultHiddenProperties())
@@ -89,7 +87,7 @@ import java.util.Set;
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    ExpRunTable expRunTable = AssayService.get().createRunTable(protocol, provider, schema.getUser(), schema.getContainer());
+                    ExpRunTable expRunTable = AssayService.get().createRunTable(schema.getProtocol(), schema.getProvider(), schema.getUser(), schema.getContainer());
                     expRunTable.setContainerFilter(getContainerFilter());
                     return expRunTable;
                 }
@@ -97,14 +95,14 @@ import java.util.Set;
             addColumn(runColumn);
         }
 
-        Domain runDomain = provider.getRunDomain(protocol);
+        Domain runDomain = schema.getProvider().getRunDomain(schema.getProtocol());
         for (DomainProperty prop : runDomain.getProperties())
         {
             if (!prop.isHidden())
                 visibleColumns.add(FieldKey.fromParts("Run", prop.getName()));
         }
 
-        for (DomainProperty prop : provider.getBatchDomain(protocol).getProperties())
+        for (DomainProperty prop : schema.getProvider().getBatchDomain(schema.getProtocol()).getProperties())
         {
             if (!prop.isHidden())
                 visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
@@ -112,7 +110,7 @@ import java.util.Set;
 
         if (!forUpgrade)
         {
-            Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), false);
+            Set<String> studyColumnNames = schema.addCopiedToStudyColumns(this, false);
             for (String columnName : studyColumnNames)
             {
                 visibleColumns.add(new FieldKey(null, columnName));

@@ -111,7 +111,7 @@ public class RunDataSetContextualRoles implements HasContextualRoles
             return null;
 
         // get the results table and the set of dataset columns
-        TableInfo resultsTable = provider.createDataTable(schema, true);
+        TableInfo resultsTable = schema.createDataTable();
         if (resultsTable == null)
             return null;
 
