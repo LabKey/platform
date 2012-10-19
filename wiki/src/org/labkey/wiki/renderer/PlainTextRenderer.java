@@ -16,9 +16,9 @@
 
 package org.labkey.wiki.renderer;
 
-import org.labkey.api.wiki.WikiRenderer;
-import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.wiki.FormattedHtml;
+import org.labkey.api.wiki.WikiRenderer;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

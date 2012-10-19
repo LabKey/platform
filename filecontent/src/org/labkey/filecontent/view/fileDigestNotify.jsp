@@ -17,19 +17,19 @@
 %>
 <%@ page import="org.labkey.api.audit.AuditLogEvent"%>
 <%@ page import="org.labkey.api.files.FileContentEmailPref" %>
+<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.Path" %>
-<%@ page import="org.labkey.api.webdav.WebdavService" %>
-<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -43,7 +43,7 @@
 <html>
     <head>
         <base href="<%=h(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath())%>"/>
-        <%=PageFlowUtil.getStylesheetIncludes(form.getContainer())%>
+        <%=PageFlowUtil.getStylesheetIncludes(form.getContainer(), form.getUser())%>
     </head>
     <body>
         <table width="100%">

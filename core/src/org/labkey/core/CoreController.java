@@ -730,7 +730,7 @@ public class CoreController extends SpringActionController
                 
                 Set<String> scripts = new LinkedHashSet<String>();
                 Set<String> includes = new LinkedHashSet<String>();
-                PageFlowUtil.getJavaScriptPaths(scripts, includes);
+                PageFlowUtil.getJavaScriptPaths(getContainer(), getUser(), scripts, includes);
                 List<String> concat = new ArrayList<String>();
                 for (String path : scripts)
                 {

@@ -1759,7 +1759,7 @@ public class ExperimentController extends SpringActionController
             if (!base.endsWith("/")) base += "/";
 
             String baseTag = "<base href=\"" + PageFlowUtil.filter(base) + "\"/>";
-            String css = PageFlowUtil.getStylesheetIncludes(getViewContext().getContainer(), null);
+            String css = PageFlowUtil.getStylesheetIncludes(getViewContext().getContainer(), getViewContext().getUser());
             String htmlFragment = StringUtils.trimToEmpty(form.getHtmlFragment());
             String html = "<html><head>" + baseTag + css + "</head><body>" + htmlFragment + "</body></html>";
 

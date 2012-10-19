@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 <%
@@ -42,7 +42,7 @@
 <html>
 <head>
 <base href="<%=h(getViewContext().getActionURL().getBaseServerURI() + getViewContext().getContextPath())%>">
-<%=PageFlowUtil.getStylesheetIncludes(c)%>
+<%=PageFlowUtil.getStylesheetIncludes(c, user)%>
 </head>
 
 <body>

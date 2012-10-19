@@ -1222,16 +1222,16 @@ public class ProjectController extends SpringActionController
             LinkedHashSet<ClientDependency> dependencies = view.getClientDependencies();
             LinkedHashSet<String> includes = new LinkedHashSet<String>();
             LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
-            PageFlowUtil.getJavaScriptFiles(dependencies, includes, implicitIncludes);
+            PageFlowUtil.getJavaScriptFiles(getContainer(), getUser(), dependencies, includes, implicitIncludes);
 
             LinkedHashSet<String> cssScripts = new LinkedHashSet<String>();
             LinkedHashSet<String> implicitCssScripts = new LinkedHashSet<String>();
             for (ClientDependency d : dependencies)
             {
-                cssScripts.addAll(d.getCssPaths(AppProps.getInstance().isDevMode()));
-                implicitCssScripts.addAll(d.getCssPaths(AppProps.getInstance().isDevMode()));
+                cssScripts.addAll(d.getCssPaths(getContainer(), getUser(), AppProps.getInstance().isDevMode()));
+                implicitCssScripts.addAll(d.getCssPaths(getContainer(), getUser(), AppProps.getInstance().isDevMode()));
 
-                implicitCssScripts.addAll(d.getCssPaths(!AppProps.getInstance().isDevMode()));
+                implicitCssScripts.addAll(d.getCssPaths(getContainer(), getUser(), !AppProps.getInstance().isDevMode()));
             }
 
 

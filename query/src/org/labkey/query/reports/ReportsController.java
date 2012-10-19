@@ -42,8 +42,8 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.views.DataViewProvider.EditInfo.Property;
 import org.labkey.api.data.views.DataViewProvider;
+import org.labkey.api.data.views.DataViewProvider.EditInfo.Property;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -112,7 +112,6 @@ import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -149,7 +148,16 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: Karl Lum
@@ -737,7 +745,7 @@ public class ReportsController extends SpringActionController
                 LinkedHashSet<ClientDependency> dependencies = resultsView.getClientDependencies();
                 LinkedHashSet<String> includes = new LinkedHashSet<String>();
                 LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
-                PageFlowUtil.getJavaScriptFiles(dependencies, includes, implicitIncludes);
+                PageFlowUtil.getJavaScriptFiles(getContainer(), getUser(), dependencies, includes, implicitIncludes);
 
                 MockHttpServletResponse mr = new MockHttpServletResponse();
                 resultsView.render(getViewContext().getRequest(), mr);

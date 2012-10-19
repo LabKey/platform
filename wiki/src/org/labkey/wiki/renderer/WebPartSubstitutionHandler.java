@@ -16,9 +16,16 @@
 
 package org.labkey.wiki.renderer;
 
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.FormattedHtml;
 
 import java.io.StringWriter;
@@ -95,9 +102,25 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 //Issue 15609: we need to include client dependencies for embedded webparts
                 if (view.getClientDependencies().size() > 0)
                 {
+                    Container c = null;
+                    User u = null;
+                    ViewContext ctx = HttpView.currentContext();
+                    assert ctx != null;
+
+                    if (ctx == null)
+                    {
+                        c = ContainerManager.getRoot();
+                        u = User.guest;
+                    }
+                    else
+                    {
+                        c = ctx.getContainer();
+                        u = ctx.getUser();
+                    }
+
                     StringBuilder sb = new StringBuilder();
-                    PageFlowUtil.writeCss(sb, view.getClientDependencies());
-                    sb.append(PageFlowUtil.getJavaScriptIncludes(view.getClientDependencies(), false));
+                    PageFlowUtil.writeCss(c, u, sb, view.getClientDependencies());
+                    sb.append(PageFlowUtil.getJavaScriptIncludes(c, u, view.getClientDependencies(), false));
 
                     if (sb.length() > 0)
                         sw.write(sb.toString());

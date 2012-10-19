@@ -20,11 +20,10 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.wiki.WikiRenderer" %>
 <%@ page extends="org.labkey.announcements.DailyDigestPage" %>
 <html>
 <head>
-<%=PageFlowUtil.getStylesheetIncludes(c)%>
+<%=PageFlowUtil.getStylesheetIncludes(c, getViewContext().getUser())%>
 </head>
 
 <body>
