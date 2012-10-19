@@ -3009,6 +3009,7 @@ public class StudyController extends BaseStudyController
         private String _label;
         private VisitImpl _visit;
         private int _visitDateDatasetId;
+        private String _sequenceNumHandling;
 
         public VisitForm()
         {
@@ -3078,6 +3079,7 @@ public class StudyController extends BaseStudyController
             _visit.setCohortId(getCohortId());
             _visit.setVisitDateDatasetId(getVisitDateDatasetId());
 
+            _visit.setSequenceNumHandling(getSequenceNumHandling());
             return _visit;
         }
 
@@ -3091,6 +3093,7 @@ public class StudyController extends BaseStudyController
                 setTypeCode(bean.getTypeCode());
             setLabel(bean.getLabel());
             setCohortId(bean.getCohortId());
+            setSequenceNumHandling(bean.getSequenceNumHandling());
         }
 
         public String[] getDataSetStatus()
@@ -3181,6 +3184,16 @@ public class StudyController extends BaseStudyController
         public void setVisitDateDatasetId(int visitDateDatasetId)
         {
             _visitDateDatasetId = visitDateDatasetId;
+        }
+
+        public String getSequenceNumHandling()
+        {
+            return _sequenceNumHandling;
+        }
+
+        public void setSequenceNumHandling(String sequenceNumHandling)
+        {
+            _sequenceNumHandling = sequenceNumHandling;
         }
     }
 

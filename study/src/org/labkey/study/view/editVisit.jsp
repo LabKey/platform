@@ -41,7 +41,6 @@
 <form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
-
     <table>
 <%--        <tr>
             <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>
@@ -50,19 +49,19 @@
             </td>
         </tr> --%>
         <tr>
-            <th align="right">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview'")%></th>
+            <td class=labkey-form-label>Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview'")%></td>
             <td>
                 <input type="text" size="50" name="label" value="<%= h(visit.getLabel()) %>">
             </td>
         </tr>
         <tr>
-            <th align="right">VisitId/Sequence Number</th>
+            <td class=labkey-form-label>VisitId/Sequence Number</td>
             <td>
                 <input type="text" size="50" name="sequenceNumMin" value="<%= visit.getSequenceNumMin() %>">-<input type="text" size="50" name="sequenceNumMax" value="<%= visit.getSequenceNumMax() %>">
             </td>
         </tr>
         <tr>
-            <th align="right">Type</th>
+            <td class=labkey-form-label>Type</td>
             <td>
                 <select name="typeCode">
                     <option value="">[None]</option>
@@ -79,7 +78,7 @@
             </td>
         </tr>
         <tr>
-            <th align="right">Cohort</th>
+            <td class=labkey-form-label>Cohort</td>
             <td>
                 <%
                     if (cohorts == null || cohorts.length == 0)
@@ -111,7 +110,7 @@
             </td>
         </tr>
         <tr>
-            <th align="right">Visit Date Dataset</th>
+            <td class=labkey-form-label>Visit Date Dataset</td>
             <td>
                 <select name="visitDateDatasetId">
                     <option value="0">[None]</option>
@@ -129,7 +128,7 @@
             </td>
         </tr>
         <tr>
-            <th align="right">Visit Date Column Name</th>
+            <td class=labkey-form-label>Visit Date Column Name</td>
             <td><%
                 // UNDONE: use fancy javascript or AJAX here
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), visit.getVisitDateDatasetId());
@@ -137,14 +136,28 @@
                 %><input disabled=true value="<%=h(visitDatePropertyName)%>">
             </td>
         </tr>
+    <tr>
+        <td class=labkey-form-label>Visit Handling (advanced)<%=
+            helpPopup("SequenceNum handling",
+                    "You may specificy that unique sequence numbers should be based on visit date.<br>"+
+                    "This is for special handling of some log/unscheduled events.<p>"+
+                    "Make sure that the sequence number range is adequate (e.g #.0000-#.9999)",
+                    true)
+        %></td>
+        <td><%
+            %><select name="sequenceNumHandling">
+              <option <%=text(Visit.SequenceHandling.normal.name().equals(visit.getSequenceNumHandling())?"selected":"")%> value="<%=text(Visit.SequenceHandling.normal.name())%>">Normal</option>
+              <option <%=text(Visit.SequenceHandling.logUniqueByDate.name().equals(visit.getSequenceNumHandling()) ?"selected":"")%> value="<%=text(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option></select>
+        </td>
+    </tr>
         <tr>
-            <th align="right">Show By Default</th>
+            <td class=labkey-form-label>Show By Default</td>
             <td>
                 <input type="checkbox" name="showByDefault" <%= visit.isShowByDefault() ? "checked" : "" %>>
             </td>
         </tr>
         <tr>
-            <th valign="top">Associated Datasets</th>
+            <td class=labkey-form-label valign="top">Associated Datasets</td>
             <td>
                 <table>
                 <%
