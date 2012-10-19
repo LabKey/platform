@@ -98,11 +98,10 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
                         Container childContainer = ctx.getContainer().getChild(subfolderNode.getName());
                         if (childContainer == null)
                         {
-                            // TODO: support container tabs
                             String title = folderXml.getFolder().getTitle();
                             String description = folderXml.getFolder().getDescription();
-                            boolean isWorkbook = folderXml.getFolder().getIsWorkbook();
-                            childContainer = ContainerManager.createContainer(ctx.getContainer(), subfolderNode.getName(), title, description, (isWorkbook ? Container.TYPE.workbook : Container.TYPE.normal), ctx.getUser());
+                            Container.TYPE cType = folderXml.getFolder().isSetType() ? Container.TYPE.typeFromString(folderXml.getFolder().getType()) : Container.TYPE.normal;
+                            childContainer = ContainerManager.createContainer(ctx.getContainer(), subfolderNode.getName(), title, description, cType, ctx.getUser());
 
                             // set the child container to inherit permissions from the parent by default
                             SecurityManager.setInheritPermissions(childContainer);
