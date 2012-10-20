@@ -91,7 +91,7 @@ Ext4.define('Security.panel.PermissionEditor', {
         this.tabPanel = Ext4.create('Ext.tab.Panel', {
             xtype      : 'tabpanel',
             region     : 'center',
-            activeTab  : this.isSiteRoot ? "siteGroups" : 0,
+            activeTab  : 0, // this.isSiteRoot ? "siteGroups" : 0, // TODO: Permissions tab broken if not initially selected
             autoHeight : false,
             border     : true,
             defaults   : {style : {padding:'5px'}},
