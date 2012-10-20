@@ -190,7 +190,9 @@ public class SimpleFolderTab extends FolderTab.PortalPage
             if (null == container)
             {
                 container = ContainerManager.createContainer(parent, getName(), null, null, Container.TYPE.tab, user);
-                container.setFolderType(getFolderType(), user);
+                FolderType folderType = getFolderType();
+                if (null != folderType)
+                    container.setFolderType(folderType, user);
             }
             return container;
         }

@@ -105,6 +105,16 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             folderType.resetDefaultTabs(container);
             folderTabs = folderType.getDefaultTabs();
         }
+
+        // Add in custom (portal page) tabs
+        for (Portal.PortalPage portalPage : portalPages.values())
+        {
+            String properties = portalPage.getProperties();
+            if (null != properties && properties.contains(Portal.PROP_CUSTOMTAB))
+            {
+                folderTabs.add(new SimpleFolderTab(portalPage.getPageId(), portalPage.getPageId()));
+            }
+        }
         return folderTabs;
     }
 
@@ -178,6 +188,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 }
             }
         }
+
         // If we didn't find a match, and there is a tab that should be the default, and we're on the generic portal page
         if (_activePortalPage == null && !navMap.isEmpty() && ctx.getActionURL().equals(PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ctx.getContainer())))
         {
@@ -187,7 +198,16 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             entry.getValue().setSelected(true);
         }
 
-        migrateLegacyPortalPage(null != childContainer ? childContainer : ctx.getContainer());
+        if (null != childContainer && childContainer.getFolderType() instanceof MultiPortalFolderType)
+        {
+            // We have childContainer, which means childContainer is a Container Tab
+            // Weird that this migration is here, but if childContainer is of MultiPortalFolderType, it needs to be done. But it only applys to MultiPortals so don't do it otherwise
+            migrateLegacyPortalPage(childContainer);
+        }
+        else
+        {
+            migrateLegacyPortalPage(ctx.getContainer());
+        }
 
         return new AppBar(getFolderTitle(ctx), ctx.getContainer().getStartURL(ctx.getUser()), buttons);
     }

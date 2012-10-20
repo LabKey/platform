@@ -1060,11 +1060,26 @@ public class Portal
     {
         if (page.isHidden() == hidden)
             return;
-        page = page.copy();
-        page.setHidden(hidden);
+
         try
         {
-            Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+            String properties = page.getProperties();
+            if (null != properties && properties.contains(PROP_CUSTOMTAB))
+            {
+                // Custom (portal page) tab; Do actual delete
+                TableInfo tableInfo = getTableInfoPortalWebParts();
+                SimpleFilter filter = new SimpleFilter();
+                filter.addCondition(tableInfo.getColumn("container"), page.getContainer());
+                filter.addCondition(tableInfo.getColumn("pageid"), page.getPageId());
+                Table.delete(tableInfo, filter);
+                Table.delete(getTableInfoPortalPages(), new Object[] {page.getContainer(), page.getPageId()});
+            }
+            else
+            {
+                page = page.copy();
+                page.setHidden(hidden);
+                Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+            }
         }
         catch (SQLException x)
         {
@@ -1104,6 +1119,34 @@ public class Portal
         return;
     }
 
+    public static final String PROP_CUSTOMTAB = "customTab";
+
+    public static void addProperty(Container container, String pageId, String property)
+    {
+        Portal.PortalPage page = WebPartCache.getPortalPage(container, pageId);
+        _setProperties(page, property);
+    }
+
+    private static void _setProperties(PortalPage page, String newProperties)
+    {
+        page = page.copy();
+        String props = page.getProperties();
+        props = (null != props ? props + "," : "") + newProperties;
+        page.setProperties(props);
+
+        try
+        {
+            Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
+        }
+    }
 
     public static class PortalPage implements Cloneable
     {
