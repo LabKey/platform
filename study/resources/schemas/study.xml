@@ -218,6 +218,7 @@
       <ns:column columnName="ChronologicalOrder">
         <ns:description>An integer value used to sort visits chronologically.</ns:description>
       </ns:column>
+      <ns:column columnName="sequencenumhandling"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="VisitMap" tableDbType="TABLE">
