@@ -48,7 +48,8 @@ Ext4.define('Security.panel.PermissionEditor', {
                         type : 'ajax',
                         url  : LABKEY.ActionURL.buildURL('core', 'getExtSecurityContainerTree.api'),
                         extraParams : {
-                            requiredPermission : this.treeConfig.requiredPermission
+                            requiredPermission : this.treeConfig.requiredPermission,
+                            showContainerTabs : this.treeConfig.showContainerTabs
                         }
                     },
                     root : {

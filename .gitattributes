@@ -592,9 +592,11 @@ core/src/org/labkey/core/admin/FileSettingsForm.java -text
 core/src/org/labkey/core/admin/FilesSiteSettingsAction.java -text
 core/src/org/labkey/core/admin/FolderManagementAction.java -text
 core/src/org/labkey/core/admin/InstallSettingsAction.java -text
+core/src/org/labkey/core/admin/MenuViewFactory.java -text
 core/src/org/labkey/core/admin/ProjectSettingsAction.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/ValidateDomainsPipelineJob.java -text
+core/src/org/labkey/core/admin/addTab.jsp -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/checkDatabase.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.jsp -text

@@ -41,7 +41,8 @@
             renderTo : 'someUniqueElement',
             height   : 700,
             selected : <%= c.getRowId() %>,
-            requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>
+            requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
+            showContainerTabs : false
         });
 
         var _resize = function(w, h) {

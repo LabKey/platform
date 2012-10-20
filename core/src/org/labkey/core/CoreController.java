@@ -1249,6 +1249,7 @@ public class CoreController extends SpringActionController
     {
         private int _node;
         private boolean _move = false;
+        private boolean _showContainerTabs = false;
         private String _requiredPermission;
 
         public int getNode()
@@ -1279,6 +1280,16 @@ public class CoreController extends SpringActionController
         public void setRequiredPermission(String requiredPermission)
         {
             _requiredPermission = requiredPermission;
+        }
+
+        public boolean getShowContainerTabs()
+        {
+            return _showContainerTabs;
+        }
+
+        public void setShowContainerTabs(boolean showContainerTabs)
+        {
+            _showContainerTabs = showContainerTabs;
         }
     }
 
@@ -1317,19 +1328,19 @@ public class CoreController extends SpringActionController
 
                 for (Container child : parent.getChildren())
                 {
-                    if (!child.isWorkbook())
+                    if (child.isWorkbook() || (!form.getShowContainerTabs() && child.isContainerTab()))
+                        continue;       // Don't show workbook and don't show containerTabs if we're told not to
+
+                    AccessType accessType = getAccessType(child, user, _reqPerm);
+                    if (accessType != AccessType.none)
                     {
-                        AccessType accessType = getAccessType(child, user, _reqPerm);
-                        if (accessType != AccessType.none)
+                        JSONObject childProps = getContainerProps(child);
+                        if (accessType == AccessType.indirect)
                         {
-                            JSONObject childProps = getContainerProps(child);
-                            if (accessType == AccessType.indirect)
-                            {
-                                // Disable so they can't act on it directly, since they have no permission
-                                childProps.put("disabled", true);
-                            }
-                            children.put(childProps);
+                            // Disable so they can't act on it directly, since they have no permission
+                            childProps.put("disabled", true);
                         }
+                        children.put(childProps);
                     }
                 }
             }

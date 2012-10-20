@@ -136,29 +136,13 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NavTreeManager;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.TabStripView;
-import org.labkey.api.view.TermsOfUseException;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.WebTheme;
-import org.labkey.api.view.WebThemeManager;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.portal.ProjectController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
@@ -5213,6 +5197,103 @@ public class AdminController extends SpringActionController
         catch (SQLException e)
         {
 
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class AddTabAction extends FormViewAction<AddTabForm>
+    {
+        public void validateCommand(AddTabForm form, Errors errors)
+        {
+
+        }
+
+        public boolean handlePost(AddTabForm form, BindException errors) throws Exception
+        {
+            if (form.isCancel())
+                return true;
+
+            Container container = getContainer();
+            if (form.getTabType().equalsIgnoreCase("portal"))
+            {
+                String name = form.getTabName();
+                if (null == name)
+                {
+                    errors.reject(ERROR_MSG, "A tab name must be specified.");
+                    return false;
+                }
+
+                Map<String, Portal.PortalPage> pages = Portal.getPages(container, true);
+                if (pages.containsKey(name))
+                {
+                    errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                    return false;
+                }
+
+                Portal.saveParts(container, name, new Portal.WebPart[0]);
+                Portal.addProperty(container, name, Portal.PROP_CUSTOMTAB);
+            }
+            else
+            {
+                // TabType is really pageId of hidden page
+                Portal.showPage(container, form.getTabType());
+            }
+            return true;
+        }
+
+        public ModelAndView getView(AddTabForm form, boolean reshow, BindException errors) throws Exception
+        {
+            HttpView view = new JspView<AddTabForm>("/org/labkey/core/admin/addTab.jsp", form, errors);
+
+            return view;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Add Tab");
+            return root;
+        }
+
+        public ActionURL getSuccessURL(AddTabForm form)
+        {
+            return new ActionURL(ProjectController.BeginAction.class, getContainer());
+        }
+    }
+
+    public static class AddTabForm
+    {
+        String _tabType;
+        String _tabName;
+        private boolean _cancel = false;
+
+        public String getTabName()
+        {
+            return _tabName;
+        }
+
+        public void setTabName(String name)
+        {
+            _tabName = name;
+        }
+
+        public String getTabType()
+        {
+            return _tabType;
+        }
+
+        public void setTabType(String tabType)
+        {
+            _tabType = tabType;
+        }
+
+        public boolean isCancel()
+        {
+            return _cancel;
+        }
+
+        public void setCancel(boolean cancel)
+        {
+            _cancel = cancel;
         }
     }
 

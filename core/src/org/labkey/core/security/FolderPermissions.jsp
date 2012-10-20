@@ -127,6 +127,7 @@ Ext4.onReady(function(){
     <% if (!c.isRoot()) { %>
         ,treeConfig     : {
            requiredPermission: '<%=RoleManager.getPermission(AdminPermission.class).getUniqueName()%>',
+           showContainerTabs: true,
            project : {
                id   : '<%=project.getRowId()%>',
                name : <%=PageFlowUtil.qh(project.getName())%>,
