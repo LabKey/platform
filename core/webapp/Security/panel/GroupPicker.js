@@ -156,6 +156,6 @@ Ext4.define('Security.panel.GroupPicker', {
     {
         this.callParent(arguments);
         this.cache.onReady(this.onDataChanged,this);
-        this.cls = 'groupPicker';
+        this.addClass('groupPicker');
     }
 });
