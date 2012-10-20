@@ -91,7 +91,7 @@ Ext4.define('Security.panel.PermissionEditor', {
         this.tabPanel = Ext4.create('Ext.tab.Panel', {
             xtype      : 'tabpanel',
             region     : 'center',
-            activeItem : 0,
+            activeTab  : this.isSiteRoot ? "siteGroups" : 0,
             autoHeight : false,
             border     : true,
             defaults   : {style : {padding:'5px'}},
@@ -210,6 +210,7 @@ Ext4.define('Security.panel.PermissionEditor', {
 
         return {
             title  : projectId === '' ? 'Site Groups' : 'Project Groups',
+            itemId : projectId === '' ? 'siteGroups' : null,
             border : false,
             deferredRender : false,
             items  : items
