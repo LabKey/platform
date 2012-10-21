@@ -13,9 +13,9 @@ import org.labkey.api.laboratory.SimpleQueryNavItem;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayProviderSchema;
-import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -176,14 +176,14 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         List<NavItem> items = new ArrayList<NavItem>();
         for (ExpProtocol p : getProtocols(c))
         {
-            //TODO: better approach?
             boolean visible = new AssayNavItem(this, p).isVisible(c, u);
             if (visible)
             {
-                items.add(new SimpleQueryNavItem(this, AssaySchema.NAME + "." + getAssayProvider().getName() + "." + p.getName(), AssayProviderSchema.getResultsTableName(p, false), _providerName, p.getName() + ": Raw Data"));
+                AssayProtocolSchema schema = getAssayProvider().createProtocolSchema(u, c, p, null);
+                items.add(new SimpleQueryNavItem(this, schema.getSchemaName(), AssayProviderSchema.getResultsTableName(p, false), _providerName, p.getName() + ": Raw Data"));
 
                 //for file-based assays, append any associated queries
-                List<QueryDefinition> queries = getAssayProvider().createProtocolSchema(u, c, p, null).getFileBasedAssayProviderScopedQueries();
+                List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();
                 for (QueryDefinition qd : queries)
                 {
                     items.add(new SimpleQueryNavItem(this, qd.getSchema().getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + qd.getName()));
