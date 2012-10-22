@@ -383,7 +383,10 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             if (LABKEY.devMode)
                 container.children.push(this.formatQueryLink("rawTableMetaData", params, "view raw table metadata"));
         }
-        
+
+        if (queryDetails.auditHistoryUrl)
+            container.children.push(this.formatQueryLink("auditHistory", params, "view history", undefined, queryDetails.auditHistoryUrl));
+
         return container;
     },
 

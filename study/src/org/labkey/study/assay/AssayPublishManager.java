@@ -359,7 +359,6 @@ public class AssayPublishManager implements AssayPublishService.Service
                     dataMap.put("sourceLsid", entry.getKey());
                     dataMap.put("recordCount", entry.getValue()[0]);
 
-                    AssayAuditViewFactory.getInstance().ensureDomain(user);
                     AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(ASSAY_PUBLISH_AUDIT_EVENT));
                 }
             }

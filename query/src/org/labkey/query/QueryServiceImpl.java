@@ -48,6 +48,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
@@ -91,6 +92,7 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.query.audit.QueryAuditViewFactory;
+import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryDef;
@@ -1583,6 +1585,105 @@ public class QueryServiceImpl extends QueryService
         event.setKey3(detailsURL.toString());
 
         AuditLogService.get().addEvent(event);
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>> ... params)
+    {
+        AuditBehaviorType auditType = table.getAuditBehavior();
+
+        switch (auditType)
+        {
+            case NONE:
+                return;
+
+            case SUMMARY:
+            {
+                assert (params.length > 0);
+
+                List<Map<String, Object>> rows = params[0];
+                String comment = String.format(action.getCommentSummary(), rows.size());
+                AuditLogEvent event = _createAuditRecord(user, c, table, comment);
+
+                AuditLogService.get().addEvent(event);
+                break;
+            }
+            case DETAILED:
+            {
+                assert (params.length > 0);
+
+                List<Map<String, Object>> rows = params[0];
+                for (int i=0; i < rows.size(); i++)
+                {
+                    Map<String,Object> dataMap = new HashMap<String,Object>();
+                    Map<String, Object> row = rows.get(i);
+                    String comment = String.format(action.getCommentDetailed(), row.size());
+
+                    AuditLogEvent event = _createAuditRecord(user, c, table, comment);
+                    String oldRecord = QueryAuditViewFactory.encodeForDataMap(row);
+
+                    switch (action)
+                    {
+                        case INSERT:
+                            if (oldRecord != null)
+                                dataMap.put(QueryAuditViewFactory.NEW_RECORD_PROP_NAME, oldRecord);
+                            break;
+
+                        case DELETE:
+                            if (oldRecord != null)
+                                dataMap.put(QueryAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
+                            break;
+
+                        case UPDATE:
+                        {
+                            assert (params.length >= 2);
+
+                            List<Map<String, Object>> updatedRows = params[1];
+                            Map<String, Object> updatedRow = updatedRows.get(i);
+
+                            String newRecord = QueryAuditViewFactory.encodeForDataMap(updatedRow);
+                            if (newRecord != null)
+                                dataMap.put(QueryAuditViewFactory.NEW_RECORD_PROP_NAME, newRecord);
+                            break;
+                        }
+                    }
+                    AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(QueryAuditViewFactory.QUERY_AUDIT_EVENT));
+                }
+                break;
+            }
+        }
+    }
+
+    private static AuditLogEvent _createAuditRecord(User user, Container c, TableInfo tinfo, String comment)
+    {
+        AuditLogEvent event = new AuditLogEvent();
+
+        event.setCreatedBy(user);
+        if (c.getProject() != null)
+            event.setProjectId(c.getProject().getId());
+        event.setContainerId(c.getId());
+        event.setEventType(QueryAuditViewFactory.QUERY_AUDIT_EVENT);
+        event.setComment(comment);
+        event.setKey1(tinfo.getPublicSchemaName());
+        event.setKey2(tinfo.getPublicName());
+        event.setIntKey1(QueryAuditViewFactory.TINFO_EVENT_TYPE);
+
+        return event;
+    }
+
+    @Override
+    public @Nullable ActionURL getAuditHistoryURL(User user, Container c, TableInfo table)
+    {
+        AuditBehaviorType auditBehavior = table.getAuditBehavior();
+
+        if (auditBehavior != null && auditBehavior != AuditBehaviorType.NONE)
+        {
+            return new ActionURL(QueryController.AuditHistoryAction.class, c).
+                    addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
+                    addParameter(QueryParam.queryName, table.getPublicName());
+        }
+
+        return null;
     }
 
     public static class TestCase extends Assert

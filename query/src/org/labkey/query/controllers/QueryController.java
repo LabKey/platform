@@ -32,10 +32,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -89,6 +93,7 @@ import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 import org.labkey.query.TableXML;
+import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.metadata.MetadataServiceImpl;
@@ -4708,5 +4713,68 @@ public class QueryController extends SpringActionController
             }
             return response;
         }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class AuditHistoryAction extends SimpleViewAction<QueryForm>
+    {
+        @Override
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            return QueryAuditViewFactory.getInstance().createHistoryQueryView(getViewContext(), form);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Audit History");
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class QueryAuditChangesAction extends SimpleViewAction<AuditChangesForm>
+    {
+        @Override
+        public ModelAndView getView(AuditChangesForm form, BindException errors) throws Exception
+        {
+            int auditRowId = form.getAuditRowId();
+            AuditLogEvent event = AuditLogService.get().getEvent(auditRowId);
+            if (event == null)
+            {
+                throw new NotFoundException("Could not find event " + auditRowId + " to display.");
+            }
+
+            Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
+            String oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
+                    QueryAuditViewFactory.QUERY_AUDIT_EVENT,
+                    QueryAuditViewFactory.OLD_RECORD_PROP_NAME));
+            String newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
+                    QueryAuditViewFactory.QUERY_AUDIT_EVENT,
+                    QueryAuditViewFactory.NEW_RECORD_PROP_NAME));
+
+            if (oldRecord != null || newRecord != null)
+            {
+                Map<String,String> oldData = QueryAuditViewFactory.decodeFromDataMap(oldRecord);
+                Map<String,String> newData = QueryAuditViewFactory.decodeFromDataMap(newRecord);
+
+                return new AuditChangesView(event, oldData, newData);
+            }
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Audit Details");
+        }
+    }
+
+    public static class AuditChangesForm
+    {
+        private int auditRowId;
+
+        public int getAuditRowId() {return auditRowId;}
+
+        public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
     }
 }

@@ -32,6 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.Study;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
@@ -325,7 +326,13 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         }
     }
 
-    public void ensureDomain(User user)
+    @Override
+    public void initialize(ContainerUser context) throws Exception
+    {
+        ensureDomain(context.getUser());
+    }
+
+    private void ensureDomain(User user) throws Exception
     {
         Container c = ContainerManager.getSharedContainer();
         String domainURI = AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
@@ -346,18 +353,12 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
         if (domain != null)
         {
-            try {
-                ensureProperties(user, domain, new PropertyInfo[]{
-                        new PropertyInfo("datasetId", "Dataset Id", PropertyType.INTEGER),
-                        new PropertyInfo("sourceLsid", "Source LSID", PropertyType.STRING),
-                        new PropertyInfo("recordCount", "Record Count", PropertyType.INTEGER),
-                        new PropertyInfo("targetContainer", "Target Container", PropertyType.STRING)
-                });
-            }
-            catch (Exception e)
-            {
-                _log.error(e);
-            }
+            ensureProperties(user, domain, new PropertyInfo[]{
+                    new PropertyInfo("datasetId", "Dataset Id", PropertyType.INTEGER),
+                    new PropertyInfo("sourceLsid", "Source LSID", PropertyType.STRING),
+                    new PropertyInfo("recordCount", "Record Count", PropertyType.INTEGER),
+                    new PropertyInfo("targetContainer", "Target Container", PropertyType.STRING)
+            });
         }
     }
 }

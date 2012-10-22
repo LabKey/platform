@@ -38,6 +38,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 import org.labkey.audit.query.AuditQueryViewImpl;
@@ -63,6 +64,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     private static final Logger _log = Logger.getLogger(AuditLogImpl.class);
     private static final String OBJECT_XML_KEY = "objectXML";
     private static Map<String, AuditLogService.AuditViewFactory> _auditViewFactories = new HashMap<String, AuditLogService.AuditViewFactory>();
+    private static final Map<String, Boolean> _factoryInitialized = new HashMap<String, Boolean>();
 
     private Queue<Pair<User, AuditLogEvent>> _eventQueue = new LinkedList<Pair<User, AuditLogEvent>>();
     private boolean _logToDatabase = false;
@@ -195,6 +197,21 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return null;
     }
 
+    private void initializeAuditFactory(User user, AuditLogEvent event) throws Exception
+    {
+        if (!_factoryInitialized.containsKey(event.getEventType()))
+        {
+            _log.info("Initializing audit event factory for: " + event.getEventType());
+            AuditLogService.AuditViewFactory factory = getAuditViewFactory(event.getEventType());
+            if (factory != null)
+            {
+                Container c = ContainerManager.getForId(event.getContainerId());
+                factory.initialize(new DefaultContainerUser(c, user));
+            }
+            _factoryInitialized.put(event.getEventType(), true);
+        }
+    }
+
     private AuditLogEvent _addEvent(User user, AuditLogEvent event)
     {
         try
@@ -215,15 +232,18 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             synchronized (STARTUP_LOCK)
             {
                 if (_logToDatabase)
+                {
+                    initializeAuditFactory(user, event);
                     return LogManager.get().insertEvent(user, event);
+                }
                 else
                     _eventQueue.add(new Pair<User, AuditLogEvent>(user, event));
             }
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             _log.error("Failed to insert audit log event", e);
-            throw new RuntimeSQLException(e);
+            throw new RuntimeException(e);
         }
         return null;
     }

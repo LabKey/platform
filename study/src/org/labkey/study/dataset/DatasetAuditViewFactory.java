@@ -40,6 +40,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
@@ -171,8 +172,8 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         });
         table.addColumn(datasetColumn);
 
-        FieldKey oldFieldKey = FieldKey.fromParts("Property", "oldRecordMap");
-        FieldKey newFieldKey = FieldKey.fromParts("Property", "newRecordMap");
+        FieldKey oldFieldKey = FieldKey.fromParts("Property", OLD_RECORD_PROP_NAME);
+        FieldKey newFieldKey = FieldKey.fromParts("Property", NEW_RECORD_PROP_NAME);
 
         Map<FieldKey,ColumnInfo> cols = QueryService.get().getColumns(table, Arrays.<FieldKey>asList(oldFieldKey, newFieldKey));
         ColumnInfo oldCol = cols.get(oldFieldKey);
@@ -298,7 +299,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void ensureDomain(User user)
+    private void ensureDomain(User user) throws Exception
     {
         Container c = ContainerManager.getSharedContainer();
         String domainURI = AuditLogService.get().getDomainURI(DATASET_AUDIT_EVENT);
@@ -306,33 +307,24 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         Domain domain = PropertyService.get().getDomain(c, domainURI);
         if (domain == null)
         {
-            try
-            {
-                domain = PropertyService.get().createDomain(c, domainURI, "DatasetAuditEventDomain");
-                domain.save(user);
-                domain = PropertyService.get().getDomain(c, domainURI);
-            }
-            catch (Exception e)
-            {
-                LOG.error(e);
-            }
+            domain = PropertyService.get().createDomain(c, domainURI, "DatasetAuditEventDomain");
+            domain.save(user);
+            domain = PropertyService.get().getDomain(c, domainURI);
         }
 
         if (domain != null)
         {
-            try
-            {
-                ensureProperties(user, domain, new PropertyInfo[]{
-                        new PropertyInfo("oldRecordMap", "Old Record Map", PropertyType.STRING),
-                        new PropertyInfo("newRecordMap", "New Record Map", PropertyType.STRING)
-
-                });
-            }
-            catch (Exception e)
-            {
-                LOG.error("Unexpected error", e);
-            }
+            ensureProperties(user, domain, new PropertyInfo[]{
+                    new PropertyInfo(OLD_RECORD_PROP_NAME, OLD_RECORD_PROP_CAPTION, PropertyType.STRING),
+                    new PropertyInfo(NEW_RECORD_PROP_NAME, NEW_RECORD_PROP_CAPTION, PropertyType.STRING)
+            });
         }
+    }
+
+    @Override
+    public void initialize(ContainerUser context) throws Exception
+    {
+        ensureDomain(context.getUser());
     }
 
     private static class DetailsColumn extends DataColumn

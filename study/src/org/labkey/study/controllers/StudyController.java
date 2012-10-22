@@ -2530,7 +2530,6 @@ public class StudyController extends BaseStudyController
 
                     Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DataSetDefinition.DATASETKEY, form.getDatasetId());
 
-                    AssayAuditViewFactory.getInstance().ensureDomain(getUser());
                     AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
                 }
             }

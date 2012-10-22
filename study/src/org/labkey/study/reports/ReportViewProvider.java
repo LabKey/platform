@@ -44,12 +44,12 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.study.StudySchema;
 
 import java.io.InputStream;
@@ -355,27 +355,4 @@ public class ReportViewProvider implements DataViewProvider
         }
     }
 
-    private static class DefaultContainerUser implements ContainerUser
-    {
-        private User _user;
-        private Container _container;
-
-        public DefaultContainerUser(Container container, User user)
-        {
-            _user = user;
-            _container = container;
-        }
-
-        @Override
-        public User getUser()
-        {
-            return _user;
-        }
-
-        @Override
-        public Container getContainer()
-        {
-            return _container;
-        }
-    }
 }

@@ -1440,8 +1440,8 @@ public class StudyManager
             event.setComment(auditComment);
 
             Map<String, Object> dataMap = new HashMap<String, Object>();
-            dataMap.put("oldRecordMap", SimpleAuditViewFactory.encodeForDataMap(oldQCStates, false));
-            dataMap.put("newRecordMap", SimpleAuditViewFactory.encodeForDataMap(newQCStates, false));
+            dataMap.put(DatasetAuditViewFactory.OLD_RECORD_PROP_NAME, SimpleAuditViewFactory.encodeForDataMap(oldQCStates, false));
+            dataMap.put(DatasetAuditViewFactory.NEW_RECORD_PROP_NAME, SimpleAuditViewFactory.encodeForDataMap(newQCStates, false));
             AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
 
             clearCaches(container, false);

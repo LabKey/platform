@@ -19,6 +19,7 @@ package org.labkey.study.controllers;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
@@ -348,8 +349,10 @@ public class DatasetController extends BaseStudyController
             VBox view = new VBox();
 
             Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
-            String oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT, "oldRecordMap"));
-            String newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT, "newRecordMap"));
+            String oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT,
+                    DatasetAuditViewFactory.OLD_RECORD_PROP_NAME));
+            String newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT,
+                    DatasetAuditViewFactory.NEW_RECORD_PROP_NAME));
 
             Map<String,String> oldData = null;
             Map<String,String> newData = null;
@@ -393,8 +396,7 @@ public class DatasetController extends BaseStudyController
             }
             if (oldData != null || newData != null)
             {
-                DiffDetailsView diffView = new DiffDetailsView(event, oldData, newData);
-                view.addView(diffView);
+                view.addView(new AuditChangesView(event, oldData, newData));
             }
 
             return view;

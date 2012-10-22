@@ -44,6 +44,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.list.view.ListController;
 
 import java.io.IOException;
@@ -256,7 +257,13 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         }
     }
 
-    public void ensureDomain(User user) throws ChangePropertyDescriptorException
+    @Override
+    public void initialize(ContainerUser context) throws Exception
+    {
+        ensureDomain(context.getUser());
+    }
+
+    private void ensureDomain(User user) throws ChangePropertyDescriptorException
     {
         Container c = ContainerManager.getSharedContainer();
         String domainURI = AuditLogService.get().getDomainURI(ListManager.LIST_AUDIT_EVENT);
@@ -281,8 +288,8 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
             ensureProperties(user, domain, new PropertyInfo[]{
                     new PropertyInfo("oldRecord", "Old Record", PropertyType.STRING),
                     new PropertyInfo("newRecord", "New Record", PropertyType.STRING),
-                    new PropertyInfo("oldRecordMap", "Old Record Map", PropertyType.STRING),
-                    new PropertyInfo("newRecordMap", "New Record Map", PropertyType.STRING)
+                    new PropertyInfo(OLD_RECORD_PROP_NAME, OLD_RECORD_PROP_CAPTION, PropertyType.STRING),
+                    new PropertyInfo(NEW_RECORD_PROP_NAME, NEW_RECORD_PROP_CAPTION, PropertyType.STRING)
             });
         }
     }

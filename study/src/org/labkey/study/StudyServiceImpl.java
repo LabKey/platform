@@ -448,25 +448,24 @@ public class StudyServiceImpl implements StudyService.Service
         event.setIntKey2(1);
 
         event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
-        DatasetAuditViewFactory.getInstance().ensureDomain(u);
 
         String oldRecordString = null;
         String newRecordString = null;
         Object lsid;
         if (oldRecord == null)
         {
-            newRecordString = encodeAuditMap(newRecord);
+            newRecordString = DatasetAuditViewFactory.encodeForDataMap(newRecord);
             lsid = newRecord.get("lsid");
         }
         else if (newRecord == null)
         {
-            oldRecordString = encodeAuditMap(oldRecord);
+            oldRecordString = DatasetAuditViewFactory.encodeForDataMap(oldRecord);
             lsid = oldRecord.get("lsid");
         }
         else
         {
-            oldRecordString = encodeAuditMap(oldRecord);
-            newRecordString = encodeAuditMap(newRecord);
+            oldRecordString = DatasetAuditViewFactory.encodeForDataMap(oldRecord);
+            newRecordString = DatasetAuditViewFactory.encodeForDataMap(newRecord);
             lsid = newRecord.get("lsid");
         }
         event.setKey1(lsid == null ? null : lsid.toString());
@@ -474,8 +473,8 @@ public class StudyServiceImpl implements StudyService.Service
         event.setComment(auditComment);
 
         Map<String,Object> dataMap = new HashMap<String,Object>();
-        if (oldRecordString != null) dataMap.put("oldRecordMap", oldRecordString);
-        if (newRecordString != null) dataMap.put("newRecordMap", newRecordString);
+        if (oldRecordString != null) dataMap.put(DatasetAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecordString);
+        if (newRecordString != null) dataMap.put(DatasetAuditViewFactory.NEW_RECORD_PROP_NAME, newRecordString);
 
         AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
     }
@@ -492,7 +491,6 @@ public class StudyServiceImpl implements StudyService.Service
         event.setIntKey1(def.getDataSetId());
 
         event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
-        DatasetAuditViewFactory.getInstance().ensureDomain(u);
 
         event.setComment(comment);
 
@@ -505,20 +503,6 @@ public class StudyServiceImpl implements StudyService.Service
                 Collections.<String,Object>emptyMap(),
                 AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
                 */
-    }
-
-    static String encodeAuditMap(Map<String,Object> data)
-    {
-        if (data == null) return null;
-        
-        // encoding requires all strings, so convert our map
-        Map<String,String> stringMap = new HashMap<String,String>();
-        for (Map.Entry<String,Object> entry :  data.entrySet())
-        {
-            Object value = entry.getValue();
-            stringMap.put(entry.getKey(), value == null ? null : value.toString());
-        }
-        return DatasetAuditViewFactory.encodeForDataMap(stringMap, true);
     }
 
     public void ensureTransaction() throws SQLException

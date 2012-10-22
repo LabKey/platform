@@ -450,18 +450,9 @@ public class ListItemImpl implements ListItem
         event.setKey3(_list.getName());
         event.setKey2(entityId);
 
-        try
-        {
-            ListAuditViewFactory.getInstance().ensureDomain(user);
-        }
-        catch(ChangePropertyDescriptorException e)
-        {
-            throw new RuntimeException(e);
-        }
-
         final Map<String, Object> dataMap = new HashMap<String, Object>();
-        if (oldRecord != null) dataMap.put("oldRecordMap", oldRecord);
-        if (newRecord != null) dataMap.put("newRecordMap", newRecord);
+        if (oldRecord != null) dataMap.put(ListAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
+        if (newRecord != null) dataMap.put(ListAuditViewFactory.NEW_RECORD_PROP_NAME, newRecord);
 
         if (!dataMap.isEmpty())
             AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(ListManager.LIST_AUDIT_EVENT));

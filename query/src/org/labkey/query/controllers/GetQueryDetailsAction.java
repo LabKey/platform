@@ -115,7 +115,11 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
         if (!isUserDefined && tinfo.isMetadataOverrideable())
             resp.put("isMetadataOverrideable", true);
-        
+
+        ActionURL auditHistoryUrl = QueryService.get().getAuditHistoryURL(user, container, tinfo);
+        if (auditHistoryUrl != null)
+            resp.put("auditHistoryUrl", auditHistoryUrl);
+
         //8649: let the table provide the view data url
         if (schema instanceof UserSchema)
         {
