@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Container;
@@ -105,8 +106,8 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
      */
     String getRunReportTarget();
 
-    ActionURL getEditReportURL(ViewContext context);
-    ActionURL getEditReportURL(ViewContext context, ActionURL returnURL);
+    @Nullable ActionURL getEditReportURL(ViewContext context);
+    @Nullable ActionURL getEditReportURL(ViewContext context, ActionURL returnURL);
 
     /**
      * Allows source grid data to be downloaded for query based reports. This would be most

@@ -117,7 +117,7 @@ public class LookupColumn extends ColumnInfo
         return result;
     }
 
-    private SQLFragment getJoinCondition(String tableAliasName, ColumnInfo fk, ColumnInfo pk, boolean equalOrIsNull)
+    protected SQLFragment getJoinCondition(String tableAliasName, ColumnInfo fk, ColumnInfo pk, boolean equalOrIsNull)
     {
         SQLFragment condition = new SQLFragment();
         if (equalOrIsNull)

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports.report;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
@@ -124,10 +125,10 @@ public abstract class AbstractReport implements Report
 
     // Callers should pass in the "after save" redirect location; report might not be able to figure this out
     // (e.g., when manage views call this method, context.getActionURL() is a JSON API action)
-    public ActionURL getEditReportURL(ViewContext context, ActionURL returnURL)
+    public @Nullable ActionURL getEditReportURL(ViewContext context, ActionURL returnURL)
     {
         ActionURL url = getEditReportURL(context);
-        return url.addReturnURL(returnURL);
+        return null != url ? url.addReturnURL(returnURL) : null;
     }
 
     public HttpView renderDataView(ViewContext context) throws Exception

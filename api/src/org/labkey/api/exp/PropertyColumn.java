@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -251,6 +252,40 @@ public class PropertyColumn extends LookupColumn
         strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment(tableAliasName + ".Container"), _container));
 
         return strJoinNoContainer;
+    }
+
+    @Override
+    protected SQLFragment getJoinCondition(String tableAliasName, ColumnInfo fk, ColumnInfo pk, boolean equalOrIsNull)
+    {
+        // hack: issue 16263, on sql server entityid is a uniqueidentifier type, we need to force a cast
+        // when using an entityid to join to an objecturi
+        boolean addEntityIdCast = StringUtils.equalsIgnoreCase("entityid", fk.getSqlTypeName()) &&
+                StringUtils.equalsIgnoreCase("lsidtype", pk.getSqlTypeName()) &&
+                getSqlDialect().isSqlServer();
+
+        if (addEntityIdCast)
+        {
+            SQLFragment condition = new SQLFragment();
+            if (equalOrIsNull)
+                condition.append("(");
+
+            SQLFragment fkSql = fk.getValueSql(tableAliasName);
+                condition.append("CAST((").append(fkSql).append(") AS VARCHAR(36))");
+            condition.append(" = ");
+
+            SQLFragment pkSql = pk.getValueSql(getTableAlias(tableAliasName));
+            condition.append(pkSql);
+
+            if (equalOrIsNull)
+            {
+                condition.append(" OR (").append(fkSql).append(" IS NULL");
+                condition.append(" AND ").append(pkSql).append(" IS NULL))");
+            }
+
+            return condition;
+        }
+        else
+            return super.getJoinCondition(tableAliasName, fk, pk, equalOrIsNull);
     }
 
     public String getTableAlias(String baseAlias)
