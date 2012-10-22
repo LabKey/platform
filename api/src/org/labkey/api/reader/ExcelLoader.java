@@ -16,29 +16,31 @@
 package org.labkey.api.reader;
 
 import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
+import org.apache.poi.ss.usermodel.BuiltinFormats;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
+import org.apache.poi.xssf.model.StylesTable;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -52,7 +54,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -296,6 +297,7 @@ public class ExcelLoader extends DataLoader
             OPCPackage xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
             ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(xlsxPackage);
             XSSFReader xssfReader = new XSSFReader(xlsxPackage);
+            StylesTable styles = xssfReader.getStylesTable();
             XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
             if (iter.hasNext())
             {
@@ -304,7 +306,7 @@ public class ExcelLoader extends DataLoader
                 SAXParserFactory saxFactory = SAXParserFactory.newInstance();
                 SAXParser saxParser = saxFactory.newSAXParser();
                 XMLReader sheetParser = saxParser.getXMLReader();
-                ContentHandler handler = new SheetHandler(strings, 1, output);
+                SheetHandler handler = new SheetHandler(styles, strings, 1, output);
                 sheetParser.setContentHandler(handler);
                 sheetParser.parse(sheetSource);
             }
@@ -482,7 +484,7 @@ public class ExcelLoader extends DataLoader
 
 
     /* code modified from example code found XLS2CSV.java
-     *
+     * http://svn.apache.org/repos/asf/poi/trunk/src/examples/src/org/apache/poi/xssf/eventusermodel/XLSX2CSV.java
      */
 
 /* ====================================================================
@@ -515,9 +517,14 @@ public class ExcelLoader extends DataLoader
     class SheetHandler extends DefaultHandler
     {
         /**
+         * Table with styles
+         */
+        private final StylesTable stylesTable;
+
+        /**
          * Table with unique strings
          */
-        private ReadOnlySharedStringsTable sharedStringsTable;
+        private final ReadOnlySharedStringsTable sharedStringsTable;
 
         /**
          * Destination for data
@@ -538,6 +545,11 @@ public class ExcelLoader extends DataLoader
         // used when cell close element is seen.
         private xssfDataType nextDataType;
 
+            // Used to format numeric cell values.
+        private boolean useFormats = false;
+        private short formatIndex;
+        private String formatString;
+        private final DataFormatter formatter;
         private int thisColumn = -1;
 
         // Gathers characters as they are seen.
@@ -553,20 +565,24 @@ public class ExcelLoader extends DataLoader
          * @param target  Sink for output
          */
         public SheetHandler(
+                StylesTable styles,
                 ReadOnlySharedStringsTable strings,
                 int cols,
                 Collection<ArrayList<Object>> target)
         {
+            this.stylesTable = styles;
             this.sharedStringsTable = strings;
             this.minColumnCount = cols;
             this.value = new StringBuffer();
             this.nextDataType = xssfDataType.NUMBER;
             this.output = target;
+            this.formatter = new DataFormatter();
+            this.useFormats = false;
         }
 
         private void debugPrint(String s)
         {
-//            System.out.println(StringUtils.repeat(" ", debugIndent) + s);
+            System.out.println(StringUtils.repeat(" ", debugIndent) + s);
         }
 
         /*
@@ -607,6 +623,8 @@ public class ExcelLoader extends DataLoader
 
                 // Set up defaults.
                 this.nextDataType = xssfDataType.NUMBER;
+                this.formatIndex = -1;
+                this.formatString = null;
                 String cellType = attributes.getValue("t");
                 String cellStyleStr = attributes.getValue("s");
                 if ("b".equals(cellType))
@@ -619,6 +637,17 @@ public class ExcelLoader extends DataLoader
                     nextDataType = xssfDataType.SSTINDEX;
                 else if ("str".equals(cellType))
                     nextDataType = xssfDataType.FORMULA;
+                else if (cellStyleStr != null)
+                {
+                    // It's a number, but almost certainly one
+                    //  with a special style or format
+                    int styleIndex = Integer.parseInt(cellStyleStr);
+                    XSSFCellStyle style = stylesTable.getStyleAt(styleIndex);
+                    this.formatIndex = style.getDataFormat();
+                    this.formatString = style.getDataFormatString();
+                    if (this.formatString == null)
+                        this.formatString = BuiltinFormats.getBuiltinFormat(this.formatIndex);
+                }
             }
         }
 
@@ -644,7 +673,7 @@ public class ExcelLoader extends DataLoader
                         break;
 
                     case ERROR:
-                        thisValue = "\"ERROR:" + value.toString() + '"';
+                        thisValue = "ERROR:" + value.toString();
                         break;
 
                     case FORMULA:
@@ -673,7 +702,12 @@ public class ExcelLoader extends DataLoader
                         break;
 
                     case NUMBER:
-                        thisValue = Double.parseDouble(value.toString());
+                        // since Excel auto-converts lots of things that are not numbers, such particpantids and sometimes dates
+                        // convert to string and let DataLoader sort it out
+                        if (useFormats && this.formatString != null)
+                            thisValue = formatter.formatRawCellContents(Double.parseDouble(value.toString()), this.formatIndex, this.formatString);
+                        else
+                            thisValue = value.toString();
                         break;
 
                     default:
@@ -727,6 +761,7 @@ public class ExcelLoader extends DataLoader
     }
 
 
+/*
     static class _ArrayListMap extends ArrayListMap<String, Object>
     {
         _ArrayListMap(FindMap<String> findMap, ArrayList<Object> row)
@@ -734,4 +769,5 @@ public class ExcelLoader extends DataLoader
             super(findMap, row);
         }
     }
+*/
 }
