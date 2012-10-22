@@ -7,6 +7,7 @@ import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -85,7 +86,7 @@ public class AssayProviderSchema extends AssaySchema
         if (_protocols == null)
         {
             _protocols = AssayService.get().getAssayProtocols(getContainer(), getProvider());
-            _protocolsByName = new HashMap<String, ExpProtocol>();
+            _protocolsByName = new CaseInsensitiveHashMap<ExpProtocol>();
             for (ExpProtocol protocol : _protocols)
                 _protocolsByName.put(protocol.getName(), protocol);
         }
