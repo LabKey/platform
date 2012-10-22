@@ -17,14 +17,19 @@
 package org.labkey.study.assay.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -34,9 +39,9 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -53,6 +58,7 @@ import java.util.TreeSet;
 public class AssaySchemaImpl extends AssaySchema
 {
     private Map<ExpProtocol, AssayProvider> _protocols;
+    private List<AssayProvider> _allProviders;
 
     /** Cache the "child" schemas so that we don't have to recreate them over and over within this schema's lifecycle */
     private Map<ExpProtocol, AssayProtocolSchema> _protocolSchemas = new HashMap<ExpProtocol, AssayProtocolSchema>();
@@ -68,7 +74,12 @@ public class AssaySchemaImpl extends AssaySchema
 
     public AssaySchemaImpl(User user, Container container, @Nullable Container targetStudy)
     {
-        super(NAME, user, container, ExperimentService.get().getSchema(), targetStudy);
+        this(user, container, ExperimentService.get().getSchema(), targetStudy);
+    }
+
+    private AssaySchemaImpl(User user, Container container, DbSchema schema, @Nullable Container targetStudy)
+    {
+        super(NAME, user, container, schema, targetStudy);
     }
 
     @Override
@@ -111,7 +122,7 @@ public class AssaySchemaImpl extends AssaySchema
         if (_restricted)
             return null;
 
-        for (AssayProvider provider : AssayService.get().getAssayProviders())
+        for (AssayProvider provider : getAllProviders())
         {
             if (name.equalsIgnoreCase(provider.getResourceName()))
             {
@@ -149,11 +160,21 @@ public class AssaySchemaImpl extends AssaySchema
             }
         });
         names.addAll(super.getSchemaNames());
-        for (AssayProvider provider : AssayService.get().getAssayProviders())
+        for (AssayProvider provider : getAllProviders())
             names.add(provider.getResourceName());
 
         return names;
     }
+
+    private List<AssayProvider> getAllProviders()
+    {
+        if (_allProviders == null)
+        {
+            _allProviders = AssayService.get().getAssayProviders();
+        }
+        return _allProviders;
+    }
+
 
     @Override
     public TableInfo createTable(String name)
@@ -230,5 +251,75 @@ public class AssaySchemaImpl extends AssaySchema
             _protocolSchemas.put(protocol, protocolSchema);
         }
         return protocolSchema;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private Mockery _context;
+        private ExpProtocol _protocol1;
+        private AssayProvider _provider1;
+        private AssaySchemaImpl _schemaImpl;
+
+        public TestCase()
+        {
+            _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+
+            _protocol1 = _context.mock(ExpProtocol.class);
+            _context.checking(new Expectations() {{
+                allowing(_protocol1).getName();
+                will(returnValue("Design1"));
+            }});
+
+            _provider1 = _context.mock(AssayProvider.class);
+            _context.checking(new Expectations() {{
+                allowing(_provider1).getName();
+                will(returnValue("Provider1"));
+                allowing(_provider1).getResourceName();
+                will(returnValue("Provider1"));
+
+                allowing(_provider1).createProviderSchema(with(any(User.class)), with(any(Container.class)), (Container) with(same(null)));
+            }});
+
+            Map<ExpProtocol, AssayProvider> designs = new HashMap<ExpProtocol, AssayProvider>();
+            designs.put(_protocol1, _provider1);
+
+            _schemaImpl = new AssaySchemaImpl(User.guest, ContainerManager.createMockContainer(), null, null);
+            _schemaImpl._protocols = designs;
+            _schemaImpl._allProviders = Collections.singletonList(_provider1);
+        }
+
+        @Test
+        public void testProviderChildSchemas()
+        {
+            assertEquals(Collections.singleton(AssaySchema.ASSAY_LIST_TABLE_NAME), _schemaImpl.getTableNames());
+            assertEquals(PageFlowUtil.set("Folder", "Provider1"), _schemaImpl.getSchemaNames());
+
+            assertNotNull(_schemaImpl.getSchema("Provider1"));
+        }
+
+        // Would like to be able to validate this, but right now classloading for AbstractTableInfo, which is
+        // part of a method signature in AssayProtocolSchema, sets an ActionURL static variable which needs
+        // the context path
+
+//        @Test
+//        public void testLegacyQueryName()
+//        {
+//            final AssayProtocolSchema protocolSchema = _context.mock(AssayProtocolSchema.class);
+//
+//            _context.checking(new Expectations() {{
+//                allowing(protocolSchema).getTableNames();
+//                will(returnValue(Collections.singleton("Data")));
+//
+//                allowing(protocolSchema).getTable("Data", true);
+//            }});
+//
+//            _context.checking(new Expectations() {{
+//                allowing(_provider1).createProtocolSchema(with(any(User.class)), with(any(Container.class)), with(same(_protocol1)), (Container) with(same(null)));
+//                will(returnValue(protocolSchema));
+//            }});
+//
+//            assertNotNull(_schemaImpl.getTable("Design1 Data"));
+//        }
     }
 }

@@ -63,6 +63,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
@@ -724,6 +725,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(DatasetWriter.TestCase.class);
         set.add(SpecimenWriter.TestCase.class);
         set.add(TsvAssayProvider.TestCase.class);
+        set.add(AssaySchemaImpl.TestCase.class);
+        set.add(AssayProviderSchema.TestCase.class);
         return set;
     }
 
