@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -86,10 +87,17 @@ public class CrosstabDataRegion extends DataRegion
                             getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
                 }
 
-                if (alternate)
+                for (DisplayColumn renderer : memberColumns)
                 {
-                    for (DisplayColumn renderer : memberColumns)
+                    if (alternate)
                         renderer.addDisplayClass("labkey-alternate-col");
+                    if (currentMember != null)
+                    {
+                        String memberCaption = currentMember.getCaption();
+                        String innerCaption = renderer.getCaption(ctx);
+                        if (StringUtils.startsWith(innerCaption,memberCaption))
+                            renderer.setCaption(StringUtils.trim(innerCaption.substring(memberCaption.length())));
+                    }
                 }
             }
 
