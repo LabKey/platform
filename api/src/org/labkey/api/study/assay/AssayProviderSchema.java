@@ -2,13 +2,21 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +48,12 @@ public class AssayProviderSchema extends AssaySchema
 
     public AssayProviderSchema(User user, Container container, @NotNull AssayProvider provider, @Nullable Container targetStudy, @Nullable List<ExpProtocol> protocols)
     {
-        super(SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName()), descr(provider), user, container, ExperimentService.get().getSchema(), targetStudy);
+        this(user, container, provider, targetStudy, protocols, ExperimentService.get().getSchema());
+    }
+
+    private AssayProviderSchema(User user, Container container, @NotNull AssayProvider provider, @Nullable Container targetStudy, @Nullable List<ExpProtocol> protocols, DbSchema dbSchema)
+    {
+        super(SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName()), descr(provider), user, container, dbSchema, targetStudy);
         _provider = provider;
         _protocols = protocols;
         if (protocols != null)
@@ -149,4 +162,40 @@ public class AssayProviderSchema extends AssaySchema
         return protocolSchema;
     }
 
+    public static class TestCase extends Assert
+    {
+        private Mockery _context;
+        private ExpProtocol _protocol1;
+        private AssayProvider _provider1;
+        private AssayProviderSchema _schemaImpl;
+
+        public TestCase()
+        {
+            _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+
+            _protocol1 = _context.mock(ExpProtocol.class);
+            _context.checking(new Expectations() {{
+                allowing(_protocol1).getName();
+                will(returnValue("Design1"));
+            }});
+
+            _provider1 = _context.mock(AssayProvider.class);
+            _context.checking(new Expectations() {{
+                allowing(_provider1).getName();
+                will(returnValue("Provider1"));
+                allowing(_provider1).getResourceName();
+                will(returnValue("Provider1"));
+            }});
+
+            _schemaImpl = new AssayProviderSchema(User.guest, ContainerManager.createMockContainer(), _provider1, null, Collections.singletonList(_protocol1), null);
+        }
+
+        @Test
+        public void testChildSchemas()
+        {
+            assertEquals(0, _schemaImpl.getTableNames().size());
+            assertEquals(PageFlowUtil.set("Folder", "Design1"), _schemaImpl.getSchemaNames());
+        }
+    }
 }

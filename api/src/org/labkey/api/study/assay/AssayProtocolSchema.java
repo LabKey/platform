@@ -8,6 +8,7 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
@@ -62,6 +63,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * A child schema of AssayProviderSchema. Exposes tables for Runs, Batches, etc.
  * User: kevink
  * Date: 9/15/12
  */
@@ -76,7 +78,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
     private final ExpProtocol _protocol;
     private final AssayProvider _provider;
 
-    // XXX: Not sure if prefixedTableNames should be a property of the schema or an argument to .getTableNames() and .createTable()
     public AssayProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
         super(SchemaKey.fromParts(AssaySchema.NAME, AssayService.get().getProvider(protocol).getResourceName(), protocol.getName()), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
@@ -98,7 +99,10 @@ public abstract class AssayProtocolSchema extends AssaySchema
     @Override
     public Map<String, QueryDefinition> getQueryDefs()
     {
+        // Get all the custom queries from the standard locations
         Map<String, QueryDefinition> result = super.getQueryDefs();
+
+        // Add in ones that are associated with the assay type
         List<QueryDefinition> providerQueryDefs = getFileBasedAssayProviderScopedQueries();
         for (QueryDefinition providerQueryDef : providerQueryDefs)
         {
@@ -127,7 +131,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     }
 
     @Override
-    // NOTE: Subclasses should override to add any additional provider specific tables.
+    /** NOTE: Subclasses should override to add any additional provider specific tables. */
     public Set<String> getTableNames()
     {
         Set<String> names = new HashSet<String>();
@@ -171,9 +175,9 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     /** @return may return null if no results/data are tracked by this assay type */
     @Nullable
-    public final FilteredTable createDataTable()
+    public final ContainerFilterable createDataTable()
     {
-        FilteredTable table = createDataTable(true);
+        ContainerFilterable table = createDataTable(true);
         if (table != null && table.getColumn("Properties") != null)
             fixupPropertyURLs(table.getColumn("Properties"));
         return table;
@@ -271,12 +275,14 @@ public abstract class AssayProtocolSchema extends AssaySchema
             fixupRenderers(col, col);
         }
 
-        result.setDescription("Contains a row per " + protocol.getName() + " batch, a group of runs that were loaded at the same time.");
+        result.setDescription("Contains a row per " + protocol.getName() + " batch (a group of runs that were loaded at the same time)");
 
         return result;
     }
 
-    public abstract FilteredTable createDataTable(boolean includeCopiedToStudyColumns);
+    @Nullable
+    /** Implementations may return null if they don't have any data associated with them */
+    public abstract ContainerFilterable createDataTable(boolean includeCopiedToStudyColumns);
 
     public ExpRunTable createRunsTable()
     {
@@ -538,7 +544,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 {
 
                     FilteredTable table = new FilteredTable(DbSchema.get("study").getTable("study"));
-//                    FilteredTable table = new FilteredTable(AssayProtocolSchema.this.getSchema("Study").getTable("Study"));
                     table.setContainerFilter(new StudyContainerFilter(AssayProtocolSchema.this));
                     ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
                     col.setFk(new ContainerForeignKey(AssayProtocolSchema.this));
