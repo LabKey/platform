@@ -42,6 +42,7 @@ import org.labkey.api.etl.TriggerDataBuilderHelper;
 import org.labkey.api.etl.WrapperDataIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
@@ -328,6 +329,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
+        QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, result);
+
         return result;
     }
 
@@ -423,6 +426,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
+        List<Map<String, Object>> oldRows = new ArrayList<Map<String, Object>>(rows.size());
+
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
@@ -441,6 +446,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
                 getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow, extraScriptContext);
                 result.add(updatedRow);
+                oldRows.add(oldRow);
             }
             catch (ValidationException vex)
             {
@@ -449,6 +455,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
+
+        QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.UPDATE, oldRows, result);
 
         return result;
     }
@@ -497,6 +505,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
+        QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE, result);
 
         return result;
     }

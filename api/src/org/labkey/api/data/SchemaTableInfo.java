@@ -30,6 +30,7 @@ import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
@@ -56,6 +57,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.AuditType;
 import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.TableType;
 
@@ -110,6 +112,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     private final Object _columnLock = new Object();
     private String _versionColumnName = null;
     private List<FieldKey> _defaultVisibleColumns = null;
+    private AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
 
 
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName)
@@ -444,8 +447,19 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return getColumnMetaData().getColumnNameSet();
     }
 
+     @Override
+     public void setAuditBehavior(AuditBehaviorType type)
+     {
+         _auditBehaviorType = type;
+     }
 
-    void copyToXml(TableType xmlTable, boolean bFull)
+     @Override
+     public AuditBehaviorType getAuditBehavior()
+     {
+         return _auditBehaviorType;
+     }
+
+     void copyToXml(TableType xmlTable, boolean bFull)
     {
         xmlTable.setTableName(_name);
         xmlTable.setTableDbType(_tableType.name());
@@ -522,6 +536,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
         if (xmlTable.getButtonBarOptions() != null)
             _buttonBarConfig = new ButtonBarConfig(xmlTable.getButtonBarOptions());
+
+        if (xmlTable.getAuditLogging() != null)
+        {
+            AuditType.Enum auditBehavior = xmlTable.getAuditLogging();
+            setAuditBehavior(AuditBehaviorType.valueOf(auditBehavior.toString()));
+        }
 
         // Stash so we can overlay ColumnInfo properties later
         _xmlTable = xmlTable;

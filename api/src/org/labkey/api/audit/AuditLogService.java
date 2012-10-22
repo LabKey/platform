@@ -29,6 +29,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.List;
 import java.util.Map;
@@ -124,6 +125,13 @@ public class AuditLogService
         public QueryView createDefaultQueryView(ViewContext context);
         public List<FieldKey> getDefaultVisibleColumns();
         public void setupTable(FilteredTable table, UserSchema schema);
+
+        /**
+         * Provides a way for factories to perform one time additional initialization (domain creation),
+         * prior to logging an audit event.
+         * @param context
+         */
+        public void initialize(ContainerUser context) throws Exception;
     }
 
     public interface Replaceable{}

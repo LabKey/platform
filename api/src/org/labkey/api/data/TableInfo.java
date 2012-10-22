@@ -22,6 +22,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -426,4 +427,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     @Nullable
     public ContainerContext getContainerContext();
 
+    public void setAuditBehavior(AuditBehaviorType type);
+    public AuditBehaviorType getAuditBehavior();
 }

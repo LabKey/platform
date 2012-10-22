@@ -26,6 +26,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
@@ -60,6 +61,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.AuditType;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.PositionTypeEnum;
@@ -111,6 +113,7 @@ abstract public class AbstractTableInfo implements TableInfo
     protected AggregateRowConfig _aggregateRowConfig;
 
     private DetailsURL _detailsURL;
+    protected AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
 
     @NotNull
     public List<ColumnInfo> getPkColumns()
@@ -858,6 +861,12 @@ abstract public class AbstractTableInfo implements TableInfo
             setAggregateRowConfig(xmlTable);
         }
 
+        if (xmlTable.getAuditLogging() != null)
+        {
+            AuditType.Enum auditBehavior = xmlTable.getAuditLogging();
+            setAuditBehavior(AuditBehaviorType.valueOf(auditBehavior.toString()));
+        }
+
         // This needs to happen AFTER all of the other XML-based config has been applied, so it should always
         // be at the end of this method
         if (xmlTable.isSetJavaCustomizer())
@@ -1268,6 +1277,18 @@ abstract public class AbstractTableInfo implements TableInfo
     public boolean isLocked()
     {
         return _locked;
+    }
+
+    @Override
+    public void setAuditBehavior(AuditBehaviorType type)
+    {
+        _auditBehaviorType = type;
+    }
+
+    @Override
+    public AuditBehaviorType getAuditBehavior()
+    {
+        return _auditBehaviorType;
     }
 
     @Override

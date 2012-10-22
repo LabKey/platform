@@ -30,6 +30,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.ContainerUser;
 
 import javax.mail.MessagingException;
 import java.io.ByteArrayInputStream;
@@ -53,6 +54,11 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
 {
     private static final Logger _log = Logger.getLogger(SimpleAuditViewFactory.class);
 
+    public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
+    public static final String OLD_RECORD_PROP_CAPTION = "Old Record Map";
+    public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
+    public static final String NEW_RECORD_PROP_CAPTION = "New Record Map";
+
     public String getName()
     {
         return getEventType();
@@ -72,6 +78,11 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
     {
         // set the filter for the audit view type
         table.addCondition(table.getRealTable().getColumn("EventType"), getEventType());
+    }
+
+    @Override
+    public void initialize(ContainerUser context) throws Exception
+    {
     }
 
     private static Object _82decodeObject(String s) throws IOException
@@ -134,6 +145,20 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
     }
 
     private static int MAX_FIELD_SIZE = 4000;
+
+    public static String encodeForDataMap(Map<String, Object> properties)
+    {
+        if (properties == null) return null;
+
+        Map<String,String> stringMap = new HashMap<String,String>();
+        for (Map.Entry<String,Object> entry :  properties.entrySet())
+        {
+            Object value = entry.getValue();
+            stringMap.put(entry.getKey(), value == null ? null : value.toString());
+        }
+        return encodeForDataMap(stringMap, true);
+    }
+
     // helper to encode map information into a form that can be saved into an ontology column,
     // if validate size is set, the returned String will be guaranteed to fit into the field.
     //

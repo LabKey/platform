@@ -72,6 +72,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _importTemplates = _rootTable.getRawImportTemplates();
         // UNDONE: lazy load button bar config????
         _buttonBarConfig = _rootTable.getButtonBarConfig();
+        _auditBehaviorType = _rootTable.getAuditBehavior();
 
         // We used to copy the titleColumn from table, but this forced all ColumnInfos to load.  Now, delegate
         // to _rootTable lazily, allowing overrides.

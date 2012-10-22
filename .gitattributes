@@ -128,6 +128,7 @@ api/src/org/labkey/api/audit/query/AuditLogQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditSchema.java -text
 api/src/org/labkey/api/audit/query/SimpleAuditColumnFactory.java -text
+api/src/org/labkey/api/audit/view/AuditChangesView.java -text
 api/src/org/labkey/api/cache/BlockingCache.java -text
 api/src/org/labkey/api/cache/BlockingStringKeyCache.java -text
 api/src/org/labkey/api/cache/Cache.java -text
@@ -1361,6 +1362,7 @@ api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
 api/src/org/labkey/api/writer/AbstractVirtualFile.java -text
 api/src/org/labkey/api/writer/ContainerUser.java -text
+api/src/org/labkey/api/writer/DefaultContainerUser.java -text
 api/src/org/labkey/api/writer/FastaEntry.java -text
 api/src/org/labkey/api/writer/FastaGenerator.java -text
 api/src/org/labkey/api/writer/FastaWriter.java -text
@@ -4707,6 +4709,7 @@ api/webapp/labkey-ext-theme/resources/sass/ext-madison.scss -text
 api/webapp/labkey-ext-theme/resources/sass/ext-sage.scss -text
 api/webapp/labkey-ext-theme/resources/sass/ext-seattle.scss -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
+internal/gwtsrc/org/labkey/api/gwt/client/AuditBehaviorType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/FacetingBehaviorType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text

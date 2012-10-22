@@ -240,6 +240,35 @@ abstract public class QueryService
     abstract public void bindNamedParameters(SQLFragment frag, Map<String, Object> in);
     abstract public void validateNamedParameters(SQLFragment frag);
 
+    public enum AuditAction
+    {
+        INSERT("A row was inserted.",
+                "%s rows were inserted."),
+        UPDATE("Row was updated.",
+                "%s rows were updated."),
+        DELETE("Row was deleted.",
+                "%s rows were deleted.");
+
+        String _commentDetailed;
+        String _commentSummary;
+
+        AuditAction(String commentDetailed, String commentSummary)
+        {
+            _commentDetailed = commentDetailed;
+            _commentSummary = commentSummary;
+        }
+
+        public String getCommentDetailed()
+        {
+            return _commentDetailed;
+        }
+
+        public String getCommentSummary()
+        {
+            return _commentSummary;
+        }
+    }
+
     /**
      * Add an audit log entry for this QueryView. The
      * schemaName, queryName, and sortFilters are logged along with a comment message.
@@ -248,4 +277,7 @@ abstract public class QueryService
      */
     abstract public void addAuditEvent(QueryView queryView, String comment);
     abstract public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment);
+    abstract public void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>> ... params);
+
+    abstract public @Nullable ActionURL getAuditHistoryURL(User user, Container c, TableInfo table);
 }
