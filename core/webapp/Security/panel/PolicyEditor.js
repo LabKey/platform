@@ -670,7 +670,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         {
             this._removeInvalidRoles(policy, this.roles);
             if (policy.isEmpty())
-                policy.addRoleAssignment(this.cache.groupGuests, this.policy.noPermissionsRole);
+                policy.addRoleAssignment(Security.util.SecurityCache.groupGuests, this.policy.noPermissionsRole);
             if (overwrite)
                 policy.setModified(null);
             Security.util.Policy.savePolicy({policy:policy, successCallback:success, errorCallback:this.saveFail, scope:scope});

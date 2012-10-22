@@ -129,7 +129,7 @@ Ext4.define('Security.util.SecurityCache', {
                 metachange    : function(store, meta) {
                     //TODO
                     meta.fields.push({name:'sortOrder',type:'string',mvEnabled:false});
-                    var rtype = Ext.data.Record.create(meta.fields,'UserId');
+//                    var rtype = Ext.data.Record.create(meta.fields,'UserId');
 //                    store.fields = rtype.prototype.fields;
 //                    store.recordType = store.reader.recordType = rtype;
                 },
