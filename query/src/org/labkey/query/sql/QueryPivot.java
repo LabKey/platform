@@ -142,8 +142,6 @@ public class QueryPivot extends QueryRelation
                 switch (((QAggregate) source).getType())
                 {
                     case COUNT:
-                        rollupType = QAggregate.Type.COUNT;
-                        break;
                     case SUM:
                         rollupType = QAggregate.Type.SUM;
                         break;
@@ -154,14 +152,11 @@ public class QueryPivot extends QueryRelation
                         rollupType = QAggregate.Type.MAX;
                         break;
                     case AVG:
-                        rollupType = QAggregate.Type.AVG;
-                        break;
                     case STDDEV:
-                        rollupType = QAggregate.Type.STDDEV;
-                        break;
                     case STDERR:
                     case GROUP_CONCAT:
-                        // nyi;
+                        // translate AVG() -> SUM(sum())/SUM(count())
+                        // etc.
                         break;
                 }
             }
@@ -576,7 +571,6 @@ public class QueryPivot extends QueryRelation
 
                 if (usePivotForeignKey)
                     to.setLabel(null);
-                /*
                 else if (_aggregates.size() == 1)
                     to.setLabel(name);
                 else
@@ -584,7 +578,6 @@ public class QueryPivot extends QueryRelation
                     String aggLabel = to.getLabel();
                     to.setLabel(name + " " + aggLabel);
                 }
-                */
             }
 
             @Override
@@ -835,7 +828,6 @@ public class QueryPivot extends QueryRelation
                 if (pivotURL != null)
                     dim.setUrl(pivotURL);
                 _settings.getColumnAxis().setCaption(pivotLabel);
-
 
                 // aggregates are the crosstab measure
                 for (Map.Entry<String, QAggregate.Type> agg : _aggregates.entrySet())
