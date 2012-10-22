@@ -861,6 +861,26 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
            return;
         }
 
+        // fail quickly if some of the key components are not selected for the chart info (ptids, groups, series)
+        if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0)
+        {
+            this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + " from the filter panel on the right.");
+            return;
+        }
+
+        if (this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length == 0)
+        {
+            this.clearChartPanel("Please select at least one group from the filter panel on the right.");
+            return;
+        }
+
+        var seriesList = this.getSeriesList();
+        if (seriesList.length == 0)
+        {
+            this.clearChartPanel("Please select at least one series/dimension value.");
+            return;
+        }
+
         if (this.chartInfo.displayIndividual)
         {
             //Get data for individual lines.

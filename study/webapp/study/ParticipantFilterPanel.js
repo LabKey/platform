@@ -250,15 +250,26 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                     model    : 'LABKEY.study.GroupCohort'
                 };
 
-                var cohortConfig = Ext4.clone(storeConfig);
-                cohortConfig.data = categories['cohort'];
+                var groupSectionCfg = [];
+                var maxSelection = undefined;
+                if (this.maxInitSelection !== undefined)
+                    maxSelection = this.maxInitSelection;
 
-                var groupSectionCfg = [{
-                    normalWrap  : this.normalWrap,
-                    store       : Ext4.create('Ext.data.Store', cohortConfig),
-                    selection   : this.getInitialSelection('cohort'),
-                    description : 'Cohorts'
-                }];
+                if (categories['cohort'])
+                {
+                    var cohortConfig = Ext4.clone(storeConfig);
+                    cohortConfig.data = categories['cohort'];
+
+                    groupSectionCfg.push({
+                        normalWrap  : this.normalWrap,
+                        store       : Ext4.create('Ext.data.Store', cohortConfig),
+                        selection   : this.getInitialSelection('cohort'),
+                        maxInitSelection : maxSelection,
+                        description : 'Cohorts'
+                    });
+
+                    maxSelection = maxSelection ? Math.max(0, maxSelection - cohortConfig.data.length) : maxSelection;
+                }
 
                 for (var type in categories) {
                     if (categories.hasOwnProperty(type))
@@ -274,8 +285,11 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                             normalWrap  : this.normalWrap,
                             store       : Ext4.create('Ext.data.Store', groupConfig),
                             selection   : this.getInitialSelection('participantGroup'),
+                            maxInitSelection : maxSelection,
                             description : categoryName[type]
                         });
+
+                        maxSelection = maxSelection ? Math.max(0, maxSelection - cohortConfig.data.length) : maxSelection;
                     }
                 }
 

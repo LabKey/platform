@@ -566,14 +566,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         return (!record.get('hidden') && normalizedType !== 'float' && normalizedType !== 'int' && normalizedType !== 'double');
                     });
 
+                    var firstVal = this.groupingMeasureStore.getAt(0);
+
                     this.groupingPanel.supressEvents = true;
 
                     if(this.groupingPanel.getColorMeasure().name == null){
-                        this.groupingPanel.setColorMeasure(this.groupingMeasureStore.getAt(0).data);
+                        if(firstVal){
+                            this.groupingPanel.setColorMeasure(firstVal.data);
+                        }
                     }
 
                     if(this.groupingPanel.getPointMeasure().name == null){
-                        this.groupingPanel.setPointMeasure(this.groupingMeasureStore.getAt(0).data);
+                        if(firstVal){
+                            this.groupingPanel.setPointMeasure(firstVal.data);
+                        }
                     }
 
                     this.groupingPanel.supressEvents = false;
@@ -1498,9 +1504,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!forExport)
         {
             this.viewPanel.getEl().mask('Rendering Chart...');
-            this.viewPanel.removeAll();
-            this.exportPdfBtn.removeListener('click', this.exportChartToPdf);
-            this.exportPdfBtn.disable();
+            this.clearChartPanel();
         }
 
         if (!this.yAxisMeasure && !forExport)
@@ -1557,12 +1561,38 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var measures = this.initMeasures(chartOptions, this.chartData, this.xAxisMeasure, this.yAxisMeasure);
         var pointClickFn = null;
 
+        if(measures.color && this.groupingMeasureStore.find('name', measures.color.name) === -1){
+            this.addWarningText(
+                    '<p style="color: red; text-align: center;">The saved category for point color, "' +
+                    measures.color.label +
+                    '", is not available. It may have been deleted or renamed. </p>'
+            );
+
+            measures.color = undefined;
+        }
+
+        if(measures.shape && this.groupingMeasureStore.find('name', measures.shape.name) === -1){
+            this.addWarningText(
+                    '<p style="color: red; text-align: center;">The saved category for point shape, "' +
+                    measures.shape.label +
+                    '", is not available. It may have been deleted or renamed. </p>'
+            );
+
+            measures.shape = undefined;
+        }
+
         // Check if y axis actually has data first, if not show error message and have user select new measure.
         var yDataIsNull = true;
+        var invalidYLogValues = false;
+
         for(var i = 0; i < this.chartData.rows.length; i++){
-            var value = measures.y.acc(this.chartData.rows[i]);
-            if(value != null){
+            var yValue = measures.y.acc(this.chartData.rows[i]);
+            if(yValue != null){
                 yDataIsNull = false;
+            }
+
+            if(yValue <= 0 || yValue === null || yValue === undefined){
+                invalidYLogValues = true;
             }
         }
 
@@ -1570,6 +1600,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.viewPanel.getEl().unmask();
             Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label) + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
             return;
+        }
+
+        if(invalidYLogValues && chartOptions.yAxis.scaleType === 'log'){
+            this.addWarningText("Unable to use a log scale on the y-axis. All y-axis values must be > 0. Reverting to linear scale on y-axis.");
+            chartOptions.yAxis.scaleType = 'linear';
+            this.yMeasurePanel.setScaleType('linear');
         }
 
         // create a new function from the pointClickFn string provided by the developer
@@ -1660,10 +1696,26 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             measures.x.acc = function(row){
                 return row[measures.x.name].value;
             };
-            
-            scales.x = (this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double') ?
-                {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType} :
-                {scaleType: 'discrete'};
+
+            if(this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double'){
+                scales.x = {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType};
+                if(scales.x.trans === 'log'){
+                    // Check for values < 0, show error accordingly.
+                    for(var i = 0; i < this.chartData.rows.length; i++){
+                        var value = measures.x.acc(this.chartData.rows[i]);
+
+                        if(value <= 0 || value === null || value === undefined){
+                            this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be > 0. Reverting to linear scale on x-axis.");
+                            scales.x.trans = 'linear';
+                            this.xMeasurePanel.setScaleType('linear');
+                            break;
+                        }
+                    }
+                }
+            } else {
+                scales.x = {scaleType: 'discrete'};
+            }
+
             scales.y = {scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
             geom = new LABKEY.vis.Geom.Point({
                 opacity: chartOptions.opacity,
@@ -1732,12 +1784,37 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
 
+        newChartDiv.insert(0, Ext4.create('Ext.container.Container', {
+            autoEl: 'div',
+            style: 'color: red; text-align: center;',
+            html: this.warningText
+        }));
+
         if (!forExport){
             this.exportPdfBtn.addListener('click', this.exportChartToPdf, this);
             this.exportPdfBtn.setDisabled(!this.supportedBrowser);
             this.viewPanel.getEl().unmask();
         } else{
             return newChartDiv.id;
+        }
+    },
+
+    clearChartPanel: function(){
+        this.clearWarningText();
+        this.viewPanel.removeAll();
+        this.exportPdfBtn.removeListener('click', this.exportChartToPdf);
+        this.exportPdfBtn.disable();
+    },
+
+    clearWarningText: function(){
+        this.warningText = '';
+    },
+
+    addWarningText: function(warning){
+        if(!this.warningText){
+            this.warningText = warning;
+        } else {
+            this.warningText = this.warningText + '<br />' + warning;
         }
     },
 
@@ -1758,8 +1835,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 name: chartOptions.grouping.colorMeasure.name,
                 label: chartOptions.grouping.colorMeasure.label,
                 acc: function(row){
-
-                    var value = row[measures.color.name].displayValue ? row[measures.color.name].displayValue : row[measures.color.name].value;
+                    var valueObj = row[measures.color.name];
+                    var value;
+                    if(valueObj){
+                        value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
+                    } else {
+                        value = null;
+                    }
 
                     if(value === null || value === undefined){
                         value = "n/a";
@@ -1775,8 +1857,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 name: chartOptions.grouping.pointMeasure.name,
                 label: chartOptions.grouping.pointMeasure.label,
                 acc: function(row){
-                    var value = row[measures.shape.name].displayValue ? row[measures.shape.name].displayValue : row[measures.shape.name].value;
+                    var valueObj = row[measures.shape.name];
+                    var value;
 
+                    if(valueObj){
+                        value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
+                    } else {
+                        value = null;
+                    }
                     if(value === null || value === undefined){
                         value = "n/a";
                     }
@@ -1788,7 +1876,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         measures.x = {
             name: xMeasure ? xMeasure.name : chartData.queryName,
-            label: xMeasure ? Ext4.util.Format.htmlEncode(xMeasure.label) : chartData.queryName,
+            label: xMeasure ? xMeasure.label : chartData.queryName,
             acc: null // The x-axis accessor depends on the render type. This will be set later.
         };
 
@@ -1863,19 +1951,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                 if(measures.color){
                     hover = hover +  ', \n' + measures.color.label + ': ';
-                    if(row[measures.color.name].displayValue){
-                        hover = hover + row[measures.color.name].displayValue;
-                    } else {
-                        hover = hover + row[measures.color.name].value;
+                    if(row[measures.color.name]){
+                        if(row[measures.color.name].displayValue){
+                            hover = hover + row[measures.color.name].displayValue;
+                        } else {
+                            hover = hover + row[measures.color.name].value;
+                        }
                     }
                 }
 
                 if(measures.shape && !(measures.color && measures.color.name == measures.shape.name)){
                     hover = hover +  ', \n' + measures.shape.label + ': ';
-                    if(row[measures.shape.name].displayValue){
-                        hover = hover + row[measures.shape.name].displayValue;
-                    } else {
-                        hover = hover + row[measures.shape.name].value;
+                    if(row[measures.shape.name]){
+                        if(row[measures.shape.name].displayValue){
+                            hover = hover + row[measures.shape.name].displayValue;
+                        } else {
+                            hover = hover + row[measures.shape.name].value;
+                        }
                     }
                 }
                 return hover;

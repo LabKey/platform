@@ -100,7 +100,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         var disable = true;
         if(measure.length > 0){
             measure = measure[0];
-            if(measure.data.type == 'int' || measure.data.type == 'float'){
+            if(measure.data.normalizedType == 'int' || measure.data.normalizedType == 'float' || measure.data.normalizedType == 'double'){
                 disable = false;
             }
         }

@@ -99,7 +99,9 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
                         }
 
                         this.displayIndividualCheckbox.enable();
+                        this.displayIndividualCheckbox.setValue(false);
                         this.displayAggregateCheckbox.enable();
+                        this.displayAggregateCheckbox.setValue(true);
 
                         this.subjectSelectionChange = true;
                     }

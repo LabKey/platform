@@ -196,7 +196,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         }
 
         // if there is not a default number of selection to make initially, set it to select all
-        if (!this.maxInitSelection)
+        if (this.maxInitSelection === undefined)
             this.maxInitSelection = target.store.getCount();
 
         this.fireEvent('beforeInitGroupConfig', this, target.store);
@@ -290,7 +290,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         var target = this.getGrid();
         var rec = target.getStore().findRecord('id', id);
         if (rec)
-            target.getSelectionModel().select(rec);
+            target.getSelectionModel().select(rec, true);
 
         if (stopEvents)
             this.resumeEvents();
@@ -454,6 +454,17 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                 border : false,
                 frame : false
             }));
+        }
+
+        if (!filterPanels.length)
+        {
+            filterPanels.push({
+                xtype : 'box',
+                autoEl: {
+                    tag : 'div',
+                    html: 'No Groups defined'
+                }
+            });
         }
 
         this.on('beforeInitGroupConfig', this.handleBeforeInitGroupConfig, this);

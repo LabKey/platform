@@ -18,6 +18,8 @@ package gwt.client.org.labkey.study.designer.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 
+import java.util.Arrays;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Mark Igra
@@ -139,6 +141,14 @@ public class GWTAssayDefinition implements IsSerializable
     public void setLabs(String[] labs)
     {
         this.labs = labs;
+        //Make sure default lab is valid
+        if (labs != null && labs.length > 0)
+        {
+            if (this.defaultLab == null || !Arrays.asList(labs).contains(this.defaultLab))
+                this.defaultLab = labs[0];
+        }
+        else
+            this.defaultLab = null;
     }
 
     public String getDefaultLab()
