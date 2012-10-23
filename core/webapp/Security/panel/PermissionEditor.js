@@ -24,9 +24,9 @@ Ext4.define('Security.panel.PermissionEditor', {
             items  : this.getItems()
         });
 
-        if (!this.treeConfig) {
-            console.warn('A treeConfig was not supplied. Unable to show Folder Tree.');
-        }
+//        if (!this.treeConfig) {
+//            console.warn('A treeConfig was not supplied. Unable to show Folder Tree.');
+//        }
 
         this.callParent();
     },
@@ -91,7 +91,7 @@ Ext4.define('Security.panel.PermissionEditor', {
         this.tabPanel = Ext4.create('Ext.tab.Panel', {
             xtype      : 'tabpanel',
             region     : 'center',
-            activeTab  : 0, // this.isSiteRoot ? "siteGroups" : 0, // TODO: Permissions tab broken if not initially selected
+            activeTab  : this.resolveActiveTab(),
             autoHeight : false,
             border     : true,
             defaults   : {style : {padding:'5px'}},
@@ -100,6 +100,21 @@ Ext4.define('Security.panel.PermissionEditor', {
         });
 
         return this.tabPanel;
+    },
+
+    resolveActiveTab : function() {
+
+        var valids = {
+            'permissions'  : true,
+            'sitegroups'   : true,
+            'projectgroups': true
+        };
+
+        var params = LABKEY.ActionURL.getParameters();
+        if (params['t'] && valids[params['t']]) {
+            return params['t'];
+        }
+        return (this.isSiteRoot ? 'sitegroups' : 0);
     },
 
     getTabItems : function() {
@@ -123,6 +138,7 @@ Ext4.define('Security.panel.PermissionEditor', {
 
         this.policyEditor = Ext4.create('Security.panel.PolicyEditor', {
             title  : 'Permissions',
+            itemId : 'permissions',
             cache  : this.securityCache,
             border : false,
             isSiteAdmin    : LABKEY.Security.currentUser.isSystemAdmin,
@@ -210,7 +226,7 @@ Ext4.define('Security.panel.PermissionEditor', {
 
         return {
             title  : projectId === '' ? 'Site Groups' : 'Project Groups',
-            itemId : projectId === '' ? 'siteGroups' : null,
+            itemId : projectId === '' ? 'sitegroups' : 'projectgroups', // required for URL lookup
             border : false,
             deferredRender : false,
             items  : items

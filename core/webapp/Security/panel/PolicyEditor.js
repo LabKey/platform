@@ -23,15 +23,6 @@ Ext4.define('Security.panel.PolicyEditor', {
 
         this.callParent(arguments);
 
-//        this.on('afterlayout', function(){
-//            if (!this.cache.ready) {
-//                this.getEl().mask('Loading Memberships...');
-//                this.cache.on('ready', function() {
-//                    this.getEl().unmask();
-//                }, this, {single: true});
-//            }
-//        }, this, {single: true});
-
         if (this.resourceId)
             this.setResource(this.resourceId);
         this.cache.principalsStore.on('remove',this.Principals_onRemove,this);
@@ -56,6 +47,13 @@ Ext4.define('Security.panel.PolicyEditor', {
     {
         this.callParent(arguments);
         window.onbeforeunload = LABKEY.beforeunload(this.isDirty, this);
+        if (this.redrawRequested) {
+            this.redrawRequested = false;
+            this.on('afterrender', function() {
+                this.firstRender = true;
+                this._redraw();
+            }, this, {single: true});
+        }
     },
 
     // config
@@ -144,7 +142,12 @@ Ext4.define('Security.panel.PolicyEditor', {
             if (role)
                 this.roles.push(role);
         }
-        this._redraw();
+        if (!this.isVisible()) {
+            this.redrawRequested = true;
+        }
+        else {
+            this._redraw();
+        }
     },
 
 
@@ -205,7 +208,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         if (this.firstRender) {
 
             this.firstRender = false;
-            this.removeAll();
+            this.removeAll(true);
 
             toAdd.push({
                 layout: 'hbox',
