@@ -48,7 +48,6 @@
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.LinkedList" %>
-<%@ page import="java.lang.reflect.Array" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
@@ -121,7 +120,7 @@
     </tr>
     <tr>
         <th align="left">Additional Properties</th>
-        <td>This study has <%=numProperties%> additional <%=propString%></td>
+        <td>This study has <%=numProperties%> additional <%=h(propString)%></td>
         <td><%
             Container p = c.getProject();
             if (p.hasPermission(user,AdminPermission.class))
@@ -149,8 +148,8 @@
     </tr>
     <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
     <tr>
-        <th align="left"><%= visitLabel %></th>
-        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%></td>
+        <th align="left"><%= h(visitLabel) %></th>
+        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=h(visitLabel)%></td>
         <td><%= textLink("Manage " + visitLabel, ManageVisitsAction.class) %></td>
     </tr>
     <% } %>
@@ -158,7 +157,7 @@
         <th align="left">Study Schedule</th>
          <td>This study defines <%= numDatasets %> Datasets
              <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-             and <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%>
+             and <%= getVisits(Visit.Order.DISPLAY).length %> <%=h(visitLabel)%>
              <% } %>
          </td>
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
@@ -222,7 +221,7 @@
     <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
         <th align="left">Repository Type</th>
-        <td>This study uses the <%=study.getRepositorySettings().isSimple() ? "standard" : "advanced"%> specimen repository</td>
+        <td>This study uses the <%=text(study.getRepositorySettings().isSimple() ? "standard" : "advanced")%> specimen repository</td>
         <td><%=textLink("Change Repository Type", new ActionURL(SpecimenController.ShowManageRepositorySettingsAction.class, c))%></td>
     </tr>
     <tr>
@@ -305,7 +304,7 @@
         ActionURL exportURL = PageFlowUtil.urlProvider(AdminUrls.class).getExportFolderURL(c);
         exportURL.addParameter("exportType", "study");
 %>
-<%=generateButton("Export Study", exportURL.getURIString())%>
+<%=generateButton("Export Study", exportURL)%>
 <%=generateButton("Reload Study", StudyController.ImportStudyAction.class)%>
 <%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
 <%=generateButton("Create Ancillary Study", "javascript:void(0)", "showNewStudyWizard()")%>
@@ -321,7 +320,7 @@
             var wizard = new LABKEY.study.CreateStudyWizard({
                 mode: 'ancillary',
                 studyName : <%=q(ancillaryStudyName)%>,
-                studyType: "<%=study.getTimepointType().toString()%>",
+                studyType: "<%=h(study.getTimepointType())%>",
                 subject: {
                     nounSingular: <%=q(study.getSubjectNounSingular())%>,
                     nounPlural: <%=q(study.getSubjectNounPlural())%>,
@@ -345,7 +344,7 @@
             var wizard = new LABKEY.study.CreateStudyWizard({
                 mode: 'publish',
                 studyName : <%=q(ancillaryStudyName)%>,
-                studyType: "<%=study.getTimepointType().toString()%>",
+                studyType: "<%=h(study.getTimepointType())%>",
                 subject: {
                     nounSingular: <%=q(study.getSubjectNounSingular())%>,
                     nounPlural: <%=q(study.getSubjectNounPlural())%>,

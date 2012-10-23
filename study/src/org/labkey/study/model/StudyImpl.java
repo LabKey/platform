@@ -213,12 +213,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getSharedProperties(this);
     }
 
-    public SampleRequestActor[] getSampleRequestActors() throws SQLException
+    public SampleRequestActor[] getSampleRequestActors()
     {
         return SampleManager.getInstance().getRequirementsProvider().getActors(getContainer());
     }
 
-    public Set<Integer> getSampleRequestActorsInUse() throws SQLException
+    public Set<Integer> getSampleRequestActorsInUse()
     {
         Collection<SampleRequestActor> actors = SampleManager.getInstance().getRequirementsProvider().getActorsInUse(getContainer());
         Set<Integer> ids = new HashSet<Integer>();
@@ -243,17 +243,17 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), user);
     }
 
-    public SampleRequestStatus[] getSampleRequestStatuses(User user) throws SQLException
+    public SampleRequestStatus[] getSampleRequestStatuses(User user)
     {
         return SampleManager.getInstance().getRequestStatuses(getContainer(), user);
     }
 
-    public Set<Integer> getSampleRequestStatusesInUse() throws SQLException
+    public Set<Integer> getSampleRequestStatusesInUse()
     {
         return SampleManager.getInstance().getRequestStatusIdsInUse(getContainer());
     }
 
-    public RepositorySettings getRepositorySettings() throws SQLException
+    public RepositorySettings getRepositorySettings()
     {
         return SampleManager.getInstance().getRepositorySettings(getContainer());
     }
@@ -623,7 +623,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _protocolDocumentEntityId = protocolDocumentEntityId;
     }
 
-    public void attachProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException
+    public void attachProtocolDocument(List<AttachmentFile> files , User user) throws IOException
     {
         AttachmentService.get().addAttachments(getProtocolDocumentAttachmentParent(), files, user);
         SearchService ss = ServiceRegistry.get(SearchService.class);
@@ -1012,10 +1012,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
                 createStudy();
                 _testAttachProtocolDoc(_testStudy);
                 _testDeleteProtocolDoc(_testStudy);
-            }
-            catch (Throwable t)
-            {
-                throw t;
             }
             finally
             {

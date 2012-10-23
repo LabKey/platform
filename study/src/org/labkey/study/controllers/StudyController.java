@@ -1300,17 +1300,10 @@ public class StudyController extends BaseStudyController
 
     public static void updateRepositorySettings(Container c, boolean simple)
     {
-        try
-        {
-            RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
-            reposSettings.setSimple(simple);
-            reposSettings.setEnableRequests(!simple);
-            SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
+        reposSettings.setSimple(simple);
+        reposSettings.setEnableRequests(!simple);
+        SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
     }
 
     @RequiresPermissionClass(ManageStudyPermission.class)

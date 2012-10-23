@@ -658,7 +658,7 @@ public class SampleManager
         return _primaryTypeHelper.get(c, "ExternalId");
     }
 
-    public SampleRequestStatus[] getRequestStatuses(Container c, User user) throws SQLException
+    public SampleRequestStatus[] getRequestStatuses(Container c, User user)
     {
         SampleRequestStatus[] statuses = _requestStatusHelper.get(c, "SortOrder");
         // if the 'not-yet-submitted' status doesn't exist, create it here, with sort order -1,
@@ -671,8 +671,15 @@ public class SampleManager
             notYetSubmittedStatus.setSpecimensLocked(true);
             notYetSubmittedStatus.setLabel("Not Yet Submitted");
             notYetSubmittedStatus.setSortOrder(-1);
-            Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
-            statuses = _requestStatusHelper.get(c, "SortOrder");
+            try
+            {
+                Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
+                statuses = _requestStatusHelper.get(c, "SortOrder");
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
         return statuses;
     }
@@ -713,7 +720,7 @@ public class SampleManager
         return false;
     }
 
-    public Set<Integer> getRequestStatusIdsInUse(Container c) throws SQLException
+    public Set<Integer> getRequestStatusIdsInUse(Container c)
     {
         SampleRequest[] requests = _requestHelper.get(c);
         Set<Integer> uniqueStatuses = new HashSet<Integer>();
@@ -843,7 +850,7 @@ public class SampleManager
                 new Object[]{request.getRowId(), request.getContainer().getId()}, Specimen.class);
     }
 
-    public RepositorySettings getRepositorySettings(Container container) throws SQLException
+    public RepositorySettings getRepositorySettings(Container container)
     {
         Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
                 container, "SpecimenRepositorySettings");
@@ -857,7 +864,7 @@ public class SampleManager
             return new RepositorySettings(container, settingsMap);
     }
 
-    public void saveRepositorySettings(Container container, RepositorySettings settings) throws SQLException
+    public void saveRepositorySettings(Container container, RepositorySettings settings)
     {
         Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser().getUserId(),
                 container, "SpecimenRepositorySettings", true);
@@ -1578,17 +1585,10 @@ public class SampleManager
 
     public boolean isSampleRequestEnabled(Container container)
     {
-        try
-        {
-            if (!getRepositorySettings(container).isEnableRequests())
-                return false;
-            SampleRequestStatus[] statuses = _requestStatusHelper.get(container, "SortOrder");
-            return (statuses != null && statuses.length > 1);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        if (!getRepositorySettings(container).isEnableRequests())
+            return false;
+        SampleRequestStatus[] statuses = _requestStatusHelper.get(container, "SortOrder");
+        return (statuses != null && statuses.length > 1);
     }
 
     public List<String> getMissingSpecimens(SampleRequest sampleRequest) throws SQLException

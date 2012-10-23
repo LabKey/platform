@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.*;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -52,12 +51,12 @@ public abstract class BaseStudyPage extends JspBase
         return getStudy().getDataSets();
     }
 
-    protected SiteImpl[] getSites() throws SQLException
+    protected SiteImpl[] getSites()
     {
         return getStudy().getSites();
     }
 
-    protected CohortImpl[] getCohorts(User user) throws SQLException
+    protected CohortImpl[] getCohorts(User user)
     {
         return getStudy().getCohorts(user);
     }
