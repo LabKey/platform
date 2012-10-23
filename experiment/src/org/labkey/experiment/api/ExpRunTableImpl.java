@@ -648,11 +648,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             out.write(buildString(ctx, true));
         }
 
-        public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            out.write(buildString(ctx, true));
-        }
-
         @Override
         public void addQueryFieldKeys(Set<FieldKey> keys)
         {

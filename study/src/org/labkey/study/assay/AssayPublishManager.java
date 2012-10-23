@@ -35,6 +35,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -78,7 +79,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
@@ -858,7 +858,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return study.getTimepointType();
     }
 
-    public boolean hasMismatchedInfo(List<Integer> allObjects, AssayProtocolSchema schema)
+    public boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema)
     {
         TableInfo tableInfo = schema.createDataTable();
         if (tableInfo == null)
@@ -866,37 +866,21 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         AssayTableMetadata tableMetadata = schema.getProvider().getTableMetadata(schema.getProtocol());
 
+        // Try to find the column that tells us if the specimen matches
         FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
-
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, Collections.singleton(matchFieldKey));
         ColumnInfo matchColumn = columns.get(matchFieldKey);
-
         if (matchColumn == null)
         {
+            // Couldn't find it, so there's no use in trying to reset to the study's version of the specimen data
             return false;
         }
 
-        // TODO: Shouldn't the rest of this method be a simple EXISTS query?
-        // I.e., add "<matchColumn> = FALSE" to filter and then return new TableSelector(tableInfo, filter, null).exists()
-        SimpleFilter filter = new SimpleFilter();
-        filter.addClause(new SimpleFilter.InClause(tableMetadata.getResultRowIdFieldKey().toString(), allObjects));
-
-        try
-        {
-            Boolean[] matches = Table.executeArray(tableInfo, matchColumn, filter, null, Boolean.class);
-            for (Boolean match : matches)
-            {
-                if (Boolean.FALSE.equals(match))
-                {
-                    return true;
-                }
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        return false;
+        // Check if there are any rows that have been selected to copy that have specimen data that doesn't match
+        // the target study
+        SimpleFilter filter = new SimpleFilter(matchFieldKey, false);
+        filter.addClause(new SimpleFilter.InClause(tableMetadata.getResultRowIdFieldKey(), dataRowPKs));
+        return new TableSelector(tableInfo, filter, null).exists();
     }
 
     /** Automatically copy assay data to a study if the design is set up to do so */

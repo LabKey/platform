@@ -53,24 +53,6 @@ public class StackTraceDisplayColumn extends DataColumn
         renderContents(ctx, out, Integer.MAX_VALUE);
     }
 
-    private List<String> trimStackTrace(List<String> fullTrace)
-    {
-        List<String> result = new ArrayList<String>();
-        int i = fullTrace.size() - 1;
-        while (i >= 0)
-        {
-            String line = fullTrace.get(i);
-            if (!line.startsWith("\tat java.") &&
-                !line.startsWith("\tat javax.") &&
-                !line.startsWith("\tat org.apache."))
-            {
-
-            }
-            i--;
-        }
-        return null;
-    }
-
     private void renderContents(RenderContext ctx, Writer out, int maxLines) throws IOException
     {
         String stackTrace = (String)getValue(ctx);

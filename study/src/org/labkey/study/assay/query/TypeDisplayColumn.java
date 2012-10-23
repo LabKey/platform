@@ -55,11 +55,6 @@ public class TypeDisplayColumn extends DataColumn
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        renderDetailsCellContents(ctx, out);
-    }
-
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
-    {
         String lsid = (String)getColumnInfo().getValue(ctx);
         if (lsid != null)
         {
