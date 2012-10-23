@@ -110,6 +110,12 @@ public class QuerySchemaWrapper implements QuerySchema
         return _schema.getName();
     }
 
+    @Override
+    public String getSchemaName()
+    {
+        return _schema.getName();
+    }
+
     public String getDescription()
     {
         return "Contains data tables from the '" + _schema.getName() + "' database schema.";

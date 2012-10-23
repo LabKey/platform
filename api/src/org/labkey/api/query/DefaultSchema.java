@@ -238,6 +238,12 @@ final public class DefaultSchema extends AbstractSchema
         return null;
     }
 
+    /** Returns a SchemaKey encoded name for this schema. */
+    public String getSchemaName()
+    {
+        return getName();
+    }
+
     @Override
     public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
     {
