@@ -1028,6 +1028,13 @@ groupByLoop:
             {
                 return _orderBy != null && !_orderBy.childList().isEmpty();
             }
+
+            @Override
+            public String getPublicSchemaName()
+            {
+                // Use the QuerySchema name, not the DbSchema name
+                return _relation.getSchema().getSchemaName();
+            }
         };
 
         for (SelectColumn col : _columns.values())
