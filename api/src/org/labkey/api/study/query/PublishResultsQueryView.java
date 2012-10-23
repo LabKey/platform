@@ -935,7 +935,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
         FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
         FieldKey specimenPTIDFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "ParticipantID");
-        FieldKey specimenVisitFieldKey = new FieldKey(new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "Visit"), "SequenceNumMin");
+        FieldKey specimenVisitFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "SequenceNum");
         FieldKey specimenDateFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "DrawTimestamp");
         Set<FieldKey> fieldKeys = new HashSet<FieldKey>(Arrays.asList(runIdFieldKey, objectIdFieldKey, assayPTIDFieldKey, assayVisitIDFieldKey, assayDateFieldKey, specimenIDFieldKey, matchFieldKey, specimenPTIDFieldKey, specimenVisitFieldKey, specimenDateFieldKey));
 
