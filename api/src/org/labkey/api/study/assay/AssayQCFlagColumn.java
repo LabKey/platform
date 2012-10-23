@@ -65,12 +65,6 @@ public class AssayQCFlagColumn extends ExprColumn
                 return new DataColumn(colInfo)
                 {
                     @Override
-                    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
-                    {
-                        renderGridCellContents(ctx, out);
-                    }
-
-                    @Override
                     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                     {
                         if (null != getValue(ctx))

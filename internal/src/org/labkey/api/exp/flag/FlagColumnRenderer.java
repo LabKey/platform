@@ -165,11 +165,6 @@ public class FlagColumnRenderer extends DataColumn
     }
 
 
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
-    {
-        renderFlag(ctx, out);
-    }
-
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         renderFlag(ctx, out);

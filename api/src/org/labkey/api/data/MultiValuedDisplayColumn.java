@@ -54,7 +54,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
         }
     }
 
-    @Override         // TODO: Need similar for renderDetailsCellContents()
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
@@ -68,6 +68,49 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
         }
 
         // TODO: Call super in empty values case?
+    }
+
+    @Override
+    public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
+    {
+        if (null == _caption)
+            out.write("<td colspan=" + (span + 1) + ">");
+        else
+            out.write("<td colspan=" + span + ">");
+        renderGridCellContents(ctx, out);
+        out.write("</td>");
+    }
+
+    @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
+        String sep = "";
+        StringBuilder sb = new StringBuilder();
+
+        while (mvCtx.next())
+        {
+            sb.append(sep);
+            sep = ", ";
+            sb.append(super.getDisplayValue(mvCtx));
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public String getTsvFormattedValue(RenderContext ctx)
+    {
+        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
+        String sep = "";
+        StringBuilder sb = new StringBuilder();
+
+        while (mvCtx.next())
+        {
+            sb.append(sep);
+            sep = ", ";
+            sb.append(super.getTsvFormattedValue(mvCtx));
+        }
+        return sb.toString();
     }
 
     public Object getJsonValue(RenderContext ctx)

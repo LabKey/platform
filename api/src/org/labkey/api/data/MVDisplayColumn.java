@@ -163,12 +163,6 @@ public class MVDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
-    {
-        renderGridCellContents(ctx, out);
-    }
-
-    @Override
     public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
     {
         out.write("<td colspan=" + span + ">");

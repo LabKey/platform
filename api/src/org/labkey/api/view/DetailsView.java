@@ -51,11 +51,6 @@ public class DetailsView extends DataView
 
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
     {
-        //UNDONE String err = PageFlowUtil.getStrutsError(ctx.getRequest(), "dataregion_" + getDataRegion().getName());
-        String err = null;
-        if (err != null && err.length() > 0)
-            out.write(err.replaceAll(System.getProperty("line.separator"), "<br>"));
-
         if (ctx.getResultSet() == null)
         {
             Filter filter = ctx.getBaseFilter();

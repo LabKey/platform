@@ -229,41 +229,8 @@ public class DataColumn extends DisplayColumn
 
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        Object value = _boundColumn.getValue(ctx);
-        if (null != value)
-        {
-            String url = renderURL(ctx);
-
-            if (null != url)
-            {
-                out.write("<a href=\"");
-                out.write(PageFlowUtil.filter(url));
-
-                String linkTarget = getLinkTarget();
-
-                if (null != linkTarget)
-                {
-                    out.write("\" target=\"");
-                    out.write(linkTarget);
-                }
-
-                String css = getCssStyle(ctx);
-                if (!css.isEmpty())
-                {
-                    out.write("\" style=\"");
-                    out.write(css);
-                }
-
-                out.write("\">");
-            }
-
-            out.write(getFormattedValue(ctx));
-
-            if (null != url)
-            {
-                out.write("</a>");
-            }
-        }
+        // By default, use the same rendering for both the details and grid views
+        renderGridCellContents(ctx, out);
     }
 
     public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException

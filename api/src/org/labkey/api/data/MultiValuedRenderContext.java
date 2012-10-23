@@ -20,7 +20,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.junit.Test;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.view.ViewContext;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +37,8 @@ public class MultiValuedRenderContext extends RenderContextDecorator
     private final Map<FieldKey, Iterator<String>> _iterators = new HashMap<FieldKey, Iterator<String>>();
     private final Map<FieldKey, String> _currentValues = new HashMap<FieldKey, String>();
 
+    public static final String VALUE_DELIMETER = "{@~^";
+
     public MultiValuedRenderContext(RenderContext ctx, Set<FieldKey> requiredFieldKeys)
     {
         super(ctx);
@@ -48,14 +49,14 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         Set<FieldKey> nullFieldKeys = new HashSet<FieldKey>();
         for (FieldKey fieldKey : requiredFieldKeys)
         {
-            String valueString = (String)ctx.get(fieldKey);
-            if (valueString == null)
+            Object value = ctx.get(fieldKey);
+            if (value == null)
             {
                 nullFieldKeys.add(fieldKey);
             }
             else
             {
-                String[] values = valueString.split(",");
+                String[] values = value.toString().split("\\Q" + VALUE_DELIMETER + "\\E");
                 if (length != -1 && values.length != length)
                 {
                     throw new IllegalStateException("Expected all columns to have the same number of values, but '" + fieldKey + "' has " + values.length + " and " + _iterators.keySet() + " had " + length);
@@ -129,8 +130,8 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             fieldKeys.add(_fk1);
             fieldKeys.add(_fk2);
             Map<FieldKey, String> values = new HashMap<FieldKey, String>();
-            values.put(_fk1, "1,2,3");
-            values.put(_fk2, "a,b,c");
+            values.put(_fk1, "1" + VALUE_DELIMETER + "2" + VALUE_DELIMETER + "3");
+            values.put(_fk2, "a" + VALUE_DELIMETER + "b" + VALUE_DELIMETER + "c");
             MultiValuedRenderContext mvContext = new MultiValuedRenderContext(new TestRenderContext(values), fieldKeys);
             assertTrue(mvContext.next());
             assertEquals(1, mvContext.get(_fk1));
@@ -153,8 +154,8 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             fieldKeys.add(_fk2);
             fieldKeys.add(_otherFK);
             Map<FieldKey, String> values = new HashMap<FieldKey, String>();
-            values.put(_fk1, "1,2,3");
-            values.put(_fk2, "a,b,c");
+            values.put(_fk1, "1" + VALUE_DELIMETER + "2" + VALUE_DELIMETER + "3");
+            values.put(_fk2, "a" + VALUE_DELIMETER + "b" + VALUE_DELIMETER + "c");
             MultiValuedRenderContext mvContext = new MultiValuedRenderContext(new TestRenderContext(values), fieldKeys);
             assertTrue(mvContext.next());
             assertEquals(1, mvContext.get(_fk1));
@@ -178,8 +179,8 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             fieldKeys.add(_fk1);
             fieldKeys.add(_fk2);
             Map<FieldKey, String> values = new HashMap<FieldKey, String>();
-            values.put(_fk1, "1,2,3");
-            values.put(_fk2, "a,b,c,d");
+            values.put(_fk1, "1" + VALUE_DELIMETER + "2" + VALUE_DELIMETER + "3");
+            values.put(_fk2, "a" + VALUE_DELIMETER + "b" + VALUE_DELIMETER + "c" + VALUE_DELIMETER + "d");
             try
             {
                 new MultiValuedRenderContext(new TestRenderContext(values), fieldKeys);
