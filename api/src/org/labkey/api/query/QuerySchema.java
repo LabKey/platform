@@ -40,7 +40,7 @@ public interface QuerySchema extends SchemaTreeNode
 
     public Collection<TableInfo> getTables();
 
-    // Could be null if, for example, provider hides schema when module is inactive.
+    /** Could be null if, for example, provider hides schema when module is inactive. */
     public @Nullable QuerySchema getSchema(String name);
 
     public Set<String> getSchemaNames();
@@ -55,4 +55,6 @@ public interface QuerySchema extends SchemaTreeNode
     public @Nullable String getDescription();
 
     public NavTree getSchemaBrowserLinks(User user);
+
+    boolean isHidden();
 }

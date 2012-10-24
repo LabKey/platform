@@ -29,6 +29,7 @@ abstract public class AbstractSchema implements QuerySchema
     protected DbSchema _dbSchema;
     protected User _user;
     protected Container _container;
+    protected boolean _hidden = false;
 
     public AbstractSchema(DbSchema dbSchema, User user, Container container)
     {
@@ -133,5 +134,11 @@ abstract public class AbstractSchema implements QuerySchema
     public NavTree getSchemaBrowserLinks(User user)
     {
         return new NavTree();
+    }
+
+    @Override
+    public boolean isHidden()
+    {
+        return _hidden;
     }
 }

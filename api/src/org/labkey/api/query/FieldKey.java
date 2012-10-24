@@ -239,7 +239,7 @@ public class FieldKey extends QueryKey<FieldKey>
     public static class TestCase extends Assert
     {
         @Test
-        public void test()
+        public void testCompare()
         {
             assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"a")) == 0);
             assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"A")) == 0);
@@ -258,6 +258,24 @@ public class FieldKey extends QueryKey<FieldKey>
             // shorter sorts first, don't really care but that's easier given the datastructure
             assertTrue(FieldKey.fromParts("z").compareTo(fromParts("a","b")) < 0);
             assertTrue(FieldKey.fromParts("a","b").compareTo(fromParts("z")) > 0);
+        }
+
+        @Test
+        public void testParse()
+        {
+            assertEquals(FieldKey.fromParts("Slash/Separated"), FieldKey.fromString("Slash$SSeparated"));
+            assertEquals(FieldKey.fromParts("Dollar$Separated"), FieldKey.fromString("Dollar$DSeparated"));
+            assertEquals(FieldKey.fromParts("Tilde~Separated"), FieldKey.fromString("Tilde$TSeparated"));
+            assertEquals(FieldKey.fromParts("Parent", "Tilde~Separated"), FieldKey.fromString("Parent/Tilde$TSeparated"));
+        }
+
+        @Test
+        public void testEncode()
+        {
+            assertEquals("Slash$SSeparated", FieldKey.fromParts("Slash/Separated").toString());
+            assertEquals("Dollar$DSeparated", FieldKey.fromParts("Dollar$Separated").toString());
+            assertEquals("Tilde$TSeparated", FieldKey.fromParts("Tilde~Separated").toString());
+            assertEquals("Parent/Tilde$TSeparated", FieldKey.fromParts("Parent", "Tilde~Separated").toString());
         }
     }
 }

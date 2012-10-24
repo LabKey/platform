@@ -186,7 +186,7 @@ final public class DefaultSchema extends AbstractSchema
                 continue;
             }
             UserSchema userSchema = (UserSchema) schema;
-            if (userSchema.getName() == null)
+            if (userSchema.getName() == null || userSchema.isHidden())
                 continue;
             ret.add(schemaName);
         }

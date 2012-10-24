@@ -133,4 +133,10 @@ public class QuerySchemaWrapper implements QuerySchema
         // Skip visiting
         return null;
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

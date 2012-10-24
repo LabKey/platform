@@ -188,8 +188,6 @@ abstract public class UserSchema extends AbstractSchema
             if (def == null)
                 return null;
 
-            if (!includeExtraMetadata)
-                def.setMetadataXml(null);
             torq = def;
         }
 

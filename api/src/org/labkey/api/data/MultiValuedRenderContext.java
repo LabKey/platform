@@ -38,6 +38,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
     private final Map<FieldKey, String> _currentValues = new HashMap<FieldKey, String>();
 
     public static final String VALUE_DELIMETER = "{@~^";
+    public static final String VALUE_DELIMETER_REGEX = "\\Q{@~^\\E";
 
     public MultiValuedRenderContext(RenderContext ctx, Set<FieldKey> requiredFieldKeys)
     {
@@ -56,7 +57,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             }
             else
             {
-                String[] values = value.toString().split("\\Q" + VALUE_DELIMETER + "\\E");
+                String[] values = value.toString().split(VALUE_DELIMETER_REGEX);
                 if (length != -1 && values.length != length)
                 {
                     throw new IllegalStateException("Expected all columns to have the same number of values, but '" + fieldKey + "' has " + values.length + " and " + _iterators.keySet() + " had " + length);
