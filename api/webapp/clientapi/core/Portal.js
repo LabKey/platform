@@ -38,6 +38,8 @@ LABKEY.Portal = new function()
     var REMOVE_ACTION = 'remove';
     var MOVE_UP = 0;
     var MOVE_DOWN = 1;
+    var MOVE_LEFT = 0;
+    var MOVE_RIGHT = 1;
 
     function wrapSuccessCallback(userSuccessCallback, action, webPartId, direction)
     {
@@ -349,7 +351,7 @@ LABKEY.Portal = new function()
 
 
         /**
-         * Move an existing web part up within its portal page, identifying the web part by the unique ID of the containing span.
+         * Move an existing web part down within its portal page, identifying the web part by the unique ID of the containing span.
          * This span will have name 'webpart'.
          * @param config An object which contains the following configuration properties.
          * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
@@ -397,7 +399,7 @@ LABKEY.Portal = new function()
             });
         },
         /**
-         * Move an existing web part up within its portal page.
+         * Remove an existing web part within its portal page.
          * @param config An object which contains the following configuration properties.
          * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
          * If not provided, main portal page for the container will be modified.
@@ -441,6 +443,62 @@ LABKEY.Portal = new function()
                 success: LABKEY.Utils.getOnSuccess(callConfig),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
                 params: callConfig.params
+            });
+        },
+
+        /**
+         * Move a folder tab to the left.
+         * @param config An object which contains the following configuration properties.
+         * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
+         */
+        moveTabLeft : function(config)
+        {
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
+                method: 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(function(response, options){
+                    if(response.oldIndex && response.newIndex && response.oldIndex != response.newIndex){
+                        var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
+                        var from = tabs[response.oldIndex - 1];
+                        var to = tabs[response.newIndex - 1];
+                        LABKEY.ExtAdapter.get(from).insertBefore(to);
+                    }
+                }, this, false),
+                failure: function(response){
+                    // Currently no-op when failure occurs.
+                },
+                params: {
+                    pageId: config.pageId,
+                    direction: MOVE_LEFT
+                }
+            });
+        },
+
+        /**
+         * Move a folder tab to the right.
+         * @param config An object which contains the following configuration properties.
+         * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
+         */
+        moveTabRight : function(config)
+        {
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
+                method: 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(function(response, options){
+                    if(response.oldIndex && response.newIndex && response.oldIndex != response.newIndex){
+                        var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
+                        var from = tabs[response.oldIndex - 1];
+                        var to = tabs[response.newIndex - 1];
+                        LABKEY.ExtAdapter.get(from).insertAfter(to);
+                    }
+                }, this, false),
+                failure: function(response, options){
+                    // Currently no-op when failure occurs.
+                },
+                params: {
+                    pageId: config.pageId,
+                    direction: MOVE_RIGHT
+                }
             });
         }
     };

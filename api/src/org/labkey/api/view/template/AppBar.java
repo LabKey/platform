@@ -39,6 +39,7 @@ public class AppBar extends NavTree
 
     private String _pageTitle;
     private List<NavTree> _navTrail;
+    private List<NavTree> _subContainerTabs;
 
     public AppBar(String folderTitle, ActionURL titleURL, NavTree... buttons)
     {
@@ -49,6 +50,13 @@ public class AppBar extends NavTree
     {
         super(folderTitle, titleURL);
         addChildren(buttons);
+    }
+
+    public AppBar(String folderTitle, ActionURL titleURL, List<NavTree> buttons, List<NavTree> subContainerTabs)
+    {
+        super(folderTitle, titleURL);
+        addChildren(buttons);
+        setSubContainerTabs(subContainerTabs);
     }
 
     public String getFolderTitle()
@@ -89,6 +97,16 @@ public class AppBar extends NavTree
     {
         _navTrail = fixCrumbTrail(navTrail, context);
         return _navTrail;
+    }
+
+    public List<NavTree> getSubContainerTabs()
+    {
+        return _subContainerTabs;
+    }
+
+    public void setSubContainerTabs(List<NavTree> subContainerTabs)
+    {
+        _subContainerTabs = subContainerTabs;
     }
 
     /**

@@ -1119,6 +1119,26 @@ public class Portal
         return;
     }
 
+    public static void updatePortalPage(Container c, PortalPage page)
+    {
+        if(null != page)
+        {
+            try
+            {
+                page = page.copy();
+                Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                WebPartCache.remove(ContainerManager.getForId(page.getContainer()),  page.getPageId());
+            }
+        }
+    }
+
     public static final String PROP_CUSTOMTAB = "customTab";
 
     public static void addProperty(Container container, String pageId, String property)

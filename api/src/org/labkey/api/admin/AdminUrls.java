@@ -48,6 +48,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getCustomizeEmailURL(Container c, Class<? extends EmailTemplate> selectedTemplate, URLHelper returnURL);
     ActionURL getFilesSiteSettingsURL(boolean upgrade);
     ActionURL getSessionLoggingURL();
+    ActionURL getAddTabURL(Container c, URLHelper returnURL);
 
     NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
 }

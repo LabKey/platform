@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -33,6 +34,8 @@ import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -131,17 +134,37 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         List<FolderTab> folderTabs = getFolderTabs(container, this);
         Map<String,Portal.PortalPage> portalPages = Portal.getPages(container, false);
         List<NavTree> buttons = new ArrayList<NavTree>();
-
+        List<NavTree> subContainerTabs = new ArrayList<NavTree>();
+        Map<String, FolderTab> folderTabMap = new HashMap<String, FolderTab>();
+        ArrayList<Portal.PortalPage> sortedPages = new ArrayList<Portal.PortalPage>(portalPages.values());
         _activePortalPage = null;
         Map<String, NavTree> navMap = new LinkedHashMap<String, NavTree>();
+
+        Collections.sort(sortedPages, new Comparator<Portal.PortalPage>()
+        {
+            @Override
+            public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
+            {
+                return o1.getIndex() - o2.getIndex();
+            }
+        });
+
         for (FolderTab folderTab : folderTabs)
         {
+            folderTabMap.put(folderTab.getName(), folderTab);
+        }
+
+        for (int i = 0; i < sortedPages.size(); i++)
+        {
+            FolderTab folderTab = folderTabMap.get(sortedPages.get(i).getPageId());
+            Portal.PortalPage portalPage = sortedPages.get(i);
+            
             if (folderTab != null && folderTab.isVisible(container, ctx.getUser()))
             {
-                Portal.PortalPage portalPage = portalPages.get(folderTab.getName());
                 String label = folderTab.getCaption(ctx);
                 NavTree nav = new NavTree(label, folderTab.getURL(container, ctx.getUser()));
                 nav.setId("portal:" + portalPage.getPageId());
+                nav.addChild(getTabMenu(ctx, folderTab, portalPage));
                 buttons.add(nav);
                 navMap.put(portalPage.getPageId(), nav);
                 // Stop looking for a tab to select if we've already found one
@@ -172,7 +195,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                                     if (!subTab.isVisible(folderContainer, ctx.getUser()))
                                         continue;
                                     NavTree subNav = new NavTree(subTab.getCaption(ctx), subTab.getURL(folderContainer, ctx.getUser()));
-                                    nav.addChild(subNav);
+                                    subContainerTabs.add(subNav);
                                     if (subTab.isSelectedPage(ctx))         // Use original context to determine whether to select
                                     {
                                         subNav.setSelected(true);
@@ -181,7 +204,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                                 }
 
                                 if (!foundSelected && nav.getChildCount() > 0)
-                                    nav.getChildren()[0].setSelected(true);
+                                    subContainerTabs.get(0).setSelected(true);
                             }
                         }
                    }
@@ -209,7 +232,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             migrateLegacyPortalPage(ctx.getContainer());
         }
 
-        return new AppBar(getFolderTitle(ctx), ctx.getContainer().getStartURL(ctx.getUser()), buttons);
+        return new AppBar(getFolderTitle(ctx), ctx.getContainer().getStartURL(ctx.getUser()), buttons, subContainerTabs);
     }
 
 
@@ -310,5 +333,56 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     public FolderTab getDefaultTab()
     {
         return _defaultTab == null ? getDefaultTabs().get(0) : _defaultTab;
+    }
+
+    private NavTree getTabMenu(ViewContext ctx, FolderTab folderTab, Portal.PortalPage portalPage)
+    {
+        NavTree menu = new NavTree("Tab Administration");
+        ActionURL removeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getHidePortalPageURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
+        NavTree moveMenu = new NavTree("Move");
+
+        moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft({pageId: \"" + portalPage.getPageId() + "\"});"));
+        moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight({pageId: \"" + portalPage.getPageId() + "\"});"));
+
+        menu.addChild(new NavTree("Remove", removeURL));
+        menu.addChild(moveMenu);
+
+        // TODO: Determing permissions and settings links.
+//        menu.addChild(new NavTree("Permissions"));
+//        menu.addChild(new NavTree("Settings"));
+
+        if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
+        {
+            Container tabContainer = ContainerManager.getChild(ctx.getContainer(), folderTab.getName());
+
+            if (null != tabContainer)
+            {
+                menu.addSeparator();
+                // might need to pass tabContainer into this.
+                tabContainer.getFolderType().addManageLinks(menu, tabContainer);
+                menu.addSeparator();
+
+                NavTree moduleMenu = new NavTree("Go to Module");
+
+                for (Module module : tabContainer.getActiveModules())
+                {
+                    if (null == module || module.equals(tabContainer.getDefaultModule()))
+                        continue;
+
+                    ActionURL tabUrl = module.getTabURL(tabContainer, ctx.getUser());
+
+                    if(null != tabUrl)
+                        moduleMenu.addChild(new NavTree(module.getTabName(ctx), tabUrl));
+
+                }
+
+                if(moduleMenu.getChildCount() > 0)
+                {
+                    menu.addChild(moduleMenu);
+                }
+            }
+        }
+
+        return menu;
     }
 }

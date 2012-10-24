@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.FolderTab" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page import="org.labkey.api.view.template.AppBarView" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -40,53 +39,49 @@
         folderTitle = "Home";
 
     NavTree[] tabs = bean.getButtons();
-    NavTree[] portalTabs = bean.getSelected().getChildren();
+    List<NavTree> portalTabs = bean.getSubContainerTabs();
 %>
 <div class="labkey-app-bar">
     <div class="labkey-folder-header">
         <div class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(folderTitle)%></a></div>
         <div class="button-bar">
-            <ul class="labkey-tab-strip">
+            <ul>
                 <%
                     for (NavTree navTree : tabs)
                     {
                         if (null != navTree.getText() && navTree.getText().length() > 0)
                         {
                 %>
-                        <li class="<%=text(navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive")%>">
+                        <li class="<%=text(navTree.isSelected() ? "labkey-app-bar-tab-active" : "labkey-app-bar-tab-inactive")%>">
                             <a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a>
+                            <%
+                                if(navTree.getChildCount() > 0)
+                                {
+                            %>
+                                    <span class="labkey-tab-menu" style="visibility:hidden;">
+                            <%
+                                    NavTree tabMenu = navTree.getChildren()[0];
+                                    PopupMenu tabMenuPopup = new PopupMenu(tabMenu);
+                                    tabMenu.setImage(request.getContextPath() + "/_images/text_link_arrow.gif", 10, 5);
+                                    tabMenuPopup.setAlign(PopupMenu.Align.RIGHT);
+                                    org.labkey.api.view.PopupMenuView popup = new org.labkey.api.view.PopupMenuView(tabMenuPopup);
+                                    popup.setButtonStyle(org.labkey.api.view.PopupMenu.ButtonStyle.IMAGE);
+                                    me.include(popup, out);
+                            %>
+                                    </span>
+                            <%
+                                }
+                            %>
                         </li>
                 <%
                         }
                     }
-                    if (context.getContainer().getFolderType().hasConfigurableTabs() && context.hasPermission(org.labkey.api.security.permissions.AdminPermission.class))
+                    if(context.getUser().isAdministrator())
                     {
-                        NavTree link = new NavTree("Tab Administration");
-                        if (tabs.length > 1)
-                        {
-                            NavTree removeNode = new NavTree("Remove tab");
-                            for (NavTree tab : tabs)
-                            {
-                                if (tab.getId().startsWith("portal:"))
-                                {
-                                    String pageId = tab.getId().substring("portal:".length());
-                                    ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getHidePortalPageURL(context.getContainer(), pageId, getViewContext().getActionURL());
-                                    NavTree removeTab = new NavTree(tab.getText(), url);
-                                    removeNode.addChild(removeTab);
-                                }
-                            }
-                            link.addChild(removeNode);
-                        }
-
-                        link.addChild(new NavTree("Reset to default tabs", PageFlowUtil.urlProvider(ProjectUrls.class).getResetDefaultTabsURL(context.getContainer(), getViewContext().getActionURL())));
-
-                        PopupMenu menu = new PopupMenu(link);
-                        menu.setAlign(PopupMenu.Align.RIGHT);
-                        link.setImage(request.getContextPath() + "/_images/text_link_arrow.gif", 10, 5);
-                        org.labkey.api.view.PopupMenuView popup = new org.labkey.api.view.PopupMenuView(menu);
-                        popup.setButtonStyle(org.labkey.api.view.PopupMenu.ButtonStyle.IMAGE);
                 %>
-                    <li class="labkey-tab-inactive"><% me.include(popup, out); %></li>
+                    <li class="labkey-app-bar-add-tab">
+                        <a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getAddTabURL(context.getContainer().getProject(), context.getActionURL())%>">+</a>
+                    </li>
                 <%
                     }
                 %>
@@ -97,8 +92,8 @@
 </div>
 
 <%
-    if (portalTabs.length > 0)
-    {
+     if (portalTabs != null && portalTabs.size() > 1)
+     {
 %>
         <div class="labkey-sub-container-tab-strip">
             <ul>
@@ -119,6 +114,7 @@
                     }
                 %>
             </ul>
+            <div style="clear: both;"></div>
         </div>
 <%
     }
@@ -144,26 +140,56 @@
 
 <script type="text/javascript">
     (function(){
-        Ext4.onReady(function(){
+        var setMinWidth = function(){
             var buttonBar = Ext4.get(Ext4.query('.labkey-folder-header .button-bar')[0]);
             var folderTitle = Ext4.get(Ext4.query('.labkey-folder-title')[0]);
             var appBar = Ext4.get(Ext4.query('.labkey-app-bar')[0]);
-            var tabAnchors = Ext4.query('.labkey-app-bar ul.labkey-tab-strip li a');
+            var tabMenus = Ext4.query('span.labkey-tab-menu');
+            var tabs = Ext4.query('.labkey-app-bar ul li');
             var totalWidth = 0;
 
-            for(var i = 0; i < tabAnchors.length; i++){
-                var anchor = Ext4.get(tabAnchors[i]);
-                totalWidth = totalWidth + anchor.getWidth() + 2; // add two for tab margin.
+            for(var i = 0; i < tabMenus.length; i++){
+                var tabMenu = Ext4.get(tabMenus[i]);
             }
 
-            // Add 60 for padding and margins.
-            appBar.dom.setAttribute('style', 'min-width: ' + (totalWidth + folderTitle.getWidth() + 60 ) + 'px;');
+            for(var i = 0; i < tabs.length; i++){
+                var anchor = Ext4.get(tabs[i]);
+                totalWidth = totalWidth + anchor.getWidth() + 10; // add two for tab padding and margin.
+            }
+
+            appBar.dom.setAttribute('style', 'min-width: ' + (totalWidth + folderTitle.getWidth()) + 'px;');
 
             if(Ext4.isIE7){
-                // We add a few more px for IE7 be
-//                appBar.setWidth(totalWidth + 20);
-                buttonBar.setWidth(totalWidth+10);
+                // We add a few more px for IE7
+                buttonBar.setWidth(totalWidth + 10);
             }
+        };
+
+        var addTabListeners = function(){
+            var tabs = Ext4.query('.labkey-app-bar ul li');
+            for(var i = 0; i < tabs.length; i++){
+                var tab = Ext4.get(tabs[i]);
+                tab.on('mouseover', function(){
+                    var tabMenu =  Ext4.get(this.query('span[class=labkey-tab-menu]')[0]);
+                    if(tabMenu){
+                       tabMenu.show();
+                    }
+                });
+
+                tab.on('mouseout', function(){
+                    var tabMenu =  Ext4.get(this.query('span[class=labkey-tab-menu]')[0]);
+                    if(tabMenu){
+                        tabMenu.hide();
+                    }
+                });
+            }
+        };
+
+        var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
+
+        Ext4.onReady(function(){
+            setMinWidth();
+            addTabListeners();
         });
     })();
 </script>
