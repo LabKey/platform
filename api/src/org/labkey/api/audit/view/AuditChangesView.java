@@ -52,7 +52,8 @@ public class AuditChangesView extends HttpView
         out.write("<table>\n");
         out.write("<tr class=\"labkey-wp-header\"><th colspan=\"2\" align=\"left\">Item Changes</th></tr>");
         out.write("<tr><td colspan=\"2\">Comment:&nbsp;<i>" + PageFlowUtil.filter(event.getComment()) + "</i></td></tr>");
-        out.write("<tr><td/>\n");
+
+        boolean update = !oldData.isEmpty() && !newData.isEmpty();
 
         for (Map.Entry<String, String> entry : oldData.entrySet())
         {
@@ -60,7 +61,7 @@ public class AuditChangesView extends HttpView
             out.write(entry.getKey());
             out.write("</td><td>");
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             String oldValue = entry.getValue();
             if (oldValue == null)
                 oldValue = "";
@@ -69,7 +70,7 @@ public class AuditChangesView extends HttpView
             String newValue = newData.remove(entry.getKey());
             if (newValue == null)
                 newValue = "";
-            if (!newValue.equals(oldValue))
+            if (update && !newValue.equals(oldValue))
             {
                 modified++;
                 sb.append("&nbsp;&raquo;&nbsp;");
@@ -86,8 +87,9 @@ public class AuditChangesView extends HttpView
             out.write(entry.getKey());
             out.write("</td><td>");
 
-            StringBuffer sb = new StringBuffer();
-            sb.append("&nbsp;&raquo;&nbsp;");
+            StringBuilder sb = new StringBuilder();
+            if (update)
+                sb.append("&nbsp;&raquo;&nbsp;");
             String newValue = entry.getValue();
             if (newValue == null)
                 newValue = "";
@@ -95,9 +97,11 @@ public class AuditChangesView extends HttpView
             out.write(sb.toString());
             out.write("</td></tr>\n");
         }
-        out.write("<tr><td/>\n");
-        out.write("<tr><td colspan=\"2\">Summary:&nbsp;<i>");
-        out.write(modified + " field(s) were modified</i></td></tr>");
+        if (update)
+        {
+            out.write("<tr><td colspan=\"2\">Summary:&nbsp;<i>");
+            out.write(modified + " field(s) were modified</i></td></tr>");
+        }
         out.write("</table>\n");
     }
 }
