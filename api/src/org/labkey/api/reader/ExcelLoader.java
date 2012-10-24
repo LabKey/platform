@@ -130,13 +130,13 @@ public class ExcelLoader extends DataLoader
         {
             try
             {
-                if (null != _file)
-                {
-                    _workbook = ExcelFactory.create(_file);
-                }
-                else if (null != _is)
+                if (null != _is)
                 {
                     _workbook = ExcelFactory.create(_is);
+                }
+                else if (null != _file)
+                {
+                    _workbook = ExcelFactory.create(_file);
                 }
             }
             catch (InvalidFormatException e)
