@@ -160,7 +160,7 @@ public class AssaySchemaImpl extends AssaySchema
             }
         });
         names.addAll(super.getSchemaNames());
-        for (AssayProvider provider : getAllProviders())
+        for (AssayProvider provider : getProtocols().values())
             names.add(provider.getResourceName());
 
         return names;

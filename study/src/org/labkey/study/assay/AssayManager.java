@@ -98,6 +98,10 @@ public class AssayManager implements AssayService.Interface
     public void registerAssayProvider(AssayProvider provider)
     {
         // Blow up if we've already added a provider with this name
+        if (AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getName()) || AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getResourceName()))
+        {
+            throw new IllegalArgumentException("'" + AssaySchema.ASSAY_LIST_TABLE_NAME + "' is not allowed as an AssayProvider name because it conflicts with the built-in query");
+        }
         if (getProvider(provider.getName()) != null)
         {
             throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
