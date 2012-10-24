@@ -515,6 +515,8 @@ public class AdminController extends SpringActionController
 
         public ActionURL getAddTabURL(Container c, @Nullable URLHelper returnURL)
         {
+            if (c.isContainerTab())
+                c = c.getParent();          // If we're in a container tab container, context should be the parent
             ActionURL url = new ActionURL(AddTabAction.class, c);
 
             if (returnURL != null)

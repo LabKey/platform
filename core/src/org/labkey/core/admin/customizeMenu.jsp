@@ -27,11 +27,7 @@
 <%
     JspView<CustomizeMenuForm> me = (JspView<CustomizeMenuForm>) JspView.currentView();
     CustomizeMenuForm bean = me.getModelBean();
-    ViewContext ctx = me.getViewContext();
-    Container c = ctx.getContainer();
-    String requiredPermission = PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName());
 %>
-<div id="someUniqueElement"></div>
 <div id="someUniqueElement2"></div>
 <script type="text/javascript">
     LABKEY.requiresScript("viewPicker.js");

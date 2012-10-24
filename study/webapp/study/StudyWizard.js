@@ -277,7 +277,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var folderTree = new Ext.tree.TreePanel({
             loader : new Ext.tree.TreeLoader({
                 dataUrl : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
-                baseParams : {requiredPermission : 'org.labkey.api.security.permissions.AdminPermission'}
+                baseParams : {requiredPermission : 'org.labkey.api.security.permissions.AdminPermission', showContainerTabs: false}
             }),
             root : {
                 id : '1',

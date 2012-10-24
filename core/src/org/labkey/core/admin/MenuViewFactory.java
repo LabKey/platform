@@ -262,6 +262,8 @@ public class MenuViewFactory
                 out.write("</table>");
             }
         };
+
+        view.setEmpty(containers.isEmpty());
         return view;
     }
 

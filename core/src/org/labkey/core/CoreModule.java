@@ -349,7 +349,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         return view;
                     }
                 },
-                new AlwaysAvailableWebPartFactory("Custom Menu", WebPartFactory.LOCATION_MENUBAR, true, false) {
+                new AlwaysAvailableWebPartFactory("Custom Menu", WebPartFactory.LOCATION_MENUBAR, true, true) {
                     public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
                         final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);

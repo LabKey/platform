@@ -102,7 +102,7 @@
         folderTree = new Ext.tree.TreePanel({
             loader : new Ext.tree.TreeLoader({
                 dataUrl : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
-                baseParams : {move: true, requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>}
+                baseParams : {move: true, requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>, showContainerTabs: false}
             }),
             root : new Ext.tree.AsyncTreeNode({
                 id : <%= PageFlowUtil.jsString(Integer.toString(project.getParent().getRowId()))%>,
