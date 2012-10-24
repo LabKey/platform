@@ -225,20 +225,20 @@ span.labkey-button:active
     background-color:#<%= webpart %>;
 }
 
-.labkey-app-bar ul.labkey-tab-strip a { /* map bottom border to Primary background color */
+.labkey-app-bar ul.labkey-tab-strip { /* map bottom border to Primary background color */
 	border-bottom: 1px solid #<%= primary %>;
 }
 
-.labkey-app-bar li.labkey-tab-inactive a { /* map text color to Link color */
+.labkey-app-bar li.labkey-tab-inactive { /* map text color to Link color */
     color: #<%= link %>;
 }
 
-.labkey-app-bar li.labkey-tab-active a { /* map bottom border and background color to Primary background color */
+.labkey-app-bar li.labkey-tab-active { /* map bottom border and background color to Primary background color */
     background-color: #<%= primary %>;
 	border-bottom: 1px solid #<%= primary %>;
 }
 
-.labkey-app-bar ul.labkey-tab-strip a:hover { /* map bottom border and background color to Primary background color */
+.labkey-app-bar ul.labkey-tab-strip li:hover { /* map bottom border and background color to Primary background color */
     background-color: #<%= primary %>;
     border-bottom: 1px solid #<%= primary %>;
 }
@@ -698,4 +698,12 @@ li.labkey-tab-inactive a
 .ext-el-mask-msg {
     background-color: #<%= webpart %>;
     background-image: none;
+}
+
+li.labkey-app-bar-tab-active {
+    background-color: #<%= primary %>;
+}
+
+li.labkey-app-bar-tab-inactive:hover {
+    background-color: #<%= primary %>;
 }

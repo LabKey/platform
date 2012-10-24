@@ -36,6 +36,7 @@ import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasValidator;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -66,6 +67,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryProfiler;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -509,6 +511,17 @@ public class AdminController extends SpringActionController
         public ActionURL getSessionLoggingURL()
         {
             return new ActionURL(SessionLoggingAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getAddTabURL(Container c, @Nullable URLHelper returnURL)
+        {
+            ActionURL url = new ActionURL(AddTabAction.class, c);
+
+            if (returnURL != null)
+            {
+                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+            }
+            return url;
         }
     }
 
@@ -5297,4 +5310,171 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class MoveTabAction extends ApiAction<MoveTabForm>
+    {
+        @Override
+        public ApiResponse execute(MoveTabForm form, BindException errors) throws Exception
+        {
+            final Map<String, Object> properties = new HashMap<String, Object>();
+            Portal.PortalPage tab = Portal.getPages(getContainer()).get(form.getPageId());
+
+
+            if (null != tab)
+            {
+                int oldIndex = tab.getIndex();
+                boolean success = handleMovePortalPage(tab, form.getDirection());
+                if (success)
+                {
+                    properties.put("oldIndex", oldIndex);
+                    properties.put("newIndex", tab.getIndex());
+                }
+                else
+                {
+                    properties.put("error", "Unable to move tab.");
+                }
+            }
+            else
+            {
+                properties.put("error", "Requested tab does not exist.");
+            }
+
+            return new ApiResponse()
+            {
+                @Override
+                public Map<String, Object> getProperties()
+                {
+                    return properties;
+                }
+            };
+        }
+    }
+
+    public static class MoveTabForm implements HasViewContext
+    {
+        private int _direction;
+        private String _pageId;
+        private ViewContext _viewContext;
+
+        public int getDirection()
+        {
+            // 0 moves left, 1 moves right.
+            return _direction;
+        }
+
+        public void setDirection(int direction)
+        {
+            _direction = direction;
+        }
+
+        public String getPageId()
+        {
+            return _pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            _pageId = pageId;
+        }
+
+        public ViewContext getViewContext()
+        {
+            return _viewContext;
+        }
+
+        public void setViewContext(ViewContext viewContext)
+        {
+            _viewContext = viewContext;
+        }
+    }
+
+    private boolean handleMovePortalPage(Portal.PortalPage page, int direction)
+    {
+        Map<String, Portal.PortalPage> pages = Portal.getPages(getContainer(), false);
+
+        if(null == pages)
+            return true;
+
+        ArrayList<Portal.PortalPage> pagesList = new ArrayList<Portal.PortalPage>(pages.values());
+
+        Collections.sort(pagesList, new Comparator<Portal.PortalPage>()
+        {
+            @Override
+            public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
+            {
+                return o1.getIndex() - o2.getIndex();
+            }
+        });
+
+        int visibleIndex;
+        for (visibleIndex = 0; visibleIndex < pagesList.size(); visibleIndex++)
+        {
+            if (pagesList.get(visibleIndex).getIndex() == page.getIndex())
+            {
+                break;
+            }
+        }
+
+        if(visibleIndex == pagesList.size())
+        {
+            return true;
+        }
+
+        if (direction == Portal.MOVE_DOWN)
+        {
+            if(visibleIndex == pagesList.size() - 1)
+            {
+                return true;
+            }
+
+            Portal.PortalPage nextPage = pagesList.get(visibleIndex + 1);
+            int newIndex = nextPage.getIndex();
+
+            nextPage.setIndex(page.getIndex());
+            page.setIndex(newIndex);
+
+            DbScope scope = Portal.getSchema().getScope();
+            try
+            {
+                scope.ensureTransaction();
+                Portal.updatePortalPage(getContainer(), nextPage);
+                Portal.updatePortalPage(getContainer(), page);
+                scope.commitTransaction();
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+
+            return true;
+        }
+        else
+        {
+            if(visibleIndex == 1)
+            {
+                return true;
+            }
+
+            Portal.PortalPage prevPage = pagesList.get(visibleIndex - 1);
+            int newIndex = prevPage.getIndex();
+
+            prevPage.setIndex(page.getIndex());
+            page.setIndex(newIndex);
+
+            DbScope scope = Portal.getSchema().getScope();
+            try
+            {
+                scope.ensureTransaction();
+                Portal.updatePortalPage(getContainer(), prevPage);
+                Portal.updatePortalPage(getContainer(), page);
+                scope.commitTransaction();
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+
+            return true;
+        }
+    }
 }
