@@ -54,7 +54,7 @@ import java.util.regex.Pattern;
 */
 public class DatasetFileReader
 {
-    private static final Pattern DEFAULT_PATTERN = Pattern.compile("^\\D*(\\d*).(?:tsv|txt)$");
+    private static final Pattern DEFAULT_PATTERN = Pattern.compile("^\\D*(\\d*).(?:tsv|txt|xls|xlsx)$");
 
     private final StudyImpl _study;
     private final StudyManager _studyManager = StudyManager.getInstance();

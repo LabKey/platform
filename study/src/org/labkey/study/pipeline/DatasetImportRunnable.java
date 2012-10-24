@@ -22,6 +22,9 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderFactory;
+import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
@@ -120,7 +123,7 @@ public class DatasetImportRunnable implements Runnable
         }
 
         boolean needToClose = true;
-        TabLoader loader = null;
+        DataLoader loader = null;
 
         try
         {
@@ -144,10 +147,11 @@ public class DatasetImportRunnable implements Runnable
             if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
                 final Integer[] skippedRowCount = new Integer[] { 0 };
-                loader = new TabLoader(new BufferedReader(new InputStreamReader(_root.getInputStream(_tsvName))), true);
-                if (useCutoff)
+                loader = DataLoaderService.get().createLoader(_tsvName, null, _root.getInputStream(_tsvName), true, _job.getContainer());
+                if (useCutoff && loader instanceof TabLoader)
                 {
-                    loader.setMapFilter(new Filter<Map<String,Object>>()
+                    // UNDONE: shouldn't be tied to TabLoader
+                    ((TabLoader)loader).setMapFilter(new Filter<Map<String,Object>>()
                     {
                         public boolean accept(Map<String, Object> row)
                         {
