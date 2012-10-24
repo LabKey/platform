@@ -1,4 +1,9 @@
 /*
+ * Copyright (c) 2012 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
+/*
  * @class Security.panel.PolicyEditor
  * @param {SecurityCache} [config.cache] An allocated SecurityCache object
  * @cfg {string}  [config.resourceId] the id of the resource whose policy is being edited
