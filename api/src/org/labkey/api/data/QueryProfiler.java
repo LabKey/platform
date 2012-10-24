@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -148,13 +147,13 @@ public class QueryProfiler
     {
     }
 
-    public static void track(String sql, @Nullable Collection<Object> parameters, long elapsed, @Nullable StackTraceElement[] stackTrace, boolean requestThread)
+    public static void track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed, @Nullable StackTraceElement[] stackTrace, boolean requestThread)
     {
         if (null == stackTrace)
             stackTrace = Thread.currentThread().getStackTrace();
 
         // Don't block if queue is full
-        QUEUE.offer(new Query(sql, parameters, elapsed, stackTrace, requestThread));
+        QUEUE.offer(new Query(scope, sql, parameters, elapsed, stackTrace, requestThread));
     }
 
     public static void resetAllStatistics()
@@ -268,21 +267,12 @@ public class QueryProfiler
     }
 
 
-    public static HttpView getStackTraceView(int hashCode)
+    public static HttpView getStackTraceView(int hashCode, ActionURLFactory executeFactory)
     {
         // Don't update anything while we're rendering the report or vice versa
         synchronized (LOCK)
         {
-            QueryTracker tracker = null;
-
-            for (QueryTracker candidate : QUERIES.values())
-            {
-                if (candidate.hashCode() == hashCode)
-                {
-                    tracker = candidate;
-                    break;
-                }
-            }
+            QueryTracker tracker = findTracker(hashCode);
 
             if (null == tracker)
                 return new HtmlView("<font class=\"labkey-error\">Error: That query no longer exists</font>");
@@ -298,12 +288,75 @@ public class QueryProfiler
             sb.append("</table>\n");
             sb.append("<br>\n");
 
+            if (tracker.canShowExecutionPlan())
+            {
+                sb.append("<table>\n  <tr><td>");
+                sb.append("  <tr><td>");
+                ActionURL url = executeFactory.getActionURL(tracker.getSql());
+                sb.append(PageFlowUtil.textLink("Show Execution Plan", url));
+                sb.append("  </td></tr><br>\n</table>\n");
+            }
+
             sb.append("<table>\n");
             tracker.appendStackTraces(sb);
             sb.append("</table>\n");
 
             return new HtmlView(sb.toString());
         }
+    }
+
+
+    public static HttpView getAnalyzeQueryView(int hashCode)
+    {
+        SQLFragment sql;
+        DbScope scope;
+
+        // Don't update anything while we're gathering the SQL and parameters
+        synchronized (LOCK)
+        {
+            QueryTracker tracker = findTracker(hashCode);
+
+            if (null == tracker)
+                return new HtmlView("<font class=\"labkey-error\">Error: That query no longer exists</font>");
+
+            if (!tracker.canShowExecutionPlan())
+                throw new IllegalStateException("Can't show the execution plan for this query");
+
+            scope = tracker.getScope();
+
+            if (null == scope)
+                throw new IllegalStateException("Scope should not be null");
+
+            sql = tracker.getSQLFragment();
+        }
+
+        Collection<String> executionPlan = scope.getSqlDialect().getExecutionPlan(scope, sql);
+        StringBuilder html = new StringBuilder();
+
+        for (String row : executionPlan)
+        {
+            html.append(PageFlowUtil.filter(row, true));
+            html.append("</br>\n");
+        }
+
+        return new HtmlView(html.toString());
+    }
+
+
+    private static @Nullable QueryTracker findTracker(int hashCode)
+    {
+        QueryTracker tracker = null;
+
+        for (QueryTracker candidate : QUERIES.values())
+        {
+            if (candidate.hashCode() == hashCode)
+            {
+                tracker = candidate;
+                break;
+            }
+        }
+
+        return tracker;
     }
 
 
@@ -351,19 +404,28 @@ public class QueryProfiler
 
     private static class Query
     {
+        private final @Nullable DbScope _scope;
         private final String _sql;
-        private final @Nullable Collection<Object> _parameters;
+        private final @Nullable List<Object> _parameters;
         private final long _elapsed;
         private final StackTraceElement[] _stackTrace;
         private final boolean _isRequestThread;
+        private Boolean _validSql = null;
 
-        private Query(String sql, @Nullable Collection<Object> parameters, long elapsed, StackTraceElement[] stackTrace, boolean isRequestThread)
+        private Query(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed, StackTraceElement[] stackTrace, boolean isRequestThread)
         {
+            _scope = scope;
             _sql = sql;
             _parameters = null != parameters ? new ArrayList<Object>(parameters) : null;    // Make a copy... callers might modify the collection
             _elapsed = elapsed;
             _stackTrace = stackTrace;
             _isRequestThread = isRequestThread;
+        }
+
+        @Nullable
+        public DbScope getScope()
+        {
+            return _scope;
         }
 
         private String getSql()
@@ -372,8 +434,16 @@ public class QueryProfiler
             return transform(_sql);
         }
 
+        public boolean isValidSql()
+        {
+            if (null == _validSql)
+                throw new IllegalStateException("Must call getSql() before calling isValidSql()");
+
+            return _validSql;
+        }
+
         @Nullable
-        private Collection<Object> getParameters()
+        private List<Object> getParameters()
         {
             return _parameters;  // TODO: Check parameters? Ignore InputStream, BLOBs, etc.?
         }
@@ -424,28 +494,37 @@ public class QueryProfiler
         private static final Pattern SPECIMEN_TEMP_TABLE_PATTERN = Pattern.compile("(SpecimenUpload)\\d{9}");
 
         // Transform the SQL to help with coalescing
-        private String transform(String sql)
+        private String transform(String in)
         {
             // Remove the randomly-generated parts of temp table names
-            sql = TEMP_TABLE_PATTERN.matcher(sql).replaceAll("$1");
-            return SPECIMEN_TEMP_TABLE_PATTERN.matcher(sql).replaceAll("$1");
+            String out = TEMP_TABLE_PATTERN.matcher(in).replaceAll("$1");
+            out = SPECIMEN_TEMP_TABLE_PATTERN.matcher(out).replaceAll("$1");
+
+            _validSql = out.equals(in);   // We changed the SQL, which means it's no longer legal
+
+            return out;
         }
     }
 
     private static class QueryTracker
     {
+        private final @Nullable DbScope _scope;
         private final String _sql;
-        private @Nullable Collection<Object> _parameters = null;  // Keep parameters from the longest running query
+        private final boolean _validSql;
         private final long _firstInvocation;
         private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new HashMap<ByteArrayHashKey, AtomicInteger>();
+
+        private @Nullable List<Object> _parameters = null;  // Keep parameters from the longest running query
 
         private long _count = 0;
         private long _max = 0;
         private long _cumulative = 0;
 
-        private QueryTracker(@NotNull String sql, long elapsed, String stackTrace)
+        private QueryTracker(@Nullable DbScope scope, @NotNull String sql, long elapsed, String stackTrace, boolean validSql)
         {
+            _scope = scope;
             _sql = sql;
+            _validSql = validSql;
             _firstInvocation = System.currentTimeMillis();
 
             addInvocation(elapsed, stackTrace);
@@ -468,39 +547,41 @@ public class QueryProfiler
                 frequency.incrementAndGet();
         }
 
+        @Nullable
+        public DbScope getScope()
+        {
+            return _scope;
+        }
+
         public String getSql()
         {
             return _sql;
         }
 
-        public String getSqlAndParameters()
+        public SQLFragment getSQLFragment()
         {
-            List<Object> zeroBasedList = new LinkedList<Object>();
-
-            if (null != _parameters && _parameters.size() > 1)
-            {
-                Iterator<Object> iter = _parameters.iterator();
-
-                iter.next();
-
-                while (iter.hasNext())
-                    zeroBasedList.add(iter.next());
-            }
-
-            SQLFragment sql = new SQLFragment(getSql(), zeroBasedList);
-
-            return sql.toString();
+            return null != _parameters ? new SQLFragment(getSql(), _parameters) : new SQLFragment(getSql());
         }
 
-        private void setParameters(@Nullable Collection<Object> parameters)
+        public String getSqlAndParameters()
+        {
+            return getSQLFragment().toString();
+        }
+
+        private void setParameters(@Nullable List<Object> parameters)
         {
             _parameters = parameters;
         }
 
         @Nullable
-        public Collection<Object> getParameters()
+        public List<Object> getParameters()
         {
             return _parameters;
+        }
+
+        public boolean canShowExecutionPlan()
+        {
+            return null != _scope && _scope.getSqlDialect().canShowExecutionPlan() && _validSql && Table.isSelect(_sql);
         }
 
         public long getCount()
@@ -738,7 +819,7 @@ public class QueryProfiler
 
                         if (null == tracker)
                         {
-                            tracker = new QueryTracker(query.getSql(), query.getElapsed(), query.getStackTrace());
+                            tracker = new QueryTracker(query.getScope(), query.getSql(), query.getElapsed(), query.getStackTrace(), query.isValidSql());
 
                             // First instance of this query, so always save its parameters
                             tracker.setParameters(query.getParameters());

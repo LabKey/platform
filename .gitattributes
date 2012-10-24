@@ -164,11 +164,14 @@ api/src/org/labkey/api/collections/CompareMap.java -text
 api/src/org/labkey/api/collections/ConcurrentCaseInsensitiveSortedMap.java -text
 api/src/org/labkey/api/collections/ConcurrentCaseInsensitiveSortedSet.java -text
 api/src/org/labkey/api/collections/ConcurrentHashSet.java -text
+api/src/org/labkey/api/collections/IndexMappingList.java -text
 api/src/org/labkey/api/collections/Join.java -text
+api/src/org/labkey/api/collections/ListWrapper.java -text
 api/src/org/labkey/api/collections/MapWrapper.java -text
 api/src/org/labkey/api/collections/MultiValueMap.java -text
 api/src/org/labkey/api/collections/NullPreventingSet.java -text
 api/src/org/labkey/api/collections/OldCaseInsensitiveHashMap.java -text
+api/src/org/labkey/api/collections/OneBasedList.java -text
 api/src/org/labkey/api/collections/ResultSetRowMapFactory.java -text
 api/src/org/labkey/api/collections/RowMap.java -text
 api/src/org/labkey/api/collections/RowMapFactory.java -text

@@ -31,7 +31,6 @@ import java.sql.Timestamp;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 18, 2010
  * Time: 11:26:39 AM

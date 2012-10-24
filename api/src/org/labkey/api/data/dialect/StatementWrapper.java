@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.OneBasedList;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.QueryProfiler;
@@ -66,7 +67,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private long _msStart = 0;
     private boolean userCancelled = false;
     // NOTE: CallableStatement supports getObject(), but PreparedStatement doesn't
-    private List<Object> _parameters = null;
+    private OneBasedList<Object> _parameters = null;
     private @Nullable StackTraceElement[] _stackTrace = null;
     private @Nullable Boolean _requestThread = null;
 
@@ -625,8 +626,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private boolean _set(int i, Object o)
     {
         if (null == _parameters)
-            _parameters = new ArrayList<Object>(10);
-        while (_parameters.size() < i+1)
+            _parameters = new OneBasedList<Object>(10);
+        while (_parameters.size() < i)
             _parameters.add(null);
         _parameters.set(i, o);
         return true;
@@ -1581,7 +1582,10 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private void _logStatement(String sql, Exception x)
     {
         long elapsed = System.currentTimeMillis() - _msStart;
-        QueryProfiler.track(sql, _parameters, elapsed, _stackTrace, isRequestThread());
+
+        // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
+        List<Object> zeroBasedList = null != _parameters ? new ArrayList<Object>(_parameters.getUnderlyingList()) : null;
+        QueryProfiler.track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread());
 
         if (!_log.isEnabledFor(Level.DEBUG))
             return;
@@ -1600,11 +1604,11 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
         if (null != _parameters)
         {
-            for (int i=1 ; i<_parameters.size() ; i++)
+            for (int i = 1; i <= _parameters.size(); i++)
             {
                 try
                 {
-                    Object o = i < _parameters.size() ? _parameters.get(i) : null;
+                    Object o = i <= _parameters.size() ? _parameters.get(i) : null;
                     String value;
                     if (o == null)
                         value = "NULL";

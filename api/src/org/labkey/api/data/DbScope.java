@@ -452,7 +452,7 @@ public class DbScope
             _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
         }
 
-        return new ConnectionWrapper(conn, _dialect, spid, log);
+        return new ConnectionWrapper(conn, this, spid, log);
     }
 
 

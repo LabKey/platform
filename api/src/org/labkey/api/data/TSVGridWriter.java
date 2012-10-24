@@ -22,8 +22,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,22 +72,6 @@ public class TSVGridWriter extends TSVColumnWriter
     protected TSVGridWriter(List<DisplayColumn> displayColumns)
     {
         init(null, displayColumns);
-    }
-
-
-    private void init(ResultSet rs) throws SQLException
-    {
-        ResultSetMetaData md = rs.getMetaData();
-        Collection<ColumnInfo> cols = new LinkedList<ColumnInfo>();
-
-        for (int i = 0; i < md.getColumnCount(); i++)
-        {
-            int sqlColumn = i + 1;
-            cols.add(new ColumnInfo(md, sqlColumn));
-        }
-
-        Results results = new ResultsImpl(rs, cols);
-        init(results, cols);
     }
 
 

@@ -231,8 +231,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
 
-    protected List<Map<String, Object>> _insertRowsUsingETL(User user, Container container, List<Map<String, Object>> rows,  DataIteratorContext context, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    protected @Nullable List<Map<String, Object>> _insertRowsUsingETL(User user, Container container, List<Map<String, Object>> rows,
+          DataIteratorContext context, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");

@@ -17,6 +17,7 @@ package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableChange;
@@ -115,6 +116,18 @@ public abstract class SimpleSqlDialect extends SqlDialect
     public boolean treatCatalogsAsSchemas()
     {
         return false;
+    }
+
+    @Override
+    public boolean canShowExecutionPlan()
+    {
+        return false;
+    }
+
+    @Override
+    public Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql)
+    {
+        throw new IllegalStateException("Should not call when canShowExecutionPlan() returns false");
     }
 
     // The following methods may or may not need to be implemented in a simple dialect... if these exceptions appear

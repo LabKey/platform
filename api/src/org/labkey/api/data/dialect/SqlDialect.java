@@ -1063,6 +1063,28 @@ public abstract class SqlDialect
     }
 
 
+    public abstract boolean canShowExecutionPlan();
+    protected abstract Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql);
+
+    // Public method ensures that execution plan queries are done in a transaction that is never committed.
+    // This ensures that unusual connection settings and other side effects are always discarded.
+    public final Collection<String> getExecutionPlan(DbScope scope, SQLFragment sql)
+    {
+        try
+        {
+            scope.beginTransaction();
+            return getQueryExecutionPlan(scope, sql);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+    }
+
     public abstract List<String> getChangeStatements(TableChange change);
     public abstract void initializeConnection(Connection conn) throws SQLException;
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);

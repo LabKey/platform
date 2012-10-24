@@ -17,16 +17,38 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 
-import java.sql.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.NClob;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.RowIdLifetime;
+import java.sql.SQLClientInfoException;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
 import java.text.DateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -36,7 +58,7 @@ import java.util.concurrent.Executor;
 public class ConnectionWrapper implements java.sql.Connection
 {
     private final Connection _connection;
-    private final SqlDialect _dialect;
+    private final DbScope _scope;
     private final Integer _spid;
     private final java.util.Date _allocationTime = new java.util.Date();
     private final String _allocatingThreadName;
@@ -59,13 +81,15 @@ public class ConnectionWrapper implements java.sql.Connection
     private static String _mostRecentSPIDUsageString = "";
     private static Logger _logDefault = Logger.getLogger(ConnectionWrapper.class);
     private static boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
-    private Logger _log;
 
-    public ConnectionWrapper(Connection conn, SqlDialect dialect, Integer spid, @Nullable Logger log) throws SQLException
+    private final @NotNull Logger _log;
+
+    public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, @Nullable Logger log) throws SQLException
     {
         _connection = conn;
+        _scope = scope;
         _spid = spid;
-        _dialect = dialect;
+
         synchronized (_mostRecentSPIDThreads)
         {
             _mostRecentSPIDThreads.put(_spid, Thread.currentThread().getName());
@@ -76,6 +100,7 @@ public class ConnectionWrapper implements java.sql.Connection
             }
             _mostRecentSPIDUsageString = sb.toString();
         }
+
         assert MemTracker.put(this);
         _allocatingThreadName = Thread.currentThread().getName();
 
@@ -110,27 +135,19 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
 
-    public Logger setLogger(Logger log)
-    {
-        Logger prev = _log;
-        _log = log;
-        return prev;
-    }
-
-
-    public Logger getLogger()
+    public @NotNull Logger getLogger()
     {
         return _log;
     }
 
 
-    public SqlDialect getDialect()
+    public DbScope getScope()
     {
-        return _dialect;
+        return _scope;
     }
 
 
-    public static boolean Dump()
+    public static boolean dumpOpenConnections()
     {
         for (Pair<Thread, Throwable> p : _openConnections.values())
         {
@@ -139,6 +156,7 @@ public class ConnectionWrapper implements java.sql.Connection
             System.err.println("Connection opened on thread " + thread);
             t.printStackTrace(System.err);
         }
+
         return true;
     }
 
@@ -305,18 +323,18 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
     {
-        if (null == _dialect)
+        if (null == _scope)
             return new StatementWrapper(conn, stmt);
         else
-            return _dialect.getStatementWrapper(conn, stmt);
+            return _scope.getSqlDialect().getStatementWrapper(conn, stmt);
     }
 
     private StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
-        if (null == _dialect)
+        if (null == _scope)
             return new StatementWrapper(conn, stmt, sql);
         else
-            return _dialect.getStatementWrapper(conn, stmt, sql);
+            return _scope.getSqlDialect().getStatementWrapper(conn, stmt, sql);
     }
 
 
