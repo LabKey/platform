@@ -22,9 +22,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
@@ -933,5 +936,29 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         iso.append(date);
         iso.append(") AS DATETIME), 121)");
         return iso;
+    }
+
+
+    @Override
+    public boolean canShowExecutionPlan()
+    {
+        return true;
+    }
+
+    @Override
+    public Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql)
+    {
+        try
+        {
+            new SqlExecutor(scope, "SET SHOWPLAN_ALL ON").execute();
+
+            // I don't want to inline all the parameters... but SQL Server / jTDS blow up with some (not all)
+            // prepared statements with parameters.
+            return new SqlSelector(scope, sql.toString()).getCollection(String.class);
+        }
+        finally
+        {
+            new SqlExecutor(scope, "SET SHOWPLAN_ALL OFF").execute();
+        }
     }
 }

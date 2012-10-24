@@ -2035,6 +2035,7 @@ public class AdminController extends SpringActionController
             return _stat;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setStat(String stat)
         {
             _stat = stat;
@@ -2051,11 +2052,17 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class QueryStackTracesAction extends SimpleViewAction<QueryStackTraceForm>
+    public class QueryStackTracesAction extends SimpleViewAction<QueryForm>
     {
-        public ModelAndView getView(QueryStackTraceForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return QueryProfiler.getStackTraceView(form.getSqlHashCode());
+            return QueryProfiler.getStackTraceView(form.getSqlHashCode(), new QueryProfiler.ActionURLFactory() {
+                @Override
+                public ActionURL getActionURL(String sql)
+                {
+                    return getExecuteQueryURL(sql);
+                }
+            });
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2067,7 +2074,32 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class QueryStackTraceForm
+    private static ActionURL getExecuteQueryURL(String sql)
+    {
+        ActionURL url = new ActionURL(ExecuteQueryAction.class, ContainerManager.getRoot());
+        url.addParameter("sqlHashCode", sql.hashCode());
+        return url;
+    }
+
+
+    @AdminConsoleAction
+    public class ExecuteQueryAction extends SimpleViewAction<QueryForm>
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            return QueryProfiler.getAnalyzeQueryView(form.getSqlHashCode());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            appendAdminNavTrail(root, "Queries", QueriesAction.class);
+            root.addChild("Analyze Query");
+            return root;
+        }
+    }
+
+
+    public static class QueryForm
     {
         int _sqlHashCode;
 
@@ -2076,6 +2108,7 @@ public class AdminController extends SpringActionController
             return _sqlHashCode;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setSqlHashCode(int sqlHashCode)
         {
             _sqlHashCode = sqlHashCode;

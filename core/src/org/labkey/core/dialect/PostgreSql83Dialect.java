@@ -1306,7 +1306,6 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
 
-
     @Override
     public SQLFragment getISOFormat(SQLFragment date)
     {
@@ -1315,5 +1314,21 @@ class PostgreSql83Dialect extends SqlDialect
         iso.append(date);
         iso.append(") AS TIMESTAMP), 'YYYY-MM-DD HH24:MI:SS.MS')");
         return iso;
+    }
+
+
+    @Override
+    public boolean canShowExecutionPlan()
+    {
+        return true;
+    }
+
+    @Override
+    protected Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql)
+    {
+        SQLFragment copy = new SQLFragment(sql);
+        copy.insert(0, "EXPLAIN ANALYZE ");
+
+        return new SqlSelector(scope, copy).getCollection(String.class);
     }
 }
