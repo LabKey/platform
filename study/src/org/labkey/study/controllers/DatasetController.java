@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -396,6 +397,21 @@ public class DatasetController extends BaseStudyController
             }
             if (oldData != null || newData != null)
             {
+                if (oldData != null && newData != null)
+                {
+                    String oldLsid = oldData.get("lsid");
+                    String newLsid = newData.get("lsid");
+                    Container c = ContainerManager.getForId(event.getContainerId());
+                    if (null != oldLsid && null != newLsid && !StringUtils.equalsIgnoreCase(oldLsid, newLsid) && null != c)
+                    {
+                        ActionURL history = new ActionURL("audit", "begin", c);
+                        history.addParameter("view","DatasetAuditEvent");
+                        history.addParameter("audit.Key1~eq", oldLsid);
+                        view.addView(new HtmlView(
+                            "Key values were modified.  <a href=\"" + history + "\">[previous history]</a>"
+                        ));
+                    }
+                }
                 view.addView(new AuditChangesView(event, oldData, newData));
             }
 
@@ -416,7 +432,8 @@ public class DatasetController extends BaseStudyController
             {
                 Study study = getStudy();
                 root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-                root.addChild("Dataset Entry History");
+                root.addChild("Audit Log", new ActionURL("audit","begin", getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM,1));
+                root.addChild("Dataset Entry Detail");
                 return root;
             }
             catch (ServletException se) {throw UnexpectedException.wrap(se);}
@@ -622,7 +639,7 @@ public class DatasetController extends BaseStudyController
                 out.write(entry.getKey());
                 out.write("</td><td>");
 
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 String oldValue = entry.getValue();
                 if (oldValue == null)
                     oldValue = "";
@@ -648,7 +665,7 @@ public class DatasetController extends BaseStudyController
                 out.write(entry.getKey());
                 out.write("</td><td>");
 
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append("&nbsp;&raquo;&nbsp;");
                 String newValue = entry.getValue();
                 if (newValue == null)
