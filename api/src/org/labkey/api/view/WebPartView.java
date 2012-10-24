@@ -48,6 +48,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     private boolean _isEmbedded = false;
     private boolean _showTitle  = true;
     private boolean _isWebpart  = true;
+    private boolean _isEmpty = false;
     private String _helpPopup;
     private FrameType _frame = FrameType.PORTAL;
     private int _webPartRowId = DEFAULT_WEB_PART_ID;
@@ -58,6 +59,16 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     private final boolean _devMode =AppProps.getInstance().isDevMode();
     protected String _debugViewDescription = null;
+
+    public boolean isEmpty()
+    {
+        return _isEmpty;
+    }
+
+    public void setEmpty(boolean empty)
+    {
+        _isEmpty = empty;
+    }
 
     public static enum FrameType
     {

@@ -36,6 +36,9 @@ LABKEY.HoverPopup = function(config)
     LABKEY.HoverPopup.superclass.constructor.call(this);
 
     this.extElem = Ext.get(config.hoverElem);
+    if (!this.extElem)
+        return;             // Custom Menu Bar may be hidden in which case element is null
+
     var dh = Ext.DomHelper;
     var popup = dh.insertAfter("menubar",
             {id:config.hoverElem + "_menu", tag:"div", cls:"labkey-webpart-menu",

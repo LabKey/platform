@@ -84,14 +84,15 @@
     <td colspan=2 class="<%=menuBarClass%>"><span class="normal"><%
         if (folderMenu)
         {
-    %>
-            <a href="#" id="menuBarFolder" class="labkey-header" style="position:relative;padding-right:1em"><span><img src="<%=currentContext.getContextPath()%>/<%=PageFlowUtil.extJsRoot()%>/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders"></span></a><%
+            %><a href="#" id="menuBarFolder" class="labkey-header" style="position:relative;padding-right:1em"><span><img src="<%=currentContext.getContextPath()%>/<%=PageFlowUtil.extJsRoot()%>/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders"></span></a><%
         }
+        boolean seenAtLeastOne = false;
         if (menus.size() > 0)
         {
             if (!folderMenu) //Make sure you can always get back to project home
-            {%> 
-                <a href="<%=h(homeLink.getHref())%>"><%=h(homeLink.getText())%></a><%
+            {
+                seenAtLeastOne = true;
+                %><a href="<%=h(homeLink.getHref())%>"><%=h(homeLink.getText())%></a><%
             }
             for (Portal.WebPart part : menus)
             {
@@ -103,6 +104,8 @@
                     if (null == factory)
                         continue;
                     WebPartView view = factory.getWebPartView(currentContext, part);
+                    if (view.isEmpty())
+                        continue;       // Don't show folder/query if nothing to show
                     if (null != view.getTitle())
                         menuCaption = view.getTitle();
                 }
@@ -110,12 +113,15 @@
                 {
                     //Use the part name...
                 }
-                %>
-                    <a id="<%=h(menuName)%>$Header" class="labkey-header" style="vertical-align:bottom;padding-right:1em;position:relative;z-index:1001;" href="#"><span><%=h(menuCaption)%></span></a><%
+
+                seenAtLeastOne = true;
+                %><a id="<%=h(menuName)%>$Header" class="labkey-header" style="vertical-align:bottom;padding-right:1em;position:relative;z-index:1001;" href="#"><span><%=h(menuCaption)%></span></a><%
             }
-            }
-        else
+        }
+        if (!seenAtLeastOne)
+        {
             out.print("<img src='" + currentContext.getContextPath() + "/_.gif'>");
+        }
         %></span></td>
     </tr>
 </table>

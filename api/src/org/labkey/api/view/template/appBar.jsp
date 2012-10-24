@@ -80,7 +80,7 @@
                     {
                 %>
                     <li class="labkey-app-bar-add-tab">
-                        <a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getAddTabURL(context.getContainer().getProject(), context.getActionURL())%>">+</a>
+                        <a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getAddTabURL(context.getContainer(), context.getActionURL())%>">+</a>
                     </li>
                 <%
                     }
