@@ -346,8 +346,19 @@ public class ExcelLoader extends DataLoader
         {
             if (lineNum() >= grid.size())
                 return null;
+
+            ColumnDescriptor[] allColumns = getColumns();
             ArrayList row = grid.get(lineNum());
-            return row.toArray();
+            Object[] fields = new Object[_activeColumns.length];
+            for (int columnIndex = 0, fieldIndex = 0; columnIndex < row.size(); columnIndex++)
+            {
+                // UNDONE: it seems to me that DataLoader should handle .load==false
+                ColumnDescriptor cd = allColumns[columnIndex];
+                if (!cd.load)
+                    continue;
+                fields[fieldIndex++] = row.get(columnIndex);
+            }
+            return fields;
         }
     }
 
@@ -582,7 +593,7 @@ public class ExcelLoader extends DataLoader
 
         private void debugPrint(String s)
         {
-            System.out.println(StringUtils.repeat(" ", debugIndent) + s);
+//            System.out.println(StringUtils.repeat(" ", debugIndent) + s);
         }
 
         /*
@@ -702,9 +713,10 @@ public class ExcelLoader extends DataLoader
                         break;
 
                     case NUMBER:
+                        boolean isDateFormat = null!=this.formatString && org.apache.poi.ss.usermodel.DateUtil.isADateFormat(this.formatIndex, this.formatString);
                         // since Excel auto-converts lots of things that are not numbers, such particpantids and sometimes dates
                         // convert to string and let DataLoader sort it out
-                        if (useFormats && this.formatString != null)
+                        if (this.formatString != null && (useFormats || isDateFormat))
                             thisValue = formatter.formatRawCellContents(Double.parseDouble(value.toString()), this.formatIndex, this.formatString);
                         else
                             thisValue = value.toString();
@@ -717,6 +729,7 @@ public class ExcelLoader extends DataLoader
 
                 while (currentRow.size() <= thisColumn)
                     currentRow.add(null);
+                debugPrint("row:" + output.size() + " col:" + thisColumn + " " + thisValue);
                 currentRow.set(thisColumn, thisValue);
             }
             else if ("row".equals(name))
