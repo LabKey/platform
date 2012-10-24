@@ -855,7 +855,7 @@ public class DavController extends SpringActionController
 
             if (isCollection)
             {
-                String filename;
+                String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
                 FileStream stream;
                 
                 if (getRequest() instanceof MultipartHttpServletRequest)
@@ -868,13 +868,13 @@ public class DavController extends SpringActionController
 
                     Map.Entry<String, MultipartFile> entry = (Map.Entry<String, MultipartFile>)multipartRequest.getFileMap().entrySet().iterator().next();
                     MultipartFile file = entry.getValue();
-                    filename = file.getOriginalFilename();
+                    if (null == filename)
+                        filename = file.getOriginalFilename();
                     stream = new SpringAttachmentFile(file);
                 }
                 else
                 {
                     // CONSIDER: enforce ContentType=text/plain?
-                    filename = getRequest().getParameter("filename");
                     String content = StringUtils.defaultString(getRequest().getParameter("content"),"");
                     stream = new FileStream.ByteArrayFileStream(content.getBytes());
                 }
