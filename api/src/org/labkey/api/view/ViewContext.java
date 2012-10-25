@@ -286,6 +286,14 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         _user = user;
     }
 
+    public Container getContainerNoTab()
+    {
+        // Return parent container if container is a Container Tab
+        Container container = getContainer();
+        if (null != container && container.isContainerTab())
+            container = container.getParent();
+        return container;
+    }
 
     public Container getContainer()
     {
