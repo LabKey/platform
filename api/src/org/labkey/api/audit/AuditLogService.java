@@ -113,7 +113,7 @@ public class AuditLogService
          */
         public void addAuditViewFactory(AuditViewFactory factory);
         public AuditViewFactory getAuditViewFactory(String eventType);
-        public AuditViewFactory[] getAuditViewFactories();
+        public List<AuditViewFactory> getAuditViewFactories();
     }
 
     public interface AuditViewFactory

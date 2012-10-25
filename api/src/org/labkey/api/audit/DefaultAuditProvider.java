@@ -122,9 +122,9 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
         return null;
     }
 
-    public AuditLogService.AuditViewFactory[] getAuditViewFactories()
+    public List<AuditLogService.AuditViewFactory> getAuditViewFactories()
     {
-        return new AuditLogService.AuditViewFactory[0];
+        return Collections.emptyList();
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
