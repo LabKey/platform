@@ -5258,9 +5258,6 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(AddTabForm form, BindException errors) throws Exception
         {
-            if (form.isCancel())
-                return true;
-
             Container container = getContainer();
             if (form.getTabType().equalsIgnoreCase("portal"))
             {
@@ -5304,15 +5301,19 @@ public class AdminController extends SpringActionController
 
         public ActionURL getSuccessURL(AddTabForm form)
         {
+            if (!form.getReturnActionURL().getAction().equals("addTab"))
+            {
+                return form.getReturnActionURL();
+            }
+
             return new ActionURL(ProjectController.BeginAction.class, getContainer());
         }
     }
 
-    public static class AddTabForm
+    public static class AddTabForm extends ReturnUrlForm
     {
         String _tabType;
         String _tabName;
-        private boolean _cancel = false;
 
         public String getTabName()
         {
@@ -5333,16 +5334,6 @@ public class AdminController extends SpringActionController
         {
             _tabType = tabType;
         }
-
-        public boolean isCancel()
-        {
-            return _cancel;
-        }
-
-        public void setCancel(boolean cancel)
-        {
-            _cancel = cancel;
-        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
@@ -5352,17 +5343,29 @@ public class AdminController extends SpringActionController
         public ApiResponse execute(MoveTabForm form, BindException errors) throws Exception
         {
             final Map<String, Object> properties = new HashMap<String, Object>();
-            Portal.PortalPage tab = Portal.getPages(getContainer()).get(form.getPageId());
+            Container tabContainer;
 
+            if (getContainer().isContainerTab())
+            {
+                tabContainer = getContainer().getParent();
+            }
+            else
+            {
+                tabContainer = getContainer();
+            }
+            Portal.PortalPage tab = Portal.getPages(tabContainer).get(form.getPageId());
 
             if (null != tab)
             {
                 int oldIndex = tab.getIndex();
-                boolean success = handleMovePortalPage(tab, form.getDirection());
-                if (success)
+                Portal.PortalPage pageToSwap = handleMovePortalPage(tabContainer, tab, form.getDirection());
+
+                if (null != pageToSwap)
                 {
                     properties.put("oldIndex", oldIndex);
                     properties.put("newIndex", tab.getIndex());
+                    properties.put("pageId", tab.getPageId());
+                    properties.put("pageIdToSwap", pageToSwap.getPageId());
                 }
                 else
                 {
@@ -5423,13 +5426,9 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private boolean handleMovePortalPage(Portal.PortalPage page, int direction)
+    private Portal.PortalPage handleMovePortalPage(Container c, Portal.PortalPage page, int direction)
     {
-        Map<String, Portal.PortalPage> pages = Portal.getPages(getContainer(), false);
-
-        if(null == pages)
-            return true;
-
+        Map<String, Portal.PortalPage> pages = Portal.getPages(c, false);
         ArrayList<Portal.PortalPage> pagesList = new ArrayList<Portal.PortalPage>(pages.values());
 
         Collections.sort(pagesList, new Comparator<Portal.PortalPage>()
@@ -5452,14 +5451,14 @@ public class AdminController extends SpringActionController
 
         if(visibleIndex == pagesList.size())
         {
-            return true;
+            return null;
         }
 
         if (direction == Portal.MOVE_DOWN)
         {
             if(visibleIndex == pagesList.size() - 1)
             {
-                return true;
+                return page;
             }
 
             Portal.PortalPage nextPage = pagesList.get(visibleIndex + 1);
@@ -5481,13 +5480,13 @@ public class AdminController extends SpringActionController
                 throw new RuntimeSQLException(x);
             }
 
-            return true;
+            return nextPage;
         }
         else
         {
             if(visibleIndex == 1)
             {
-                return true;
+                return page;
             }
 
             Portal.PortalPage prevPage = pagesList.get(visibleIndex - 1);
@@ -5509,7 +5508,7 @@ public class AdminController extends SpringActionController
                 throw new RuntimeSQLException(x);
             }
 
-            return true;
+            return prevPage;
         }
     }
 }

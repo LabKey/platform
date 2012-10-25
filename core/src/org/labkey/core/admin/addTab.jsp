@@ -27,12 +27,12 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     ViewContext context = HttpView.currentContext();
     JspView<AdminController.AddTabForm> me = (JspView<AdminController.AddTabForm>) HttpView.currentView();
+    AdminController.AddTabForm form = me.getModelBean();
     Container c = context.getContainer();
     FolderType folderType = c.getFolderType();
     List<FolderTab> folderTabs = folderType.getDefaultTabs();
@@ -121,6 +121,7 @@
 		panelItems.push(standardTabsDisplayField);
 		panelItems.push(portalTabRadio);
 		panelItems.push(folderTabsDisplayField);
+        panelItems.push({xtype:'hidden', name:'returnUrl', value: "<%=form.getReturnActionURL()%>"});
 
         for(var i = 0; i < folder.tabs.length; i++){
 			panelItems.push(Ext4.create('Ext.form.field.Radio', {
@@ -160,8 +161,7 @@
                 }, {
                     text: 'cancel',
                     handler: function(){
-                        console.log('cancel clicked');
-                        newTabPanel.getForm().submit({params: {cancel: true}});
+                        window.location = "<%=form.getReturnActionURL()%>";
                     }
                 }]
             }]
