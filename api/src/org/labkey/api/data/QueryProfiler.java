@@ -285,16 +285,14 @@ public class QueryProfiler
             sb.append("    <td>").append(PageFlowUtil.filter(tracker.getSql(), true)).append("</td>\n");
             sb.append("    <td style=\"padding-left: 20px;\">").append(PageFlowUtil.filter(tracker.getSqlAndParameters(), true)).append("</td>\n");
             sb.append("  </tr>\n");
-            sb.append("</table>\n");
-            sb.append("<br>\n");
+            sb.append("</table>\n<br>\n");
 
             if (tracker.canShowExecutionPlan())
             {
                 sb.append("<table>\n  <tr><td>");
-                sb.append("  <tr><td>");
                 ActionURL url = executeFactory.getActionURL(tracker.getSql());
                 sb.append(PageFlowUtil.textLink("Show Execution Plan", url));
-                sb.append("  </td></tr><br>\n</table>\n");
+                sb.append("  </td></tr></table>\n<br>\n");
             }
 
             sb.append("<table>\n");
@@ -306,7 +304,7 @@ public class QueryProfiler
     }
 
 
-    public static HttpView getAnalyzeQueryView(int hashCode)
+    public static HttpView getExecutionPlanView(int hashCode)
     {
         SQLFragment sql;
         DbScope scope;
