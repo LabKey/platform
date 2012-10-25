@@ -94,6 +94,7 @@ import org.labkey.query.CustomViewUtil;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryAuditViewFactory;
+import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.metadata.MetadataServiceImpl;
@@ -2055,8 +2056,32 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            DetailsView view = new DetailsView(tableForm);
-            view.getDataRegion().setButtonBar(bb);
+            DetailsView detailsView = new DetailsView(tableForm);
+            detailsView.getDataRegion().setButtonBar(bb);
+
+            VBox view = new VBox(detailsView);
+
+            DetailsURL detailsURL = QueryService.get().getAuditDetailsURL(getViewContext().getUser(), getViewContext().getContainer(), _table);
+
+            if (detailsURL != null)
+            {
+                String url = detailsURL.eval(tableForm.getTypedValues());
+                if (url != null)
+                {
+                    ActionURL auditURL = new ActionURL(url);
+
+                    QueryView historyView = QueryUpdateAuditViewFactory.getInstance().createDetailsQueryView(getViewContext(),
+                            auditURL.getParameter(QueryParam.schemaName),
+                            auditURL.getParameter(QueryParam.queryName),
+                            auditURL.getParameter("keyValue"));
+
+
+                    historyView.setFrame(WebPartView.FrameType.PORTAL);
+                    historyView.setTitle("History");
+
+                    view.addView(historyView);
+                }
+            }
             return view;
         }
 
@@ -4721,13 +4746,44 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return QueryAuditViewFactory.getInstance().createHistoryQueryView(getViewContext(), form);
+            return QueryUpdateAuditViewFactory.getInstance().createHistoryQueryView(getViewContext(), form);
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Audit History");
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class AuditDetailsAction extends SimpleViewAction<QueryDetailsForm>
+    {
+        @Override
+        public ModelAndView getView(QueryDetailsForm form, BindException errors) throws Exception
+        {
+            return QueryUpdateAuditViewFactory.getInstance().createDetailsQueryView(getViewContext(), form);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Audit History");
+        }
+    }
+
+    public static class QueryDetailsForm extends QueryForm
+    {
+        String _keyValue;
+
+        public String getKeyValue()
+        {
+            return _keyValue;
+        }
+
+        public void setKeyValue(String keyValue)
+        {
+            _keyValue = keyValue;
         }
     }
 
@@ -4746,11 +4802,11 @@ public class QueryController extends SpringActionController
 
             Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
             String oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
-                    QueryAuditViewFactory.QUERY_AUDIT_EVENT,
-                    QueryAuditViewFactory.OLD_RECORD_PROP_NAME));
+                    QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT,
+                    QueryUpdateAuditViewFactory.OLD_RECORD_PROP_NAME));
             String newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
-                    QueryAuditViewFactory.QUERY_AUDIT_EVENT,
-                    QueryAuditViewFactory.NEW_RECORD_PROP_NAME));
+                    QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT,
+                    QueryUpdateAuditViewFactory.NEW_RECORD_PROP_NAME));
 
             if (oldRecord != null || newRecord != null)
             {

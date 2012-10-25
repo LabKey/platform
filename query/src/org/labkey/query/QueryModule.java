@@ -59,6 +59,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.query.audit.QueryAuditViewFactory;
+import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
@@ -137,6 +138,7 @@ public class QueryModule extends DefaultModule
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
 
         AuditLogService.get().addAuditViewFactory(QueryAuditViewFactory.getInstance());
+        AuditLogService.get().addAuditViewFactory(QueryUpdateAuditViewFactory.getInstance());
 
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
                 "This feature will turn on generating a generic [details] URL link in most grids.", false);

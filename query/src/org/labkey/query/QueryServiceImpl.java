@@ -92,6 +92,7 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.query.audit.QueryAuditViewFactory;
+import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -127,6 +128,7 @@ public class QueryServiceImpl extends QueryService
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
     private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
     private static final String CUSTOMVIEW_SET_CACHE_ENTRY = "CUSTOMVIEW:";
+    private static final Logger _log = Logger.getLogger(QueryServiceImpl.class);
 
     static public QueryServiceImpl get()
     {
@@ -1603,7 +1605,7 @@ public class QueryServiceImpl extends QueryService
 
                 List<Map<String, Object>> rows = params[0];
                 String comment = String.format(action.getCommentSummary(), rows.size());
-                AuditLogEvent event = _createAuditRecord(user, c, table, comment);
+                AuditLogEvent event = _createAuditRecord(user, c, table, comment, rows.get(0));
 
                 AuditLogService.get().addEvent(event);
                 break;
@@ -1619,7 +1621,7 @@ public class QueryServiceImpl extends QueryService
                     Map<String, Object> row = rows.get(i);
                     String comment = String.format(action.getCommentDetailed(), row.size());
 
-                    AuditLogEvent event = _createAuditRecord(user, c, table, comment);
+                    AuditLogEvent event = _createAuditRecord(user, c, table, comment, row);
                     String oldRecord = QueryAuditViewFactory.encodeForDataMap(row);
 
                     switch (action)
@@ -1638,6 +1640,9 @@ public class QueryServiceImpl extends QueryService
                         {
                             assert (params.length >= 2);
 
+                            if (oldRecord != null)
+                                dataMap.put(QueryAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
+
                             List<Map<String, Object>> updatedRows = params[1];
                             Map<String, Object> updatedRow = updatedRows.get(i);
 
@@ -1647,14 +1652,14 @@ public class QueryServiceImpl extends QueryService
                             break;
                         }
                     }
-                    AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(QueryAuditViewFactory.QUERY_AUDIT_EVENT));
+                    AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT));
                 }
                 break;
             }
         }
     }
 
-    private static AuditLogEvent _createAuditRecord(User user, Container c, TableInfo tinfo, String comment)
+    private static AuditLogEvent _createAuditRecord(User user, Container c, TableInfo tinfo, String comment, @Nullable Map<String, Object> row)
     {
         AuditLogEvent event = new AuditLogEvent();
 
@@ -1662,12 +1667,20 @@ public class QueryServiceImpl extends QueryService
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
         event.setContainerId(c.getId());
-        event.setEventType(QueryAuditViewFactory.QUERY_AUDIT_EVENT);
+        event.setEventType(QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT);
         event.setComment(comment);
-        event.setKey1(tinfo.getPublicSchemaName());
-        event.setKey2(tinfo.getPublicName());
-        event.setIntKey1(QueryAuditViewFactory.TINFO_EVENT_TYPE);
+        event.setKey2(tinfo.getPublicSchemaName());
+        event.setKey3(tinfo.getPublicName());
 
+        FieldKey rowPk = tinfo.getAuditRowPk();
+        if (rowPk != null && row != null)
+        {
+            if (row.containsKey(rowPk.toString()))
+            {
+                Object pk = row.get(rowPk.toString());
+                event.setKey1(String.valueOf(pk));
+            }
+        }
         return event;
     }
 
@@ -1683,6 +1696,22 @@ public class QueryServiceImpl extends QueryService
                     addParameter(QueryParam.queryName, table.getPublicName());
         }
 
+        return null;
+    }
+
+    @Override
+    public DetailsURL getAuditDetailsURL(User user, Container c, TableInfo table)
+    {
+        FieldKey rowPk = table.getAuditRowPk();
+
+        if (rowPk != null)
+        {
+            ActionURL url = new ActionURL(QueryController.AuditDetailsAction.class, c).
+                    addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
+                    addParameter(QueryParam.queryName, table.getName());
+
+            return new DetailsURL(url, Collections.singletonMap("keyValue", rowPk));
+        }
         return null;
     }
 

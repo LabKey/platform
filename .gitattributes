@@ -2125,6 +2125,7 @@ query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/ValidateQueriesVisitor.java -text
 query/src/org/labkey/query/ViewFilterItemImpl.java -text
 query/src/org/labkey/query/audit/QueryAuditViewFactory.java -text
+query/src/org/labkey/query/audit/QueryUpdateAuditViewFactory.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
 query/src/org/labkey/query/controllers/DesignServiceForm.java -text
 query/src/org/labkey/query/controllers/ExternalSchemaForm.java -text

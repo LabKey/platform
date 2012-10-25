@@ -58,8 +58,6 @@ import java.util.Set;
 public class QueryAuditViewFactory extends SimpleAuditViewFactory
 {
     public static final String QUERY_AUDIT_EVENT = "QueryExportAuditEvent";
-    public static final int EXPORT_EVENT_TYPE = 0;      // sub events
-    public static final int TINFO_EVENT_TYPE = 1;
 
     private static final QueryAuditViewFactory INSTANCE = new QueryAuditViewFactory();
 
@@ -91,19 +89,6 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
         return view;
     }
 
-    public QueryView createHistoryQueryView(ViewContext context, QueryForm form)
-    {
-        AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
-        view.setSort(new Sort("-Date"));
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Key1"), form.getSchemaName());
-        filter.addCondition(FieldKey.fromParts("Key2"), form.getQueryName());
-
-        view.setFilter(filter);
-        addDetailsColumn(view);
-        return view;
-    }
-
     private void addDetailsColumn(AuditLogQueryView view)
     {
         ColumnInfo containerId = view.getTable().getColumn("ContainerId");
@@ -111,12 +96,8 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo schemaCol = view.getTable().getColumn("Key1");
         ColumnInfo queryCol = view.getTable().getColumn("Key2");
         ColumnInfo sortFilterCol = view.getTable().getColumn("Key3");
-        ColumnInfo subTypeCol = view.getTable().getColumn("IntKey1");
-        ColumnInfo lsidCol = view.getTable().getColumn("Lsid");
-        ColumnInfo rowCol = view.getTable().getColumn("RowId");
 
-        view.addDisplayColumn(0, new QueryDetailsColumn(containerId, subTypeCol, schemaCol, queryCol, sortFilterCol,
-                lsidCol, rowCol));
+        view.addDisplayColumn(0, new QueryDetailsColumn(containerId, schemaCol, queryCol, sortFilterCol));
     }
 
     public List<FieldKey> getDefaultVisibleColumns()
@@ -154,46 +135,17 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
         table.getColumn("IntKey3").setHidden(true);
     }
 
-    @Override
-    public void initialize(ContainerUser context) throws Exception
-    {
-        Container c = ContainerManager.getSharedContainer();
-        String domainURI = AuditLogService.get().getDomainURI(QUERY_AUDIT_EVENT);
-
-        Domain domain = PropertyService.get().getDomain(c, domainURI);
-        if (domain == null)
-        {
-            domain = PropertyService.get().createDomain(c, domainURI, "QueryAuditEventDomain");
-            domain.save(context.getUser());
-            domain = PropertyService.get().getDomain(c, domainURI);
-        }
-
-        if (domain != null)
-        {
-            ensureProperties(context.getUser(), domain, new PropertyInfo[]{
-                    new PropertyInfo(OLD_RECORD_PROP_NAME, OLD_RECORD_PROP_CAPTION, PropertyType.STRING),
-                    new PropertyInfo(NEW_RECORD_PROP_NAME, NEW_RECORD_PROP_CAPTION, PropertyType.STRING)
-
-            });
-        }
-    }
-
     private static class QueryDetailsColumn extends DetailsColumn
     {
         ColumnInfo _containerCol, _schemaCol, _queryCol, _sortFilterCol;
-        ColumnInfo _subTypeCol, _lsidCol, _rowCol;
 
-        public QueryDetailsColumn(ColumnInfo containerCol, ColumnInfo subTypeColumn, ColumnInfo schemaCol,
-                                  ColumnInfo queryCol, ColumnInfo sortFilterCol, ColumnInfo lsidCol, ColumnInfo rowCol)
+        public QueryDetailsColumn(ColumnInfo containerCol, ColumnInfo schemaCol, ColumnInfo queryCol, ColumnInfo sortFilterCol)
         {
             super(null, null);
             _containerCol = containerCol;
-            _subTypeCol = subTypeColumn;
             _schemaCol = schemaCol;
             _queryCol = queryCol;
             _sortFilterCol = sortFilterCol;
-            _lsidCol = lsidCol;
-            _rowCol = rowCol;
         }
 
         @Override
@@ -201,60 +153,29 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
         {
             super.addQueryFieldKeys(keys);
             keys.add(_containerCol.getFieldKey());
-            keys.add(_subTypeCol.getFieldKey());
             keys.add(_schemaCol.getFieldKey());
             keys.add(_queryCol.getFieldKey());
             keys.add(_sortFilterCol.getFieldKey());
-            keys.add(_lsidCol.getFieldKey());
-            keys.add(_rowCol.getFieldKey());
         }
 
         @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            if (showDetailsLink(ctx))
-                super.renderGridCellContents(ctx, out);
-            else
-                out.write("&nbsp;");
-        }
+            String containerId = (String)ctx.get("ContainerId");
+            Container c = ContainerManager.getForId(containerId);
 
-        /**
-         * Helper to determine whether to render a details link.
-         * The details link will be used for either showing the source query in the case of an export
-         * event sub type or record level changes in the case of insert/update/delete to the source query.
-         */
-        private boolean showDetailsLink(RenderContext ctx)
-        {
-            Integer eventSubType = ctx.get(_subTypeCol.getFieldKey(), Integer.class);
-            String lsid = ctx.get(_lsidCol.getFieldKey(), String.class);
+            String schemaName = ctx.get(_schemaCol.getFieldKey(), String.class);
+            String queryName = ctx.get(_queryCol.getFieldKey(), String.class);
 
-            if (eventSubType == null || eventSubType == EXPORT_EVENT_TYPE)
+            if (c != null && schemaName != null && queryName != null)
             {
-                String schemaName = ctx.get(_schemaCol.getFieldKey(), String.class);
-                String queryName = ctx.get(_queryCol.getFieldKey(), String.class);
-
-                return schemaName != null && queryName != null;
+                super.renderGridCellContents(ctx, out);
             }
-            else if (lsid != null && eventSubType == TINFO_EVENT_TYPE)
-                return true;
-
-            return false;
+            out.write("&nbsp;");
         }
 
         @Override
         public String renderURL(RenderContext ctx)
-        {
-            Integer eventSubType = ctx.get(_subTypeCol.getFieldKey(), Integer.class);
-
-            if (eventSubType == null || eventSubType == EXPORT_EVENT_TYPE)
-                return _renderExportURL(ctx);
-            else if (eventSubType == TINFO_EVENT_TYPE)
-                return _renderTinfoURL(ctx);
-
-            return null;
-        }
-
-        private String _renderExportURL(RenderContext ctx)
         {
             // NOTE: Not all grid work well with executeQuery yet (ms2, specimen).
             // Ideally we would use the URL returned from queryDef.urlFor(QueryAction.executeQuery)
@@ -285,21 +206,6 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
                 url.addParameter(QueryParam.schemaName, schemaName);
             if (url.getParameter(QueryParam.queryName) == null && url.getParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName) == null)
                 url.addParameter(QueryParam.queryName, queryName);
-
-            return url.toString();
-        }
-
-        private String _renderTinfoURL(RenderContext ctx)
-        {
-            String containerId = (String)ctx.get("ContainerId");
-            Container c = ContainerManager.getForId(containerId);
-            if (c == null)
-                return null;
-
-            Integer rowId = ctx.get(_rowCol.getFieldKey(), Integer.class);
-
-            ActionURL url = new ActionURL(QueryController.QueryAuditChangesAction.class, c).
-                    addParameter("auditRowId", rowId);
 
             return url.toString();
         }
