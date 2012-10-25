@@ -137,9 +137,6 @@ public class QueryModule extends DefaultModule
 //		WebdavService.addProvider(new QueryWebdavprovider());
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
 
-        AuditLogService.get().addAuditViewFactory(QueryAuditViewFactory.getInstance());
-        AuditLogService.get().addAuditViewFactory(QueryUpdateAuditViewFactory.getInstance());
-
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
                 "This feature will turn on generating a generic [details] URL link in most grids.", false);
     }
@@ -187,6 +184,9 @@ public class QueryModule extends DefaultModule
             ServiceRegistry.get(SearchService.class).addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
         }
         PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
+
+        AuditLogService.get().addAuditViewFactory(QueryAuditViewFactory.getInstance());
+        AuditLogService.get().addAuditViewFactory(QueryUpdateAuditViewFactory.getInstance());
     }
 
     @Override

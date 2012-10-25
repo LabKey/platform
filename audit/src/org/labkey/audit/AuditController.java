@@ -87,7 +87,7 @@ public class AuditController extends SpringActionController
         {
             String selected = form.getView();
             if (selected == null)
-                selected = AuditLogService.get().getAuditViewFactories()[0].getEventType();
+                selected = AuditLogService.get().getAuditViewFactories().get(0).getEventType();
 
             AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(selected);
             if (factory != null)

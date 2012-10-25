@@ -417,7 +417,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return _auditViewFactories.get(eventType);
     }
 
-    public AuditViewFactory[] getAuditViewFactories()
+    public List<AuditViewFactory> getAuditViewFactories()
     {
         List<AuditViewFactory> factories = new ArrayList<AuditViewFactory>(_auditViewFactories.values());
 
@@ -427,7 +427,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                 return (o1.getName().compareToIgnoreCase(o2.getName()));
             }
         });
-        return factories.toArray(new AuditViewFactory[factories.size()]);
+        return Collections.unmodifiableList(factories);
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)

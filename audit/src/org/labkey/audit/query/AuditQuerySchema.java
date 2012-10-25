@@ -71,7 +71,7 @@ public class AuditQuerySchema extends UserSchema
 
     public TableInfo createTable(String name)
     {
-        // event specific audit views are implemented as queries off of the audit schema
+        // event specific audit views are implemented as queries on the audit schema
         if (AUDIT_TABLE_NAME.equalsIgnoreCase(name) || (AuditLogService.get().getAuditViewFactory(name) != null))
         {
             return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);

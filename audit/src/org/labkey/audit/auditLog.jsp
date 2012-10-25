@@ -17,13 +17,14 @@
 %>
 <%@ page import="org.labkey.api.audit.AuditLogService"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String currentView = (String)HttpView.currentModel();
-    AuditLogService.AuditViewFactory[] factories = AuditLogService.get().getAuditViewFactories();
+    List<AuditLogService.AuditViewFactory> factories = AuditLogService.get().getAuditViewFactories();
 
     if (currentView == null)
-        currentView = factories[0].getEventType();
+        currentView = factories.get(0).getEventType();
 
 %>
 <form action="" method="get">
