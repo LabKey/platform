@@ -449,7 +449,8 @@ LABKEY.Portal = new function()
         /**
          * Move a folder tab to the left.
          * @param config An object which contains the following configuration properties.
-         * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
+         * @param {String} [config.pageId] The pageId of the tab to be moved.
+         * @param {String} [config.folderTabCaption] The caption of the tab to be moved.
          */
         moveTabLeft : function(config)
         {
@@ -457,11 +458,19 @@ LABKEY.Portal = new function()
                 url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
                 method: 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(response, options){
-                    if(response.oldIndex && response.newIndex && response.oldIndex != response.newIndex){
+                    if(config.folderTabCaption && response.pageIdToSwap && response.pageIdToSwap !== response.pageId){
                         var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
-                        var from = tabs[response.oldIndex - 1];
-                        var to = tabs[response.newIndex - 1];
-                        LABKEY.ExtAdapter.get(from).insertBefore(to);
+                        for(var i = 0; i < tabs.length; i++){
+                            var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
+                            var anchors = tabEl.query('a');
+
+                            if(anchors[0].innerText === config.folderTabCaption){
+                                // Found the tab, swap it with the previous tab.
+                                if(tabs[i - 1]){
+                                    tabEl.insertBefore(tabs[i -1]);
+                                }
+                            }
+                        }
                     }
                 }, this, false),
                 failure: function(response){
@@ -485,11 +494,19 @@ LABKEY.Portal = new function()
                 url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
                 method: 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(response, options){
-                    if(response.oldIndex && response.newIndex && response.oldIndex != response.newIndex){
+                    if(config.folderTabCaption && response.pageIdToSwap && response.pageIdToSwap !== response.pageId){
                         var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
-                        var from = tabs[response.oldIndex - 1];
-                        var to = tabs[response.newIndex - 1];
-                        LABKEY.ExtAdapter.get(from).insertAfter(to);
+                        for(var i = 0; i < tabs.length; i++){
+                            var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
+                            var anchors = tabEl.query('a');
+
+                            if(anchors[0].innerText === config.folderTabCaption){
+                                // Found the tab, swap it with the previous tab.
+                                if(tabs[i + 1]){
+                                    tabEl.insertAfter(tabs[i + 1]);
+                                }
+                            }
+                        }
                     }
                 }, this, false),
                 failure: function(response, options){

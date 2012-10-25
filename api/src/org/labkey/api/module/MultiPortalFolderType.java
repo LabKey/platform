@@ -340,9 +340,10 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         NavTree menu = new NavTree("Tab Administration");
         ActionURL removeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getHidePortalPageURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
         NavTree moveMenu = new NavTree("Move");
+        String moveConfig = "{pageId: \"" + portalPage.getPageId() + "\", folderTabCaption:\"" + folderTab.getCaption(ctx) +"\"}";
 
-        moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft({pageId: \"" + portalPage.getPageId() + "\"});"));
-        moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight({pageId: \"" + portalPage.getPageId() + "\"});"));
+        moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + moveConfig + ");"));
+        moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + moveConfig + ");"));
 
         menu.addChild(new NavTree("Remove", removeURL));
         menu.addChild(moveMenu);
