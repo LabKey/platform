@@ -429,4 +429,11 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     public void setAuditBehavior(AuditBehaviorType type);
     public AuditBehaviorType getAuditBehavior();
+
+    /**
+     * Returns the row primary key column to use for audit history details. Note, this must
+     * be a single key as we don't support multiple column primary keys for audit details.
+     */
+    @Nullable
+    public FieldKey getAuditRowPk();
 }

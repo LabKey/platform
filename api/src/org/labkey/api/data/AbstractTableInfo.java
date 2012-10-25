@@ -114,6 +114,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
     private DetailsURL _detailsURL;
     protected AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
+    private FieldKey _auditRowPk;
 
     @NotNull
     public List<ColumnInfo> getPkColumns()
@@ -1289,6 +1290,22 @@ abstract public class AbstractTableInfo implements TableInfo
     public AuditBehaviorType getAuditBehavior()
     {
         return _auditBehaviorType;
+    }
+
+    @Override
+    public FieldKey getAuditRowPk()
+    {
+        if (_auditRowPk == null)
+        {
+            List<String> pks = getPkColumnNames();
+            if (pks.size() == 1)
+                _auditRowPk = FieldKey.fromParts(pks.get(0));
+            else if (getColumn(FieldKey.fromParts("EntityId")) != null)
+                _auditRowPk = FieldKey.fromParts("EntityId");
+            else if (getColumn(FieldKey.fromParts("RowId")) != null)
+                _auditRowPk = FieldKey.fromParts("RowId");
+        }
+        return _auditRowPk;
     }
 
     @Override

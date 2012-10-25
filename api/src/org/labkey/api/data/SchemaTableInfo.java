@@ -113,7 +113,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     private String _versionColumnName = null;
     private List<FieldKey> _defaultVisibleColumns = null;
     private AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
-
+    private FieldKey _auditRowPk;
 
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName)
     {
@@ -457,6 +457,22 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
      public AuditBehaviorType getAuditBehavior()
      {
          return _auditBehaviorType;
+     }
+
+     @Override
+     public FieldKey getAuditRowPk()
+     {
+         if (_auditRowPk == null)
+         {
+             List<String> pks = getPkColumnNames();
+             if (pks.size() == 1)
+                 _auditRowPk = FieldKey.fromParts(pks.get(0));
+             else if (getColumn(FieldKey.fromParts("EntityId")) != null)
+                 _auditRowPk = FieldKey.fromParts("EntityId");
+             else if (getColumn(FieldKey.fromParts("RowId")) != null)
+                 _auditRowPk = FieldKey.fromParts("RowId");
+         }
+         return _auditRowPk;
      }
 
      void copyToXml(TableType xmlTable, boolean bFull)

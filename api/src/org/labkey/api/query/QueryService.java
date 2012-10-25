@@ -243,11 +243,11 @@ abstract public class QueryService
     public enum AuditAction
     {
         INSERT("A row was inserted.",
-                "%s rows were inserted."),
+                "%s row(s) were inserted."),
         UPDATE("Row was updated.",
-                "%s rows were updated."),
+                "%s row(s) were updated."),
         DELETE("Row was deleted.",
-                "%s rows were deleted.");
+                "%s row(s) were deleted.");
 
         String _commentDetailed;
         String _commentSummary;
@@ -279,5 +279,13 @@ abstract public class QueryService
     abstract public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment);
     abstract public void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>> ... params);
 
+    /**
+     * Returns a URL for the audit history for the table.
+     */
     abstract public @Nullable ActionURL getAuditHistoryURL(User user, Container c, TableInfo table);
+
+    /**
+     * Returns a DetailsURL that can be used for the row audit history for the table.
+     */
+    abstract public @Nullable DetailsURL getAuditDetailsURL(User user, Container c, TableInfo table);
 }
