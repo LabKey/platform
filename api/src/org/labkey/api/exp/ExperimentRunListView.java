@@ -176,7 +176,6 @@ public class ExperimentRunListView extends QueryView
             List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(getContainer());
             if (!protocols.isEmpty())
             {
-                Collections.sort(protocols);
                 MenuButton addRunsButton;
                 if(c.getFolderType().getForceAssayUploadIntoWorkbooks() && !c.isWorkbook())
                 {
