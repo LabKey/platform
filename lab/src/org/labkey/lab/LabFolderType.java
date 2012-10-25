@@ -15,22 +15,12 @@
  */
 package org.labkey.lab;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.MultiPortalFolderType;
-import org.labkey.api.security.User;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.AppBar;
-import org.labkey.api.view.template.PageConfig;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
