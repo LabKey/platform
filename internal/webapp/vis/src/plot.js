@@ -7,13 +7,17 @@
 LABKEY.vis.Plot = function(config){
 
     var error = function(msg){
-        console.error(msg);
-        if(console.trace){
-            console.trace();
-        }
-        if(this.paper){
-            this.paper.clear();
-            this.paper.text(this.paper.width / 2, this.paper.height / 2, "Error rendering chart:\n" + msg).attr('font-size', '12px').attr('fill', 'red');
+        if (this.throwErrors){
+            throw new Error(msg);
+        } else {
+            console.error(msg);
+            if(console.trace){
+                console.trace();
+            }
+            if(this.paper){
+                this.paper.clear();
+                this.paper.text(this.paper.width / 2, this.paper.height / 2, "Error rendering chart:\n" + msg).attr('font-size', '12px').attr('fill', 'red');
+            }
         }
     };
 
@@ -94,6 +98,7 @@ LABKEY.vis.Plot = function(config){
     this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
     this.clipRect = config.clipRect ? config.clipRect : false;
     this.legendPos = config.legendPos;
+    this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
 
     var allAes = [];
     if(this.aes){
