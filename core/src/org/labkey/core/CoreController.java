@@ -1318,6 +1318,9 @@ public class CoreController extends SpringActionController
             Container parent = ContainerManager.getForRowId(form.getNode());
             if (null != parent)
             {
+                if (!form.getShowContainerTabs() && parent.isContainerTab())
+                    parent = parent.getParent();            // Don't show container tab, show parent
+
                 //determine which permission should be required for a child to show up
                 if (null != form.getRequiredPermission())
                 {
@@ -1328,19 +1331,20 @@ public class CoreController extends SpringActionController
 
                 for (Container child : parent.getChildren())
                 {
-                    if (child.isWorkbook() || (!form.getShowContainerTabs() && child.isContainerTab()))
-                        continue;       // Don't show workbook and don't show containerTabs if we're told not to
-
-                    AccessType accessType = getAccessType(child, user, _reqPerm);
-                    if (accessType != AccessType.none)
+                    // Don't show workbook and don't show containerTabs if we're told not to
+                    if (!child.isWorkbook() && (form.getShowContainerTabs() || !child.isContainerTab()))
                     {
-                        JSONObject childProps = getContainerProps(child);
-                        if (accessType == AccessType.indirect)
+                        AccessType accessType = getAccessType(child, user, _reqPerm);
+                        if (accessType != AccessType.none)
                         {
-                            // Disable so they can't act on it directly, since they have no permission
-                            childProps.put("disabled", true);
+                            JSONObject childProps = getContainerProps(child, form.getShowContainerTabs());
+                            if (accessType == AccessType.indirect)
+                            {
+                                // Disable so they can't act on it directly, since they have no permission
+                                childProps.put("disabled", true);
+                            }
+                            children.put(childProps);
                         }
-                        children.put(childProps);
                     }
                 }
             }
@@ -1376,7 +1380,7 @@ public class CoreController extends SpringActionController
             return AccessType.none;
         }
 
-        protected JSONObject getContainerProps(Container c)
+        protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
         {
             JSONObject props = new JSONObject();
             props.put("id", c.getRowId());
@@ -1393,9 +1397,9 @@ public class CoreController extends SpringActionController
     public class GetExtSecurityContainerTreeAction extends GetExtContainerTreeAction
     {
         @Override
-        protected JSONObject getContainerProps(Container c)
+        protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
         {
-            JSONObject props = super.getContainerProps(c);
+            JSONObject props = super.getContainerProps(c, showContainerTabs);
             String text = PageFlowUtil.filter(c.getName());
             if (!c.getPolicy().getResourceId().equals(c.getResourceId()))
                 text += "*";
@@ -1414,12 +1418,12 @@ public class CoreController extends SpringActionController
                 JSONArray childrenProps = new JSONArray();
                 for (Container child : c.getChildren())
                 {
-                    if (!child.isWorkbook())
+                    if (!child.isWorkbook() && (showContainerTabs || !child.isContainerTab()))
                     {
                         AccessType accessType = getAccessType(child, getUser(), _reqPerm);
                         if (accessType != AccessType.none)
                         {
-                            JSONObject childProps = getContainerProps(child);
+                            JSONObject childProps = getContainerProps(child, showContainerTabs);
                             if (accessType == AccessType.indirect)
                             {
                                 // Disable so they can't act on it directly, since they have no permission
@@ -1442,9 +1446,9 @@ public class CoreController extends SpringActionController
     public class GetExtMWBContainerTreeAction extends GetExtContainerTreeAction
     {
         @Override
-        protected JSONObject getContainerProps(Container c)
+        protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
         {
-            JSONObject props = super.getContainerProps(c);
+            JSONObject props = super.getContainerProps(c, showContainerTabs);
             if (c.equals(getViewContext().getContainer()))
                 props.put("disabled", true);
             return props;
@@ -1455,9 +1459,9 @@ public class CoreController extends SpringActionController
     public class GetExtContainerAdminTreeAction extends GetExtContainerTreeAction
     {
         @Override
-        protected JSONObject getContainerProps(Container c)
+        protected JSONObject getContainerProps(Container c, boolean showContainerTabs)
         {
-            JSONObject props = super.getContainerProps(c);
+            JSONObject props = super.getContainerProps(c, showContainerTabs);
             if (c.equals(getViewContext().getContainer()))
             {
                 props.put("cls", "x-tree-node-current");
@@ -1480,12 +1484,12 @@ public class CoreController extends SpringActionController
                 JSONArray childrenProps = new JSONArray();
                 for (Container child : c.getChildren())
                 {
-                    if (!child.isWorkbook())
+                    if (!child.isWorkbook() && (showContainerTabs || !child.isContainerTab()))
                     {
                         AccessType accessType = getAccessType(child, getUser(), _reqPerm);
                         if (accessType != AccessType.none)
                         {
-                            JSONObject childProps = getContainerProps(child);
+                            JSONObject childProps = getContainerProps(child, showContainerTabs);
                             //childProps.put("expanded", true);
                             if (accessType == AccessType.indirect)
                             {

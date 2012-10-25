@@ -41,7 +41,7 @@ var requiredModules = new Object();
 var defaultModules = new Object();
 <% //Generate javascript objects...
 final ViewContext context = HttpView.currentContext();
-Container c = context.getContainer();
+Container c = context.getContainerNoTab();
 FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
 Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes();
 List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());

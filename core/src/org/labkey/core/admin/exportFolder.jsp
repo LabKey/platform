@@ -29,7 +29,7 @@
 
 <%
 ViewContext context = HttpView.currentContext();
-Container c = context.getContainer();
+Container c = context.getContainerNoTab();
 FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
 %>
 

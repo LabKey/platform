@@ -40,6 +40,8 @@
             <td>
                 <%
                     Container c = HttpView.getContextContainer();
+                    if (c.isContainerTab())
+                        c = c.getParent();          // Not allowed to do anything on container tab
                     Container definingContainer = MvUtil.getDefiningContainer(c);
                     boolean inherited = !c.equals(definingContainer);
 

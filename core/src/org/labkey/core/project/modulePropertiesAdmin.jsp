@@ -37,11 +37,11 @@
     ViewContext ctx = me.getViewContext();
     boolean hasPermission;
 
-    Container target = ctx.getContainer();
+    Container target = ctx.getContainerNoTab();
     hasPermission = target.hasPermission(ctx.getUser(), ReadPermission.class);
 
     List<String> modules = new ArrayList<String>();
-    for (Module m : ctx.getContainer().getActiveModules())
+    for (Module m : target.getActiveModules())
     {
         if(m.getModuleProperties().size() > 0)
         {

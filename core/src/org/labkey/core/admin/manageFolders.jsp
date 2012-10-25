@@ -26,7 +26,7 @@
 <%
     HttpView<FolderManagementForm> me = (HttpView<FolderManagementAction.FolderManagementForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
-    Container c = ctx.getContainer();
+    Container c = ctx.getContainerNoTab();
 %>
 <div id="someUniqueElement"></div>
 <script type="text/javascript">

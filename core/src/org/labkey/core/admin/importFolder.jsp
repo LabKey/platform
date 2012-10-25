@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    Container c = getViewContext().getContainer();
+    Container c = getViewContext().getContainerNoTab();
 %>
 
 <form action="" name="import" enctype="multipart/form-data" method="post">

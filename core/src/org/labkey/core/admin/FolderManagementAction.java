@@ -127,7 +127,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // URL; returning null here causes the base action to stop pestering the action.
         if (reshow && !errors.hasErrors())
             return null;
-        
+
         return new FolderManagementTabStrip(getContainer(), form, errors);
     }
 
@@ -167,8 +167,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private boolean handleFolderTypePost(FolderManagementForm form, BindException errors) throws SQLException
     {
-        Container c = getContainer();
-        if (c.isRoot())
+        Container container = getContainer();
+        if (container.isRoot())
         {
             throw new NotFoundException();
         }
@@ -191,36 +191,36 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
         {
-            c.setFolderType(FolderType.NONE, activeModules);
+            container.setFolderType(FolderType.NONE, activeModules);
             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
-            c.setDefaultModule(defaultModule);
+            container.setDefaultModule(defaultModule);
         }
         else
         {
             FolderType folderType = ModuleLoader.getInstance().getFolderType(form.getFolderType());
-            c.setFolderType(folderType, activeModules);
+            container.setFolderType(folderType, activeModules);
         }
 
         if (form.isWizard())
         {
-            _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(c);
+            _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(container);
             _successURL.addParameter("wizard", Boolean.TRUE.toString());
         }
         else
-            _successURL = c.getFolderType().getStartURL(c, getUser());
+            _successURL = container.getFolderType().getStartURL(container, getUser());
 
         return true;
     }
 
     private boolean handleFullTextSearchPost(FolderManagementForm form, BindException errors) throws SQLException
     {
-        Container c = getContainer();
-        if (c.isRoot())
+        Container container = getContainer();
+        if (container.isRoot())
         {
             throw new NotFoundException();
         }
 
-        ContainerManager.updateSearchable(c, form.getSearchable(), getUser());
+        ContainerManager.updateSearchable(container, form.getSearchable(), getUser());
         _successURL = getViewContext().getActionURL();  // Redirect to ourselves -- this forces a reload of the Container object to get the property update
 
         return true;
@@ -241,14 +241,14 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private boolean handleExportPost(FolderManagementForm form, BindException errors) throws Exception
     {
-        Container c = getContainer();
-        if (c.isRoot())
+        Container container = getContainer();
+        if (container.isRoot())
         {
             throw new NotFoundException();
         }
 
         FolderWriterImpl writer = new FolderWriterImpl();
-        FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()),
+        FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
                 form.getFormat(), form.isIncludeSubfolders(), form.isRemoveProtected(), form.isShiftDates(),
                 form.isAlternateIds(), Logger.getLogger(FolderWriterImpl.class));
 
@@ -256,35 +256,35 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         {
             case 0:
             {
-                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                PipeRoot root = PipelineService.get().findPipelineRoot(container);
                 if (root == null || !root.isValid())
                 {
                     throw new NotFoundException("No valid pipeline root found");
                 }
                 File exportDir = root.resolvePath("export");
-                writer.write(c, ctx, new FileSystemFile(exportDir));
-                _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer());
+                writer.write(container, ctx, new FileSystemFile(exportDir));
+                _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
                 break;
             }
             case 1:
             {
-                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                PipeRoot root = PipelineService.get().findPipelineRoot(container);
                 if (root == null || !root.isValid())
                 {
                     throw new NotFoundException("No valid pipeline root found");
                 }
                 File exportDir = root.resolvePath("export");
                 exportDir.mkdir();
-                ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
-                writer.write(c, ctx, zip);
+                ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip"));
+                writer.write(container, ctx, zip);
                 zip.close();
-                _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer());
+                _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
                 break;
             }
             case 2:
             {
-                ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
-                writer.write(c, ctx, zip);
+                ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip"));
+                writer.write(container, ctx, zip);
                 zip.close();
                 break;
             }
@@ -294,20 +294,20 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private boolean handleImportPost(FolderManagementForm form, BindException errors) throws Exception
     {
-        Container c = getContainer();
-        if (c.isRoot())
+        Container container = getContainer();
+        if (container.isRoot())
         {
             throw new NotFoundException();
         }
 
-        if (!PipelineService.get().hasValidPipelineRoot(c))
+        if (!PipelineService.get().hasValidPipelineRoot(container))
         {
             errors.reject("folderImport", "Pipeline root not set or does not exist on disk");
         }
         else
         {
             // Assuming success starting the import process, redirect to pipeline status
-            _successURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+            _successURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(container);
 
             Map<String, MultipartFile> map = getFileMap();
             if (map.isEmpty())
@@ -355,10 +355,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     public NavTree appendNavTrail(NavTree root)
     {
-        Container c = getViewContext().getContainer();
+        Container container = getContainer();
 
-        if (c.isRoot())
-            return AdminController.appendAdminNavTrail(root, "Admin Console", AdminController.ShowAdminAction.class, getContainer());
+        if (container.isRoot())
+            return AdminController.appendAdminNavTrail(root, "Admin Console", AdminController.ShowAdminAction.class, container);
 
         root.addChild("Folder Management");
         return root;
@@ -366,7 +366,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private Container getContainer()
     {
-        return getViewContext().getContainer();
+        return getViewContext().getContainerNoTab();
     }
 
     private User getUser()
