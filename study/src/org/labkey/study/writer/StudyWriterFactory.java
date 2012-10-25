@@ -58,7 +58,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         @Override
         public boolean show(Container c)
         {
-            // show the Study folder export option if this container has a study or one of its container tab children
+            // show the Study folder export option if this container or one of its children has a study
             StudyImpl study = StudyManager.getInstance().getStudy(c);
             if (study != null)
                 return true;
@@ -67,12 +67,9 @@ public class StudyWriterFactory implements FolderWriterFactory
             {
                 for (Container child : c.getChildren())
                 {
-                    if (child.isContainerTab())
-                    {
-                        study = StudyManager.getInstance().getStudy(child);
-                        if (study != null)
-                            return true;
-                    }
+                    study = StudyManager.getInstance().getStudy(child);
+                    if (study != null)
+                        return true;
                 }
             }
 
