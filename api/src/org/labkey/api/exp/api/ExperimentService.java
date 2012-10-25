@@ -65,7 +65,7 @@ public class ExperimentService
 
         ExpRun getExpRun(int rowid);
         ExpRun getExpRun(String lsid);
-        ExpRun[] getExpRuns(Container container, ExpProtocol parentProtocol, ExpProtocol childProtocol);
+        ExpRun[] getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
         ExpRun createExperimentRun(Container container, String name);
 
         ExpData getExpData(int rowid);

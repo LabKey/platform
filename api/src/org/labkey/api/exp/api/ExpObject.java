@@ -31,6 +31,9 @@ import java.util.Map;
 
 public interface ExpObject extends Identifiable, Comparable<ExpObject>
 {
+    /** Prevent edits to this object. Subsequent calls to setters will throw an IllegalStateException */
+    public void lock();
+
     int getRowId();
     void setLSID(String lsid);
     void setLSID(Lsid lsid);

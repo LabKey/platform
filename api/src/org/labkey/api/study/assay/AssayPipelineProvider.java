@@ -73,7 +73,6 @@ public class AssayPipelineProvider extends PipelineProvider
         if (includeAll || (files != null && files.length > 0))
         {
             List<ExpProtocol> assays = AssayService.get().getAssayProtocols(context.getContainer());
-            Collections.sort(assays);
             String id = getFilePropertiesId();
             NavTree navTree = new NavTree(_actionDescription);
             navTree.setId(id);

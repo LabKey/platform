@@ -135,5 +135,7 @@ public class AssayService
          */
         public ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, @Nullable Container targetStudyContainer)
                 throws IOException, ExperimentException;
+
+        public void clearProtocolCache();
     }
 }
