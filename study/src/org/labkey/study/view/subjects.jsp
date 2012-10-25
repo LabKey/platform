@@ -443,11 +443,11 @@ li.ptid a.unhighlight
 
                     var hasUnenrolled = false;
                     var filterPanels = list.getFilterPanels();
-                    var select = [];
 
                     for (var i = 0; i < filterPanels.length; i++)
                     {
                         var store = filterPanels[i].getGrid().store;
+                        var select = [];
 
                         for (var j = 0; j < store.getCount(); j++)
                         {
@@ -466,7 +466,7 @@ li.ptid a.unhighlight
                             }
                         }
 
-                        if (select.length > 0)
+                        if (hasUnenrolled && select.length > 0)
                         {
                             filterPanels[i].getGrid().selection = select;
                             filterPanels[i].deselectAll();
@@ -478,6 +478,9 @@ li.ptid a.unhighlight
 
                     if (hasUnenrolled)
                     {
+                        select = [];
+                        Ext4.each(list.getSelection(true), function(rec){select.push(rec.data);});
+
                         // ensure we apply the group filter as well
                         filterTask.delay(50, null, null, [select])
                     }
