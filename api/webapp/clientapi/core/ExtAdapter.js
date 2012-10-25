@@ -80,7 +80,7 @@ LABKEY.initExtAdapter = function(LABKEY, Ext){
 
         query: Ext.query
     });
-}
+};
 
 LABKEY.inferHighestExtVersion = function(){
     if (window.Ext4)
@@ -88,6 +88,6 @@ LABKEY.inferHighestExtVersion = function(){
     else if (window.Ext)
         return Ext;
     console.warn('A known version of ExtJS cannot be found. Some features of this page may not work correctly.');
-}
+};
 
 LABKEY.initExtAdapter(LABKEY, LABKEY.inferHighestExtVersion());

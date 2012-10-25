@@ -22,7 +22,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.AppBar;
 import org.labkey.api.data.DataRegionSelection;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
