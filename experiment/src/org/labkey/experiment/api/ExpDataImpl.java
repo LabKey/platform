@@ -79,6 +79,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public void setDataFileURI(URI uri)
     {
+        ensureUnlocked();
         if (uri != null && !uri.isAbsolute())
         {
             throw new IllegalArgumentException("URI must be absolute.");
@@ -181,12 +182,14 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public void setDataFileUrl(String s)
     {
+        ensureUnlocked();
         _object.setDataFileUrl(s);
     }
 
     @Override
     public void setFile(File file)
     {
+        ensureUnlocked();
         setDataFileUrl(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI().toString());
     }
 

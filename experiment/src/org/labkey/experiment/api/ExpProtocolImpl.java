@@ -76,6 +76,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public void setObjectProperties(Map<String, ObjectProperty> props)
     {
+        ensureUnlocked();
         _object.storeObjectProperties(props);
     }
 
@@ -91,16 +92,19 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public void setProtocolDescription(String description)
     {
+        ensureUnlocked();
         _object.setProtocolDescription(description);
     }
 
     public void setMaxInputMaterialPerInstance(Integer maxMaterials)
     {
+        ensureUnlocked();
         _object.setMaxInputMaterialPerInstance(maxMaterials);
     }
 
     public void setMaxInputDataPerInstance(Integer i)
     {
+        ensureUnlocked();
         _object.setMaxInputDataPerInstance(i);
     }
 
@@ -121,11 +125,13 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public void setApplicationType(ApplicationType type)
     {
+        ensureUnlocked();
         _object.setApplicationType(type.toString());
     }
 
     public void setDescription(String description)
     {
+        ensureUnlocked();
         _object.setProtocolDescription(description);
     }
 
@@ -174,6 +180,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public void setContainer(Container container)
     {
+        ensureUnlocked();
         _object.setContainer(container);
     }
 
@@ -184,6 +191,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public void setProtocolParameters(Collection<ProtocolParameter> params)
     {
+        ensureUnlocked();
         _object.storeProtocolParameters(params);
     }
 
@@ -295,5 +303,4 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
                 try { rs.close(); } catch (SQLException e) {}
         }
     }
-
 }

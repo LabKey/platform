@@ -436,7 +436,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     throw new AssayException(errors.toString());
 
                 schema.getScope().commitTransaction();
-
+                AssayManager.get().clearProtocolCache();
                 return getAssayDefinition(assay.getProtocolId(), false);
             }
             catch (UnexpectedException e)

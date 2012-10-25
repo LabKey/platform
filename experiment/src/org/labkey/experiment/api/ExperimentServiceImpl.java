@@ -248,7 +248,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpRunImpl(run);
     }
 
-    public ExpRun[] getExpRuns(Container container, ExpProtocol parentProtocol, ExpProtocol childProtocol)
+    public ExpRun[] getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol)
     {
         SQLFragment sql = new SQLFragment(" SELECT ER.* "
                     + " FROM exp.ExperimentRun ER "
@@ -1523,6 +1523,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
             deleteProtocolByRowIds(c, user, orphanedProtocolIds);
 
+            AssayService.get().clearProtocolCache();
+            getExpSchema().getScope().addCommitTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // Be sure that we clear the cache after we commit the overall transaction, in case it
+                    // gets repopulated by another thread before then
+                    AssayService.get().clearProtocolCache();
+                }
+            });
+
             commitTransaction();
         }
         finally
@@ -2321,6 +2333,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         try
         {
+            ensureTransaction();
             Protocol result;
             boolean newProtocol = protocol.getRowId() == 0;
             if (newProtocol)
@@ -2344,11 +2357,29 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
 
             savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
+            AssayService.get().clearProtocolCache();
+
+            getExpSchema().getScope().addCommitTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // Be sure that we clear the cache after we commit the overall transaction, in case it
+                    // gets repopulated by another thread before then
+                    AssayService.get().clearProtocolCache();
+                }
+            });
+
+            commitTransaction();
             return result;
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            closeTransaction();
         }
     }
 

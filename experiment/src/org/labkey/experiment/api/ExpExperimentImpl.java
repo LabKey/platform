@@ -104,6 +104,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void setBatchProtocol(ExpProtocol protocol)
     {
+        ensureUnlocked();
         _object.setBatchProtocolId(protocol == null ? null : protocol.getRowId());
     }
 
@@ -235,6 +236,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void setHidden(boolean hidden)
     {
+        ensureUnlocked();
         _object.setHidden(hidden);
     }
     
@@ -245,6 +247,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void setContainer(Container container)
     {
+        ensureUnlocked();
         _object.setContainer(container);
     }
 
@@ -255,6 +258,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void setComments(String comments)
     {
+        ensureUnlocked();
         _object.setComments(comments);
     }
 

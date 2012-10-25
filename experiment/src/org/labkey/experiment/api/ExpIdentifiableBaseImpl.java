@@ -50,11 +50,13 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
     public void setLSID(Lsid lsid)
     {
+        ensureUnlocked();
         setLSID(lsid == null ? null : lsid.toString());
     }
 
     public void setLSID(String lsid)
     {
+        ensureUnlocked();
         _object.setLSID(lsid);
     }
 
@@ -65,6 +67,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
     public void setName(String name)
     {
+        ensureUnlocked();
         _object.setName(name);
     }
 

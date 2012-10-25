@@ -39,6 +39,21 @@ import java.io.Serializable;
 
 abstract public class ExpObjectImpl implements ExpObject, Serializable
 {
+    protected boolean _locked = false;
+
+    public void lock()
+    {
+        _locked = true;
+    }
+
+    protected void ensureUnlocked()
+    {
+        if (_locked)
+        {
+            throw new IllegalStateException("Cannot change a locked " + getClass());
+        }
+    }
+
     public String getLSIDNamespacePrefix()
     {
         return new Lsid(getLSID()).getNamespacePrefix();

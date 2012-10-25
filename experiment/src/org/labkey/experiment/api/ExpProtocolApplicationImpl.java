@@ -165,22 +165,26 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
     public void setRun(ExpRun run)
     {
+        ensureUnlocked();
         _object.setRunId(run.getRowId());
     }
 
     public void setActionSequence(int actionSequence)
     {
+        ensureUnlocked();
         _object.setActionSequence(actionSequence);
     }
 
     public void setProtocol(ExpProtocol protocol)
     {
+        ensureUnlocked();
         _object.setProtocolLSID(protocol.getLSID());
         _object.setCpasType(protocol.getApplicationType().toString());
     }
 
     public void setActivityDate(Date date)
     {
+        ensureUnlocked();
         _object.setActivityDate(date);
     }
 
@@ -240,21 +244,25 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
     public void setInputMaterials(List<ExpMaterial> inputMaterialList)
     {
+        ensureUnlocked();
         _inputMaterials = inputMaterialList;
     }
 
     public void setInputDatas(List<ExpData> inputDataList)
     {
+        ensureUnlocked();
         _inputDatas = inputDataList;
     }
 
     public void setOutputMaterials(List<ExpMaterial> outputMaterialList)
     {
+        ensureUnlocked();
         _outputMaterials = outputMaterialList;
     }
 
     public void setOutputDatas(List<ExpData> outputDataList)
     {
+        ensureUnlocked();
         _outputDatas = outputDataList;
     }
     

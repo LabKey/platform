@@ -173,11 +173,13 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public void setDescription(String s)
     {
+        ensureUnlocked();
         _object.setDescription(s);
     }
 
     public void setMaterialLSIDPrefix(String s)
     {
+        ensureUnlocked();
         _object.setMaterialLSIDPrefix(s);
     }
 
@@ -284,6 +286,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public void setContainer(Container container)
     {
+        ensureUnlocked();
         _object.setContainer(container);
     }
 

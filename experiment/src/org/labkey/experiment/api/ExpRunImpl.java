@@ -160,6 +160,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void setFilePathRoot(File file)
     {
+        ensureUnlocked();
         _object.setFilePathRoot(file == null ? null : file.getAbsolutePath());
     }
 
@@ -192,6 +193,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public ExpProtocolApplicationImpl addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType appType, String name)
     {
+        ensureUnlocked();
         ProtocolApplication pa = new ProtocolApplication();
         if (action == null)
         {
@@ -228,11 +230,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void setComments(String comments)
     {
+        ensureUnlocked();
         _object.setComments(comments);
     }
 
     public void setEntityId(String entityId)
     {
+        ensureUnlocked();
         _object.setEntityId(entityId);
     }
 
@@ -249,6 +253,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void setJobId(Integer jobId)
     {
+        ensureUnlocked();
         _object.setJobId(jobId);
     }
 
@@ -259,6 +264,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void setProtocolApplications(ExpProtocolApplicationImpl[] protocolSteps)
     {
+        ensureUnlocked();
         _protocolSteps = protocolSteps;
     }
 
@@ -316,12 +322,14 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void deleteProtocolApplications(User user)
     {
+        ensureUnlocked();
         deleteProtocolApplications(getOutputDatas(null), user);
     }
 
     @Override
     public void setReplacedByRun(ExpRun run)
     {
+        ensureUnlocked();
         if (run != null && run.getRowId() < 1)
         {
             throw new IllegalArgumentException("Run must have already been saved to the database");
@@ -424,6 +432,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void trimRunTree(Integer id, String type) throws ExperimentException
     {
+        ensureUnlocked();
         List<ExpProtocolApplication> listPA = new ArrayList<ExpProtocolApplication>();
         List<ExpMaterial> listM = new ArrayList<ExpMaterial>();
         List<ExpData> listD = new ArrayList<ExpData>();

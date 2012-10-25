@@ -72,6 +72,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     public void setSuccessorAppList(ArrayList<ExpProtocolApplication> successorAppList)
     {
+        ensureUnlocked();
         _successorAppList = successorAppList;
     }
 
@@ -154,6 +155,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     public void setSourceApplication(ExpProtocolApplication app)
     {
+        ensureUnlocked();
         if (app != null && app.getRowId() == 0)
         {
             throw new IllegalArgumentException();
@@ -168,6 +170,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     public void setRun(ExpRun run)
     {
+        ensureUnlocked();
         if (run != null && run.getRowId() == 0)
         {
             throw new IllegalArgumentException();
@@ -177,6 +180,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     public void setCpasType(String type)
     {
+        ensureUnlocked();
         _object.setCpasType(type);
     }
 
@@ -187,6 +191,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     public void setContainer(Container container)
     {
+        ensureUnlocked();
         _object.setContainer(container);
     }
 

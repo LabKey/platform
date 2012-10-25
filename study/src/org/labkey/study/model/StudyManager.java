@@ -122,6 +122,7 @@ import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
+import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
@@ -2076,6 +2077,7 @@ public class StudyManager
         _studyHelper.clearCache(c);
         _visitHelper.clearCache(c);
         _siteHelper.clearCache(c);
+        AssayManager.get().clearProtocolCache();
         if (unmaterializeDatasets && null != study)
             for (DataSetDefinition def : getDataSetDefinitions(study))
                 uncache(def);

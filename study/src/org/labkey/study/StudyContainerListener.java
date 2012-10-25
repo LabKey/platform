@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.study.assay.AssayManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -58,6 +59,8 @@ public class StudyContainerListener implements ContainerManager.ContainerListene
             // ignore any failures.
             _log.error("Failure cleaning up study data when deleting container " + c.getPath(), e);
         }
+        // Changing the container tree can change what assays are in scope
+        AssayManager.get().clearProtocolCache();
     }
 
     @Override

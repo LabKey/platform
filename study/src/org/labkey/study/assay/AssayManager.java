@@ -19,6 +19,8 @@ package org.labkey.study.assay;
 import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -67,6 +69,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: brittp
@@ -75,6 +78,8 @@ import java.util.*;
  */
 public class AssayManager implements AssayService.Interface
 {
+    private static Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(100, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
+
     private List<AssayProvider> _providers = new ArrayList<AssayProvider>();
     /** Synchronization lock object for ensuring that batch names are unique */
     private static final Object BATCH_NAME_LOCK = new Object();
@@ -150,7 +155,7 @@ public class AssayManager implements AssayService.Interface
 
     public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container)
     {
-        return (ExpRunTable) createProtocolSchema(user, container, protocol, null).createRunsTable();
+        return createProtocolSchema(user, container, protocol, null).createRunsTable();
     }
 
     public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy)
@@ -180,39 +185,64 @@ public class AssayManager implements AssayService.Interface
 
     public List<ExpProtocol> getAssayProtocols(Container container)
     {
-        return getAssayProtocols(container, null);
+        List<ExpProtocol> result = PROTOCOL_CACHE.get(container.getEntityId());
+        if (result == null)
+        {
+            // Build up a set of containers so that we can query them all at once
+            Set<Container> containers = new HashSet<Container>();
+            containers.add(container);
+            containers.add(ContainerManager.getSharedContainer());
+            Container project = container.getProject();
+            if (project != null)
+            {
+                containers.add(project);
+            }
+            if (container.isWorkbook())
+            {
+                containers.add(container.getParent());
+            }
+
+            ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
+            result = new ArrayList<ExpProtocol>();
+
+            // Filter to just the ones that have an AssayProvider associated with them
+            for (ExpProtocol protocol : protocols)
+            {
+                AssayProvider p = AssayService.get().getProvider(protocol);
+                if (p != null)
+                {
+                    // We don't want anyone editing our cached object
+                    protocol.lock();
+                    result.add(protocol);
+                }
+            }
+            // Sort them, just to be nice
+            Collections.sort(result);
+            result = Collections.unmodifiableList(result);
+            PROTOCOL_CACHE.put(container.getEntityId(), result);
+        }
+        return result;
     }
 
-    // CONSIDER: Cache ExpProtocol by container
-    // CONSIDER: Add provider LIKE filter to .getExpProtocols() query.
-    public List<ExpProtocol> getAssayProtocols(Container container, AssayProvider provider)
+    public List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider)
     {
-        // Build up a set of containers so that we can query them all at once
-        Set<Container> containers = new HashSet<Container>();
-        containers.add(container);
-        containers.add(ContainerManager.getSharedContainer());
-        Container project = container.getProject();
-        if (project != null)
+        // Take the full list
+        List<ExpProtocol> allProtocols = getAssayProtocols(container);
+        if (provider == null)
         {
-            containers.add(project);
-        }
-        if (container.isWorkbook())
-        {
-            containers.add(container.getParent());
+            return allProtocols;
         }
 
-        ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
+        // Filter it down to just ones that match the provider
         List<ExpProtocol> result = new ArrayList<ExpProtocol>();
-
-        // Filter to just the ones that have an AssayProvider associated with them
-        for (ExpProtocol protocol : protocols)
+        for (ExpProtocol p : allProtocols)
         {
-            AssayProvider p = AssayService.get().getProvider(protocol);
-            if (p != null && (provider == null || provider.equals(p)))
-                result.add(protocol);
+            if (provider.equals(AssayService.get().getProvider(p)))
+            {
+                result.add(p);
+            }
         }
-
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     public WebPartView createAssayListView(ViewContext context, boolean portalView)
@@ -297,7 +327,7 @@ public class AssayManager implements AssayService.Interface
         }
 
         //this is the previous assay btn
-        else if(currentContainer.getFolderType().getForceAssayUploadIntoWorkbooks() == false)
+        else if(!currentContainer.getFolderType().getForceAssayUploadIntoWorkbooks())
         {
             if (containers.size() == 1 && containers.iterator().next().equals(currentContainer))
             {
@@ -637,5 +667,10 @@ public class AssayManager implements AssayService.Interface
             resolverType = new StudyParticipantVisitResolverType();
 
         return resolverType.createResolver(run, targetStudyContainer, user);
+    }
+
+    public void clearProtocolCache()
+    {
+        PROTOCOL_CACHE.clear();
     }
 }
