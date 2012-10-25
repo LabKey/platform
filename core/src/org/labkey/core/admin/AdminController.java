@@ -2017,7 +2017,7 @@ public class AdminController extends SpringActionController
             new QueryProfiler.ActionURLFactory() {
                 public ActionURL getActionURL(String sql)
                 {
-                    return getQueryStackTracesURL(sql);
+                    return getQueryStackTracesURL(sql.hashCode());
                 }
             });
         }
@@ -2045,10 +2045,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static ActionURL getQueryStackTracesURL(String sql)
+    private static ActionURL getQueryStackTracesURL(int hashCode)
     {
         ActionURL url = new ActionURL(QueryStackTracesAction.class, ContainerManager.getRoot());
-        url.addParameter("sqlHashCode", sql.hashCode());
+        url.addParameter("sqlHashCode", hashCode);
         return url;
     }
 
@@ -2062,7 +2062,7 @@ public class AdminController extends SpringActionController
                 @Override
                 public ActionURL getActionURL(String sql)
                 {
-                    return getExecuteQueryURL(sql);
+                    return getExecutionPlanURL(sql);
                 }
             });
         }
@@ -2076,26 +2076,30 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static ActionURL getExecuteQueryURL(String sql)
+    private static ActionURL getExecutionPlanURL(String sql)
     {
-        ActionURL url = new ActionURL(ExecuteQueryAction.class, ContainerManager.getRoot());
+        ActionURL url = new ActionURL(ExecutionPlanAction.class, ContainerManager.getRoot());
         url.addParameter("sqlHashCode", sql.hashCode());
         return url;
     }
 
 
     @AdminConsoleAction
-    public class ExecuteQueryAction extends SimpleViewAction<QueryForm>
+    public class ExecutionPlanAction extends SimpleViewAction<QueryForm>
     {
+        private int _hashCode;
+
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return QueryProfiler.getAnalyzeQueryView(form.getSqlHashCode());
+            _hashCode = form.getSqlHashCode();
+            return QueryProfiler.getExecutionPlanView(form.getSqlHashCode());
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             appendAdminNavTrail(root, "Queries", QueriesAction.class);
-            root.addChild("Analyze Query");
+            root.addChild("Query Stack Traces", getQueryStackTracesURL(_hashCode));
+            root.addChild("Execution Plan");
             return root;
         }
     }

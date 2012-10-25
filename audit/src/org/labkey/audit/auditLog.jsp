@@ -32,7 +32,7 @@
     for (AuditLogService.AuditViewFactory factory : factories)
     {
 %>
-        <option value="<%=factory.getEventType()%>" <%=factory.getEventType().equals(currentView) ? "selected" : ""%>><%=h(factory.getName())%></option>
+        <option value="<%=h(factory.getEventType())%>"<%=h(factory.getEventType().equals(currentView) ? " selected" : "")%>><%=h(factory.getName())%></option>
 <%
     }
 %>
