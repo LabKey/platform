@@ -20,24 +20,36 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditLogService.AuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.util.StartupListener;
-import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.Pair;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.StartupListener;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
@@ -50,7 +62,17 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -63,7 +85,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     private static final Logger _log = Logger.getLogger(AuditLogImpl.class);
     private static final String OBJECT_XML_KEY = "objectXML";
-    private static Map<String, AuditLogService.AuditViewFactory> _auditViewFactories = new HashMap<String, AuditLogService.AuditViewFactory>();
+    private static Map<String, AuditViewFactory> _auditViewFactories = new ConcurrentHashMap<String, AuditViewFactory>();
     private static final Map<String, Boolean> _factoryInitialized = new HashMap<String, Boolean>();
 
     private Queue<Pair<User, AuditLogEvent>> _eventQueue = new LinkedList<Pair<User, AuditLogEvent>>();
@@ -202,7 +224,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         if (!_factoryInitialized.containsKey(event.getEventType()))
         {
             _log.info("Initializing audit event factory for: " + event.getEventType());
-            AuditLogService.AuditViewFactory factory = getAuditViewFactory(event.getEventType());
+            AuditViewFactory factory = getAuditViewFactory(event.getEventType());
             if (factory != null)
             {
                 Container c = ContainerManager.getForId(event.getContainerId());
@@ -381,34 +403,39 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return null;
     }
 
-    public synchronized void addAuditViewFactory(AuditLogService.AuditViewFactory factory)
+    public void addAuditViewFactory(AuditViewFactory factory)
     {
-        _auditViewFactories.put(factory.getEventType(), factory);
+        AuditViewFactory previous = _auditViewFactories.put(factory.getEventType(), factory);
+
+        if (null != previous)
+            throw new IllegalStateException("AuditViewFactory \"" + factory.getEventType() + "\" is already registered: "
+                    + previous.getClass().getName() + " vs. " + factory.getClass().getName());
     }
 
-    public synchronized AuditLogService.AuditViewFactory getAuditViewFactory(String eventType)
+    public AuditViewFactory getAuditViewFactory(String eventType)
     {
         return _auditViewFactories.get(eventType);
     }
 
-    public AuditLogService.AuditViewFactory[] getAuditViewFactories()
+    public AuditViewFactory[] getAuditViewFactories()
     {
-        List<AuditLogService.AuditViewFactory> factories = new ArrayList<AuditLogService.AuditViewFactory>(_auditViewFactories.values());
+        List<AuditViewFactory> factories = new ArrayList<AuditViewFactory>(_auditViewFactories.values());
 
-        Collections.sort(factories, new Comparator<AuditLogService.AuditViewFactory>(){
-            public int compare(AuditLogService.AuditViewFactory o1, AuditLogService.AuditViewFactory o2)
+        Collections.sort(factories, new Comparator<AuditViewFactory>(){
+            public int compare(AuditViewFactory o1, AuditViewFactory o2)
             {
                 return (o1.getName().compareToIgnoreCase(o2.getName()));
             }
         });
-        return factories.toArray(new AuditLogService.AuditViewFactory[factories.size()]);
+        return factories.toArray(new AuditViewFactory[factories.size()]);
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
     {
         DbSchema schema = AuditSchema.getInstance().getSchema();
 
-        try {
+        try
+        {
             schema.getScope().ensureTransaction();
 
             event = addEvent(event);

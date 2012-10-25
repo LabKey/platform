@@ -21,13 +21,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 
 public class AuditSchema
 {
-    private static AuditSchema _instance = null;
+    private static final AuditSchema _instance = new AuditSchema();
 
     public static AuditSchema getInstance()
     {
-        if (null == _instance)
-            _instance = new AuditSchema();
-
         return _instance;
     }
 

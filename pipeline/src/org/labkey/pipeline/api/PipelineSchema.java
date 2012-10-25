@@ -23,14 +23,11 @@ import org.labkey.api.data.TableInfo;
  */
 public class PipelineSchema
 {
-    private static PipelineSchema instance = null;
+    private static final PipelineSchema _instance = new PipelineSchema();
 
     public static PipelineSchema getInstance()
     {
-        if (null == instance)
-            instance = new PipelineSchema();
-
-        return instance;
+        return _instance;
     }
 
     private static final String SCHEMA_NAME = "pipeline";
