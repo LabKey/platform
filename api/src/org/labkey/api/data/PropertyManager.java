@@ -40,15 +40,12 @@ public class PropertyManager
 {
     public static class PropertySchema
     {
-        private static PropertySchema instance = null;
+        private static final PropertySchema _instance = new PropertySchema();
         private static final String SCHEMA_NAME = "prop";
 
         public static PropertySchema getInstance()
         {
-            if (null == instance)
-                instance = new PropertySchema();
-
-            return instance;
+            return _instance;
         }
 
         private PropertySchema()

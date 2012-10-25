@@ -24,7 +24,7 @@ import org.labkey.api.data.dialect.SqlDialect;
  */
 public class TestSchema
 {
-    private static TestSchema instance = new TestSchema();
+    private static final TestSchema instance = new TestSchema();
 
     public static TestSchema getInstance()
     {
