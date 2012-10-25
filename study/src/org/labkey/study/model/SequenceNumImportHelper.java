@@ -209,7 +209,7 @@ translateToDouble:
         if (null != v && v.getSequenceNumHandlingEnum() == Visit.SequenceHandling.logUniqueByDate)
         {
             int daysSinceEpoch = convertToDaysSinceEpoch(date);
-            int offset = daysSinceEpoch - _startDaysSinceEpoch;
+            int offset = Math.max(0,daysSinceEpoch - _startDaysSinceEpoch);
             double fraction = offset/10000.0;
             sequencenum += fraction;
         }

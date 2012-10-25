@@ -262,8 +262,8 @@ public class SampleMindedTransformTask
         toInt("sitecode", inputRow);
 
         String vesselDomainType = (String)inputRow.get("VesselDomainType");
-        if (null != vesselDomainType && vesselDomainType.length() > 32)
-            inputRow.put("VesselDomainType", vesselDomainType.substring(0,32));
+        if (null != vesselDomainType && vesselDomainType.length() > 64)
+            inputRow.put("VesselDomainType", vesselDomainType.substring(0,64));
 
         // Get the barcode and strip off the "-INVALID" suffix, if present
         String barcode = inputRow.get("barcode") == null ? null : inputRow.get("barcode").toString();
