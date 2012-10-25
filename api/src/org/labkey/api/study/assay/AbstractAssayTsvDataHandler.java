@@ -48,7 +48,13 @@ import java.util.*;
  */
 public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentDataHandler implements ValidationDataHandler
 {
-    protected static final Object ERROR_VALUE = new Object();
+    protected static final Object ERROR_VALUE = new Object() {
+        @Override
+        public String toString()
+        {
+            return "{AbstractAssayTsvDataHandler.ERROR_VALUE}";
+        }
+    };
 
     private static final Logger LOG = Logger.getLogger(AbstractAssayTsvDataHandler.class);
 
