@@ -89,16 +89,20 @@ Ext4.define('LABKEY.ext.ImportWizard', {
                 return;
             }
 
+            Ext4.Msg.wait('Creating workbook');
+
             LABKEY.Security.createContainer({
                 isWorkbook: true,
                 title: panel.down('#titleField').getValue(),
                 description: panel.down('#descriptionField').getValue(),
                 folderType: panel.workbookFolderType,
                 success: function(data){
-                   this.doLoad(data.path);
+                    Ext4.Msg.hide();
+                    this.doLoad(data.path);
                 },
                 scope: this,
                 failure: function(error){
+                    Ext4.Msg.hide();
                     if(error.exception)
                         alert(error.exception);
                     LABKEY.Utils.onError(error);

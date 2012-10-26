@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.laboratory.AbstractDataProvider;
 import org.labkey.api.laboratory.NavItem;
 import org.labkey.api.laboratory.SimpleQueryNavItem;
@@ -82,7 +81,12 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
     public List<ExpProtocol> getProtocols(Container c)
     {
         List<ExpProtocol> list = new ArrayList<ExpProtocol>();
-        ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(c, c.getProject(), ContainerManager.getSharedContainer());
+        List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
+        protocols.addAll(AssayService.get().getAssayProtocols(c));
+        protocols.addAll(AssayService.get().getAssayProtocols(ContainerManager.getSharedContainer()));
+        if (!c.isProject())
+            protocols.addAll(AssayService.get().getAssayProtocols(c.getProject()));
+
         for (ExpProtocol p : protocols)
         {
             AssayProvider provider = AssayService.get().getProvider(p);
