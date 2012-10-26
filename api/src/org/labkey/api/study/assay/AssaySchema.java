@@ -56,7 +56,7 @@ public abstract class AssaySchema extends UserSchema
     }
 
     /** Make it public - protected in superclass */
-    public abstract TableInfo createTable(String name);
+    public abstract @Nullable TableInfo createTable(String name);
 
     public static String getBatchesTableName(ExpProtocol protocol, boolean protocolPrefixed)
     {

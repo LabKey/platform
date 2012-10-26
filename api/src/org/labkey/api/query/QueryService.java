@@ -116,11 +116,11 @@ abstract public class QueryService
      * Loops through the field keys and turns them into ColumnInfos based on the base table
      */
     @NotNull
-    abstract public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields);
+    abstract public Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, Collection<FieldKey> fields);
     @NotNull
     abstract public LinkedHashMap<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields, @NotNull Collection<ColumnInfo> existingColumns);
 
-    abstract public List<DisplayColumn> getDisplayColumns(TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields);
+    abstract public List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields);
 
     /**
      * Ensure that <code>columns</code> contains all of the columns necessary for <code>filter</code> and <code>sort</code>.

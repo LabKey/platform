@@ -204,7 +204,7 @@ abstract public class UserSchema extends AbstractSchema
         return getTable(name, true);
     }
 
-    protected abstract TableInfo createTable(String name);
+    protected abstract @Nullable TableInfo createTable(String name);
 
     abstract public Set<String> getTableNames();
 
