@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -212,6 +213,8 @@ public class DefaultFolderType implements FolderType
     public void unconfigureContainer(Container c, User user)
     {
         List<WebPart> parts = Portal.getParts(c);
+        List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
+        Map<String, Portal.PortalPage> portalPages = Portal.getPages(c, true);
 
         if (null != parts)
         {
@@ -228,6 +231,17 @@ public class DefaultFolderType implements FolderType
 
             if (saveRequired)
                 Portal.saveParts(c, parts);
+        }
+
+        for (FolderTab folderTab : folderTabs)
+        {
+            // Hide all of the portal pages for the old Folder Tabs.
+            Portal.PortalPage portalPage = portalPages.get(folderTab.getName());
+
+            if (null != portalPage)
+            {
+               Portal.hidePage(c, portalPage.getPageId());
+            }
         }
     }
 

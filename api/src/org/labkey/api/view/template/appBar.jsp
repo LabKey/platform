@@ -79,7 +79,7 @@
                     if(context.getUser().isAdministrator())
                     {
                 %>
-                    <li class="labkey-app-bar-add-tab">
+                    <li class="labkey-app-bar-add-tab" id="addTab">
                         <a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getAddTabURL(context.getContainer(), context.getActionURL())%>">+</a>
                     </li>
                 <%

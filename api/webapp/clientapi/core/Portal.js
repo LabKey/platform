@@ -502,7 +502,7 @@ LABKEY.Portal = new function()
 
                             if(anchors[0].innerText === config.folderTabCaption){
                                 // Found the tab, swap it with the previous tab.
-                                if(tabs[i + 1]){
+                                if(tabs[i + 1] && tabs[i + 1].getAttribute('id') !== 'addTab'){
                                     tabEl.insertAfter(tabs[i + 1]);
                                 }
                             }
