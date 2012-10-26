@@ -20,12 +20,16 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayResultDetailsAction;
 import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayResultTable;
+import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,5 +65,9 @@ public class CBCProtocolSchema extends AssayProtocolSchema
         return table;
     }
 
-
+    @Override
+    protected ResultsQueryView createDataQueryView(ViewContext context, QuerySettings settings, BindException errors)
+    {
+        return new CBCResultsQueryView((CBCAssayProvider)getProvider(), getProtocol(), context, settings);
+    }
 }

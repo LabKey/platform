@@ -41,11 +41,8 @@ public class AssayResultsWebPartFactory extends AssayBaseWebPartFactory
     @Override
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart, ExpProtocol protocol, boolean showButtons)
     {
-        // XXX: filtering by batch and run not yet implemented
-        //Integer batchId = getBatchId(webPart);
-        //Integer runId = getRunId(webPart);
-
-        AssayResultsView resultsView = new AssayResultsView(protocol, !showButtons);
+        String dataRegionName = AssayProtocolSchema.DATA_TABLE_NAME + webPart.getIndex();
+        AssayResultsView resultsView = new AssayResultsView(protocol, !showButtons, null, dataRegionName);
         resultsView.setTitleHref(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(portalCtx.getContainer(), protocol));
         resultsView.setTitle(protocol.getName() + " Results");
         return resultsView;

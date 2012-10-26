@@ -173,16 +173,6 @@ public class AssayManager implements AssayService.Interface
         return AssayService.get().getProvider(protocol).createProtocolSchema(user, container, protocol, targetStudy);
     }
 
-    public String getRunsTableName(ExpProtocol protocol)
-    {
-        return AssaySchemaImpl.getRunsTableName(protocol, false);
-    }
-
-    public String getResultsTableName(ExpProtocol protocol)
-    {
-        return AssaySchemaImpl.getResultsTableName(protocol, false);
-    }
-
     public List<ExpProtocol> getAssayProtocols(Container container)
     {
         List<ExpProtocol> result = PROTOCOL_CACHE.get(container.getEntityId());

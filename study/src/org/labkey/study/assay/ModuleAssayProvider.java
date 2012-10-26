@@ -51,6 +51,7 @@ import org.labkey.study.assay.xml.DomainDocument;
 import org.labkey.study.assay.xml.ProviderType;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.StudyModule;
+import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.script.ScriptEngineManager;
@@ -465,7 +466,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
-    public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol)
+    public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol, BindException errors)
     {
         return createListView(AssayDomainTypes.Result, protocol);
     }

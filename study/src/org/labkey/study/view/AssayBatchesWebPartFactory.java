@@ -18,6 +18,7 @@ package org.labkey.study.view;
 
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AssayBatchesView;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.Portal;
@@ -43,7 +44,8 @@ public class AssayBatchesWebPartFactory extends AssayBaseWebPartFactory
     @Override
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart, ExpProtocol protocol, boolean showButtons)
     {
-        AssayBatchesView batchesView = new AssayBatchesView(protocol, !showButtons);
+        String dataRegionName = AssayProtocolSchema.BATCHES_TABLE_NAME + webPart.getIndex();
+        AssayBatchesView batchesView = new AssayBatchesView(protocol, !showButtons, dataRegionName);
         batchesView.setTitleHref(PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(portalCtx.getContainer(), protocol, null));
         batchesView.setTitle(protocol.getName() + " Batches");
         return batchesView;

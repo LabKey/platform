@@ -464,7 +464,7 @@ public class AssayController extends SpringActionController
             ModelAndView view = provider.createBeginView(getViewContext(), form.getProtocol());
             _hasCustomView = (null != view);
             setHelpTopic("createDatasetViaAssay");
-            return (null == view ? new AssayRunsView(_protocol, false) : view);
+            return (null == view ? new AssayRunsView(_protocol, false, errors) : view);
         }
 
         @Override
@@ -875,12 +875,12 @@ public class AssayController extends SpringActionController
                     filterValue.append(sep).append(batchId);
                     sep = ";";
                 }
-                result.addFilter(AssayService.get().getRunsTableName(protocol),
+                result.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME,
                         AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.IN, filterValue.toString());
             }
             else if (batchIds.length == 1)
             {
-                result.addFilter(AssayService.get().getResultsTableName(protocol),
+                result.addFilter(AssayProtocolSchema.DATA_TABLE_NAME,
                         AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, batchIds[0]);
             }
             if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
@@ -914,7 +914,7 @@ public class AssayController extends SpringActionController
             AssayProvider provider = AssayService.get().getProvider(protocol);
 
             AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
-            String resultsTableName = AssayService.get().getResultsTableName(protocol);
+            String resultsTableName = AssayProtocolSchema.DATA_TABLE_NAME;
 
             // Check if we need to set a filter on the URL to show replaced data, which is usually filtered out
             if (provider.supportsReRun())
@@ -1149,7 +1149,7 @@ public class AssayController extends SpringActionController
         {
             form.setContainer(getContainer());
             ExpProtocol protocol = form.getProtocol();
-            String tableName = AssayService.get().getResultsTableName(protocol);
+            String tableName = AssayProtocolSchema.DATA_TABLE_NAME;
             AssaySchema schema = AssayService.get().createProtocolSchema(getUser(), getContainer(), protocol, null);
             TableInfo table = schema.getTable(tableName);
             if (!(table instanceof AssayResultTable))

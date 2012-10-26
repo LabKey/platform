@@ -19,6 +19,7 @@ package org.labkey.study.view;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayRunsView;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -50,10 +51,8 @@ public class AssayRunsWebPartFactory extends AssayBaseWebPartFactory
     @Override
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart, ExpProtocol protocol, boolean showButtons)
     {
-        // XXX: filtering by batch not yet implemented
-        //Integer batchId = getBatchId(webPart);
-
-        AssayRunsView runsView = new AssayRunsView(protocol, !showButtons);
+        String dataRegionName = AssayProtocolSchema.RUNS_TABLE_NAME + webPart.getIndex();
+        AssayRunsView runsView = new AssayRunsView(protocol, !showButtons, null, dataRegionName);
         runsView.setTitleHref(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(portalCtx.getContainer(), protocol));
         runsView.setTitle(protocol.getName() + " Runs");
         return runsView;

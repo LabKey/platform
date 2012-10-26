@@ -30,9 +30,7 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
-import org.labkey.api.study.actions.AssayResultDetailsAction;
 import org.labkey.api.study.assay.*;
-import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.view.*;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -295,25 +293,11 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 //                new ThawListResolverType());
     }
 
-    QuerySettings getResultsQuerySettings(ViewContext context, ExpProtocol protocol)
-    {
-        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(context.getUser(), context.getContainer(), protocol, null);
-        String name = AssayService.get().getResultsTableName(protocol);
-        QuerySettings settings = schema.getSettings(context, name, name);
-        return settings;
-    }
 
     @Override
     public boolean hasCustomView(IAssayDomainType domainType, boolean details)
     {
         return details && domainType == ExpProtocol.AssayDomainTypes.Result;
-    }
-
-    @Override
-    public ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol)
-    {
-        QuerySettings settings = getResultsQuerySettings(context, protocol);
-        return new CBCResultsQueryView(this, protocol, context, settings);
     }
 
     @Override
