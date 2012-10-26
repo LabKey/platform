@@ -374,14 +374,14 @@ public class Portal
     }
 
 
-    public static void resetPages(Container c, List<FolderTab> tabs)
+    public static void resetPages(Container c, List<FolderTab> tabs, boolean resetIndexes)
     {
         try
         {
             getSchema().getScope().ensureTransaction();
             ArrayList<PortalPage> existing = new ArrayList<PortalPage>(getPages(c).values());
             for (FolderTab tab : tabs)
-                ensurePage(c, tab, existing);
+                ensurePage(c, tab, existing, resetIndexes);
             getSchema().getScope().commitTransaction();
         }
         catch (SQLException x)
@@ -598,7 +598,7 @@ public class Portal
 
 
     /* existing is used to optmize inserting multiple pages */
-    private static void ensurePage(Container c, FolderTab tab, List<PortalPage> existing)
+    private static void ensurePage(Container c, FolderTab tab, List<PortalPage> existing, boolean resetIndexes)
     {
         assert getSchema().getScope().isTransactionActive();
 
@@ -606,20 +606,39 @@ public class Portal
         if (null != find)
         {
             _setHidden(find, false);
+            if (resetIndexes)
+            {
+                try
+                {
+                    find.setIndex(tab.getDefaultIndex());
+                    Table.update(null, getTableInfoPortalPages(), find, new Object[] {find.getContainer(), find.getPageId()});
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+            }
             return;
         }
 
-        boolean available = 0 <= tab.getDefaultIndex();
-        int nextAvailableIndex = tab.getDefaultIndex();
-        for (PortalPage p : existing)
+        int index = 0;
+        if (resetIndexes)
         {
-            if (p.getIndex() == tab.getDefaultIndex())
-                available = false;
-            nextAvailableIndex = Math.max(p.getIndex()+1,nextAvailableIndex);
+            index = tab.getDefaultIndex();
         }
-        int index = available ? tab.getDefaultIndex() : nextAvailableIndex;
-        index = Math.max(0,index);
-
+        else
+        {
+            boolean available = 0 <= tab.getDefaultIndex();
+            int nextAvailableIndex = tab.getDefaultIndex();
+            for (PortalPage p : existing)
+            {
+                if (p.getIndex() == tab.getDefaultIndex())
+                    available = false;
+                nextAvailableIndex = Math.max(p.getIndex()+1,nextAvailableIndex);
+            }
+            index = available ? tab.getDefaultIndex() : nextAvailableIndex;
+            index = Math.max(0,index);
+        }
         PortalPage p = new PortalPage();
         p.setEntityId(new GUID());
         p.setContainer(new GUID(c.getId()));
