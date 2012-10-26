@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
@@ -86,6 +87,22 @@ public class AssayListTable extends FilteredTable
         addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
 
         setDetailsURL(detailsURL);
+    }
+
+    @Override
+    public boolean hasDefaultContainerFilter()
+    {
+        return getContainerFilter() instanceof ContainerFilter.WorkbookAssay;
+    }
+
+    @Override
+    public void setContainerFilter(@NotNull ContainerFilter filter)
+    {
+        if (hasDefaultContainerFilter())
+        {
+            filter = new UnionContainerFilter(filter, getContainerFilter());
+        }
+        super.setContainerFilter(filter);
     }
 
     @Override

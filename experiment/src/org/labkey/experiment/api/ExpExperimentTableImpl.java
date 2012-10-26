@@ -16,12 +16,15 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -190,5 +193,22 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         }
         sql.append(")");
         return new ExprColumn(this, alias, sql, JdbcType.INTEGER);
+    }
+
+    @Override
+    public boolean hasDefaultContainerFilter()
+    {
+        // Lie a little bit - we have two "standard" filters.
+        return super.hasDefaultContainerFilter() || getContainerFilter() instanceof ContainerFilter.CurrentPlusProjectAndShared;
+    }
+
+    @Override
+    public void setContainerFilter(@NotNull ContainerFilter filter)
+    {
+        if (getContainerFilter() instanceof ContainerFilter.CurrentPlusProjectAndShared)
+        {
+            filter = new UnionContainerFilter(filter, getContainerFilter());
+        }
+        super.setContainerFilter(filter);
     }
 }
