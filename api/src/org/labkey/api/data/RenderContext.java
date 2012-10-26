@@ -258,7 +258,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     /** valid after call to getResultSet() */
     public Map<FieldKey, ColumnInfo> getFieldMap()
     {
-        return null==_rs ? null : _rs.getFieldMap();
+        return null == _rs ? null : _rs.getFieldMap();
     }
 
     public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, QuerySettings settings, Map<String,Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException

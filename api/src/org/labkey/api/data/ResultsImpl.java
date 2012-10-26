@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +53,7 @@ import java.util.Set;
 public class ResultsImpl implements Results
 {
     private final ResultSet _rs;
-    private final Map<FieldKey, ColumnInfo> _fieldMap;
-
+    private final Map<FieldKey, ColumnInfo> _fieldMap;  // Usually a LinkedHashMap, to keep column order
     private final Map<FieldKey, Integer> _fieldIndexMap;
 
 
@@ -66,7 +66,7 @@ public class ResultsImpl implements Results
         {
             ResultSetMetaData rsmd = rs.getMetaData();
             int count = rsmd.getColumnCount();
-            _fieldMap = new HashMap<FieldKey,ColumnInfo>(count * 2);
+            _fieldMap = new LinkedHashMap<FieldKey,ColumnInfo>(count * 2);
             _fieldIndexMap = new HashMap<FieldKey, Integer>(count * 2);
 
             for (int i = 1; i <= count; i++)
@@ -88,7 +88,7 @@ public class ResultsImpl implements Results
     public ResultsImpl(ResultSet rs, @NotNull Collection<ColumnInfo> cols)
     {
         _rs = rs;
-        _fieldMap = new HashMap<FieldKey, ColumnInfo>(cols.size() * 2);
+        _fieldMap = new LinkedHashMap<FieldKey, ColumnInfo>(cols.size() * 2);
         _fieldIndexMap = new HashMap<FieldKey, Integer>(cols.size() * 2);
 
         for (ColumnInfo col : cols)
@@ -133,27 +133,28 @@ public class ResultsImpl implements Results
     }
 
 
-    public ResultsImpl(ResultsImpl rs)
-    {
-        this._rs = rs._rs;
-        this._fieldMap = rs._fieldMap;
-        this._fieldIndexMap = rs._fieldIndexMap;
-    }
-
-
-    public ResultsImpl wrap(Results rs)
-    {
-        if (rs instanceof ResultsImpl)
-        {
-            return new ResultsImpl((ResultsImpl)rs);
-        }
-        else
-        {
-            return new ResultsImpl(rs.getResultSet(), rs.getFieldMap());
-        }
-    }
-
-    
+// TODO: Remove... not used
+//    public ResultsImpl(ResultsImpl rs)
+//    {
+//        this._rs = rs._rs;
+//        this._fieldMap = rs._fieldMap;
+//        this._fieldIndexMap = rs._fieldIndexMap;
+//    }
+//
+//
+//    public ResultsImpl wrap(Results rs)
+//    {
+//        if (rs instanceof ResultsImpl)
+//        {
+//            return new ResultsImpl((ResultsImpl)rs);
+//        }
+//        else
+//        {
+//            return new ResultsImpl(rs.getResultSet(), rs.getFieldMap());
+//        }
+//    }
+//
+//
     @Override
     @NotNull
     public Map<FieldKey, ColumnInfo> getFieldMap()
