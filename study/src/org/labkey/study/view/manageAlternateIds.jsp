@@ -129,7 +129,7 @@
             var changeAlternateIds = function(prefixField, digitsField) {
                 Ext4.MessageBox.show({
                     title: "Change All Alternate IDs",
-                    msg: "If you have published this study before with Alternate IDs, this action will prevent future published studies being matched to previous studies by Alternate IDs. Are you sure you want to change all Alternate IDs?",
+                    msg: "This action will change the Alternate IDs for all participants in this study. The Alternate IDs in future published studies will not match the Alternate IDs in previously published studies. Are you sure you want to change all Alternate IDs?",
                     buttons: Ext4.MessageBox.OKCANCEL,
                     icon: Ext4.MessageBox.WARNING,
                     fn : function(buttonID) {
@@ -150,7 +150,6 @@
                                 headers : {'Content-Type' : 'application/json'},
                                 scope: this
                             });
-
                         }
                     }
                 });

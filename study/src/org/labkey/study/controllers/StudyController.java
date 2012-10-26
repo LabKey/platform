@@ -7739,8 +7739,8 @@ public class StudyController extends BaseStudyController
                 TableInfo ti = StudySchema.getInstance().getTableInfoParticipant();
                 List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
                 cols.add(ti.getColumn("participantid"));
-                cols.add(ti.getColumn("dateoffset"));
                 cols.add(ti.getColumn("alternateid"));
+                cols.add(ti.getColumn("dateoffset"));
                 SimpleFilter filter = new SimpleFilter();
                 filter.addCondition(ti.getColumn("container"), getContainer());
                 Results rs = QueryService.get().select(ti, cols, filter, new Sort("participantid"));
