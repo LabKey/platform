@@ -18,6 +18,7 @@ package org.labkey.api.study.actions;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.action.RedirectAction;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.DataRegionSelection;
@@ -64,9 +65,9 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
             containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getViewContext().getUser());
 
         ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), form.getProtocol(), containerFilter, selectedIds);
-        String maxRowsKey = AssayService.get().getResultsTableName(form.getProtocol()) + ".maxRows";
+        String maxRowsKey = AssayProtocolSchema.DATA_TABLE_NAME + ".maxRows";
         applyLastFilterParameter(url, maxRowsKey);
-        String sortKey = AssayService.get().getResultsTableName(form.getProtocol()) + ".sort";
+        String sortKey = AssayProtocolSchema.DATA_TABLE_NAME + ".sort";
         applyLastFilterParameter(url, sortKey);
 
         if (form.getContainerFilterName() != null)

@@ -17,17 +17,27 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.study.query.ResultsQueryView;
+import org.springframework.validation.BindException;
 
 /**
+ * A composite of a header section and a QueryView for the results below
  * User: kevink
  */
 public class AssayResultsView extends AbstractAssayView
 {
-    public AssayResultsView(ExpProtocol protocol, boolean minimizeLinks)
+    public AssayResultsView(ExpProtocol protocol, boolean minimizeLinks, BindException errors)
+    {
+        this(protocol, minimizeLinks, errors, AssayProtocolSchema.DATA_TABLE_NAME);
+    }
+
+    public AssayResultsView(ExpProtocol protocol, boolean minimizeLinks, BindException errors, String dataRegionName)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        ResultsQueryView resultsView = provider.createResultsQueryView(getViewContext(), protocol);
+        AssayProtocolSchema schema = provider.createProtocolSchema(getViewContext().getUser(), getViewContext().getContainer(), protocol, null);
+        QuerySettings settings = schema.getSettings(getViewContext(), dataRegionName, AssayProtocolSchema.DATA_TABLE_NAME);
+        ResultsQueryView resultsView = schema.createDataQueryView(getViewContext(), settings, errors);
         setupViews(resultsView, minimizeLinks, provider, protocol);
     }
 }

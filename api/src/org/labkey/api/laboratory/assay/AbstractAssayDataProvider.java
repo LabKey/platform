@@ -199,7 +199,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             if (visible)
             {
                 AssayProtocolSchema schema = getAssayProvider().createProtocolSchema(u, c, p, null);
-                items.add(new SimpleQueryNavItem(this, schema.getSchemaName(), AssayProviderSchema.getResultsTableName(p, false), _providerName, p.getName() + ": Raw Data"));
+                items.add(new SimpleQueryNavItem(this, schema.getSchemaName(), AssayProtocolSchema.DATA_TABLE_NAME, _providerName, p.getName() + ": Raw Data"));
 
                 //for file-based assays, append any associated queries
                 List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();

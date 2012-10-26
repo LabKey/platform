@@ -57,6 +57,8 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.AssayDetailRedirectAction;
+import org.labkey.api.study.actions.AssayResultDetailsAction;
+import org.labkey.api.study.actions.AssayRunDetailsAction;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
@@ -84,6 +86,11 @@ import java.util.Set;
  */
 public abstract class AssayProtocolSchema extends AssaySchema
 {
+    public static final String RUNS_TABLE_NAME = "Runs";
+    public static final String DATA_TABLE_NAME = "Data";
+    public static final String BATCHES_TABLE_NAME = "Batches";
+    public static final String QC_FLAGS_TABLE_NAME = "QCFlags";
+
     /** Legacy location for PropertyDescriptor columns is under a separate node. New location is as a top-level member of the table */
     private static final String RUN_PROPERTIES_COLUMN_NAME = "RunProperties";
     private static final String BATCH_PROPERTIES_COLUMN_NAME = "BatchProperties";
@@ -150,10 +157,10 @@ public abstract class AssayProtocolSchema extends AssaySchema
     public Set<String> getTableNames()
     {
         Set<String> names = new HashSet<String>();
-        names.add(getBatchesTableName(_protocol, false));
-        names.add(getRunsTableName(_protocol, false));
-        names.add(getResultsTableName(_protocol, false));
-        names.add(getQCFlagTableName(_protocol, false));
+        names.add(BATCHES_TABLE_NAME);
+        names.add(RUNS_TABLE_NAME);
+        names.add(DATA_TABLE_NAME);
+        names.add(QC_FLAGS_TABLE_NAME);
 
         return names;
     }
@@ -171,13 +178,13 @@ public abstract class AssayProtocolSchema extends AssaySchema
     // NOTE: Subclasses should override to add any additional provider specific tables.
     protected TableInfo createProviderTable(String name)
     {
-        if (name.equalsIgnoreCase(getBatchesTableName(getProtocol(), false)))
+        if (name.equalsIgnoreCase(BATCHES_TABLE_NAME))
             return createBatchesTable();
-        else if (name.equalsIgnoreCase(getRunsTableName(getProtocol(), false)))
+        else if (name.equalsIgnoreCase(RUNS_TABLE_NAME))
             return createRunsTable();
-        else if (name.equalsIgnoreCase(getResultsTableName(getProtocol(), false)))
+        else if (name.equalsIgnoreCase(DATA_TABLE_NAME))
             return createDataTable();
-        else if (name.equalsIgnoreCase(getQCFlagTableName(getProtocol(), false)))
+        else if (name.equalsIgnoreCase(QC_FLAGS_TABLE_NAME))
             return createQCFlagTable();
 
         return null;
@@ -185,7 +192,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     public TableInfo createBatchesTable()
     {
-        return createBatchesTable(getProtocol(), getProvider(), null, false);
+        return createBatchesTable(getProtocol(), getProvider(), null);
     }
 
     /** @return may return null if no results/data are tracked by this assay type */
@@ -200,30 +207,10 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     public ExpQCFlagTable createQCFlagTable()
     {
-        ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(AssaySchema.getQCFlagTableName(getProtocol(), false), this);
+        ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(QC_FLAGS_TABLE_NAME, this);
         table.populate();
         table.setAssayProtocol(getProtocol());
         return table;
-    }
-
-    public String getBatchesTableName(boolean protocolPrefixed)
-    {
-        return getBatchesTableName(getProtocol(), protocolPrefixed);
-    }
-
-    public String getRunsTableName(boolean protocolPrefixed)
-    {
-        return getRunsTableName(getProtocol(), protocolPrefixed);
-    }
-
-    public String getResultsTableName(boolean protocolPrefixed)
-    {
-        return getResultsTableName(getProtocol(), protocolPrefixed);
-    }
-
-    public String getQCFlagTableName(boolean protocolPrefixed)
-    {
-        return getQCFlagTableName(getProtocol(), protocolPrefixed);
     }
 
     // NOTE: This should be transitioned to partly happen in the TableInfo.overlayMetadata() for the various tables
@@ -241,9 +228,9 @@ public abstract class AssayProtocolSchema extends AssaySchema
     }
 
 
-    private ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter, boolean protocolPrefixed)
+    private ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
     {
-        final ExpExperimentTable result = ExperimentService.get().createExperimentTable(getBatchesTableName(protocolPrefixed), this);
+        final ExpExperimentTable result = ExperimentService.get().createExperimentTable(BATCHES_TABLE_NAME, this);
         result.populate();
         if (containerFilter != null)
         {
@@ -253,7 +240,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
         ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, getContainer());
-        fakeURL.addFilter(AssayService.get().getRunsTableName(protocol),
+        fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME,
                 AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
         String paramName = fakeURL.getParameters()[0].getKey();
 
@@ -301,8 +288,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     public ExpRunTable createRunsTable()
     {
-        final String tableName = getRunsTableName(false);
-        final ExpRunTable runTable = ExperimentService.get().createRunTable(tableName, this);
+        final ExpRunTable runTable = ExperimentService.get().createRunTable(RUNS_TABLE_NAME, this);
         if (getProvider().isEditableRuns(getProtocol()))
         {
             runTable.addAllowablePermission(UpdatePermission.class);
@@ -313,7 +299,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return getTable(tableName);
+                return getTable(RUNS_TABLE_NAME);
             }
         };
         runTable.getColumn(ExpRunTable.Column.ReplacedByRun).setFk(assayRunFK);
@@ -364,7 +350,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpExperimentTable batchesTable = createBatchesTable(getProtocol(), getProvider(), runTable.getContainerFilter(), false);
+                ExpExperimentTable batchesTable = createBatchesTable(getProtocol(), getProvider(), runTable.getContainerFilter());
                 fixupRenderers(batchesTable);
                 return batchesTable;
             }
@@ -393,19 +379,59 @@ public abstract class AssayProtocolSchema extends AssaySchema
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
         String name = settings.getQueryName();
+        QueryView result = null;
         if (name != null)
         {
-            if (name.equals(getResultsTableName(true)) || name.equals(getResultsTableName(false)))
-                return new ResultsQueryView(getProtocol(), this, settings);
-
-            if (name.equals(getRunsTableName(true)) || name.equals(getRunsTableName(false)))
-                return new RunListQueryView(getProtocol(), this, settings, new AssayRunType(getProtocol(), getContainer()));
-
-            if (name.equals(getBatchesTableName(true)) || name.equals(getBatchesTableName(false)))
-                return new BatchListQueryView(getProtocol(), this, settings);
+            if (name.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), DATA_TABLE_NAME)) || name.equalsIgnoreCase(DATA_TABLE_NAME))
+                result = createDataQueryView(context, settings, errors);
+            else if (name.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), RUNS_TABLE_NAME)) || name.equalsIgnoreCase(RUNS_TABLE_NAME))
+                result = createRunsQueryView(context, settings, errors);
+            else if (name.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), BATCHES_TABLE_NAME)) || name.equalsIgnoreCase(BATCHES_TABLE_NAME))
+                result = new BatchListQueryView(getProtocol(), this, settings);
         }
 
-        return super.createView(context, settings, errors);
+        if (result == null)
+            result = super.createView(context, settings, errors);
+        return result;
+    }
+
+    protected RunListQueryView createRunsQueryView(ViewContext context, QuerySettings settings, BindException errors)
+    {
+        RunListQueryView queryView = new RunListQueryView(getProtocol(), this, settings, new AssayRunType(getProtocol(), getContainer()));
+
+        if (getProvider().hasCustomView(ExpProtocol.AssayDomainTypes.Run, true))
+        {
+            ActionURL runDetailsURL = new ActionURL(AssayRunDetailsAction.class, context.getContainer());
+            runDetailsURL.addParameter("rowId", getProtocol().getRowId());
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("runId", "RowId");
+
+            AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
+            ati.setDetailsURL(new DetailsURL(runDetailsURL, params));
+            queryView.setShowDetailsColumn(true);
+        }
+
+        return queryView;
+    }
+
+    protected ResultsQueryView createDataQueryView(ViewContext context, QuerySettings settings, BindException errors)
+    {
+        ResultsQueryView queryView = new ResultsQueryView(_protocol, context, settings);
+
+        if (_provider.hasCustomView(ExpProtocol.AssayDomainTypes.Result, true))
+        {
+            ActionURL resultDetailsURL = new ActionURL(AssayResultDetailsAction.class, context.getContainer());
+            resultDetailsURL.addParameter("rowId", _protocol.getRowId());
+            Map<String, String> params = new HashMap<String, String>();
+            // map ObjectId to url parameter ResultDetailsForm.dataRowId
+            params.put("dataRowId", AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
+
+            AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
+            ati.setDetailsURL(new DetailsURL(resultDetailsURL, params));
+            queryView.setShowDetailsColumn(true);
+        }
+
+        return queryView;
     }
 
     @Override

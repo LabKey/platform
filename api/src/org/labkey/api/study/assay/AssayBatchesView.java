@@ -32,23 +32,30 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A composite of a header section and a QueryView for the batches below
+ */
 public class AssayBatchesView extends AbstractAssayView
 {
-    public AssayBatchesView(final ExpProtocol protocol, boolean minimizeLinks)
+    public AssayBatchesView(ExpProtocol protocol, boolean minimizeLinks)
+    {
+        this(protocol, minimizeLinks, AssayProtocolSchema.BATCHES_TABLE_NAME);
+    }
+
+    public AssayBatchesView(final ExpProtocol protocol, boolean minimizeLinks, String dataRegionName)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         ViewContext context = getViewContext();
 
         AssayProtocolSchema schema = provider.createProtocolSchema(context.getUser(), context.getContainer(), protocol, null);
-        String tableName = schema.getBatchesTableName(false);
-        QuerySettings settings = schema.getSettings(context, tableName, tableName);
+        QuerySettings settings = schema.getSettings(context, dataRegionName, AssayProtocolSchema.BATCHES_TABLE_NAME);
         settings.setAllowChooseQuery(false);
 
         BatchListQueryView batchesView = new BatchListQueryView(protocol, schema, settings);
 
         // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
         ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, context.getContainer());
-        fakeURL.addFilter(schema.getRunsTableName(false),
+        fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME,
                 AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
         String key = fakeURL.getParameters()[0].getKey();
 

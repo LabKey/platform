@@ -66,7 +66,7 @@ public class RunListQueryView extends ExperimentRunListView
     // so that TableQueryDefinition.getTable() doesn't think that it's being asked for a table from a different schema
     private RunListQueryView(ExpProtocol protocol, AssayProtocolSchema schema, ViewContext context)
     {
-        this(protocol, schema, getDefaultQuerySettings(protocol, schema, context), getDefaultAssayRunFilter(protocol, context));
+        this(protocol, schema, getDefaultQuerySettings(schema, context), getDefaultAssayRunFilter(protocol, context));
     }
 
     public RunListQueryView(ExpProtocol protocol, ViewContext context)
@@ -79,9 +79,9 @@ public class RunListQueryView extends ExperimentRunListView
         return new AssayRunType(protocol, context.getContainer());
     }
 
-    public static QuerySettings getDefaultQuerySettings(ExpProtocol protocol, UserSchema schema, ViewContext context)
+    public static QuerySettings getDefaultQuerySettings(UserSchema schema, ViewContext context)
     {
-        return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayService.get().getRunsTableName(protocol), true);
+        return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayProtocolSchema.RUNS_TABLE_NAME, true);
     }
 
     @Override

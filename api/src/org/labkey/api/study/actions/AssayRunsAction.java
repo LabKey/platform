@@ -78,7 +78,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         ModelAndView resultsView = provider.createRunsView(context, _protocol);
         if (resultsView != null)
             return resultsView;
-        return new AssayRunsView(_protocol, false);
+        return new AssayRunsView(_protocol, false, errors);
     }
 
     public NavTree appendNavTrail(NavTree root)

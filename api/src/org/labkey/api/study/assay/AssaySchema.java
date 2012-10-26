@@ -58,53 +58,10 @@ public abstract class AssaySchema extends UserSchema
     /** Make it public - protected in superclass */
     public abstract @Nullable TableInfo createTable(String name);
 
-    public static String getBatchesTableName(ExpProtocol protocol, boolean protocolPrefixed)
-    {
-        return getProviderTableName(protocol, "Batches", protocolPrefixed);
-    }
-
-    public static String getRunsTableName(ExpProtocol protocol, boolean protocolPrefixed)
-    {
-        return getProviderTableName(protocol, "Runs", protocolPrefixed);
-    }
-
-    public static String getResultsTableName(ExpProtocol protocol, boolean protocolPrefixed)
-    {
-        return getProviderTableName(protocol, "Data", protocolPrefixed);
-    }
-
-    public static String getQCFlagTableName(ExpProtocol protocol, boolean protocolPrefixed)
-    {
-        return getProviderTableName(protocol, "QCFlags", protocolPrefixed);
-    }
-
     /** Tack the table type onto the protocol name to create the full table name */
-    public static String getProviderTableName(ExpProtocol protocol, @NotNull String tableType, boolean protocolPrefixed)
+    public static String getLegacyProtocolTableName(ExpProtocol protocol, @NotNull String tableType)
     {
-        if (protocolPrefixed)
-            return protocol.getName() + " " + tableType;
-        else
-            return tableType;
-    }
-
-    public static String getProviderTableName(ExpProtocol protocol, @NotNull String tableType)
-    {
-        return getProviderTableName(protocol, tableType, false);
-    }
-
-    /** Strip off the provider name to determine the specific assay table type (runs, batches, etc) */
-    public static String getProviderTableType(ExpProtocol protocol, @NotNull String tableName)
-    {
-        String lname = tableName.toLowerCase();
-        String protocolPrefix = protocol.getName().toLowerCase() + " ";
-        if (lname.startsWith(protocolPrefix))
-        {
-            return tableName.substring(protocolPrefix.length());
-        }
-        
-        // This wasn't a table associated with the given protocol
-        // XXX: maybe?
-        return null;
+        return protocol.getName() + " " + tableType;
     }
 
         // UNDONE: need to check permissions here 8449

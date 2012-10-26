@@ -18,7 +18,6 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -30,7 +29,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -62,45 +60,32 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.ui.PropertiesEditorUtil;
 import org.labkey.api.qc.DataExchangeHandler;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.actions.AssayDetailRedirectAction;
-import org.labkey.api.study.actions.AssayResultDetailsAction;
-import org.labkey.api.study.actions.AssayRunDetailsAction;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.DesignerAction;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.pipeline.AssayRunAsyncContext;
-import org.labkey.api.study.query.ResultsQueryView;
-import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -880,48 +865,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return DefaultValueType.LAST_ENTERED;
     }
 
-    public RunListQueryView createRunQueryView(ViewContext context, ExpProtocol protocol)
-    {
-        RunListQueryView queryView = new RunListQueryView(protocol, context);
-
-        if (hasCustomView(ExpProtocol.AssayDomainTypes.Run, true))
-        {
-            ActionURL runDetailsURL = new ActionURL(AssayRunDetailsAction.class, context.getContainer());
-            runDetailsURL.addParameter("rowId", protocol.getRowId());
-            Map<String, String> params = new HashMap<String, String>();
-            params.put("runId", "RowId");
-
-            AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
-            ati.setDetailsURL(new DetailsURL(runDetailsURL, params));
-            queryView.setShowDetailsColumn(true);
-        }
-
-        return queryView;
-    }
-
-    public ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol)
-    {
-        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), AssaySchema.NAME);
-        String name = AssayService.get().getResultsTableName(protocol);
-        QuerySettings settings = schema.getSettings(context, name, name);
-        ResultsQueryView queryView = new ResultsQueryView(protocol, context, settings);
-
-        if (hasCustomView(ExpProtocol.AssayDomainTypes.Result, true))
-        {
-            ActionURL resultDetailsURL = new ActionURL(AssayResultDetailsAction.class, context.getContainer());
-            resultDetailsURL.addParameter("rowId", protocol.getRowId());
-            Map<String, String> params = new HashMap<String, String>();
-            // map ObjectId to url parameter ResultDetailsForm.dataRowId
-            params.put("dataRowId", AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
-
-            AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
-            ati.setDetailsURL(new DetailsURL(resultDetailsURL, params));
-            queryView.setShowDetailsColumn(true);
-        }
-
-        return queryView;
-    }
-
     public boolean hasCustomView(IAssayDomainType domainType, boolean details)
     {
         return false;
@@ -952,14 +895,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return null;
     }
 
-    public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol)
+    public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol, BindException errors)
     {
         return null;
     }
 
     public ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId)
     {
-        QueryView queryView = createResultsQueryView(context, protocol);
+        AssayProtocolSchema schema = createProtocolSchema(context.getUser(), context.getContainer(), protocol, null);
+        QuerySettings settings = schema.getSettings(context, AssayProtocolSchema.DATA_TABLE_NAME, AssayProtocolSchema.DATA_TABLE_NAME);
+        QueryView queryView = schema.createDataQueryView(context, settings, null);
 
         DataRegion region = new DataRegion();
 

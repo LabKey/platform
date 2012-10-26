@@ -38,6 +38,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.pipeline.PipelineProvider;
+import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -112,10 +113,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     DefaultValueType getDefaultValueDefault(Domain domain);
 
-    ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol);
-
-    RunListQueryView createRunQueryView(ViewContext context, ExpProtocol protocol);
-
     boolean hasCustomView(IAssayDomainType domainType, boolean details);
 
     ModelAndView createBeginView(ViewContext context, ExpProtocol protocol);
@@ -128,7 +125,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     ModelAndView createRunDetailsView(ViewContext context, ExpProtocol protocol, ExpRun run);
 
-    ModelAndView createResultsView(ViewContext context, ExpProtocol protocol);
+    ModelAndView createResultsView(ViewContext context, ExpProtocol protocol, BindException errors);
 
     public ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId);
 

@@ -247,8 +247,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         boolean mismatched = AssayPublishService.get().hasMismatchedInfo(allObjects, schema);
 
         // Show the form
-        String name = AssayService.get().getResultsTableName(_protocol);
-        QuerySettings settings = schema.getSettings(context, name, name);
+        QuerySettings settings = schema.getSettings(context, AssayProtocolSchema.DATA_TABLE_NAME, AssayProtocolSchema.DATA_TABLE_NAME);
         settings.setAllowChooseView(false);
         PublishResultsQueryView queryView = new PublishResultsQueryView(provider, _protocol, schema, settings,
                 allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);

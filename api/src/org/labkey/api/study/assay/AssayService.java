@@ -77,9 +77,6 @@ public class AssayService
         public AssayProviderSchema createProviderSchema(User user, Container container, AssayProvider provider, @Nullable Container targetStudy);
         public AssayProtocolSchema createProtocolSchema(User user, Container container, ExpProtocol protocol, @Nullable Container targetStudy);
 
-        public String getRunsTableName(ExpProtocol protocol);
-        public String getResultsTableName(ExpProtocol protocol);
-
         List<ExpProtocol> getAssayProtocols(Container container);
         List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
 

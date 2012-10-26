@@ -42,10 +42,10 @@ public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
         ViewContext context = getViewContext();
         _protocol = form.getProtocol();
 
-        ModelAndView resultsView = form.getProvider().createResultsView(context, _protocol);
+        ModelAndView resultsView = form.getProvider().createResultsView(context, _protocol, errors);
         if (resultsView != null)
             return resultsView;
-        return new AssayResultsView(_protocol, false);
+        return new AssayResultsView(_protocol, false, errors);
     }
 
     public NavTree appendNavTrail(NavTree root)
