@@ -338,8 +338,18 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             queryTable.setName(getName());
         }
 
-        if (null != ret && null != query.getTablesDocument())
-            ((QueryTableInfo)ret).loadFromXML(schema, query.getTablesDocument().getTables().getTableArray(0), errors);
+        if (null != ret)
+        {
+            if (null != query.getTablesDocument())
+                ((QueryTableInfo)ret).loadFromXML(schema, query.getTablesDocument().getTables().getTableArray(0), errors);
+
+            if (includeMetadata)
+            {
+                // Lookup any XML metadata that has been stored in the database, which won't have been applied
+                // if this is a file-based custom query
+                ret.overlayMetadata(getName(), schema, errors);
+            }
+        }
 
         if (!query.getParseErrors().isEmpty())
         {
