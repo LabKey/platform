@@ -5488,7 +5488,7 @@ public class AdminController extends SpringActionController
         }
         else
         {
-            if(visibleIndex == 1)
+            if(visibleIndex <= 1)
             {
                 return page;
             }
