@@ -76,6 +76,7 @@ public class PageWriterFactory implements FolderWriterFactory
                     PagesDocument.Pages.Page pageXml = pagesXML.addNewPage();
                     pageXml.setIndex(tab.getIndex());
                     pageXml.setName(tab.getPageId());
+                    pageXml.setPropertyString(tab.getProperties());     // For custom tab
 
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
                     List<WebPart> portalPageParts = Portal.getParts(ctx.getContainer(), tab.getPageId());

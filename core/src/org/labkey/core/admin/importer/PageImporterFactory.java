@@ -157,11 +157,15 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                         webparts.add(webPart);
                     }
                     Portal.saveParts(ctx.getContainer(), pageId, webparts);
+
+                    String properties = pageXml.getPropertyString();        // Check for custom tab
+                    if (null != properties && properties.contains(Portal.PROP_CUSTOMTAB))
+                        Portal.addProperty(ctx.getContainer(), pageId, Portal.PROP_CUSTOMTAB);
                 }
 
                 if (tabs.size() > 1)
                 {
-                    Portal.resetPages(ctx.getContainer(), tabs);
+                    Portal.resetPages(ctx.getContainer(), tabs, true);
                 }
 
                 ctx.getLogger().info("Done importing " + getDescription());
