@@ -916,7 +916,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public List<DisplayColumn> getDisplayColumns(TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields)
+    public List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields)
     {
         List<DisplayColumn> ret = new ArrayList<DisplayColumn>();
         Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
