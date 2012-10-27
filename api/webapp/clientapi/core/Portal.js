@@ -463,8 +463,9 @@ LABKEY.Portal = new function()
                         for(var i = 0; i < tabs.length; i++){
                             var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
                             var anchors = tabEl.query('a');
+                            var anchorText = anchors[0].text || anchors[0].innerText;
 
-                            if(anchors[0].innerText === config.folderTabCaption){
+                            if(anchorText === config.folderTabCaption){
                                 // Found the tab, swap it with the previous tab.
                                 if(tabs[i - 1]){
                                     tabEl.insertBefore(tabs[i -1]);
@@ -499,8 +500,9 @@ LABKEY.Portal = new function()
                         for(var i = 0; i < tabs.length; i++){
                             var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
                             var anchors = tabEl.query('a');
+                            var anchorText = anchors[0].text || anchors[0].innerText;
 
-                            if(anchors[0].innerText === config.folderTabCaption){
+                            if(anchorText === config.folderTabCaption){
                                 // Found the tab, swap it with the previous tab.
                                 if(tabs[i + 1] && tabs[i + 1].getAttribute('id') !== 'addTab'){
                                     tabEl.insertAfter(tabs[i + 1]);
