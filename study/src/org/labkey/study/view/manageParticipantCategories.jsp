@@ -102,7 +102,7 @@
                     }},
                 id: 'delete_categories'
             });
-        }
+        };
 
         Ext4.define('ParticipantGroup', {
             extend : 'Ext.data.Model',
@@ -118,8 +118,6 @@
                 {name : 'canEdit',          type : 'boolean',   mapping : 'category.canEdit'},
                 {name : 'canDelete',        type : 'boolean',   mapping : 'category.canDelete'},
                 {name : 'categoryLabel',    type : 'string',    mapping : 'category.label'}
-
-
             ]
         });
 
@@ -143,6 +141,7 @@
                   }
               }
             });
+
         var deleteButton = Ext4.create('Ext.button.Button',
             {
                 id : 'deleteSelectedButtonExt4',
@@ -186,9 +185,10 @@
         var grid = Ext4.create('Ext.grid.Panel', {
             store: participantStore,
             cls: 'participantCategoriesGrid',
+            width : 855,
             columns: [
-                {header:'Label',       dataIndex:'label',    width: 300},
-                {header:'Category',    dataIndex:'category', width: 300, renderer: categoryRenderer},
+                {header:'Label',       dataIndex:'label',    width: 275},
+                {header:'Category',    dataIndex:'category', width: 275, renderer: categoryRenderer},
                 {header:'Shared',      dataIndex:'shared'},
                 {header:'Created By',  dataIndex:'createdBy'},
                 {header:'Modified By', dataIndex:'modifiedBy'}
@@ -209,6 +209,11 @@
             }
             else deleteButton.setDisabled(true);
         }, this);
+        grid.on('itemdblclick', function(g, idx, e){
+            if (g.getSelectionModel().hasSelection()) {
+                editParticipantGroup(g.getSelectionModel().getLastSelected());
+            }
+        });
 
     });
 })();

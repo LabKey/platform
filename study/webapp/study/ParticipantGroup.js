@@ -10,19 +10,19 @@ Ext4.define('Study.window.ParticipantGroup', {
 
     constructor : function(config){
         this.panelConfig = config;
-        this.addEvents('aftersave');
-        this.addEvents('closeWindow');
+        this.addEvents('aftersave', 'closewindow');
 
         //var h = config.hideDataRegion ? 500 : Ext4.getBody().getViewSize().height * 75;
         var h = 500;
         if(h < 500) h = 500;
+
         Ext4.apply(config, {
             title : 'Define ' + Ext4.util.Format.htmlEncode(config.subject.nounSingular) + ' Group',
             layout : 'fit',
             autoScroll : true,
             modal : true,
             resizable : false,
-            height : 500,
+            height : h,
             width : 950
         });
 
@@ -49,14 +49,13 @@ Ext4.define('Study.window.ParticipantGroup', {
             columns : 'Label',
             sort : 'Label',
             listeners : {
-                scope : this,
-                'load' :function(store, records, options){
+                load :function(store, records, options){
                     if (records.length > 0){
                         infoCombo.setValue(records[0].get("Label"));
-                        //Note: Calling select() on a combo does not fire select event.
-                        infoCombo.fireEvent('select', infoCombo, records[0], 0);
+                        this.onDemographicSelect(infoCombo, records, 0);
                     }
-                }
+                },
+                scope : this
             }
         });
 
@@ -71,13 +70,10 @@ Ext4.define('Study.window.ParticipantGroup', {
             fieldLabel: 'Select ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' from',
             labelStyle: 'width: 150px;',
             labelSeparator : '',
-            minListWidth : 300,
             disabled : !this.canEdit,
             listeners: {
-                scope: this,
-                'select': function(cmp, record, index){
-                    this.getQueryWebPart(record.get("Label"));
-                }
+                select: this.onDemographicSelect,
+                scope: this
             }
         });
 
@@ -125,6 +121,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             }
         });
 
+        var defaultWidth = 880;
         var categoryCombo = Ext4.create('Ext.form.ComboBox', {
             id : 'participantCategory',
             name : 'participantCategory',
@@ -133,7 +130,6 @@ Ext4.define('Study.window.ParticipantGroup', {
             editable : true,
             mode : 'local',
             anchor : '100%',
-            algin  : 'north',
             typeAhead : true,
             typeAheadDelay : 75,
             minChars : 1,
@@ -143,7 +139,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             labelAlign : 'top',
             grow : true,
             height : 50,
-            width: 900,
+            maxWidth: defaultWidth,
             valueField : 'rowId',
             displayField : 'label',
             triggerAction : 'all',
@@ -166,9 +162,7 @@ Ext4.define('Study.window.ParticipantGroup', {
         var simplePanel = Ext4.create('Ext.form.FormPanel', {
             id : 'simplePanel',
             name : 'simplePanel',
-//            height : 500,
-//            width : 950,
-            bodyStyle : 'padding:20px',
+            bodyStyle : 'padding: 15px 0 0 15px',
             autoScroll : true,
             items : [
                 {
@@ -178,7 +172,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                     emptyText : Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Group Label',
                     fieldLabel: Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Group Label',
                     labelAlign : 'top',
-                    width: 900
+                    width: defaultWidth
                 },
                 {
                     xtype : 'textareafield',
@@ -187,43 +181,40 @@ Ext4.define('Study.window.ParticipantGroup', {
                     emptyText : 'Enter ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Identifiers Separated by Commas',
                     fieldLabel: Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Identifiers',
                     labelAlign : 'top',
-                    width: 900
+                    width: defaultWidth
                 },
                 categoryCombo,
                 {
                     xtype : 'checkboxfield',
                     name : 'sharedBox',
                     id : 'sharedBox',
-                    align : 'west',
-                    boxLabel : 'Share Category?',
-                    labelAlign : 'top'
+                    boxLabel : 'Share Category?'
                 },
                 {
                     xtype : 'button',
-                    align : 'east',
                     text : "Save",
+                    margin: '3 3 3 0',
                     handler : this.saveCategory
                 },
                 {
                     xtype : 'button',
-                    align : 'east',
                     text : "Cancel",
-                    scope : this,
-                    handler : function(){this.fireEvent('closeWindow');}
+                    margin: 3,
+                    handler : function(){this.fireEvent('closewindow');},
+                    scope : this
                 }, infoCombo,
                 {
                     xtype: 'panel',
                     id : 'webPartPanel',
                     height : 400,
-                    width :  900,
+                    width :  defaultWidth,
                     grow : true,
-                    border : false,
-                    scope : this,
+                    border : false
                 }
             ]
         });
 
-        this.on('closeWindow', this.close, this);
+        this.on('closewindow', this.close, this);
         this.on('afterSave', this.close, this);
         this.items = [simplePanel];
         if(this.categoryParticipantIds) {
@@ -232,20 +223,25 @@ Ext4.define('Study.window.ParticipantGroup', {
         if(this.groupLabel){
             simplePanel.queryById('groupLabel').setValue(this.groupLabel);
         }
-        simplePanel.on('closeWindow', this.close, this);
+        simplePanel.on('closewindow', this.close, this);
         this.callParent(arguments);
-        //This .class exists for testing purposes (e.g. ReportTest)
+        //This class exists for testing purposes (e.g. ReportTest)
         this.cls = "doneLoadingTestMarker";
     },
 
-    validate : function() {
-        var fieldValues = this.down('panel').getValues();
-        var label = fieldValues['groupLabel'];
-        var idStr = fieldValues['participantIdentifiers'];
-        var categoryCombo = this.queryById('participantCategory');
-        var categoryStore = categoryCombo.getStore();
+    onDemographicSelect : function(combo, records, idx) {
+        if (Ext4.isArray(records) && records.length > 0) {
+            this.getQueryWebPart(records[0].get("Label"));
+        }
+    },
 
-        console.log(categoryCombo);
+    validate : function() {
+        var fieldValues = this.down('panel').getValues(),
+            label = fieldValues['groupLabel'],
+            idStr = fieldValues['participantIdentifiers'],
+            categoryCombo = this.queryById('participantCategory'),
+            categoryStore = categoryCombo.getStore();
+
         if(categoryStore.find('label', categoryCombo.getRawValue()) > -1){
             categoryCombo.select(categoryStore.findRecord('label', categoryCombo.getRawValue()));
         }
@@ -286,14 +282,13 @@ Ext4.define('Study.window.ParticipantGroup', {
     },
 
     getGroupData : function(){
-        var fieldValues = this.queryById('simplePanel').getValues();
-        var ptids = fieldValues['participantIdentifiers'].split(',');
-        var categoryLabel;
-        var categoryId;
-        var categoryType;
-
-        var categoryCombo = Ext4.ComponentQuery.query('combo[id=participantCategory]')[0];
-        var categoryStore = categoryCombo.getStore();
+        var fieldValues = this.queryById('simplePanel').getValues(),
+            ptids = fieldValues['participantIdentifiers'].split(','),
+            categoryLabel,
+            categoryId,
+            categoryType,
+            categoryCombo = Ext4.ComponentQuery.query('combo[id=participantCategory]')[0],
+            categoryStore = categoryCombo.getStore();
 
         if(typeof categoryCombo.getValue() == 'number'){
             categoryId = categoryCombo.getValue();
@@ -330,9 +325,6 @@ Ext4.define('Study.window.ParticipantGroup', {
     },
 
     getQueryWebPart : function(queryName){
-        var ptidCategoryPanel = this.down('panel').down('panel');
-
-//        var getSelected = this.getSelectedDemoParticipants;
         var me = this;
         var initialLoad = true;
         if(!this.hideDataRegion){
@@ -409,7 +401,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                         }
 
                         //append the selected ids to the current list
-                        for(var i = 0; i < data.rows.length; i++){
+                        for(i = 0; i < data.rows.length; i++){
                             if(tempIdsArray.indexOf(data.rows[i][me.subject.nounColumnName]) == -1){
                                 tempIds += (tempIds.length > 0 ? ", " : "") + data.rows[i][me.subject.nounColumnName];
                                 tempIdsArray.push(data.rows[i][me.subject.nounColumnName]);
