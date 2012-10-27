@@ -345,7 +345,9 @@
           <root url="jar://$MODULE_DIR$/../../external/lib/server/log4j-1.2.16.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/log4j-1.2.16.sources.zip!/java" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">

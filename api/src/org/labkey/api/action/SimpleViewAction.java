@@ -31,6 +31,7 @@ import org.springframework.web.servlet.ModelAndView;
 public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implements NavTrailAction
 {
     protected boolean _print = false;
+    protected boolean _debug = false;
 
     protected SimpleViewAction()
     {
@@ -52,6 +53,13 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
         FORM form = (FORM)errors.getTarget();
         validate(form, errors);
 
+        // Special flag puts actions in "debug" mode, during which they should log extra information that would be
+        // helpful for testing or debugging problems
+        if (null != StringUtils.trimToNull((String) getProperty("_debug")))
+        {
+            _debug = true;
+        }
+
         ModelAndView v;
         
         if (null != StringUtils.trimToNull((String) getProperty("_print")) ||
@@ -59,6 +67,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
             v = getPrintView(form, errors);
         else
             v = getView(form, errors);
+
         return v;
     }
 
@@ -94,5 +103,10 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
     public boolean isPrint()
     {
         return _print;
+    }
+
+    public boolean isDebug()
+    {
+        return _debug;
     }
 }
