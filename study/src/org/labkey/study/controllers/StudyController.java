@@ -1049,7 +1049,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermissionClass(ReadPermission.class)
     public class ParticipantAction extends SimpleViewAction<ParticipantForm>
     {
-        ParticipantForm _bean;
+        private ParticipantForm _bean;
         private CohortFilter _cohortFilter;
 
         public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
@@ -1078,6 +1078,7 @@ public class StudyController extends BaseStudyController
                 throw new UnauthorizedException("User does not have permission to view cohort information");
 
             List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, _cohortFilter, form.getQCState());
+
             if (participants != null)
             {
                 int idx = participants.indexOf(form.getParticipantId());
