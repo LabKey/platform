@@ -52,8 +52,8 @@ $button-default-base-color-disabled: adjust-color($base-color, $hue: 0deg, $satu
 $button-default-border-color: #b4b4b4;
 $button-default-border-color-over: #676767;
 $button-default-border-color-focus: #676767;
-$button-default-border-color-pressed: #333;
-$button-default-border-color-disabled: #676767;
+$button-default-border-color-pressed: #333333;
+$button-default-border-color-disabled: #DDDDDD;
 
 $button-default-background-gradient: color-stops(#fff, #e4e4e4);
 $button-default-background-gradient-over: color-stops(#fff, #e4e4e4);
@@ -136,6 +136,8 @@ $window-header-color: #fff;
 $window-body-background-color: #fff;
 
 //grids
+$grid-header-background-color: #FFFFFF;
+$grid-header-over-background-color: $grid-color;
 $grid-row-cell-selected-background-color: #C5C5C5 !default;
 
 //toolbars
@@ -188,6 +190,18 @@ $tab-spacing: 3px;
 /* A margin is being explicitly added to the inner element of buttons in Ext 4.1.0. */
 .x4-reset .x4-tab .x4-tab-inner {
     margin: 0 !important;
+}
+
+.x4-reset .x4-column-header {
+    border-bottom: 1px solid #AAAAAA !important;
+    border-right: 1px solid #DDDDDD !important;
+}
+
+.x4-reset {
+    .x4-column-header-over {
+        background-image: none !important;
+        cursor: pointer !important;
+    }
 }
 
 @import 'ext4/default/all';
