@@ -320,7 +320,7 @@ public class UserManager
     }
 
 
-    static void clearUserList(int userId)
+    public static void clearUserList(int userId)
     {
         UserCache.remove(userId);
     }

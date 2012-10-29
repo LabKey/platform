@@ -24,6 +24,7 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ExceptionUtil;
@@ -196,7 +197,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         finally
         {
             dbschema.getScope().closeConnection();
+            UserManager.clearUserList(form.getUser().getUserId());
         }
     }
-
 }
