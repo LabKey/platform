@@ -23,13 +23,18 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -51,8 +56,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.DefaultSchema;
@@ -76,10 +83,12 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.XmlBeansUtil;
@@ -1702,15 +1711,18 @@ public class QueryServiceImpl extends QueryService
     @Override
     public DetailsURL getAuditDetailsURL(User user, Container c, TableInfo table)
     {
-        FieldKey rowPk = table.getAuditRowPk();
-
-        if (rowPk != null)
+        if (table.getAuditBehavior() != AuditBehaviorType.NONE)
         {
-            ActionURL url = new ActionURL(QueryController.AuditDetailsAction.class, c).
-                    addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
-                    addParameter(QueryParam.queryName, table.getName());
+            FieldKey rowPk = table.getAuditRowPk();
 
-            return new DetailsURL(url, Collections.singletonMap("keyValue", rowPk));
+            if (rowPk != null)
+            {
+                ActionURL url = new ActionURL(QueryController.AuditDetailsAction.class, c).
+                        addParameter(QueryParam.schemaName, table.getPublicSchemaName()).
+                        addParameter(QueryParam.queryName, table.getName());
+
+                return new DetailsURL(url, Collections.singletonMap("keyValue", rowPk));
+            }
         }
         return null;
     }
