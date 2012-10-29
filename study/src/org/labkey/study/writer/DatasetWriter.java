@@ -248,8 +248,8 @@ public class DatasetWriter implements InternalStudyWriter
             TableInfo participantTableInfo = StudySchema.getInstance().getTableInfoParticipant();
             List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
             cols.add(participantTableInfo.getColumn("participantid"));
-            cols.add(participantTableInfo.getColumn("dateoffset"));
             cols.add(participantTableInfo.getColumn("alternateid"));
+            cols.add(participantTableInfo.getColumn("dateoffset"));
             SimpleFilter containerFilter = new SimpleFilter();
             containerFilter.addCondition(participantTableInfo.getColumn("container"), ctx.getContainer());
             Sort participantSort = new Sort("participantid");
