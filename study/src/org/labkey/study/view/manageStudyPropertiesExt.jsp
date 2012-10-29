@@ -22,7 +22,19 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%!
+
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      //Need to include the Helper for a use of the form panel configuration.
+      resources.add(ClientDependency.fromFilePath("/extWidgets/Ext4Helper.js"));
+      return resources;
+  }
+%>
 <%
     ViewContext context = getViewContext();
     boolean canEdit = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
@@ -54,10 +66,8 @@
 <div class="extContainer" id="manageStudyPropertiesDiv"></div>
 
 <script type="text/javascript">
-    LABKEY.requiresScript("FileUploadField.js");
-</script>
 
-<script type="text/javascript">
+(function(){/* All code */})();
 
 var canEdit = <%=canEdit?"true":"false"%>;
 var editableFormPanel = canEdit;
@@ -67,7 +77,7 @@ var timepointType = "<%=timepointType%>";
 
 function removeProtocolDocument(name, xid)
 {
-    if (Ext)
+    if (Ext4)
     {
         function remove()
         {
@@ -76,31 +86,31 @@ function removeProtocolDocument(name, xid)
                 name: name
             };
 
-            Ext.Ajax.request(
-            {
-                url    : LABKEY.ActionURL.buildURL('study', 'removeProtocolDocument'),
-                method : 'POST',
-                success: function()
-                {
-                    var el = document.getElementById(xid);
-                    if (el)
+            Ext4.Ajax.request(
                     {
-                        el.parentNode.removeChild(el);
-                    }
-                },
-                failure: function()
-                {
-                    alert('Failed to remove study protocol document.');
-                },
-                params : params
-            });
+                        url    : LABKEY.ActionURL.buildURL('study', 'removeProtocolDocument'),
+                        method : 'POST',
+                        success: function()
+                        {
+                            var el = document.getElementById(xid);
+                            if (el)
+                            {
+                                el.parentNode.removeChild(el);
+                            }
+                        },
+                        failure: function()
+                        {
+                            alert('Failed to remove study protocol document.');
+                        },
+                        params : params
+                    });
         }
 
-        Ext.Msg.show({
+        Ext4.Msg.show({
             title : 'Remove Attachment',
             msg : 'Please confirm you would like to remove this study protocol document. This cannot be undone.',
-            buttons: Ext.Msg.OKCANCEL,
-            icon: Ext.MessageBox.QUESTION,
+            buttons: Ext4.Msg.OKCANCEL,
+            icon: Ext4.MessageBox.QUESTION,
             fn  : function(b) {
                 if (b == 'ok') {
                     remove();
@@ -112,55 +122,61 @@ function removeProtocolDocument(name, xid)
 
 function addExtFilePickerHandler()
 {
-    var fibasic = new Ext.form.FileUploadField(
-    {
-        width: 300
+    var fibasic = Ext4.create('Ext.form.field.File', {
+        width  : 300,
+        height : 30,
+        style  : 'float: left;'
     });
 
-    var removeBtn = new Ext.Button({
+    var removeBtn = Ext4.create('Ext.Button', {
         text: "remove",
         name: "remove",
         uploadId: fibasic.id,
+        style : 'margin: 4px;',
         handler: removeNewAttachment
     });
 
-    var uploadField = new Ext.form.CompositeField({
-        renderTo: 'filePickers',
+    var uploadField = Ext4.create('Ext.Panel', {
+        border : false, frame : false,
+        height : 35,
         items:[fibasic, removeBtn]
     });
 
-    studyPropertiesFormPanel.add(uploadField);
+    var protocolPanel = studyPropertiesFormPanel.getComponent('protocolPanel');
+    if (protocolPanel) {
+        protocolPanel.add(uploadField);
+        protocolPanel.enlarge();
+        protocolPanel.doLayout();
+    }
+    studyPropertiesFormPanel.doLayout();
 }
 
+//TODO:  This concerns me slightly.  I doubt it'll be able ot find this component.
 function removeNewAttachment(btn)
 {
     // In order to 'remove' an attachment before it is submitted we must hide and disable it. We CANNOT destroy the
     // elements related to the upload field, if we do the form will not validate. This is a known Issue with Ext 3.4.
     // http://www.sencha.com/forum/showthread.php?25479-2.0.1-2.1-Field.destroy()-on-Fields-rendered-by-FormLayout-does-not-clean-up.
-    Ext.getCmp(btn.uploadId).disable();
+    Ext4.getCmp(btn.uploadId).disable();
+    studyPropertiesFormPanel.getComponent('protocolPanel').shrink();
+    studyPropertiesFormPanel.doLayout();
     btn.ownerCt.hide();
 }
 
-var maskEl = null;
-
 function mask()
 {
-    maskEl = Ext.getBody();
-    maskEl.mask();
+    Ext4.getBody().mask();
 }
 
 function unmask()
 {
-    if (maskEl)
-        maskEl.unmask();
-    maskEl = null;
+    Ext4.getBody().unmask();
 }
-
 
 function showSuccessMessage(message, after)
 {
-    Ext.get("formError").update("");
-    var el = Ext.get("formSuccess");
+    Ext4.get("formError").update("");
+    var el = Ext4.get("formSuccess");
     el.update(message);
     el.pause(3).fadeOut({callback:function(){el.update("");}});
 }
@@ -169,10 +185,10 @@ function showSuccessMessage(message, after)
 function onSaveSuccess_updateRows()
 {
     // if you want to stay on page, you need to refresh anyway to udpate attachments
-    var msgbox = Ext.Msg.show({
-       title:'Status',
-       msg: '<span class="labkey-message">Changes saved</span>',
-       buttons: false
+    var msgbox = Ext4.Msg.show({
+        title:'Status',
+        msg: '<span class="labkey-message">Changes saved</span>',
+        buttons: false
     });
     var el = msgbox.getDialog().el;
     el.pause(1).fadeOut({callback:cancelButtonHandler});
@@ -180,13 +196,16 @@ function onSaveSuccess_updateRows()
 
 function onSaveSuccess_formSubmit()
 {
+
     // if you want to stay on page, you need to refresh anyway to udpate attachments
-    var msgbox = Ext.Msg.show({
-       title:'Status',
-       msg: '<span class="labkey-message">Changes saved</span>',
-       buttons: false
+    LABKEY.submit=true;
+    var msgbox = Ext4.Msg.show({
+        title:'Status',
+        msg: '<span class="labkey-message">Changes saved</span>',
+        buttons: false
     });
-    var el = msgbox.getDialog().el;
+    window.location = <%=q(cancelLink)%>;
+    var el = msgbox.getEl();
     el.pause(1).fadeOut({callback:cancelButtonHandler});
 }
 
@@ -194,8 +213,8 @@ function onSaveSuccess_formSubmit()
 function onSaveFailure_updateRows(error)
 {
     unmask();
-    Ext.get("formSuccess").update("");
-    Ext.get("formError").update(error.exception);
+    Ext4.get("formSuccess").update("");
+    Ext4.get("formError").update(error.exception);
 }
 
 
@@ -204,17 +223,16 @@ function onSaveFailure_formSubmit(form, action)
     unmask();
     switch (action.failureType)
     {
-        case Ext.form.Action.CLIENT_INVALID:
-            Ext.Msg.alert('Failure', 'Form fields may not be submitted with invalid values');
+        case Ext4.form.Action.CLIENT_INVALID:
+            Ext4.Msg.alert('Failure', 'Form fields may not be submitted with invalid values');
             break;
-        case Ext.form.Action.CONNECT_FAILURE:
-            Ext.Msg.alert('Failure', 'Ajax communication failed');
+        case Ext4.form.Action.CONNECT_FAILURE:
+            Ext4.Msg.alert('Failure', 'Ajax communication failed');
             break;
-        case Ext.form.Action.SERVER_INVALID:
-           Ext.Msg.alert('Failure', action.result.msg);
+        case Ext4.form.Action.SERVER_INVALID:
+            Ext4.Msg.alert('Failure', action.result.msg);
     }
 }
-
 
 function submitButtonHandler()
 {
@@ -222,27 +240,29 @@ function submitButtonHandler()
     if (form.isValid())
     {
         /* This works except for the file attachment
-        var rows = studyPropertiesFormPanel.getFormValues();
-        LABKEY.Query.updateRows(
-        {
-            schemaName:'study',
-            queryName:'StudyProperties',
-            rows:rows,
-            success : onSaveSuccess_updateRows,
-            failure : onSaveFailure_updateRows
-        });
-        */
+         var rows = studyPropertiesFormPanel.getFormValues();
+         LABKEY.Query.updateRows(
+         {
+         schemaName:'study',
+         queryName:'StudyProperties',
+         rows:rows,
+         success : onSaveSuccess_updateRows,
+         failure : onSaveFailure_updateRows
+         });
+         */
+
         form.fileUpload = true;
         form.submit(
-        {
-            success : onSaveSuccess_formSubmit,
-            failure : onSaveFailure_formSubmit
-        });
+                {
+                    url     : LABKEY.ActionURL.buildURL('study', 'manageStudyProperties.view'),
+                    success : onSaveSuccess_formSubmit,
+                    failure : onSaveFailure_formSubmit
+                });
         mask();
     }
     else
     {
-        Ext.MessageBox.alert("Error Saving", "There are errors in the form.");
+        Ext4.MessageBox.alert("Error Saving", "There are errors in the form.");
     }
 }
 
@@ -287,9 +307,54 @@ for (WikiRendererType type : getRendererTypes())
     comma = ",";
 }%>};
 
-function renderFormPanel(data, editable)
-{
-    destroyFormPanel();
+
+function renderFormPanel(data, editable){
+    var protocolDocs = [];
+<%
+    int x = 0;
+    for (Attachment att : getStudy().getProtocolDocuments())
+    {
+%>
+    protocolDocs.push({
+        logo : '<%= request.getContextPath() + att.getFileIcon() %>',
+        text : '<%= h(shortenFileName(att.getName()))%>',
+        removeURL : <%=PageFlowUtil.jsString(att.getName())%>,
+        atId : <%=x%>
+    });
+<%
+        x++;
+    }
+%>
+    var initHeight = <%=x%>;
+    Ext4.define('ProtocolDoc', {
+        extend : 'Ext.data.Model',
+        fields : [
+            {name : 'logo', type : 'string' },
+            {name : 'text', type : 'string'},
+            {name : 'removeURL', type : 'string'},
+            {name : 'atId', type : 'int'}
+        ]
+    });
+
+    var protocolStore = Ext4.create('Ext.data.Store',{
+        model : 'ProtocolDoc',
+        data : protocolDocs
+    });
+   // protocolStore.loadRawData(protocolDocs);
+
+    var protoTemplate = new Ext4.XTemplate(
+        '<tpl for=".">',
+            '<div class="protoDoc" id="attach-{atId}">',
+                '<td>&nbsp;<img src="{logo}" talt="logo"/></td>',
+                '<td>&nbsp; {text} </td>',
+                '<td>&nbsp; [<a class="removelink" onclick="removeProtocolDocument(\'{removeURL}\', \'attach-{atId}\');">remove </a>]</td>',
+            '</div>',
+        '</tpl>',
+        '<div>',
+            '&nbsp;<a onclick="addExtFilePickerHandler4(); return false;" href="#addFile"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">&nbsp;&nbsp;Attach a file</a>',
+        '</div>'
+    );
+
     var buttons = [];
 
     if (editable)
@@ -299,7 +364,10 @@ function renderFormPanel(data, editable)
             handler: submitButtonHandler,
             scope: this
         });
-        buttons.push({text: "Cancel", handler: cancelButtonHandler});
+        buttons.push({
+            text: "Cancel",
+            handler: cancelButtonHandler
+        });
     }
     else if (<%=canEdit ? "true" : "false"%>)
     {
@@ -307,18 +375,23 @@ function renderFormPanel(data, editable)
         buttons.push({text:"Done", handler: doneButtonHandler});
     }
 
-    var renderTypeCombo = new Ext.form.ComboBox(
-    {
+
+    var renderTypeCombo = Ext4.create('Ext.form.ComboBox', {
+        fieldLabel : 'Render Type',
+        labelWidth : 150,
+        padding : 5,
         hiddenName : 'DescriptionRendererType',
         name : 'RendererTypeDisplayName',
-        mode: 'local',
-        triggerAction: 'all',
+        triggerAction : 'all',
+        queryMode: 'local',
         valueField: 'renderType',
         displayField: 'displayText',
-        value: data.rows[0]['DescriptionRendererType'], //Set default value to the current render type.
-        store : new Ext.data.ArrayStore(
-        {
-            id : 0, fields:['renderType', 'displayText'],
+        width : 500,
+        editable : false,
+        value : data.rows[0]['DescriptionRendererType'].value,
+        store : Ext4.create('Ext.data.ArrayStore', {
+            id : 0,
+            fields : ['renderType', 'displayText'],
             data : [
 <%
                 comma = "";
@@ -332,103 +405,126 @@ function renderFormPanel(data, editable)
         })
     });
 
-    var timepointTypeRadioGroup = new Ext.form.RadioGroup({
-        fieldLabel: "Timepoint Type",
-        disabled: !emptyStudy,
-        items: [{
+    var timepointTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+        xtype : 'radiogroup',
+        fieldLabel : "Timepoint Type",
+        disabled : !emptyStudy,
+        labelWidth : 150,
+        width : 500,
+        columns : 2,
+        vertical : true,
+        items : [{
+
             xtype: 'radio',
+            id : 'visitRadio',
+            inputId : 'visit',
             disabled: !emptyStudy,
             boxLabel: 'VISIT',
             inputValue: 'VISIT',
+            value: 'VISIT',
             name: 'TimepointType',
             checked: timepointType == 'VISIT'
         },{
             xtype: 'radio',
+            id : 'dateRadio',
+            inputId : 'date',
             disabled: !emptyStudy,
             boxLabel: 'DATE',
             inputValue: 'DATE',
             name: 'TimepointType',
             checked: timepointType == 'DATE'
-        }],
-//        listeners: {
-//            change: function(group, checkedRadio){
-//                if(checkedRadio.inputValue == "DATE"){
-//                    startDateField.setDisabled(false);
-//                    startDateField.setVisible(true);
-//                } else {
-//                    startDateField.setDisabled(true);
-//                    startDateField.setVisible(false);
-//                }
-//            }
-//        }
+        }]
     });
 
-//    We should eventually get the startDateField working. Currently it doesn't send the correct date format
-//    back to the server, due to some issues with posting files to the server at the same time.
-
-//    var startDateField = new Ext.form.DateField({
-//        fieldLabel: "Start Date",
-//        name: "StartDate",
-//        editable: false,
-//        allowBlank: false,
-        <%--value: "<%=startDate%>",--%>
-//        altFormats: LABKEY.Utils.getDateAltFormats(),
-//        disabled: timepointType == "VISIT",
-//        hidden: timepointType == "VISIT"
-//    });
-
-    // fields we've handled (whether or now we're showing them)
-    var handledFields = {};
+    var getConfig = function(searchString){
+        var fields = data.metaData.fields;
+        for(var i = 0; i < fields.length; i++){
+            if(fields[i].caption == searchString)
+                return LABKEY.ext.Ext4Helper.getFormEditorConfig(data.metaData.fields[i]);
+        }
+        return undefined;
+    };
     var items = [];
-
-    items.push({name:'Label'});
+    var handledFields = {};
+    items.push(getConfig('Label'));
     handledFields['Label'] = true;
-    items.push({name:'Investigator'});
+    items.push(getConfig('Investigator'));
     handledFields['Investigator'] = true;
-    items.push({name:'Grant'});
+    items.push(getConfig('Grant'));
     handledFields['Grant'] = true;
-    items.push({name:'Description', width:500});
+    items.push(getConfig('Description'));
     handledFields['Description'] = true;
-    if (editableFormPanel)
+    if(editableFormPanel){
         items.push(renderTypeCombo);
+    }
     handledFields[renderTypeCombo.hiddenName] = true;
-    items.push({fieldLabel:'Protocol Documents', width:500, border: false, xtype:'panel', contentEl:'attachmentsDiv'});
+
+    var protocolPanel = Ext4.create('Ext.Panel', {
+        itemId : 'protocolPanel',
+        height : (initHeight * 25) + 30,
+        border : false, frame: false,
+        enlarge : function(){
+            this.height += 35;
+        },
+        shrink : function(){
+            this.height -= 35;
+        },
+        items : [{
+            xtype : 'dataview',
+            store : protocolStore,
+            tpl : protoTemplate,
+            itemSelector :  'div.protoDoc',
+            emptyText : 'No current docs'
+        }]
+    });
+
+    var label = Ext4.create('Ext.form.Label', {
+          text : 'Protocol Documents:',
+          style : 'float: left;',
+          width : 150
+    });
+
+    items.push(label);
+    items.push(protocolPanel);
     // the original form didn't include these, but we can decide later
     items.push(timepointTypeRadioGroup);
     handledFields['TimepointType'] = true;
-//    items.push(startDateField);
     handledFields['StartDate'] = true;
     handledFields['Container'] = true;
+    var info = data.rows[0];
 
-    // Now let's add all the other fields
-    var cm = data.columnModel;
-    var col, i;
-    for (i=0 ; i<cm.length ; i++)
-    {
+    items[0].value = info.Label.value;
+    items[1].value = info.Investigator.value;
+    items[2].value = info.Grant.value;
+    items[3].value = info.Description.value;
+
+    var cm = data.columnModel,
+        col,
+        hold;
+
+    for(var i = 0; i < cm.length; i++){
         col = cm[i];
-        col = cm[i];
-        if (col.hidden) continue;
-        if (handledFields[col.dataIndex]) continue;
-        items.push({name:col.dataIndex});
-    }
-    for (i=0 ; i<items.length ; i++)
-    {
-        items[i].disabled = !editableFormPanel;
-        items[i].disabledClass = 'noop';    // TODO the default disabledClass makes everything unreadable
+        if(col.hidden) continue;
+        if(handledFields[col.dataIndex]) continue;
+        hold = getConfig(col.header);
+        if(hold != undefined){
+            items.push(hold);
+        }
     }
 
-    studyPropertiesFormPanel = new LABKEY.ext.FormPanel(
-    {
-        selectRowsResults : data,
-        labelSeparator    : '',
-        padding           : 10,
-        defaults          : { width:500, disabled : !editableFormPanel, disabledClass:'noop' },
-        labelWidth        : 150,   <%-- don't wrap even on Large font theme --%>
-        buttonAlign       : 'left',
-        buttons           : buttons,
-        items             : items
+    for(var i = 8; i < items.length; i++){
+        items[i].value = data.rows[0][items[i].name].value;
+    }
+
+    studyPropertiesFormPanel = Ext4.create('Ext.form.Panel', {
+        padding : 10,
+        defaults : {labelWidth: 150, width: 500, height : 30, padding : '5px', disabled : !editableFormPanel},
+        items: items,
+        buttons : buttons,
+        buttonAlign : 'left',
+        renderTo : 'testZone'
+
     });
-    studyPropertiesFormPanel.render('formDiv');
 }
 
 
@@ -447,6 +543,7 @@ function onQueryFailure(a)
 function createPage()
 {
     LABKEY.Query.selectRows({
+        requiredVersion : '9.1',
         schemaName: 'study',
         queryName: 'StudyProperties',
         columns: '*',
@@ -468,24 +565,4 @@ Ext.onReady(createPage);
 
 <span id=formSuccess class=labkey-message-strong></span><span id=formError class=labkey-error></span>&nbsp;</br>
 <div id='formDiv'></div>
-<div id='attachmentsDiv' class='x-hidden'>
-<table>
-<%
-        int x = -1;
-        for (Attachment att : getStudy().getProtocolDocuments())
-        {
-            x++;
-            %><tr id="attach-<%=x%>" style="min-width:20px;">
-                <td>&nbsp;<img src="<%=request.getContextPath() + att.getFileIcon()%>" alt="logo"/></td>
-                <td>&nbsp;<%= h(shortenFileName(att.getName())) %></td>
-                <td>&nbsp;[<a onclick="removeProtocolDocument(<%=PageFlowUtil.jsString(att.getName())%>, 'attach-<%=x%>'); ">remove</a>]</td>
-            </tr ><%
-        }
-%>
-</table>
-<div id="filePickers">
-</div>
-<div>
-&nbsp;<a onclick="addExtFilePickerHandler(); return false;" href="#addFile"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">&nbsp;&nbsp;Attach a file</a>
-</div>
-</div>
+<div id='testZone'></div>
