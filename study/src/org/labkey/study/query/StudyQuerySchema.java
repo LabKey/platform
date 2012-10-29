@@ -424,12 +424,12 @@ public class StudyQuerySchema extends UserSchema
     }
 
     @Override
-    protected QuerySettings createQuerySettings(String dataRegionName)
+    protected QuerySettings createQuerySettings(String dataRegionName, String queryName, String viewName)
     {
         if (DataSetQueryView.DATAREGION.equals(dataRegionName))
             return new DataSetQuerySettings(dataRegionName);
 
-        return super.createQuerySettings(dataRegionName);
+        return super.createQuerySettings(dataRegionName, queryName, viewName);
     }
 
     @Override
