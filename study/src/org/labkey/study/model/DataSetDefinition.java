@@ -1712,7 +1712,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             //
 
             Integer indexSequenceNum = fromMap.get(DataSetDefinition.getSequenceNumURI());
-            it.indexSequenceNumOutput = it.translateSequenceNum(indexSequenceNum, indexVisitDate);
+            Integer indexVisitDateColumn = indexVisitDate;
+            if (null == indexVisitDateColumn)
+            {
+                String name = getVisitDateColumnName();
+                if (null != name)
+                    indexVisitDateColumn = fromMap.get(name);
+            }
+            it.indexSequenceNumOutput = it.translateSequenceNum(indexSequenceNum, indexVisitDateColumn);
 
 
             if (null == indexKeyProperty)
