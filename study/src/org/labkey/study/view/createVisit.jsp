@@ -42,19 +42,19 @@ is uploaded along with the data. This form allows you to define a range of seque
             </td> 
         </tr> --%>
         <tr>
-            <th align="right">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview'")%></th>
+            <td class=labkey-form-label>Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview'")%></td>
             <td>
                 <input type="text" size="50" name="label" value="<%=h(v.getLabel())%>">
             </td>
         </tr>
         <tr>
-            <th align="right">Sequence Range</th>
+            <td class=labkey-form-label>Sequence Range</td>
             <td>
                 <input type="text" size="20" name="sequenceNumMin" value="<%=v.getSequenceNumMin()>0?v.getSequenceNumMin():""%>">--<input type="text" size="20" name="sequenceNumMax" value="<%=v.getSequenceNumMin()==v.getSequenceNumMax()?"":v.getSequenceNumMax()%>">
             </td>
         </tr>
         <tr>
-            <th align="right">Type</th>
+            <td class=labkey-form-label>Type</td>
             <td>
                 <select name="typeCode">
                     <option value="">[None]</option>
@@ -63,22 +63,38 @@ is uploaded along with the data. This form allows you to define a range of seque
                         for (Visit.Type type : Visit.Type.values())
                         {
                             %>
-                            <option value="<%= type.getCode() %>" <%=type.getCode()==visitTypeCode?"selected":""%>><%= type.getMeaning() %></option>
+                            <option value="<%= type.getCode() %>" <%=text(type.getCode()==visitTypeCode?"selected":"")%>><%=h(type.getMeaning())%></option>
                             <%
                         }
                     %>
                 </select>
             </td>
         </tr>
+    <tr>
+        <%-- UNDONE: duplicated in editVisit.jsp --%>
+        <td class=labkey-form-label>Visit Handling (advanced)<%=
+            helpPopup("SequenceNum handling",
+                    "You may specificy that unique sequence numbers should be based on visit date.<br>"+
+                    "This is for special handling of some log/unscheduled events.<p>"+
+                    "Make sure that the sequence number range is adequate (e.g #.0000-#.9999)",
+                    true)
+        %></td>
+        <td>
+            <select name="sequenceNumHandling">
+              <option selected value="<%=text(Visit.SequenceHandling.normal.name())%>">Normal</option>
+              <option value="<%=text(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option>
+            </select>
+        </td>
+    </tr>
         <tr>
-            <th align="right">Show By Default</th>
+            <td class=labkey-form-label>Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault" <%=v.isShowByDefault()?"checked":""%>>
+                <input type="checkbox" name="showByDefault" <%=text(v.isShowByDefault()?"checked":"")%>>
             </td>
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", StudyController.ManageVisitsAction.class)%></td>
+            <td><%= this.generateSubmitButton("Save")%>&nbsp;<%=generateButton("Cancel", StudyController.ManageVisitsAction.class)%></td>
         </tr>
     </table>
 </form>

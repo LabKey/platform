@@ -70,7 +70,7 @@
                         {
                             String selected = (visit.getType() == type ? "selected" : "");
                             %>
-                            <option value="<%= type.getCode() %>" <%= selected %>><%= type.getMeaning() %></option>
+                            <option value="<%= type.getCode() %>" <%=text(selected)%>><%=h(type.getMeaning())%></option>
                             <%
                         }
                     %>
@@ -90,14 +90,14 @@
                     else
                     {
                     %>
-                    <select name="<%= CohortFilterFactory.Params.cohortId.name() %>">
+                    <select name="<%=text(CohortFilterFactory.Params.cohortId.name())%>">
                         <option value="">All</option>
                     <%
 
                         for (CohortImpl cohort : cohorts)
                         {
                     %>
-                        <option value="<%= cohort.getRowId()%>" <%= visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : ""%>>
+                        <option value="<%= cohort.getRowId()%>" <%=text(visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : "")%>>
                             <%= h(cohort.getLabel())%>
                         </option>
                     <%
@@ -121,7 +121,7 @@
                             if (def == null || def.getTypeURI() == null)
                                 continue;
                             String selected = (visit.getVisitDateDatasetId() == def.getDataSetId() ? "selected" : "");
-                            %><option value="<%= def.getDataSetId() %>" <%= selected %>><%= h(def.getLabel()) %></option><%
+                            %><option value="<%= def.getDataSetId() %>" <%= text(selected) %>><%= h(def.getLabel()) %></option><%
                         }
                     %>
                 </select>
@@ -137,6 +137,7 @@
             </td>
         </tr>
     <tr>
+        <%-- UNDONE: duplicated in createVisit.jsp --%>
         <td class=labkey-form-label>Visit Handling (advanced)<%=
             helpPopup("SequenceNum handling",
                     "You may specificy that unique sequence numbers should be based on visit date.<br>"+
@@ -144,16 +145,17 @@
                     "Make sure that the sequence number range is adequate (e.g #.0000-#.9999)",
                     true)
         %></td>
-        <td><%
-            %><select name="sequenceNumHandling">
+        <td>
+            <select name="sequenceNumHandling">
               <option <%=text(Visit.SequenceHandling.normal.name().equals(visit.getSequenceNumHandling())?"selected":"")%> value="<%=text(Visit.SequenceHandling.normal.name())%>">Normal</option>
-              <option <%=text(Visit.SequenceHandling.logUniqueByDate.name().equals(visit.getSequenceNumHandling()) ?"selected":"")%> value="<%=text(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option></select>
+              <option <%=text(Visit.SequenceHandling.sequenceNumHandling.name().equals(visit.getSequenceNumHandling()) ?"selected":"")%> value="<%=text(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option>
+            </select>
         </td>
     </tr>
         <tr>
             <td class=labkey-form-label>Show By Default</td>
             <td>
-                <input type="checkbox" name="showByDefault" <%= visit.isShowByDefault() ? "checked" : "" %>>
+                <input type="checkbox" name="showByDefault" <%=text(visit.isShowByDefault() ? "checked" : "")%>>
             </td>
         </tr>
         <tr>
@@ -172,16 +174,16 @@
                             type = VisitDataSetType.NOT_ASSOCIATED;
                 %>
                         <tr>
-                            <td><%= dataSet.getDisplayString() %></td>
+                            <td><%= h(dataSet.getDisplayString()) %></td>
                             <td>
                                 <input type="hidden" name="dataSetIds" value="<%= dataSet.getDataSetId() %>">
                                 <select name="dataSetStatus">
-                                    <option value="<%= VisitDataSetType.NOT_ASSOCIATED.name() %>"
-                                        <%= type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : ""%>></option>
-                                    <option value="<%= VisitDataSetType.OPTIONAL.name() %>"
-                                        <%= type == VisitDataSetType.OPTIONAL ? "selected" : ""%>>Optional</option>
-                                    <option value="<%= VisitDataSetType.REQUIRED.name() %>"
-                                        <%= type == VisitDataSetType.REQUIRED ? "selected" : ""%>>Required</option>
+                                    <option value="<%= text(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
+                                        <%= text(type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : "")%>></option>
+                                    <option value="<%= text(VisitDataSetType.OPTIONAL.name()) %>"
+                                        <%= text(type == VisitDataSetType.OPTIONAL ? "selected" : "") %>>Optional</option>
+                                    <option value="<%= text(VisitDataSetType.REQUIRED.name())  %>"
+                                        <%= text(type == VisitDataSetType.REQUIRED ? "selected" : "") %>>Required</option>
                                 </select>
                             </td>
                         </tr>
