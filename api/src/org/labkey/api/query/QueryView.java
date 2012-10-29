@@ -43,7 +43,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
@@ -1320,11 +1319,16 @@ public class QueryView extends WebPartView<Object>
 
     protected void addReportViews(MenuButton menu)
     {
-        String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
+        List<Report> allReports = new ArrayList<Report>();
+        // Ask the schema for the report keys so that we get legacy ones for backwards compatibility too
+        for (String reportKey : getSchema().getReportKeys(getSettings().getQueryName()))
+        {
+            allReports.addAll(ReportUtil.getReports(getContainer(), getUser(), reportKey, true));
+        }
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
         ReportService.ItemFilter viewItemFilter = getItemFilter();
 
-        for (Report report : ReportUtil.getReports(getContainer(), getUser(), reportKey, true))
+        for (Report report : allReports)
         {
             // Filter out reports that don't match what this view is supposed to show. This can prevent
             // reports that were created on the same schema and table/query from a different view from showing up on a

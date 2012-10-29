@@ -17,6 +17,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
@@ -51,6 +52,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -72,6 +74,7 @@ import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -383,15 +386,40 @@ public abstract class AssayProtocolSchema extends AssaySchema
         if (name != null)
         {
             if (name.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), DATA_TABLE_NAME)) || name.equalsIgnoreCase(DATA_TABLE_NAME))
+            {
+                settings.setQueryName(DATA_TABLE_NAME);
                 result = createDataQueryView(context, settings, errors);
+            }
             else if (name.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), RUNS_TABLE_NAME)) || name.equalsIgnoreCase(RUNS_TABLE_NAME))
+            {
+                settings.setQueryName(RUNS_TABLE_NAME);
                 result = createRunsQueryView(context, settings, errors);
+            }
             else if (name.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), BATCHES_TABLE_NAME)) || name.equalsIgnoreCase(BATCHES_TABLE_NAME))
+            {
+                settings.setQueryName(BATCHES_TABLE_NAME);
                 result = new BatchListQueryView(getProtocol(), this, settings);
+            }
         }
 
         if (result == null)
+        {
+            String prefix = getProtocol().getName().toLowerCase() + " ";
+            // Check if we need to reset the name to the new, post refactor name
+            if (name != null && name.toLowerCase().startsWith(prefix))
+            {
+                // Cut off the prefix part that's no longer a part of the table name and is
+                // now part of the schema name
+                String newName = name.substring(prefix.length());
+                // We only need to check this for tables in the schema, not custom queries since they didn't get
+                // moved as part of the refactor
+                if (new CaseInsensitiveHashSet(getTableNames()).contains(newName))
+                {
+                    settings.setQueryName(newName);
+                }
+            }
             result = super.createView(context, settings, errors);
+        }
         return result;
     }
 
@@ -612,5 +640,15 @@ public abstract class AssayProtocolSchema extends AssaySchema
             fixupRenderers(pd, result);
             return result;
         }
+    }
+
+    @Override
+    public Collection<String> getReportKeys(String queryName)
+    {
+        // Include the standard report name
+        Set<String> result = new HashSet<String>(super.getReportKeys(queryName));
+        // Include the legacy schema/query name so we don't lose old reports
+        result.add(ReportUtil.getReportKey(AssaySchema.NAME, getLegacyProtocolTableName(getProtocol(), queryName)));
+        return result;
     }
 }

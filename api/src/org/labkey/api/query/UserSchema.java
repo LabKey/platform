@@ -29,6 +29,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -611,4 +612,9 @@ abstract public class UserSchema extends AbstractSchema
         return visitor.visitUserSchema(this, path, param);
     }
 
+    /** Gives the schema a chance to pick up reports associated with legacy report keys, like if the schema or query name has changed */
+    public Collection<String> getReportKeys(String queryName)
+    {
+        return Collections.singleton(ReportUtil.getReportKey(getSchemaName(), queryName));
+    }
 }
