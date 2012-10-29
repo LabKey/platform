@@ -497,7 +497,7 @@ abstract public class UserSchema extends AbstractSchema
     }
 
     /** override this method to return schema specific QuerySettings object */
-    protected QuerySettings createQuerySettings(String dataRegionName)
+    protected QuerySettings createQuerySettings(String dataRegionName, String queryName, String viewName)
     {
         return new QuerySettings(dataRegionName);
     }
@@ -509,7 +509,7 @@ abstract public class UserSchema extends AbstractSchema
         if (null == dataRegionName)
             dataRegionName = "qwp" + webPart.getIndex();
 
-        QuerySettings settings = createQuerySettings(dataRegionName);
+        QuerySettings settings = createQuerySettings(dataRegionName, null, null);
         (new BoundMap(settings)).putAll(webPart.getPropertyMap());
         settings.init(context);
 
@@ -518,32 +518,31 @@ abstract public class UserSchema extends AbstractSchema
 
     public final QuerySettings getSettings(ViewContext context, String dataRegionName)
     {
-        QuerySettings settings = createQuerySettings(dataRegionName);
-        settings.init(context);
-        settings.setSchemaName(getSchemaName());
+        QuerySettings settings = getSettings(context, dataRegionName, null);
 
         return settings;
     }
 
     public final QuerySettings getSettings(ViewContext context, String dataRegionName, String queryName)
     {
-        QuerySettings settings = getSettings(context, dataRegionName);
-        settings.setQueryName(queryName);
+        QuerySettings settings = getSettings(context, dataRegionName, queryName, null);
 
         return settings;
     }
 
     public final QuerySettings getSettings(ViewContext context, String dataRegionName, String queryName, String viewName)
     {
-        QuerySettings settings = getSettings(context, dataRegionName, queryName);
+        QuerySettings settings = createQuerySettings(dataRegionName, queryName, viewName);
+        settings.init(context);
+        settings.setSchemaName(getSchemaName());
+        settings.setQueryName(queryName);
         settings.setViewName(viewName);
-
         return settings;
     }
 
     public final QuerySettings getSettings(PropertyValues pvs, String dataRegionName)
     {
-        QuerySettings settings = createQuerySettings(dataRegionName);
+        QuerySettings settings = createQuerySettings(dataRegionName, null, null);
         settings.init(pvs);
         settings.setSchemaName(getSchemaName());
 

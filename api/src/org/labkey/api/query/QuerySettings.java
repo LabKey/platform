@@ -194,15 +194,14 @@ public class QuerySettings
         setSortFilter(pvs);
         setAggregates(pvs);
 
-        if (getAllowChooseQuery())
+        // Let URL parameter control which query we show, even if we don't show the Query drop-down menu to let the user choose
+        String param = param(QueryParam.queryName);
+        String queryName = StringUtils.trimToNull(_getParameter(param));
+        if (queryName != null)
         {
-            String param = param(QueryParam.queryName);
-            String queryName = StringUtils.trimToNull(_getParameter(param));
-            if (queryName != null)
-            {
-                setQueryName(queryName);
-            }
+            setQueryName(queryName);
         }
+
         if (getAllowChooseView())
         {
             String viewName = StringUtils.trimToNull(_getParameter(param(QueryParam.viewName)));

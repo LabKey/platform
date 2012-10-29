@@ -84,6 +84,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
 
         setDescription("Contains all of the results (and may contain raw data as well) for the " + _protocol.getName() + " assay definition");
         setName(AssayProtocolSchema.DATA_TABLE_NAME);
+        setPublicSchemaName(_schema.getSchemaName());
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 

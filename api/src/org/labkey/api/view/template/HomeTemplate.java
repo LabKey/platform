@@ -193,7 +193,7 @@ public class HomeTemplate extends PrintTemplate
         {
             String extraPath = getRootContext().getActionURL().getExtraPath();
             if (extraPath.length() > 0)
-                page.setTitle(page.getTitle() + ": " + getRootContext().getActionURL().getExtraPath());
+                page.setTitle(page.getTitle() + (page.getTitle() != null && !page.getTitle().isEmpty() ? ": " : "") + extraPath);
         }
 
         if (null == getView("header"))

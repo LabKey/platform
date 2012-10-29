@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -419,6 +420,18 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 }
             }
             result = super.createView(context, settings, errors);
+        }
+        return result;
+    }
+
+    @Override
+    protected QuerySettings createQuerySettings(String dataRegionName, String queryName, String viewName)
+    {
+        QuerySettings result = super.createQuerySettings(dataRegionName, queryName, viewName);
+        result.setAllowChooseQuery(false);
+        if (RUNS_TABLE_NAME.equals(queryName))
+        {
+            result.setBaseSort(new Sort("-RowId"));
         }
         return result;
     }

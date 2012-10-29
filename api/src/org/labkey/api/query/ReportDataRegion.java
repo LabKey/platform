@@ -52,6 +52,11 @@ public class ReportDataRegion extends AbstractDataRegion
         try {
             // subtle, but we always want to use the data region specified from the enclosing query
             report.getDescriptor().setProperty(ReportDescriptor.Prop.dataRegionName, settings.getDataRegionName());
+
+            // Update in case the resolved schemaName and queryName differ from the one that was stored (which
+            // will be the case if the report is associated with a legacy schema/query name)
+            report.getDescriptor().setProperty(ReportDescriptor.Prop.schemaName, settings.getSchemaName());
+            report.getDescriptor().setProperty(ReportDescriptor.Prop.queryName, settings.getQueryName());
             _report = report;
             _reportView = report.getRunReportView(context);
             _allowHeaderLock = false;
