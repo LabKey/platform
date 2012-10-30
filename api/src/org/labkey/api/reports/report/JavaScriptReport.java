@@ -18,8 +18,6 @@ package org.labkey.api.reports.report;
 
 import org.labkey.api.query.CreateJavaScriptModel;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
-import org.labkey.api.reports.report.view.AjaxScriptReportView;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.ClientDependency;
 

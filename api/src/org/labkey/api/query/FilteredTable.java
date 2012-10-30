@@ -25,12 +25,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.TableType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -97,6 +99,21 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
             applyContainerFilter(ContainerFilter.CURRENT);
     }
 
+    @Override
+    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors)
+    {
+        if (_rootTable instanceof SchemaTableInfo)
+        {
+            String parentJavaCustomizer = ((SchemaTableInfo)_rootTable).getJavaCustomizer();
+            if (parentJavaCustomizer != null)
+            {
+                // Before we do our own customization, apply customization from the SchemaTableInfo
+                configureViaTableCustomizer(errors, parentJavaCustomizer);
+            }
+        }
+
+        super.loadFromXML(schema, xmlTable, errors);
+    }
 
     @Override
     public String getTitleColumn()

@@ -50,11 +50,13 @@ public class AjaxRunScriptReportView extends AjaxScriptReportView
             bean.setErrors(new NullSafeBindException(bean, "form"));
 
         if (_report != null)
+        {
             bean.populateFromDescriptor(_report.getDescriptor());
 
-        if (null == bean.getScript())
-        {
-            bean.setScript(((ScriptReport)_report).getDefaultScript());
+            if (null == bean.getScript())
+            {
+                bean.setScript(((ScriptReport)_report).getDefaultScript());
+            }
         }
 
         // for late-bound client dependencies

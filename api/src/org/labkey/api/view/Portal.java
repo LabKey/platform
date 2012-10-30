@@ -837,11 +837,11 @@ public class Portal
                 if (null == desc)
                     continue;
 
-                WebPartView view = getWebPartViewSafe(desc, context, part);
+                WebPartView<Object> view = getWebPartViewSafe(desc, context, part);
                 if (null == view)
                     continue;
                 view.prepare(view.getModelBean());
-                template.addClientDependencies((Set)view.getClientDependencies());
+                template.addClientDependencies(view.getClientDependencies());
 
                 NavTree navTree = view.getPortalLinks();
                 if (canCustomize)

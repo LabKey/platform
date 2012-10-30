@@ -52,7 +52,7 @@ public class ModuleHtmlView extends HtmlView
     }
 
 
-    public ModuleHtmlView(Resource r, Portal.WebPart webpart)
+    public ModuleHtmlView(Resource r, @Nullable Portal.WebPart webpart)
     {
         super(null);
         _debugViewDescription = this.getClass().toString();

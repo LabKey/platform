@@ -724,9 +724,15 @@ abstract public class AbstractTableInfo implements TableInfo
     }
     
 
-    public void loadFromXML(QuerySchema schema, TableType xmlTable, Collection<QueryException> errors)
+    public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors)
     {
         checkLocked();
+
+        if (xmlTable == null)
+        {
+            return;
+        }
+
         if (xmlTable.getTitleColumn() != null)
             setTitleColumn(xmlTable.getTitleColumn());
         if (xmlTable.getDescription() != null)
@@ -872,11 +878,11 @@ abstract public class AbstractTableInfo implements TableInfo
         // be at the end of this method
         if (xmlTable.isSetJavaCustomizer())
         {
-            configureViaTableCustomizer(this, errors, xmlTable.getJavaCustomizer());
+            configureViaTableCustomizer(errors, xmlTable.getJavaCustomizer());
         }
     }
 
-    public static void configureViaTableCustomizer(TableInfo table, Collection<QueryException> errors, String className)
+    protected void configureViaTableCustomizer(Collection<QueryException> errors, String className)
     {
         if (className == null)
         {
@@ -893,7 +899,7 @@ abstract public class AbstractTableInfo implements TableInfo
             Class c = Class.forName(className);
             if (!(TableCustomizer.class.isAssignableFrom(c)))
             {
-                addAndLogError(errors, "Class " + c.getName() + " is not an implementation of " + TableCustomizer.class.getName() + " to configure table " + table, null);
+                addAndLogError(errors, "Class " + c.getName() + " is not an implementation of " + TableCustomizer.class.getName() + " to configure table " + this, null);
             }
             else
             {
@@ -901,21 +907,21 @@ abstract public class AbstractTableInfo implements TableInfo
                 try
                 {
                     TableCustomizer customizer = customizerClass.newInstance();
-                    customizer.customize(table);
+                    customizer.customize(this);
                 }
                 catch (InstantiationException e)
                 {
-                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + table, e);
+                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + this, e);
                 }
                 catch (IllegalAccessException e)
                 {
-                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + table, e);
+                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + this, e);
                 }
             }
         }
         catch (ClassNotFoundException e)
         {
-            addAndLogError(errors, "Unable to load class '" + className + "'" + " to configure table " + table, e);
+            addAndLogError(errors, "Unable to load class '" + className + "'" + " to configure table " + this, e);
         }
     }
 
@@ -991,7 +997,7 @@ abstract public class AbstractTableInfo implements TableInfo
     public void overlayMetadata(TableType metadata, UserSchema schema, Collection<QueryException> errors)
     {
         checkLocked();
-        if (metadata != null && isMetadataOverrideable())
+        if (isMetadataOverrideable())
         {
             loadFromXML(schema, metadata, errors);
         }
