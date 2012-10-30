@@ -1029,7 +1029,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         containerProps.put("effectivePermissions", getPolicy().getPermissionNames(user));
         if (null != getDescription())
             containerProps.put("description", getDescription());
-        containerProps.put("isWorkbook", isWorkbook());                   // TODO: anything needed for container Tab?
+        containerProps.put("isWorkbook", isWorkbook());
+        containerProps.put("isContainerTab", isContainerTab());
         containerProps.put("type", getContainerNoun());
         JSONArray activeModuleNames = new JSONArray();
         for (Module module : getActiveModules())
