@@ -62,9 +62,12 @@
             target = ContainerManager.getForId(containerPath);
         }
         hasPermission = target != null && target.hasPermission(ctx.getUser(), ReadPermission.class);
+
+        //normalize entityId vs path.
+        jsonProps.put("containerPath", target.getPath());
     }
 %>
-<div id='<%=renderTarget%>'></div>
+<div id='<%=text(renderTarget)%>'></div>
 <script type="text/javascript">
 
 Ext4.onReady(function(){
@@ -74,12 +77,12 @@ Ext4.onReady(function(){
     config.hideCreateButton = config.hideCreateButton === 'true';
 
     if(<%=target == null%>){
-        Ext4.get('<%=renderTarget%>').update('The target container has been deleted.');
+        Ext4.get('<%=text(renderTarget)%>').update('The target container has been deleted.');
         return;
     }
 
     if(!<%=hasPermission%>){
-        Ext4.get('<%=renderTarget%>').update('You do not have permission to view this folder');
+        Ext4.get('<%=text(renderTarget)%>').update('You do not have permission to view this folder');
         return;
     }
 
@@ -104,8 +107,44 @@ Ext4.onReady(function(){
         if(LABKEY.Security.getSharedContainer())
             filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL));
 
+        if (panel.containerFilter == 'CurrentAndFirstChildren'){
+            //NOTE: path is not directly filterable, so we settle for Client-side filtering
+            panel.store.on('load', function(){
+                var path = this.containerPath;
+                this.filterBy(function(rec){
+                    return rec.get('Path') != path;
+                })
+            }, null, {single: true});
+        }
+
         return filterArray;
     }
+
+    var store = Ext4.create('LABKEY.ext4.Store', {
+        containerPath: config.containerPath,
+        schemaName: 'core',
+        queryName: 'Containers',
+        sort: 'Name',
+        containerFilter: config.containerFilter,
+        columns: 'Name,EntityId,Path,ContainerType',
+        autoLoad: false,
+        metadata: {
+            iconurl: {
+                createIfDoesNotExist: true,
+                setValueOnLoad: true,
+                getInitialValue: function(val, rec){
+                    return LABKEY.ActionURL.buildURL('project', 'downloadProjectIcon', rec.get('EntityId'))
+                }
+            },
+            url: {
+                createIfDoesNotExist: true,
+                setValueOnLoad: true,
+                getInitialValue: function(val, rec){
+                    return LABKEY.ActionURL.buildURL('project', 'start', rec.get('Path'))
+                }
+            }
+        }
+    });
 
     var panelCfg = {
         id: 'projects-panel-<%=webPartId%>',
@@ -123,33 +162,7 @@ Ext4.onReady(function(){
         buttonAlign: 'left',
         emptyText: 'No folder to display',
         deferEmptyText: false,
-        store: Ext4.create('LABKEY.ext4.Store', {
-            containerPath: config.containerPath || LABKEY.Security.getHomeContainer(),
-            schemaName: 'core',
-            queryName: 'Containers',
-            sort: 'Name',
-            containerFilter: config.containerFilter,
-            columns: 'Name,EntityId,Path,ContainerType',
-            autoLoad: true,
-//            maxRows: 0,
-            filterArray: getFilterArray(config),
-            metadata: {
-                iconurl: {
-                    createIfDoesNotExist: true,
-                    setValueOnLoad: true,
-                    getInitialValue: function(val, rec){
-                        return LABKEY.ActionURL.buildURL('project', 'downloadProjectIcon', rec.get('EntityId'))
-                    }
-                },
-                url: {
-                    createIfDoesNotExist: true,
-                    setValueOnLoad: true,
-                    getInitialValue: function(val, rec){
-                        return LABKEY.ActionURL.buildURL('project', 'start', rec.get('Path'))
-                    }
-                }
-            }
-        })
+        store: store
     }
 
     //NOTE: separated to differentiate site admins from those w/ admin permission in this container
@@ -163,9 +176,12 @@ Ext4.onReady(function(){
     }
 
     var panel = Ext4.create('LABKEY.ext.IconPanel', panelCfg);
-    panel.render('<%=renderTarget%>');
+    panel.render('<%=text(renderTarget)%>');
     Ext4.apply(panel, config);
     panel.getFilterArray = getFilterArray;
+
+    panel.store.filterArray = getFilterArray(panel);
+    panel.store.load();
 });
 
     /**
@@ -335,7 +351,6 @@ Ext4.onReady(function(){
                                 var directDescendants = btn.up('window').down('#directDescendants').getValue();
                                 panel.store.containerFilter = directDescendants ? 'CurrentAndFirstChildren' : 'CurrentAndSubfolders';
                                 panel.store.filterArray = panel.getFilterArray(panel);
-                                panel.store.filterArray.push(LABKEY.Filter.create('EntityId', panel.store.containerPath, LABKEY.Filter.Types.NOT_EQUAL));
                             }
 
                             panel.store.load();
