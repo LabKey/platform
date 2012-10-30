@@ -102,7 +102,7 @@ LABKEY.Mothership = (function () {
         // Ignore some URLs
         var ignoreURLs = [
             // Chrome extensions
-            'extensions/',
+            'extensions/'
         ];
 
         for (var i = 0; i < ignoreURLs.length; i++) {
@@ -219,7 +219,7 @@ LABKEY.Mothership = (function () {
             file: file,
             line: line,
             browser: navigator && navigator.userAgent || "Unknown",
-            platform:  navigator && navigator.platform  || "Unknown",
+            platform:  navigator && navigator.platform  || "Unknown"
         };
 
         try {
