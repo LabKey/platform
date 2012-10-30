@@ -3644,6 +3644,7 @@ public class AdminController extends SpringActionController
         private boolean recurse = false;
         private String templateSourceId;
         private String[] templateWriterTypes;
+        private boolean templateIncludeSubfolders = false;
 
         public boolean getHasLoaded()
         {
@@ -3780,6 +3781,16 @@ public class AdminController extends SpringActionController
         public void setTemplateWriterTypes(String[] templateWriterTypes)
         {
             this.templateWriterTypes = templateWriterTypes;
+        }
+
+        public boolean getTemplateIncludeSubfolders()
+        {
+            return templateIncludeSubfolders;
+        }
+
+        public void setTemplateIncludeSubfolders(boolean templateIncludeSubfolders)
+        {
+            this.templateIncludeSubfolders = templateIncludeSubfolders;
         }
     }
 
@@ -4039,7 +4050,8 @@ public class AdminController extends SpringActionController
 
                         // export objects from the source folder
                         FolderWriterImpl writer = new FolderWriterImpl();
-                        FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new", Logger.getLogger(FolderWriterImpl.class));
+                        FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
+                                form.getTemplateIncludeSubfolders(), false, false, false, Logger.getLogger(FolderWriterImpl.class));
                         writer.write(sourceContainer, exportCtx, vf);
 
                         // import objects into the target folder

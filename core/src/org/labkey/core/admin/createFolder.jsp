@@ -393,6 +393,17 @@
 
                                 return folderTemplateWriters;
                             }()
+                        },
+                        {
+                            html: 'Options:',
+                            cls: 'labkey-wizard-header'
+                        },
+                        {
+                            xtype: 'checkbox',
+                            hideLabel: true,
+                            boxLabel: 'Include Subfolders',
+                            name: 'templateIncludeSubfolders',
+                            itemId: 'templateIncludeSubfolders'
                         }
                     ]);
 
@@ -436,7 +447,9 @@
         function getTemplateFolders(data)
         {
             // add the container itself to the templateFolder object if it is not the root and the user has admin perm to it
-            if (data.path != "/" && LABKEY.Security.hasPermission(data.userPermissions, LABKEY.Security.permissions.admin))
+            // and if it is not a workbook or container tab folder
+            if (data.path != "/" && LABKEY.Security.hasPermission(data.userPermissions, LABKEY.Security.permissions.admin)
+                    && !data.isWorkbook && !data.isContainerTab)
             {
                 templateFolders.push([data.id, data.path]);
             }
