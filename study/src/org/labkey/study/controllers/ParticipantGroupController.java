@@ -488,8 +488,10 @@ public class ParticipantGroupController extends BaseStudyController
                         }
                         break;
                     case cohort:
+                        boolean hasCohorts = false;
                         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
                         {
+                            hasCohorts = true;
                             selectedParticipants.addAll(cohort.getParticipantSet());
                             JSONGroup jsonGroup = new JSONGroup(cohort);
                             if (form.includeParticipantIds())
@@ -498,8 +500,11 @@ public class ParticipantGroupController extends BaseStudyController
                             groups.add(jsonGroup.toJSON(getViewContext()));
                         }
 
-                        if (form.isIncludeUnassigned() && hasUnassignedParticipants(selectedParticipants))
-                            groups.add(new JSONGroup(-1, -1, "Not in any cohort", GroupType.cohort).toJSON(getViewContext()));
+                        if (hasCohorts)
+                        {
+                            if (form.isIncludeUnassigned() && hasUnassignedParticipants(selectedParticipants))
+                                groups.add(new JSONGroup(-1, -1, "Not in any cohort", GroupType.cohort, null).toJSON(getViewContext()));
+                        }
                         break;
                 }
             }
@@ -524,9 +529,13 @@ public class ParticipantGroupController extends BaseStudyController
 
                     groups.add(jsonGroup.toJSON(getViewContext()));
                 }
-                String[] unassigned = StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, getUser(), category.getRowId());
-                if (form.isIncludeUnassigned() && (unassigned.length > 0))
-                    groups.add(new JSONGroup(-1, category.getRowId(), "Not in any group", GroupType.participantGroup).toJSON(getViewContext()));
+
+                if (category.getGroups().length > 0)
+                {
+                    String[] unassigned = StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, getUser(), category.getRowId());
+                    if (form.isIncludeUnassigned() && (unassigned.length > 0))
+                        groups.add(new JSONGroup(-1, category.getRowId(), "Not in any group", GroupType.participantGroup, category).toJSON(getViewContext()));
+                }
             }
         }
 
@@ -583,12 +592,13 @@ public class ParticipantGroupController extends BaseStudyController
             _type = GroupType.cohort;
         }
 
-        public JSONGroup(int groupId, int categoryId, String label, GroupType type)
+        public JSONGroup(int groupId, int categoryId, String label, GroupType type, ParticipantCategoryImpl category)
         {
             _groupId = groupId;
             _categoryId = categoryId;
             _label = label;
             _type = type;
+            _category = category;
         }
 
         public void setParticipantIds(Set<String> participantIds)

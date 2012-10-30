@@ -289,7 +289,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                             description : categoryName[type]
                         });
 
-                        maxSelection = maxSelection ? Math.max(0, maxSelection - cohortConfig.data.length) : maxSelection;
+                        maxSelection = maxSelection ? Math.max(0, maxSelection - groupConfig.data.length) : maxSelection;
                     }
                 }
 
