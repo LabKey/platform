@@ -518,25 +518,27 @@ abstract public class UserSchema extends AbstractSchema
 
     public final QuerySettings getSettings(ViewContext context, String dataRegionName)
     {
-        QuerySettings settings = getSettings(context, dataRegionName, null);
-
-        return settings;
+        return getSettings(context, dataRegionName, null);
     }
 
-    public final QuerySettings getSettings(ViewContext context, String dataRegionName, String queryName)
+    public final QuerySettings getSettings(ViewContext context, String dataRegionName, @Nullable String queryName)
     {
-        QuerySettings settings = getSettings(context, dataRegionName, queryName, null);
-
-        return settings;
+        return getSettings(context, dataRegionName, queryName, null);
     }
 
-    public final QuerySettings getSettings(ViewContext context, String dataRegionName, String queryName, String viewName)
+    public final QuerySettings getSettings(ViewContext context, String dataRegionName, @Nullable String queryName, @Nullable String viewName)
     {
         QuerySettings settings = createQuerySettings(dataRegionName, queryName, viewName);
         settings.init(context);
         settings.setSchemaName(getSchemaName());
-        settings.setQueryName(queryName);
-        settings.setViewName(viewName);
+        if (queryName != null)
+        {
+            settings.setQueryName(queryName);
+        }
+        if (viewName != null)
+        {
+            settings.setViewName(viewName);
+        }
         return settings;
     }
 
