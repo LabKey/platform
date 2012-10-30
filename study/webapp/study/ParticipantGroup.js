@@ -9,6 +9,7 @@ Ext4.define('Study.window.ParticipantGroup', {
     extend : 'Ext.window.Window',
 
     constructor : function(config){
+        Ext4.QuickTips.init();
         this.panelConfig = config;
         this.addEvents('aftersave', 'closewindow');
 
@@ -188,7 +189,18 @@ Ext4.define('Study.window.ParticipantGroup', {
                     xtype : 'checkboxfield',
                     name : 'sharedBox',
                     id : 'sharedBox',
-                    boxLabel : 'Share Category?'
+                    boxLabel : 'Share Category?',
+                    listeners : {
+                        scope : this,
+                        afterrender : function(checkboxField){
+                            var shareTip = Ext4.create('Ext.tip.ToolTip', {
+                                trackMouse : true,
+                                target : checkboxField.getEl(),
+                                html : 'Share this ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) +' category with all users'
+                            });
+                        }
+
+                    }
                 },
                 {
                     xtype : 'button',
