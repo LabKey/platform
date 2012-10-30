@@ -2567,7 +2567,6 @@ public class StudyManager
     {
         try
         {
-            TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
             DbSchema schema = StudySchema.getInstance().getSchema();
 
             SQLFragment sql = new SQLFragment(String.format(

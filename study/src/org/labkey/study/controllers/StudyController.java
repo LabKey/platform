@@ -1081,6 +1081,10 @@ public class StudyController extends BaseStudyController
 
             if (participants != null)
             {
+                if (isDebug())
+                {
+                    _log.info("Cached participants: " + participants);
+                }
                 int idx = participants.indexOf(form.getParticipantId());
                 if (idx != -1)
                 {
