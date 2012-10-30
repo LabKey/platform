@@ -23,6 +23,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -340,8 +341,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
         if (null != ret)
         {
-            if (null != query.getTablesDocument())
-                ((QueryTableInfo)ret).loadFromXML(schema, query.getTablesDocument().getTables().getTableArray(0), errors);
+            TableType xmlTable = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getTableArray(0);
+            ((AbstractTableInfo)ret).loadFromXML(schema, xmlTable, errors);
 
             if (includeMetadata)
             {

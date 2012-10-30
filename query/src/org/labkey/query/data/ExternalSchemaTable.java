@@ -44,19 +44,16 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements
     {
         super(schema, table);
 
-        if (metadata != null)
+        try
         {
-            try
-            {
-                //create list to avoid NPE if an error occurs
-                Collection<QueryException> errors = new ArrayList<QueryException>();
-                loadFromXML(schema, metadata, errors);
-            }
-            catch (IllegalArgumentException e)
-            {
-                _logger.error("Malformed XML for external table: " + getSchema() + "." + getName(), e);
-                //otherwise ignore malformed XML
-            }
+            //create list to avoid NPE if an error occurs
+            Collection<QueryException> errors = new ArrayList<QueryException>();
+            loadFromXML(schema, metadata, errors);
+        }
+        catch (IllegalArgumentException e)
+        {
+            _logger.error("Malformed XML for external table: " + getSchema() + "." + getName(), e);
+            //otherwise ignore malformed XML
         }
     }
 

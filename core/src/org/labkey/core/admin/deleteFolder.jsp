@@ -58,7 +58,7 @@
     // admin permissions to the entire tree.
     if (c.hasChildren() && !ContainerManager.hasTreePermission(c, user, AdminPermission.class))
     {
-        %><tr><td>This <%=h(containerType)%> has <%=childrenDescription%>s, but you don't have admininistrative permissions to all the <%=childrenDescription%>s.</td></tr>
+        %><tr><td>This <%=h(containerType)%> has <%=h(childrenDescription)%>s, but you don't have admininistrative permissions to all the <%=h(childrenDescription)%>s.</td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td>
             <%=generateButton("Back", urlProvider(AdminUrls.class).getManageFoldersURL(c))%>
@@ -80,7 +80,7 @@
         {
             List<Container> containers = Arrays.asList(ContainerManager.getAllChildren(c));
             %>
-            <tr><td>You are about to delete the following <%="project".equals(containerType) ? "project and its subfolders" : ("folder" + (recurse ? "s" : ""))%>:</td></tr>
+            <tr><td>You are about to delete the following <%=h("project".equals(containerType) ? "project and its subfolders" : ("folder" + (recurse ? "s" : "")))%>:</td></tr>
             <tr><td>&nbsp;</td></tr>
             <tr><td><ul><%
 
