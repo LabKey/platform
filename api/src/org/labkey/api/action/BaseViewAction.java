@@ -66,6 +66,8 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     PropertyValues _pvs;
     boolean _useBasicAuthentication = false;
 
+    private boolean _debug = false;
+    protected boolean _print = false;
 
     // shared construction code
     private void _BaseViewAction()
@@ -169,7 +171,26 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (null == getPropertyValues())
             setProperties(new ServletRequestParameterPropertyValues(request));
         _context.setBindPropertyValues(getPropertyValues());
+        handleSpecialProperties();
+
         return handleRequest();
+    }
+
+
+    private void handleSpecialProperties()
+    {
+        // Special flag puts actions in "debug" mode, during which they should log extra information that would be
+        // helpful for testing or debugging problems
+        if (null != StringUtils.trimToNull((String) getProperty("_debug")))
+        {
+            _debug = true;
+        }
+
+        if (null != StringUtils.trimToNull((String) getProperty("_print")) ||
+            null != StringUtils.trimToNull((String) getProperty("_print.x")))
+        {
+            _print = true;
+        }
     }
 
 
@@ -689,5 +710,15 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     protected List<AttachmentFile> getAttachmentFileList()
     {
         return SpringAttachmentFile.createList(getFileMap());
+    }
+
+    public boolean isPrint()
+    {
+        return _print;
+    }
+
+    public boolean isDebug()
+    {
+        return _debug;
     }
 }

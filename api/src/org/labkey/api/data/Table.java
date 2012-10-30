@@ -133,15 +133,25 @@ public class Table
         return new LegacyTableSelector(table, select, filter, sort).setMaxRows(maxRows).setOffset(offset).getArray(clss);
     }
 
-    // ================== These methods have been converted to Selector/Executor, but still have callers ==================
-
-    // 1 usages
     // return a result from a one column resultset. K should be a string or number type
     @Deprecated // Use TableSelector
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
     {
         return new LegacyTableSelector(col, filter, sort).getArray(c);
     }
+
+    @NotNull
+    @Deprecated // Use TableSelector
+    public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
+            throws SQLException
+    {
+        TableSelector selector = new TableSelector(table, select, filter, sort);
+        selector.setForDisplay(true);
+
+        return selector.getArray(clss);
+    }
+
+    // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
     // 21 usages
     @NotNull
@@ -186,7 +196,7 @@ public class Table
     }
 
 
-    // 8 usages
+    // 7 usages
     // return a result from a one column resultset. K should be a string or number type
     @Deprecated // Use TableSelector
     public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
@@ -270,17 +280,7 @@ public class Table
     public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
             throws SQLException
     {
-        return selectForDisplay(table, columnInfosList(table, select), filter, sort, clss);
-    }
-
-
-    // 2 usages
-    @NotNull
-    @Deprecated // Use TableSelector
-    public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
-            throws SQLException
-    {
-        TableSelector selector = new TableSelector(table, select, filter, sort);
+        TableSelector selector = new TableSelector(table, columnInfosList(table, select), filter, sort);
         selector.setForDisplay(true);
 
         return selector.getArray(clss);

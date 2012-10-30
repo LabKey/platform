@@ -120,7 +120,9 @@ public class UpgradeUtils
         }
 
         // Now enumerate the rows in the specified order and fix up the duplicates.  Use selectForDisplay to ensure PKs are selected.
-        Map<String, Object>[] maps = Table.selectForDisplay(table, selectColumns, filter, sort, Map.class);
+        TableSelector selector = new TableSelector(table, selectColumns, filter, sort).setForDisplay(true);
+
+        Map<String, Object>[] maps = selector.getArray(Map.class);
         Set<String> newValues = getSet(caseSensitive);
 
         for (Map<String, Object> map : maps)
