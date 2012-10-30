@@ -144,17 +144,15 @@
             var buttonBar = Ext4.get(Ext4.query('.labkey-folder-header .button-bar')[0]);
             var folderTitle = Ext4.get(Ext4.query('.labkey-folder-title')[0]);
             var appBar = Ext4.get(Ext4.query('.labkey-app-bar')[0]);
-            var tabMenus = Ext4.query('span.labkey-tab-menu');
             var tabs = Ext4.query('.labkey-app-bar ul li');
             var totalWidth = 0;
 
-            for(var i = 0; i < tabMenus.length; i++){
-                var tabMenu = Ext4.get(tabMenus[i]);
-            }
-
             for(var i = 0; i < tabs.length; i++){
                 var anchor = Ext4.get(tabs[i]);
-                totalWidth = totalWidth + anchor.getWidth() + 10; // add two for tab padding and margin.
+                totalWidth = totalWidth + anchor.getWidth();
+                if(tabs[i].getAttribute('id') !== 'addTab'){
+                    totalWidth = totalWidth + 20;
+                }
             }
 
             appBar.dom.setAttribute('style', 'min-width: ' + (totalWidth + folderTitle.getWidth()) + 'px;');
