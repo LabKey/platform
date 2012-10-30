@@ -55,6 +55,15 @@ public class PopupAdminView extends PopupMenuView
 
     public PopupAdminView(final ViewContext context)
     {
+        Container c = context.getContainer();
+
+        // If current context is a container tab, use the parent container to build this menu
+        if (c.isContainerTab())
+        {
+            c = c.getParent();
+            context.setContainer(c);
+        }
+
         User user = context.getUser();
 
         boolean isAdminInThisFolder = context.hasPermission(AdminPermission.class);
@@ -65,7 +74,6 @@ public class PopupAdminView extends PopupMenuView
             return;
         
         NavTree navTree = new NavTree("Admin");
-        Container c = context.getContainer();
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 
         //Allow Admins to turn the folder bar on & off
@@ -94,7 +102,7 @@ public class PopupAdminView extends PopupMenuView
             if (isAdminInThisFolder && !c.isWorkbook())
             {
                 NavTree folderAdmin = new NavTree("Folder");
-                folderAdmin.addChildren(FolderAdminMenu.getFolderElements(context.getContainer()));
+                folderAdmin.addChildren(FolderAdminMenu.getFolderElements(c));
                 folderAdmin.addSeparator();
                 folderAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
                 navTree.addChild(folderAdmin);

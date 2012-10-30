@@ -363,7 +363,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 tabContainer.getFolderType().addManageLinks(menu, tabContainer);
                 menu.addSeparator();
 
-                NavTree moduleMenu = new NavTree("Go to Module");
+                NavTree moduleMenu = new NavTree("Go To Module");
 
                 for (Module module : tabContainer.getActiveModules())
                 {
