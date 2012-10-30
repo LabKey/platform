@@ -508,13 +508,6 @@ li.ptid a.unhighlight
 
     function renderSubjects()
     {
-        if (_ptids.length == 0 && first)
-        {
-            document.getElementById(_divId).innerHTML = 'No ' + _pluralNoun.toLowerCase() + " were found in this study.  " +
-                    _singularNoun + " IDs will appear here after specimens or datasets are imported.";
-            first = false;
-            return;
-        }
         // don't render the initial list if we have unenrolled cohorts; wait until we have a filterGroupMap
         // (unless this is the narrow participant list which doesn't have a filterGroupMap)
         if (_isWide && _hasUnenrolledCohorts && !_filterGroupMap)
@@ -630,6 +623,18 @@ li.ptid a.unhighlight
 
     function render()
     {
+        if (_ptids.length == 0 && first)
+        {
+            // Issue 16372
+            // Need to check for ptids here instead of later, otherwise internal Ext errors occur which prevent other
+            // Ext items (i.e. Admin / Help menus) from being rendered.
+
+            document.getElementById(_divId).innerHTML = 'No ' + _pluralNoun.toLowerCase() + " were found in this study.  " +
+                    _singularNoun + " IDs will appear here after specimens or datasets are imported.";
+            first = false;
+            return;
+        }
+
         doAdjustSize(); // get close
         renderGroups();
         renderSubjects();
