@@ -69,8 +69,8 @@ import java.util.Set;
 public class AssayResultTable extends FilteredTable implements UpdateableTableInfo
 {
     protected final AssayProtocolSchema _schema;
-    private final ExpProtocol _protocol;
-    private final AssayProvider _provider;
+    protected final ExpProtocol _protocol;
+    protected final AssayProvider _provider;
     private final Domain _resultsDomain;
 
     public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
