@@ -234,7 +234,9 @@ public class CrosstabView extends QueryView
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        rgn.setAllowAsync(false);
+
+        configureForExcelExport(docType, view, rgn);
+
         Results rs = rgn.getResultSet(view.getRenderContext());
 
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();

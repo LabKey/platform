@@ -1851,14 +1851,9 @@ public class QueryView extends WebPartView<Object>
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        getSettings().setShowRows(ShowRows.PAGINATED);
-        getSettings().setMaxRows(docType.getMaxRows());
-        getSettings().setOffset(Table.NO_OFFSET);
-        rgn.setAllowAsync(false);
-        RenderContext rc = view.getRenderContext();
-        // Cache resultset only for SAS/SHARE data sources. See #12966 (which removed caching) and #13638 (which added it back for SAS)
-        boolean sas = "SAS".equals(rgn.getTable().getSqlDialect().getProductName());
-        rc.setCache(sas);
+
+        RenderContext rc = configureForExcelExport(docType, view, rgn);
+
         ResultSet rs = rgn.getResultSet(rc);
         Map<FieldKey, ColumnInfo> map = rc.getFieldMap();
         ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);
@@ -1936,6 +1931,19 @@ public class QueryView extends WebPartView<Object>
                 it.remove();
         }
         return new ExcelWriter(null, displayColumns);
+    }
+
+    protected RenderContext configureForExcelExport(ExcelWriter.ExcelDocumentType docType, DataView view, DataRegion rgn)
+    {
+        getSettings().setShowRows(ShowRows.PAGINATED);
+        getSettings().setMaxRows(docType.getMaxRows());
+        getSettings().setOffset(Table.NO_OFFSET);
+        rgn.setAllowAsync(false);
+        RenderContext rc = view.getRenderContext();
+        // Cache resultset only for SAS/SHARE data sources. See #12966 (which removed caching) and #13638 (which added it back for SAS)
+        boolean sas = "SAS".equals(rgn.getTable().getSqlDialect().getProductName());
+        rc.setCache(sas);
+        return rc;
     }
 
     public void exportToExcel(HttpServletResponse response) throws Exception
@@ -2054,12 +2062,12 @@ public class QueryView extends WebPartView<Object>
 
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        getSettings().setShowRows(ShowRows.PAGINATED);
-        getSettings().setMaxRows(ExcelWriter.MAX_ROWS);
-        getSettings().setOffset(Table.NO_OFFSET);
-        view.getRenderContext().setCache(false);
 
-        ResultSet rs = rgn.getResultSet(view.getRenderContext());
+        // We're not sure if we're dealing with a version of Excel that can handle more than 65535 rows.
+        // Assume that it can, and rely on the fact that Excel throws out rows if there are more than it can handle
+        RenderContext ctx = configureForExcelExport(ExcelWriter.ExcelDocumentType.xlsx, view, rgn);
+
+        ResultSet rs = rgn.getResultSet(ctx);
 
         // Bug 5610 & 6179. Excel web queries don't work over SSL if caching is disabled,
         // so we need to allow caching so that Excel can read from IE on Windows.
@@ -2067,7 +2075,7 @@ public class QueryView extends WebPartView<Object>
         response.setHeader("Pragma", "private");
         response.setHeader("Cache-Control", "private");
 
-        new HtmlWriter().write(rs, getExportColumns(rgn.getDisplayColumns()), response, view.getRenderContext(), true);
+        new HtmlWriter().write(rs, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
 
         logAuditEvent("Exported to Excel Web Query data");
     }
