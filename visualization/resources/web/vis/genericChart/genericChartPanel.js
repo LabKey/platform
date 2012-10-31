@@ -744,7 +744,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.markDirty(false);
             this.loadReport(this.reportId);
         } else {
-            this.markDirty(true);
+            this.markDirty(false);
             this.on('render', this.ensureQuerySettings, this);
         }
 
