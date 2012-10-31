@@ -129,7 +129,7 @@ public class ContainerTable extends FilteredTable
 
         SQLFragment containerWorkbookSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN 'true' " +
                 "ELSE 'false' END");
-        ExprColumn containerWorkbookColumn = new ExprColumn(this, "Workbook", containerWorkbookSQL, JdbcType.VARCHAR);
+        ExprColumn containerWorkbookColumn = new ExprColumn(this, "Workbook", containerWorkbookSQL, JdbcType.BOOLEAN);
         addColumn(containerWorkbookColumn);
 
         SQLFragment containerDisplaySQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS + ".Type = 'workbook' " +
