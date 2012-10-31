@@ -19,6 +19,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.PropertyManager;
@@ -26,6 +27,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -34,17 +36,18 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.view.Portal;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UsersDomainKind;
 
-import javax.servlet.ServletContext;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -181,5 +184,32 @@ public class CoreUpgradeCode implements UpgradeCode
             time = "2:00";
 
         SystemMaintenance.setProperties(enabled, time);
+    }
+
+
+    /* called at 12.2->12.3 */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setPortalPageEntityId(ModuleContext moduleContext)
+    {
+        if (moduleContext.isNewInstall())
+            return;
+
+        try
+        {
+            DbSchema schema = CoreSchema.getInstance().getSchema();
+            Collection<Portal.PortalPage> pages = new SqlSelector(schema, "SELECT * FROM core.PortalPages").getCollection(Portal.PortalPage.class);
+            String updateSql = "UPDATE core.PortalPages SET EntityId=? WHERE Container=? AND PageId=?";
+
+            for (Portal.PortalPage p : pages)
+            {
+                if (null != p.getEntityId())
+                    continue;
+                Table.execute(schema, updateSql,  GUID.makeGUID(), p.getContainer().toString(), p.getPageId());
+            }
+        }
+        catch (SQLException se)
+        {
+            throw UnexpectedException.wrap(se);
+        }
     }
 }
