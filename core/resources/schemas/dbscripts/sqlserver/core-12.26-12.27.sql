@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-EXEC core.executeJavaUpgradeCode 'setPortalPageEntityId';
+--EXEC core.executeJavaUpgradeCode 'setPortalPageEntityId';
 
-ALTER TABLE core.PortalPages ALTER COLUMN EntityId ENTITYID NOT NULL;
+--ALTER TABLE core.PortalPages ALTER COLUMN EntityId ENTITYID NOT NULL;
 
-CREATE INDEX ix_portalpages_entityid ON core.portalpages(entityid);
+--CREATE INDEX ix_portalpages_entityid ON core.portalpages(entityid);
 
