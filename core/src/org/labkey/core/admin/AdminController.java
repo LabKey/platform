@@ -50,6 +50,7 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.FolderWriterImpl;
+import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
@@ -4051,7 +4052,7 @@ public class AdminController extends SpringActionController
                         // export objects from the source folder
                         FolderWriterImpl writer = new FolderWriterImpl();
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
-                                form.getTemplateIncludeSubfolders(), false, false, false, Logger.getLogger(FolderWriterImpl.class));
+                                form.getTemplateIncludeSubfolders(), false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
                         writer.write(sourceContainer, exportCtx, vf);
 
                         // import objects into the target folder
@@ -4059,7 +4060,7 @@ public class AdminController extends SpringActionController
                         if (folderXml instanceof FolderDocument)
                         {
                             FolderDocument folderDoc = (FolderDocument)folderXml;
-                            FolderImportContext importCtx = new FolderImportContext(getUser(), c, folderDoc, Logger.getLogger(FolderImporterImpl.class), vf);
+                            FolderImportContext importCtx = new FolderImportContext(getUser(), c, folderDoc, new StaticLoggerGetter(Logger.getLogger(FolderImporterImpl.class)), vf);
 
                             FolderImporterImpl importer = new FolderImporterImpl();
                             importer.process(null, importCtx, vf);

@@ -15,6 +15,7 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
@@ -45,18 +46,18 @@ public class StudyExportContext extends AbstractContext
     private Set<Integer> _visitIds = null;
     private List<String> _participants = new ArrayList<String>();
 
-    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Logger logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, LoggerGetter logger)
     {
         this(study, user, c, oldFormats, dataTypes, false, new ParticipantMapper(study, false, false), logger);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Set<DataSetDefinition> initDatasets, Logger logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Set<DataSetDefinition> initDatasets, LoggerGetter logger)
     {
         this(study, user, c, oldFormats, dataTypes, false, new ParticipantMapper(study, false, false), logger);
         setDatasets(initDatasets);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, Logger logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, LoggerGetter logger)
     {
         super(user, c, StudyXmlWriter.getStudyDocument(), logger, null);
         _oldFormats = oldFormats;
@@ -68,7 +69,7 @@ public class StudyExportContext extends AbstractContext
             initializeDatasets(study);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, Set<DataSetDefinition> initDatasets, Logger logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, Set<DataSetDefinition> initDatasets, LoggerGetter logger)
     {
         this(study, user, c, oldFormats, dataTypes, removeProtected, participantMapper, logger);
         setDatasets(initDatasets);

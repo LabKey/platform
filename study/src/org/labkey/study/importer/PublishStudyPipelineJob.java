@@ -19,6 +19,7 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -195,7 +196,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
                 Set<String> dataTypes = getDataTypesToExport(_form);
 
                 FolderExportContext ctx = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new",
-                        _form.isRemoveProtectedColumns(), _form.isShiftDates(), _form.isUseAlternateParticipantIds(), getLogger());
+                        _form.isRemoveProtectedColumns(), _form.isShiftDates(), _form.isUseAlternateParticipantIds(), new PipelineJobLoggerGetter(this));
 
                 if (_form.getLists() != null)
                     ctx.setListIds(_form.getLists());
@@ -209,7 +210,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
                 StudyExportContext studyCtx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(),
                         false, dataTypes, _form.isRemoveProtectedColumns(),
                         new ParticipantMapper(_sourceStudy, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
-                        _datasets, getLogger()
+                        _datasets, new PipelineJobLoggerGetter(this)
                 );
 
                 if (selectedVisits != null)
@@ -280,7 +281,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
 
         if (studyDoc != null)
         {
-            StudyImportContext importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, getLogger(), studyDir);
+            StudyImportContext importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, new PipelineJobLoggerGetter(this), studyDir);
 
             ParticipantGroupImporter groupImporter = new ParticipantGroupImporter();
             groupImporter.process(importContext, studyDir, errors);
@@ -334,7 +335,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
         getLogger().info("Importing data to destination study");
         if (studyDoc != null)
         {
-            StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, getLogger(), studyDir);
+            StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, new PipelineJobLoggerGetter(this), studyDir);
 
             // missing values and qc states
             new MissingValueImporterFactory().create().process(null, importContext, studyDir);
@@ -362,7 +363,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
         User user = getUser();
         FolderImporterImpl importer = new FolderImporterImpl();
         FolderDocument folderDoc = (FolderDocument)vf.getXmlBean("folder.xml");
-        FolderImportContext folderImportContext = new FolderImportContext(user, newStudy.getContainer(), folderDoc, getLogger(), vf);
+        FolderImportContext folderImportContext = new FolderImportContext(user, newStudy.getContainer(), folderDoc, new PipelineJobLoggerGetter(this), vf);
 
         // remove the study folder importer since we are handling dataset, specimen, etc. importing separately
         importer.removeImporterByDescription("study");
@@ -381,7 +382,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
 
             if (studyDoc != null)
             {
-                StudyImportContext importContext = new StudyImportContext(user, destStudy.getContainer(), studyDoc, getLogger(), studyDir);
+                StudyImportContext importContext = new StudyImportContext(user, destStudy.getContainer(), studyDoc, new PipelineJobLoggerGetter(this), studyDir);
 
                 // the dataset import task handles importing the dataset data and updating the participant and participantVisit tables
                 VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(importContext, studyDir);

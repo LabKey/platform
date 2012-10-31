@@ -17,6 +17,7 @@
 package org.labkey.study.pipeline;
 
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
@@ -70,7 +71,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         try
         {
             PipelineJob job = getJob();
-            StudyImportContext ctx = new StudyImportContext(job.getUser(), job.getContainer(), job.getLogger());
+            StudyImportContext ctx = new StudyImportContext(job.getUser(), job.getContainer(), new PipelineJobLoggerGetter(job));
             doImport(getDatasetsDirectory(), getDatasetsFileName(), job, ctx, getStudy());
 
             return new RecordedActionSet();

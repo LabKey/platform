@@ -99,7 +99,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     throw new InvalidFileException(studyDir.getRelativePath(studyFileName), e);
                 }
 
-                StudyImportContext studyImportContext = new StudyImportContext(user, c, studyDoc, ctx.getLogger(), studyDir);
+                StudyImportContext studyImportContext = new StudyImportContext(user, c, studyDoc, ctx.getLoggerGetter(), studyDir);
 
                 // the initial study improt task handles things like base study properties, MVIs, qcStates, visits, datasets
                 StudyImportInitialTask.doImport(job, studyImportContext, errors, studyFileName);

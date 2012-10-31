@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -62,7 +63,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         _originalFilename = originalFilename;
         setLogFile(StudyPipeline.logForInputFile(new File(studyXml.getParentFile(), "study_load")));
         _errors = errors;
-        _ctx = new StudyImportContext(user, c, studyXml, getLogger(), _root);
+        _ctx = new StudyImportContext(user, c, studyXml, new PipelineJobLoggerGetter(this), _root);
 
         StudyImpl study = getStudy(true);
         _reload = (null != study);

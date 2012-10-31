@@ -133,7 +133,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
 
                         // import the subfolder with the folderDir as the root with a new import context
                         ctx.getLogger().info("Loading folder archive for " + subfolderNode.getName());
-                        FolderImportContext folderCtx = new FolderImportContext(ctx.getUser(), childContainer, folderXml, ctx.getLogger(), subfolderDir);
+                        FolderImportContext folderCtx = new FolderImportContext(ctx.getUser(), childContainer, folderXml, ctx.getLoggerGetter(), subfolderDir);
                         FolderImporterImpl importer = new FolderImporterImpl(job);
                         importer.process(job, folderCtx, subfolderDir);
                         ctx.getLogger().info("Done importing folder archive for " + subfolderNode.getName());

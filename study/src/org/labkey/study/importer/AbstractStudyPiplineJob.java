@@ -19,6 +19,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriterImpl;
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -108,7 +109,7 @@ public abstract class AbstractStudyPiplineJob extends PipelineJob
         StudyDocument studyDoc = getStudyDocument(studyDir);
         if (studyDoc != null)
         {
-            StudyImportContext ctx = new StudyImportContext(getUser(), destStudy.getContainer(), studyDoc, getLogger(), studyDir);
+            StudyImportContext ctx = new StudyImportContext(getUser(), destStudy.getContainer(), studyDoc, new PipelineJobLoggerGetter(this), studyDir);
             StudyImportSpecimenTask.doImport(null, this, ctx, false);
         }
     }

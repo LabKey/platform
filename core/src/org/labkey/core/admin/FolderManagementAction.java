@@ -22,6 +22,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriterImpl;
+import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -250,7 +251,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         FolderWriterImpl writer = new FolderWriterImpl();
         FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
                 form.getFormat(), form.isIncludeSubfolders(), form.isRemoveProtected(), form.isShiftDates(),
-                form.isAlternateIds(), Logger.getLogger(FolderWriterImpl.class));
+                form.isAlternateIds(), new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
 
         switch(form.getLocation())
         {

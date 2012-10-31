@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -410,7 +411,7 @@ public class StudyReload
                         File folderXml = root.resolvePath("folder.xml");
                         if (folderXml.exists())
                         {
-                            FolderImportContext folderCtx = new FolderImportContext(reloadUser, c, folderXml, LOG, null);
+                            FolderImportContext folderCtx = new FolderImportContext(reloadUser, c, folderXml, new StaticLoggerGetter(LOG), null);
                             FolderDocument folderDoc = folderCtx.getDocument();
                             if (folderDoc.getFolder().getStudy() != null && folderDoc.getFolder().getStudy().getDir() != null)
                             {

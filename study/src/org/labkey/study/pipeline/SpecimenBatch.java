@@ -16,13 +16,13 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.importer.StudyJobSupport;
@@ -78,7 +78,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobS
     @Override
     public StudyImportContext getImportContext()
     {
-        return new StudyImportContext(getUser(), getContainer(), getLogger());
+        return new StudyImportContext(getUser(), getContainer(), new PipelineJobLoggerGetter(this));
     }
 
     @Override

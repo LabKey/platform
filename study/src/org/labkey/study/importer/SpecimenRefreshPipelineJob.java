@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.security.User;
@@ -81,14 +82,14 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPiplineJob
             Set<String> dataTypes = PageFlowUtil.set(StudyWriterFactory.DATA_TYPE, "Specimens");  // TODO: Define a constant for specimens
 
             FolderExportContext ctx = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new",
-                    _settings.isRemoveProtectedColumns(), _settings.isShiftDates(), _settings.isUseAlternateParticipantIds(), getLogger());
+                    _settings.isRemoveProtectedColumns(), _settings.isShiftDates(), _settings.isUseAlternateParticipantIds(), new PipelineJobLoggerGetter(this));
 
             Set<DataSetDefinition> datasets = Collections.emptySet();
 
             StudyExportContext studyCtx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(),
                     false, dataTypes, _settings.isRemoveProtectedColumns(),
                     new ParticipantMapper(_sourceStudy, _settings.isShiftDates(), _settings.isUseAlternateParticipantIds()),
-                    datasets, getLogger()
+                    datasets, new PipelineJobLoggerGetter(this)
             );
 
             studyCtx.setVisitIds(_settings.getVisits());

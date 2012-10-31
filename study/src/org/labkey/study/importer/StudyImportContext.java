@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.admin.ImportException;
@@ -47,18 +48,18 @@ public class StudyImportContext extends AbstractContext
         super(null, null, null, null, null);
     }
 
-    public StudyImportContext(User user, Container c, Logger logger)
+    public StudyImportContext(User user, Container c, LoggerGetter logger)
     {
         super(user, c, null, logger, null);
     }
 
-    public StudyImportContext(User user, Container c, File studyXml, Logger logger, VirtualFile root)
+    public StudyImportContext(User user, Container c, File studyXml, LoggerGetter logger, VirtualFile root)
     {
         super(user, c, null, logger, root);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _studyXml = studyXml;
     }
 
-    public StudyImportContext(User user, Container c, StudyDocument studyDoc, Logger logger, VirtualFile root)
+    public StudyImportContext(User user, Container c, StudyDocument studyDoc, LoggerGetter logger, VirtualFile root)
     {
         super(user, c, studyDoc, logger, root); 
     }
