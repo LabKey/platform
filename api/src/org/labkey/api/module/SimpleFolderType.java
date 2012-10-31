@@ -162,7 +162,15 @@ public class SimpleFolderType extends MultiPortalFolderType
             if (tabNames.add(tab.getName()))
             {
                 FolderTab newTab = new SimpleFolderTab(tab);
-                tabs.add(newTab);
+                StringBuilder stringBuilder = new StringBuilder();
+                if (newTab.getTabType() != FolderTab.TAB_TYPE.Container || Container.isLegalName(newTab.getName(), stringBuilder))
+                {
+                    tabs.add(newTab);
+                }
+                else
+                {
+                    LOGGER.error(stringBuilder);
+                }
             }
             else
             {

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
@@ -39,6 +41,7 @@ import java.util.List;
  */
 public class SimpleFolderTab extends FolderTab.PortalPage
 {
+    private static final Logger LOGGER = Logger.getLogger(SimpleFolderTab.class);
     private List<Portal.WebPart> _requiredWebParts = new ArrayList<Portal.WebPart>();
     private List<Portal.WebPart> _preferredWebParts = new ArrayList<Portal.WebPart>();
     private List<TabSelector> _selectors = new ArrayList<TabSelector>();
@@ -63,9 +66,9 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         super(tab.getName(), tab.getCaption());
 
         //initialize from XML:
-        if (tab.getTabType() != null)
+        String tabTypeString = StringUtils.trimToNull(tab.getTabType());
+        if (tabTypeString != null)
         {
-            String tabTypeString = tab.getTabType();
             if (tabTypeString.equalsIgnoreCase("container"))
             {
                 _tabType = TAB_TYPE.Container;
@@ -74,10 +77,10 @@ public class SimpleFolderTab extends FolderTab.PortalPage
                     _folderTypeName = tab.getFolderType();
                 }
             }
-            else if (tabTypeString.equalsIgnoreCase("link"))
-                _tabType = TAB_TYPE.Link;
-            else
-                _tabType = TAB_TYPE.Portal;
+//            else if (tabTypeString.equalsIgnoreCase("link"))      // FUTURE
+//                _tabType = TAB_TYPE.Link;
+            else if (!tabTypeString.equalsIgnoreCase("portal"))
+                LOGGER.error("Container tab type " + tabTypeString + " is not a recognized tab type.");
         }
 
         if (tab.getPreferredWebParts() != null)
