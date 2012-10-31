@@ -5285,7 +5285,7 @@ public class AdminController extends SpringActionController
                 }
 
                 Map<String, Portal.PortalPage> pages = Portal.getPages(container, true);
-                if (pages.containsKey(name))
+                if (pages.containsKey(name.toLowerCase()))
                 {
                     errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
                     return false;
