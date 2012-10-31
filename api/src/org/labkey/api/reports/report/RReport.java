@@ -151,7 +151,26 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         }
 
         // Root path to resolve system files in reports
-        labkey.append("labkey.file.root <- \"" + ServiceRegistry.get(FileContentService.class).getSiteDefaultRoot().getPath().replaceAll("\\\\", "/") +"\"\n");
+        File root = ServiceRegistry.get(FileContentService.class).getFileRoot(context.getContainer(), FileContentService.ContentType.files);
+        if (root != null)
+        {
+            labkey.append("labkey.file.root <- \"" + root.getPath().replaceAll("\\\\", "/") +"\"\n");
+        }
+        else
+        {
+            labkey.append("labkey.file.root <- NULL\n");
+        }
+
+        // Root path to resolve pipeline files in reports
+        root = ServiceRegistry.get(FileContentService.class).getFileRoot(context.getContainer(), FileContentService.ContentType.pipeline);
+        if (root != null)
+        {
+            labkey.append("labkey.pipeline.root <- \"" + root.getPath().replaceAll("\\\\", "/") + "\"\n");
+        }
+        else
+        {
+            labkey.append("labkey.pipeline.root <- NULL\n");
+        }
 
         // pipeline path to resolve data files in reports
         if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
