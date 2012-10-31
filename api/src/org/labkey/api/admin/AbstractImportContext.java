@@ -38,7 +38,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
 {
     private final User _user;
     private final Container _c;
-    private final transient Logger _logger;
+    private final LoggerGetter _logger;
     private final @Nullable VirtualFile _root;
     private final Map<Class<? extends ImportContext>, ImportContext> _contextMap = new HashMap<Class<? extends ImportContext>, ImportContext>();
 
@@ -46,7 +46,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
 
     private boolean _locked = false;
 
-    protected AbstractImportContext(User user, Container c, XmlDocument document, Logger logger, @Nullable VirtualFile root)
+    protected AbstractImportContext(User user, Container c, XmlDocument document, LoggerGetter logger, @Nullable VirtualFile root)
     {
         _user = user;
         _c = c;
@@ -90,7 +90,14 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         return null;
     }
 
+    @Override
     public Logger getLogger()
+    {
+        return _logger.getLogger();
+    }
+
+    @Override
+    public LoggerGetter getLoggerGetter()
     {
         return _logger;
     }

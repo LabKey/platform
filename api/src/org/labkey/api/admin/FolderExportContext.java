@@ -17,7 +17,6 @@ package org.labkey.api.admin;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.apache.log4j.Logger;
 import org.labkey.folder.xml.FolderDocument;
 
 import java.util.Arrays;
@@ -40,17 +39,17 @@ public class FolderExportContext extends AbstractFolderContext
     private Set<String> _reportIds;
     private Set<Integer> _listIds;
 
-    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, Logger logger)
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
     {
         this(user, c, dataTypes, format, false, false, false, false, logger);
     }
 
-    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean removeProtected, boolean shiftDates, boolean alternateIds, Logger logger)
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean removeProtected, boolean shiftDates, boolean alternateIds, LoggerGetter logger)
     {
         this(user, c, dataTypes, format, false, removeProtected, shiftDates, alternateIds, logger);
     }
 
-    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removeProtected, boolean shiftDates, boolean alternateIds, Logger logger)
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removeProtected, boolean shiftDates, boolean alternateIds, LoggerGetter logger)
     {
         super(user, c, getFolderDocument(), logger, null);
         _dataTypes = dataTypes;

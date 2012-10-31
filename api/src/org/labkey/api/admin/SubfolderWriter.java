@@ -68,7 +68,7 @@ public class SubfolderWriter extends BaseFolderWriter
 
                 // need to create a new FolderExportContext for each child (different roots, folder.xml, etc.)
                 FolderExportContext childCtx = new FolderExportContext(ctx.getUser(), child, ctx.getDataTypes(), ctx.getFormat(),
-                        ctx.isIncludeSubfolders(), ctx.isRemoveProtected(), ctx.isShiftDates(), ctx.isAlternateIds(), ctx.getLogger());
+                        ctx.isIncludeSubfolders(), ctx.isRemoveProtected(), ctx.isShiftDates(), ctx.isAlternateIds(), ctx.getLoggerGetter());
 
                 FolderWriterImpl childFolderWriter = new FolderWriterImpl();
                 childFolderWriter.write(child, childCtx, childDir);

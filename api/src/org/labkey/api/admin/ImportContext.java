@@ -31,6 +31,7 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     public XmlType getXml() throws ImportException;
     public VirtualFile getDir(String xmlNodeName) throws ImportException;
     public Logger getLogger();
+    public LoggerGetter getLoggerGetter();
     public Set<String> getDataTypes();
     public String getFormat();
     public boolean isIncludeSubfolders();

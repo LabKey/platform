@@ -34,7 +34,7 @@ public abstract class AbstractFolderContext extends AbstractImportContext<Folder
         STUDY
     }
 
-    protected AbstractFolderContext(User user, Container c, FolderDocument folderDoc, Logger logger, @Nullable VirtualFile root)
+    protected AbstractFolderContext(User user, Container c, FolderDocument folderDoc, LoggerGetter logger, @Nullable VirtualFile root)
     {
         super(user, c, folderDoc, logger, root);
     }
