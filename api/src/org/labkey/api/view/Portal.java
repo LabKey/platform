@@ -578,6 +578,7 @@ public class Portal
         p.setEntityId(new GUID());
         p.setContainer(new GUID(c.getId()));
         p.setPageId(pageId);
+        p.setCaption(pageId);
         p.setIndex(index);
         p.setType("portal");
         FolderTab tab = findFolderTab(c, pageId);
@@ -1129,7 +1130,7 @@ public class Portal
 
     public static void hidePage(Container c, int index)
     {
-        Map<String,PortalPage> pages = WebPartCache.getPages(c,true);
+        CaseInsensitiveHashMap<PortalPage> pages = WebPartCache.getPages(c,true);
         for (PortalPage page : pages.values())
         {
             if (page.getIndex() == index)
@@ -1229,7 +1230,7 @@ public class Portal
 
         public void setPageId(String pageId)
         {
-            this.pageId = pageId;
+            this.pageId = pageId.toLowerCase();
         }
 
         public int getIndex()

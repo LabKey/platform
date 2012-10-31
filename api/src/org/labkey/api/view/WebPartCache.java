@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -42,23 +43,23 @@ import java.util.LinkedHashMap;
  */
 public class WebPartCache
 {
-    private static final BlockingStringKeyCache<LinkedHashMap<String,Portal.PortalPage>> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Webparts", null);
+    private static final BlockingStringKeyCache<CaseInsensitiveHashMap<Portal.PortalPage>> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Webparts", null);
 
     static public Portal.PortalPage getPortalPage(@NotNull Container c, @NotNull String pageId)
     {
-        LinkedHashMap<String,Portal.PortalPage> pages = get(c);
+        CaseInsensitiveHashMap<Portal.PortalPage> pages = get(c);
         return null == pages ? null : pages.get(pageId);
     }
 
 
-    static LinkedHashMap<String,Portal.PortalPage> getPages(Container c, boolean showHidden)
+    static CaseInsensitiveHashMap<Portal.PortalPage> getPages(Container c, boolean showHidden)
     {
-        LinkedHashMap<String,Portal.PortalPage> pages = get(c);
+        CaseInsensitiveHashMap<Portal.PortalPage> pages = get(c);
         if (null == pages)
-            new LinkedHashMap<String, Portal.PortalPage>();
+            new CaseInsensitiveHashMap<Portal.PortalPage>();
         if (showHidden)
             return pages;
-        LinkedHashMap<String, Portal.PortalPage> ret = new LinkedHashMap<String, Portal.PortalPage>();
+        CaseInsensitiveHashMap<Portal.PortalPage> ret = new CaseInsensitiveHashMap<Portal.PortalPage>();
         for (Portal.PortalPage page : pages.values())
             if (!page.isHidden())
                 ret.put(page.getPageId(), page);
@@ -83,13 +84,13 @@ public class WebPartCache
     }
 
 
-    static CacheLoader _webpartLoader = new CacheLoader<String, LinkedHashMap<String,Portal.PortalPage>>()
+    static CacheLoader _webpartLoader = new CacheLoader<String, CaseInsensitiveHashMap<Portal.PortalPage>>()
     {
         @Override
-        public LinkedHashMap<String,Portal.PortalPage> load(String containerId, Object o)
+        public CaseInsensitiveHashMap<Portal.PortalPage> load(String containerId, Object o)
         {
             DbSchema schema = CoreSchema.getInstance().getSchema();
-            LinkedHashMap<String,Portal.PortalPage> pages = new LinkedHashMap<String, Portal.PortalPage>();
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>();
 
             SQLFragment selectPages = new SQLFragment("SELECT * FROM " + Portal.getTableInfoPortalPages().getSelectName() + " WHERE Container = ? ORDER BY \"index\"", containerId);
             Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
@@ -121,7 +122,7 @@ public class WebPartCache
     };
 
 
-    private static LinkedHashMap<String,Portal.PortalPage> get(@NotNull final Container c)
+    private static CaseInsensitiveHashMap<Portal.PortalPage> get(@NotNull final Container c)
     {
         return CACHE.get(c.getId(), c, _webpartLoader);
     }
