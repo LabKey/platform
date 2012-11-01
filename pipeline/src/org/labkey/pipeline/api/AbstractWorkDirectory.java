@@ -215,7 +215,17 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         List<File> filesWork = getWorkFiles(WorkDirectory.Function.output, tp);
         for (File fileWork : filesWork)
         {
-            File fileOutput = _support.findOutputFile(fileWork.getName());
+            File fileOutput;
+
+            // Check if the output is specifically flagged to go into the analysis directory
+            if (tp.isForceToAnalysisDir())
+            {
+                fileOutput = new File(_support.getAnalysisDirectory(), fileWork.getName());
+            }
+            else
+            {
+                fileOutput = _support.findOutputFile(fileWork.getName());
+            }
             if (fileOutput != null)
             {
                 // If the output file is optional, or in a shared directory outside
@@ -239,7 +249,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             if (!tp.isOptional() || fileWork.exists())
             {
                 // Add it as an output if it's non-optional, or if it's optional and the file exists
-                File f = outputFile(fileWork);
+                File f = outputFile(fileWork, fileOutput);
                 action.addOutput(f, role, false);
             }
         }

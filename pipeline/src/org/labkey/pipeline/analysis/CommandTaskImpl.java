@@ -153,11 +153,23 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             {
                 // TODO: Join somehow with code in CommandTaskImpl
                 FileType type = tp.getType();
+
                 // TODO: do we really want to only check for files of default extension type?
                 //       possibly author did not realize that type.getName single-arg overload used here does that
                 //       (bpratt renamed it to getDefaultName to make its function more obvious)
-                File result = support.findOutputFile(type != null ?
-                        type.getDefaultName(support.getBaseName()) : tp.getName());
+                String fileName = type != null ? type.getDefaultName(support.getBaseName()) : tp.getName();
+
+                File result;
+                // Check if the output is specifically flagged to go into the analysis directory so we check in the right
+                // place when deciding if the task has already been performed
+                if (tp.isForceToAnalysisDir())
+                {
+                    result = new File(support.getAnalysisDirectory(), fileName);
+                }
+                else
+                {
+                    result = support.findOutputFile(fileName);
+                }
                 if (tp.isOptional())
                 {
                     hasOptional = true;
