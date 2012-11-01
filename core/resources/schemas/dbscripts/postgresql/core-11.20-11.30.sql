@@ -61,3 +61,20 @@ CREATE AGGREGATE core.array_accum(text) (
     INITCOND = '{}',
     SORTOP = >
 );
+
+-- Add an index and FK on the Container column
+CREATE INDEX IX_PortalWebParts ON portal.PortalWebParts(Container);
+
+DELETE FROM portal.PortalWebParts WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
+
+ALTER TABLE portal.PortalWebParts
+  ADD CONSTRAINT FK_PortalWebParts_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+
+ALTER TABLE portal.PortalWebParts ALTER COLUMN PageId TYPE VARCHAR(50);
+
+UPDATE portal.PortalWebParts SET PageId = 'portal.default' WHERE PageId = Container;
+
+/* portal-11.26-11.27.sql */
+
+UPDATE portal.PortalWebParts SET PageId = 'study.PARTICIPANTS' WHERE PageId = 'study.SHORTCUTS';
+UPDATE portal.PortalWebParts SET Name = 'study.PARTICIPANTS' WHERE Name = 'study.SHORTCUTS' AND PageId = 'folderTab';

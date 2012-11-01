@@ -269,8 +269,11 @@ core/resources/schemas/dbscripts/postgresql/core-12.12-12.13.sql -text
 core/resources/schemas/dbscripts/postgresql/core-12.20-12.21.sql -text
 core/resources/schemas/dbscripts/postgresql/core-12.21-12.22.sql -text
 core/resources/schemas/dbscripts/postgresql/core-12.22-12.23.sql -text
+core/resources/schemas/dbscripts/postgresql/core-12.23-12.24.sql -text
+core/resources/schemas/dbscripts/postgresql/core-12.24-12.25.sql -text
 core/resources/schemas/dbscripts/postgresql/core-12.25-12.26.sql -text
 core/resources/schemas/dbscripts/postgresql/core-12.26-12.27.sql -text
+core/resources/schemas/dbscripts/postgresql/core-12.27-12.28.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/bootstrap.sql -text
@@ -352,6 +355,7 @@ core/resources/schemas/dbscripts/postgresql/obsolete/core-9.35-9.36.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/core-9.36-9.37.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/core-9.37-9.38.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-0.00-1.00.sql -text
+core/resources/schemas/dbscripts/postgresql/obsolete/portal-0.00-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-0.00-2.00.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-0.00-8.30.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-1.50-1.51.sql -text
@@ -362,8 +366,10 @@ core/resources/schemas/dbscripts/postgresql/obsolete/portal-1.61-1.62.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-1.695-1.696.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-10.11-10.12.sql -text
+core/resources/schemas/dbscripts/postgresql/obsolete/portal-11.10-11.20.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-11.11-11.12.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-11.20-11.24.sql -text
+core/resources/schemas/dbscripts/postgresql/obsolete/portal-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-11.23-11.24.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-11.26-11.27.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/portal-8.20-8.30.sql -text
@@ -384,11 +390,6 @@ core/resources/schemas/dbscripts/postgresql/obsolete/prop-9.30-10.10.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/prop-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/test-11.30-11.32.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/test-11.31-11.32.sql -text
-core/resources/schemas/dbscripts/postgresql/portal-0.00-10.20.sql -text
-core/resources/schemas/dbscripts/postgresql/portal-11.10-11.20.sql -text
-core/resources/schemas/dbscripts/postgresql/portal-11.20-11.30.sql -text
-core/resources/schemas/dbscripts/postgresql/portal-12.23-12.24.sql -text
-core/resources/schemas/dbscripts/postgresql/portal-12.24-12.25.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-10.20-10.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-12.10-12.20.sql -text
@@ -407,8 +408,11 @@ core/resources/schemas/dbscripts/sqlserver/core-12.13-12.14.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.20-12.21.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.21-12.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.22-12.23.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-12.23-12.24.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-12.24-12.25.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.25-12.26.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.26-12.27.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-12.27-12.28.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
@@ -494,6 +498,7 @@ core/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.63.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.60-0.63.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.63-0.64.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-0.00-1.00.sql -text
+core/resources/schemas/dbscripts/sqlserver/obsolete/portal-0.00-10.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-0.00-2.00.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-0.00-8.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-1.50-1.51.sql -text
@@ -504,8 +509,10 @@ core/resources/schemas/dbscripts/sqlserver/obsolete/portal-1.61-1.62.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-1.695-1.696.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-10.11-10.12.sql -text
+core/resources/schemas/dbscripts/sqlserver/obsolete/portal-11.10-11.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-11.11-11.12.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-11.20-11.24.sql -text
+core/resources/schemas/dbscripts/sqlserver/obsolete/portal-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-11.23-11.24.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-11.26-11.27.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/portal-8.20-8.30.sql -text
@@ -526,11 +533,6 @@ core/resources/schemas/dbscripts/sqlserver/obsolete/prop-9.30-10.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/prop-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/test-11.30-11.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/test-11.31-11.32.sql -text
-core/resources/schemas/dbscripts/sqlserver/portal-0.00-10.20.sql -text
-core/resources/schemas/dbscripts/sqlserver/portal-11.10-11.20.sql -text
-core/resources/schemas/dbscripts/sqlserver/portal-11.20-11.30.sql -text
-core/resources/schemas/dbscripts/sqlserver/portal-12.23-12.24.sql -text
-core/resources/schemas/dbscripts/sqlserver/portal-12.24-12.25.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-10.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-10.20-10.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-12.10-12.20.sql -text

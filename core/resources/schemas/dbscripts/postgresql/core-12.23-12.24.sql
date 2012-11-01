@@ -19,22 +19,22 @@
 
 CREATE TABLE portal.pages
 (
-  entityid ENTITYID NULL,
-  container ENTITYID NOT NULL,
-  pageid varchar(50) NOT NULL,
-  index integer NOT NULL DEFAULT 0,
-  caption varchar(64),
-  hidden boolean NOT NULL DEFAULT false,
-  type varchar(20), -- 'portal', 'folder', 'action'
-  -- associate page with a registered folder type
-  -- folderType varchar(64),
-  action varchar(200),    -- type='action' see DetailsURL
-  targetFolder ENTITYID,  -- type=='folder'
-  permanent boolean NOT NULL DEFAULT false, -- may not be renamed,hidden,deleted (w/o changing folder type)
-  properties text,
+    EntityId ENTITYID NULL,
+    Container ENTITYID NOT NULL,
+    PageId VARCHAR(50) NOT NULL,
+    Index INTEGER NOT NULL DEFAULT 0,
+    Caption VARCHAR(64),
+    Hidden BOOLEAN NOT NULL DEFAULT false,
+    Type VARCHAR(20), -- 'portal', 'folder', 'action'
+    -- associate page with a registered folder type
+    -- folderType varchar(64),
+    Action VARCHAR(200),    -- type='action' see DetailsURL
+    TargetFolder ENTITYID,  -- type=='folder'
+    Permanent BOOLEAN NOT NULL DEFAULT false, -- may not be renamed,hidden,deleted (w/o changing folder type)
+    Properties TEXT,
 
-  CONSTRAINT PK_PortalPages PRIMARY KEY (container, pageid),
-  CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
+    CONSTRAINT PK_PortalPages PRIMARY KEY (container, pageid),
+    CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
 );
 
 

@@ -18,3 +18,12 @@
 DELETE FROM core.Modules WHERE Name = 'Workbook';
 DELETE FROM core.SqlScripts WHERE ModuleName = 'Workbook';
 EXEC core.fn_dropifexists '*', 'workbook', 'SCHEMA';
+
+ALTER TABLE Portal.PortalWebParts
+    ADD Container ENTITYID NULL;
+GO
+
+UPDATE Portal.PortalWebParts SET Container = PageId;
+
+ALTER TABLE Portal.PortalWebParts
+    ALTER COLUMN Container ENTITYID NOT NULL;

@@ -42,9 +42,9 @@ CREATE TABLE core.Logins
 
 -- Principals is used for managing security related information
 -- It is not used for validating login, that requires an 'external'
--- process, either using SMB, LDAP, JDBC etc (see Logins table)
+-- process, either using LDAP, JDBC, etc. (see Logins table)
 --
--- It does not contain contact info and other generic user visible data
+-- It does not contain contact info or other generic user visible data
 
 CREATE TABLE core.Principals
 (
@@ -61,7 +61,7 @@ CREATE TABLE core.Principals
 
 SELECT SETVAL('core.Principals_UserId_Seq', 1000);
 
--- maps users to groups (issue: groups containing groups?)
+-- maps users to groups
 CREATE TABLE core.Members
 (
     UserId USERID,
@@ -358,3 +358,24 @@ $$ LANGUAGE plpgsql;
 -- Should this container's content be searched during multi-container searches?
 ALTER TABLE core.Containers
     ADD Searchable BOOLEAN NOT NULL DEFAULT TRUE;
+
+CREATE SCHEMA portal;
+
+CREATE TABLE portal.PortalWebParts
+(
+    PageId ENTITYID NOT NULL,
+    Index INT NOT NULL,
+    Name VARCHAR(64),
+    Location VARCHAR(16),    -- 'body', 'left', 'right'
+    Properties TEXT,    -- url encoded properties
+    Permanent Boolean NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT PK_PortalWebParts PRIMARY KEY (PageId, Index)
+);
+
+/* portal-10.10-10.20.sql */
+
+ALTER TABLE portal.PortalWebParts
+    ADD COLUMN RowId SERIAL NOT NULL,
+    DROP CONSTRAINT PK_PortalWebParts,
+    ADD CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId);

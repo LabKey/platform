@@ -399,3 +399,31 @@ ELSE
     RAISERROR('Invalid object type - %s   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA ', 16,1, @objtype )
 
 RETURN @ret_code;
+
+GO
+
+CREATE SCHEMA portal;
+GO
+
+CREATE TABLE portal.PortalWebParts
+(
+    PageId ENTITYID NOT NULL,
+    [Index] INT NOT NULL,
+    Name VARCHAR(64),
+    Location VARCHAR(16),    -- 'body', 'left', 'right'
+    Properties TEXT,    -- url encoded properties
+    Permanent BIT NOT NULL DEFAULT 0,
+
+    CONSTRAINT PK_PortalWebParts PRIMARY KEY (PageId, [Index])
+);
+
+/* portal-10.10-10.20.sql */
+
+ALTER TABLE Portal.PortalWebParts
+    ADD RowId INT IDENTITY(1, 1) NOT NULL;
+
+ALTER TABLE Portal.PortalWebParts
+    DROP CONSTRAINT PK_PortalWebParts;
+
+ALTER TABLE Portal.PortalWebParts
+    ADD CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId);

@@ -21,5 +21,3 @@ ALTER TABLE portal.Pages RENAME TO PortalPages;
 ALTER TABLE portal.PortalPages SET SCHEMA core;
 ALTER TABLE portal.PortalWebParts SET SCHEMA core;
 DROP SCHEMA portal;
-
--- End of the line for "portal" scripts... going forward, all changes to these tables should be in "core" scripts;

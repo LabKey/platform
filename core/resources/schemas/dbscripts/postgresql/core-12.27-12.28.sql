@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
--- Committed and then immediately disabled because of portal/core script conflicts. See core-12.27-12.28.sql
+SELECT core.executeJavaUpgradeCode('setPortalPageEntityId');
 
---EXEC core.executeJavaUpgradeCode 'setPortalPageEntityId';
+ALTER TABLE core.PortalPages ALTER COLUMN EntityId SET NOT NULL;
 
---ALTER TABLE core.PortalPages ALTER COLUMN EntityId ENTITYID NOT NULL;
-
---CREATE INDEX ix_portalpages_entityid ON core.portalpages(entityid);
-
+CREATE INDEX ix_portalpages_entityid ON core.portalpages(entityid);

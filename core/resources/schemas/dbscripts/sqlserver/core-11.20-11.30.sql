@@ -88,3 +88,22 @@ ALTER TABLE core.MappedDirectories
 
 ALTER TABLE core.MappedDirectories
     ADD CONSTRAINT UQ_MappedDirectories UNIQUE (Container, Name);
+
+/* portal-11.20-11.24.sql */
+
+-- Add an index and FK on the Container column
+CREATE INDEX IX_PortalWebParts ON portal.PortalWebParts(Container);
+
+DELETE FROM portal.PortalWebParts WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
+
+ALTER TABLE portal.PortalWebParts
+    ADD CONSTRAINT FK_PortalWebParts_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+
+ALTER TABLE portal.PortalWebParts ALTER COLUMN PageId VARCHAR(50);
+
+UPDATE portal.PortalWebParts SET PageId = 'portal.default' WHERE PageId = CAST(Container AS VARCHAR(50));
+
+/* portal-11.26-11.27.sql */
+
+UPDATE portal.PortalWebParts SET PageId = 'study.PARTICIPANTS' WHERE PageId = 'study.SHORTCUTS';
+UPDATE portal.PortalWebParts SET Name = 'study.PARTICIPANTS' WHERE Name = 'study.SHORTCUTS' AND PageId = 'folderTab';
