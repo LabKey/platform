@@ -57,6 +57,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.ConnectionWrapper;
@@ -5285,8 +5286,8 @@ public class AdminController extends SpringActionController
                     return false;
                 }
 
-                Map<String, Portal.PortalPage> pages = Portal.getPages(container, true);
-                if (pages.containsKey(name.toLowerCase()))
+                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container, true));
+                if (pages.containsKey(name))
                 {
                     errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
                     return false;
@@ -5370,7 +5371,9 @@ public class AdminController extends SpringActionController
             {
                 tabContainer = getContainer();
             }
-            Portal.PortalPage tab = Portal.getPages(tabContainer).get(form.getPageId());
+
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(tabContainer));
+            Portal.PortalPage tab = pages.get(form.getPageId());
 
             if (null != tab)
             {

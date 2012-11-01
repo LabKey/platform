@@ -17,6 +17,7 @@
 package org.labkey.study.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.study.StudyFolderTabs;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -119,7 +120,7 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
 
         private StudyToolsWebPart.Item getParticipantListItem(ViewContext context, String noun, String iconBase)
         {
-            Map<String,Portal.PortalPage> pages = Portal.getPages(context.getContainer());
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(context.getContainer()));
             Portal.PortalPage participantPage = pages.get(StudyFolderTabs.ParticipantsPage.PAGE_ID);
             if (null != participantPage && !participantPage.isHidden())
             {
