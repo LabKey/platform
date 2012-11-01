@@ -87,10 +87,10 @@ public class MutableSecurityPolicy extends SecurityPolicy
      * @return An initialized SecurityPolicy
      */
     @NotNull
-    public static MutableSecurityPolicy fromMap(@NotNull Map<String,Object> map, @NotNull SecurableResource resource)
+    public static MutableSecurityPolicy fromMap(@NotNull Map<String, Object> map, @NotNull SecurableResource resource)
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(resource);
-        String modified = (String)map.get("modified");
+        String modified = (String) map.get("modified");
 
         try
         {
@@ -102,32 +102,32 @@ public class MutableSecurityPolicy extends SecurityPolicy
         }
 
         //ensure that if there is a property called 'assignments', that it is indeed a list
-        if(map.containsKey("assignments"))
+        if (map.containsKey("assignments"))
         {
-            if(!(map.get("assignments") instanceof JSONArray))
-                throw new RuntimeException("The assignements property does not contain a list!");
-            JSONArray assignments = (JSONArray)map.get("assignments");
-            for(Object element : assignments.toMapList())
+            if (!(map.get("assignments") instanceof JSONArray))
+                throw new IllegalArgumentException("The assignements property does not contain a list!");
+            JSONArray assignments = (JSONArray) map.get("assignments");
+            for (Object element : assignments.toMapList())
             {
-                if(!(element instanceof Map))
-                    throw new RuntimeException("An element within the assignments property was not a map!");
-                Map assignmentProps = (Map)element;
+                if (!(element instanceof Map))
+                    throw new IllegalArgumentException("An element within the assignments property was not a map!");
+                Map assignmentProps = (Map) element;
 
                 //assignment map must have userId and role props
-                if(!assignmentProps.containsKey("userId") || !assignmentProps.containsKey("role"))
-                    throw new RuntimeException("A map within the assignments list did not have a userId or role property!");
+                if (!assignmentProps.containsKey("userId") || !assignmentProps.containsKey("role"))
+                    throw new IllegalArgumentException("A map within the assignments list did not have a userId or role property!");
 
                 //resolve the role and principal
                 Role role = RoleManager.getRole((String) assignmentProps.get("role"));
-                if(null == role)
-                    throw new RuntimeException("The role '" + assignmentProps.get("role") + "' is not a valid role name");
+                if (null == role)
+                    throw new IllegalArgumentException("The role '" + assignmentProps.get("role") + "' is not a valid role name");
 
-                Integer userId = (Integer)assignmentProps.get("userId");
-                if(null == userId)
-                    throw new RuntimeException("Null user id passed in role assignment!");
+                Integer userId = (Integer) assignmentProps.get("userId");
+                if (null == userId)
+                    throw new IllegalArgumentException("Null user id passed in role assignment!");
 
                 UserPrincipal principal = SecurityManager.getPrincipal(userId.intValue());
-                if(null == principal)
+                if (null == principal)
                     continue; //silently ignore--this could happen if the principal was deleted in between the get and save
 
                 policy.addRoleAssignment(principal, role);
