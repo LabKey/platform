@@ -2233,7 +2233,7 @@ public class DavController extends SpringActionController
 
             if (exists && !resource.canWrite(getUser(),true) || !exists && !resource.canCreate(getUser(),true))
                 return unauthorized(resource);
-            if (exists && resource.isCollection())
+            if (resource.isCollectionType() || exists && resource.isCollection())
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED, "Cannot overwrite folder");
 
             Range range = parseContentRange();
