@@ -459,6 +459,11 @@ public class Portal
     // Add a web part to the container at the specified index, with properties
     public static WebPart addPart(Container c, String pageId, WebPartFactory desc, @Nullable String location, int partIndex, @Nullable Map<String, String> properties)
     {
+        PortalPage page = WebPartCache.getPortalPage(c, pageId);
+
+        if(null != page)
+            pageId = page.getPageId();
+        
         List<WebPart> parts = getParts(c, pageId);
 
         WebPart newPart = new Portal.WebPart();
@@ -666,6 +671,12 @@ public class Portal
 
     public static void saveParts(Container c, String pageId, WebPart[] newParts)
     {
+        // In some rare cases we can have a difference in casing for pageId, so we want to get the page from the cache
+        // first so we get the pageId with proper casing.
+        PortalPage page = WebPartCache.getPortalPage(c, pageId);
+
+        if(null != page)
+            pageId = page.getPageId();
 
         // make sure indexes are unique
         Arrays.sort(newParts, new Comparator<WebPart>()
@@ -1230,7 +1241,7 @@ public class Portal
 
         public void setPageId(String pageId)
         {
-            this.pageId = pageId.toLowerCase();
+            this.pageId = pageId;
         }
 
         public int getIndex()

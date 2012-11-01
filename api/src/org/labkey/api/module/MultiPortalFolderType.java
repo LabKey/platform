@@ -69,13 +69,13 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     private Collection<Portal.PortalPage> getPortalPages(Container container)
     {
 
-        Map<String,Portal.PortalPage> tabs = Portal.getPages(container, false);
+        CaseInsensitiveHashMap<Portal.PortalPage> tabs = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container, false));
 
         // Build up a list of all the currently defined tab names
         Set<String> currentTabNames = new HashSet<String>();
         for (FolderTab folderTab : getDefaultTabs())
         {
-            currentTabNames.add(folderTab.getName().toLowerCase());
+            currentTabNames.add(folderTab.getName());
         }
 
         // Filter out ones that we've saved that are no longer part of the folder type
@@ -97,11 +97,11 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
     private static List<FolderTab> getFolderTabs(Container container, FolderType folderType)
     {
-        Map<String,Portal.PortalPage> portalPages = Portal.getPages(container, false);
+        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container, false));
         List<FolderTab> folderTabs = new ArrayList<FolderTab>();
         for (FolderTab folderTab : folderType.getDefaultTabs())
         {
-            if (portalPages.containsKey(folderTab.getName().toLowerCase()))
+            if (portalPages.containsKey(folderTab.getName()))
                 folderTabs.add(folderTab);
         }
 
@@ -377,7 +377,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 tabContainer.getFolderType().addManageLinks(menu, tabContainer);
                 menu.addSeparator();
 
-                NavTree moduleMenu = new NavTree("Go to Module");
+                NavTree moduleMenu = new NavTree("Go To Module");
 
                 for (Module module : tabContainer.getActiveModules())
                 {

@@ -18,6 +18,7 @@ package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.portal.ProjectUrls;
@@ -214,7 +215,7 @@ public class DefaultFolderType implements FolderType
     {
         List<WebPart> parts = Portal.getParts(c);
         List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
-        Map<String, Portal.PortalPage> portalPages = Portal.getPages(c, true);
+        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(c, true));
 
         if (null != parts)
         {
