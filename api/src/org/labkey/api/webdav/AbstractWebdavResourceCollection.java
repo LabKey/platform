@@ -54,6 +54,12 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
         super(parent, name, resolver);
     }
 
+    @Override
+    public boolean isCollectionType()
+    {
+        return true;
+    }
+
     public boolean isCollection()
     {
         return exists();

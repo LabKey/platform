@@ -75,6 +75,11 @@ abstract public class AbstractResource implements Resource
         return false;
     }
 
+    public boolean isCollectionType()
+    {
+        return false;
+    }
+
     public Resource find(String name)
     {
         return null;

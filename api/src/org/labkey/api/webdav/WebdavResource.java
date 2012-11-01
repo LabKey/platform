@@ -39,6 +39,10 @@ public interface WebdavResource extends Resource
 {
     WebdavResource find(String name);
 
+    // isCollection() only returns true when resource exists
+    // return true to indicate that this resource may _only_ be a collection (whether it exists or not)
+    boolean isCollectionType();
+
     // TODO move more functionality into interface and remove this method
     File getFile();
 

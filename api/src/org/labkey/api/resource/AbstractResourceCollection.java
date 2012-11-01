@@ -40,6 +40,12 @@ public abstract class AbstractResourceCollection extends AbstractResource
 
     public abstract Resource parent();
 
+    @Override
+    public boolean isCollectionType()
+    {
+        return true;
+    }
+
     public boolean isCollection()
     {
         return exists();
