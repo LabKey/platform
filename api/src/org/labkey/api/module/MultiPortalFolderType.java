@@ -114,8 +114,8 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         // Add in custom (portal page) tabs
         for (Portal.PortalPage portalPage : portalPages.values())
         {
-            String properties = portalPage.getProperties();
-            if (null != properties && properties.contains(Portal.PROP_CUSTOMTAB))
+            String customTab = portalPage.getProperty(Portal.PROP_CUSTOMTAB);
+            if (null != customTab && customTab.equalsIgnoreCase("true"))
             {
                 String caption = portalPage.getCaption() != null ? portalPage.getCaption() : portalPage.getPageId();
                 folderTabs.add(new SimpleFolderTab(portalPage.getPageId(), caption));
@@ -289,7 +289,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             while (i.hasNext())
             {
                 Portal.WebPart defaultPortalPart = i.next();
-                if (!WebPartFactory.LOCATION_MENUBAR.equals(defaultPortalPart.getLocation()))
+                String legacyPageAdded = defaultPortalPart.getPropertyMap().get(Portal.WEBPART_PROP_LegacyPageAdded);
+                if ((null == legacyPageAdded || !legacyPageAdded.equalsIgnoreCase("true")) &&
+                        !WebPartFactory.LOCATION_MENUBAR.equals(defaultPortalPart.getLocation()))
                 {
                     // Add it to the default tab if it's not already there
                     if (!mergedParts.contains(defaultPortalPart))
@@ -298,7 +300,8 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                         mergedParts.add(defaultPortalPart);
                     }
                     // Remove it from the legacy portal page
-                    i.remove();
+                    defaultPortalPart.setProperty(Portal.WEBPART_PROP_LegacyPageAdded, "true");
+//                    i.remove();
                     changed = true;
                 }
             }
@@ -318,7 +321,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     @Override
     public String getDefaultPageId(ViewContext ctx)
     {
-        String result;
+        String result = null;
         if (_activePortalPage != null)
         {
             // If we have an explicit selection, use that
@@ -326,7 +329,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
         else
         {
-            Collection<Portal.PortalPage> activeTabs = getPortalPages(ctx.getContainer());
+            ArrayList<Portal.PortalPage> activeTabs = new ArrayList<Portal.PortalPage>(getPortalPages(ctx.getContainer()));
             if (activeTabs.isEmpty())
             {
                 // No real tabs exist for this folder type, so just use the default portal page
@@ -335,7 +338,25 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             else
             {
                 // Use the left-most tab as the default
-                result = activeTabs.iterator().next().getPageId();
+                // Need to sort by index so we choose the first tab as the default tab.
+                Collections.sort(activeTabs, new Comparator<Portal.PortalPage>()
+                {
+                    @Override
+                    public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
+                    {
+                        return o1.getIndex() - o2.getIndex();
+                    }
+                });
+                for (Portal.PortalPage tab : activeTabs)
+                {
+                    if (!tab.isHidden())
+                    {
+                        result = tab.getPageId();
+                        break;
+                    }
+                }
+                if (null == result)
+                    result = Portal.DEFAULT_PORTAL_PAGE_ID;
             }
         }
 

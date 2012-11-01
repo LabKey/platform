@@ -147,6 +147,7 @@ public class Portal
         }
     }
 
+    public static final String WEBPART_PROP_LegacyPageAdded = "legacyPageAdded";
 
     public static class WebPart implements Serializable
     {
@@ -1094,8 +1095,8 @@ public class Portal
 
         try
         {
-            String properties = page.getProperties();
-            if (null != properties && properties.contains(PROP_CUSTOMTAB))
+            String customTab = page.getProperty(Portal.PROP_CUSTOMTAB);
+            if (null != customTab && customTab.equalsIgnoreCase("true"))
             {
                 // Custom (portal page) tab; Do actual delete
                 TableInfo tableInfo = getTableInfoPortalWebParts();
@@ -1172,19 +1173,24 @@ public class Portal
 
     public static final String PROP_CUSTOMTAB = "customTab";
 
+    public static void addProperties(Container container, String pageId, String properties)
+    {
+        Portal.PortalPage page = WebPartCache.getPortalPage(container, pageId);
+        page = page.copy();
+        page.setProperties(properties);
+        _setProperties(page);
+    }
+
     public static void addProperty(Container container, String pageId, String property)
     {
         Portal.PortalPage page = WebPartCache.getPortalPage(container, pageId);
-        _setProperties(page, property);
+        page = page.copy();
+        page.setProperty(property, "true");
+        _setProperties(page);
     }
 
-    private static void _setProperties(PortalPage page, String newProperties)
+    private static void _setProperties(PortalPage page)
     {
-        page = page.copy();
-        String props = page.getProperties();
-        props = (null != props ? props + "," : "") + newProperties;
-        page.setProperties(props);
-
         try
         {
             Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
@@ -1211,6 +1217,7 @@ public class Portal
         private String action;       // detailsurl (type==action)
         private GUID targetFolder;   // continerId (type==folder)
         private boolean permanent;   // may not rename,hide,delete
+        Map<String, String> propertyMap = new HashMap<String, String>();
         private String properties;
         private LinkedHashMap<Integer,WebPart> webparts = new LinkedHashMap<Integer, WebPart>();
 
@@ -1314,14 +1321,31 @@ public class Portal
             this.permanent = permanent;
         }
 
-        public String getProperties()
+        public Map<String, String> getPropertyMap()
         {
-            return properties;
+            return propertyMap;
         }
 
-        public void setProperties(String properties)
+        public void setProperty(String k, String v)
         {
-            this.properties = properties;
+            propertyMap.put(k, v);
+        }
+
+        public String getProperty(String k)
+        {
+            return propertyMap.get(k);
+        }
+
+        public String getProperties()
+        {
+            return PageFlowUtil.toQueryString(propertyMap.entrySet());
+        }
+
+        public void setProperties(String query)
+        {
+            Pair<String, String>[] props = PageFlowUtil.fromQueryString(query);
+            for (Pair<String, String> prop : props)
+                setProperty(prop.first, prop.second);
         }
 
         public void addWebPart(WebPart part)
