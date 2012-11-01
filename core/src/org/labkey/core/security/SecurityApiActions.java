@@ -661,13 +661,13 @@ public class SecurityApiActions
 
             //get the existing policy so we can audit how it's changed
             SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(resource);
-
-            //create the policy from the props (will throw if invalid)
-            MutableSecurityPolicy policy = MutableSecurityPolicy.fromMap(form.getProps(), resource);
+            MutableSecurityPolicy policy = null;
 
             //save it
             try
             {
+                //create the policy from the props (will throw if invalid)
+                policy = MutableSecurityPolicy.fromMap(form.getProps(), resource);
                 SecurityPolicyManager.savePolicy(policy);
             }
             catch (Exception e)
