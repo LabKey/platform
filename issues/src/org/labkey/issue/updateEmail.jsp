@@ -40,7 +40,7 @@
 
     if (bean.isPlain)
     {
-        %>You can review this issue from this URL: <%=bean.url%><%
+        %>You can review this issue from this URL: <%=text(bean.url)%><%
     }
     else
     {
@@ -53,7 +53,7 @@
 <body><%
         %>You can review this issue here: <a href="<%=h(bean.url)%>"><%=h(bean.url)%></a><br/><%
         %>Modified by: <%=h(modifiedBy)%><br/><%
-        %><%=changeComment.getSource()%>
+        %><%=text(changeComment.getSource())%>
 </body>
 </html>
 <%

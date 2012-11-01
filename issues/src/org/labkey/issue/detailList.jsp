@@ -70,7 +70,7 @@
         bean.setIssue(issue);
 %>
 <table width=640>
-    <tr><td colspan="3"><h3><%=issueId + " : " + h(issue.getTitle())%></h3></td></tr>
+    <tr><td colspan="3"><h3><%=h(issueId)%> : <%=h(issue.getTitle())%></h3></td></tr>
     <tr>
         <td valign="top" width="34%"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
@@ -106,29 +106,29 @@
             <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
 
-            <%=bean.writeCustomColumn(ColumnType.STRING2, 20)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING3, 20)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING4, 20)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING5, 20)%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING2, 20))%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING3, 20))%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING4, 20))%>
+            <%=text(bean.writeCustomColumn(ColumnType.STRING5, 20))%>
         </table></td>
     </tr>
 </table>
 <%
         if (bean.getCallbackURL() != null)
         {
-            %><input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/><%
+            %><input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/><%
         }
 
         for (Issue.Comment comment : issue.getComments())
         {
 %>
         <hr><table width="100%"><tr><td align="left"><b>
-        <%=bean.writeDate(comment.getCreated())%>
+        <%=text(bean.writeDate(comment.getCreated()))%>
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>
-        <%=comment.getComment().getSource()%>
-        <%=bean.renderAttachments(context, comment)%>
+        <%=text(comment.getComment().getSource())%>
+        <%=text(bean.renderAttachments(context, comment))%>
 <%
         }
 %>

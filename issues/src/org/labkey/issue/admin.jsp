@@ -61,10 +61,10 @@
     <td valign=top>
         <table>
             <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields</b></div></td></tr>
-            <tr><td colspan=2>Select fields to be required when entering or updating <%=bean.getEntryTypeNames().getIndefiniteSingularArticle()%> <%=h(bean.getEntryTypeNames().singularName)%>:</td></tr>
+            <tr><td colspan=2>Select fields to be required when entering or updating <%=h(bean.getEntryTypeNames().getIndefiniteSingularArticle())%> <%=h(bean.getEntryTypeNames().singularName)%>:</td></tr>
             <tr><td colspan=2>&nbsp;</td></tr>
             <tr>
-                <td><input type="checkbox" name="requiredFields" <%=isRequired("comment", bean.getRequiredFields()) ? "checked " : ""%>value="comment">Comments (new issues only)</td><%
+                <td><input type="checkbox" name="requiredFields" <%=text(isRequired("comment", bean.getRequiredFields()) ? "checked " : "")%>value="comment">Comments (new issues only)</td><%
             List<ColumnInfo> columns = bean.getColumns();
             for (int i = 0; i < columns.size(); i++)
             {
@@ -77,7 +77,7 @@
 
                 }
         %>
-                <td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%><%=isPickList(ccc, info) && !hasKeywords(c, info) ? "disabled " : "" %>value="<%=info.getName()%>"><%=getCaption(ccc, info)%></td><%
+                <td><input type="checkbox" name="requiredFields" <%=text(isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : "")%><%=text(isPickList(ccc, info) && !hasKeywords(c, info) ? "disabled " : "")%>value="<%=h(info.getName())%>"><%=getCaption(ccc, info)%></td><%
 
                 if (!startNewRow)
                 {
@@ -101,11 +101,11 @@
         <tr><td>Resolution</td><td><input name="resolution" value="<%=h(captions.get("resolution"))%>" size=20></td></tr>
         <tr><td>Integer1</td><td><input name="int1" value="<%=h(captions.get("int1"))%>" size=20></td></tr>
         <tr><td>Integer2</td><td><input name="int2" value="<%=h(captions.get("int2"))%>" size=20></td></tr>
-        <tr><td>String1</td><td><input name="string1" value="<%=h(captions.get("string1"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string1" <%=pickListColumns.contains("string1") ? "checked" : ""%>>Use pick list for this field</td></tr>
-        <tr><td>String2</td><td><input name="string2" value="<%=h(captions.get("string2"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string2" <%=pickListColumns.contains("string2") ? "checked" : ""%>>Use pick list for this field</td></tr>
-        <tr><td>String3</td><td><input name="string3" value="<%=h(captions.get("string3"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string3" <%=pickListColumns.contains("string3") ? "checked" : ""%>>Use pick list for this field</td></tr>
-        <tr><td>String4</td><td><input name="string4" value="<%=h(captions.get("string4"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string4" <%=pickListColumns.contains("string4") ? "checked" : ""%>>Use pick list for this field</td></tr>
-        <tr><td>String5</td><td><input name="string5" value="<%=h(captions.get("string5"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string5" <%=pickListColumns.contains("string5") ? "checked" : ""%>>Use pick list for this field</td></tr>
+        <tr><td>String1</td><td><input name="string1" value="<%=h(captions.get("string1"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string1" <%=text(pickListColumns.contains("string1") ? "checked" : "")%>>Use pick list for this field</td></tr>
+        <tr><td>String2</td><td><input name="string2" value="<%=h(captions.get("string2"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string2" <%=text(pickListColumns.contains("string2") ? "checked" : "")%>>Use pick list for this field</td></tr>
+        <tr><td>String3</td><td><input name="string3" value="<%=h(captions.get("string3"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string3" <%=text(pickListColumns.contains("string3") ? "checked" : "")%>>Use pick list for this field</td></tr>
+        <tr><td>String4</td><td><input name="string4" value="<%=h(captions.get("string4"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string4" <%=text(pickListColumns.contains("string4") ? "checked" : "")%>>Use pick list for this field</td></tr>
+        <tr><td>String5</td><td><input name="string5" value="<%=h(captions.get("string5"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string5" <%=text(pickListColumns.contains("string5") ? "checked" : "")%>>Use pick list for this field</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
         </table>
     </td>
@@ -119,12 +119,12 @@
                     <table>
                         <tr>
                             <td>Singular item name</td>
-                            <td><input type="text" name="<%=ConfigureIssuesForm.ParamNames.entrySingularName.name()%>"
+                            <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entrySingularName.name())%>"
                                        value="<%=h(bean.entryTypeNames.singularName)%>" size="20"/></td>
                         </tr>
                         <tr>
                             <td>Plural items name</td>
-                            <td><input type="text" name="<%=ConfigureIssuesForm.ParamNames.entryPluralName.name()%>"
+                            <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entryPluralName.name())%>"
                                        value="<%=h(bean.entryTypeNames.pluralName)%>" size="20"/></td>
                         </tr>
                         <tr>
@@ -142,16 +142,16 @@
                         <tr><td colspan="2">Populate the assigned to list from:</td></tr>
                         <tr>
                             <td>
-                                <input onchange="assignedToGroup.disabled=true;" type="radio" name="assignedToMethod" value="ProjectUsers"<%=null == bean.assignedToGroup ? " checked" : ""%> />
+                                <input onchange="assignedToGroup.disabled=true;" type="radio" name="assignedToMethod" value="ProjectUsers"<%=text(null == bean.assignedToGroup ? " checked" : "")%> />
                             </td>
                             <td>All Project Users</td>
                         </tr>
                         <tr>
                             <td>
-                                <input onchange="assignedToGroup.disabled=false;" type="radio" name="assignedToMethod" value="Group" <%=null != bean.assignedToGroup ? " checked" : ""%> />
+                                <input onchange="assignedToGroup.disabled=false;" type="radio" name="assignedToMethod" value="Group" <%=text(null != bean.assignedToGroup ? " checked" : "")%> />
                             </td>
                             <td>Specific Group
-                                <select<%=Boolean.valueOf(null == bean.assignedToGroup) ? " disabled=\"disabled\"" : ""%> name="assignedToGroup"><%
+                                <select<%=text(Boolean.valueOf(null == bean.assignedToGroup) ? " disabled=\"disabled\"" : "")%> name="assignedToGroup"><%
                                     for (Group group : SecurityManager.getGroups(c.getProject(), true))
                                     {
                                         if (!group.isGuests())

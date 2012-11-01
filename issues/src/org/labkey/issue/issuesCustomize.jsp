@@ -37,7 +37,7 @@
       Enter title for the Issues Summary web part.
     </td>
     <td>
-      <input name="title" size="25" type="text" value="<%=null == title ? h(singularName) + " Summary" : h(title) %>">
+      <input name="title" size="25" type="text" value="<%=text(null == title ? h(singularName) + " Summary" : h(title) )%>">
     </td>
   </tr>
   <tr>

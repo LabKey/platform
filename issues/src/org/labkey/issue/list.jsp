@@ -31,9 +31,7 @@
 
     if (request.getParameter("error") != null)
     {
-%>
-        <font class="labkey-error"><%=request.getParameter("error")%></font><br/>
-<%
+        %><span class="labkey-error"><%=h(request.getParameter("error"))%></span><br/><%
     }
 %>
 
@@ -61,7 +59,7 @@
 <%
 if ("true".equals(context.getActionURL().getParameter("navigateInPlace")))
 {
-%><script src="<%=contextPath%>/issues/hashbang.js"></script>
+%><script src="<%=h(contextPath)%>/issues/hashbang.js"></script>
 <script>
 if (!Ext.isDefined(window.navigationStrategy))
 {

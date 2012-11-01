@@ -40,18 +40,18 @@
     {
         String formId = "form" + kwp.type.getColumnName();
 %>
-    <!-- <%=kwp.type.getColumnName()%> -->
+    <!-- <%=h(kwp.type.getColumnName())%> -->
     <td style="vertical-align:top">
     <div class="labkey-form-label"><b><%=h(kwp.name)%> Options</b></div>
-    <form id="<%=formId%>" method="POST" action="<%=h(buildURL(IssuesController.DeleteKeywordAction.class))%>">
+    <form id="<%=h(formId)%>" method="POST" action="<%=h(buildURL(IssuesController.DeleteKeywordAction.class))%>">
 <%
     if (kwp.keywords.isEmpty())
     {
-        out.println("    <i>none set</i><br>");
+        %><i>none set</i><br><%
     }
     else
     {
-        out.print("    <table>");
+        %><table><%
 
         for (Keyword keyword : kwp.keywords)
         {
@@ -83,7 +83,7 @@
     {
 %>
 <td align="center">
-    <form method="POST" name="add<%=kwp.type.getColumnName()%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
+    <form method="POST" name="add<%=h(kwp.type.getColumnName())%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
     <input name="keyword" value=""><br>
         <%=generateSubmitButton("Add " + kwp.name.getSource())%><br>
     <input type="hidden" name="type" value="<%=kwp.type.getOrdinal()%>">

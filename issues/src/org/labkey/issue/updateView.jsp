@@ -88,7 +88,9 @@
             }
         }
     if (!bean.getRequiredFields().isEmpty())
-        out.print("<tr><td>Fields marked with an asterisk <span class=\"labkey-error\">*</span> are required.</td></tr>");
+    {
+        %><tr><td>Fields marked with an asterisk <span class="labkey-error">*</span> are required.</td></tr><%
+    }
     %>
     </table>
 
@@ -116,9 +118,9 @@
                 <td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td>
                 <td rowspan="6" valign="top">
                     <table>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(user))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=text(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
+                        <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=text(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=text(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.RESOLUTION)%></td><td><%=bean.writeSelect(ColumnType.RESOLUTION, 10)%></td></tr>
         <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus().getSource())) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
@@ -178,19 +180,19 @@
                         %>
                         </td></tr>
         <% } %>
-                        <%=bean.writeCustomColumn(ColumnType.INT1, 10)%>
-                        <%=bean.writeCustomColumn(ColumnType.INT2, 10)%>
-                        <%=bean.writeCustomColumn(ColumnType.STRING1, 10)%>
+                        <%=text(bean.writeCustomColumn(ColumnType.INT1, 10))%>
+                        <%=text(bean.writeCustomColumn(ColumnType.INT2, 10))%>
+                        <%=text(bean.writeCustomColumn(ColumnType.STRING1, 10))%>
                     </table>
                 </td>
                 <td valign="top" rowspan="6"><table>
-                    <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(user))%></td></tr>
+                    <tr><td class="labkey-form-label">Closed</td><td><%=text(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr>
     <%
                 if (bean.isEditable("notifyList"))
                 {
     %>
                     <tr>
-                        <td class="labkey-form-label-nowrap"><%=bean.getLabel("NotifyList") + popup%><br/><br/>
+                        <td class="labkey-form-label-nowrap"><%=h(bean.getLabel("NotifyList"))%><%=text(popup)%><br/><br/>
     <%
                         if (issue.getIssueId() == 0)
                         {
@@ -213,10 +215,10 @@
     <%
                 }
     %>
-                    <%=bean.writeCustomColumn(ColumnType.STRING2, 20)%>
-                    <%=bean.writeCustomColumn(ColumnType.STRING3, 20)%>
-                    <%=bean.writeCustomColumn(ColumnType.STRING4, 20)%>
-                    <%=bean.writeCustomColumn(ColumnType.STRING5, 20)%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING2, 20))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING3, 20))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING4, 20))%>
+                    <%=text(bean.writeCustomColumn(ColumnType.STRING5, 20))%>
                 </table></td>
             </tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect(new HString("assignedTo", false), HString.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 0)%></td></tr>
@@ -244,14 +246,14 @@
     
     <table>
         <tr><td><table id="filePickerTable"></table></td></tr>
-        <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=context.getRequest().getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
+        <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=h(context.getRequest().getContextPath())%>/_images/paperclip.gif">Attach a file</a></td></tr>
     </table>
     
 <%
     if (bean.getCallbackURL() != null)
     {
 %>
-    <input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/>
+    <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
 <%
     }
 
@@ -259,20 +261,20 @@
     {
 %>
         <hr><table width="100%"><tr><td align="left"><b>
-        <%=bean.writeDate(comment.getCreated())%>
+        <%=text(bean.writeDate(comment.getCreated()))%>
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>
-        <%=comment.getComment().getSource()%>
-        <%=bean.renderAttachments(context, comment)%>   
+        <%=text(comment.getComment().getSource())%>
+        <%=text(bean.renderAttachments(context, comment))%>
 <%
     }
 %>
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
-    <input type="hidden" name="action" value="<%=bean.getAction().getName()%>">
+    <input type="hidden" name="action" value="<%=h(bean.getAction().getName())%>">
     <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
 </form>
-<script type="text/javascript" for="window" event="onload">try {document.getElementById("<%=focusId%>").focus();} catch (x) {}</script>
+<script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>
 <script type="text/javascript">
 
 var origComment = document.getElementById("comment").value;

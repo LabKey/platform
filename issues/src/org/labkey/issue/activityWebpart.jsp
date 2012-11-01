@@ -16,13 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.IssuesActivityWebPartFactory" %>
-<%@ page import="org.labkey.api.data.Entity" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -90,7 +86,7 @@
                 }
             %>
         </div>
-        <span class="comment-created"><%=DateUtil.formatDateTime(comment.getCreated())%></span>
+        <span class="comment-created"><%=text(DateUtil.formatDateTime(comment.getCreated()))%></span>
         <span style="float:none;">&nbsp;</span>
     </div>
     <%--<hr>--%>
