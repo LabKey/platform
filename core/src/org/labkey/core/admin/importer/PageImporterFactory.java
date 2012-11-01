@@ -122,15 +122,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
                     String pageId = pageXml.getName();
                     String properties = pageXml.getPropertyString();        // Need to check if before export we already did legacyPage thing before changing pageid
-                    if (pageId.equals("Overview") && Portal.getParts(ctx.getContainer(), pageId).size() == 0)
-                    {
-                        // Create dummy page to mkae sure proerties get parsed right
-                        Portal.PortalPage page = new Portal.PortalPage();
-                        page.setProperties(properties);
-                        String legacyPageAdded = page.getPropertyMap().get(Portal.WEBPART_PROP_LegacyPageAdded);
-                        if (null == legacyPageAdded || !legacyPageAdded.equalsIgnoreCase("true"))
-                            pageId = Portal.DEFAULT_PORTAL_PAGE_ID;         // Only change this if we didn't already do legacyPage thing
-                    }
+                    Boolean hidden = pageXml.getHidden();
 
                     FolderTab tab = new _FolderTab(pageXml.getName(), pageXml.getIndex());
                     tabs.add(tab);
@@ -164,6 +156,8 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                     }
                     Portal.saveParts(ctx.getContainer(), pageId, webparts);
                     Portal.addProperties(ctx.getContainer(), pageId, properties);
+                    if(hidden)
+                        Portal.hidePage(ctx.getContainer(), pageId);
                 }
 
                 if (tabs.size() > 1)

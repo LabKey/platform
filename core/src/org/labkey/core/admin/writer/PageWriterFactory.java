@@ -61,7 +61,7 @@ public class PageWriterFactory implements FolderWriterFactory
             PagesDocument pagesDocXML = PagesDocument.Factory.newInstance();
             PagesDocument.Pages pagesXML = pagesDocXML.addNewPages();
 
-            Map<String,Portal.PortalPage> tabs = Portal.getPages(ctx.getContainer());
+            Map<String,Portal.PortalPage> tabs = Portal.getPages(ctx.getContainer(), true);
             if (tabs.size() == 0)
             {
                 // if there are no tabs, try getting webparts for the default page ID
@@ -77,11 +77,10 @@ public class PageWriterFactory implements FolderWriterFactory
                     pageXml.setIndex(tab.getIndex());
                     pageXml.setName(tab.getPageId());
                     pageXml.setPropertyString(tab.getProperties());     // For custom tab
+                    pageXml.setHidden(tab.isHidden());
 
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
                     List<WebPart> portalPageParts = Portal.getParts(ctx.getContainer(), tab.getPageId());
-                    if (tab.getPageId().equals("Overview") && portalPageParts.size() == 0)
-                        portalPageParts = Portal.getParts(ctx.getContainer(), Portal.DEFAULT_PORTAL_PAGE_ID);
 
                     addWebPartsToPage(ctx, pageXml, portalPageParts);
                 }
