@@ -845,41 +845,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.loaderCount = 0; //Used to prevent the loader from running until we have recieved all necessary callbacks.
         if (this.chartInfo.displayIndividual)
             this.loaderCount++;
-
         if (this.chartInfo.displayAggregate)
             this.loaderCount++;
 
-        if (this.loaderCount == 0)
-        {
-            this.clearChartPanel("Please select either \"Show Individual Lines\" or \"Show Mean\".");
-            return;
-        }
-
-        if (this.chartInfo.measures.length == 0)
-        {
-           this.clearChartPanel("No measure selected. Please click the \"Measures\" button to add a measure.");
-           return;
-        }
-
         // fail quickly if some of the key components are not selected for the chart info (ptids, groups, series)
-        if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0)
-        {
-            this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + " from the filter panel on the right.");
+        if (this.warnSelectionsMissing())
             return;
-        }
-
-        if (this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length == 0)
-        {
-            this.clearChartPanel("Please select at least one group from the filter panel on the right.");
-            return;
-        }
-
-        var seriesList = this.getSeriesList();
-        if (seriesList.length == 0)
-        {
-            this.clearChartPanel("Please select at least one series/dimension value.");
-            return;
-        }
 
         if (this.chartInfo.displayIndividual)
         {
@@ -994,6 +965,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                     // trim the visit map domain to just those visits in the response data
                     this.aggregateData.visitMap = this.trimVisitMapDomain(this.aggregateData.visitMap, visitsInData);
+
+                    // store the temp schema name, query name, etc. for the data grid
+                    this.tempGridInfo = {schema: this.aggregateData.schemaName, query: data.queryName};
+
+                    // now that we have the temp grid info, enable the View Data button
+                    this.viewGridBtn.enable();
 
                     // ready to render the chart or grid
                     this.loaderCount--;
@@ -1400,27 +1377,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         };
 
-        // warn if user doesn't have an subjects, groups, or series selected
-        if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0)
-        {
-            this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
-            this.toggleSaveButtons(true);
-        }
-        else if (this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length < 1)
-        {
-            this.clearChartPanel("Please select at least one group.");
-            this.toggleSaveButtons(true);
-        }
-        else if (seriesList.length == 0)
-        {
-            this.clearChartPanel("Please select at least one series/dimension value.");
-            this.toggleSaveButtons(true);
-        }
-        // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
-        else
+        // warn if user doesn't have an subjects, groups, series, etc. selected
+        if (!this.warnSelectionsMissing())
         {
             this.toggleSaveButtons(false);
 
+            // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
             if (this.chartInfo.chartLayout == "per_subject")
             {
                 // warn if the max number of charts has been exceeded
@@ -2433,5 +2395,43 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             if (row[intervalAlias] && row[intervalAlias].value != null)
                 this.hasIntervalData = true;
         }
+    },
+
+    warnSelectionsMissing: function() {
+        var warningsExist = false;
+        var seriesList = this.getSeriesList();
+
+        if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0)
+        {
+            this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + " from the filter panel on the right.");
+            this.toggleSaveButtons(true);
+            warningsExist = true;
+        }
+        else if (this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length < 1)
+        {
+            this.clearChartPanel("Please select at least one group from the filter panel on the right.");
+            this.toggleSaveButtons(true);
+            warningsExist = true;
+        }
+        else if (this.chartInfo.measures.length == 0)
+        {
+           this.clearChartPanel("No measure selected. Please click the \"Measures\" button to add a measure.");
+            this.toggleSaveButtons(true);
+            warningsExist = true;
+        }
+        else if (seriesList.length == 0)
+        {
+            this.clearChartPanel("Please select at least one series/dimension value.");
+            this.toggleSaveButtons(true);
+            warningsExist = true;
+        }
+        else if (!(this.chartInfo.displayIndividual || this.chartInfo.displayAggregate))
+        {
+            this.clearChartPanel("Please select either \"Show Individual Lines\" or \"Show Mean\".");
+            this.toggleSaveButtons(true);
+            warningsExist = true;
+        }
+
+        return warningsExist;
     }
 });

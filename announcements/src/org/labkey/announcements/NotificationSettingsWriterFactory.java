@@ -1,0 +1,71 @@
+package org.labkey.announcements;
+
+import org.apache.commons.lang3.math.NumberUtils;
+import org.labkey.announcements.model.AnnouncementManager;
+import org.labkey.api.admin.BaseFolderWriter;
+import org.labkey.api.admin.FolderWriter;
+import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.data.Container;
+import org.labkey.api.files.FileContentDefaultEmailPref;
+import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.notification.EmailService;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.NotificationsType;
+
+/**
+ * User: cnathe
+ * Date: 10/31/12
+ */
+public class NotificationSettingsWriterFactory implements FolderWriterFactory
+{
+    @Override
+    public FolderWriter create()
+    {
+        return new NotificationSettingsWriter();
+    }
+
+    public class NotificationSettingsWriter extends BaseFolderWriter
+    {
+        @Override
+        public String getSelectionText()
+        {
+            return "Notification settings";
+        }
+
+        @Override
+        public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+        {
+            FolderDocument.Folder folderXml = ctx.getXml();
+
+            // add the folder default notification settings for messages
+            int messagesDefault = AnnouncementManager.getDefaultEmailOption(c);
+            NotificationsType notifications = folderXml.addNewNotifications();
+            NotificationsType.MessagesDefault messages = notifications.addNewMessagesDefault();
+            messages.setId(messagesDefault);
+            MessageConfigService.NotificationOption messagesOption = MessageConfigService.getInstance().getOption(messagesDefault);
+            if (messagesOption != null)
+            {
+                messages.setLabel(messagesOption.getEmailOption());
+            }
+
+            /// add the folder default notification settings for file content events
+            String pref = EmailService.get().getDefaultEmailPref(c, new FileContentDefaultEmailPref());
+            int filesDefault = NumberUtils.toInt(pref);
+            NotificationsType.FilesDefault files = notifications.addNewFilesDefault();
+            files.setId(filesDefault);
+            MessageConfigService.NotificationOption filesOption = MessageConfigService.getInstance().getOption(filesDefault);
+            if (filesOption != null)
+            {
+                files.setLabel(filesOption.getEmailOption());
+            }
+        }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return true;
+        }
+    }
+}

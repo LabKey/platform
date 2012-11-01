@@ -27,6 +27,7 @@ import org.labkey.announcements.model.DiscussionWebPartFactory;
 import org.labkey.announcements.model.SecureMessageBoardReadPermission;
 import org.labkey.announcements.model.SecureMessageBoardRespondPermission;
 import org.labkey.announcements.query.AnnouncementSchema;
+import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.AnnouncementService;
@@ -194,6 +195,12 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         {
             ss.addSearchCategory(AnnouncementManager.searchCategory);
             ss.addDocumentProvider(this);
+        }
+
+        FolderSerializationRegistry fsr = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        if (null != fsr)
+        {
+            fsr.addFactories(new NotificationSettingsWriterFactory(), new NotificationSettingsImporterFactory());
         }
     }
     
