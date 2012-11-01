@@ -87,7 +87,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GuidString;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
@@ -1714,7 +1714,7 @@ public class AnnouncementsController extends SpringActionController
 
         public AnnouncementForm()
         {
-            super(AnnouncementModel.class, null, Collections.<String, Class>singletonMap("parentid", GuidString.class));
+            super(AnnouncementModel.class, null, Collections.<String, Class>singletonMap("parentid", GUID.class));
         }
 
         // XXX: change return value to typed GuidString

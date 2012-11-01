@@ -90,7 +90,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;

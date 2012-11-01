@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.api.query.QueryForm" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.util.IdentifierString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.DataView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>

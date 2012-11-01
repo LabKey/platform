@@ -39,8 +39,7 @@ public class ExternalSchemaForm extends BeanViewForm<ExternalSchemaDef>
     public void validate(Errors errors)
     {
         ExternalSchemaDef bean = getBean();
-        IdentifierString i = new IdentifierString(bean.getUserSchemaName());
-        if (i.isTainted())
+        if (null != IdentifierString.validateIdentifierString(bean.getUserSchemaName()))
             errors.reject(SpringActionController.ERROR_MSG, "Schema name should only contain alphanumeric characters and underscores");
 
         String metaData = bean.getMetaData();
