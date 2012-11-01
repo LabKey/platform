@@ -28,6 +28,7 @@ public class TaskPath
     private boolean _splitFiles;
     private boolean _copyInput;
     private boolean _optional;
+    private boolean _forceToAnalysisDir = false;
 
     /**
      * Default bean constructor.
@@ -186,5 +187,19 @@ public class TaskPath
     public void setOptional(boolean optional)
     {
         _optional = optional;
+    }
+
+    /**
+     * Indicates that the output file should always be copied directly to the analysis directory, instead of relying
+     * on the normal job behavior for where to put it.
+     */
+    public boolean isForceToAnalysisDir()
+    {
+        return _forceToAnalysisDir;
+    }
+
+    public void setForceToAnalysisDir(boolean forceToAnalysisDir)
+    {
+        _forceToAnalysisDir = forceToAnalysisDir;
     }
 }
