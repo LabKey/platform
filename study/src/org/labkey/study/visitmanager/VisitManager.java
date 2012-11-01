@@ -652,6 +652,7 @@ public abstract class VisitManager
             return StudySchema.getInstance().getTableInfoSpecimen();
     }
 
+
     /** @param potentiallyDeletedParticipants null if all participants should be examined,
      * or the subset of all participants that might have been deleted and should be checked */
     public static void performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
@@ -660,49 +661,59 @@ public abstract class VisitManager
         {
             return;
         }
-        
-        try
+
+        for (int retry = 1 ; retry >= 0 ; retry--)
         {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-            TableInfo tableSpecimen = getSpecimenTable(study);
-
-            SQLFragment ptids = new SQLFragment();
-            SQLFragment studyDataPtids = studyDataPtids(study.getDataSets());
-            if (null != studyDataPtids)
+            try
             {
-                ptids.append(studyDataPtids);
-                ptids.append(" UNION\n");
-            }
-            ptids.append("SELECT DISTINCT ptid FROM ");
-            ptids.append(tableSpecimen, "spec");
-            ptids.append(" WHERE spec.container=?");
-            ptids.add(study.getContainer().getId());
+                DbSchema schema = StudySchema.getInstance().getSchema();
+                TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+                TableInfo tableSpecimen = getSpecimenTable(study);
 
-            SQLFragment del = new SQLFragment();
-            del.append("DELETE FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=? ");
-            del.add(study.getContainer().getId());
-            del.append(" AND participantid NOT IN (\n");
-            del.append(ptids);
-            del.append(")");
+                SQLFragment ptids = new SQLFragment();
+                SQLFragment studyDataPtids = studyDataPtids(study.getDataSets());
+                if (null != studyDataPtids)
+                {
+                    ptids.append(studyDataPtids);
+                    ptids.append(" UNION\n");
+                }
+                ptids.append("SELECT DISTINCT ptid FROM ");
+                ptids.append(tableSpecimen, "spec");
+                ptids.append(" WHERE spec.container=?");
+                ptids.add(study.getContainer().getId());
 
-            // Databases limit the size of IN clauses, so check that we won't blow the cap
-            if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
-            {
-                // We have an explicit list of potentially deleted participants, so filter to only look at them
-                del.append(" AND participantid IN (");
-                del.append(StringUtils.repeat("?", ", ", potentiallyDeletedParticipants.size()));
-                del.addAll(potentiallyDeletedParticipants);
+                SQLFragment del = new SQLFragment();
+                del.append("DELETE FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=? ");
+                del.add(study.getContainer().getId());
+                del.append(" AND participantid NOT IN (\n");
+                del.append(ptids);
                 del.append(")");
-            }
 
-            Table.execute(schema, del);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
+                // Databases limit the size of IN clauses, so check that we won't blow the cap
+                if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
+                {
+                    // We have an explicit list of potentially deleted participants, so filter to only look at them
+                    del.append(" AND participantid IN (");
+                    del.append(StringUtils.repeat("?", ", ", potentiallyDeletedParticipants.size()));
+                    del.addAll(potentiallyDeletedParticipants);
+                    del.append(")");
+                }
+
+                Table.execute(schema, del);
+                break;
+            }
+            catch (SQLException x)
+            {
+                if (retry != 0 && ("42P01".equals(x.getSQLState()) || "42S02".equals(x.getSQLState())))
+                {
+                    StudyManager.getInstance().clearCaches(study.getContainer(), false);
+                    continue; // retry
+                }
+                throw new RuntimeSQLException(x);
+            }
         }
     }
+
 
     StudyImpl getStudy()
     {
