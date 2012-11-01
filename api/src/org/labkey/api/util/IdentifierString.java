@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.apache.commons.beanutils.ConversionException;
 
@@ -28,26 +29,33 @@ import java.util.regex.Pattern;
  */
 public class IdentifierString extends HString
 {
-     Pattern idPattern = Pattern.compile("[\\p{Alpha}_][\\p{Alnum}_]*");
+    static Pattern idPattern = Pattern.compile("[\\p{Alpha}_][\\p{Alnum}_]*");
 
-    public IdentifierString(String s)
+    public static String validateIdentifierString(String s)
+    {
+        if (StringUtils.isEmpty(s) || idPattern.matcher(s).matches())
+            return null;
+        return "Value is not a valid identifier: " + s;
+    }
+
+    IdentifierString(String s)
     {
         _source = s;
         _tainted = _source.length() != 0 && !idPattern.matcher(s).matches();
     }
 
-	public IdentifierString(HString s)
+	IdentifierString(HString s)
 	{
 		this(null == s ? "" : s._source);
 	}
 
-	public IdentifierString(String s, boolean t)
+	IdentifierString(String s, boolean t)
 	{
 		_source = s;
 		_tainted = _source.length() != 0 && t;
 	}
 
-    public IdentifierString(Container c)
+    IdentifierString(Container c)
     {
         _source = c.getId();
         _tainted = false;

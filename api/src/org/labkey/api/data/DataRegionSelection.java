@@ -20,7 +20,6 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.IdentifierString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 

@@ -24,7 +24,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HString;
-import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;

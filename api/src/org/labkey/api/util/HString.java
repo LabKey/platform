@@ -19,8 +19,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.view.ViewServlet;
 
@@ -584,7 +582,6 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
         public void test()
         {
             // HString
-            
             HString t = new HString("<script>alert('8(')</script>", true);
             assertTrue(t.isTainted());
             assertFalse(t.toString().contains("<script"));
@@ -596,23 +593,6 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
             assertTrue(sb.isTainted());
             assertFalse(sb.toString().contains("<script"));
             assertFalse(PageFlowUtil.filter(t).isTainted());
-
-            // IdentifierString
-
-            IdentifierString id = new IdentifierString("x1");
-            assertFalse(id.isTainted());
-            IdentifierString bad = new IdentifierString("<x1");
-            assertTrue(bad.isTainted());
-
-            // GuidString
-
-            Container mockContainer = ContainerManager.createMockContainer();
-            GuidString g = new GuidString(mockContainer.getId().toLowerCase());
-            assertFalse(g.isTainted());
-            GuidString G = new GuidString(mockContainer.getId().toUpperCase());
-            assertFalse(G.isTainted());
-            GuidString gooey = new GuidString("flaksdjfasdf");
-            assertTrue(gooey.isTainted());
         }
     }
 }

@@ -23,8 +23,11 @@ import org.apache.commons.beanutils.ConversionException;
  * User: matthewb
  * Date: Feb 9, 2009
  * Time: 10:40:19 AM
+ *
+ * @deprecated use GUID
  */
-public class GuidString extends HString
+@Deprecated
+class GuidString extends HString
 {
     public GuidString(String s)
     {

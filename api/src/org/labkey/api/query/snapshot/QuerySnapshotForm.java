@@ -20,7 +20,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.security.User;
-import org.labkey.api.util.IdentifierString;
 
 import java.util.ArrayList;
 import java.util.List;

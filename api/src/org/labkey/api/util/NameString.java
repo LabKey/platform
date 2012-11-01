@@ -39,8 +39,8 @@ import java.util.regex.Pattern;
  * with strict rules and loosen up as necessary.
  */
 
-
-public class NameString extends HString
+@Deprecated
+class NameString extends HString
 {
 	Pattern namePattern = Pattern.compile("(\\p{Alnum}|[\\Q$ _-:()\\E])*");
 
