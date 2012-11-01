@@ -16,9 +16,12 @@
 
 package org.labkey.api.security;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -42,6 +45,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -419,7 +423,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
             guestSession = _nursery.get(containerSession.getId());
             if (null == guestSession  && containerSession.isNew())
             {
-                guestSession = new GuestSession(getRemoteAddr());
+                guestSession = new GuestSession(this);
                 containerSession.setAttribute(GuestSession.class.getName(), guestSession);
                 _nursery.put(containerSession.getId(), guestSession);
             }
@@ -430,15 +434,41 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     }
 
 
+
+    // helper to avoid filling the _log
+    private static Cache<String, String> logMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(1), "GuestSession Messages");
+
+    private static void _logGuestSession(String ip, String msg)
+    {
+        ip = StringUtils.defaultString(ip,"unknown");
+        String prevMessage = logMessages.get(ip);
+        if (StringUtils.equals(prevMessage, msg))
+            return;
+        logMessages.put(ip, msg);
+        _log.warn(msg);
+    }
+
+
     private static class GuestSession implements HttpSessionBindingListener
     {
         HttpSession _session = null;
         final String _ip;
         final long[] _accessedTime = new long[5];
+        final Map<String,String> _info;
 
-        GuestSession(String ip)
+        GuestSession(AuthenticatedRequest r)
         {
-            _ip = ip;   // for debugging
+            // do not hold onto request
+            _ip = r.getRemoteAddr();
+            _info = new TreeMap<String,String>();
+            Enumeration<String> e = r.getHeaderNames();
+            while (e.hasMoreElements())
+            {
+                String name = e.nextElement();
+                if (StringUtils.startsWithIgnoreCase(name, "x-"))
+                    _info.put(name, r.getHeader(name));
+            }
+            _info.put("user-agent", r.getHeader("User-Agent"));
         }
 
         @Override
@@ -466,12 +496,19 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
             {
                 long age = HeartBeat.currentTimeMillis() - s.getCreationTime();
                 if (age < TimeUnit.HOURS.toMillis(1))
-                    _log.warn("Due to server load, guest session was forced to expire, remoteAddr=" + _ip);
+                {
+                    //String q = PageFlowUtil.toQueryString(_info.entrySet());
+                    StringBuilder sb = new StringBuilder();
+                    for (Map.Entry<String,String> e : _info.entrySet())
+                        sb.append(e.getKey()).append("=").append(e.getValue()).append("&");
+                    sb.setLength(sb.length()-1);
+                    _logGuestSession(_ip, "Due to server load, guest session was forced to expire: " + _ip + "?" + sb.toString());
+                }
                 s.setMaxInactiveInterval(0);
             }
             catch (IllegalStateException x)
             {
-                ;
+                /* */
             }
         }
 
