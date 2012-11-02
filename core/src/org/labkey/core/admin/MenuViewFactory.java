@@ -193,15 +193,22 @@ public class MenuViewFactory
         Container rootFolder = (0 == rootPath.compareTo("")) ? context.getContainer() : ContainerManager.getForPath(rootPath);
         final User user = context.getUser();
         List<Container> containersTemp;
-        if (form.isIncludeAllDescendants())
+        if (null != rootFolder)
         {
-            containersTemp = ContainerManager.getAllChildren(rootFolder, user, ReadPermission.class, false);    // no workbooks
-            containersTemp.remove(rootFolder);      // getAllChildren adds root, which we don't want
+            if (form.isIncludeAllDescendants())
+            {
+                containersTemp = ContainerManager.getAllChildren(rootFolder, user, ReadPermission.class, false);    // no workbooks
+                containersTemp.remove(rootFolder);      // getAllChildren adds root, which we don't want
+            }
+            else
+            {
+                containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class, false);   // no workbooks
+    //            containersTemp.add(rootFolder);      // Don't add root folder; later we may add a checkbox to allow it to be added, if so, check root's permissions
+            }
         }
         else
         {
-            containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class, false);   // no workbooks
-//            containersTemp.add(rootFolder);      // Don't add root folder; later we may add a checkbox to allow it to be added, if so, check root's permissions
+            containersTemp = new ArrayList<Container>();
         }
 
         if (!context.getContainer().getPolicy().hasPermission(user, AdminPermission.class))
