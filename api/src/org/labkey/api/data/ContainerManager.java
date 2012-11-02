@@ -1973,7 +1973,11 @@ public class ContainerManager
             assertEquals(newFolderFromCache.getFolderType(), randomType);
 
             delete(newFolder, TestContext.get().getUser());
-            assertNull(getForId(newFolder.getId()));
+            Container deletedContainer = getForId(newFolder.getId());
+            if (deletedContainer != null)
+            {
+                fail("Expected container with Id " + newFolder.getId() + " to be deleted, but found " + deletedContainer);
+            }
         }
 
 
