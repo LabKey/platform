@@ -163,7 +163,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             
             if (folderTab != null && folderTab.isVisible(container, ctx.getUser()))
             {
-                String label = folderTab.getCaption(ctx);
+                String label = portalPage.getCaption() != null ? portalPage.getCaption() : folderTab.getCaption(ctx);
                 NavTree nav = new NavTree(label, folderTab.getURL(container, ctx.getUser()));
                 nav.setId("portal:" + portalPage.getPageId());
                 nav.addChild(getTabMenu(ctx, folderTab, portalPage));
