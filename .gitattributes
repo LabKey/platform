@@ -248,6 +248,7 @@ api/src/org/labkey/api/data/HtmlWriter.java -text
 api/src/org/labkey/api/data/IconDisplayColumn.java -text
 api/src/org/labkey/api/data/ImportAliasable.java -text
 api/src/org/labkey/api/data/InClauseGenerator.java -text
+api/src/org/labkey/api/data/InputColumn.java -text
 api/src/org/labkey/api/data/JdbcCommand.java -text
 api/src/org/labkey/api/data/JdbcType.java -text
 api/src/org/labkey/api/data/JsonTest.java -text
@@ -260,6 +261,7 @@ api/src/org/labkey/api/data/LegacyTableSelector.java -text
 api/src/org/labkey/api/data/LookupColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumnFactory.java -text
+api/src/org/labkey/api/data/MapListResultSet.java -text
 api/src/org/labkey/api/data/MenuButton.java -text
 api/src/org/labkey/api/data/MethodInfo.java -text
 api/src/org/labkey/api/data/MultiValuedDisplayColumn.java -text
@@ -4850,8 +4852,6 @@ internal/src/org/labkey/api/data/DropDownList.java -text
 internal/src/org/labkey/api/data/MultiResultSetMetaData.java -text
 internal/src/org/labkey/api/data/ResourceInputStream.java -text
 internal/src/org/labkey/api/data/ResultSetCollapser.java -text
-internal/src/org/labkey/api/data/SimpleInputColumn.java -text
-internal/src/org/labkey/api/data/TextAreaInputColumn.java -text
 internal/src/org/labkey/api/data/XMLWriter.java -text
 internal/src/org/labkey/api/data/XMLWriterTest.java -text
 internal/src/org/labkey/api/exp/AbstractFileXarSource.java -text

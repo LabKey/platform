@@ -1450,10 +1450,9 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderRecordSelector(RenderContext ctx, Writer out) throws IOException
     {
-        Map rowMap = ctx.getRow();
         out.write("<td class='labkey-selectors' nowrap>");
         out.write("<input type=checkbox title='Select/unselect row' name='");
-        out.write(SELECT_CHECKBOX_NAME);
+        out.write(getRecordSelectorName(ctx));
         out.write("' ");
         String id = getRecordSelectorId(ctx);
         if (id != null)
@@ -1463,39 +1462,12 @@ public class DataRegion extends AbstractDataRegion
             out.write("' ");
         }
         out.write("value=\"");
-        String and = "";
-        StringBuilder checkboxName = new StringBuilder();
-        if (_recordSelectorValueColumns == null)
-        {
-            for (ColumnInfo column : getTable().getPkColumns())
-            {
-                Object v = column.getValue(ctx);
-                // always append the comma, even if there's no value; we need to maintain the correct number
-                // of values (even if they're empty) between commas for deterministic parsing (bug 6755)
-                checkboxName.append(and);
-                if (null != v)
-                    checkboxName.append(PageFlowUtil.filter(v.toString()));
-                and = ",";
-            }
-        }
-        else
-        {
-            for (String valueColumnName : _recordSelectorValueColumns)
-            {
-                Object v = (null == rowMap ? null : rowMap.get(valueColumnName));
-                // always append the comma, even if there's no value; we need to maintain the correct number
-                // of values (even if they're empty) between commas for deterministic parsing (bug 6755)
-                checkboxName.append(and);
-                if (null != v)
-                    checkboxName.append(PageFlowUtil.filter(v.toString()));
-                and = ",";
-            }
-        }
-        out.write(checkboxName.toString());
+        String checkboxValue = getRecordSelectorValue(ctx);
+        out.write(checkboxValue);
         out.write("\"");
         boolean enabled = isRecordSelectorEnabled(ctx);
-        Set<String> selectedValues = ctx.getAllSelected();
-        if (selectedValues.contains(checkboxName.toString()) && enabled)
+        boolean checked = isRecordSelectorChecked(ctx, checkboxValue);
+        if (checked && enabled)
         {
             out.write(" checked");
         }
@@ -1506,6 +1478,51 @@ public class DataRegion extends AbstractDataRegion
         out.write(">");
         renderExtraRecordSelectorContent(ctx, out);
         out.write("</td>");
+    }
+
+    protected String getRecordSelectorName(RenderContext ctx)
+    {
+        return SELECT_CHECKBOX_NAME;
+    }
+
+    protected String getRecordSelectorValue(RenderContext ctx)
+    {
+        Map rowMap = ctx.getRow();
+        StringBuilder checkboxValue = new StringBuilder();
+        String and = "";
+        if (_recordSelectorValueColumns == null)
+        {
+            for (ColumnInfo column : getTable().getPkColumns())
+            {
+                Object v = column.getValue(ctx);
+                // always append the comma, even if there's no value; we need to maintain the correct number
+                // of values (even if they're empty) between commas for deterministic parsing (bug 6755)
+                checkboxValue.append(and);
+                if (null != v)
+                    checkboxValue.append(PageFlowUtil.filter(v.toString()));
+                and = ",";
+            }
+        }
+        else
+        {
+            for (String valueColumnName : _recordSelectorValueColumns)
+            {
+                Object v = (null == rowMap ? null : rowMap.get(valueColumnName));
+                // always append the comma, even if there's no value; we need to maintain the correct number
+                // of values (even if they're empty) between commas for deterministic parsing (bug 6755)
+                checkboxValue.append(and);
+                if (null != v)
+                    checkboxValue.append(PageFlowUtil.filter(v.toString()));
+                and = ",";
+            }
+        }
+        return checkboxValue.toString();
+    }
+
+    protected boolean isRecordSelectorChecked(RenderContext ctx, String checkboxValue)
+    {
+        Set<String> selectedValues = ctx.getAllSelected();
+        return selectedValues.contains(checkboxValue);
     }
 
     protected boolean isRecordSelectorEnabled(RenderContext ctx)

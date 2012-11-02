@@ -351,6 +351,12 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
+    public void setAllSelected(Set<String> selected)
+    {
+        _ctx.setAllSelected(selected);
+    }
+
+    @Override
     public void setView(CustomView view)
     {
         _ctx.setView(view);

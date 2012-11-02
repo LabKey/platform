@@ -760,6 +760,11 @@ public class RenderContext implements Map<String, Object>, Serializable
         return _selected;
     }
 
+    public void setAllSelected(Set<String> selected)
+    {
+        _selected = selected;
+    }
+
     public void setView(CustomView view)
     {
         _view = view;

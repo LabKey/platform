@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +71,9 @@ public class ExperimentService
 
         ExpData getExpData(int rowid);
         ExpData getExpData(String lsid);
-        ExpData[] getExpDatas(Container container, DataType type);
+        ExpData[] getExpDatas(int... rowid);
+        ExpData[] getExpDatas(Collection<Integer> rowid);
+        ExpData[] getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
         /**
          * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
          */
