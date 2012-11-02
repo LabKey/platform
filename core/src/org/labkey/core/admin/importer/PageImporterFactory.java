@@ -121,9 +121,14 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                 {
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
                     String pageId = pageXml.getName();
-                    String properties = pageXml.getPropertyString();        // Need to check if before export we already did legacyPage thing before changing pageid
-                    Boolean hidden = pageXml.getHidden();
+                    String properties = pageXml.getPropertyString();
+                    boolean hidden = pageXml.getHidden();
 
+/*                    if (pageId.equals("Overview") && Portal.getParts(ctx.getContainer(), pageId).size() == 0)
+                    {
+                        pageId = Portal.DEFAULT_PORTAL_PAGE_ID;       // TODO: seems to cause problem with new container tab and import/export features. Check this.
+                    }
+*/
                     FolderTab tab = new _FolderTab(pageXml.getName(), pageXml.getIndex());
                     tabs.add(tab);
 
