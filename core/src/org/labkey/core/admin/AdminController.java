@@ -5271,7 +5271,21 @@ public class AdminController extends SpringActionController
     {
         public void validateCommand(AddTabForm form, Errors errors)
         {
+            String name = form.getTabName();
 
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(getContainer(), true));
+            if (pages.containsKey(name))
+            {
+                errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+            }
+
+            if (form.getTabType().equalsIgnoreCase("portal"))
+            {
+                if (null == name)
+                {
+                    errors.reject(ERROR_MSG, "A tab name must be specified.");
+                }
+            }
         }
 
         public boolean handlePost(AddTabForm form, BindException errors) throws Exception
@@ -5279,27 +5293,39 @@ public class AdminController extends SpringActionController
             Container container = getContainer();
             if (form.getTabType().equalsIgnoreCase("portal"))
             {
-                String name = form.getTabName();
-                if (null == name)
-                {
-                    errors.reject(ERROR_MSG, "A tab name must be specified.");
-                    return false;
-                }
-
-                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container, true));
-                if (pages.containsKey(name))
-                {
-                    errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
-                    return false;
-                }
-
-                Portal.saveParts(container, name, new Portal.WebPart[0]);
-                Portal.addProperty(container, name, Portal.PROP_CUSTOMTAB);
+                Portal.saveParts(container, form.getTabName(), new Portal.WebPart[0]);
+                Portal.addProperty(container, form.getTabName(), Portal.PROP_CUSTOMTAB);
             }
             else
             {
                 // TabType is really pageId of hidden page
                 Portal.showPage(container, form.getTabType());
+
+                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container));
+                Portal.PortalPage page = pages.get(form.getTabType());
+
+                if(form.getTabName() != null && !form.getTabName().equals(""))
+                {
+                    page.setCaption(form.getTabName());
+                }
+                else
+                {
+                    String caption = "";
+
+                    for(FolderTab folderTab : container.getFolderType().getDefaultTabs())
+                    {
+                        if(folderTab.getName().equals(form.getTabType()))
+                        {
+                            caption = folderTab.getCaption(getViewContext());
+                            break;
+                        }
+                    }
+
+                    page.setCaption(caption);
+                }
+
+                // Update the page the caption is saved.
+                Portal.updatePortalPage(container, page);
             }
             return true;
         }
