@@ -18,5 +18,5 @@ SELECT core.executeJavaUpgradeCode('setPortalPageEntityId');
 
 ALTER TABLE core.PortalPages ALTER COLUMN EntityId SET NOT NULL;
 
-EXEC core.fn_dropifexists 'portalpages', 'core', 'INDEX', 'ix_portalpages_entityid';
+SELECT core.fn_dropifexists('portalpages', 'core', 'INDEX', 'ix_portalpages_entityid');
 CREATE INDEX ix_portalpages_entityid ON core.portalpages(entityid);
