@@ -60,7 +60,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         @Override
         public String getDescription()
         {
-            return "subfolders and workbooks";
+            return "subfolders and container tabs";
         }
 
         @Override

@@ -4047,8 +4047,6 @@ public class AdminController extends SpringActionController
                             return false;
                         }
                             
-                        c = ContainerManager.createContainer(parent, folderName, null, null, Container.TYPE.normal, getUser());
-
                         MemoryVirtualFile vf = new MemoryVirtualFile();
 
                         // export objects from the source folder
@@ -4056,6 +4054,9 @@ public class AdminController extends SpringActionController
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
                                 form.getTemplateIncludeSubfolders(), false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
                         writer.write(sourceContainer, exportCtx, vf);
+
+                        // create the new target container
+                        c = ContainerManager.createContainer(parent, folderName, null, null, Container.TYPE.normal, getUser());
 
                         // import objects into the target folder
                         XmlObject folderXml = vf.getXmlBean("folder.xml");
