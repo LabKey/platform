@@ -82,8 +82,9 @@ public class SubfolderWriter extends BaseFolderWriter
     {
         for (Container child : potentialChildren)
         {
-            // only include subfolders if reguested by user (otherwise just workbooks and container tabs)
-            if (child.isWorkbookOrTab() || context.isIncludeSubfolders())
+            // only include subfolders if reguested by user (otherwise just container tabs)
+            // but don't include the current folder in the case of creating a folder from template
+            if (child.isContainerTab() || (context.isIncludeSubfolders() && !child.isWorkbook()))
                 childrenToExport.add(child);
         }
     }
@@ -105,19 +106,18 @@ public class SubfolderWriter extends BaseFolderWriter
             List<Container> childList = Arrays.asList(c1, c2, c3, c4);
             FolderExportContext fec = new FolderExportContext(null, fakeRoot, null, null, null);
 
-            // test including all subfolders
+            // test including all subfolders (except workbooks)
             fec.setIncludeSubfolders(true);
             List<Container> allSubfolders = new ArrayList<Container>();
             getChildrenToExport(fec, childList, allSubfolders);
-            assertEquals(childList.size(), allSubfolders.size());
+            assertEquals(childList.size() - 1, allSubfolders.size());
 
-            // test not including subfolders
+            // test not including subfolders (just container tabs by default)
             fec.setIncludeSubfolders(false);
             List<Container> noSubfolders = new ArrayList<Container>();
             getChildrenToExport(fec, childList, noSubfolders);
-            assertEquals("Expected two child containers (one workbook and one container tab", 2, noSubfolders.size());
+            assertEquals("Expected one container tab subfolder", 1, noSubfolders.size());
             assertEquals("containertab", noSubfolders.get(0).getName());
-            assertEquals("workbook", noSubfolders.get(1).getName());
         }
     }
 }

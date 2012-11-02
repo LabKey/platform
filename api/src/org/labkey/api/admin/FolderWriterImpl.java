@@ -73,7 +73,7 @@ public class FolderWriterImpl extends BaseFolderWriter
                 writer.write(c, ctx, vf);
         }
 
-        // include workbook and container tab children in the folder export (and optionally all other subfolders if the user chooses)
+        // include container tab children in the folder export (and optionally all other subfolders if the user chooses, except workbooks)
         if (c.hasChildren())
         {
             SubfolderWriter subfolderWriter = new SubfolderWriter();
