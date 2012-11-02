@@ -18,7 +18,6 @@ package org.labkey.api.laboratory.assay;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.laboratory.AbstractDataProvider;
@@ -29,7 +28,6 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -81,12 +79,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
     public List<ExpProtocol> getProtocols(Container c)
     {
         List<ExpProtocol> list = new ArrayList<ExpProtocol>();
-        List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
-        protocols.addAll(AssayService.get().getAssayProtocols(c));
-        protocols.addAll(AssayService.get().getAssayProtocols(ContainerManager.getSharedContainer()));
-        if (!c.isProject())
-            protocols.addAll(AssayService.get().getAssayProtocols(c.getProject()));
-
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c);
         for (ExpProtocol p : protocols)
         {
             AssayProvider provider = AssayService.get().getProvider(p);
