@@ -204,7 +204,7 @@ public class DefaultFolderType implements FolderType
     }
 
 
-    public List<Portal.PortalPage> resetDefaultTabs(Container c)
+    public ArrayList<Portal.PortalPage> resetDefaultTabs(Container c)
     {
         Portal.resetPages(c, getDefaultTabs(), false);
         return new ArrayList(Portal.getPages(c).values());

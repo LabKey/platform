@@ -66,7 +66,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     }
 
 
-    private Collection<Portal.PortalPage> getPortalPages(Container container)
+    private ArrayList<Portal.PortalPage> getSortedPortalPages(Container container)
     {
 
         CaseInsensitiveHashMap<Portal.PortalPage> tabs = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container, false));
@@ -79,7 +79,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
 
         // Filter out ones that we've saved that are no longer part of the folder type
-        List<Portal.PortalPage> filtered = new ArrayList<Portal.PortalPage>(tabs.size());
+        ArrayList<Portal.PortalPage> filtered = new ArrayList<Portal.PortalPage>(tabs.size());
         for (Portal.PortalPage tab : tabs.values())
         {
             if (currentTabNames.contains(tab.getPageId()))
@@ -92,6 +92,15 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         if (filtered.isEmpty())
             filtered = resetDefaultTabs(container);
 
+        // Need to sort by index so we choose the first tab as the default tab.
+        Collections.sort(filtered, new Comparator<Portal.PortalPage>()
+        {
+            @Override
+            public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
+            {
+                return o1.getIndex() - o2.getIndex();
+            }
+        });
         return filtered;
     }
 
@@ -241,21 +250,10 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     @Override
     public ActionURL getStartURL(Container c, User user)
     {
-        ArrayList<Portal.PortalPage> tabs = new ArrayList<Portal.PortalPage>(getPortalPages(c));
+        ArrayList<Portal.PortalPage> tabs = getSortedPortalPages(c);
 
-        // Need to sort by index so we choose the first tab as the default tab.
-        Collections.sort(tabs, new Comparator<Portal.PortalPage>()
+        for (Portal.PortalPage tab : tabs)
         {
-            @Override
-            public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
-            {
-                return o1.getIndex() - o2.getIndex();
-            }
-        });
-
-        for (int i = 0; i < tabs.size(); i++)
-        {
-            Portal.PortalPage tab = tabs.get(i);
             FolderTab folderTab = findTab(tab.getPageId());
             if (!tab.isHidden() && null != folderTab && folderTab.isVisible(c, user))
             {
@@ -296,12 +294,12 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     // Add it to the default tab if it's not already there
                     if (!mergedParts.contains(defaultPortalPart))
                     {
-                        defaultPortalPart.setPageId(defaultTabName);
-                        mergedParts.add(defaultPortalPart);
+                        Portal.WebPart webPart = new Portal.WebPart(defaultPortalPart);
+                        webPart.setPageId(defaultTabName);
+                        mergedParts.add(webPart);
                     }
-                    // Remove it from the legacy portal page
+                    // Remember that legacy portal page has been added to default tab
                     defaultPortalPart.setProperty(Portal.WEBPART_PROP_LegacyPageAdded, "true");
-//                    i.remove();
                     changed = true;
                 }
             }
@@ -329,35 +327,19 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
         else
         {
-            ArrayList<Portal.PortalPage> activeTabs = new ArrayList<Portal.PortalPage>(getPortalPages(ctx.getContainer()));
-            if (activeTabs.isEmpty())
+            ArrayList<Portal.PortalPage> activeTabs = getSortedPortalPages(ctx.getContainer());
+
+            // Use the left-most tab as the default
+            for (Portal.PortalPage tab : activeTabs)
             {
-                // No real tabs exist for this folder type, so just use the default portal page
-                result = Portal.DEFAULT_PORTAL_PAGE_ID;
-            }
-            else
-            {
-                // Use the left-most tab as the default
-                // Need to sort by index so we choose the first tab as the default tab.
-                Collections.sort(activeTabs, new Comparator<Portal.PortalPage>()
+                if (!tab.isHidden())
                 {
-                    @Override
-                    public int compare(Portal.PortalPage o1, Portal.PortalPage o2)
-                    {
-                        return o1.getIndex() - o2.getIndex();
-                    }
-                });
-                for (Portal.PortalPage tab : activeTabs)
-                {
-                    if (!tab.isHidden())
-                    {
-                        result = tab.getPageId();
-                        break;
-                    }
+                    result = tab.getPageId();
+                    break;
                 }
-                if (null == result)
-                    result = Portal.DEFAULT_PORTAL_PAGE_ID;
             }
+            if (null == result)
+                result = Portal.DEFAULT_PORTAL_PAGE_ID;
         }
 
         return result;
