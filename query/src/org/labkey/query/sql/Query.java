@@ -219,7 +219,10 @@ public class Query
             if (null == getSchema())
                 throw new NullPointerException("getSchema() returned null");
             if (null == getSchema().getDbSchema())
-                throw new NullPointerException("getDbSchema() returned null: " + getSchema().getName() + " " + getSchema().getClass().getName());
+            {
+                parseError(_parseErrors, "Schema is not available, check configuration: " + getSchema().getName(), null);
+                return;
+            }
             SqlParser parser = new SqlParser(getSchema().getDbSchema().getSqlDialect());
             parser.parseQuery(queryText, _parseErrors);
             _parameters = parser.getParameters();
@@ -531,7 +534,7 @@ public class Query
 	//
 
 
-	static void parseError(List<QueryException> errors, String message, QNode node)
+	static void parseError(List<QueryException> errors, String message, @Nullable QNode node)
 	{
 		int line = 0;
 		int column = 0;
