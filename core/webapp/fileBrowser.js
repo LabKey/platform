@@ -1929,11 +1929,11 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
     },
 
 
-    start : function(wd)
+    start : function(wd, file)
     {
         if (!this.fileSystem.ready)
         {
-            this.fileSystem.onReady(this.start.createDelegate(this, [wd]));
+            this.fileSystem.onReady(this.start.createDelegate(this, [wd, file]));
             return;
         }
         if (this.tree)
@@ -1943,7 +1943,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         if (typeof wd == "string")
         {
             this.changeDirectory(wd);
-            this.selectFile(wd);
+            this.selectFile(file || wd);
             return;
         }
         if (this.statePrefix)

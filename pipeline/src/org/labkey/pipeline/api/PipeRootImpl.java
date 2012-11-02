@@ -190,6 +190,10 @@ public class PipeRootImpl implements PipeRoot
         if (null == path)
             throw new NotFoundException("Must specify a file path");
 
+        // Remove leading "./" sometimes added by the client side FileBrowser
+        if (path.startsWith("./"))
+            path = path.substring(2);
+
         // Check if the file already exists on disk
         for (File root : getRootPaths())
         {

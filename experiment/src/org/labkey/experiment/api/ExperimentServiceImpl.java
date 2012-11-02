@@ -134,6 +134,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.SimpleFileVisitor;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -295,12 +296,28 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpDataImpl(data);
     }
 
-    public ExpData[] getExpDatas(Container container, DataType type)
+    public ExpData[] getExpDatas(int... rowids)
+    {
+        if (rowids.length == 0)
+            return null;
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), Table.ALL_COLUMNS, new SimpleFilter("RowId", rowids, CompareType.IN), null).getArray(Data.class));
+    }
+
+    public ExpData[] getExpDatas(Collection<Integer> rowids)
+    {
+        if (rowids.size() == 0)
+            return null;
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), Table.ALL_COLUMNS, new SimpleFilter("RowId", rowids, CompareType.IN), null).getArray(Data.class));
+    }
+
+    public ExpData[] getExpDatas(Container container, @Nullable DataType type, @Nullable String name)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("Container", container.getId());
         if (type != null)
             filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
+        if (name != null)
+            filter.addCondition("Name", name);
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), Table.ALL_COLUMNS, filter, null).getArray(Data.class));
     }
 
