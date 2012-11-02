@@ -1721,6 +1721,10 @@ groupByLoop:
             if (label != null)
                 to.setLabel(label);
 
+            boolean hidden = null != _annotations && _annotations.containsKey("hidden");
+            if (hidden)
+                to.setHidden(hidden);
+
             // copy URL if possible
             FieldKey fk = null != _resolved ? _resolved.getFieldKey() : null;
             if (null != fk)
