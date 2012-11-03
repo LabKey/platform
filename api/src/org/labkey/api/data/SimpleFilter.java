@@ -1049,13 +1049,6 @@ public class SimpleFilter implements Filter
         return this;
     }
 
-    @Deprecated // Use FieldKey version instead.
-    public SimpleFilter addBetween(String colName, Comparable value1, Comparable value2)
-    {
-        FieldKey fieldKey = FieldKey.fromString(colName);
-        return addBetween(fieldKey, value1, value2);
-    }
-
     public SimpleFilter addBetween(FieldKey fieldKey, Comparable value1, Comparable value2)
     {
         if (value1 != null && value2 != null && value1.equals(value2))

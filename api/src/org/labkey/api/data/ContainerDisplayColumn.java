@@ -272,7 +272,7 @@ public class ContainerDisplayColumn extends DataColumn
 
             //create and delete containers to give audit events
             Container workbook1 = ContainerManager.createContainer(subFolder2, "Workbook1", "Workbook1", "", Container.TYPE.workbook, _user);
-            ContainerManager.delete(workbook1, _user);
+            assertTrue(ContainerManager.delete(workbook1, _user));
             ContainerManager.deleteAll(subFolder2, _user);
 
             UserSchema us = QueryService.get().getUserSchema(_user, ContainerManager.getRoot(), "auditLog");

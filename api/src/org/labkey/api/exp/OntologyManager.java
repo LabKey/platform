@@ -2909,77 +2909,39 @@ public class OntologyManager
             defineCrossFolderProperties(fldr1aa, fldr1b);
             defineCrossFolderProperties(fldr1aaa, fldr1b);
 
-            Container c;
-            c = ContainerManager.getForPath("/_ontMgrTestP1/Fb");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-
-            c = ContainerManager.getForPath("/_ontMgrTestP1/Fa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-
-            c = ContainerManager.getForPath("/_ontMgrTestP1/Fa/Faa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-
-            c = ContainerManager.getForPath("/_ontMgrTestP1/Fa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-
-            c = ContainerManager.getForPath("/_ontMgrTestP1");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-
-
+            deleteContainers(TestContext.get().getUser(), "/_ontMgrTestP1/Fb",
+                "/_ontMgrTestP1/Fa/Faa/Faaa", "/_ontMgrTestP1/Fa/Faa", "/_ontMgrTestP1/Fa", "/_ontMgrTestP1");
         }
 
         private void deleteMoveTestContainers() throws SQLException
         {
-            Container c;
-            c = ContainerManager.getForPath("/_ontMgrTestP2/Fc");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrTestP1/Fb");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
+            deleteContainers(TestContext.get().getUser(),
+                "/_ontMgrTestP2/Fc", "/_ontMgrTestP1/Fb",
+                "/_ontMgrTestP1/Fa/Faa/Faaa", "/_ontMgrTestP2/Fa/Faa/Faaa",
+                "/_ontMgrTestP1/Fa/Faa", "/_ontMgrTestP2/Fa/Faa",
+                "/_ontMgrTestP1/Fa", "/_ontMgrTestP2/Fa",
+                "/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa/Faaa", "/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa", "/_ontMgrTestP2/_ontMgrDemotePromoteFa",
+                "/_ontMgrTestP2", "/_ontMgrTestP1",
+                "/_ontMgrDemotePromoteFc", "/_ontMgrDemotePromoteFb", "/_ontMgrDemotePromoteFa/Faa/Faaa", "/_ontMgrDemotePromoteFa/Faa", "/_ontMgrDemotePromoteFa",
+                "/Fa/Faa/Faaa", "/Fa/Faa", "/Fa"
+            );
+        }
 
-            c = ContainerManager.getForPath("/_ontMgrTestP1/Fa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrTestP2/Fa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
+        private void deleteContainers(User user, String... paths)
+        {
+            for (String path : paths)
+                deleteContainerIfExists(user, path);
 
-            c = ContainerManager.getForPath("/_ontMgrTestP1/Fa/Faa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrTestP2/Fa/Faa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
+            for (String path : paths)
+                assertNull("Container " + path + " was not deleted", ContainerManager.getForPath(path));
+        }
 
-            c = ContainerManager.getForPath("/_ontMgrTestP1/Fa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrTestP2/Fa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
+        private void deleteContainerIfExists(User user, String path)
+        {
+            Container c = ContainerManager.getForPath(path);
 
-            c = ContainerManager.getForPath("/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrTestP2/_ontMgrDemotePromoteFa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-
-            c = ContainerManager.getForPath("/_ontMgrTestP2");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrTestP1");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-
-            c = ContainerManager.getForPath("/_ontMgrDemotePromoteFc");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrDemotePromoteFb");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrDemotePromoteFa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrDemotePromoteFa/Faa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/_ontMgrDemotePromoteFa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/Fa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/Fa/Faa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-            c = ContainerManager.getForPath("/Fa");
-            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
-
+            if (null!= c)
+                assertTrue(ContainerManager.delete(c, user));
         }
 
         @Test

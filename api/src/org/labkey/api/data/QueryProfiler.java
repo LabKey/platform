@@ -45,6 +45,7 @@ import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -126,7 +127,28 @@ public class QueryProfiler
 
         // Not displayed, but gives new queries some time to get above one of the other thresholds.  Without this,
         // the first N unique queries would dominate the statistics.
-        TRACKER_SETS.add(new QueryTrackerSet("FirstInvocation", "most recent invocation time", true, false, new QueryTrackerComparator()
+        TRACKER_SETS.add(new QueryTrackerSet("Last Invocation", "most recent invocation time", false, true, new QueryTrackerComparator()
+        {
+            long getPrimaryStatisticValue(QueryTracker qt)
+            {
+                return qt.getLastInvocation();
+            }
+
+            long getSecondaryStatisticValue(QueryTracker qt)
+            {
+                return qt.getCumulative();
+            }
+
+            @Override
+            String getFormattedPrimaryStatistic(QueryTracker qt)
+            {
+                return DateUtil.formatDateTime(new Date(getPrimaryStatisticValue(qt)));
+            }
+        }));
+
+        // Not displayed, but gives new queries some time to get above one of the other thresholds.  Without this,
+        // the first N unique queries would dominate the statistics.
+        TRACKER_SETS.add(new QueryTrackerSet("FirstInvocation", "first invocation time", true, false, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -517,6 +539,7 @@ public class QueryProfiler
         private long _count = 0;
         private long _max = 0;
         private long _cumulative = 0;
+        private long _lastInvocation;
 
         private QueryTracker(@Nullable DbScope scope, @NotNull String sql, long elapsed, String stackTrace, boolean validSql)
         {
@@ -532,6 +555,7 @@ public class QueryProfiler
         {
             _count++;
             _cumulative += elapsed;
+            _lastInvocation = System.currentTimeMillis();
 
             if (elapsed > _max)
                 _max = elapsed;
@@ -600,6 +624,11 @@ public class QueryProfiler
         public long getFirstInvocation()
         {
             return _firstInvocation;
+        }
+
+        public long getLastInvocation()
+        {
+            return _lastInvocation;
         }
 
         public long getAverage()
@@ -750,7 +779,7 @@ public class QueryProfiler
 
             for (QueryTrackerSet set : TRACKER_SETS)
                 if (set.shouldDisplay())
-                    row.append("<td valign=top align=right>").append(Formats.commaf0.format(((QueryTrackerComparator)set.comparator()).getPrimaryStatisticValue(this))).append("</td>");
+                    row.append("<td valign=top align=right>").append(((QueryTrackerComparator) set.comparator()).getFormattedPrimaryStatistic(this)).append("</td>");
 
             ActionURL url = factory.getActionURL(getSql());
             row.append("<td valign=top align=right><a href=\"").append(PageFlowUtil.filter(url.getLocalURIString())).append("\">").append(Formats.commaf0.format(getStackTraceCount())).append("</a></td>");
@@ -769,7 +798,7 @@ public class QueryProfiler
             {
                 if (set.shouldDisplay())
                 {
-                    row.append(tab).append(Formats.commaf0.format(((QueryTrackerComparator)set.comparator()).getPrimaryStatisticValue(this)));
+                    row.append(tab).append((((QueryTrackerComparator)set.comparator()).getFormattedPrimaryStatistic(this)));
                     tab = "\t";
                 }
             }
@@ -1006,6 +1035,11 @@ public class QueryProfiler
                 ret = qt1.getSql().compareTo(qt2.getSql());
 
             return ret;
+        }
+
+        String getFormattedPrimaryStatistic(QueryTracker qt)
+        {
+            return Formats.commaf0.format(getPrimaryStatisticValue(qt));
         }
 
         abstract long getPrimaryStatisticValue(QueryTracker qt);

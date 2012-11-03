@@ -391,8 +391,8 @@ public class GroupManager
 
             String newContainerPath = "GroupManagerJunitTestProject";
             Container newProject = ContainerManager.getContainerService().getForPath("GroupManagerJunitTestProject");
-            if(newProject != null)
-                ContainerManager.delete(newProject, getUser());
+            if (newProject != null)
+                assertTrue(ContainerManager.delete(newProject, getUser()));
 
             newProject = ContainerManager.createContainer(ContainerManager.getRoot(), newContainerPath);
 
@@ -426,7 +426,7 @@ public class GroupManager
             SecurityManager.deleteGroup(groupB);
             SecurityManager.deleteGroup((Group)newGroupA);
             SecurityManager.deleteGroup((Group)newGroupB);
-            ContainerManager.delete(newProject, getUser());
+            assertTrue(ContainerManager.delete(newProject, getUser()));
         }
     }
 

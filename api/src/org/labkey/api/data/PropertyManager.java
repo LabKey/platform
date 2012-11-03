@@ -608,7 +608,7 @@ public class PropertyManager
                 if (child != null)
                 {
                     //Properties should get cleaned up when container is deleted.
-                    ContainerManager.delete(child, TestContext.get().getUser());
+                    assertTrue(ContainerManager.delete(child, TestContext.get().getUser()));
                 }
             }
             Map m = PropertyManager.getProperties(user.getUserId(), child, "junit");

@@ -1862,7 +1862,7 @@ public class ContainerManager
                     Container c = createContainer(_testRoot, name);
                     try
                     {
-                        delete(c, TestContext.get().getUser());
+                        assertTrue(delete(c, TestContext.get().getUser()));
                     }
                     catch(Exception e){}
                     fail("Should have thrown illegal argument when trying to create container with name: " + name);
@@ -1932,7 +1932,7 @@ public class ContainerManager
             assertEquals(3, ContainerManager.getChildren(one).size());
             assertEquals(0, ContainerManager.getChildren(deleteme).size());
 
-            ContainerManager.delete(deleteme, TestContext.get().getUser());
+            assertTrue(ContainerManager.delete(deleteme, TestContext.get().getUser()));
             assertEquals(3, _containers.size());
             assertEquals(1, ContainerManager.getChildren(_testRoot).size());
             assertEquals(2, ContainerManager.getChildren(one).size());
@@ -1943,14 +1943,14 @@ public class ContainerManager
             assertEquals(3, ContainerManager.getChildren(one).size());
             assertEquals(0, ContainerManager.getChildren(oneC).size());
 
-            ContainerManager.delete(oneC, TestContext.get().getUser());
-            ContainerManager.delete(oneB, TestContext.get().getUser());
+            assertTrue(ContainerManager.delete(oneC, TestContext.get().getUser()));
+            assertTrue(ContainerManager.delete(oneB, TestContext.get().getUser()));
             assertEquals(1, ContainerManager.getChildren(one).size());
 
-            ContainerManager.delete(oneA, TestContext.get().getUser());
+            assertTrue(ContainerManager.delete(oneA, TestContext.get().getUser()));
             assertEquals(0, ContainerManager.getChildren(one).size());
 
-            ContainerManager.delete(one, TestContext.get().getUser());
+            assertTrue(ContainerManager.delete(one, TestContext.get().getUser()));
             assertEquals(0, ContainerManager.getChildren(_testRoot).size());
             assertEquals(0, _containers.size());
         }
@@ -1972,11 +1972,11 @@ public class ContainerManager
             newFolderFromCache = getForId(newFolder.getId());
             assertEquals(newFolderFromCache.getFolderType(), randomType);
 
-            delete(newFolder, TestContext.get().getUser());
+            assertTrue(delete(newFolder, TestContext.get().getUser()));
             Container deletedContainer = getForId(newFolder.getId());
             if (deletedContainer != null)
             {
-                fail("Expected container with Id " + newFolder.getId() + " to be deleted, but found " + deletedContainer);
+                fail("Expected container with Id " + newFolder.getId() + " to be deleted, but found " + deletedContainer + ". Folder type was " + randomType);
             }
         }
 
