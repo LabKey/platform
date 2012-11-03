@@ -274,28 +274,33 @@ Ext4.define('Security.panel.PolicyEditor', {
             }]
         }];
 
+        var me = this;
         for (r=0; r < this.roles.length; r++){
             role = this.roles[r];
             roleRows.push({
                 layout: 'hbox',
                 itemId: role.uniqueName.replace(/\./g, '_'),
                 roleId: role.uniqueName,
-                border: true,
-                cls   : 'rolepanel',
-                bodyStyle: 'padding: 5px',
+                cls   : (r < this.roles.length-1) ? 'rolepanel' : 'rolepanel last',
+                policyEditor : me,
+                role : role,
+                bodyStyle: 'padding: 5px; background-color: transparent;',
+                border : false,
                 defaults: {border: false},
                 items: [{
                     html: '<div><h3 class="rn">' + role.name + '</h3><div class="rd">' + role.description + '</div></div>',
-                    //TODO
+                    bodyStyle : 'background-color: transparent;',
                     cls: 'rn',
                     width: 300
                 },{
                     xtype: 'panel',
                     flex : 1,
+                    bodyStyle : 'background-color: transparent;',
                     items: [{
                         xtype  : 'panel',
                         border : false,
-                        itemId : 'buttonArea'
+                        itemId : 'buttonArea',
+                        bodyStyle : 'background-color: transparent;'
                     },{
                         xtype  : 'labkey-principalcombo',
                         cache  : this.cache,
@@ -308,14 +313,12 @@ Ext4.define('Security.panel.PolicyEditor', {
                         },
                         scope : this
                     }],
-//                    listeners: {
-//                        render: function(panel) {
-//                            this.addDD(panel.getEl(), role);
-//                        },
-//                        scope: this
-//                    },
                     scope : this
                 }],
+                listeners: {
+                    render: this.initializeRoleDropZone,
+                    scope: this
+                },
                 scope : this
             });
         }
@@ -335,11 +338,6 @@ Ext4.define('Security.panel.PolicyEditor', {
         if (this.down('#roles'))
             this.remove(this.down('#roles'));
         this.add(toAdd);
-
-        // DropSource (whole editor)
-//        Ext4.create('Security.dd.ButtonsDragDropZone', {
-//            container: this
-//        });
 
         // render security policy
         var policy = this.getPolicy();
@@ -381,6 +379,81 @@ Ext4.define('Security.panel.PolicyEditor', {
         this.disableRoles(this.getInheritCheckboxValue());
     },
 
+    initializeButtonDragZone : function(b) {
+
+        // initialize button as drag zone
+        b.dragZone = Ext4.create('Ext.dd.DragZone', b.getEl(), {
+
+            ddGroup : 'secPerm',
+
+            getDragData : function(e) {
+
+                var sourceEl = Ext4.get(e.target).parent('.dragbutton');
+                if (sourceEl && sourceEl.dom) {
+                    var dom = document.createElement('div');
+                    var child = document.createElement('div');
+                    dom.setAttribute('class', 'x4-reset');
+                    child.setAttribute('class', 'x4-btn-default-small');
+                    dom.appendChild(child);
+                    b.getRenderTemplate().append(child, {
+                        text : b.getText(),
+                        id   : 'dragbtn',
+                        baseCls : 'x4-btn',
+                        btnCls : 'x4-btn-center'
+                    });
+
+                    return b.dragData = {
+                        sourceEl : sourceEl.dom,
+                        repairXY : Ext4.fly(sourceEl.dom).getXY(),
+                        ddel : dom,
+                        roleId : b.roleId,
+                        groupId : b.groupId
+                    };
+                }
+            },
+
+            getRepairXY : function() {
+                return this.dragData.repairXY;
+            }
+        });
+    },
+
+    initializeRoleDropZone : function(dropPanel) {
+
+        dropPanel.dropZone = Ext4.create('Ext.dd.DropZone', dropPanel.el, {
+
+            ddGroup : 'secPerm',
+
+            padding: [10,10,10,10],
+
+            getTargetFromEvent: function(e) {
+                return e.getTarget('.x4-box-inner');
+            },
+
+            onNodeEnter : function(target, dd, e, data){
+                Ext4.fly(target).addCls('rolehover');
+            },
+
+            onNodeOut : function(target, dd, e, data){
+                Ext4.fly(target).removeCls('rolehover');
+            },
+
+            onNodeOver : function(target, dd, e, data){
+                return Ext4.dd.DropZone.prototype.dropAllowed;
+            },
+
+            onNodeDrop : function(target, dd, e, data){
+                if (data.roleId == dropPanel.roleId || !dropPanel.role.accept(data.groupId)) {
+                    return false;
+                }
+
+                dropPanel.policyEditor.addRoleAssignment(data.groupId, dropPanel.role, dd.proxy.el);
+                dropPanel.policyEditor.removeRoleAssignment(data.groupId, data.roleId);
+                return true;
+            }
+        });
+    },
+
     disableRoles : function(isDisabled)
     {
         // mask the roles
@@ -390,51 +463,6 @@ Ext4.define('Security.panel.PolicyEditor', {
         // hide the buttons
         var buttonArea = this.down('#savebar');
         buttonArea.setVisible(!isDisabled);
-    },
-
-    addDD: function(el, role)
-    {
-        // DropTarget
-        new Ext4.dd.DropTarget(el,
-        {
-            editor : this,
-            role : role,
-            ddGroup  : 'ButtonsDD',
-            notifyEnter : function(dd, e, data)
-            {
-                this.el.stopFx();
-                if (data.roleId == this.role.uniqueName || !this.role.accept(data.groupId))
-                {
-                    dd.proxy.setStatus(this.dropNotAllowed);
-                    return this.dropNotAllowed;
-                }
-                // DOESN'T WORK RELIABLY... this.el.highlight("ffff9c",{duration:1});
-                dd.proxy.setStatus(this.dropAllowed);
-                return this.dropAllowed;
-            },
-            notifyOut : function(dd, e, data)
-            {
-                this.el.stopFx();
-            },
-            notifyDrop  : function(ddSource, e, data)
-            {
-                this.el.stopFx();
-                if (data.roleId == this.role.uniqueName || !this.role.accept(data.groupId))
-                {
-                    // add for fail animation
-                    this.editor.addRoleAssignment(data.groupId, data.roleId, ddSource.proxy.el);
-                    return false;
-                }
-                else
-                {
-                    this.editor.addRoleAssignment(data.groupId, this.role, ddSource.proxy.el);
-                    if (!e.shiftKey)
-                        this.editor.removeRoleAssignment(data.groupId, data.roleId);
-                    return true;
-                }
-            }
-        });
-
     },
 
     getInheritCheckboxValue : function()
@@ -507,9 +535,38 @@ Ext4.define('Security.panel.PolicyEditor', {
         this.disableRoles(this.getInheritCheckboxValue());
     },
 
-
     addButton : function(group, role, animate, animEl)
     {
+        if (animEl) {
+            var btn = this._addButton(group, role, true);
+            var animCopy = animEl.dom.cloneNode(true);
+            animCopy.id = Ext4.id();
+            var box = animEl.getBox();
+            animCopy = Ext4.get(animCopy);
+            animCopy.appendTo(Ext4.getBody());
+            animCopy.setLocation(box.x, box.y);
+            box = btn.getEl().getBox();
+            animCopy.animate({
+                duration : 500,
+                to : {
+                    x : box.x,
+                    y : box.y
+                },
+                listeners : {
+                    afteranimate : function() {
+                        animCopy.hide();
+                        btn.show();
+                        Ext4.removeNode(animCopy.dom);
+                    }
+                }
+            });
+        }
+        else {
+            this._addButton(group, role, false);
+        }
+    },
+
+    _addButton : function(group, role, hideButton) {
         if (typeof group != 'object')
             group = this.cache.getPrincipal(group);
         var groupName = group.Name;
@@ -529,23 +586,6 @@ Ext4.define('Security.panel.PolicyEditor', {
         var btnId = (roleId+'$'+groupId).replace(/\./g, "_");
         var button = buttonArea.down('labkey-closebutton[itemId="'+btnId+'"]');
 
-        //TODO: animate
-//        if (typeof animate == 'boolean' && animate)  //!Ext4.isSafari
-//        {
-//            var startAtEl = animEl || this.getComponent('$add$' + roleId).el;
-//            var endAtEl = btnEl || br;
-
-//            var body = Ext4.getBody();
-//            var span = body.insertHtml("beforeend",'<span style:"position:absolute;">' + Ext4.util.Format.htmlEncode(groupName) + '<span>', true);
-//            span.setXY(startAtEl.getXY());
-//            var xy = endAtEl.getXY();
-//            span.shift({x:xy[0], y:xy[1], callback:function(){
-//                span.remove();
-//                this.addButton(group, role, false);
-//            }, scope:this});
-//            return;
-//        }
-
         //button already exists...
         if (button){
             button.getEl().frame();
@@ -564,21 +604,20 @@ Ext4.define('Security.panel.PolicyEditor', {
             groupId : groupId,
             roleId  : roleId,
             tooltip : tooltip,
+            hidden : hideButton || false,
+            hideMode : hideButton ? 'visibility' : 'display',
             listeners : {
                 afterrender : function(b) {
                     Ext4.DomQuery.select('span.closeicon', b.getEl().id)[0].onclick = Ext4.bind(this.Button_onClose, this, [b]);
+
+                    this.initializeButtonDragZone(b);
                 },
                 click : this.Button_onClick,
                 scope : this
             }
         });
-//
-//        if (typeof animate == 'string')
-//            b.el[animate]();
 
-//        if (!this.buttonGroups[groupId])
-//            this.buttonGroups[groupId] = new ButtonGroup();
-//        this.buttonGroups[groupId].add(button);
+        return button;
     },
 
     highlightGroup : function(groupId)
@@ -607,17 +646,6 @@ Ext4.define('Security.panel.PolicyEditor', {
         if (!button) {
             return;
         }
-//        if (animate)
-//        {
-//            var combo = this.getComponent('$add$' + roleId);
-//            var xy = combo.el.getXY();
-//            var fx = {callback:this.removeButton.createDelegate(this,[groupId,roleId,false]), x:xy[0], y:xy[1], opacity:0};
-//            if (typeof animate == 'string')
-//                button.el[animate](fx);
-//            else
-//                button.el.shift(fx);
-//            return;
-//        }
 
         buttonArea.remove(button);
     },
@@ -643,7 +671,6 @@ Ext4.define('Security.panel.PolicyEditor', {
         var roleId = role;
         if (typeof role == "object")
             roleId= role.uniqueName;
-        xx = this;
         this.policy.removeRoleAssignment(groupId,roleId);
         this.removeButton(groupId, roleId, true);
     },
@@ -746,107 +773,13 @@ Ext4.define('Security.panel.PolicyEditor', {
     }
 });
 
-var ButtonGroup = function()
-{
-    this.buttons = [];
-};
-
-Ext4.apply(ButtonGroup.prototype, {
-
-    buttons : null,
-
-    add : function(btn)
-    {
-        this.buttons.push(btn);
-        btn.on("mouseover", this.over, this);
-        btn.on("mouseout", this.out, this);
-    },
-
-    over : function()
-    {
-        for (var i=0 ; i<this.buttons.length ; i++)
-        {
-            var btn = this.buttons[i];
-            btn.el.addClass("x-btn-over");
-        }
-    },
-
-    out : function()
-    {
-        for (var i=0 ; i<this.buttons.length ; i++)
-        {
-            var btn = this.buttons[i];
-            btn.el.removeClass("x-btn-over");
-        }
-    }
-});
-
-Ext4.define('Security.dd.ButtonsDragDropZone', {
-    extend: 'Ext4.dd.DragZone',
-    ddGroup : "ButtonsDD",
-
-    constructor : function(config)
-    {
-        Ext.apply(this, config);
-
-        this.node = this.container.el.dom;
-        //this.view = grid.getView();
-        this.callParent([this.node, config]);
-        this.scroll = false;
-        this.ddel = document.createElement('div');
-    },
-
-    getDragData : function(e)
-    {
-        // is target a button in my container?
-        var btnEl = Ext4.fly(e.getTarget()).findParentNode('span.principalButton');
-        if (!btnEl || !btnEl.id)
-            return false;
-        var btn = this.container.getComponent(btnEl.id);
-        if (!btn)
-            return false;
-        if (!('groupId' in btn) || !btn.roleId)
-            return false;
-        return btn;
-    },
-
-    onInitDrag : function(e)
-    {
-        var data = this.dragData;
-        this.ddel.innerHTML = data.text;
-        this.proxy.update(this.ddel);
-        this.proxy.setStatus(this.proxy.dropAllowed);
-    },
-
-    afterRepair : function()
-    {
-        this.dragging = false;
-    },
-
-    getRepairXY : function(e, data)
-    {
-        return false;
-    },
-
-    onEndDrag : function(data, e)
-    {
-    },
-
-    onValidDrop : function(dd, e, id)
-    {
-        this.hideProxy();
-    },
-
-    beforeInvalidDrop : function(e, id)
-    {
-    }
-});
-
 Ext4.define('Security.button.Close', {
 
     extend : 'Ext.button.Button',
 
     alias : 'widget.labkey-closebutton',
+
+    cls : 'dragbutton',
 
     renderTpl: [
         '<em id="{id}-btnWrap">',
@@ -857,5 +790,9 @@ Ext4.define('Security.button.Close', {
                 '<span id="{id}-btnIconEl" style="position: absolute; background-repeat: no-repeat; top: 2px; right: 2px;" class="{baseCls}-icon {iconCls}"<tpl if="iconUrl"> style="background-image:url({iconUrl})"</tpl>></span>',
             '</div>',
         '</em>'
-    ]
+    ],
+
+    getRenderTemplate : function() {
+        return this.renderTpl;
+    }
 });

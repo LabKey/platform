@@ -61,6 +61,19 @@
     td.x-tree-node-current a {
         font-weight: bold;
     }
+
+    div.rolepanel {
+        border: 1px solid #B4B4B4;
+        border-bottom: none;
+    }
+
+    div.last {
+        border-bottom: 1px solid;
+    }
+
+    div.rolehover {
+        background-color: #F4F4F4;
+    }
 </style>
 <%--
     TABS
@@ -136,8 +149,6 @@ Ext4.onReady(function(){
         }
     <% } %>
     });
-
-    ee = editor;
 
     editor.on('afterlayout', function() {
         var tPanel = editor.getTabPanel();
