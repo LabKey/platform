@@ -1784,6 +1784,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
 
+        if(this.chartData.rowCount > 5000){
+            this.addWarningText('<p style="text-align: center;">The 5,000 row limit for plotting has been reached. Consider filtering your data.</p>');
+        }
+
         newChartDiv.insert(0, Ext4.create('Ext.container.Container', {
             autoEl: 'div',
             style: 'color: red; text-align: center;',
