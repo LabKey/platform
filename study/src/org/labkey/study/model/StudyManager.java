@@ -4063,7 +4063,7 @@ public class StudyManager
 
                 Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
                 Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
-                List rows = new ArrayList();
+                List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
 
                 // insert one row
                 rows.clear(); errors.clear();
@@ -4616,17 +4616,16 @@ public class StudyManager
         }
 
 
-
 //        @AfterClass
         public void tearDown()
         {
             if (null != _studyDateBased)
             {
-                ContainerManager.delete(_studyDateBased.getContainer(), _context.getUser());
+                assertTrue(ContainerManager.delete(_studyDateBased.getContainer(), _context.getUser()));
             }
             if (null != _studyVisitBased)
             {
-                ContainerManager.delete(_studyDateBased.getContainer(), _context.getUser());
+                assertTrue(ContainerManager.delete(_studyVisitBased.getContainer(), _context.getUser()));
             }
         }
     }

@@ -19,7 +19,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
@@ -102,7 +101,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             Map<String, Object> selectMap = rows[0];
 
             if (rows.length > 1)
-                _log.error("More than one row returned for data file: " + filter);
+                _log.error("More than one row returned for data file: " + filter.toSQLString(getQueryTable().getSqlDialect()));
 
             Domain domain = getFileProperties(container);
 
