@@ -36,6 +36,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -1161,28 +1162,20 @@ public class ContainerManager
         }
     }
 
-    // Delete a container from the database.
+    // Delete a container from the database
     public static boolean delete(Container c, User user)
     {
         try
         {
             CORE.getSchema().getScope().ensureTransaction();
-            ResultSet rs = null;
 
-            try
+            // Verify that no children exist
+            Selector sel = new TableSelector(CORE.getTableInfoContainers(), new SimpleFilter(FieldKey.fromParts("Parent"), c), null);
+
+            if (sel.exists())
             {
-                // check to ensure no children exist
-                rs = Table.executeQuery(CORE.getSchema(), "SELECT EntityId FROM " + CORE.getTableInfoContainers() +
-                        " WHERE Parent = ?", new Object[]{c.getId()});
-                if (rs.next())
-                {
-                    _removeFromCache(c);
-                    return false;
-                }
-            }
-            finally
-            {
-               ResultSetUtil.close(rs);
+                _removeFromCache(c);
+                return false;
             }
 
             List<Throwable> errors = fireDeleteContainer(c, user);
@@ -1850,6 +1843,7 @@ public class ContainerManager
                 ContainerManager.deleteAll(_testRoot, TestContext.get().getUser());
         }
 
+
         @Test
         public void testImproperFolderNamesBlocked() throws Exception
         {
@@ -1873,8 +1867,6 @@ public class ContainerManager
                 }
             }
         }
-
-
 
 
         @Test
@@ -1959,24 +1951,32 @@ public class ContainerManager
         @Test
         public void testFolderType() throws SQLException
         {
-            Container newFolder = createContainer(_testRoot, "folderTypeTest");
-            FolderType ft = newFolder.getFolderType();
-            assertEquals(ft, FolderType.NONE);
-
-            Container newFolderFromCache = getForId(newFolder.getId());
-            assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
-
-            FolderType randomType = getRandomFolderType();
-            newFolder.setFolderType(randomType, TestContext.get().getUser());
-
-            newFolderFromCache = getForId(newFolder.getId());
-            assertEquals(newFolderFromCache.getFolderType(), randomType);
-
-            assertTrue(delete(newFolder, TestContext.get().getUser()));
-            Container deletedContainer = getForId(newFolder.getId());
-            if (deletedContainer != null)
+            for (FolderType folderType : ModuleLoader.getInstance().getFolderTypes())
             {
-                fail("Expected container with Id " + newFolder.getId() + " to be deleted, but found " + deletedContainer + ". Folder type was " + randomType);
+                // TODO: Eliminate this check when issue #16429 is fixed. Also, switch back to picking random types or eliminate that method
+                if ("My XML-defined Tabbed Folder Type".equals(folderType.getName()))
+                    continue;
+
+                Container newFolder = createContainer(_testRoot, "folderTypeTest");
+                FolderType ft = newFolder.getFolderType();
+                assertEquals(ft, FolderType.NONE);
+
+                Container newFolderFromCache = getForId(newFolder.getId());
+                assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
+
+//                FolderType randomType = getRandomFolderType();
+                newFolder.setFolderType(folderType, TestContext.get().getUser());
+
+                newFolderFromCache = getForId(newFolder.getId());
+                assertEquals(newFolderFromCache.getFolderType(), folderType);
+
+                assertTrue("Folder delete failed for " + newFolder + ", folder type " + folderType.getName(), delete(newFolder, TestContext.get().getUser()));
+                Container deletedContainer = getForId(newFolder.getId());
+
+                if (deletedContainer != null)
+                {
+                    fail("Expected container with Id " + newFolder.getId() + " to be deleted, but found " + deletedContainer + ". Folder type was " + folderType);
+                }
             }
         }
 
