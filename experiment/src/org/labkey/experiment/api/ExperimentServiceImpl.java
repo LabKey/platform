@@ -1411,7 +1411,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Set<Integer> idsToCheck = new HashSet<Integer>(allIds);
         while (!idsToCheck.isEmpty())
         {
-            String idsString = StringUtils.join(idsToCheck.iterator(), ",");
+            String idsString = StringUtils.join(idsToCheck.iterator(), ", ");
             idsToCheck = new HashSet<Integer>();
 
             StringBuilder sb = new StringBuilder();
@@ -1463,7 +1463,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sb.append(getTinfoExperimentRun().getSelectName());
         sb.append(" WHERE ProtocolLSID IN (");
         sb.append("SELECT LSID FROM exp.Protocol WHERE RowId IN (");
-        sb.append(StringUtils.join(ArrayUtils.toObject(allProtocolIds), ","));
+        sb.append(StringUtils.join(ArrayUtils.toObject(allProtocolIds), ", "));
         sb.append("))");
         return Arrays.asList(ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb.toString()).getArray(ExperimentRun.class)));
     }
@@ -1479,7 +1479,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             run.delete(user);
         }
 
-        String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ",");
+        String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ", ");
 
         SQLFragment sql = new SQLFragment("SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");");
         Protocol[] protocols = new SqlSelector(getExpSchema(), sql).getArray(Protocol.class);
@@ -1514,7 +1514,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
                 }
 
-                String actionIdsJoined = "(" + StringUtils.join(actionIds, ",") + ")";
+                String actionIdsJoined = "(" + StringUtils.join(actionIds, ", ") + ")";
                 new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";")).execute();
 
                 new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined)).execute();
@@ -1574,7 +1574,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 if (to > selectedMaterialIds.length)
                     to = selectedMaterialIds.length;
 
-                String materialIds = StringUtils.join(new ArrayIterator(selectedMaterialIds, from, to), ",");
+                String materialIds = StringUtils.join(new ArrayIterator(selectedMaterialIds, from, to), ", ");
                 String sql = "SELECT * FROM exp.Material WHERE RowId IN (" + materialIds + ");";
 
                 Material[] materials = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Material.class);
@@ -1641,7 +1641,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 if (to > selectedDataIds.length)
                     to = selectedDataIds.length;
 
-                String dataIds = StringUtils.join(new ArrayIterator(selectedDataIds, from, to), ",");
+                String dataIds = StringUtils.join(new ArrayIterator(selectedDataIds, from, to), ", ");
                 String sql = "SELECT * FROM exp.Data WHERE RowId IN (" + dataIds + ");";
                 
                 Data[] datas = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Data.class);

@@ -2033,7 +2033,7 @@ public class AdminController extends SpringActionController
 
     public static class QueriesForm
     {
-        private String _stat = "Invocations";
+        private String _stat = "Count";
 
         public String getStat()
         {
