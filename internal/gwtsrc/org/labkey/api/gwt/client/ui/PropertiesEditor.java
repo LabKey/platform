@@ -70,21 +70,28 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public enum FieldStatus
     {
-        Added("This field is newly added"),
-        Deleted("This field is marked for deletion"),
-        Existing("This field has not been changed"),
-        Changed("This field has been edited");
+        Added("This field is newly added", "/_images/partadded.gif"),
+        Deleted("This field is marked for deletion", "/_images/partdeleted.gif"),
+        Existing("This field has not been changed", "/_images/partexisting.gif"),
+        Changed("This field has been edited", "/_images/partchanged.gif");
 
         private final String _description;
+        private final String _path;
 
-        private FieldStatus(String description)
+        private FieldStatus(String description, String path)
         {
             _description = description;
+            _path = path;
         }
 
         public String getDescription()
         {
             return _description;
+        }
+
+        public String getImageSrc()
+        {
+            return PropertyUtil.getContextPath() + _path;
         }
     }
 
@@ -604,12 +611,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             this.index = index;
         }
 
-        public void onFocus(FocusEvent event)
+        public void onFocus(FocusEvent event)       // FocusHandler (gwt)
         {
             focus();
         }
 
-        public void handleEvent(ComponentEvent e)
+        public void handleEvent(ComponentEvent e)   // Listener(Events.KeyPress,Events.Focus) (gxt)
         {
             if (e.getType() ==  Events.KeyPress)
                 componentKeyPress(e);
@@ -617,7 +624,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 focus();
         }
 
-        public void onKeyPress(KeyPressEvent event)
+        public void onKeyPress(KeyPressEvent event) // KeyPressHandler (gwt)
         {
             if (event.getCharCode() == 13)
                 enter();
@@ -673,6 +680,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return BAD_NAME_ERROR_MESSAGE;
     }
 
+
+
     public void refreshRow(final int index, final Row rowObject)
     {
         HTMLTable.CellFormatter formatter = _table.getCellFormatter();
@@ -687,8 +696,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         FieldStatus status = getStatus(rowObject);
         boolean readOnly = isReadOnly(rowObject);
 
-        String imageId = "part" + status.toString().toLowerCase() + "_" + index;
-        Image statusImage = getStatusImage(imageId, status, rowObject);
+        String imageId = "partstatus_" + index;
+        Image statusImage = getStatusImage(imageId, status);
         if (status != FieldStatus.Existing)
             fireChangeEvent();
         _table.setWidget(tableRow, col, statusImage);
@@ -971,9 +980,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return getImageButton("cancel", idSuffix, l);
     }
 
-    protected Image getStatusImage(String id, FieldStatus status, Row row)
+    protected Image getStatusImage(String id, FieldStatus status)
     {
-        String src = PropertyUtil.getContextPath() + "/_images/part" + status.toString().toLowerCase() + ".gif";
+        String src = status.getImageSrc();
         Image i = new Image(src);
         DOM.setElementProperty(i.getElement(), "id", id);
         addTooltip(i, status.getDescription());
@@ -1367,6 +1376,23 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
 
+    void updateStatusImage(GWTPropertyDescriptor pd)
+    {
+        FieldStatus status = getStatus(pd);
+        Image i = (Image)_table.getWidget(getRow(pd)+1,0);
+        String old = i.getUrl();
+        if (old.contains(status.getImageSrc()))
+            return;
+        i.setUrl(status.getImageSrc());
+        addTooltip(i, status.getDescription());
+        fireChangeEvent();
+//        Image i = new Image(src);
+//        DOM.setElementProperty(i.getElement(), "id", id);
+//        addTooltip(i, status.getDescription());
+//        return i;
+    }
+
+
     private class _TextField<D> extends TextField<D>
     {
         public _TextField()
@@ -1487,7 +1513,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 {
                     _prop.set(text);
                     if (status != getStatus(_pd))
-                        refreshRow(_pd);
+                        updateStatusImage(_pd);
                 }
             }
             else
