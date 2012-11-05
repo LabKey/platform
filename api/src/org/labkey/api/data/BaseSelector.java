@@ -300,7 +300,8 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
 
     protected void forEach(final ForEachBlock<ResultSet> block, FACTORY factory)
     {
-        handleResultSet(factory, (new ResultSetHandler<Object>() {
+        handleResultSet(factory, (new ResultSetHandler<Object>()
+        {
             @Override
             public Object handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
             {

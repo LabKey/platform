@@ -311,7 +311,7 @@ public class Table
     }
 
 
-    // 38 usages
+    // 37 usages
     @Deprecated // Use TableSelector
     public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
@@ -335,7 +335,7 @@ public class Table
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    // 64 usages
+    // 62 usages
     @Deprecated // Use TableSelector
     public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {

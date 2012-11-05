@@ -187,7 +187,7 @@ public class ContainerManager
     }
 
     // TODO: Pass in folder type and transact it with container creation?
-    public static Container createContainer(Container parent, String name, String title, String description, Container.TYPE type, User user)
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, Container.TYPE type, User user)
     {
         if (CORE.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
@@ -1425,27 +1425,19 @@ public class ContainerManager
     public static MultiMap<Container, Container> getContainerTree(Container root)
     {
         //build a multimap of only the container ids
-        MultiMap<String, String> mmIds = new MultiHashMap<String, String>();
-        ResultSet rs = null;
+        final MultiMap<String, String> mmIds = new MultiHashMap<String, String>();
 
-        try
+        // Get all containers and parents
+        Selector selector = new SqlSelector(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC");
+
+        selector.forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            // Get all containers and parents
-            rs = Table.executeQuery(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC", null);
-
-            while (rs.next())
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 mmIds.put(rs.getString(1), rs.getString(2));
             }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
 
         //now find the root and build a MultiMap of it and its descendants
         MultiMap<Container, Container> mm = new MultiHashMap<Container, Container>();

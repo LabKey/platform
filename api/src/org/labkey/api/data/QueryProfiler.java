@@ -86,7 +86,7 @@ public class QueryProfiler
     {
         TRACKER_SETS.add(new InvocationQueryTrackerSet());
 
-        TRACKER_SETS.add(new QueryTrackerSet("Cumulative", "highest cumulative execution time", false, true, new QueryTrackerComparator()
+        TRACKER_SETS.add(new QueryTrackerSet("Total", "highest cumulative execution time", false, true, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -99,7 +99,7 @@ public class QueryProfiler
             }
         }));
 
-        TRACKER_SETS.add(new QueryTrackerSet("Average", "highest average execution time", false, true, new QueryTrackerComparator()
+        TRACKER_SETS.add(new QueryTrackerSet("Avg", "highest average execution time", false, true, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -125,9 +125,7 @@ public class QueryProfiler
             }
         }));
 
-        // Not displayed, but gives new queries some time to get above one of the other thresholds.  Without this,
-        // the first N unique queries would dominate the statistics.
-        TRACKER_SETS.add(new QueryTrackerSet("Last Invocation", "most recent invocation time", false, true, new QueryTrackerComparator()
+        TRACKER_SETS.add(new QueryTrackerSet("Last", "most recent invocation time", false, true, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -142,13 +140,13 @@ public class QueryProfiler
             @Override
             String getFormattedPrimaryStatistic(QueryTracker qt)
             {
-                return DateUtil.formatDateTime(new Date(getPrimaryStatisticValue(qt)));
+                return PageFlowUtil.filter(DateUtil.formatDateTime(new Date(getPrimaryStatisticValue(qt))));
             }
         }));
 
         // Not displayed, but gives new queries some time to get above one of the other thresholds.  Without this,
         // the first N unique queries would dominate the statistics.
-        TRACKER_SETS.add(new QueryTrackerSet("FirstInvocation", "first invocation time", true, false, new QueryTrackerComparator()
+        TRACKER_SETS.add(new QueryTrackerSet("First", "first invocation time", true, false, new QueryTrackerComparator()
         {
             long getPrimaryStatisticValue(QueryTracker qt)
             {
@@ -683,7 +681,7 @@ public class QueryProfiler
                 formattedCommonPrefix = "<b>" + PageFlowUtil.filter(commonPrefix.substring(0, commonLength), true) + "</b>";
             }
 
-            sb.append("<tr><td>").append("<b>Occurrences</b>").append("</td><td style=\"padding-left:10;\">").append("<b>Stack&nbsp;Traces</b>").append("</td></tr>\n");
+            sb.append("<tr><td>").append("<b>Count</b>").append("</td><td style=\"padding-left:10;\">").append("<b>Traces</b>").append("</td></tr>\n");
 
             int alt = 0;
             String[] classes = new String[]{"labkey-alternate-row", "labkey-row"};
@@ -725,7 +723,7 @@ public class QueryProfiler
                     appendColumnHeader(set.getCaption(), set == currentSet, sb, factory);
 
             sb.append("<td>");
-            sb.append("Stack&nbsp;Traces");
+            sb.append("Traces");
             sb.append("</td><td style=\"padding-left:10;\">");
             sb.append("SQL");
             sb.append("</td>");
@@ -998,7 +996,7 @@ public class QueryProfiler
     {
         InvocationQueryTrackerSet()
         {
-            super("Invocations", "highest number of invocations", false, true, new QueryTrackerComparator()
+            super("Count", "highest number of invocations", false, true, new QueryTrackerComparator()
             {
                 long getPrimaryStatisticValue(QueryTracker qt)
                 {
