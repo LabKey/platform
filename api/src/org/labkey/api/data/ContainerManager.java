@@ -1943,42 +1943,51 @@ public class ContainerManager
         @Test
         public void testFolderType() throws SQLException
         {
-            for (FolderType folderType : ModuleLoader.getInstance().getFolderTypes())
+            // Test a random folderType plus the XML-defined Tabbed
+            List<FolderType> folderTypes = new ArrayList<FolderType>(ModuleLoader.getInstance().getFolderTypes());
+            int randomInt = new Random().nextInt(folderTypes.size());
+            FolderType folderTypeRandom = folderTypes.get(randomInt);
+            if ("My XML-defined Tabbed Folder Type".equals(folderTypeRandom.getName()))
             {
-                // TODO: Eliminate this check when issue #16429 is fixed. Also, switch back to picking random types or eliminate that method
+                // Choose different one
+                if (randomInt + 1 < folderTypes.size())
+                    folderTypeRandom = folderTypes.get(randomInt + 1);
+                else if (randomInt - 1 >= 0)
+                    folderTypeRandom = folderTypes.get(randomInt - 1);
+            }
+            testOneFolderType(folderTypeRandom);
+
+            for (FolderType folderType : folderTypes)
+            {
                 if ("My XML-defined Tabbed Folder Type".equals(folderType.getName()))
-                    continue;
-
-                Container newFolder = createContainer(_testRoot, "folderTypeTest");
-                FolderType ft = newFolder.getFolderType();
-                assertEquals(ft, FolderType.NONE);
-
-                Container newFolderFromCache = getForId(newFolder.getId());
-                assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
-
-//                FolderType randomType = getRandomFolderType();
-                newFolder.setFolderType(folderType, TestContext.get().getUser());
-
-                newFolderFromCache = getForId(newFolder.getId());
-                assertEquals(newFolderFromCache.getFolderType(), folderType);
-
-                assertTrue("Folder delete failed for " + newFolder + ", folder type " + folderType.getName(), delete(newFolder, TestContext.get().getUser()));
-                Container deletedContainer = getForId(newFolder.getId());
-
-                if (deletedContainer != null)
                 {
-                    fail("Expected container with Id " + newFolder.getId() + " to be deleted, but found " + deletedContainer + ". Folder type was " + folderType);
+                    testOneFolderType(folderType);
+                    break;
                 }
             }
         }
 
-
-        private FolderType getRandomFolderType()
+        private void testOneFolderType(FolderType folderType)
         {
-            List<FolderType> folderTypes = new ArrayList<FolderType>(ModuleLoader.getInstance().getFolderTypes());
-            return folderTypes.get(new Random().nextInt(folderTypes.size()));
-        }
+            Container newFolder = createContainer(_testRoot, "folderTypeTest");
+            FolderType ft = newFolder.getFolderType();
+            assertEquals(ft, FolderType.NONE);
 
+            Container newFolderFromCache = getForId(newFolder.getId());
+            assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
+            newFolder.setFolderType(folderType, TestContext.get().getUser());
+
+            newFolderFromCache = getForId(newFolder.getId());
+            assertEquals(newFolderFromCache.getFolderType(), folderType);
+
+            deleteAll(newFolder, TestContext.get().getUser());          // There might be subfolders because of container tabs
+            Container deletedContainer = getForId(newFolder.getId());
+
+            if (deletedContainer != null)
+            {
+                fail("Expected container with Id " + newFolder.getId() + " to be deleted, but found " + deletedContainer + ". Folder type was " + folderType);
+            }
+        }
 
         private static void createContainers(MultiMap<String, String> mm, String name, Container parent)
         {
