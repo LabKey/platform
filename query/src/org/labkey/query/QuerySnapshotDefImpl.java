@@ -28,7 +28,6 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
@@ -164,10 +163,10 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         String[] values = StringUtils.split(_snapshotDef.getColumns(), "&");
         List<FieldKey> ret = new ArrayList<FieldKey>();
         if (values != null)
+        {
             for (String entry : values)
-            {
-                ret.add(FieldKey.fromString(PageFlowUtil.decode(entry)));
-            }
+                ret.add(FieldKey.fromString(entry));
+        }
         return Collections.unmodifiableList(ret);
     }
 

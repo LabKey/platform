@@ -41,11 +41,6 @@
     boolean emptyStudy = getStudy().isEmptyStudy();
     String timepointType = getStudy().getTimepointType().toString();
     String cancelLink = context.getActionURL().getParameter("returnURL");
-    String startDate = null;
-    if (timepointType == "DATE")
-    {
-        startDate = getStudy().getStartDate().toString();
-    }
     if (cancelLink == null || cancelLink.length() == 0)
         cancelLink = new ActionURL(StudyController.ManageStudyAction.class, context.getContainer()).toString();
 %>
@@ -66,6 +61,8 @@
 <div class="extContainer" id="manageStudyPropertiesDiv"></div>
 
 <script type="text/javascript">
+
+Ext4.QuickTips.init();
 
 (function(){/* All code */})();
 
@@ -461,6 +458,7 @@ function renderFormPanel(data, editable){
 
     var protocolPanel = Ext4.create('Ext.Panel', {
         itemId : 'protocolPanel',
+        cls    : 'protocolPanel',
         height : (initHeight * 25) + 30,
         border : false, frame: false,
         enlarge : function(){
@@ -489,7 +487,7 @@ function renderFormPanel(data, editable){
     // the original form didn't include these, but we can decide later
     items.push(timepointTypeRadioGroup);
     handledFields['TimepointType'] = true;
-    handledFields['StartDate'] = true;
+    //handledFields['StartDate'] = true;
     handledFields['Container'] = true;
     var info = data.rows[0];
 

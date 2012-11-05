@@ -1373,55 +1373,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class UpdateStudyPropertiesAction extends FormHandlerAction<StudyPropertiesForm>
-    {
-        public void validateCommand(StudyPropertiesForm target, Errors errors)
-        {
-            if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
-                errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
-
-            target.setLabel(StringUtils.trimToNull(target.getLabel()));
-            if (null == target.getLabel())
-                errors.reject(ERROR_MSG, "Please supply a label");
-        }
-
-        public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
-        {
-            if (getStudy(true) != null)
-            {
-                StudyImpl updated = getStudy().createMutable();
-                updated.setLabel(form.getLabel());
-                updated.setInvestigator(form.getInvestigator());
-                updated.setGrant((form.getGrant()));
-                updated.setDescription(form.getDescription());
-                updated.setDescriptionRendererType(form.getDescriptionRendererType());
-                StudyManager.getInstance().updateStudy(getUser(), updated);
-
-                // Update protocol documents:
-                List<AttachmentFile> files = getAttachmentFileList();
-                updated.attachProtocolDocument(files, getUser());
-            }
-            return true;
-        }
-
-        public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
-        {
-            try
-            {
-                if (getStudy(true) == null)
-                    return new ActionURL(CreateStudyAction.class, getContainer());
-            }
-            catch (ServletException e){}
-
-            if (studyPropertiesForm.getReturnURL() != null)
-                return new ActionURL(studyPropertiesForm.getReturnURL());
-            else
-                return new ActionURL(ManageStudyAction.class, getContainer());
-        }
-    }
-
     public static class RemoveProtocolDocumentForm
     {
         private String _name;
@@ -1459,29 +1410,6 @@ public class StudyController extends BaseStudyController
             return new ActionURL(ManageStudyPropertiesAction.class, getContainer());
         }
     }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ManageStudyPropertiesOldAction extends SimpleViewAction<StudyPropertiesForm>
-    {
-        public ModelAndView getView(StudyPropertiesForm form, BindException errors) throws Exception
-        {
-            Study study = getStudy(true);
-            if (null == study)
-            {
-                CreateStudyAction action = (CreateStudyAction)initAction(this, new CreateStudyAction());
-                return action.getView(form, false, errors);
-            }
-            return new StudyJspView<StudyPropertiesForm>(getStudy(), "manageStudyProperties.jsp", form, errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            _appendManageStudy(root);
-            return root.addChild("Study Properties");
-        }
-    }
-
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ManageStudyPropertiesAction extends FormApiAction<TableViewForm>

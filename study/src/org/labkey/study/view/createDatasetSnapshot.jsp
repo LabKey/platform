@@ -93,10 +93,7 @@
 
         %>
     </table>
-    <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean, null)) { %>
-            <input type="hidden" name="snapshotColumns" value="<%=getColumnName(col)%>">
-    <%  }
-        if (context.getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
+    <%  if (context.getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
             <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=context.getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>">
     <%  } %>
     <input type="hidden" name="action" value="<%=StudyController.StudySnapshotForm.CREATE_SNAPSHOT%>" id="action">

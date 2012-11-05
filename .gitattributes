@@ -3279,7 +3279,6 @@ study/src/org/labkey/study/view/manageReload.jsp -text
 study/src/org/labkey/study/view/manageReports.jsp -text
 study/src/org/labkey/study/view/manageSites.jsp -text
 study/src/org/labkey/study/view/manageStudy.jsp -text
-study/src/org/labkey/study/view/manageStudyProperties.jsp -text
 study/src/org/labkey/study/view/manageStudyPropertiesExt.jsp -text
 study/src/org/labkey/study/view/manageTimepoints.jsp -text
 study/src/org/labkey/study/view/manageTypes.jsp -text

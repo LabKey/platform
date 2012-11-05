@@ -26,10 +26,14 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.DateUtil;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.visitmanager.RelativeDateVisitManager;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -70,15 +74,29 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
         // update the base table, but only some columns StudyPropertiesTable
         CaseInsensitiveHashMap<Object> updateRow = new CaseInsensitiveHashMap<Object>();
+        boolean recalculateVisits = false;
         for (Map.Entry<String,Object> entry : row.entrySet())
         {
             ColumnInfo c = table.getColumn(entry.getKey());
             if (null != c && c.isUserEditable() || (null != c && c.getName().equals("TimepointType") && study.isEmptyStudy()))
+            {
                 updateRow.put(entry.getKey(), entry.getValue());
+
+                if (c.getName().equalsIgnoreCase("StartDate") && study.getTimepointType() == TimepointType.DATE)
+                {
+                    Date newDate = new Date(DateUtil.parseDateTime(entry.getValue().toString()));
+                    recalculateVisits = !study.getStartDate().equals(newDate);
+                }
+            }
         }
         if (!updateRow.isEmpty())
             Table.update(user, table.getRealTable(), updateRow, study.getContainer().getId());
 
+        if (recalculateVisits)
+        {
+            RelativeDateVisitManager visitManager = (RelativeDateVisitManager) StudyManager.getInstance().getVisitManager(study);
+            visitManager.recomputeDates(study.getStartDate(), user);
+        }
         StudyManager.getInstance().clearCaches(container, false);
 
         return getRow(user, container, null);

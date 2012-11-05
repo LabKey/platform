@@ -67,7 +67,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         ColumnInfo labelColumn = addRootColumn("label", true, true);
         DetailsURL detailsURL = new DetailsURL(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(schema.getContainer()));
         labelColumn.setURL(detailsURL);
-        addRootColumn("startDate");
+        addRootColumn("startDate", true, true);
 
         ColumnInfo containerColumn = addRootColumn("container", false, false);
         containerColumn.setFk(new ContainerForeignKey(schema));
