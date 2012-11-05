@@ -17,7 +17,6 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -72,8 +71,6 @@ abstract public class LaboratoryService
     abstract public AssayDataProvider getDataProviderForAssay(AssayProvider ap);
 
     abstract public Pair<ExpExperiment, ExpRun> saveAssayBatch(List<Map<String, Object>> results, JSONObject json, File file, String fileName, ViewContext ctx, AssayProvider provider, ExpProtocol protocol) throws ValidationException;
-
-    abstract public TableCustomizer getDefaultTableCustomizer();
 
     abstract public List<NavItem> getSettingsItems(Container c, User u);
 
