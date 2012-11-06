@@ -1218,7 +1218,17 @@ public class ContainerManager
 
     public static boolean isDeletable(Container c)
     {
-        return !c.equals(getRoot()) && !c.equals(getHomeContainer()) && !c.equals(getSharedContainer());
+        return !isSystemContainer(c);
+    }
+
+    public static boolean isRenameable(Container c)
+    {
+        return !isSystemContainer(c);
+    }
+
+    public static boolean isSystemContainer(Container c)
+    {
+         return c.equals(getRoot()) || c.equals(getHomeContainer()) || c.equals(getSharedContainer());
     }
 
     public static void deleteAll(Container root, User user) throws UnauthorizedException
