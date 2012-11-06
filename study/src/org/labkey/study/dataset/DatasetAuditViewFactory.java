@@ -16,13 +16,21 @@
 
 package org.labkey.study.dataset;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.audit.data.DataMapColumn;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -34,12 +42,12 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.DataSet;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
@@ -55,8 +63,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 
 /**
  * IntKey1 is the dataset row id
@@ -184,34 +190,9 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             {
                 public DisplayColumn createRenderer(final ColumnInfo colInfo)
                 {
-                    return new DataColumn(colInfo)
-                    {
-                        public String getFormattedValue(RenderContext ctx)
-                        {
-                            return formatPropertyMap((String)getValue(ctx));
-                        }
-                        public String getTsvFormattedValue(RenderContext ctx){
-                            return formatPropertyMapForExport((String)getValue(ctx));
-                        }
-                        public String getDisplayValue(RenderContext ctx)
-                        {
-                            return formatPropertyMapForExport((String)getValue(ctx));
-                        }
-                        @Override
-                        public boolean isFilterable()
-                        {
-                            return false;
-                        }
-                        @Override
-                        public boolean isSortable()
-                        {
-                            return false;
-                        }
-
-                    };
+                    return new DataMapColumn(colInfo);
                 }
             });
-
             table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
         }
 
@@ -221,25 +202,10 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             {
                 public DisplayColumn createRenderer(final ColumnInfo colInfo)
                 {
-                    return new DataColumn(colInfo)
-                    {
-                        public String getFormattedValue(RenderContext ctx)
-                        {
-                            return formatPropertyMap((String)getValue(ctx));
-                        }
-                        public String getTsvFormattedValue(RenderContext ctx){
-                            return formatPropertyMapForExport((String)getValue(ctx));
-                        }
-                        public Object getDisplayValue(RenderContext ctx)
-                        {
-                            return formatPropertyMapForExport((String)getValue(ctx));
-                        }
-
-                    };
+                    return new DataMapColumn(colInfo);
                 }
 
             });
-
             table.addColumn(new AliasedColumn(table, "NewValues", newCol));
         }
 
@@ -377,56 +343,5 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
 
             out.write(PageFlowUtil.textLink("details", url));
         }
-    }
-
-    public String formatPropertyMap(String contents)
-    {
-        if (contents == null)
-            return "";
-
-        contents = contents.replaceAll("=",": ");
-        String[] contentsArray = contents.split("&");
-        String[] newContents = new String[contentsArray.length];
-        Integer idx = 0;
-        for(String e : contentsArray)
-        {
-            try
-            {
-                e = URLDecoder.decode(e, "UTF-8");
-            }
-            catch (UnsupportedEncodingException error)
-            {
-                throw new IllegalArgumentException("UTF-8 encoding not supported on this machine", error);
-            }
-            newContents[idx] = (PageFlowUtil.filter(e));
-            newContents[idx] = e;
-            idx++;
-        }
-        return StringUtils.join(newContents, "<br>");
-    }
-
-    public String formatPropertyMapForExport(String contents)
-    {
-        if (contents == null)
-            return "";
-
-        contents = contents.replaceAll("=",": ");
-        String[] contentsArray = contents.split("&");
-        String[] newContents = new String[contentsArray.length];
-        Integer idx = 0;
-        for(String e : contentsArray)
-        {
-            try
-            {
-                e = URLDecoder.decode(e, "UTF-8");
-            }
-            catch (UnsupportedEncodingException error)
-            {
-                throw new IllegalArgumentException("UTF-8 encoding not supported on this machine", error);
-            }
-            newContents[idx] = e;
-            idx++;
-        }
-        return StringUtils.join(newContents, "\n");
     }
 }

@@ -17,21 +17,27 @@ package org.labkey.query.audit;
 
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.audit.data.DataMapColumn;
+import org.labkey.api.audit.data.DataMapDiffColumn;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DetailsColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
@@ -42,7 +48,9 @@ import org.labkey.query.controllers.QueryController;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -165,6 +173,44 @@ public class QueryUpdateAuditViewFactory extends SimpleAuditViewFactory
         table.getColumn("IntKey1").setHidden(true);
         table.getColumn("IntKey2").setHidden(true);
         table.getColumn("IntKey3").setHidden(true);
+
+        // add columns to show a textual representation of the old and new values for the row
+        FieldKey oldFieldKey = FieldKey.fromParts("Property", OLD_RECORD_PROP_NAME);
+        FieldKey newFieldKey = FieldKey.fromParts("Property", NEW_RECORD_PROP_NAME);
+
+        Map<FieldKey,ColumnInfo> cols = QueryService.get().getColumns(table, Arrays.<FieldKey>asList(oldFieldKey, newFieldKey));
+
+        ColumnInfo oldCol = cols.get(oldFieldKey);
+        ColumnInfo newCol = cols.get(newFieldKey);
+
+        if (oldCol != null)
+        {
+            ColumnInfo col = table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
+            col.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new DataMapColumn(colInfo);
+                }
+            });
+        }
+
+        if (newCol != null)
+        {
+            ColumnInfo col = table.addColumn(new AliasedColumn(table, "NewValues", newCol));
+            col.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new DataMapColumn(colInfo);
+                }
+            });
+        }
+
+        // add a column to show the differences between old and new values
+        table.addColumn(new DataMapDiffColumn(table, "DataChanges", oldCol, newCol));
     }
 
     @Override
