@@ -184,7 +184,43 @@ public class ExcelLoader extends DataLoader
         }
     }
 
+
     public String[][] getFirstNLines(int n) throws IOException
+    {
+        if (null != _file)
+        {
+            try
+            {
+                List<ArrayList<Object>> grid = getParsedGridXLSX();
+                List<String[]> cells = new ArrayList<String[]>();
+                for (int i=0 ; cells.size() < n && i<grid.size() ; i++)
+                {
+                    ArrayList<Object> currentRow = grid.get(i);
+                    ArrayList<String> rowData = new ArrayList<String>(currentRow.size());
+                    boolean foundData = false;
+                    for (int column = 0; column < currentRow.size() ; column++)
+                    {
+                        Object v = currentRow.get(column);
+                        String data = (v != null && !(v instanceof String)) ? String.valueOf(v) : (String)v;
+                        if (!StringUtils.isEmpty(data))
+                            foundData = true;
+                        rowData.add(data != null ? data : "");
+                    }
+                    if (foundData)
+                        cells.add(rowData.toArray(new String[rowData.size()]));
+                }
+                return cells.toArray(new String[cells.size()][]);
+            }
+            catch (InvalidFormatException x)
+            {
+                /* fall through */
+            }
+        }
+        return getFirstNLinesXLS(n);
+    }
+
+
+    public String[][] getFirstNLinesXLS(int n) throws IOException
     {
         Sheet sheet = getSheet();
 
@@ -288,6 +324,15 @@ public class ExcelLoader extends DataLoader
 //    }
 
 
+    private LinkedList<ArrayList<Object>> _parsedGridXLSX = null;
+
+    private LinkedList<ArrayList<Object>> getParsedGridXLSX() throws IOException, InvalidFormatException
+    {
+        if (null == _parsedGridXLSX)
+            _parsedGridXLSX = loadSheetFromXLSX();
+        return _parsedGridXLSX;
+    }
+
     private LinkedList<ArrayList<Object>> loadSheetFromXLSX() throws IOException, InvalidFormatException
     {
         try
@@ -338,7 +383,7 @@ public class ExcelLoader extends DataLoader
         public XlsxIterator() throws IOException, InvalidFormatException
         {
             super(_skipLines == -1 ? 1 : _skipLines, true);
-            grid = loadSheetFromXLSX();
+            grid = getParsedGridXLSX();
         }
 
         @Override
