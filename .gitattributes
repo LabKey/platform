@@ -122,6 +122,8 @@ api/src/org/labkey/api/audit/AuditLogService.java -text
 api/src/org/labkey/api/audit/ClientAPIAuditViewFactory.java -text
 api/src/org/labkey/api/audit/DefaultAuditProvider.java -text
 api/src/org/labkey/api/audit/SimpleAuditViewFactory.java -text
+api/src/org/labkey/api/audit/data/DataMapColumn.java -text
+api/src/org/labkey/api/audit/data/DataMapDiffColumn.java -text
 api/src/org/labkey/api/audit/data/ExperimentAuditColumn.java -text
 api/src/org/labkey/api/audit/data/ProtocolColumn.java -text
 api/src/org/labkey/api/audit/data/RunColumn.java -text
