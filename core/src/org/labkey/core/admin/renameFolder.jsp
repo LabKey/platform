@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
@@ -33,6 +34,10 @@
 
     String containerDescription = (c.isProject() ? "Project" : "Folder");
     String containerType = containerDescription.toLowerCase();
+
+    // 16221
+    if (ContainerManager.isRenameable(c))
+    {
 %>
 <form action="<%=h(buildURL(AdminController.RenameFolderAction.class))%>" method="post">
     <table>
@@ -47,3 +52,12 @@
         </tr>
     </table>
 </form>
+<%
+    }
+    else
+    {
+%>
+This folder may not be renamed as it is reserved by the system.
+<%
+    }
+%>

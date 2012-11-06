@@ -126,12 +126,7 @@ Ext4.define('Security.panel.PolicyEditor', {
     setPolicy : function(policy, roles)
     {
         this.inheritedOriginally = policy.isInherited();
-        if (this.canInherit)
-        {
-            this.getInheritCheckbox().setValue(this.inheritedOriginally);
-        }
-
-        if (policy.isInherited())
+        if (this.inheritedOriginally)
         {
             this.inheritedPolicy = policy;
             this.policy = policy.copy(this.resource.id);
@@ -139,6 +134,7 @@ Ext4.define('Security.panel.PolicyEditor', {
             if (this.canInherit)
             {
                 this.getInheritCheckbox().enable();
+                this.getInheritCheckbox().setValue(this.inheritedOriginally);
             }
         }
         else
@@ -152,6 +148,13 @@ Ext4.define('Security.panel.PolicyEditor', {
                             Ext4.Msg.alert("Error", "Error getting parent policy: " + errorInfo.exception);
                     }, scope:this});
         }
+
+        // check after the policy has been set
+        if (!this.inheritedOriginally && this.canInherit)
+        {
+            this.getInheritCheckbox().setValue(this.inheritedOriginally);
+        }
+
         this.roles = [];
         for (var r=0 ; r<roles.length ; r++)
         {
@@ -470,11 +473,15 @@ Ext4.define('Security.panel.PolicyEditor', {
     {
         // mask the roles
         var roles = this.down('#roles');
-        roles.setDisabled(isDisabled);
+        if (roles) {
+            roles.setDisabled(isDisabled);
+        }
 
         // hide the buttons
         var buttonArea = this.down('#savebar');
-        buttonArea.setVisible(!isDisabled);
+        if (buttonArea) {
+            buttonArea.setVisible(!isDisabled);
+        }
     },
 
     getInheritCheckboxValue : function()
