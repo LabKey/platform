@@ -19,7 +19,12 @@ Ext4.define('Security.util.SecurityCache', {
         groupAdministrators : -1,
         groupUsers : -2,
         groupGuests : -3,
-        groupDevelopers : -4
+        groupDevelopers : -4,
+
+        global : null,
+        getGlobalCache : function() {
+            return Security.util.SecurityCache.global;
+        }
     },
 
 //    requires : [
@@ -85,6 +90,11 @@ Ext4.define('Security.util.SecurityCache', {
         });
 
         this.membershipStore.load();
+
+        if (config.global) {
+            // Set the global cache to this securty cache instance
+            Security.util.SecurityCache.global = this;
+        }
     },
 
     getContainersStore : function() {
@@ -301,6 +311,9 @@ Ext4.define('Security.util.SecurityCache', {
 
     _addPrincipal : function(p)
     {
+        if (p.UserId && !p.id) {
+            p.id = p.UserId;
+        }
         var st = this.principalsStore;
         var record = st.model.create(p);  //TODO: is ID set right? ,p.UserId);
         this._applyPrincipalsSortOrder(record);
@@ -309,15 +322,19 @@ Ext4.define('Security.util.SecurityCache', {
         return record;
     },
 
+    /**
+     * Interprets an empty projectId or '/' as Site Groups (as opposed to Project Groups).
+     */
     createGroup : function(projectId, name, callback, scope)
     {
         var me = this;
+        var path = (projectId == '/' || projectId == '') ? '/' : projectId;
         LABKEY.Security.createGroup({
-            containerPath : projectId,
+            containerPath : path,
             groupName     : name,
             success       : function(group) {
-                var container = projectId,
-                    group     = {UserId:group.id, Name:group.name, Container:container, Type:'g'};
+                var container = (path == '/' || path == '') ? null : path;
+                var group     = {UserId:group.id, Name:group.name, Container:container, Type:'g'};
                 me._addPrincipal(group);
                 if (typeof callback == 'function')
                     callback.call(scope || this, group);

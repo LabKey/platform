@@ -117,7 +117,7 @@ Ext4.define('Security.window.UserInfoPopup', {
 
         if (groups.length)
         {
-            html = '<p class="userinfoHdr">Members of</p><ul style="list-style-type: none;">';
+            html = '<p class="userinfoHdr">Member of</p><ul style="list-style-type: none;">';
 
             for (var g=0; g < groups.length; g++)
             {
@@ -128,6 +128,7 @@ Ext4.define('Security.window.UserInfoPopup', {
             html += '</ul>';
 
             toAdd.push({html: html, border: false, frame: false});
+            html = '';
         }
 
         if (this.policy)

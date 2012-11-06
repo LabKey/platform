@@ -18,6 +18,13 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     alias: 'widget.labkey-policyeditor',
 
+    statics : {
+        globalPolicy : null,
+        getGlobalPolicy : function() {
+            return Security.panel.PolicyEditor.globalPolicy;
+        }
+    },
+
     initComponent: function()
     {
         Ext4.apply(this, {
@@ -36,6 +43,11 @@ Ext4.define('Security.panel.PolicyEditor', {
             if (!this.roles)
                 this.add({html: '<i>Loading...</i>', border: false});
         }, this);
+
+        if (this.globalPolicy)
+        {
+            Security.panel.PolicyEditor.globalPolicy = this.getPolicy();
+        }
     },
 
     Principals_onRemove : function(store,record,index)
@@ -537,8 +549,9 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     addButton : function(group, role, animate, animEl)
     {
+        var btn;
         if (animEl) {
-            var btn = this._addButton(group, role, true);
+            btn = this._addButton(group, role, true);
             var animCopy = animEl.dom.cloneNode(true);
             animCopy.id = Ext4.id();
             var box = animEl.getBox();
@@ -562,8 +575,10 @@ Ext4.define('Security.panel.PolicyEditor', {
             });
         }
         else {
-            this._addButton(group, role, false);
+            btn = this._addButton(group, role, false);
         }
+
+        return btn;
     },
 
     _addButton : function(group, role, hideButton) {
@@ -589,7 +604,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         //button already exists...
         if (button){
             button.getEl().frame();
-            return;
+            return button;
         }
 
         // really add the button
@@ -609,7 +624,6 @@ Ext4.define('Security.panel.PolicyEditor', {
             listeners : {
                 afterrender : function(b) {
                     Ext4.DomQuery.select('span.closeicon', b.getEl().id)[0].onclick = Ext4.bind(this.Button_onClose, this, [b]);
-
                     this.initializeButtonDragZone(b);
                 },
                 click : this.Button_onClick,
@@ -660,7 +674,10 @@ Ext4.define('Security.panel.PolicyEditor', {
             roleId = role.uniqueName;
         this.policy.addRoleAssignment(groupId, roleId);
 
-        this.addButton(group,role,true,animEl);
+        var b = this.addButton(group,role,true,animEl);
+        if (b && b.getEl()) {
+            b.getEl().frame();
+        }
     },
 
     removeRoleAssignment : function(group, role)

@@ -38,22 +38,41 @@
         }
         else
         {
-            this.hideUnconnectedCheckbox = new Ext4.form.Checkbox({id:'hideUnconnectedCheckbox', style:{display:'inline'}, boxLabel:"Hide unconnected nodes"});
-            this.hideUnconnectedCheckbox.render('unconnected');
-            this.hideUnconnectedCheckbox.on("check", refreshDiagram, this);
+            var refreshTask = new Ext4.util.DelayedTask(refreshDiagram);
+            var refresh  = function() {
+                refreshTask.delay(250);
+            }
 
-            refreshDiagram();
-            var cache = Ext4.getCmp('securityCache1');
+            this.hideUnconnectedCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+                renderTo : 'unconnected',
+                id       : 'hideUnconnectedCheckbox',
+                style    : {display:'inline'},
+                boxLabel : 'Hide unconnected nodes',
+                listeners : {
+                    change : function(){
+                        refreshTask.delay(0);
+                    },
+                    scope : this
+                }
+            });
+
+            var cache = Security.util.SecurityCache.getGlobalCache();
             if (cache)
             {
-                cache.principalsStore.on('add', refreshDiagram, this);
-                cache.principalsStore.on('remove', refreshDiagram, this);
-                cache.principalsStore.on('update', refreshDiagram, this);
+                cache.getPrincipalsStore().on({
+                    add : {fn: refresh, scope: this},
+                    remove : {fn: refresh, scope: this},
+                    update : {fn: refresh, scope: this}
+                });
             }
+            else
+            {
+                console.warn('Group Diagram: Security cache not available.');
+            }
+            refresh();
         }
     });
 
-    // TODO: This is getting called twice for each group add/remove... filter? different listener?
     function refreshDiagram(s, record, type)
     {
         var urlString = <%=q(groupDiagramURL.toString())%>;
@@ -72,7 +91,6 @@
     function renderGroupDiagram(response)
     {
         var bean = Ext4.JSON.decode(response.responseText);
-
         render(bean.html);
     }
 
@@ -95,5 +113,30 @@
     function render(html)
     {
         Ext4.fly("groupDiagram").update(html);
+    }
+
+    function showPopupId(groupId)
+    {
+        showPopup(Security.util.SecurityCache.getGlobalCache().getPrincipal(groupId), null);
+    }
+
+    function showPopup(group, groupsList)
+    {
+        var canEdit = !group.Container && LABKEY.Security.currentUser.isSystemAdmin || group.Container && LABKEY.Security.currentUser.isAdmin;
+
+        var w = Ext4.create('Security.window.UserInfoPopup', {
+            userId : group.UserId,
+            cache  : Security.util.SecurityCache.getGlobalCache(),
+            policy : Security.panel.PolicyEditor.getGlobalPolicy(),
+            modal  : true,
+            canEdit: canEdit,
+            listeners : {
+                close : function() {
+                    if (groupsList)
+                        groupsList.onDataChanged();
+                }
+            }
+        });
+        w.show();
     }
 </script>

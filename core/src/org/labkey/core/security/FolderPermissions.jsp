@@ -122,10 +122,10 @@ Ext4.onReady(function(){
     };
 
     var securityCache = Ext4.create('Security.util.SecurityCache', {
-        id      : 'securityCache1',
         root    : <%=PageFlowUtil.jsString(root.getId())%>,
         project : <%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
-        folder  : <%=PageFlowUtil.jsString(c.getId())%>
+        folder  : <%=PageFlowUtil.jsString(c.getId())%>,
+        global  : true
     });
 
     var editor = Ext4.create('Security.panel.PermissionEditor', {

@@ -150,7 +150,8 @@ Ext4.define('Security.panel.PermissionEditor', {
             isProjectAdmin : LABKEY.Security.currentUser.isAdmin,
             canInherit : this.canInherit,
             resourceId : LABKEY.container.id,
-            doneURL    : this.doneURL
+            doneURL    : this.doneURL,
+            globalPolicy : true
         });
 
         return this.policyEditor;
@@ -178,9 +179,10 @@ Ext4.define('Security.panel.PermissionEditor', {
                 scope : this
             });
             w.show();
-        }
+        };
 
         if (canEdit) {
+            var btnId = Ext4.id();
             items.push({
                 layout : 'hbox',
                 border : false,
@@ -190,20 +192,28 @@ Ext4.define('Security.panel.PermissionEditor', {
                     name      : projectId === '' ? 'sitegroupsname' : 'projectgroupsname',
                     emptyText : 'New group name',
                     width     : 310,
-                    padding   : '10 10 10 0'
+                    padding   : '10 10 10 0',
+                    listeners : {
+                        afterrender : function(field) {
+                            var keymap = new Ext4.util.KeyMap(field.getEl(), [
+                                {
+                                    key  : Ext4.EventObject.ENTER,
+                                    fn   : function() {
+                                        this.onCreateGroup(Ext4.getCmp(btnId), showPopup);
+                                    },
+                                    scope: this
+                                }
+                            ]);
+                        },
+                        scope : this
+                    }
                 },{
+                    id    : btnId,
                     xtype : 'button',
                     text  : 'Create New Group',
                     margin  : '10 0 0 0',
-                    handler : function(btn) {
-                        var groupName = btn.up('panel').down('textfield').getValue();
-                        if (!groupName)
-                            return;
-
-                        this.securityCache.createGroup(projectId, groupName, showPopup, this);
-
-                        btn.up('panel').down('textfield').reset();
-                    },
+                    projectId : projectId,
+                    handler : function(b) { this.onCreateGroup(b, showPopup); },
                     scope : this
                 }],
                 scope : this
@@ -236,5 +246,14 @@ Ext4.define('Security.panel.PermissionEditor', {
             deferredRender : false,
             items  : items
         };
+    },
+
+    onCreateGroup :  function(btn, callback) {
+        var field = btn.up('panel').down('textfield');
+        var groupName = field.getValue();
+        if (!groupName)
+            return;
+        this.securityCache.createGroup(btn.projectId, groupName, callback, this);
+        field.reset();
     }
 });
