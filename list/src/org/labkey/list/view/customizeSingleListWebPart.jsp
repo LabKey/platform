@@ -20,11 +20,25 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.Comparator" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        //Need to include the Helper for a use of the form panel configuration.
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("SQVSelector.js"));
+        return resources;
+    }
+%>
 <%
     HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart part = me.getModelBean();
@@ -48,30 +62,59 @@
     sortedListOptions.putAll(listOptions);
 
 %>
+
 This webpart displays data from a single list.<br><br>
 
 If you want to let users change the list that's displayed or customize the view themselves then use the query webpart.<br><br>
 
-<form name="frmCustomize" method="post" action="<%=h(part.getCustomizePostURL(ctx))%>">
-    <table>
-        <tr>
-            <td>Title:</td>
-            <td><input type="text" name="title" width="60" value="<%=h(props.get("title"))%>"></td>
-        </tr>
-        <tr>
-            <td>List:</td>
-            <td>
-                <select name="listId">
-                    <labkey:options value="<%=props.get(\"listId\")%>" map="<%=sortedListOptions%>" />
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td>View Name:</td>
-            <td><input type="text" name="viewName" width="60" value="<%=h(props.get("viewName"))%>"><%=null != props.get("viewName") ? " Clear this value to display the default view" : ""%></td>
-        </tr>
-        <tr>
-            <td colspan="2"><labkey:button text="Submit"/></td>
-        </tr>
-    </table>
-</form>
+<div id="SQVPicker"></div>
+<script type="text/javascript">
+    Ext4.onReady(function(){
+        var sqvModel = Ext4.create('LABKEY.SQVModel', {});
+        var title = Ext4.create('Ext.form.field.Text', {
+            name : 'title',
+            value :  <%=PageFlowUtil.jsString(h(props.get("title")))%>,
+            fieldLabel : 'Title'
+        })
+        var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
+            defaultSchema : 'lists',
+            name : 'listId',
+            valueField : 'listId',
+            initialValue : <%=PageFlowUtil.jsString(props.get("listId"))%>
+        }));
+
+        var viewCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({
+            name : 'viewName',
+            initialValue : <%=PageFlowUtil.jsString(h(props.get("viewName")))%>
+        }));
+
+        var submitButton = Ext4.create('Ext.button.Button', {
+            text : 'Submit',
+            handler : function() {
+                if(myPanel){
+                    if(myPanel.getForm().isValid()){
+
+                        myPanel.getForm().submit({
+                            url : <%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>,
+                            success : function(){},
+                            failure : function(){}
+                        });
+                    }
+                    else
+                    {
+                        Ext4.MessageBox.alert("Error Saving", "There are errors in the form.");
+                    }
+                }
+            }
+        })
+
+        var myPanel = Ext4.create('Ext.form.Panel', {
+            border : false,
+            renderTo : 'SQVPicker',
+            bodyStyle : 'background-color: transparent;',
+            standardSubmit: true,
+            items : [title, queryCombo, viewCombo, submitButton]
+        });
+
+    });
+</script>
