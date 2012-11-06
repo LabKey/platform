@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FilteredTable;
@@ -56,6 +57,7 @@ public class ContainerTable extends FilteredTable
 
     private void init()
     {
+        SqlDialect dialect = getSchema().getSqlDialect();
         setDescription("Contains one row for every folder, workbook, or project");
         
         wrapAllColumns(true);
@@ -127,8 +129,8 @@ public class ContainerTable extends FilteredTable
         ExprColumn containerTypeColumn = new ExprColumn(this, "ContainerType", containerTypeSQL, JdbcType.VARCHAR);
         addColumn(containerTypeColumn);
 
-        SQLFragment containerWorkbookSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN 'true' " +
-                "ELSE 'false' END");
+        SQLFragment containerWorkbookSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN " + dialect.getBooleanTRUE() +
+                " ELSE " + dialect.getBooleanFALSE() + " END");
         ExprColumn containerWorkbookColumn = new ExprColumn(this, "Workbook", containerWorkbookSQL, JdbcType.BOOLEAN);
         addColumn(containerWorkbookColumn);
 
