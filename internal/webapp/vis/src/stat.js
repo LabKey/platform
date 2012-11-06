@@ -77,3 +77,15 @@ LABKEY.vis.Stat.sortNumericDescending = function(data, accessor){
     numbers.sort(function(a, b){return b-a;});
     return numbers;
 };
+
+
+LABKEY.vis.Stat.fn = function(fn, n, min, max){
+    var data = [];
+    var stepSize = Math.abs((max - min) / n);
+
+    for(var i = min; i < max; i+=stepSize){
+        data.push({x: i, y: fn(i)});
+    }
+
+    return data;
+};

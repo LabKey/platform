@@ -432,6 +432,7 @@ LABKEY.vis.Plot = function(config){
 	};
 
     var renderLegend = function(){
+        var lastY;
         var xPadding = this.scales.yRight && this.scales.yRight.scale ? 25 : 0,
                 startY = 0,
                 defaultColor = function(){return '#333'},
@@ -509,9 +510,9 @@ LABKEY.vis.Plot = function(config){
             return;
         }
 
-        if(this.scales.color && this.scales.shape){
+        if((this.scales.color && this.scales.color.scaleType === 'discrete') && this.scales.shape){
             if(compareDomains(this.scales.color.scale.domain(), this.scales.shape.scale.domain())){
-                renderPartial(
+                lastY = renderPartial(
                         this.paper,
                         this.grid,
                         startY,
@@ -520,10 +521,10 @@ LABKEY.vis.Plot = function(config){
                         this.scales.shape.scale.domain(),
                         this.scales.shape.scale,
                         this.scales.color.scale
-                )
+                );
             } else {
                 // Color
-                var lastY = renderPartial(
+                lastY = renderPartial(
                         this.paper,
                         this.grid,
                         startY,
@@ -535,7 +536,7 @@ LABKEY.vis.Plot = function(config){
                 );
 
                 // Shape
-                renderPartial(
+                lastY = renderPartial(
                         this.paper,
                         this.grid,
                         lastY + 18,
@@ -546,8 +547,8 @@ LABKEY.vis.Plot = function(config){
                         defaultColor
                 );
             }
-        } else if(this.scales.color){
-            renderPartial(
+        } else if(this.scales.color && this.scales.color.scaleType === 'discrete'){
+            lastY = renderPartial(
                     this.paper, this.grid,
                     startY,
                     this.grid.rightEdge + 50 + xPadding,
@@ -557,7 +558,7 @@ LABKEY.vis.Plot = function(config){
                     this.scales.color.scale
             );
         } else if(this.scales.shape){
-            renderPartial(
+            lastY = renderPartial(
                     this.paper,
                     this.grid,
                     startY,

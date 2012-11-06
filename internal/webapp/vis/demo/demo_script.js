@@ -456,7 +456,7 @@ var scatterPlot = new LABKEY.vis.Plot({
     }
 });
 
-var colorScatter = LABKEY.vis.Plot({
+var colorScatter = new LABKEY.vis.Plot({
     renderTo: 'colorScatter',
     width: 900,
     height: 700,
@@ -483,6 +483,23 @@ var colorScatter = LABKEY.vis.Plot({
     }
 });
 
+var statFnPlot = new LABKEY.vis.Plot({
+    renderTo: 'statFn',
+    width: 900,
+    height: 300,
+    clipRect: false,
+    labels: {
+        main: {value: 'Line Plot with LABKEY.vis.Stat.fn'}
+    },
+    layers: [new LABKEY.vis.Layer({
+        geom: new LABKEY.vis.Geom.Path({color: '#8ABEDE'})
+    }), new LABKEY.vis.Layer({
+        geom: new LABKEY.vis.Geom.Point({color: '#8ABEDE'})
+    })],
+    data: LABKEY.vis.Stat.fn(function(x){return Math.log(x) * 2;}, 40, 1, 500),
+    aes: {x: 'x', y: 'y'}
+});
+
 plot.render();
 boxPlot.render();
 errorPlot.render();
@@ -490,4 +507,5 @@ coffeePlot.render();
 discreteScatter.render();
 scatterPlot.render();
 colorScatter.render();
+statFnPlot.render();
 renderStats();
