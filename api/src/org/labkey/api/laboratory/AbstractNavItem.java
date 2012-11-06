@@ -64,17 +64,18 @@ abstract public class AbstractNavItem implements NavItem
 
     public boolean isVisible(Container c, User u)
     {
+        Container targetContainer = c.isWorkbook() ? c.getParent() : c;
         if (getDataProvider() != null && getDataProvider().getOwningModule() != null)
         {
-            if (!c.getActiveModules().contains(getDataProvider().getOwningModule()))
+            if (!targetContainer.getActiveModules().contains(getDataProvider().getOwningModule()))
                 return false;
         }
 
-        Map<String, String> map = PropertyManager.getProperties(c, NavItem.PROPERTY_CATEGORY);
+        Map<String, String> map = PropertyManager.getProperties(targetContainer, NavItem.PROPERTY_CATEGORY);
         if (map.containsKey(getPropertyManagerKey()))
             return Boolean.parseBoolean(map.get(getPropertyManagerKey()));
 
-        return getDefaultVisibility(c, u);
+        return getDefaultVisibility(targetContainer, u);
     }
 
     public String getPropertyManagerKey()
