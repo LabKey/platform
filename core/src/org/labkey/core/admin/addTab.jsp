@@ -121,7 +121,7 @@
 		panelItems.push(standardTabsDisplayField);
 		panelItems.push(portalTabRadio);
 		panelItems.push(folderTabsDisplayField);
-        panelItems.push({xtype:'hidden', name:'returnUrl', value: "<%=form.getReturnActionURL()%>"});
+        panelItems.push({xtype:'hidden', name:'returnUrl', value: "<%=form.getReturnActionURL() != null ? form.getReturnActionURL() : ""%>"});
 
         for(var i = 0; i < folder.tabs.length; i++){
 			panelItems.push(Ext4.create('Ext.form.field.Radio', {

@@ -305,6 +305,7 @@ public class DataSetQueryView extends QueryView
             button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
 
             bar.add(button);
+            bar.add(createChartButton());
         }
     }
 

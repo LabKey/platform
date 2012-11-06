@@ -5274,18 +5274,47 @@ public class AdminController extends SpringActionController
         public void validateCommand(AddTabForm form, Errors errors)
         {
             String name = form.getTabName();
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(getContainer(), false));
+            CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<FolderTab>();
 
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(getContainer(), true));
-            if (pages.containsKey(name))
+            for (FolderTab tab : getContainer().getFolderType().getDefaultTabs())
             {
-                errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                folderTabMap.put(tab.getName(), tab);
             }
 
             if (form.getTabType().equalsIgnoreCase("portal"))
             {
-                if (null == name)
+                if(name == null)
                 {
                     errors.reject(ERROR_MSG, "A tab name must be specified.");
+                }
+                else if (pages.containsKey(name))
+                {
+                    errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                    return;
+                }
+            }
+            else
+            {
+                if(name == null)
+                {
+                    // Caption not set by user, use default caption.
+                    FolderTab tab = folderTabMap.get(form.getTabType());
+                    if (tab != null)
+                        name = tab.getCaption(getViewContext());
+                }
+            }
+
+            for (Portal.PortalPage page : pages.values())
+            {
+                if (page.getCaption() != null && page.getCaption().equals(name))
+                {
+                    errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                }
+                else if (folderTabMap.containsKey(page.getPageId()))
+                {
+                    if (folderTabMap.get(page.getPageId()).getCaption(getViewContext()).equalsIgnoreCase(name))
+                        errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
                 }
             }
         }
@@ -5347,7 +5376,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getSuccessURL(AddTabForm form)
         {
-            if (!form.getReturnActionURL().getAction().equals("addTab"))
+            if (form.getReturnActionURL() != null && !form.getReturnActionURL().getAction().equals("addTab"))
             {
                 return form.getReturnActionURL();
             }
