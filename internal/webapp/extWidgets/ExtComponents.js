@@ -97,11 +97,13 @@ Ext4.define('LABKEY.ext.LinkButton', {
             tooltip: this.tooltip
         });
 
-        //prevent double clicks
-        this.on('click', function(btn){
-            btn.setDisabled(true);
-            btn.setDisabled.defer(100, this, [false]);
-        })
+        //prevent double clicks.  this listener breaks links in IE
+        if (!Ext4.isIE7){
+            this.on('click', function(btn){
+                btn.setDisabled(true);
+                btn.setDisabled.defer(100, this, [false]);
+            })
+        }
     },
     showBrackets: true,
     renderSelectors: {
@@ -109,23 +111,22 @@ Ext4.define('LABKEY.ext.LinkButton', {
     },
     baseCls: 'linkbutton',
     renderTpl:
-        '<em id="{id}-btnWrap" class="{splitCls}">' +
+        '<div id="{id}-btnWrap">' +
             '{linkPrefix}' +
-            //NOTE: IE7+ doesnt support block-level links, so <a> tag is nested
-            '<span id="{id}-btnInnerEl" class="{baseCls}-inner">' +
-            '<a id="{id}-btnEl" role="link" ' +
+            '<a id="{id}-btnEl" ' +
                 '<tpl if="linkCls">class="{linkCls}"</tpl>' +
                 '<tpl if="href">href="{href}" </tpl>' +
                 '<tpl if="linkTarget">target="{linkTarget}" </tpl>' +
                 '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>' +
                 '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>' +
                 '>' +
+                '<span id="{id}-btnInnerEl" class="{baseCls}-inner">' +
                 '{text}' +
+                '</span>' +
+                '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
             '</a>' +
-            '</span>' +
-            '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
             '{linkSuffix}' +
-        '</em>'
+        '</div>'
 });
 
 /**

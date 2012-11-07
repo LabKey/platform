@@ -16,9 +16,12 @@
 package org.labkey.api.laboratory.assay;
 
 import org.json.JSONObject;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
 import java.io.File;
@@ -39,7 +42,7 @@ public interface AssayParser
     /**
      * Parses the provided file and json object using getPreview(), then saves this to the database
      */
-    public void saveBatch(JSONObject json, File file, String fileName, ViewContext ctx) throws BatchValidationException;
+    public Pair<ExpExperiment, ExpRun> saveBatch(JSONObject json, File file, String fileName, ViewContext ctx) throws BatchValidationException;
 
     public ExpProtocol getProtocol();
 

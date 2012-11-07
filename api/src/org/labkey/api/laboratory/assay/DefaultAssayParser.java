@@ -25,7 +25,9 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -39,6 +41,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
@@ -314,18 +317,13 @@ public class DefaultAssayParser implements AssayParser
         }
     }
 
-    public void saveBatch(JSONObject json, File file, String fileName, ViewContext ctx) throws BatchValidationException
+    public Pair<ExpExperiment, ExpRun> saveBatch(JSONObject json, File file, String fileName, ViewContext ctx) throws BatchValidationException
     {
         try
         {
-            LaboratoryService.get().saveAssayBatch(parseResults(json, file), json, file, fileName, ctx, _provider, _protocol);
+            return LaboratoryService.get().saveAssayBatch(parseResults(json, file), json, file, fileName, ctx, _provider, _protocol);
+
         }
-//        catch (ExperimentException e)
-//        {
-//            BatchValidationException ex = new BatchValidationException();
-//            ex.addRowError(new ValidationException(e.getMessage()));
-//            throw ex;
-//        }
         catch (ValidationException e)
         {
             BatchValidationException ex = new BatchValidationException();
