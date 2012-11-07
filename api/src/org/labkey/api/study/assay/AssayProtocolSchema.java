@@ -224,7 +224,16 @@ public abstract class AssayProtocolSchema extends AssaySchema
     {
         fixupRenderers(table);
 
+        // Check for metadata associated with the legacy query/schema names
         ArrayList<QueryException> errors = new ArrayList<QueryException>();
+        String legacyName = getProtocol().getName() + " " + name;
+        TableType legacyMetadata = QueryService.get().findMetadataOverride(AssayService.get().createSchema(getUser(), getContainer(), _targetStudy), legacyName, false, false, errors, null);
+        if (errors.isEmpty())
+        {
+            table.overlayMetadata(legacyMetadata, this, errors);
+        }
+
+        errors = new ArrayList<QueryException>();
         Path dir = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
         TableType metadata = QueryService.get().findMetadataOverride(this, name, false, true, errors, dir);
         if (errors.isEmpty())
