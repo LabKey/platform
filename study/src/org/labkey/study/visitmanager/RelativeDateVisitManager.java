@@ -225,16 +225,13 @@ public class RelativeDateVisitManager extends VisitManager
     {
         try
         {
-            String c = getStudy().getContainer().getId();
-
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-            TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
 
             SQLFragment sql = new SQLFragment("SELECT DISTINCT Day " +
                 "FROM " + tableParticipantVisit + "\n" +
                 "WHERE container = ? AND VisitRowId IS NULL");
-            sql.add(c);
+            sql.add(getStudy().getContainer());
 
             List<Integer> days = new ArrayList<Integer>();
             Table.TableResultSet rs = Table.executeQuery(schema, sql);

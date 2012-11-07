@@ -1008,9 +1008,15 @@ public class StudyManager
                     continue;
 
                 SQLFragment sqlf = new SQLFragment();
-                sqlf.append("DELETE FROM ").append(t.getSelectName()).append(" WHERE SequenceNum BETWEEN ? AND ?");
-                sqlf.add(visit.getSequenceNumMin());
-                sqlf.add(visit.getSequenceNumMax());
+                sqlf.append("DELETE FROM ");
+                sqlf.append(t.getSelectName());
+                sqlf.append(" WHERE LSID IN (SELECT LSID FROM ");
+                sqlf.append(t.getSelectName());
+                sqlf.append(" d, ");
+                sqlf.append(StudySchema.getInstance().getTableInfoParticipantVisit(), "pv");
+                sqlf.append(" WHERE d.ParticipantId = pv.ParticipantId AND d.SequenceNum = pv.SequenceNum AND pv.VisitRowId = ? AND pv.Container = ?)");
+                sqlf.add(visit.getRowId());
+                sqlf.add(study.getContainer());
                 int count = Table.execute(schema.getSchema(), sqlf);
                 if (count > 0)
                     StudyManager.dataSetModified(def, user, true);
