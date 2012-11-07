@@ -510,8 +510,16 @@ function renderFormPanel(data, editable){
         }
     }
 
-    for(var i = 8; i < items.length; i++){
-        items[i].value = data.rows[0][items[i].name].value;
+    for(i = 8; i < items.length; i++){
+
+        // initialize the form elements
+        var value = data.rows[0][items[i].name].value;
+
+        // stupid date conversion...
+        if (items[i].xtype == 'datefield')
+            items[i].value = (value != null && value != '') ? new Date(value) : '';
+        else
+            items[i].value = value;
     }
 
     studyPropertiesFormPanel = Ext4.create('Ext.form.Panel', {
