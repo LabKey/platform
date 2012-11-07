@@ -79,6 +79,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scatter_plot : 'Scatter Plot Report',
             box_plot : 'Box Plot Report'
         };
+
+        // only linear for now but could expand in the future
+        this.lineRenderers = {
+            linear : {
+                createRenderer : function(params){
+                    if (params && params.length >= 2) {
+                        return function(x){return x * params[0] + params[1];}
+                    }
+                    return function(x) {return x;}
+                }
+            }
+        };
         this.callParent([config]);
     },
 
@@ -1046,6 +1058,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         }
 
+        if (this.curveFit)
+            config.curveFit = this.curveFit;
+
         config.chartOptions = this.getChartOptions();
 
         return config;
@@ -1488,6 +1503,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 if (json.chartConfig.chartOptions.developer)
                     this.developerPanel.setPanelOptionValues(json.chartConfig.chartOptions.developer);
             }
+
+            if (json.chartConfig.curveFit)
+                this.curveFit = json.chartConfig.curveFit;
         }
 
         this.markDirty(false);
@@ -2006,12 +2024,29 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     generatePlotConfig: function(geom, renderTo, width, height, data, labels, scales){
+        var layers = [];
+
+        layers.push(new LABKEY.vis.Layer({geom: geom, data: data}));
+
+        // client has specified a line type
+        if (this.curveFit) {
+            var factory = this.lineRenderers[this.curveFit.type];
+            if (factory) {
+                layers.push(
+                    new LABKEY.vis.Layer({
+                        geom: new LABKEY.vis.Geom.Path(),
+                        aes: {x: 'x', y: 'y'},
+                        data: LABKEY.vis.Stat.fn(factory.createRenderer(this.curveFit.params),
+                                this.curveFit.points, this.curveFit.min, this.curveFit.max)})
+                );
+            }
+        }
         var plotConfig = {
             renderTo: renderTo,
             width: width,
             height: height,
             labels: labels,
-            layers: [new LABKEY.vis.Layer({geom: geom})],
+            layers: layers,
             scales: scales,
             data: data
         };
