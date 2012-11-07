@@ -325,6 +325,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         displayPane.addItem(new URLItem<DomainType, FieldType>(displayPane));
         displayPane.addItem(new VisibilityItem<DomainType, FieldType>(displayPane));
         addChangeHandler(displayPane.getChangeListener());
+        addChangeHandler(new ChangeHandler()
+        {
+            public void onChange(ChangeEvent event)
+            {
+                if (_selectedPD != null)
+                {
+                    updateStatusImage(_selectedPD);
+                }
+            }
+        });
 
         PropertyPane<DomainType, FieldType> formatPane = new PropertyPane<DomainType, FieldType>(this, "Format");
         formatPane.addItem(new FormatItem<DomainType, FieldType>(formatPane));
@@ -690,7 +700,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         int cellCount = _table.getCellCount(0);
         for (int c=0 ; c<cellCount ; c++)
             formatter.setHeight(tableRow, c, "23");
-        
+
         int col = 0;
         final FieldType pd = rowObject.edit;
         FieldStatus status = getStatus(rowObject);
@@ -1386,10 +1396,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         i.setUrl(status.getImageSrc());
         addTooltip(i, status.getDescription());
         fireChangeEvent();
-//        Image i = new Image(src);
-//        DOM.setElementProperty(i.getElement(), "id", id);
-//        addTooltip(i, status.getDescription());
-//        return i;
     }
 
 
@@ -1511,6 +1517,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 String propText = propObj == null ? null : propObj.toString();
                 if (!nullEquals(text, propText))
                 {
+                    // Just refresh the status icon, not the whole row
                     _prop.set(text);
                     if (status != getStatus(_pd))
                         updateStatusImage(_pd);
