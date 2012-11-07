@@ -2626,6 +2626,15 @@ font-weight:normal;
     color: #126495;
 }
 
+/*used to mark ext grid rows/cells as invalid*/
+.labkey-grid-row-invalid {
+    background-color: #f7d9d5 !important;
+}
+
+.labkey-grid-cell-invalid {
+    background-color: #f29c8d !important;
+}
+
 td.sort-desc, td.sort-asc, td.x-grid3-hd-menu-open {
 	text-decoration: none;
 }
