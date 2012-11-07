@@ -1953,27 +1953,11 @@ public class ContainerManager
         @Test
         public void testFolderType() throws SQLException
         {
-            // Test a random folderType plus the XML-defined Tabbed
+            // Test all folder types
             List<FolderType> folderTypes = new ArrayList<FolderType>(ModuleLoader.getInstance().getFolderTypes());
-            int randomInt = new Random().nextInt(folderTypes.size());
-            FolderType folderTypeRandom = folderTypes.get(randomInt);
-            if ("My XML-defined Tabbed Folder Type".equals(folderTypeRandom.getName()))
-            {
-                // Choose different one
-                if (randomInt + 1 < folderTypes.size())
-                    folderTypeRandom = folderTypes.get(randomInt + 1);
-                else if (randomInt - 1 >= 0)
-                    folderTypeRandom = folderTypes.get(randomInt - 1);
-            }
-            testOneFolderType(folderTypeRandom);
-
             for (FolderType folderType : folderTypes)
             {
-                if ("My XML-defined Tabbed Folder Type".equals(folderType.getName()))
-                {
-                    testOneFolderType(folderType);
-                    break;
-                }
+                testOneFolderType(folderType);
             }
         }
 
