@@ -58,7 +58,6 @@ public class SimpleFolderType extends MultiPortalFolderType
     private long _lastModified = 0;
     private String _name;
     private String _description;
-    private List<FolderTab> _folderTabs;
     private Set<Module> _activeModules;
     private Module _defaultModule;
     public static final String FILE_EXTENSION = ".foldertype.xml";

@@ -584,7 +584,6 @@ public class Portal
         p.setEntityId(new GUID());
         p.setContainer(new GUID(c.getId()));
         p.setPageId(pageId);
-        p.setCaption(pageId);
         p.setIndex(index);
         p.setType("portal");
         FolderTab tab = findFolderTab(c, pageId);

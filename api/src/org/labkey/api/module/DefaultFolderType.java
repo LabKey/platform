@@ -63,6 +63,7 @@ public class DefaultFolderType implements FolderType
     protected String folderIconPath = "_icons/icon_folder2.png";
     protected boolean forceAssayUploadIntoWorkbooks = false;
     protected boolean menubarEnabled = false;
+    protected List<FolderTab> _folderTabs = null;
 
     public DefaultFolderType(String name, String description)
     {
@@ -72,8 +73,7 @@ public class DefaultFolderType implements FolderType
 
     public DefaultFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
-        this.name = name;
-        this.description = description;
+        this(name, description);
         this.requiredParts = requiredParts == null ? Collections.<WebPart>emptyList() : requiredParts;
         this.preferredParts = preferredParts == null ? Collections.<WebPart>emptyList() : preferredParts;
         this.activeModules = activeModules;
@@ -82,12 +82,7 @@ public class DefaultFolderType implements FolderType
 
     public DefaultFolderType(String name, String description, List<Portal.WebPart> requiredParts, List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule, boolean forceAssayUploadIntoWorkbooks, String folderIconPath)
     {
-        this.name = name;
-        this.description = description;
-        this.requiredParts = requiredParts == null ? Collections.<WebPart>emptyList() : requiredParts;
-        this.preferredParts = preferredParts == null ? Collections.<WebPart>emptyList() : preferredParts;
-        this.activeModules = activeModules;
-        this.defaultModule = defaultModule;
+        this(name, description, requiredParts, preferredParts, activeModules, defaultModule);
         this.forceAssayUploadIntoWorkbooks = forceAssayUploadIntoWorkbooks;
         this.folderIconPath = folderIconPath;
     }
@@ -95,21 +90,24 @@ public class DefaultFolderType implements FolderType
     @Override
     public List<FolderTab> getDefaultTabs()
     {
-        FolderTab tab = new FolderTab("DefaultDashboard")
+        if (null == _folderTabs)
         {
-            @Override
-            public boolean isSelectedPage(ViewContext viewContext)
+            FolderTab tab = new FolderTab.PortalPage("DefaultDashboard", name + " Dashboard")
             {
-                return true;
-            }
+                @Override
+                public ActionURL getURL(Container container, User user)
+                {
+                    return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(container);
+                }
 
-            @Override
-            public ActionURL getURL(Container container, User user)
-            {
-                return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(container);
-            }
-        };
-        return Collections.singletonList(tab);
+                @Override
+                public List<Portal.WebPart> createWebParts() { return new ArrayList<WebPart>(); }
+            };
+            tab.setIsDefaultTab(true);
+            _folderTabs = Collections.singletonList(tab);
+        }
+
+        return _folderTabs;
     }
 
     @Override
@@ -288,6 +286,13 @@ public class DefaultFolderType implements FolderType
 
     public String getStartPageLabel(ViewContext ctx)
     {
+        FolderTab folderTab = getDefaultTab();
+        if (null != folderTab && folderTab.isDefaultTab())
+        {
+            String caption = folderTab.getCaption(ctx);
+            if (null != caption)
+                return caption;
+        }
         return getLabel() + " Dashboard";
     }
 

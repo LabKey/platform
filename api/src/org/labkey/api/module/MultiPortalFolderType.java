@@ -50,7 +50,7 @@ import java.util.Set;
 public abstract class MultiPortalFolderType extends DefaultFolderType
 {
     private String _activePortalPage = null;
-    protected FolderTab _defaultTab;
+    protected FolderTab _defaultTab = null;
 
     public MultiPortalFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
@@ -67,7 +67,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     private ArrayList<Portal.PortalPage> getSortedPortalPages(Container container)
     {
 
-        CaseInsensitiveHashMap<Portal.PortalPage> tabs = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container, false));
+        CaseInsensitiveHashMap<Portal.PortalPage> portalPages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container, false));
 
         // Build up a list of all the currently defined tab names
         Set<String> currentTabNames = new HashSet<String>();
@@ -77,8 +77,8 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
 
         // Filter out ones that we've saved that are no longer part of the folder type
-        ArrayList<Portal.PortalPage> filtered = new ArrayList<Portal.PortalPage>(tabs.size());
-        for (Portal.PortalPage tab : tabs.values())
+        ArrayList<Portal.PortalPage> filtered = new ArrayList<Portal.PortalPage>(portalPages.size());
+        for (Portal.PortalPage tab : portalPages.values())
         {
             if (currentTabNames.contains(tab.getPageId()))
             {
@@ -86,9 +86,15 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             }
         }
 
-        // If we don't have any matching tabs any more, reset to the default set
-        if (filtered.isEmpty())
-            filtered = resetDefaultTabs(container);
+        // Add in custom (portal page) tabs
+        for (Portal.PortalPage portalPage : portalPages.values())
+        {
+            String customTab = portalPage.getProperty(Portal.PROP_CUSTOMTAB);
+            if (null != customTab && customTab.equalsIgnoreCase("true"))
+            {
+                filtered.add(portalPage);
+            }
+        }
 
         // Need to sort by index so we choose the first tab as the default tab.
         Collections.sort(filtered, new Comparator<Portal.PortalPage>()
@@ -112,12 +118,6 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 folderTabs.add(folderTab);
         }
 
-        if (folderTabs.isEmpty())
-        {
-            folderType.resetDefaultTabs(container);
-            folderTabs = folderType.getDefaultTabs();
-        }
-
         // Add in custom (portal page) tabs
         for (Portal.PortalPage portalPage : portalPages.values())
         {
@@ -128,6 +128,13 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 folderTabs.add(new SimpleFolderTab(portalPage.getPageId(), caption));
             }
         }
+
+        if (folderTabs.isEmpty())
+        {
+            folderType.resetDefaultTabs(container);
+            folderTabs = folderType.getDefaultTabs();
+        }
+
         return folderTabs;
     }
 
@@ -141,14 +148,17 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     public AppBar getAppBar(ViewContext ctx, PageConfig pageConfig, Container childContainer)
     {
         Container container = ctx.getContainer();
-        Map<String,Portal.PortalPage> portalPages = Portal.getPages(container, false);
-        List<NavTree> buttons = new ArrayList<NavTree>();
-        List<NavTree> subContainerTabs = new ArrayList<NavTree>();
-        CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<FolderTab>();
-        ArrayList<Portal.PortalPage> sortedPages = new ArrayList<Portal.PortalPage>(portalPages.values());
-        _activePortalPage = null;
-        Map<String, NavTree> navMap = new LinkedHashMap<String, NavTree>();
 
+        // Get folder tabs first because it will bring back a portal page if ALL have been hidden
+        CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<FolderTab>();
+        for (FolderTab folderTab : getFolderTabs(container, this))
+        {
+            folderTabMap.put(folderTab.getName(), folderTab);
+        }
+
+        // Now get portal pages that are not hidden
+        Map<String,Portal.PortalPage> portalPages = Portal.getPages(container, false);
+        ArrayList<Portal.PortalPage> sortedPages = new ArrayList<Portal.PortalPage>(portalPages.values());
         Collections.sort(sortedPages, new Comparator<Portal.PortalPage>()
         {
             @Override
@@ -158,10 +168,10 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             }
         });
 
-        for (FolderTab folderTab : getFolderTabs(container, this))
-        {
-            folderTabMap.put(folderTab.getName(), folderTab);
-        }
+        _activePortalPage = null;
+        Map<String, NavTree> navMap = new LinkedHashMap<String, NavTree>();
+        List<NavTree> buttons = new ArrayList<NavTree>();
+        List<NavTree> subContainerTabs = new ArrayList<NavTree>();
 
         for (int i = 0; i < sortedPages.size(); i++)
         {
@@ -170,7 +180,12 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             
             if (folderTab != null && folderTab.isVisible(container, ctx.getUser()))
             {
-                String label = portalPage.getCaption() != null ? portalPage.getCaption() : folderTab.getCaption(ctx);
+                String label = portalPage.getCaption() != null ?
+                        portalPage.getCaption() :
+                        folderTab.isDefaultTab() ?
+                                getStartPageLabel(ctx) :
+                                folderTab.getCaption(ctx);
+
                 NavTree nav = new NavTree(label, folderTab.getURL(container, ctx.getUser()));
                 nav.setId("portal:" + portalPage.getPageId());
                 nav.addChild(getTabMenu(ctx, folderTab, portalPage));
@@ -311,7 +326,11 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
     }
 
-    protected abstract String getFolderTitle(ViewContext context);
+    protected String getFolderTitle(ViewContext context)
+    {   // Default; often overridden
+        String title = context.getContainer().isWorkbook() ? context.getContainer().getTitle() : context.getContainer().getName();
+        return title;
+    }
 
 
     @Override

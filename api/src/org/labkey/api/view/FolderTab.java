@@ -99,14 +99,21 @@ public abstract class FolderTab
             {
                 return true;
             }
+
             ActionURL currentURL = viewContext.getActionURL();
-            ActionURL tabURL = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getHomeContainer(), getName());
-            if (currentURL.getController().equalsIgnoreCase(tabURL.getController()) &&
-                currentURL.getAction().equalsIgnoreCase(tabURL.getAction()))
-            {
-                String pageName = currentURL.getParameter("pageId");
-                return getName().equalsIgnoreCase(pageName);
-            }
+
+            String pageName = currentURL.getParameter("pageId");
+            if (pageName != null && getName().equalsIgnoreCase(pageName))
+                return true;
+
+              // Should not be necessary with the above direct pageId check, but leaving here in case we find a case (dave 11/7/12)
+//            ActionURL tabURL = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getHomeContainer(), getName());
+//            if (currentURL.getController().equalsIgnoreCase(tabURL.getController()) &&
+//                currentURL.getAction().equalsIgnoreCase(tabURL.getAction()))
+//            {
+//                String pageName = currentURL.getParameter("pageId");
+//                return getName().equalsIgnoreCase(pageName);
+//            }
             return false;
         }
 
@@ -218,6 +225,11 @@ public abstract class FolderTab
     public void setIsDefaultTab(boolean isDefault)
     {
         _isDefaultTab = isDefault;
+    }
+
+    public boolean isDefaultTab()
+    {
+        return _isDefaultTab;
     }
 
     public int getDefaultIndex()
