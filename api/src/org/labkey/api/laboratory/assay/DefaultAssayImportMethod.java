@@ -18,7 +18,6 @@ package org.labkey.api.laboratory.assay;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -28,8 +27,6 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
@@ -179,19 +176,9 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return json;
     }
 
-    public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws Exception
+    public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws BatchValidationException
     {
-        try
-        {
-            doGenerateTemplate(json, request, response);
-        }
-        catch (BatchValidationException e)
-        {
-            response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
-
-            HttpView errorView = ExceptionUtil.getErrorView(HttpServletResponse.SC_BAD_REQUEST, e.getMessage(), e, null, false);
-            errorView.render(request, response);
-        }
+        doGenerateTemplate(json, request, response);
     }
 
     public void doGenerateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws BatchValidationException

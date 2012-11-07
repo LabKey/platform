@@ -18,6 +18,7 @@ package org.labkey.api.laboratory.assay;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
@@ -107,5 +108,5 @@ public interface AssayImportMethod
      */
     abstract public boolean supportsRunTemplates();
 
-    abstract public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws Exception;
+    abstract public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws BatchValidationException;
 }

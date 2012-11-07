@@ -478,12 +478,13 @@ LABKEY.ext.Ext4Helper = new function(){
             {
                 var displayValue = value;
                 var cellStyles = [];
-
-                if(Ext4.isEmpty(value))
-                    return value;
+                var tdCls = [];
 
                 //format value into a string
-                displayValue = LABKEY.ext.Ext4Helper.getDisplayString(value, meta, record, store);
+                if(!Ext4.isEmpty(value))
+                    displayValue = LABKEY.ext.Ext4Helper.getDisplayString(value, meta, record, store);
+                else
+                    displayValue = value;
 
                 if(meta.buildDisplayString){
                     displayValue = meta.buildDisplayString({
@@ -518,12 +519,22 @@ LABKEY.ext.Ext4Helper = new function(){
                     cellStyles.push('white-space:normal !important');
                 }
 
-                if(record && record.errors && record.errors.length)
-                    cellMetaData.css += ' x-grid3-cell-invalid';
+                if(record && record.errors && record.errors.length){
+                    tdCls.push('labkey-grid-cell-invalid');
+                }
+
+                if ((meta.allowBlank === false || meta.nullable === false) && Ext4.isEmpty(value)){
+                    tdCls.push('labkey-grid-cell-invalid');
+                }
 
                 if(cellStyles.length){
                     cellMetaData.style = cellMetaData.style || '';
                     cellMetaData.style += (cellStyles.join(';'));
+                }
+
+                if (tdCls.length){
+                    cellMetaData.tdCls = cellMetaData.tdCls || '';
+                    cellMetaData.tdCls += tdCls.join(' ');
                 }
 
                 LABKEY.ext.Ext4Helper.buildQtip({
