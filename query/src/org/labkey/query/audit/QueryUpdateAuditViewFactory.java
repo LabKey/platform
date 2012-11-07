@@ -36,7 +36,6 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -210,7 +209,8 @@ public class QueryUpdateAuditViewFactory extends SimpleAuditViewFactory
         }
 
         // add a column to show the differences between old and new values
-        table.addColumn(new DataMapDiffColumn(table, "DataChanges", oldCol, newCol));
+        if (oldCol != null && newCol != null)
+            table.addColumn(new DataMapDiffColumn(table, "DataChanges", oldCol, newCol));
     }
 
     @Override
