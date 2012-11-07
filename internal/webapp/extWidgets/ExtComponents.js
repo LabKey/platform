@@ -98,7 +98,7 @@ Ext4.define('LABKEY.ext.LinkButton', {
         });
 
         //prevent double clicks.  this listener breaks links in IE
-        if (!Ext4.isIE7){
+        if (!Ext4.isIE){
             this.on('click', function(btn){
                 btn.setDisabled(true);
                 btn.setDisabled.defer(100, this, [false]);
