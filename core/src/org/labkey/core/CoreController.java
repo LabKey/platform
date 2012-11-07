@@ -60,6 +60,7 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.module.SimpleAction;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;

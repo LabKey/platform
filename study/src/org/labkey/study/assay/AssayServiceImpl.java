@@ -311,154 +311,159 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
     public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws AssayException
     {
-        if (replaceIfExisting)
+        // Synchronize the whole method to prevent saving of new two assay designs with the same name at the same
+        // time, which will lead to a SQLException on the UNIQUE constraint on protocol LSIDs
+        synchronized (AssayServiceImpl.class)
         {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            try
+            if (replaceIfExisting)
             {
-                schema.getScope().ensureTransaction();
-
-                ExpProtocol protocol;
-                if (assay.getProtocolId() == null)
+                DbSchema schema = StudySchema.getInstance().getSchema();
+                try
                 {
-                    protocol = AssayManager.get().createAssayDefinition(getUser(), getContainer(), assay);
-                    assay.setProtocolId(protocol.getRowId());
+                    schema.getScope().ensureTransaction();
 
-                    XarContext context = new XarContext("Domains", getContainer(), getUser());
-                    context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
-                    Set<String> domainURIs = new HashSet<String>();
-                    for (GWTDomain domain : assay.getDomains())
+                    ExpProtocol protocol;
+                    if (assay.getProtocolId() == null)
                     {
-                        domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
-                        domain.setName(assay.getName() + " " + domain.getName());
-                        DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), getContainer());
-                        dd.setDescription(domain.getDescription());
-                        OntologyManager.updateDomainDescriptor(dd);
-                        domainURIs.add(domain.getDomainURI());
-                    }
-                    setPropertyDomainURIs(protocol, domainURIs);
-                }
-                else
-                {
-                    protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
+                        protocol = AssayManager.get().createAssayDefinition(getUser(), getContainer(), assay);
+                        assay.setProtocolId(protocol.getRowId());
 
-                    if (protocol == null)
-                    {
-                        throw new AssayException("Assay design has been deleted");
-                    }
-
-                    //ensure that the user has edit perms in this container
-                    if (!canUpdateProtocols())
-                        throw new AssayException("You do not have sufficient permissions to update this Assay");
-
-                    if (!protocol.getContainer().equals(getContainer()))
-                        throw new AssayException("Assays can only be edited in the folder where they were created.  " +
-                                "This assay was created in folder " + protocol.getContainer().getPath());
-                    protocol.setName(assay.getName());
-                    protocol.setProtocolDescription(assay.getDescription());
-                }
-
-                Map<String, ProtocolParameter> newParams = new HashMap<String, ProtocolParameter>(protocol.getProtocolParameters());
-                for (Map.Entry<String, String> entry : assay.getProtocolParameters().entrySet())
-                {
-                    ProtocolParameter param = new ProtocolParameter();
-                    String uri = entry.getKey();
-                    param.setOntologyEntryURI(uri);
-                    param.setValue(SimpleTypeNames.STRING, entry.getValue());
-                    param.setName(uri.indexOf("#") != -1 ? uri.substring(uri.indexOf("#") + 1) : uri);
-                    newParams.put(uri, param);
-                }
-                protocol.setProtocolParameters(newParams.values());
-
-                AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(protocol);
-                if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
-                {
-                    PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
-                    PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), assay.getSelectedPlateTemplate());
-                    if (template != null)
-                        plateProvider.setPlateTemplate(getContainer(), protocol, template);
-                    else
-                        throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
-                }
-
-                // data transform scripts
-                List<File> transformScripts = new ArrayList<File>();
-                for (String script : assay.getProtocolTransformScripts())
-                {
-                    if (!StringUtils.isBlank(script))
-                    {
-                        transformScripts.add(new File(script));
-                    }
-                }
-                provider.setValidationAndAnalysisScripts(protocol, transformScripts);
-
-                provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
-                provider.setEditableResults(protocol, assay.isEditableResults());
-                provider.setEditableRuns(protocol, assay.isEditableRuns());
-                provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
-
-                Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
-                String autoCopyTargetContainerId = null;
-                if (assay.getAutoCopyTargetContainer() != null)
-                {
-                    Container container = ContainerManager.getForId(assay.getAutoCopyTargetContainer().getEntityId());
-                    if (container == null)
-                    {
-                        throw new AssayException("No such auto-copy target container: " + assay.getAutoCopyTargetContainer().getPath());
-                    }
-                    autoCopyTargetContainerId = container.getId();
-                }
-                if (autoCopyTargetContainerId != null)
-                {
-                    props.put(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
-                }
-                else
-                {
-                    props.remove(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
-                }
-                protocol.setObjectProperties(props);
-
-                protocol.save(getUser());
-
-                StringBuilder errors = new StringBuilder();
-                for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
-                {
-                    List<String> domainErrors = updateDomainDescriptor(domain, protocol.getName(), getContainer());
-                    if (domainErrors != null)
-                    {
-                        for (String error : domainErrors)
+                        XarContext context = new XarContext("Domains", getContainer(), getUser());
+                        context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
+                        Set<String> domainURIs = new HashSet<String>();
+                        for (GWTDomain domain : assay.getDomains())
                         {
-                            errors.append(error).append("\n");
+                            domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
+                            domain.setName(assay.getName() + " " + domain.getName());
+                            DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), getContainer());
+                            dd.setDescription(domain.getDescription());
+                            OntologyManager.updateDomainDescriptor(dd);
+                            domainURIs.add(domain.getDomainURI());
+                        }
+                        setPropertyDomainURIs(protocol, domainURIs);
+                    }
+                    else
+                    {
+                        protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
+
+                        if (protocol == null)
+                        {
+                            throw new AssayException("Assay design has been deleted");
+                        }
+
+                        //ensure that the user has edit perms in this container
+                        if (!canUpdateProtocols())
+                            throw new AssayException("You do not have sufficient permissions to update this Assay");
+
+                        if (!protocol.getContainer().equals(getContainer()))
+                            throw new AssayException("Assays can only be edited in the folder where they were created.  " +
+                                    "This assay was created in folder " + protocol.getContainer().getPath());
+                        protocol.setName(assay.getName());
+                        protocol.setProtocolDescription(assay.getDescription());
+                    }
+
+                    Map<String, ProtocolParameter> newParams = new HashMap<String, ProtocolParameter>(protocol.getProtocolParameters());
+                    for (Map.Entry<String, String> entry : assay.getProtocolParameters().entrySet())
+                    {
+                        ProtocolParameter param = new ProtocolParameter();
+                        String uri = entry.getKey();
+                        param.setOntologyEntryURI(uri);
+                        param.setValue(SimpleTypeNames.STRING, entry.getValue());
+                        param.setName(uri.indexOf("#") != -1 ? uri.substring(uri.indexOf("#") + 1) : uri);
+                        newParams.put(uri, param);
+                    }
+                    protocol.setProtocolParameters(newParams.values());
+
+                    AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(protocol);
+                    if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
+                    {
+                        PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
+                        PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), assay.getSelectedPlateTemplate());
+                        if (template != null)
+                            plateProvider.setPlateTemplate(getContainer(), protocol, template);
+                        else
+                            throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
+                    }
+
+                    // data transform scripts
+                    List<File> transformScripts = new ArrayList<File>();
+                    for (String script : assay.getProtocolTransformScripts())
+                    {
+                        if (!StringUtils.isBlank(script))
+                        {
+                            transformScripts.add(new File(script));
                         }
                     }
-                }
-                if (errors.length() > 0)
-                    throw new AssayException(errors.toString());
+                    provider.setValidationAndAnalysisScripts(protocol, transformScripts);
 
-                schema.getScope().commitTransaction();
-                AssayManager.get().clearProtocolCache();
-                return getAssayDefinition(assay.getProtocolId(), false);
+                    provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
+                    provider.setEditableResults(protocol, assay.isEditableResults());
+                    provider.setEditableRuns(protocol, assay.isEditableRuns());
+                    provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
+
+                    Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+                    String autoCopyTargetContainerId = null;
+                    if (assay.getAutoCopyTargetContainer() != null)
+                    {
+                        Container container = ContainerManager.getForId(assay.getAutoCopyTargetContainer().getEntityId());
+                        if (container == null)
+                        {
+                            throw new AssayException("No such auto-copy target container: " + assay.getAutoCopyTargetContainer().getPath());
+                        }
+                        autoCopyTargetContainerId = container.getId();
+                    }
+                    if (autoCopyTargetContainerId != null)
+                    {
+                        props.put(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
+                    }
+                    else
+                    {
+                        props.remove(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
+                    }
+                    protocol.setObjectProperties(props);
+
+                    protocol.save(getUser());
+
+                    StringBuilder errors = new StringBuilder();
+                    for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
+                    {
+                        List<String> domainErrors = updateDomainDescriptor(domain, protocol.getName(), getContainer());
+                        if (domainErrors != null)
+                        {
+                            for (String error : domainErrors)
+                            {
+                                errors.append(error).append("\n");
+                            }
+                        }
+                    }
+                    if (errors.length() > 0)
+                        throw new AssayException(errors.toString());
+
+                    schema.getScope().commitTransaction();
+                    AssayManager.get().clearProtocolCache();
+                    return getAssayDefinition(assay.getProtocolId(), false);
+                }
+                catch (UnexpectedException e)
+                {
+                    Throwable cause = e.getCause();
+                    throw new AssayException(cause.getMessage());
+                }
+                catch (ExperimentException e)
+                {
+                    throw new AssayException(e.getMessage());
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+                finally
+                {
+                    schema.getScope().closeConnection();
+                }
             }
-            catch (UnexpectedException e)
-            {
-                Throwable cause = e.getCause();
-                throw new AssayException(cause.getMessage());
-            }
-            catch (ExperimentException e)
-            {
-                throw new AssayException(e.getMessage());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-            finally
-            {
-                schema.getScope().closeConnection();
-            }
+            else
+                throw new AssayException("Only replaceIfExisting == true is supported.");
         }
-        else
-            throw new AssayException("Only replaceIfExisting == true is supported.");
     }
 
     private List<String> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, String protocolName, Container protocolContainer)

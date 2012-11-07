@@ -33,6 +33,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
+import org.labkey.api.reader.ExcelFormatException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -360,6 +361,11 @@ public class PropertyController extends SpringActionController
                 }
 
                 return getData(dataLoader);
+            }
+            catch (ExcelFormatException efe)
+            {
+                error(writer, efe.getMessage());
+                return null;
             }
             catch (IOException ioe)
             {
