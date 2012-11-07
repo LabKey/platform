@@ -18,7 +18,7 @@ package org.labkey.wiki.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.module.DefaultFolderType;
+import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.Portal;
@@ -33,7 +33,7 @@ import java.util.Arrays;
  * Date: Aug 4, 2006
  * Time: 3:41:26 PM
  */
-public class CollaborationFolderType extends DefaultFolderType
+public class CollaborationFolderType extends MultiPortalFolderType
 {
     public static final String TYPE_NAME = "Collaboration";
 

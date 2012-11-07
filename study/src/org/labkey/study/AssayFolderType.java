@@ -19,8 +19,10 @@ package org.labkey.study;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +32,7 @@ import java.util.Set;
  * User: kevink
  * Date: Oct 9, 2009
  */
-public class AssayFolderType extends DefaultFolderType
+public class AssayFolderType extends MultiPortalFolderType
 {
     public static final String NAME = "Assay";
 
