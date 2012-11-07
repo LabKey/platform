@@ -141,7 +141,7 @@ public class ExcelLoader extends DataLoader
             }
             catch (InvalidFormatException e)
             {
-                throw new IOException(e.getMessage());
+                throw new ExcelFormatException(e);
             }
         }
         return _workbook;

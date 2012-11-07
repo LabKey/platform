@@ -632,8 +632,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return _nameToDescriptor.get(actionName).createController(actionController);
             }
 
-            ViewContext ctx = HttpView.getRootContext();
-            String controllerName = ctx.getActionURL().getController();
+            String controllerName = ViewServlet.getPageFlowName(actionController.getClass());
             Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
 
             Resource r = (module == null) ? null : module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);

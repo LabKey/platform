@@ -573,7 +573,6 @@ api/src/org/labkey/api/module/MockModule.java -text
 api/src/org/labkey/api/module/Module.java -text
 api/src/org/labkey/api/module/ModuleContext.java -text
 api/src/org/labkey/api/module/ModuleDependencySorter.java -text
-api/src/org/labkey/api/module/ModuleFileCopyListener.java -text
 api/src/org/labkey/api/module/ModuleFileResource.java -text
 api/src/org/labkey/api/module/ModuleHtmlView.java -text
 api/src/org/labkey/api/module/ModuleHtmlViewDefinition.java -text
@@ -799,6 +798,7 @@ api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/DataLoaderFactory.java -text
 api/src/org/labkey/api/reader/DataLoaderService.java -text
 api/src/org/labkey/api/reader/ExcelFactory.java -text
+api/src/org/labkey/api/reader/ExcelFormatException.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
 api/src/org/labkey/api/reader/FastaDataLoader.java -text
 api/src/org/labkey/api/reader/FastaLoader.java -text
@@ -1205,7 +1205,6 @@ api/src/org/labkey/api/util/ErrorView.java -text
 api/src/org/labkey/api/util/ExceptionReportingLevel.java -text
 api/src/org/labkey/api/util/ExceptionUtil.java -text
 api/src/org/labkey/api/util/ExtUtil.java -text
-api/src/org/labkey/api/util/FileCopyListener.java -text
 api/src/org/labkey/api/util/FileStream.java -text
 api/src/org/labkey/api/util/FileType.java -text
 api/src/org/labkey/api/util/FileUtil.java -text

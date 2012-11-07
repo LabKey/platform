@@ -20,7 +20,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.security.Crypt;
@@ -350,31 +349,21 @@ public class FileUtil
         copyBranch(src, dest, false);
     }
 
-    public static void copyBranch(File src, File dest, boolean contentsOnly) throws IOException
-    {
-        copyBranch(src, dest, contentsOnly, null);
-    }
-
     /**
      * Copies an entire file system branch to another location
+     *
      * @param src The source file root
      * @param dest The destination file root
      * @param contentsOnly Pass false to copy the root directory as well as the files within; true to just copy the contents
-     * @param listener An optional FileCopyListener that should be notified (or null if not desired)
      * @throws IOException Thrown if there's an IO exception
      */
-    public static void copyBranch(File src, File dest, boolean contentsOnly, @Nullable FileCopyListener listener) throws IOException
+    public static void copyBranch(File src, File dest, boolean contentsOnly) throws IOException
     {
         //if src is just a file, copy it and return
         if(src.isFile())
         {
             File destFile = new File(dest, src.getName());
-            if(null == listener || listener.shouldCopy(src, destFile))
-            {
-                copyFile(src, destFile);
-                if(null != listener)
-                    listener.afterFileCopy(src, destFile);
-            }
+            copyFile(src, destFile);
             return;
         }
 
@@ -383,19 +372,14 @@ public class FileUtil
         if(!contentsOnly)
         {
             dest = new File(dest, src.getName());
-            if(null == listener || listener.shouldCopy(src, dest))
-            {
-                dest.mkdirs();
-                if(!dest.isDirectory())
-                    throw new IOException("Unable to create the directory " + dest.toString() + "!");
-                if(null != listener)
-                    listener.afterFileCopy(src, dest);
-            }
+            dest.mkdirs();
+            if(!dest.isDirectory())
+                throw new IOException("Unable to create the directory " + dest.toString() + "!");
         }
 
         for(File file : src.listFiles())
         {
-            copyBranch(file, dest, false, listener);
+            copyBranch(file, dest, false);
         }
     }
 

@@ -1148,14 +1148,6 @@ public class ModuleLoader implements Filter
         }
     }
 
-    public String getPageFlowForPackage(Package pkg)
-    {
-        String ret = _packageToPageFlowURL.get(pkg);
-        if (ret != null)
-            return ret;
-        return StringUtils.replace(pkg.getName(), ".", "-");
-    }
-
     public Module getModuleForController(String controllerName)
     {
         synchronized(_controllerNameToModule)

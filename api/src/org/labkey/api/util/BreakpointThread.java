@@ -22,6 +22,7 @@ import org.labkey.api.module.ModuleLoader;
 
 import javax.servlet.ServletContextEvent;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Set;
 import java.util.Date;
@@ -188,7 +189,19 @@ public class BreakpointThread extends Thread implements ShutdownListener
         Object bean = ManagementFactory.newPlatformMXBeanProxy(ManagementFactory.getPlatformMBeanServer(), HOTSPOT_BEAN_NAME, hotspotClass);
         Method method = hotspotClass.getMethod("dumpHeap", String.class, boolean.class);
         File destination = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "HeapDump_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss-SSS") + ".hprof");
-        method.invoke(bean, destination.getAbsolutePath(), false);
+        try
+        {
+            method.invoke(bean, destination.getAbsolutePath(), false);
+        }
+        catch (InvocationTargetException e)
+        {
+            if (e.getTargetException() instanceof IOException)
+            {
+                // Rethrow a with a more helpful error message
+                throw new IOException("Failed to write heap dump to " + destination, e.getTargetException());
+            }
+            throw e;
+        }
         return destination;
     }
 }
