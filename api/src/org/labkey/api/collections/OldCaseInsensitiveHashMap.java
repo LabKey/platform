@@ -27,7 +27,7 @@ import java.util.Map;
  */
 
 // DO NOT USE -- this map is not thread-safe; use CaseInsensitiveHashMap instead.  This is being used to develop a junit
-// test is able to detect the underlying concurrency problem.
+// test that is able to detect the underlying concurrency problem.
 @Deprecated
 public class OldCaseInsensitiveHashMap<V> extends HashMap<String, V>
 {

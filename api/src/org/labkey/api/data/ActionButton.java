@@ -156,7 +156,8 @@ public class ActionButton extends DisplayElement implements Cloneable
         _url = StringExpressionFactory.create(url.getLocalURIString(true), true);
     }
 
-    @Deprecated /** Use version that takes an action class instead */
+    /** Use version that takes an action class instead */
+    @Deprecated
     private ActionButton(String actionName, String caption)
     {
         assert StringUtils.containsNone(actionName,"/:?") : "this is for _actions_, use setUrl() or setScript()";

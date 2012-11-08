@@ -16,8 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
@@ -82,6 +82,7 @@ public class Aggregate
     {
         private Aggregate _aggregate;
         private Object _value;
+
         public Result(Aggregate aggregate, Object value)
         {
             _aggregate = aggregate;
@@ -102,7 +103,7 @@ public class Aggregate
     private FieldKey _fieldKey;
     private Type _type;
     private String _aggregateColumnName = null;
-    private String _label;
+    private @Nullable String _label;
 
     private Aggregate()
     {
@@ -116,7 +117,7 @@ public class Aggregate
     @Deprecated // Use FieldKey version instead.
     public Aggregate(String columnAlias, Aggregate.Type type)
     {
-        this(columnAlias, type, null);
+        this(FieldKey.fromString(columnAlias), type, null);
     }
 
     public Aggregate(FieldKey fieldKey, Aggregate.Type type)
@@ -124,13 +125,7 @@ public class Aggregate
         this(fieldKey, type, null);
     }
     
-    @Deprecated // Use FieldKey version instead.
-    public Aggregate(String columnAlias, Aggregate.Type type, String label)
-    {
-        this(FieldKey.fromString(columnAlias), type, label);
-    }
-
-    public Aggregate(FieldKey fieldKey, Aggregate.Type type, String label)
+    public Aggregate(FieldKey fieldKey, Aggregate.Type type, @Nullable String label)
     {
         _fieldKey = fieldKey;
         _type = type;
@@ -185,12 +180,12 @@ public class Aggregate
         return _type;
     }
 
-    public String getLabel()
+    public @Nullable String getLabel()
     {
         return _label;
     }
 
-    public void setLabel(String label)
+    public void setLabel(@Nullable String label)
     {
         _label = label;
     }
@@ -293,7 +288,7 @@ public class Aggregate
 
     public String getValueForUrl()
     {
-        if(getLabel() == null)
+        if (getLabel() == null)
             return getType().name();
 
         StringBuilder ret = new StringBuilder();
