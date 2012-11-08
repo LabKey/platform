@@ -239,7 +239,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 else
                 {
                     hasPostData = true;
-                    loader = DataLoader.get().createLoader(resource, _hasColumnHeaders, null);
+                    loader = DataLoader.get().createLoader(resource, _hasColumnHeaders, null, null);
                     file = resource.getFileStream(user);
                     originalName = resource.getName();
                 }
@@ -255,7 +255,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     // can't read the multipart file twice so create temp file (12800)
                     tempFile = File.createTempFile("~upload", multipartfile.getOriginalFilename());
                     multipartfile.transferTo(tempFile);
-                    loader = DataLoader.get().createLoader(tempFile, multipartfile.getContentType(), _hasColumnHeaders, null);
+                    loader = DataLoader.get().createLoader(tempFile, multipartfile.getContentType(), _hasColumnHeaders, null, null);
                     file = new FileAttachmentFile(tempFile, multipartfile.getOriginalFilename());
                 }
             }

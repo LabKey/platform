@@ -43,17 +43,17 @@ public class DataLoaderService
     {
         public void registerFactory(@NotNull DataLoaderFactory factory);
 
-        @Nullable public DataLoaderFactory findFactory(File file);
-        @Nullable public DataLoaderFactory findFactory(File file, String contentType);
-        @Nullable public DataLoaderFactory findFactory(String filename, String contentType, InputStream is);
+        @Nullable public DataLoaderFactory findFactory(File file, @Nullable FileType guessFormat);
+        @Nullable public DataLoaderFactory findFactory(File file, String contentType, @Nullable FileType guessFormat);
+        @Nullable public DataLoaderFactory findFactory(String filename, String contentType, InputStream is, @Nullable FileType guessFormat);
 
-        public DataLoader createLoader(String filename, String contentType, InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
+        public DataLoader createLoader(String filename, String contentType, InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 
-        public DataLoader createLoader(MultipartFile file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
+        public DataLoader createLoader(MultipartFile file, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 
-        public DataLoader createLoader(Resource r, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
+        public DataLoader createLoader(Resource r, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 
-        public DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException;
+        public DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 
     }
 }

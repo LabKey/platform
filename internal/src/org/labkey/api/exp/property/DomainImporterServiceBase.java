@@ -24,6 +24,7 @@ import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.view.ViewContext;
 
@@ -108,7 +109,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
     {
         try
         {
-            return DataLoader.get().createLoader(getImportFile(), null, true, getContainer());
+            return DataLoader.get().createLoader(getImportFile(), null, true, getContainer(), TabLoader.TSV_FILE_TYPE);
         }
         catch (IOException e)
         {
