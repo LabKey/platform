@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -283,6 +284,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         if (!legacyPortalParts.isEmpty())
         {
             FolderType folderType = container.getFolderType();
+            if (null == folderType.getDefaultTab() || null == StringUtils.trimToNull(folderType.getDefaultTab().getName()))
+                return;         // Nothing to do
+
             // Check if there's a tab that has the legacy portal page ID
             for (FolderTab folderTab : folderType.getDefaultTabs())
             {

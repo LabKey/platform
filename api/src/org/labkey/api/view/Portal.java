@@ -159,7 +159,6 @@ public class Portal
         String location = HttpView.BODY;
         boolean permanent;
         Map<String, String> propertyMap = new HashMap<String, String>();
-        String properties = null;
         Map<String, Object> extendedProperties = null;
 
         static
@@ -180,7 +179,7 @@ public class Portal
             name = copyFrom.name;
             location = copyFrom.location;
             permanent = copyFrom.permanent;
-            setProperties(copyFrom.properties);
+            setProperties(copyFrom.getProperties());
             this.extendedProperties = copyFrom.extendedProperties;
         }
 
@@ -318,7 +317,6 @@ public class Portal
             if (location != null ? !location.equals(webPart.location) : webPart.location != null) return false;
             if (name != null ? !name.equals(webPart.name) : webPart.name != null) return false;
             if (pageId != null ? !pageId.equals(webPart.pageId) : webPart.pageId != null) return false;
-            if (properties != null ? !properties.equals(webPart.properties) : webPart.properties != null) return false;
             if (propertyMap != null ? !propertyMap.equals(webPart.propertyMap) : webPart.propertyMap != null)
                 return false;
 
@@ -335,7 +333,7 @@ public class Portal
             result = 31 * result + (location != null ? location.hashCode() : 0);
             result = 31 * result + (permanent ? 1 : 0);
             result = 31 * result + (propertyMap != null ? propertyMap.hashCode() : 0);
-            result = 31 * result + (properties != null ? properties.hashCode() : 0);
+            result = 31 * result + 0;       // properties used to be here but was always null
             result = 31 * result + (extendedProperties != null ? extendedProperties.hashCode() : 0);
             return result;
         }
