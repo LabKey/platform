@@ -1388,14 +1388,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     void updateStatusImage(GWTPropertyDescriptor pd)
     {
-        FieldStatus status = getStatus(pd);
-        Image i = (Image)_table.getWidget(getRow(pd)+1,0);
-        String old = i.getUrl();
-        if (old.contains(status.getImageSrc()))
-            return;
-        i.setUrl(status.getImageSrc());
-        addTooltip(i, status.getDescription());
-        fireChangeEvent();
+        if (getRow(pd) != -1)
+        {
+            FieldStatus status = getStatus(pd);
+            Image i = (Image)_table.getWidget(getRow(pd)+1,0);
+            String old = i.getUrl();
+            if (old.contains(status.getImageSrc()))
+                return;
+            i.setUrl(status.getImageSrc());
+            addTooltip(i, status.getDescription());
+            fireChangeEvent();
+        }
     }
 
 
