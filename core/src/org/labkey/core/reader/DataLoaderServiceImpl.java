@@ -82,19 +82,16 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
 
     private byte[] getHeader(File f, InputStream in)
     {
+        // Can't read header if underlying stream can't be buffered
+        if (in != null && !in.markSupported())
+            return null;
+
         InputStream is = in;
 
-        boolean buffered = false;
         try
         {
             if (null == is)
-                is = new FileInputStream(f);
-
-            if (!is.markSupported())
-            {
-                buffered = true;
-                is = new BufferedInputStream(is);
-            }
+                is = new BufferedInputStream(new FileInputStream(f));
 
             is.skip(Long.MIN_VALUE);
             return FileUtil.readHeader(is, 4*1024);
@@ -106,7 +103,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
         finally
         {
             // Don't close original InputStream
-            if (is != in && !buffered)
+            if (is != in)
                 IOUtils.closeQuietly(is);
         }
     }
