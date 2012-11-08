@@ -154,6 +154,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 {
                     this.toggleOptionButtons(true);
                     this.chart.add(Ext4.create('LABKEY.vis.InitialMeasurePanel', {
+                        subjectNounSingular: this.viewInfo.subjectNounSingular,
                         listeners: {
                             scope: this,
                             'initialMeasuresStoreLoaded': function(data) {

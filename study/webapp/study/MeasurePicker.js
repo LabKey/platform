@@ -19,6 +19,7 @@ LABKEY.MeasuresDataViewType = {
  * @param {object} [filter] passed to the LABKEY.ext4.MeasuresPanel definition
  * @param {boolean} [allColumns] passed to the LABKEY.ext4.MeasuresPanel definition
  * @param {boolean} [canShowHidden] passed to the LABKEY.ext4.MeasuresPanel definition
+ * @param {object} [helpText] passed to the LABKEY.ext4.MeasuresPanel definition
  * @param {boolean} [forceQuery] passed to the LABKEY.ext4.MeasuresPanel definition
 **/
 Ext4.define('LABKEY.ext4.MeasuresDialog', {
@@ -50,6 +51,7 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
     },
 
     initComponent : function() {
+        Ext4.QuickTips.init();
 
         this.buttons = [];
         this.items = [];
@@ -59,6 +61,7 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
             filter        : this.filter,
             allColumns    : this.allColumns,
             canShowHidden : this.canShowHidden,
+            helpText      : this.helpText,
             ui: this.ui,
             multiSelect : this.multiSelect,
             forceQuery  : this.forceQuery,
@@ -104,6 +107,7 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
  * @param {object} [filter] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
  * @param {boolean} [allColumns] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
  * @param {boolean} [canShowHidden] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
+ * @param {object} [helpText] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
  * @param {boolean} [forceQuery] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
  * @param {boolean} [hideDemographicMeasures] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
  * @param {object} [axis] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
@@ -121,6 +125,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
             isDateAxis : false,
             allColumns : false,
             canShowHidden : false,
+            helpText : null,
             dataViewType : LABKEY.MeasuresDataViewType.FULL_GRID
         });
 
@@ -159,6 +164,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
                 ui: this.ui,
                 allColumns    : this.allColumns,
                 canShowHidden : this.canShowHidden,
+                helpText      : this.helpText,
                 multiSelect : this.multiSelect,
                 forceQuery  : this.forceQuery,
                 bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded', 'measureChanged', 'measuresSelected', 'selectionchange']
@@ -187,6 +193,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
  * @param {object} [filter] LABKEY.Visualization.Filter object to allow filtering of the measures returned by the LABKEY.Visualization.getMeasures method.
  * @param {boolean} [allColumns] passed to LABKEY.Visualization.getMeasures method
  * @param {boolean} [canShowHidden] if true, add a "Show All" checkbox to the display to tell the LABKEY.Visualization.getMeasures method whether or not the show hidden columns
+ * @param (object) [helpText] object with a title and text attribute to be displayed in a tooltip in the grid top toolbar
  * @param {boolean} [forceQuery] if true, call the getMeasures method on init
  * @param {boolean} [hideDemographicMeasures] if true, hide the measures from demographic datasets from the display
  * @param {object} [axis]
@@ -204,7 +211,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         Ext4.apply(this, config, {
             isDateAxis : false,
             allColumns : false,
-            canShowHidden : false
+            canShowHidden : false,
+            helpText : null
         });
 
         this.callParent([config]);
@@ -437,6 +445,30 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 },
                 scope   : this
             });
+        }
+
+        if (this.helpText)
+        {
+            tbarItems.push('->');
+            var helpCmp = Ext4.create('Ext.form.DisplayField', {
+                value: 'Help?',
+                style: { 'text-decoration': 'underline' },
+                listeners: {
+                    scope: this,
+                    afterrender: function(cmp) {
+                        Ext4.create('Ext.tip.ToolTip', {
+                            target: cmp.el,
+                            width: 250,
+                            title: this.helpText.title,
+                            html: this.helpText.text,
+                            trackMouse: true,
+                            dismissDelay: 20000
+                        });
+                    }
+                }
+            });
+            tbarItems.push(helpCmp);
+            tbarItems.push({xtype:'tbspacer'});
         }
 
         // create a toolbar button for each of the axis types
