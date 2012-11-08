@@ -176,12 +176,12 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return json;
     }
 
-    public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws BatchValidationException
+    public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response, boolean exportAsWebpage) throws BatchValidationException
     {
-        doGenerateTemplate(json, request, response);
+        doGenerateTemplate(json, request, response, exportAsWebpage);
     }
 
-    public void doGenerateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws BatchValidationException
+    public void doGenerateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response, boolean exportAsWebpage) throws BatchValidationException
     {
         try
         {
@@ -207,10 +207,12 @@ public class DefaultAssayImportMethod implements AssayImportMethod
             Workbook workbook =  ExcelFactory.createFromArray(sheetsArray, docType);
 
 
-            response.setContentType(docType.getMimeType());
-            response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
-            response.setHeader("Pragma", "private");
-            response.setHeader("Cache-Control", "private");
+            if (!exportAsWebpage){
+                response.setContentType(docType.getMimeType());
+                response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
+                response.setHeader("Pragma", "private");
+                response.setHeader("Cache-Control", "private");
+            }
             workbook.write(response.getOutputStream());
         }
         catch (IOException e)

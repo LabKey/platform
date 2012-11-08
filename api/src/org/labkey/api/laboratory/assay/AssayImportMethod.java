@@ -108,5 +108,5 @@ public interface AssayImportMethod
      */
     abstract public boolean supportsRunTemplates();
 
-    abstract public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response) throws BatchValidationException;
+    abstract public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response, boolean exportAsWebpage) throws BatchValidationException;
 }
