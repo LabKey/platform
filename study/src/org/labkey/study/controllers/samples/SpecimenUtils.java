@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.*;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ButtonBarLineBreak;
@@ -930,9 +931,7 @@ public class SpecimenUtils
     {
         DataRegion dr = new DataRegion();
         dr.setTable(StudySchema.getInstance().getTableInfoSpecimenDetail());
-        dr.setColumns(StudySchema.getInstance().getTableInfoSpecimenDetail().getColumns(
-                "GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
-                        "DrawTimestamp, ProtocolNumber"));
+        dr.setColumns(getColumnsForWriters());
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcSite, type));
@@ -949,9 +948,7 @@ public class SpecimenUtils
     {
         DataRegion dr = new DataRegion();
         dr.setTable(StudySchema.getInstance().getTableInfoSpecimenDetail());
-        dr.setColumns(StudySchema.getInstance().getTableInfoSpecimenDetail().getColumns(
-                "GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
-                        "DrawTimestamp, ProtocolNumber"));
+        dr.setColumns(getColumnsForWriters());
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcSite, type));
@@ -960,6 +957,14 @@ public class SpecimenUtils
         ExcelWriter xl = new ExcelWriter(rs, cols);
         xl.setFilenamePrefix(getSpecimenListFileName(srcSite, destSite));
         return xl;
+    }
+
+    private List<ColumnInfo> getColumnsForWriters()
+    {
+        return StudySchema.getInstance().getTableInfoSpecimenDetail().getColumns(
+                "GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
+                        "DrawTimestamp, ProtocolNumber, PrimaryTypeId, " +
+                        "TotalCellCount, originatinglocationid");
     }
 
     private String getShortSiteLabel(SiteImpl site)

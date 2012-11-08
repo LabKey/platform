@@ -2888,13 +2888,13 @@ public class SpecimenController extends BaseStudyController
             LabSpecimenListsBean.Type type = LabSpecimenListsBean.Type.valueOf(form.getListType());
             if (null != form.getExport())
             {
-                if ("tsv".equals(form.getExport()))
+                if (EXPORT_TSV.equals(form.getExport()))
                 {
                     TSVGridWriter writer = getUtils().getSpecimenListTsvWriter(sampleRequest, sourceSite, destSite, type);
                     writer.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
                     writer.write(getViewContext().getResponse());
                 }
-                else if ("xls".equals(form.getExport()))
+                else if (EXPORT_XLS.equals(form.getExport()))
                 {
                     ExcelWriter writer = getUtils().getSpecimenListXlsWriter(sampleRequest, sourceSite, destSite, type);
                     writer.write(getViewContext().getResponse());
@@ -2908,6 +2908,9 @@ public class SpecimenController extends BaseStudyController
             throw new UnsupportedOperationException("Not Yet Implemented");
         }
     }
+
+    private static final String EXPORT_TSV = "tsv";
+    private static final String EXPORT_XLS = "xls";
 
     @RequiresPermissionClass(ManageRequestsPermission.class)
     public class LabSpecimenListsAction extends SimpleViewAction<LabSpecimenListsForm>
