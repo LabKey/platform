@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentParent;
@@ -34,6 +35,7 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileMoveListener;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
@@ -56,6 +58,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by IntelliJ IDEA.
@@ -66,6 +70,8 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 {
     static Logger _log = Logger.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
+
+    private List<FileMoveListener> _fileMoveListeners = new CopyOnWriteArrayList<FileMoveListener>();
 
     enum Props {
         root,
@@ -470,7 +476,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                 File dst = _getFileRoot(c);
 
                 if (src.exists() && dst != null)
-                    moveFileRoot(src, dst);
+                    moveFileRoot(src, dst, user, c);
             }
         }
     }
@@ -507,7 +513,10 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                     moveToDeleted(newLocation);
 
                 if (oldLocation.exists())
+                {
                     oldLocation.renameTo(newLocation);
+                    fireFileMoveEvent(oldLocation, newLocation, evt.user, evt.container);
+                }
                 break;
             }
             case Parent:
@@ -702,7 +711,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return true;
     }
 
-    public void moveFileRoot(File prev, File dest)
+    public void moveFileRoot(File prev, File dest, @Nullable User user, @Nullable Container container)
     {
         try
         {
@@ -722,10 +731,25 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
                 FileUtil.deleteDir(prev);
             }
+            fireFileMoveEvent(prev, dest, user, container);
         }
         catch (IOException e)
         {
             _log.error("error occurred moving the file root", e);
         }
+    }
+
+    public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    {
+        for (FileMoveListener fileMoveListener : _fileMoveListeners)
+        {
+            fileMoveListener.fileMoved(src, dest, user, container);
+        }
+    }
+
+    @Override
+    public void addFileMoveListener(FileMoveListener listener)
+    {
+        _fileMoveListeners.add(listener);
     }
 }

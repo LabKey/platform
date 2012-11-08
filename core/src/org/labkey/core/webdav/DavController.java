@@ -33,6 +33,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -2759,10 +2760,10 @@ public class DavController extends SpringActionController
         dest.notify(getViewContext(), null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
 
         Container srcContainer = src.getContainerId() == null ? null : ContainerManager.getForId(src.getContainerId());
-        Container destContainer = dest.getContainerId() == null ? null : ContainerManager.getForId(dest.getContainerId());
-        if (ObjectUtils.equals(srcContainer, destContainer) && src.getFile() != null)
+
+        if (src.getFile() != null && dest.getFile() != null)
         {
-            ExperimentService.get().onFileMoved(src.getFile(), dest.getFile(), srcContainer, getUser());
+            ServiceRegistry.get(FileContentService.class).fireFileMoveEvent(src.getFile(), dest.getFile(), getUser(), srcContainer);
         }
 
         removeFromIndex(src);

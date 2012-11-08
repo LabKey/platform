@@ -35,6 +35,8 @@ import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.TableUpdaterFileMoveListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
@@ -220,6 +222,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AuditLogService.get().addAuditViewFactory(ExperimentAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(SampleSetAuditViewFactory.getInstance());
 
+        ServiceRegistry.get(FileContentService.class).addFileMoveListener(new ExpDataFileMoveListener());
+        ServiceRegistry.get(FileContentService.class).addFileMoveListener(new TableUpdaterFileMoveListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileMoveListener.Type.filePath));
+
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {
             public void containerCreated(Container c, User user)
@@ -240,7 +245,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
             @Override
             public void containerMoved(Container c, Container oldParent, User user)
-            {                
+            {
             }
 
             public void propertyChange(PropertyChangeEvent evt)

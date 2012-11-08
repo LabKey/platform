@@ -58,6 +58,7 @@ public class FileContentModule extends DefaultModule
     {
         addController("filecontent", FileContentController.class);
         PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
+        ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -81,7 +82,6 @@ public class FileContentModule extends DefaultModule
     public void doStartup(ModuleContext moduleContext)
     {
         WebdavService.get().addProvider(new FileWebdavProvider());
-        ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());
 
         // initialize message digests
         ShortMessageDigest.getInstance().initializeTimer();

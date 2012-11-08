@@ -109,37 +109,9 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
         }
         else if (isNewRoot(prev, _svc.getSiteDefaultRoot()))
         {
-            _svc.moveFileRoot(prev, _svc.getSiteDefaultRoot());
+            _svc.moveFileRoot(prev, _svc.getSiteDefaultRoot(), getViewContext().getUser(), getViewContext().getContainer());
         }
         return true;
-    }
-
-    private void moveSiteRoot(File prev, File dest)
-    {
-        try
-        {
-            _log.info("moving " + prev.getPath() + " to " + dest.getPath());
-            boolean doRename = true;
-
-            // attempt to rename, if that fails (try the more expensive copy)
-            if (dest.exists())
-                doRename = dest.delete();
-
-            if (doRename && !prev.renameTo(dest))
-            {
-                File parentDir = dest.getParentFile();
-
-                if (parentDir != null && parentDir.exists())
-                {
-                    FileUtil.copyBranch(prev, parentDir);
-                    FileUtil.deleteDir(prev);
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            _log.error("error occurred moving the site-level file root", e);
-        }
     }
 
     private void upgradeExistingFileSets()

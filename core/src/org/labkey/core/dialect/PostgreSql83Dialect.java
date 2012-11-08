@@ -403,9 +403,14 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    public String getStringIndexOfFunction(String stringToFind, String stringToSearch)
+    public SQLFragment getStringIndexOfFunction(SQLFragment toFind, SQLFragment toSearch)
     {
-        return "position(" + stringToFind + " in " + stringToSearch + ")";
+        SQLFragment result = new SQLFragment("POSITION(");
+        result.append(toFind);
+        result.append(" IN ");
+        result.append(toSearch);
+        result.append(")");
+        return result;
     }
 
     @Override

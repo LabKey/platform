@@ -19,7 +19,6 @@ package org.labkey.experiment.api;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
@@ -84,7 +83,13 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         {
             throw new IllegalArgumentException("URI must be absolute.");
         }
-        _object.setDataFileUrl(uri == null ? null : uri.toString());
+        String s = uri == null ? null : uri.toString();
+        // Strip off any trailing "/"
+        if (s != null && s.endsWith("/"))
+        {
+            s = s.substring(0, s.length() - 1);
+        }
+        _object.setDataFileUrl(s);
     }
 
     public void save(User user)
@@ -178,19 +183,6 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     {
         File f = getFile();
         return f != null && NetworkDrive.exists(f) && f.isFile();
-    }
-
-    public void setDataFileUrl(String s)
-    {
-        ensureUnlocked();
-        _object.setDataFileUrl(s);
-    }
-
-    @Override
-    public void setFile(File file)
-    {
-        ensureUnlocked();
-        setDataFileUrl(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI().toString());
     }
 
     public String getCpasType()

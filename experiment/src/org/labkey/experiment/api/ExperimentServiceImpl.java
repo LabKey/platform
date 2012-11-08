@@ -3064,55 +3064,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void onFileMoved(File src, File dest, Container c , User user)
-    {
-        //currently, we never create a record in exp.data for directories.  is that right?
-        ExpData data = ExperimentService.get().getExpDataByURL(src, c);
-
-        if (data == null && dest != null)
-        {
-            data = ExperimentService.get().getExpDataByURL(dest, c);
-        }
-        if (data == null && !dest.isDirectory())
-        {
-            data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
-        }
-
-        //do not create a ExpData for directories unless it already exists
-        if (data != null)
-        {
-            data.setDataFileURI(dest.toURI());
-            data.setName(dest.getName());
-            data.save(user);
-        }
-
-        if (dest.isDirectory())
-        {
-            ExpData[] files = ExperimentService.get().getChildren(src, c);
-            String srcPath = src.getPath();
-            String destPath = dest.getPath();
-
-            for (ExpData d : files)
-            {
-                String relPath = FileUtil.relativePath(srcPath, d.getFile().getPath());
-                assert !relPath.contains("..");
-
-                String newPath = destPath  + File.separator + relPath;
-                File newFile = new File(newPath);
-
-                if(!newFile.exists()){
-                    //presumably this file was deleted elsewhere
-                }
-                else
-                {
-                    d.setDataFileURI(newFile.toURI());
-                    d.setName(newFile.getName());
-                    d.save(user);
-                }
-            }
-        }
-    }
-
     public ExpData[] getChildren(File file, Container c)
     {
         SimpleFilter filter = new SimpleFilter();

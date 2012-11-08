@@ -368,9 +368,14 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
     @Override
-    public String getStringIndexOfFunction(String stringToFind, String stringToSearch)
+    public SQLFragment getStringIndexOfFunction(SQLFragment toFind, SQLFragment toSearch)
     {
-        return "patindex('%' + " + stringToFind + " + '%', " + stringToSearch + ")";
+        SQLFragment result = new SQLFragment("patindex('%' + ");
+        result.append(toFind);
+        result.append(" + '%', ");
+        result.append(toSearch);
+        result.append(")");
+        return result;
     }
 
     @Override

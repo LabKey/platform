@@ -1086,6 +1086,7 @@ experiment/src/org/labkey/experiment/DataURLRelativizer.java -text
 experiment/src/org/labkey/experiment/DefaultCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/DerivedSamplePropertyHelper.java -text
 experiment/src/org/labkey/experiment/DotGraph.java -text
+experiment/src/org/labkey/experiment/ExpDataFileMoveListener.java -text
 experiment/src/org/labkey/experiment/ExperimentAuditViewFactory.java -text
 experiment/src/org/labkey/experiment/ExperimentModule.java -text
 experiment/src/org/labkey/experiment/ExperimentRunDetails.jsp -text

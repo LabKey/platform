@@ -406,7 +406,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 {
                     datas.remove(dd.getURI());
                     datas.remove(outputData.getDataFileURI());
-                    outputData.setDataFileUrl(null);
+                    outputData.setDataFileURI(null);
                     outputData.save(getJob().getUser());
 
                     outputData = addData(datas, dd.getURI(), source);

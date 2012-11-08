@@ -56,6 +56,8 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
@@ -300,7 +302,13 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
                 data = ExperimentService.get().createData(container, new DataType("UploadedFile"));
                 data.setName(resource.getName());
-                data.setDataFileUrl(dataFileUrl);
+                URI uri = null;
+                try
+                {
+                    uri = dataFileUrl == null ? null : new URI(dataFileUrl);
+                }
+                catch (URISyntaxException ignored) {}
+                data.setDataFileURI(uri);
                 data.save(user);
             }
 
