@@ -44,8 +44,5 @@ public interface ExpData extends ExpProtocolOutput
 
     boolean isFileOnDisk();
 
-    void setDataFileUrl(String s);
-    void setFile(File file);
-
     void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException, SQLException;
 }

@@ -204,9 +204,8 @@ public class SQLFragment implements Appendable, CharSequence
         return true;
     }
 
-
-
-    @Deprecated  /** use append(TableInfo, String alias) */
+    /** use append(TableInfo, String alias) */
+    @Deprecated
     public SQLFragment append(TableInfo table)
     {
         String s = table.getSelectName();

@@ -35,6 +35,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
@@ -234,14 +235,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 name = file.getName();
                 dataLSID = new Lsid(NAMESPACE_PREFIX, TEXT_NAMESPACE_SUFFIX + ".Folder-" + context.getContainer().getRowId(),
                         name).toString();
-                try
-                {
-                    thawListData.setDataFileUrl(file.getCanonicalFile().toURI().toString());
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                thawListData.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
             }
             finally
             {

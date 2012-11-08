@@ -88,9 +88,15 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
                 {
                     if (tempDirFile.equals(expData.getFile()))
                     {
-                        expData.setFile(assayDirFile);
+                        expData.setDataFileURI(assayDirFile.toURI());
                         expData.save(context.getUser());
                     }
+                }
+                if (run != null)
+                {
+                    // Fixup the path in the run itself so that it's not pointed at the temp directory
+                    run.setFilePathRoot(assayDir);
+                    run.save(context.getUser());
                 }
                 FileUtils.moveFile(tempDirFile, assayDirFile);
             }

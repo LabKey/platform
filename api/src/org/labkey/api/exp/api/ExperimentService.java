@@ -223,7 +223,6 @@ public class ExperimentService
         /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
         void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;
 
-        public void onFileMoved(File srcFile, File destFile, Container c, User user);
         public ExpData[] getChildren(File file, Container c);
 
         public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;

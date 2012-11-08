@@ -256,7 +256,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getStringIndexOfFunction(String stringToFind, String stringToSearch)
+    public SQLFragment getStringIndexOfFunction(SQLFragment toFind, SQLFragment toSearch)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
