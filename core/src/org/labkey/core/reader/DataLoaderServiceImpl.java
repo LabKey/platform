@@ -129,11 +129,11 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
     @Override
     public DataLoaderFactory findFactory(File file, String contentType, FileType guessFormat)
     {
-        FileInputStream fis = null;
+        InputStream is = null;
         try
         {
-            fis = new FileInputStream(file);
-            return findFactory(file.getName(), contentType, fis, guessFormat);
+            is = new BufferedInputStream(new FileInputStream(file));
+            return findFactory(file.getName(), contentType, is, guessFormat);
         }
         catch (FileNotFoundException e)
         {
@@ -141,7 +141,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
         }
         finally
         {
-            IOUtils.closeQuietly(fis);
+            IOUtils.closeQuietly(is);
         }
     }
 
