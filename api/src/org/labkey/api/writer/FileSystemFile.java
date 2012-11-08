@@ -147,7 +147,7 @@ public class FileSystemFile extends AbstractVirtualFile
         File file = new File(_root, makeLegalName(filename));
 
         if (file.exists())
-            return new FileInputStream(file);
+            return new BufferedInputStream(new FileInputStream(file));
         else
             return null;
     }
