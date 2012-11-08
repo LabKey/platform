@@ -34,6 +34,7 @@ import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
@@ -156,7 +157,7 @@ public class ListImporter
                 if (null != tsv)
                 {
                     BatchValidationException batchErrors = new BatchValidationException();
-                    DataLoader loader = DataLoader.get().createLoader(fileName, null, tsv, true, null);
+                    DataLoader loader = DataLoader.get().createLoader(fileName, null, tsv, true, null, TabLoader.TSV_FILE_TYPE);
                     int count = def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null);
                     for (ValidationException v : batchErrors.getRowErrors())
                         errors.add(v.getMessage());

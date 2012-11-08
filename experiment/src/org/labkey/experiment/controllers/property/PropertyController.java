@@ -414,7 +414,7 @@ public class PropertyController extends SpringActionController
 
         private DataLoader getDataLoader(File tempFile) throws IOException
         {
-            DataLoaderFactory factory = DataLoader.get().findFactory(tempFile);
+            DataLoaderFactory factory = DataLoader.get().findFactory(tempFile, TabLoader.TSV_FILE_TYPE);
             if (factory == null)
                 return null;
 

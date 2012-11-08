@@ -21,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -40,7 +41,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: kevink
@@ -50,11 +53,13 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
 {
     private static final Logger _log = Logger.getLogger(DataLoaderService.class);
 
+    private Map<FileType, DataLoaderFactory> _fileTypeToFactory;
     private MultiMap<String, DataLoaderFactory> _extensionToFactory;
     private List<DataLoaderFactory> _factories;
 
     public DataLoaderServiceImpl()
     {
+        _fileTypeToFactory = new LinkedHashMap<FileType, DataLoaderFactory>();
         _extensionToFactory = new MultiHashMap<String, DataLoaderFactory>();
         _factories = new ArrayList<DataLoaderFactory>(10);
     }
@@ -71,6 +76,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
             _extensionToFactory.put(s, factory);
         }
 
+        _fileTypeToFactory.put(fileType, factory);
         _factories.add(factory);
     }
 
@@ -118,19 +124,19 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
     }
 
     @Override
-    public DataLoaderFactory findFactory(File file)
+    public DataLoaderFactory findFactory(File file, FileType guessFormat)
     {
-        return findFactory(file, null);
+        return findFactory(file, null, guessFormat);
     }
 
     @Override
-    public DataLoaderFactory findFactory(File file, String contentType)
+    public DataLoaderFactory findFactory(File file, String contentType, FileType guessFormat)
     {
         FileInputStream fis = null;
         try
         {
             fis = new FileInputStream(file);
-            return findFactory(file.getName(), contentType, fis);
+            return findFactory(file.getName(), contentType, fis, guessFormat);
         }
         catch (FileNotFoundException e)
         {
@@ -143,10 +149,23 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
     }
 
     @Override
-    public DataLoaderFactory findFactory(String filename, String contentType, InputStream is)
+    public DataLoaderFactory findFactory(String filename, String contentType, InputStream is, FileType guessFormat)
     {
         List<DataLoaderFactory> matches = new ArrayList<DataLoaderFactory>(10);
         byte[] header = null;
+
+        // Attempt guessFormat first
+        if (guessFormat != null)
+        {
+            DataLoaderFactory factory = _fileTypeToFactory.get(guessFormat);
+            assert factory != null : "No DataLoaderFactory registered for FileType.";
+            if (factory != null)
+            {
+                header = getHeader(null, is);
+                if (guessFormat.isType(filename, contentType, header))
+                    return factory;
+            }
+        }
 
         // Attempt to match on file extension alone
         String ext = FileUtil.getExtension(filename);
@@ -161,7 +180,8 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
                 }
                 else
                 {
-                    header = getHeader(null, is);
+                    if (header == null)
+                        header = getHeader(null, is);
                     matches.addAll(matches(filename, contentType, header, factories));
                 }
             }
@@ -197,24 +217,24 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
         return null;
     }
 
-    public DataLoader createLoader(String filename, String contentType, InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public DataLoader createLoader(String filename, String contentType, InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
-        DataLoaderFactory factory = findFactory(filename, contentType, is);
+        DataLoaderFactory factory = findFactory(filename, contentType, is, guessFormat);
         if (factory == null)
-            throw new IOException("Unknown file type.");
+            throw new IOException("Unable to determine file format.");
 
         return factory.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
     }
 
-    public DataLoader createLoader(MultipartFile file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public DataLoader createLoader(MultipartFile file, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
         String origName = StringUtils.trimToEmpty(file.getOriginalFilename());
         String filename = origName.toLowerCase();
 
-        return createLoader(filename, file.getContentType(), file.getInputStream(), hasColumnHeaders, mvIndicatorContainer);
+        return createLoader(filename, file.getContentType(), file.getInputStream(), hasColumnHeaders, mvIndicatorContainer, guessFormat);
     }
 
-    public DataLoader createLoader(Resource r, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public DataLoader createLoader(Resource r, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
         String contentType = null;
         if (r.isFile())
@@ -229,23 +249,23 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
             }
 
             if (null != file)
-                return createLoader(file, contentType, hasColumnHeaders, mvIndicatorContainer);
+                return createLoader(file, contentType, hasColumnHeaders, mvIndicatorContainer, guessFormat);
         }
 
         String origName = StringUtils.trimToEmpty(r.getName());
         String filename = origName.toLowerCase();
 
-        return createLoader(filename, null, r.getInputStream(), hasColumnHeaders, mvIndicatorContainer);
+        return createLoader(filename, null, r.getInputStream(), hasColumnHeaders, mvIndicatorContainer, guessFormat);
     }
 
     public DataLoader createLoader(File file, boolean hasColumnHeaders) throws IOException
     {
-        return createLoader(file, null, hasColumnHeaders, null);
+        return createLoader(file, null, hasColumnHeaders, null, null);
     }
 
-    public DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
-        DataLoaderFactory factory = findFactory(file, contentType);
+        DataLoaderFactory factory = findFactory(file, contentType, guessFormat);
         if (factory == null)
             throw new IOException("Unknown file type.");
 

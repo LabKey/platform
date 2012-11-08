@@ -147,7 +147,7 @@ public class DatasetImportRunnable implements Runnable
             if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
                 final Integer[] skippedRowCount = new Integer[] { 0 };
-                loader = DataLoaderService.get().createLoader(_tsvName, null, _root.getInputStream(_tsvName), true, _job.getContainer());
+                loader = DataLoaderService.get().createLoader(_tsvName, null, _root.getInputStream(_tsvName), true, _job.getContainer(), TabLoader.TSV_FILE_TYPE);
                 if (useCutoff && loader instanceof TabLoader)
                 {
                     // UNDONE: shouldn't be tied to TabLoader
