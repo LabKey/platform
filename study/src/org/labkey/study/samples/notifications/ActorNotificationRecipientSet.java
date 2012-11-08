@@ -16,17 +16,15 @@
 
 package org.labkey.study.samples.notifications;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.study.Site;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
+import org.labkey.study.SampleManager;
 import org.labkey.study.model.SampleRequestActor;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.SampleManager;
-import org.labkey.api.data.Container;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.security.User;
-import org.labkey.api.study.Site;
-
-import java.sql.SQLException;
 
 /**
  * User: brittp
@@ -86,7 +84,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         return getActor().getRowId() + "," + (getSite() != null ? getSite().getRowId() : "-1");
     }
 
-    public static ActorNotificationRecipientSet getFromFormValue(Container container, String formValue) throws SQLException
+    public static ActorNotificationRecipientSet getFromFormValue(Container container, String formValue)
     {
         String[] ids = formValue.split(",");
         int actorId = Integer.parseInt(ids[0]);
@@ -95,6 +93,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         SiteImpl site = siteId >= 0 ? StudyManager.getInstance().getSite(container, siteId) : null;
         return new ActorNotificationRecipientSet(actor, site);
     }
+
     public String getConfigureEmailsLinkHTML()
     {
         String configureMembersURL = "showGroupMembers.view?id=" + getActor().getRowId();

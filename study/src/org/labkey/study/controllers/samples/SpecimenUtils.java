@@ -33,7 +33,6 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -60,7 +59,6 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -335,7 +333,7 @@ public class SpecimenUtils
 
 
 
-    public List<ActorNotificationRecipientSet> getPossibleNotifications(SampleRequest sampleRequest) throws SQLException
+    public List<ActorNotificationRecipientSet> getPossibleNotifications(SampleRequest sampleRequest)
     {
         List<ActorNotificationRecipientSet> possibleNotifications = new ArrayList<ActorNotificationRecipientSet>();
         // allow notification of all parties listed in the request requirements:
@@ -464,7 +462,7 @@ public class SpecimenUtils
             sendNotification(new DefaultRequestNotification(request, Collections.singletonList(new NotificationRecipientSet(notify)), "New Request Created"));
     }
 
-    public List<? extends NotificationRecipientSet> getNotifications(SampleRequest sampleRequest, String[] notificationIdPairs) throws SQLException
+    public List<? extends NotificationRecipientSet> getNotifications(SampleRequest sampleRequest, String[] notificationIdPairs)
     {
         List<ActorNotificationRecipientSet> siteActors = new ArrayList<ActorNotificationRecipientSet>();
         if (notificationIdPairs == null || notificationIdPairs.length == 0)
@@ -554,7 +552,7 @@ public class SpecimenUtils
             return _user.getEmail();
         }
 
-        public String getRequestingSiteName() throws SQLException
+        public String getRequestingSiteName()
         {
             Site destSite = StudyManager.getInstance().getSite(_notification.getSampleRequest().getContainer(),
                     _notification.getSampleRequest().getDestinationSiteId());
@@ -564,7 +562,7 @@ public class SpecimenUtils
                 return null;
         }
 
-        public String getStatus() throws SQLException
+        public String getStatus()
         {
             SampleRequestStatus status = SampleManager.getInstance().getRequestStatus(_notification.getSampleRequest().getContainer(),
                     _notification.getSampleRequest().getStatusId());
@@ -618,7 +616,7 @@ public class SpecimenUtils
         return intersection;
     }
 
-    public static Collection<Integer> getPreferredProvidingLocations(Collection<List<Specimen>> specimensBySample) throws SQLException
+    public static Collection<Integer> getPreferredProvidingLocations(Collection<List<Specimen>> specimensBySample)
     {
         Set<Integer> locationIntersection = null;
         for (List<Specimen> vials : specimensBySample)
@@ -641,14 +639,14 @@ public class SpecimenUtils
         return locationIntersection;
     }
 
-    public void ensureSpecimenRequestsConfigured() throws ServletException, SQLException
+    public void ensureSpecimenRequestsConfigured() throws ServletException
     {
         if (!SampleManager.getInstance().isSampleRequestEnabled(getContainer()))
             throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
     }
 
 
-    public Specimen[] getSpecimensFromRowIds(int[] requestedSampleIds) throws SQLException
+    public Specimen[] getSpecimensFromRowIds(int[] requestedSampleIds)
     {
         Specimen[] requestedSpecimens = null;
         if (requestedSampleIds != null)
@@ -666,7 +664,7 @@ public class SpecimenUtils
 
     }
 
-    public Specimen[] getSpecimensFromGlobalUniqueIds(Set<String> globalUniqueIds) throws SQLException
+    public Specimen[] getSpecimensFromGlobalUniqueIds(Set<String> globalUniqueIds)
     {
         Specimen[] requestedSpecimens = null;
         if (globalUniqueIds != null)
@@ -684,12 +682,12 @@ public class SpecimenUtils
 
     }
 
-    public Specimen[] getSpecimensFromRowIds(Collection<String> ids) throws SQLException
+    public Specimen[] getSpecimensFromRowIds(Collection<String> ids)
     {
         return getSpecimensFromRowIds(BaseStudyController.toIntArray(ids));
     }
 
-    public Specimen[] getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable) throws SQLException
+    public Specimen[] getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable)
     {
         Set<String> formValues = null;
         if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
@@ -736,15 +734,9 @@ public class SpecimenUtils
             {
                 _possibleLocations = new SiteImpl[_possibleLocationIds.size()];
                 int idx = 0;
-                try
-                {
-                    for (Integer id : _possibleLocationIds)
-                        _possibleLocations[idx++] = StudyManager.getInstance().getSite(_container, id.intValue());
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
+
+                for (Integer id : _possibleLocationIds)
+                    _possibleLocations[idx++] = StudyManager.getInstance().getSite(_container, id.intValue());
             }
             return _possibleLocations;
         }
@@ -784,15 +776,9 @@ public class SpecimenUtils
                     Container container = _specimens[0].getContainer();
                     _providingLocations = new Site[_providingLocationIds.size()];
                     int siteIndex = 0;
-                    try
-                    {
-                        for (Integer siteId : _providingLocationIds)
-                            _providingLocations[siteIndex++] = StudyManager.getInstance().getSite(container, siteId.intValue());
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
-                    }
+
+                    for (Integer siteId : _providingLocationIds)
+                        _providingLocations[siteIndex++] = StudyManager.getInstance().getSite(container, siteId.intValue());
                 }
             }
             return _providingLocations;
@@ -804,19 +790,19 @@ public class SpecimenUtils
         }
     }
 
-    public RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds) throws SQLException
+    public RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds)
     {
         Specimen[] requestedSamples = getSpecimensFromRowIds(rowIds);
         return new RequestedSpecimens(requestedSamples);
     }
 
-    public RequestedSpecimens getRequestableByVialGlobalUniqueIds(Set<String> globalUniqueIds) throws SQLException
+    public RequestedSpecimens getRequestableByVialGlobalUniqueIds(Set<String> globalUniqueIds)
     {
         Specimen[] requestedSamples = getSpecimensFromGlobalUniqueIds(globalUniqueIds);
         return new RequestedSpecimens(requestedSamples);
     }
 
-    public RequestedSpecimens getRequestableBySampleHash(Set<String> formValues, Integer preferredLocation) throws SQLException, AmbiguousLocationException
+    public RequestedSpecimens getRequestableBySampleHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
     {
         Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(), formValues, true);
 
@@ -908,8 +894,7 @@ public class SpecimenUtils
         }
     }
 
-    public SimpleFilter getSpecimenListFilter(SampleRequest sampleRequest, SiteImpl srcSite,
-                                              SpecimenController.LabSpecimenListsBean.Type type) throws SQLException
+    public SimpleFilter getSpecimenListFilter(SampleRequest sampleRequest, SiteImpl srcSite, SpecimenController.LabSpecimenListsBean.Type type)
     {
         SpecimenController.LabSpecimenListsBean bean = new SpecimenController.LabSpecimenListsBean(this, sampleRequest, type);
         List<Specimen> specimens = bean.getSpecimens(srcSite);

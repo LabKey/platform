@@ -24,8 +24,6 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.requirements.DefaultRequirement;
 
-import java.sql.SQLException;
-
 /**
  * User: brittp
  * Date: Feb 8, 2006
@@ -92,7 +90,7 @@ public class SampleRequestRequirement extends DefaultRequirement<SampleRequestRe
         return SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), _actorId);
     }
 
-    public SiteImpl getSite() throws SQLException
+    public SiteImpl getSite()
     {
         if (_siteId == null)
             return null;
@@ -180,7 +178,7 @@ public class SampleRequestRequirement extends DefaultRequirement<SampleRequestRe
         _description = description;
     }
 
-    public String getRequirementSummary() throws SQLException
+    public String getRequirementSummary()
     {
         StringBuilder builder = new StringBuilder();
         if (_actorId != null)

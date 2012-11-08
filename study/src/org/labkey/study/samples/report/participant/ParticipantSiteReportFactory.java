@@ -15,11 +15,10 @@
  */
 package org.labkey.study.samples.report.participant;
 
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.Pair;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.SiteImpl;
@@ -28,7 +27,6 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,14 +57,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         }
         else
         {
-            try
-            {
-                enrollmentSites = Collections.singleton(StudyManager.getInstance().getSite(getContainer(), _enrollmentSiteId));
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            enrollmentSites = Collections.singleton(StudyManager.getInstance().getSite(getContainer(), _enrollmentSiteId));
         }
 
         for (SiteImpl site : enrollmentSites)

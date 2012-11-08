@@ -161,7 +161,7 @@ public class SpecimenApiController extends BaseStudyController
         return map;
     }
 
-    private Map<String, Object> getLocation(Container container, int siteId) throws SQLException
+    private Map<String, Object> getLocation(Container container, int siteId)
     {
         SiteImpl location = StudyManager.getInstance().getSite(container, siteId);
         if (location == null)

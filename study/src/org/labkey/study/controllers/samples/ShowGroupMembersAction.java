@@ -178,7 +178,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         return _actor;
     }
 
-    private SiteImpl getSite(UpdateGroupForm form) throws SQLException
+    private SiteImpl getSite(UpdateGroupForm form)
     {
         if (_site == null && form.getSiteId() != null)
             _site = StudyManager.getInstance().getSite(getViewContext().getContainer(), form.getSiteId());

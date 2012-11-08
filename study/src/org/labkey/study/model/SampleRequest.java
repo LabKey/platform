@@ -21,7 +21,6 @@ import org.labkey.api.study.Site;
 import org.labkey.study.SampleManager;
 import org.labkey.study.requirements.RequirementOwner;
 
-import java.sql.SQLException;
 import java.util.Date;
 
 /**
@@ -92,7 +91,7 @@ public class SampleRequest extends AbstractStudyCachable<SampleRequest> implemen
         _destinationSiteId = destinationSiteId;
     }
 
-    public Specimen[] getSpecimens() throws SQLException
+    public Specimen[] getSpecimens()
     {
         return SampleManager.getInstance().getRequestSpecimens(this);
     }
@@ -168,7 +167,7 @@ public class SampleRequest extends AbstractStudyCachable<SampleRequest> implemen
         this._modifiedBy = modifiedBy;
     }
 
-    public String getRequestDescription() throws SQLException
+    public String getRequestDescription()
     {
         StringBuilder builder = new StringBuilder();
         builder.append("Request ID ").append(_rowId);

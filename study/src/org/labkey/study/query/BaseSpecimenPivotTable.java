@@ -278,7 +278,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     /**
      * Returns a map of site id's to labels
      */
-    protected Map<Integer, NameLabelPair> getSiteMap(Container container) throws SQLException
+    protected Map<Integer, NameLabelPair> getSiteMap(Container container)
     {
         Map<Integer, NameLabelPair> siteMap = new HashMap<Integer, NameLabelPair>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();

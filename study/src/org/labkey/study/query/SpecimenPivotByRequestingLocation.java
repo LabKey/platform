@@ -17,14 +17,8 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.study.StudyService;
-import org.labkey.study.SampleManager;
-import org.labkey.study.model.SpecimenTypeSummary;
 
-import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -43,8 +37,8 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
         setDescription("Contains up to one row of Specimen Derivative Type totals by Requesting Location for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 
-        try {
-
+        try
+        {
             Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(getContainer());
             Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(getContainer());
             Map<Integer, NameLabelPair> siteMap = getSiteMap(getContainer());
@@ -77,10 +71,6 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
             }
             setDefaultVisibleColumns(getDefaultVisibleColumns());
             addWrapColumn(_rootTable.getColumn("Container"));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
         }
         finally
         {

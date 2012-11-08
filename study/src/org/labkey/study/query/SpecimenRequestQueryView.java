@@ -110,16 +110,9 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                 {
                     if (_shoppingCartStatusRowId == null)
                     {
-                        try
-                        {
-                            SampleRequestStatus cartStatus = SampleManager.getInstance().getRequestShoppingCartStatus(ctx.getContainer(),
-                                    ctx.getViewContext().getUser());
-                            _shoppingCartStatusRowId = cartStatus.getRowId();
-                        }
-                        catch (SQLException e)
-                        {
-                            throw new RuntimeSQLException(e);
-                        }
+                        SampleRequestStatus cartStatus = SampleManager.getInstance().getRequestShoppingCartStatus(ctx.getContainer(),
+                                ctx.getViewContext().getUser());
+                        _shoppingCartStatusRowId = cartStatus.getRowId();
                     }
 
                     Integer statusId = (Integer) _colStatus.getValue(ctx);
@@ -147,7 +140,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         }
     }
 
-    protected SpecimenRequestQueryView(ViewContext context, UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort, NavTree... extraLinks)
+    protected SpecimenRequestQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort, NavTree... extraLinks)
     {
         super(schema, settings, filter, sort);
         _extraLinks = extraLinks;
@@ -164,7 +157,8 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String queryName = "SpecimenRequest";
         QuerySettings qs = schema.getSettings(context, queryName, queryName);
-        return new SpecimenRequestQueryView(context, schema, qs, addFilterClauses(filter), createDefaultSort());
+
+        return new SpecimenRequestQueryView(schema, qs, addFilterClauses(filter), createDefaultSort());
     }
     
     private static Sort createDefaultSort()

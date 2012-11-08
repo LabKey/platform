@@ -991,7 +991,7 @@ public class SpecimenController extends BaseStudyController
             }
         }
 
-        public synchronized List<ActorNotificationRecipientSet> getPossibleNotifications() throws SQLException
+        public synchronized List<ActorNotificationRecipientSet> getPossibleNotifications()
         {
             if (_possibleNotifications == null)
                 _possibleNotifications = getUtils().getPossibleNotifications(_sampleRequest);
@@ -1053,7 +1053,7 @@ public class SpecimenController extends BaseStudyController
             return _submissionResult != null && _submissionResult.booleanValue();
         }
 
-        public Site[] getProvidingSites() throws SQLException
+        public Site[] getProvidingSites()
         {
             if (_providingSites == null)
             {
@@ -2128,7 +2128,7 @@ public class SpecimenController extends BaseStudyController
         private List<ActorNotificationRecipientSet> _possibleNotifications;
         private boolean _finalState;
 
-        public ManageRequirementBean(ViewContext context, SampleRequest request, SampleRequestRequirement requirement) throws SQLException
+        public ManageRequirementBean(ViewContext context, SampleRequest request, SampleRequestRequirement requirement)
         {
             _requirement = requirement;
             _possibleNotifications = getUtils().getPossibleNotifications(request);
@@ -2982,7 +2982,7 @@ public class SpecimenController extends BaseStudyController
         private boolean _requirementsComplete;
         private SpecimenUtils _utils;
 
-        public LabSpecimenListsBean(SpecimenUtils utils, SampleRequest sampleRequest, LabSpecimenListsBean.Type type) throws SQLException
+        public LabSpecimenListsBean(SpecimenUtils utils, SampleRequest sampleRequest, LabSpecimenListsBean.Type type)
         {
             _sampleRequest = sampleRequest;
             _utils = utils;
@@ -3000,7 +3000,7 @@ public class SpecimenController extends BaseStudyController
             return _sampleRequest;
         }
 
-        private synchronized Map<Integer, List<Specimen>> getSpecimensBySiteId() throws SQLException
+        private synchronized Map<Integer, List<Specimen>> getSpecimensBySiteId()
         {
             if (_specimensBySiteId == null)
             {
@@ -3028,14 +3028,14 @@ public class SpecimenController extends BaseStudyController
             return _specimensBySiteId;
         }
 
-        public synchronized List<ActorNotificationRecipientSet> getPossibleNotifications() throws SQLException
+        public synchronized List<ActorNotificationRecipientSet> getPossibleNotifications()
         {
             if (_possibleNotifications == null)
                 _possibleNotifications = _utils.getPossibleNotifications(_sampleRequest);
             return _possibleNotifications;
         }
 
-        public Set<SiteImpl> getLabs() throws SQLException
+        public Set<SiteImpl> getLabs()
         {
             Map<Integer, List<Specimen>> siteIdToSpecimens = getSpecimensBySiteId();
             Set<SiteImpl> sites = new HashSet<SiteImpl>(siteIdToSpecimens.size());
@@ -3044,7 +3044,7 @@ public class SpecimenController extends BaseStudyController
             return sites;
         }
 
-        public List<Specimen> getSpecimens(SiteImpl site) throws SQLException
+        public List<Specimen> getSpecimens(SiteImpl site)
         {
             Map<Integer, List<Specimen>> siteSpecimenLists = getSpecimensBySiteId();
             return siteSpecimenLists.get(site.getRowId());

@@ -15,17 +15,16 @@
  */
 package org.labkey.study.samples.report.request;
 
-import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.Site;
+import org.labkey.study.SampleManager;
+import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.samples.report.SpecimenVisitReport;
 
-import java.util.List;
-import java.util.Collections;
 import java.util.ArrayList;
-import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: brittp
@@ -45,34 +44,27 @@ public class RequestReportFactory extends BaseRequestReportFactory
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        try
+        Site[] sites = SampleManager.getInstance().getSitesWithRequests(getContainer());
+        if (sites == null)
+            return Collections.emptyList();
+        List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
+        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        SimpleFilter filter = new SimpleFilter();
+        if (isCompletedRequestsOnly())
         {
-            Site[] sites = SampleManager.getInstance().getSitesWithRequests(getContainer());
-            if (sites == null)
-                return Collections.emptyList();
-            List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
-            SimpleFilter filter = new SimpleFilter();
-            if (isCompletedRequestsOnly())
-            {
-                filter.addWhereClause("globaluniqueid IN\n" +
-                        "(" + COMPLETED_REQUESTS_FILTER_SQL + ")",
-                        new Object[] { Boolean.TRUE, Boolean.TRUE, getContainer().getId()});
-            }
-            else
-            {
-                filter.addWhereClause("globaluniqueid IN\n" +
-                        "(SELECT specimenglobaluniqueid FROM study.samplerequestspecimen WHERE container = ?) and LockedInRequest = ?",
-                        new Object[] { getContainer().getId(), Boolean.TRUE });
-            }
-            addBaseFilters(filter);
-            reports.add(new RequestReport("All Requested Specimens", filter, this, visits, isCompletedRequestsOnly()));
-            return reports;
+            filter.addWhereClause("globaluniqueid IN\n" +
+                    "(" + COMPLETED_REQUESTS_FILTER_SQL + ")",
+                    new Object[] { Boolean.TRUE, Boolean.TRUE, getContainer().getId()});
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeException(e);
+            filter.addWhereClause("globaluniqueid IN\n" +
+                    "(SELECT specimenglobaluniqueid FROM study.samplerequestspecimen WHERE container = ?) and LockedInRequest = ?",
+                    new Object[] { getContainer().getId(), Boolean.TRUE });
         }
+        addBaseFilters(filter);
+        reports.add(new RequestReport("All Requested Specimens", filter, this, visits, isCompletedRequestsOnly()));
+        return reports;
     }
 
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()

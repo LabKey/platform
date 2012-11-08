@@ -1078,7 +1078,7 @@ public class StudyManager
     }
 
 
-    public SiteImpl getSite(Container container, int id) throws SQLException
+    public SiteImpl getSite(Container container, int id)
     {
         return _siteHelper.get(container, id);
     }

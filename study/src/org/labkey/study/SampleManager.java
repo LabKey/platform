@@ -63,7 +63,7 @@ import java.util.*;
 
 public class SampleManager
 {
-    private static SampleManager _instance;
+    private final static SampleManager _instance = new SampleManager();
 
     private final QueryHelper<SampleRequestEvent> _requestEventHelper;
     private final QueryHelper<Specimen> _specimenDetailHelper;
@@ -137,14 +137,12 @@ public class SampleManager
         }, SampleRequestStatus.class);
     }
 
-    public static synchronized SampleManager  getInstance()
+    public static SampleManager getInstance()
     {
-        if (_instance == null)
-            _instance = new SampleManager();
         return _instance;
     }
 
-    public Specimen[] getSpecimens(Container container, String participantId, Double visit) throws SQLException
+    public Specimen[] getSpecimens(Container container, String participantId, Double visit)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
@@ -158,7 +156,7 @@ public class SampleManager
         return _requirementProvider;
     }
 
-    public Specimen getSpecimen(Container container, int rowId) throws SQLException
+    public Specimen getSpecimen(Container container, int rowId)
     {
         return _specimenDetailHelper.get(container, rowId);
     }
@@ -187,7 +185,7 @@ public class SampleManager
             return matches[0];
     }
 
-    public Specimen[] getSpecimens(Container container, String participantId, Date date) throws SQLException
+    public Specimen[] getSpecimens(Container container, String participantId, Date date)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
@@ -198,13 +196,13 @@ public class SampleManager
         return _specimenDetailHelper.get(container, filter);
     }
 
-    public SpecimenEvent[] getSpecimenEvents(Specimen sample) throws SQLException
+    public SpecimenEvent[] getSpecimenEvents(Specimen sample)
     {
         SimpleFilter filter = new SimpleFilter("VialId", sample.getRowId());
         return _specimenEventHelper.get(sample.getContainer(), filter);
     }
 
-    public SpecimenEvent[] getSpecimenEvents(Specimen[] samples) throws SQLException
+    public SpecimenEvent[] getSpecimenEvents(Specimen[] samples)
     {
         if (samples == null || samples.length == 0)
             return new SpecimenEvent[0];
@@ -289,7 +287,7 @@ public class SampleManager
         }
     }
 
-    public List<SpecimenEvent> getDateOrderedEventList(Specimen specimen) throws SQLException
+    public List<SpecimenEvent> getDateOrderedEventList(Specimen specimen)
     {
         List<SpecimenEvent> eventList = new ArrayList<SpecimenEvent>();
         SpecimenEvent[] events = getSpecimenEvents(specimen);
@@ -300,7 +298,7 @@ public class SampleManager
         return eventList;
     }
 
-    public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(Specimen[] specimens) throws SQLException
+    public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(Specimen[] specimens)
     {
         SpecimenEvent[] allEvents = getSpecimenEvents(specimens);
         Map<Integer, List<SpecimenEvent>> vialIdToEvents = new HashMap<Integer, List<SpecimenEvent>>();
@@ -327,7 +325,7 @@ public class SampleManager
     }
 
 
-    public SiteImpl getCurrentSite(Specimen specimen) throws SQLException
+    public SiteImpl getCurrentSite(Specimen specimen)
     {
         Integer siteId = getCurrentSiteId(specimen);
         if (siteId != null)
@@ -335,13 +333,13 @@ public class SampleManager
         return null;
     }
 
-    public Integer getCurrentSiteId(Specimen specimen) throws SQLException
+    public Integer getCurrentSiteId(Specimen specimen)
     {
         List<SpecimenEvent> events = getDateOrderedEventList(specimen);
         return getCurrentSiteId(events);
     }
 
-    public Integer getCurrentSiteId(List<SpecimenEvent> dateOrderedEvents) throws SQLException
+    public Integer getCurrentSiteId(List<SpecimenEvent> dateOrderedEvents)
     {
         if (!dateOrderedEvents.isEmpty())
         {
@@ -383,19 +381,19 @@ public class SampleManager
         return dateOrderedEvents.get(dateOrderedEvents.size() - 1);
     }
 
-    public Integer getProcessingSiteId(List<SpecimenEvent> dateOrderedEvents) throws SQLException
+    public Integer getProcessingSiteId(List<SpecimenEvent> dateOrderedEvents)
     {
         SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
         return firstEvent != null ? firstEvent.getLabId() : null;
     }
 
-    public String getFirstProcessedByInitials(List<SpecimenEvent> dateOrderedEvents) throws SQLException
+    public String getFirstProcessedByInitials(List<SpecimenEvent> dateOrderedEvents)
     {
         SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
         return firstEvent != null ? firstEvent.getProcessedByInitials() : null;
     }
 
-    public SiteImpl getOriginatingSite(Specimen specimen) throws SQLException
+    public SiteImpl getOriginatingSite(Specimen specimen)
     {
         if (specimen.getOriginatingLocationId() != null)
         {
@@ -412,12 +410,12 @@ public class SampleManager
             return null;
     }
 
-    public SampleRequest[] getRequests(Container c) throws SQLException
+    public SampleRequest[] getRequests(Container c)
     {
         return getRequests(c, null);
     }
 
-    public SampleRequest[] getRequests(Container c, User user) throws SQLException
+    public SampleRequest[] getRequests(Container c, User user)
     {
         SimpleFilter filter = new SimpleFilter("Hidden", Boolean.FALSE);
         if (user != null)
@@ -425,7 +423,7 @@ public class SampleManager
         return _requestHelper.get(c, filter, "-Created");
     }
 
-    public SampleRequest getRequest(Container c, int rowId) throws SQLException
+    public SampleRequest getRequest(Container c, int rowId)
     {
         return _requestHelper.get(c, rowId);
     }
@@ -618,42 +616,42 @@ public class SampleManager
         requirement.update(user);
     }
 
-    public boolean isInFinalState(SampleRequest request) throws SQLException
+    public boolean isInFinalState(SampleRequest request)
     {
         return getRequestStatus(request.getContainer(), request.getStatusId()).isFinalState();
     }
 
-    public SampleRequestStatus getRequestStatus(Container c, int rowId) throws SQLException
+    public SampleRequestStatus getRequestStatus(Container c, int rowId)
     {
         return _requestStatusHelper.get(c, rowId);
     }
 
-    public AdditiveType getAdditiveType(Container c, int rowId) throws SQLException
+    public AdditiveType getAdditiveType(Container c, int rowId)
     {
         return _additiveHelper.get(c, rowId);
     }
 
-    public AdditiveType[] getAdditiveTypes(Container c) throws SQLException
+    public AdditiveType[] getAdditiveTypes(Container c)
     {
         return _additiveHelper.get(c, "ExternalId");
     }
 
-    public DerivativeType getDerivativeType(Container c, int rowId) throws SQLException
+    public DerivativeType getDerivativeType(Container c, int rowId)
     {
         return _derivativeHelper.get(c, rowId);
     }
 
-    public DerivativeType[] getDerivativeTypes(Container c) throws SQLException
+    public DerivativeType[] getDerivativeTypes(Container c)
     {
         return _derivativeHelper.get(c, "ExternalId");
     }
 
-    public PrimaryType getPrimaryType(Container c, int rowId) throws SQLException
+    public PrimaryType getPrimaryType(Container c, int rowId)
     {
         return _primaryTypeHelper.get(c, rowId);
     }
 
-    public PrimaryType[] getPrimaryTypes(Container c) throws SQLException
+    public PrimaryType[] getPrimaryTypes(Container c)
     {
         return _primaryTypeHelper.get(c, "ExternalId");
     }
@@ -684,7 +682,7 @@ public class SampleManager
         return statuses;
     }
 
-    public SampleRequestStatus getRequestShoppingCartStatus(Container c, User user) throws SQLException
+    public SampleRequestStatus getRequestShoppingCartStatus(Container c, User user)
     {
         SampleRequestStatus[] statuses = getRequestStatuses(c, user);
         if (statuses[0].getSortOrder() != -1)
@@ -744,12 +742,12 @@ public class SampleManager
         _requestStatusHelper.delete(status);
     }
 
-    public SampleRequestEvent[] getRequestEvents(Container c) throws SQLException
+    public SampleRequestEvent[] getRequestEvents(Container c)
     {
         return _requestEventHelper.get(c);
     }
 
-    public SampleRequestEvent getRequestEvent(Container c, int rowId) throws SQLException
+    public SampleRequestEvent getRequestEvent(Container c, int rowId)
     {
         return _requestEventHelper.get(c, rowId);
     }
@@ -844,10 +842,10 @@ public class SampleManager
             "AND request.Container = map.Container AND map.Container = SpecimenDetail.Container AND " +
             "request.RowId = ? AND request.Container = ?;";
 
-    public Specimen[] getRequestSpecimens(SampleRequest request) throws SQLException
-    { 
-        return Table.executeQuery(StudySchema.getInstance().getSchema(), REQUEST_SPECIMEN_JOIN,
-                new Object[]{request.getRowId(), request.getContainer().getId()}, Specimen.class);
+    public Specimen[] getRequestSpecimens(SampleRequest request)
+    {
+        return new SqlSelector(StudySchema.getInstance().getSchema(), REQUEST_SPECIMEN_JOIN,
+                request.getRowId(), request.getContainer().getId()).getArray(Specimen.class);
     }
 
     public RepositorySettings getRepositorySettings(Container container)
@@ -1253,7 +1251,7 @@ public class SampleManager
         }
     }
 
-    public Specimen[] getSpecimens(Container container, int[] sampleRowIds) throws SQLException
+    public Specimen[] getSpecimens(Container container, int[] sampleRowIds)
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         Set<Integer> uniqueRowIds = new HashSet<Integer>(sampleRowIds.length);
@@ -1644,10 +1642,11 @@ public class SampleManager
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         filter.addCondition("AvailableCount", count);
-        return Table.select(StudySchema.getInstance().getTableInfoSpecimenSummary(), Table.ALL_COLUMNS, filter, null, Specimen.class);
+
+        return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenSummary(), filter, null).getArray(Specimen.class);
     }
 
-    public Map<String,List<Specimen>> getVialsForSampleHashes(Container container, Collection<String> hashes, boolean onlyAvailable) throws SQLException
+    public Map<String,List<Specimen>> getVialsForSampleHashes(Container container, Collection<String> hashes, boolean onlyAvailable)
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         filter.addInClause("SpecimenHash", hashes);
@@ -1657,7 +1656,8 @@ public class SampleManager
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
         Map<String, List<Specimen>> map = new HashMap<String, List<Specimen>>();
-        Specimen[] specimens = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Specimen.class);
+        Specimen[] specimens = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(Specimen.class);
+
         for (Specimen specimen : specimens)
         {
             String hash = specimen.getSpecimenHash();
@@ -1669,48 +1669,44 @@ public class SampleManager
             }
             keySpecimens.add(specimen);
         }
+
         return map;
     }
 
-    public Map<String, Integer> getSampleCounts(Container container, Collection<String> specimenHashes) throws SQLException
+    public Map<String, Integer> getSampleCounts(Container container, Collection<String> specimenHashes)
     {
+        List<Object> params = new ArrayList<Object>();
+        params.add(container.getId());
+        StringBuilder extraClause = new StringBuilder();
 
-        Table.TableResultSet rs = null;
-        Map<String, Integer> map = new HashMap<String, Integer>();
-        try
+        if (specimenHashes != null)
         {
-            List<Object> params = new ArrayList<Object>();
-            params.add(container.getId());
-            StringBuilder extraClause = new StringBuilder();
-            if (specimenHashes != null)
+            extraClause.append(" AND SpecimenHash IN(");
+            String separator = "";
+            for (String specimenNumber : specimenHashes)
             {
-                extraClause.append(" AND SpecimenHash IN(");
-                String separator = "";
-                for (String specimenNumber : specimenHashes)
-                {
-                    extraClause.append(separator);
-                    separator = ", ";
-                    extraClause.append("?");
-                    params.add(specimenNumber);
-                }
-                extraClause.append(")");
+                extraClause.append(separator);
+                separator = ", ";
+                extraClause.append("?");
+                params.add(specimenNumber);
             }
+            extraClause.append(")");
+        }
 
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), "SELECT " +
-                    "SpecimenHash, CAST(AvailableCount AS Integer) AS AvailableCount" +
-                    " FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary().toString() +
-                    " WHERE Container = ?" + extraClause, params.toArray(new Object[params.size()]));
-            while(rs.next())
+        final Map<String, Integer> map = new HashMap<String, Integer>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT " +
+                "SpecimenHash, CAST(AvailableCount AS Integer) AS AvailableCount" +
+                " FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary().toString() +
+                " WHERE Container = ?" + extraClause, params)).forEach(new Selector.ForEachBlock<ResultSet>() {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String specimenHash = rs.getString("SpecimenHash");
                 map.put(specimenHash, rs.getInt("AvailableCount"));
             }
-        }
-        finally
-        {
-            if (null != rs)
-                rs.close();
-        }
+        });
+
         return map;
     }
 
@@ -2263,18 +2259,20 @@ public class SampleManager
             (additiveType != null ? additiveType : "all");
     }
 
-    public SiteImpl[] getSitesWithRequests(Container container) throws SQLException
+    public SiteImpl[] getSitesWithRequests(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM study.site WHERE rowid IN\n" +
                 "(SELECT destinationsiteid FROM study.samplerequest WHERE container = ?)\n" +
                 "AND container = ? ORDER BY label", container.getId(), container.getId());
-        return Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), SiteImpl.class);
+
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(SiteImpl.class);
     }
 
-    public SiteImpl[] getSites(Container container) throws SQLException
+    public SiteImpl[] getSites(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM study.site WHERE Container = ? ORDER BY label", container.getId());
-        return Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), SiteImpl.class);
+
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(SiteImpl.class);
     }
 
     public Set<SiteImpl> getEnrollmentSitesWithRequests(Container container)
