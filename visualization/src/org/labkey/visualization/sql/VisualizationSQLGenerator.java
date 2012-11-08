@@ -279,7 +279,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 }
                 VisualizationProvider provider = getVisualizationProvider(query.getSchemaName());
                 List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = new ArrayList<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>();
-                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : provider.getJoinColumns(_columnFactory, query, joinTarget))
+                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : provider.getJoinColumns(_columnFactory, query, joinTarget, false))
                 {
                     // Make sure we're selecting all the columns we need to join on:
                     VisualizationSourceColumn left = join.getKey();
@@ -438,7 +438,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             separator = "";
             aggregatedSQL.append(" ON ");
             VisualizationProvider provider = getVisualizationProvider(groupByQuery.getSchemaName());
-            for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> pair : provider.getJoinColumns(_columnFactory, groupByQuery, joinQuery))
+            for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> pair : provider.getJoinColumns(_columnFactory, groupByQuery, joinQuery, true))
             {
                 aggregatedSQL.append(separator);
                 separator = " AND ";

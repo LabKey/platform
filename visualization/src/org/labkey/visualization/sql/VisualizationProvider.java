@@ -35,7 +35,7 @@ public abstract class VisualizationProvider
     private VisualizationSQLGenerator.ChartType _type;
 
     public abstract List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>
-            getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, IVisualizationSourceQuery second);
+            getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, IVisualizationSourceQuery second, boolean isGroupByQuery);
     public abstract void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery query);
 
     public abstract void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery);

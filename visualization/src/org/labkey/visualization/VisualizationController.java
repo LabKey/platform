@@ -532,7 +532,7 @@ public class VisualizationController extends SpringActionController
                 ColumnInfo column = entry.getKey().second;
                 Map<String, Object> props = getColumnProps(fieldKey, column, query);
                 props.put("schemaName", query.getSchema().getName());
-                props.put("queryName", query.getName());
+                props.put("queryName", getQueryName(query));
                 props.put("isUserDefined", !query.isTableQueryDefinition());
                 props.put("isDemographic", isDemographic);
                 props.put("id", count++);
@@ -548,6 +548,16 @@ public class VisualizationController extends SpringActionController
 
             props.put("name", fieldKey.toString());
             props.put("label", col.getLabel());
+            props.put("longlabel", col.getLabel() + " (" + getQueryName(query) + ")");
+            props.put("type", col.getJdbcType().name());
+            props.put("description", StringUtils.trimToEmpty(col.getDescription()));
+            props.put("alias", VisualizationSourceColumn.getAlias(query.getSchemaName(), query.getName(), col.getName()));
+
+            return props;
+        }
+
+        private String getQueryName(QueryDefinition query)
+        {
             List<QueryException> errors = new ArrayList<QueryException>();
             TableInfo table = query.getTable(errors, false);
             String queryName;
@@ -555,12 +565,7 @@ public class VisualizationController extends SpringActionController
                 queryName = ((DataSetTable) table).getDataSet().getLabel();
             else
                 queryName = query.getName();
-            props.put("longlabel", col.getLabel() + " (" + queryName + ")");
-            props.put("type", col.getJdbcType().name());
-            props.put("description", StringUtils.trimToEmpty(col.getDescription()));
-            props.put("alias", VisualizationSourceColumn.getAlias(query.getSchemaName(), query.getName(), col.getName()));
-
-            return props;
+            return queryName;
         }
     }
 

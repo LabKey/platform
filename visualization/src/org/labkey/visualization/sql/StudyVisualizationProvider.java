@@ -100,7 +100,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, IVisualizationSourceQuery second)
+    public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, IVisualizationSourceQuery second, boolean isGroupByQuery)
     {
         if (!first.getContainer().equals(second.getContainer()))
             throw new IllegalArgumentException("Can't yet join across containers.");
@@ -118,55 +118,55 @@ public class StudyVisualizationProvider extends VisualizationProvider
 
         joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSubjectCol, secondSubjectCol));
 
-        // if either dataset is demographic, it's sufficient to join on subject only:
         int firstDatasetId  = StudyService.get().getDatasetId(first.getContainer(), first.getQueryName());
+        DataSet firstDataSet = firstDatasetId > -1 ? StudyService.get().getDataSet(first.getContainer(), firstDatasetId) : null;
         int secondDatasetId  = StudyService.get().getDatasetId(second.getContainer(), second.getQueryName());
-        if (firstDatasetId > -1 && secondDatasetId > -1)
+        DataSet secondDataSet = secondDatasetId > -1 ? StudyService.get().getDataSet(second.getContainer(), secondDatasetId) : null;
+
+        // if either query is a demographic dataset, it's sufficient to join on subject only:
+        if (!isGroupByQuery && (firstDataSet == null || firstDataSet.getKeyType() != DataSet.KeyType.SUBJECT) &&
+            (secondDataSet == null || secondDataSet.getKeyType() != DataSet.KeyType.SUBJECT))
         {
-            DataSet firstDataSet = StudyService.get().getDataSet(first.getContainer(), firstDatasetId);
-            DataSet secondDataSet = StudyService.get().getDataSet(second.getContainer(), secondDatasetId);
+            VisualizationSourceColumn firstSequenceCol = getVisitJoinColumn(factory, first, firstSubjectNounSingular);
+            VisualizationSourceColumn secondSequenceCol = getVisitJoinColumn(factory, second, secondSubjectNounSingular);
+            joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSequenceCol, secondSequenceCol));
 
-            if (firstDataSet.getKeyType() != DataSet.KeyType.SUBJECT && secondDataSet.getKeyType() != DataSet.KeyType.SUBJECT)
+            // for datasets with matching 3rd keys, join on subject/visit/key (if neither are pivoted), allowing null results for this column so as to follow the lead of the primary measure column for this query:
+            if (firstDataSet != null && firstDataSet.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER &&
+                    secondDataSet != null && secondDataSet.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER &&
+                    first.getPivot() == null && second.getPivot() == null && firstDataSet.hasMatchingExtraKey(secondDataSet))
             {
-                // for non-demographic datasets, join on subject/visit, allowing null results for this column so as to follow the lead of the primary measure column for this query:
-                VisualizationSourceColumn firstSequenceCol;
-                VisualizationSourceColumn secondSequenceCol;
-                if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
-                {
-                    firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), firstSubjectNounSingular + "Visit/sequencenum", true);
-                    secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), secondSubjectNounSingular + "Visit/sequencenum", true);
-                }
-                else
-                {
-                    firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), firstSubjectNounSingular + "Visit/VisitDate", true);
-                    secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), secondSubjectNounSingular + "Visit/VisitDate", true);
-                }
-                joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSequenceCol, secondSequenceCol));
-
-                if (firstDataSet.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER && secondDataSet.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER
-                        && first.getPivot() == null && second.getPivot() == null && firstDataSet.hasMatchingExtraKey(secondDataSet)) 
-                {
-                    // for datasets with matching 3rd keys, join on subject/visit/key (if neither are pivoted), allowing null results for this column so as to follow the lead of the primary measure column for this query:
-                    VisualizationSourceColumn firstKeyCol = factory.create(first.getSchema(), first.getQueryName(), firstDataSet.getKeyPropertyName(), true);
-                    VisualizationSourceColumn secondKeyCol = factory.create(second.getSchema(), second.getQueryName(), secondDataSet.getKeyPropertyName(), true);
-                    joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstKeyCol, secondKeyCol));
-                }
+                VisualizationSourceColumn firstKeyCol = factory.create(first.getSchema(), first.getQueryName(), firstDataSet.getKeyPropertyName(), true);
+                VisualizationSourceColumn secondKeyCol = factory.create(second.getSchema(), second.getQueryName(), secondDataSet.getKeyPropertyName(), true);
+                joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstKeyCol, secondKeyCol));
             }
         }
 
         return joinCols;
     }
 
+    // for non-demographic datasets, join on subject/visit, allowing null results for this column so as to follow the lead of the primary measure column for this query:
+    private VisualizationSourceColumn getVisitJoinColumn(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query, String subjectNounSingular)
+    {
+        String colName = subjectNounSingular + "Visit/";
+        colName += (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED ? "sequencenum" : "VisitDate");
+        return factory.create(query.getSchema(), query.getQueryName(), colName, true);
+    }
+
     @Override
     protected boolean isValid(TableInfo table, QueryDefinition query, ColumnMatchType type)
     {
         if (table instanceof DataSetTable)
-        {if (!((DataSetTable) table).getDataSet().isShowByDefault())
+        {
+            if (!((DataSetTable) table).getDataSet().isShowByDefault())
                 return false;
         }
         if (type == ColumnMatchType.CONFIGURED_MEASURES)
         {
-            return table != null && table.getColumnNameSet().contains("ParticipantSequenceNum");
+            // custom queries need to contain the ParticipantID and ParticipantVisit columns in order for the joining to work
+            return table != null &&
+                    table.getColumnNameSet().contains(StudyService.get().getSubjectColumnName(query.getContainer())) &&
+                    table.getColumnNameSet().contains(StudyService.get().getSubjectVisitColumnName(query.getContainer()));
         }
         else
             return super.isValid(table, query, type);
