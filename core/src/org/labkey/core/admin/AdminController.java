@@ -2881,7 +2881,11 @@ public class AdminController extends SpringActionController
 
             //new theme
             if (null == themeName || 0 == themeName.length())
+            {
                 themeName = form.getFriendlyName();
+                if (themeName == null)
+                    throw new IllegalArgumentException("Please provide a name for the new theme");
+            }
 
             //add new theme or update existing theme
             WebThemeManager.updateWebTheme(
