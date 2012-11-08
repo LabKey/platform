@@ -448,9 +448,6 @@ public class FileType implements Serializable
      */
     public boolean isType(@Nullable String filePath, @Nullable String contentType, @Nullable byte[] header)
     {
-        if (filePath == null && header == null)
-            throw new IllegalArgumentException("filePath or header required");
-
         // avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml"
         if (isAntiFileType(filePath, header))
         {
