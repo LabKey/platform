@@ -192,15 +192,17 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
         {
-            container.setFolderType(FolderType.NONE, activeModules);
+            container.setFolderType(FolderType.NONE, activeModules, errors);
             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
             container.setDefaultModule(defaultModule);
         }
         else
         {
             FolderType folderType = ModuleLoader.getInstance().getFolderType(form.getFolderType());
-            container.setFolderType(folderType, activeModules);
+            container.setFolderType(folderType, activeModules, errors);
         }
+        if (errors.hasErrors())
+            return false;
 
         if (form.isWizard())
         {
@@ -639,6 +641,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             _container = c;
             _form = form;
             _errors = errors;
+
+            // Stay on same tab if there are errors
+            if (_errors.hasErrors() && null != StringUtils.trimToNull(form.getTabId()))
+                setSelectedTabId(form.getTabId());
         }
 
         public List<NavTree> getTabList()

@@ -34,7 +34,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
-<%=formatMissedErrors("form")%>
+<labkey:errors/>
 
 <script>
 var requiredModules = new Object();
@@ -294,7 +294,6 @@ function validate()
 
         <%WebPartView.startTitleFrame(out, "Modules", null, "100%", null);%>
 
-        <labkey:errors/>
 <%
     int i = 0;
 
