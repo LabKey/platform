@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -51,6 +52,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -317,6 +320,30 @@ public class DefaultAssayParser implements AssayParser
         }
     }
 
+    protected void saveTemplate(ViewContext ctx, int templateId, int runId) throws BatchValidationException
+    {
+        try
+        {
+            //validate the template exists
+            TableInfo ti = DbSchema.get("laboratory").getTable("assay_run_templates");
+            TableSelector ts = new TableSelector(ti, Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromString("rowid"), templateId), null);
+            if (ts.getRowCount() == 0)
+            {
+                throw new BatchValidationException(Collections.singletonList(new ValidationException("Unknown template: " + templateId)), null);
+            }
+
+            Map<Object, Object> row = ts.getObject(Map.class);
+            row.put("runid", runId);
+            row.put("status", "Complete");
+
+            Table.update(ctx.getUser(), ti, row, templateId);
+        }
+        catch (SQLException e)
+        {
+            throw new BatchValidationException(Collections.singletonList(new ValidationException(e.getMessage())), null);
+        }
+    }
+
     public Pair<ExpExperiment, ExpRun> saveBatch(JSONObject json, File file, String fileName, ViewContext ctx) throws BatchValidationException
     {
         try
@@ -329,6 +356,30 @@ public class DefaultAssayParser implements AssayParser
             BatchValidationException ex = new BatchValidationException();
             ex.addRowError(new ValidationException(e.getMessage()));
             throw ex;
+        }
+    }
+
+    protected boolean mergeTemplateRow(String keyProperty, Map<String, Map<String, Object>> templateRows, Map<String, Object> map, BatchValidationException errors)
+    {
+        String key = (String)map.get(keyProperty);
+        Map<String, Object> templateRow = templateRows.get(key);
+        if (templateRow != null)
+        {
+            for (String prop : templateRow.keySet())
+            {
+                if (!"rowid".equalsIgnoreCase(prop))
+                {
+                    Object value = templateRow.get(prop);
+                    if (value != null && !org.apache.commons.lang3.StringUtils.isEmpty(value.toString()))
+                        map.put(prop, templateRow.get(prop));
+                }
+            }
+            return true;
+        }
+        else
+        {
+            errors.addRowError(new ValidationException("Unable to find sample information to match well: " + key));
+            return false;
         }
     }
 

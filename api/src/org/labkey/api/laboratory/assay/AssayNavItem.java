@@ -57,6 +57,12 @@ public class AssayNavItem extends AbstractNavItem
         return _protocol.getName();
     }
 
+    @Override
+    public String getPropertyManagerKey()
+    {
+        return getDataProvider().getKey() + "||" + getCategory() + "||" + getName() + "||" + _protocol.getRowId();
+    }
+
     public AssayDataProvider getDataProvider()
     {
         return _ad;

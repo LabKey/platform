@@ -171,11 +171,19 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         runMeta.put("performedBy", new JSONObject().put("hidden", true));
         domainMeta.put("Run", runMeta);
 
-        JSONObject resultsMeta = new JSONObject();
-        resultsMeta.put("sampleId", new JSONObject().put("lookups", false));
-        resultsMeta.put("subjectId", new JSONObject().put("lookups", false));
+        JSONObject resultMeta = getJsonObject(domainMeta, "Results");
+        resultMeta.put("sampleId", new JSONObject().put("lookups", false));
+        resultMeta.put("subjectId", new JSONObject().put("lookups", false));
 
-        domainMeta.put("Results", resultsMeta);
+        String[] hiddenResultFields = new String[]{"result", "qual_result", "qcstate", "requestid", "Run"};
+        for (String field : hiddenResultFields)
+        {
+            JSONObject json = getJsonObject(resultMeta, field);
+            json.put("hidden", true);
+            resultMeta.put(field, json);
+        }
+
+        domainMeta.put("Results", resultMeta);
 
         meta.put("domains", domainMeta);
 
