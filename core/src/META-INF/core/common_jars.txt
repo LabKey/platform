@@ -3,7 +3,7 @@ The following JAR files are distributed with LabKey and installed in the <tomcat
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 ant.jar|Apache Ant|1.7.0|{link:Apache|http://ant.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Jasper dependency for dev-mode JSP auto-recompile
-jtds.jar|jTDS JDBC Driver|1.2.6|{link:SourceForge|http://jtds.sourceforge.net}|{link:LGPL|http://jtds.sourceforge.net/license.html}|adam|Connect with Microsoft SQL Server database servers
+jtds.jar|jTDS JDBC Driver|1.3.0|{link:SourceForge|http://jtds.sourceforge.net}|{link:LGPL|http://jtds.sourceforge.net/license.html}|adam|Connect with Microsoft SQL Server database servers
 mail.jar|JavaMail|1.4.5|{link:Oracle|http://www.oracle.com/technetwork/java/index-138643.html}|{link:Oracle Binary J2EE License|http://download.oracle.com/otn-pub/java/licenses/OTN_JavaEE_Legacy_Binary-Code-License_30Jan2012.txt}|adam|Send email from LabKey Server
 mysql.jar|MySQL JDBC Driver|5.1.20|{link:MySQL|http://www.mysql.com/downloads/connector/j}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:MySQL FLOSS Exception|https://www.labkey.org/download/EXCEPTIONS-CONNECTOR-J.txt}|adam|Connect with MySQL database servers
 postgresql.jar|PostgreSQL JDBC Driver|9.2-1001 JDBC4|{link:postgresql.org|http://jdbc.postgresql.org/index.html}|{link:BSD|http://jdbc.postgresql.org/license.html}|adam|Connect with PostgreSQL database servers

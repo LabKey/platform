@@ -59,7 +59,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             return null;
     }
 
-    private final String _recommended = getProductName() + " 9.1 is the recommended version.";
+    private final String _recommended = getProductName() + " 9.2 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
@@ -77,7 +77,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             {
                 // ...but warn for anything less than 8.3.7
                 if (logWarnings && versionNumber.getRevisionAsInt() < 7)
-                    _log.warn("LabKey Server has known issues with " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
+                    _log.warn("LabKey Server has known issues with " + getProductName() + " version " + databaseProductVersion + ". " + _recommended);
 
                 return new PostgreSql83Dialect();
             }
@@ -91,10 +91,13 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             if (91 == version)
                 return new PostgreSql91Dialect();
 
-            if (version > 91)
+            if (92 == version)
+                return new PostgreSql92Dialect();
+
+            if (version > 92)
             {
                 if (logWarnings)
-                    _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
+                    _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + _recommended);
 
                 return new PostgreSql92Dialect();
             }
@@ -106,7 +109,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
 
     public Collection<? extends Class> getJUnitTests()
     {
-        return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
+        return Arrays.<Class>asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
     }
 
     @Override
