@@ -324,6 +324,10 @@ public class FileContentController extends SpringActionController
                             }
                         };
                         webPart.setTitle(_resource.getName());
+
+                        NavTree navMenu = new NavTree();
+                        navMenu.addChild(new NavTree("download " + _resource.getName(), form.getDownloadURL(getContainer())));
+                        webPart.setNavMenu(navMenu);
                         return webPart;
                     }
                     case IMAGE:
@@ -1595,6 +1599,16 @@ public class FileContentController extends SpringActionController
        public void setFileSet(String fileSet)
        {
            this.fileSet = fileSet;
+       }
+
+       public ActionURL getDownloadURL(Container c)
+       {
+           ActionURL url = new ActionURL(SendFileAction.class, c);
+           url.addParameter("fileName", getFileName());
+           url.addParameter("renderAs", RenderStyle.ATTACHMENT.name());
+           if (!StringUtils.isEmpty(getFileSet()))
+               url.addParameter("fileSet",getFileSet());
+           return url;
        }
    }
 
