@@ -108,7 +108,7 @@ public abstract class Method
         labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
 
-        labkeyMethod.put("curdate", new CurDateMethod(JdbcType.DATE));
+        labkeyMethod.put("curdate", new JdbcMethod("curdate", JdbcType.DATE, 0, 0));
         labkeyMethod.put("curtime", new JdbcMethod("curtime", JdbcType.DATE, 0, 0));
         labkeyMethod.put("dayofmonth", new JdbcMethod("dayofmonth", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("dayofweek", new JdbcMethod("dayofweek", JdbcType.INTEGER, 1, 1));
@@ -117,7 +117,7 @@ public abstract class Method
         labkeyMethod.put("minute", new JdbcMethod("minute", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("month", new JdbcMethod("month", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("monthname", new JdbcMethod("monthname", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("now", new CurDateMethod(JdbcType.TIMESTAMP));
+        labkeyMethod.put("now", new JdbcMethod("curdate", JdbcType.TIMESTAMP, 0, 0));
         labkeyMethod.put("quarter", new JdbcMethod("quarter", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("second", new JdbcMethod("second", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("week", new JdbcMethod("week", JdbcType.INTEGER, 1, 1));
@@ -299,40 +299,41 @@ public abstract class Method
     }
 
 
+    // TODO: New version of jTDS driver fixes this; test and remove this code
     // Address jTDS parsing issue; see #15479
-    private static class CurDateMethod extends JdbcMethod
-    {
-        CurDateMethod(JdbcType type)
-        {
-            super("curdate", type, 0, 0);
-        }
-
-        @Override
-        public MethodInfo getMethodInfo()
-        {
-            return new CurDateMethodInfo(this);
-        }
-    }
-
-
-    private static class CurDateMethodInfo extends JdbcMethodInfoImpl
-    {
-        public CurDateMethodInfo(Method method)
-        {
-            super(method._name, method._jdbcType);
-        }
-
-        @Override
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
-        {
-            // jTDS driver blows up if query contains more than a few {fn curdate()} expansions, so don't use it on SQL Server.
-            // See #15479 and http://sourceforge.net/p/jtds/bugs/673
-            if (schema.getSqlDialect().isSqlServer())
-                return new SQLFragment("convert(datetime, convert(varchar, getdate(), 112))");
-            else
-                return super.getSQL(schema, arguments);
-        }
-    }
+//    private static class CurDateMethod extends JdbcMethod
+//    {
+//        CurDateMethod(JdbcType type)
+//        {
+//            super("curdate", type, 0, 0);
+//        }
+//
+//        @Override
+//        public MethodInfo getMethodInfo()
+//        {
+//            return new CurDateMethodInfo(this);
+//        }
+//    }
+//
+//
+//    private static class CurDateMethodInfo extends JdbcMethodInfoImpl
+//    {
+//        public CurDateMethodInfo(Method method)
+//        {
+//            super(method._name, method._jdbcType);
+//        }
+//
+//        @Override
+//        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+//        {
+//            // jTDS driver blows up if query contains more than a few {fn curdate()} expansions, so don't use it on SQL Server.
+//            // See #15479 and http://sourceforge.net/p/jtds/bugs/673
+//            if (schema.getSqlDialect().isSqlServer())
+//                return new SQLFragment("convert(datetime, convert(varchar, getdate(), 112))");
+//            else
+//                return super.getSQL(schema, arguments);
+//        }
+//    }
 
 
     class TimestampInfo extends JdbcMethodInfoImpl
