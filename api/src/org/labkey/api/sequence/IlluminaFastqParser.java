@@ -244,7 +244,7 @@ public class IlluminaFastqParser
         return _files;
     }
 
-    public class IlluminaReadHeader
+    public static class IlluminaReadHeader
     {
         private String _instrument;
         private int _runId;
@@ -398,6 +398,18 @@ public class IlluminaFastqParser
         public void setSampleNum(int sampleNum)
         {
             this._sampleNum = sampleNum;
+        }
+    }
+
+    public static IlluminaReadHeader parseHeader(String header)
+    {
+        try
+        {
+            return new IlluminaReadHeader(header);
+        }
+        catch (IllegalArgumentException e)
+        {
+            return null;
         }
     }
 }
