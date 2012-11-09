@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -407,6 +408,36 @@ public class DefaultAssayParser implements AssayParser
         _protocol = protocol;
     }
 
+    protected List<Map<String, Object>> pivotRow(Map<String, Object> map, Set<String> staticFields, Set<String> allowable, String resultFieldName, String pivotFieldName)
+    {
+        Map<String, Object> staticValues = new HashMap<String, Object>();
+        for (String field : staticFields)
+        {
+            staticValues.put(field, map.get(field));
+        }
+
+        Map<String, Object> results = new HashMap<String, Object>();
+        for (String field : allowable)
+        {
+            if (map.get(field) != null)
+            {
+                results.put(field, map.get(field));
+            }
+        }
+
+        List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
+        for (String field : results.keySet())
+        {
+            Map<String, Object> row = new HashMap<String, Object>();
+            row.putAll(staticValues);
+            row.put(pivotFieldName, field);
+            row.put(resultFieldName, results.get(field));
+            newRows.add(row);
+        }
+
+        return newRows;
+    }
+
     protected Map<String, Map<String, Object>> getTemplateRowMap(JSONObject json, String keyProperty){
         Integer templateId = json.getInt("TemplateId");
         Map<String, Map<String, Object>> ret = new HashMap<String, Map<String, Object>>();
@@ -442,5 +473,4 @@ public class DefaultAssayParser implements AssayParser
     {
         return _provider;
     }
-
 }

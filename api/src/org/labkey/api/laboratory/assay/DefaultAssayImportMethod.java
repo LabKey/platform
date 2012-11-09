@@ -19,7 +19,11 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -32,6 +36,8 @@ import org.labkey.api.view.ViewContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -221,5 +227,24 @@ public class DefaultAssayImportMethod implements AssayImportMethod
             bve.addRowError(new ValidationException(e.getMessage()));
             throw bve;
         }
+    }
+
+    protected Map<Object, Object> getWellMap96(final String keyProperty, final String valueProperty)
+    {
+        TableInfo ti = DbSchema.get("laboratory").getTable("well_layout");
+        TableSelector ts = new TableSelector(ti);
+
+
+        final Map<Object, Object> wellMap = new HashMap<Object, Object>();
+        ts.forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet object) throws SQLException
+            {
+                wellMap.put(object.getObject(keyProperty), object.getObject(valueProperty));
+            }
+        });
+
+        return wellMap;
     }
 }
