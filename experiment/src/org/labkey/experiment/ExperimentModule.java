@@ -224,6 +224,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         ServiceRegistry.get(FileContentService.class).addFileMoveListener(new ExpDataFileMoveListener());
         ServiceRegistry.get(FileContentService.class).addFileMoveListener(new TableUpdaterFileMoveListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileMoveListener.Type.filePath));
+        ServiceRegistry.get(FileContentService.class).addFileMoveListener(new FileLinkFileMoveListener());
 
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {

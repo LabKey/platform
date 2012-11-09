@@ -17,8 +17,11 @@ package org.labkey.pipeline;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.TableUpdaterFileMoveListener;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.api.data.Container;
@@ -157,6 +160,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineController.registerAdminConsoleLinks();
         StatusController.registerAdminConsoleLinks();
         WebdavService.get().addProvider(new PipelineWebdavProvider());
+
+        ServiceRegistry.get(FileContentService.class).addFileMoveListener(new TableUpdaterFileMoveListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileMoveListener.Type.filePathForwardSlash));
     }
 
     @Override

@@ -1095,6 +1095,7 @@ experiment/src/org/labkey/experiment/ExperimentRunGraph.java -text
 experiment/src/org/labkey/experiment/ExperimentRunWebPartFactory.java -text
 experiment/src/org/labkey/experiment/ExternalDocsLabelCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/ExternalDocsURLCustomPropertyRenderer.java -text
+experiment/src/org/labkey/experiment/FileLinkFileMoveListener.java -text
 experiment/src/org/labkey/experiment/LSIDRelativizer.java -text
 experiment/src/org/labkey/experiment/LineageGraphDisplayColumn.java -text
 experiment/src/org/labkey/experiment/MoveRunsBean.java -text

@@ -35,6 +35,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
@@ -207,7 +208,7 @@ public class PipeRootImpl implements PipeRoot
 
         // Return the path to the default location
         File root = getRootPath();
-        File file = new File(root, path);
+        File file = FileUtil.getAbsoluteCaseSensitiveFile(new File(root, path));
         // Check that it's under the root to protect against ../../ type paths
         if (!isUnderRoot(file))
         {

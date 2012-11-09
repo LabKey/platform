@@ -38,6 +38,8 @@ import org.labkey.api.exp.property.AssayRunDomainKind;
 import org.labkey.api.exp.property.DefaultAssayDomainKind;
 import org.labkey.api.exp.property.PlateBasedAssaySampleSetDomainKind;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.TableUpdaterFileMoveListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
@@ -394,7 +396,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             folderRegistry.addFactories(new MissingValueWriterFactory(), new MissingValueImporterFactory());
             folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
-        }        
+        }
+
+        ServiceRegistry.get(FileContentService.class).addFileMoveListener(new TableUpdaterFileMoveListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileMoveListener.Type.filePath));
 
         try
         {

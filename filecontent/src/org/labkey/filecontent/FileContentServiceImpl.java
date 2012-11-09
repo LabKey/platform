@@ -741,6 +741,9 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
+        // Make sure that we've got the best representation of the file that we can
+        src = FileUtil.getAbsoluteCaseSensitiveFile(src);
+        dest = FileUtil.getAbsoluteCaseSensitiveFile(dest);
         for (FileMoveListener fileMoveListener : _fileMoveListeners)
         {
             fileMoveListener.fileMoved(src, dest, user, container);
