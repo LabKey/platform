@@ -196,9 +196,9 @@ public class UserController extends SpringActionController
             return url;
         }
 
-        public ActionURL getUserUpdateURL(URLHelper returnURL, int userId, boolean checkIfRequired)
+        public ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId, boolean checkIfRequired)
         {
-            ActionURL url = new ActionURL(CheckUpdateAction.class, ContainerManager.getRoot());
+            ActionURL url = new ActionURL(CheckUpdateAction.class, c);
             url.addReturnURL(returnURL);
             url.addParameter("userId", userId);
             url.addParameter("checkIfRequired", checkIfRequired);
@@ -844,14 +844,16 @@ public class UserController extends SpringActionController
     @RequiresLogin @CSRF
     public class ShowUpdateAction extends UserSchemaAction
     {
+        Integer _userId;
+
         public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors) throws Exception
         {
             User user = getViewContext().getUser();
-            int userId = user.getUserId();
+            _userId = user.getUserId();
             if (null == form.getPkVal())
-                form.setPkVal(userId);
+                form.setPkVal(_userId);
 
-            boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == userId;
+            boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == _userId;
             HttpView view;
 
             if (user.isAdministrator() || isOwnRecord)
@@ -898,8 +900,8 @@ public class UserController extends SpringActionController
         public boolean handlePost(QueryUpdateForm form, BindException errors) throws Exception
         {
             User user = getViewContext().getUser();
-            int userId = user.getUserId();
-            boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == userId;
+            _userId = user.getUserId();
+            boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == _userId;
 
             if (user.isAdministrator() || isOwnRecord)
             {
@@ -911,11 +913,25 @@ public class UserController extends SpringActionController
             return 0 == errors.getErrorCount();
         }
 
+        @Override
+        public ActionURL getSuccessURL(QueryUpdateForm form)
+        {
+            URLHelper returnURL = form.getReturnURLHelper();
+            return new UserUrlsImpl().getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), returnURL);
+        }
+
+        @Override
+        public ActionURL getCancelURL(QueryUpdateForm form)
+        {
+            URLHelper returnURL = form.getReturnURLHelper();
+            return new UserUrlsImpl().getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), returnURL);
+        }
+
         public NavTree appendNavTrail(NavTree root)
         {
-            super.appendNavTrail(root);
-            root.addChild("Edit " + _form.getQueryName());
-            return root;
+            addUserDetailsNavTrail(root, _userId);
+            root.addChild("Update");
+            return root.addChild(UserManager.getEmailForId(_userId));
         }
     }
 
