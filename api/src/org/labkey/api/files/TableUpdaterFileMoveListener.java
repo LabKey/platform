@@ -10,7 +10,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
-import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.util.Date;
@@ -97,8 +96,8 @@ public class TableUpdaterFileMoveListener implements FileMoveListener
     @Override
     public void fileMoved(@NotNull File srcFile, @NotNull File destFile, @Nullable User user, @Nullable Container container)
     {
-        String srcPath = _pathGetter.get(FileUtil.getAbsoluteCaseSensitiveFile(srcFile));
-        String destPath = _pathGetter.get(FileUtil.getAbsoluteCaseSensitiveFile(destFile));
+        String srcPath = _pathGetter.get(srcFile);
+        String destPath = _pathGetter.get(destFile);
 
         DbSchema schema = _table.getSchema();
         SqlDialect dialect = schema.getSqlDialect();
@@ -117,13 +116,13 @@ public class TableUpdaterFileMoveListener implements FileMoveListener
             sharedSQL.append("ModifiedBy = ?, ");
             sharedSQL.add(user.getUserId());
         }
-        sharedSQL.append(_pathColumn);
+        sharedSQL.append(_table.getSqlDialect().makeLegalIdentifier(_pathColumn));
         sharedSQL.append(" = ");
 
         // Now build up the SQL to handle this specific path
         SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
         singleEntrySQL.append("? WHERE ");
-        singleEntrySQL.append(_pathColumn);
+        singleEntrySQL.append(_table.getSqlDialect().makeLegalIdentifier(_pathColumn));
         singleEntrySQL.append(" = ?");
         singleEntrySQL.add(destPath);
         singleEntrySQL.add(srcPath);
@@ -146,9 +145,9 @@ public class TableUpdaterFileMoveListener implements FileMoveListener
 
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(_pathColumn, Integer.toString(srcPath.length() + 1), "5000"))));
+            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(_table.getSqlDialect().makeLegalIdentifier(_pathColumn), Integer.toString(srcPath.length() + 1), "5000"))));
             childPathsSQL.append(" WHERE ");
-            childPathsSQL.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment(_pathColumn)));
+            childPathsSQL.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment(_table.getSqlDialect().makeLegalIdentifier(_pathColumn))));
             childPathsSQL.append(" = 1");
 
             int childRows = new SqlExecutor(schema, childPathsSQL).execute();
