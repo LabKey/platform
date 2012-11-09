@@ -205,6 +205,12 @@ public class CustomFolderType implements FolderType
     }
 
     @Override
+    public boolean hasContainerTabs()
+    {
+        return false;
+    }
+
+    @Override
     public List<Portal.PortalPage> resetDefaultTabs(Container c)
     {
         throw new UnsupportedOperationException();
@@ -220,5 +226,11 @@ public class CustomFolderType implements FolderType
     public String getDefaultPageId(ViewContext ctx)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;
+    }
+
+    @Override
+    public void clearActivePortalPage()
+    {
+
     }
 }

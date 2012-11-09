@@ -164,10 +164,18 @@ public interface FolderType
     /** @return whether this is intended to be used exclusively for workbooks */
     public boolean isWorkbookType();
 
+    /** @return whether this has container tabs */
+    public boolean hasContainerTabs();
+
     /**
      * @return The pageId, which is primarily intended to support tabbed folders.  By default it will return
      * Portal.DEFAULT_PORTAL_PAGE_ID
      */
     public String getDefaultPageId(ViewContext ctx);
+
+    /**
+     * Clear active portal page if there is one
+     */
+    public void clearActivePortalPage();
 }
 

@@ -334,6 +334,12 @@ public class DefaultFolderType implements FolderType
         return false;
     }
 
+    @Override
+    public boolean hasContainerTabs()
+    {
+        return false;
+    }
+
     public String getDescription()
     {
         return description;
@@ -445,5 +451,11 @@ public class DefaultFolderType implements FolderType
     public String getDefaultPageId(ViewContext ctx)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;
+    }
+
+    @Override
+    public void clearActivePortalPage()
+    {
+
     }
 }

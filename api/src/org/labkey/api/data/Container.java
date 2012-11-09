@@ -54,6 +54,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
+import org.springframework.validation.BindException;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -693,18 +694,36 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules)
     {
-        setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser());
-        Set<Module> modules = new HashSet<Module>(folderType.getActiveModules());
-        modules.addAll(ensureModules);
-        setActiveModules(modules);
+        BindException errors = new BindException(new Object(), "dummy");
+        setFolderType(folderType, ensureModules, errors);
+    }
+
+    public void setFolderType(FolderType folderType, Set<Module> ensureModules, BindException errors)
+    {
+        setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser(), errors);
+        if (!errors.hasErrors())
+        {
+            Set<Module> modules = new HashSet<Module>(folderType.getActiveModules());
+            modules.addAll(ensureModules);
+            setActiveModules(modules);
+        }
     }
 
     public void setFolderType(FolderType folderType, User user)
     {
-        ContainerManager.setFolderType(this, folderType, user);
+        BindException errors = new BindException(new Object(), "dummy");
+        setFolderType(folderType, user, errors);
+    }
 
-        if (isWorkbook())
+    public void setFolderType(FolderType folderType, User user, BindException errors)
+    {
+        ContainerManager.setFolderType(this, folderType, user, errors);
+
+        if (!errors.hasErrors())
+        {
+            if (isWorkbook())
             appendWorkbookModulesToParent();
+        }
     }
 
     public Set<Module> getRequiredModules()

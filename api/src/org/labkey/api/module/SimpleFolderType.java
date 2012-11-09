@@ -60,6 +60,7 @@ public class SimpleFolderType extends MultiPortalFolderType
     private String _description;
     private Set<Module> _activeModules;
     private Module _defaultModule;
+    protected boolean _hasContainerTabs = false;
     public static final String FILE_EXTENSION = ".foldertype.xml";
 
     public SimpleFolderType(Resource folderTypeFile, FolderType folderType)
@@ -161,6 +162,9 @@ public class SimpleFolderType extends MultiPortalFolderType
             if (tabNames.add(tab.getName()))
             {
                 FolderTab newTab = new SimpleFolderTab(tab);
+                if (newTab.getTabType() == FolderTab.TAB_TYPE.Container)
+                    _hasContainerTabs = true;
+
                 StringBuilder stringBuilder = new StringBuilder();
                 if (newTab.getTabType() != FolderTab.TAB_TYPE.Container || Container.isLegalName(newTab.getName(), stringBuilder))
                 {
@@ -358,5 +362,11 @@ public class SimpleFolderType extends MultiPortalFolderType
     public String toString()
     {
         return "Folder type: " + _name;
+    }
+
+    @Override
+    public boolean hasContainerTabs()
+    {
+        return _hasContainerTabs;
     }
 }

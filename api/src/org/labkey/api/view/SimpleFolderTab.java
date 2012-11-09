@@ -202,6 +202,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         return null;
     }
 
+    @Override
     public String getFolderTypeName()
     {
         return _folderTypeName;

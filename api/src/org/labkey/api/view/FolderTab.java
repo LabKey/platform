@@ -60,6 +60,11 @@ public abstract class FolderTab
         return TAB_TYPE.Portal;         // Default is Portal; derived classes can override
     }
 
+    public String getFolderTypeName()
+    {
+        return "";                      // Default is no folder type name; container tabs will have a folder type name
+    }
+
     /** Controllers and their child actions (both are Spring Controller classes) claimed by this tab */
     private Set<Class<? extends Controller>> _controllersAndActions = new HashSet<Class<? extends Controller>>();
 

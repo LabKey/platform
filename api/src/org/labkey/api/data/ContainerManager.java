@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
@@ -59,10 +60,12 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -312,27 +315,97 @@ public class ContainerManager
     }
 
 
-    public static void setFolderType(Container c, FolderType folderType, User user)
+    public static void setFolderType(Container c, FolderType folderType, User user, BindException errors)
     {
         FolderType oldType = c.getFolderType();
 
         if (folderType.equals(oldType))
             return;
 
-        //only toggle the menu bar if it was not already set
-        if (folderType.isMenubarEnabled() && !LookAndFeelProperties.getInstance(c).isShowMenuBar())
+        // Check for any containers that need to be moved into container tabs
+        List<Container> containersBecomingTabs = new ArrayList<Container>();
+        if (folderType.hasContainerTabs())
         {
-            setMenuEnabled(c, user, true);
+            for (FolderTab folderTab : folderType.getDefaultTabs())
+            {
+                if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
+                {
+                    for (Container child : c.getChildren())
+                    {
+                        if (child.getName().equalsIgnoreCase(folderTab.getName()))
+                        {
+                            if (!child.getFolderType().getName().equalsIgnoreCase(folderTab.getFolderTypeName()))
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, "Child folder " + child.getName() +
+                                        " matches container tab, but folder type " + child.getFolderType().getName() + " doesn't match tab's folder type " +
+                                        folderTab.getFolderTypeName() + ".");
+                            }
+
+                            int childCount = child.getChildren().size();
+                            if (childCount > 0)
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, "Child folder " + child.getName() +
+                                        " matches container tab, but cannot be converted to a tab folder because it has " + childCount + " children.");
+                            }
+
+                            if (child.isWorkbook())
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, "Child folder " + child.getName() +
+                                        " matches container tab, but cannot be converted to a tab folder because it is a workbook.");
+                            }
+
+                            if (!errors.hasErrors() && !child.isContainerTab())
+                                containersBecomingTabs.add(child);
+
+                            break;  // we found name match; can't be another
+                        }
+                    }
+                }
+            }
+
+            if (!errors.hasErrors() && !containersBecomingTabs.isEmpty())
+            {
+                // Make containers tab container; Folder tab will find them by name
+                try
+                {
+                    CORE.getSchema().getScope().ensureTransaction();
+
+                    synchronized (DATABASE_QUERY_LOCK)
+                    {
+                        for (Container container : containersBecomingTabs)
+                            updateType(container, Container.TYPE.tab.toString(), user);
+
+                        CORE.getSchema().getScope().commitTransaction();
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+                finally
+                {
+                    CORE.getSchema().getScope().closeConnection();
+                }
+            }
         }
 
-        oldType.unconfigureContainer(c, user);
-        folderType.configureContainer(c, user);
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
-        props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
-        PropertyManager.saveProperties(props);
+        if (!errors.hasErrors())
+        {
+            //only toggle the menu bar if it was not already set
+            if (folderType.isMenubarEnabled() && !LookAndFeelProperties.getInstance(c).isShowMenuBar())
+            {
+                setMenuEnabled(c, user, true);
+            }
 
-        // TODO: Not needed? I don't think we've changed the container's state.
-        _removeFromCache(c);
+            oldType.unconfigureContainer(c, user);
+            folderType.configureContainer(c, user);
+            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
+            props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
+            PropertyManager.saveProperties(props);
+
+            // TODO: Not needed? I don't think we've changed the container's state.
+            _removeFromCache(c);
+        }
     }
 
     public static boolean setMenuEnabled(Container c, User u, boolean enabled)
@@ -476,6 +549,18 @@ public class ContainerManager
         sql.append(CORE.getTableInfoContainers());
         sql.append(" SET Searchable=? WHERE RowID=?");
         new SqlExecutor(CORE.getSchema(), new SQLFragment(sql.toString(), searchable, container.getRowId())).execute();
+
+        _removeFromCache(container);
+    }
+
+    public static void updateType(Container container, String newType, User user)
+    {
+        //For some reason there is no primary key defined on core.containers
+        //so we can't use Table.update here
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET Type=? WHERE RowID=?");
+        new SqlExecutor(CORE.getSchema(), new SQLFragment(sql.toString(), newType, container.getRowId())).execute();
 
         _removeFromCache(container);
     }

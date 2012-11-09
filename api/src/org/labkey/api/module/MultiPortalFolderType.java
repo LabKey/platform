@@ -211,6 +211,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                             FolderType folderType = simpleFolderTab.getFolderType();
                             if (null != folderType)
                             {
+                                folderType.clearActivePortalPage();         // There may have been a previous page set the last time the container tab was visited
                                 boolean foundSelected = false;
                                 List<FolderTab> subTabs = getFolderTabs(folderContainer, folderType);
                                 for (FolderTab subTab : subTabs)
@@ -423,5 +424,11 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
 
         return menu;
+    }
+
+    @Override
+    public void clearActivePortalPage()
+    {
+        _activePortalPage = null;
     }
 }
