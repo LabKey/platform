@@ -99,6 +99,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // boolean to check if we should allow things like export to PDF
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
 
+        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.allowEditMode;
+
         this.items = [];
 
         this.showOptionsBtn = Ext4.create('Ext.button.Button', {
@@ -197,6 +199,35 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scope: this
         });
 
+        var tbarItems = [
+            this.toggleBtn,
+            this.exportPdfBtn
+        ];
+
+        if (this.editMode)
+        {
+            tbarItems.push(this.showOptionsBtn);
+            tbarItems.push(this.groupingBtn);
+            tbarItems.push(this.developerBtn);
+            tbarItems.push('->');
+            tbarItems.push(this.saveBtn);
+            tbarItems.push(this.saveAsBtn);
+        }
+        else if (this.allowEditMode)
+        {
+            // add an "edit" button if the user is allowed to toggle to edit mode for this report
+            tbarItems.push('->');
+            tbarItems.push({
+                xtype: 'button',
+                text: 'Edit',
+                handler: function() {
+                    var params = LABKEY.ActionURL.getParameters();
+                    Ext4.apply(params, {edit: "true"});
+                    window.location = LABKEY.ActionURL.buildURL(LABKEY.ActionURL.getController(), LABKEY.ActionURL.getAction(), null, params);
+                }
+            });
+        }
+
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             border   : false, frame : false,
             region   : 'center',
@@ -208,16 +239,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             },
             activeItem: 0,
             items    : [this.getViewPanel(), this.getDataPanel()],
-            tbar: [
-                this.toggleBtn,
-                this.exportPdfBtn,
-                this.showOptionsBtn,
-                this.groupingBtn,
-                this.developerBtn,
-                '->',
-                this.saveBtn,
-                this.saveAsBtn
-            ]
+            tbar: tbarItems
         });
 
         var typeConvert = function(value, record){
@@ -1762,23 +1784,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         labels = {
             main: {
                 value: chartOptions.mainTitle,
-                lookClickable: !forExport,
+                lookClickable: !forExport && this.editMode,
                 listeners: {
                     click: mainTitleClickHandler(this)
                 }
             },
             y: {
                 value: chartOptions.yAxis.label ? chartOptions.yAxis.label : Ext4.util.Format.htmlEncode(this.yAxisMeasure.label),
-                lookClickable: !forExport,
+                lookClickable: !forExport && this.editMode,
                 listeners: {
-                    click: yClickHandler(this)
+                    click: this.editMode ? yClickHandler(this) : null
                 }
             },
             x: {
                 value: chartOptions.xAxis.label ? chartOptions.xAxis.label : "Choose a column",
-                lookClickable: !forExport,
+                lookClickable: !forExport && this.editMode,
                 listeners: {
-                    click: xClickHandler(this)
+                    click: this.editMode ? xClickHandler(this) : null
                 }
             }
 
