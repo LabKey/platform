@@ -94,6 +94,7 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
         return false;
     }
     var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
+    var sizeMap = layerAes.size ? layerAes.size : parentAes.size;
     var pointClickFn = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
     var yScale = this.yMap.side == "left" ? scales.yLeft : scales.yRight;
     var xBinWidth = null, yBinWidth = null;
@@ -128,7 +129,12 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
         }
 
         var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + name) : this.color;
-        var size = this.sizeMap ? this.sizeMap.getValue(data[i]) : this.size;
+        var size = sizeMap ? scales.size.scale(sizeMap.getValue(data[i])) : this.size;
+
+        if(size === null || size === undefined || isNaN(size)){
+            size = this.size;
+        }
+
         var shapeFunction = this.shapeMap ?
                 scales.shape.scale(this.shapeMap.getValue(data[i]) + name) :
                 function(paper, x, y, r){return paper.circle(x, y, r)};

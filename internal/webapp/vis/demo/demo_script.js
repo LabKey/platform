@@ -384,7 +384,8 @@ var discreteScatter = new LABKEY.vis.Plot({
     })],
     aes: {
         yLeft: 'age',
-        x: 'group'
+        x: 'group',
+        color: 'group'
     },
     scales: {
         x: {
@@ -406,14 +407,16 @@ var scatterData = [];
 for(var i = 0; i < 1000; i++){
     var point = {
         x: i % 9 == 0 ? null : parseInt((Math.random()*(150))),
-        y: Math.random() * 1500
+        y: Math.random() * 1500,
+        z: parseInt(Math.random()*125)
     };
     scatterData.push(point);
 }
 
 scatterData.push({
     x: 60,
-    y: .001
+    y: .001,
+    z: 150
 });
 
 var scatterPlot = new LABKEY.vis.Plot({
@@ -423,7 +426,7 @@ var scatterPlot = new LABKEY.vis.Plot({
     clipRect: false,
     labels: {
         main: {
-            value:'Scatter With Null Points',
+            value:'Scatter With Null Points & Size Scale',
             lookClickable: true,
             listeners: {
                 click: function(){console.log("Main Label clicked!")}
@@ -452,7 +455,8 @@ var scatterPlot = new LABKEY.vis.Plot({
         aes: {x:'x', y: 'y', size: 'z'}
     })],
     scales: {
-        y: {scaleType: 'continuous', trans: 'log'}
+        y: {scaleType: 'continuous', trans: 'log'},
+        size: {scaleType: 'continuous', trans: 'linear', range: [1, 10]}
     }
 });
 

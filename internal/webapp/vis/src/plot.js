@@ -48,7 +48,7 @@ LABKEY.vis.Plot = function(config){
         for(var i = 0; i < allAes.length; i++){
             var aes = allAes[i];
 
-            if(!foundLegendScale && (aes.shape || aes.color || aes.outlierColor || aes.outlierShape) && legendPos != 'none'){
+            if(!foundLegendScale && (aes.shape || (aes.color && (!scales.color || (scales.color && scales.color.scaleType == 'discrete'))) || aes.outlierColor || aes.outlierShape) && legendPos != 'none'){
                 foundLegendScale = true;
                 right = right + 150;
             }
