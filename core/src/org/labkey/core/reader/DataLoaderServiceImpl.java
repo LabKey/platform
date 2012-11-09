@@ -264,7 +264,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
     {
         DataLoaderFactory factory = findFactory(file, contentType, guessFormat);
         if (factory == null)
-            throw new IOException("Unknown file type.");
+            throw new IOException("Unable to determine file format.");
 
         return factory.createLoader(file, hasColumnHeaders, mvIndicatorContainer);
     }
