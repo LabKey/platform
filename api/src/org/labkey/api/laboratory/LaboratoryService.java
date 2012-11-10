@@ -81,4 +81,6 @@ abstract public class LaboratoryService
     abstract public DataProvider getDataProvider(String name);
 
     abstract public List<NavItem> getDataItems(Container c, User u);
+
+    abstract public void ensureAssayColumns(User u, String providerName);
 }

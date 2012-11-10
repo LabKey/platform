@@ -17,6 +17,7 @@ package org.labkey.api.laboratory;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -86,7 +87,14 @@ public class SimpleQueryNavItem extends AbstractNavItem
 
     public ActionURL getImportUrl(Container c, User u)
     {
-        return QueryService.get().urlFor(u, c, QueryAction.importData, _schema, _query);
+        try
+        {
+            return QueryService.get().urlFor(u, c, QueryAction.importData, _schema, _query);
+        }
+        catch (QueryParseException e)
+        {
+            return null;
+        }
     }
 
     public ActionURL getSearchUrl(Container c, User u)
@@ -96,7 +104,14 @@ public class SimpleQueryNavItem extends AbstractNavItem
 
     public ActionURL getBrowseUrl(Container c, User u)
     {
-        return QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
+        try
+        {
+            return QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
+        }
+        catch (QueryParseException e)
+        {
+            return null;
+        }
     }
 
     public DataProvider getDataProvider()
