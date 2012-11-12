@@ -78,12 +78,23 @@ class TabFileType extends FileType
                 continue;
             }
 
-            // Assuming the first non-comment line is a header,
-            // reject if the fields are longer than the header (a line may have missing fields or may be the last incomplete line.)
             if (fieldLen == -1)
+            {
+                // Assuming the first non-comment line is a header,
+                // reject if we find an empty header or a non-alphanumeric string.
+                for (String columnHeader : fields)
+                {
+                    columnHeader = columnHeader.trim();
+                    if (columnHeader.length() == 0 || StringUtils.isAlphanumericSpace(columnHeader))
+                        return false;
+                }
                 fieldLen = fields.length;
+            }
             else if (fields.length > fieldLen)
+            {
+                // Reject if the fields are longer than the header (a line may have missing fields or may be the last incomplete line.)
                 return false;
+            }
         }
 
         // Reject if no lines using the delimiter were found.
