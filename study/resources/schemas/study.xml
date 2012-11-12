@@ -994,6 +994,21 @@
         <ns:column columnName="LatestYield">
             <ns:description>Processing yield value from latest event.</ns:description>
         </ns:column>
+        <ns:column columnName="Freezer">
+            <ns:description>Freezer ID from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="Fr_Container">
+            <ns:description>Freezer Container from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="Fr_Position">
+            <ns:description>Freezer Position from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="Fr_Level1">
+            <ns:description>Freezer Level1 from latest event.</ns:description>
+        </ns:column>
+        <ns:column columnName="Fr_Level2">
+            <ns:description>Freezer Level2 from latest event.</ns:description>
+        </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">

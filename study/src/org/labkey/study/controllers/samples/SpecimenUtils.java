@@ -964,7 +964,8 @@ public class SpecimenUtils
         return StudySchema.getInstance().getTableInfoSpecimenDetail().getColumns(
                 "GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
                         "DrawTimestamp, ProtocolNumber, PrimaryTypeId, " +
-                        "TotalCellCount, originatinglocationid");
+                        "TotalCellCount, originatinglocationid, FirstProcessedByInitials, " +
+                        "Freezer, Fr_container, Fr_position, Fr_level1, Fr_level2");
     }
 
     private String getShortSiteLabel(SiteImpl site)

@@ -129,6 +129,12 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("LatestIntegrity"));
         addWrapColumn(_rootTable.getColumn("LatestRatio"));
         addWrapColumn(_rootTable.getColumn("LatestYield"));
+
+        addWrapColumn(_rootTable.getColumn("Freezer"));
+        addWrapColumn(_rootTable.getColumn("Fr_container"));
+        addWrapColumn(_rootTable.getColumn("Fr_position"));
+        addWrapColumn(_rootTable.getColumn("Fr_level1"));
+        addWrapColumn(_rootTable.getColumn("Fr_level2"));
     }
 
     @Override

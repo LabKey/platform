@@ -1054,7 +1054,8 @@ public class SpecimenImporter
                 " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
                 "FirstProcessedByInitials = ?, AtRepository = ?, " +
                 "LatestComments = ?, LatestQualityComments = ?, LatestDeviationCode1 = ?, LatestDeviationCode2 = ?, LatestDeviationCode3 = ?, " +
-                "LatestConcentration = CAST(? AS REAL), LatestIntegrity = CAST(? AS REAL), LatestRatio = CAST(? AS REAL), LatestYield = CAST(? AS REAL) " +
+                "LatestConcentration = CAST(? AS REAL), LatestIntegrity = CAST(? AS REAL), LatestRatio = CAST(? AS REAL), LatestYield = CAST(? AS REAL), " +
+                "Freezer = ?, Fr_container = ?, Fr_position = ?, Fr_level1 = ?, Fr_level2 = ? " +
                 " WHERE RowId = ?";
         String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
                 " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
@@ -1110,7 +1111,12 @@ public class SpecimenImporter
                     !safeObjectEquals(specimen.getLatestConcentration(), lastEvent.getConcentration()) ||
                     !safeObjectEquals(specimen.getLatestIntegrity(), lastEvent.getIntegrity()) ||
                     !safeObjectEquals(specimen.getLatestRatio(), lastEvent.getRatio()) ||
-                    !safeObjectEquals(specimen.getLatestYield(), lastEvent.getYield()))
+                    !safeObjectEquals(specimen.getLatestYield(), lastEvent.getYield()) ||
+                    !safeObjectEquals(specimen.getFreezer(), lastEvent.getFreezer()) ||
+                    !safeObjectEquals(specimen.getFr_container(), lastEvent.getFr_container()) ||
+                    !safeObjectEquals(specimen.getFr_position(), lastEvent.getFr_position()) ||
+                    !safeObjectEquals(specimen.getFr_level1(), lastEvent.getFr_level1()) ||
+                    !safeObjectEquals(specimen.getFr_level2(), lastEvent.getFr_level2()))
                 {
                     List<Object> params = new ArrayList<Object>();
                     params.add(currentLocation);
@@ -1126,6 +1132,11 @@ public class SpecimenImporter
                     params.add(lastEvent.getIntegrity());
                     params.add(lastEvent.getRatio());
                     params.add(lastEvent.getYield());
+                    params.add(lastEvent.getFreezer());
+                    params.add(lastEvent.getFr_container());
+                    params.add(lastEvent.getFr_position());
+                    params.add(lastEvent.getFr_level1());
+                    params.add(lastEvent.getFr_level2());
                     params.add(specimen.getRowId());
                     vialPropertiesParams.add(params);
                 }

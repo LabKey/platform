@@ -69,6 +69,11 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private Float _latestConcentration;
     private Float _latestRatio;
     private Float _latestIntegrity;
+    private String _freezer;
+    private String _fr_container;
+    private String _fr_position;
+    private String _fr_level1;
+    private String _fr_level2;
 
     public Integer getAdditiveTypeId()
     {
@@ -517,5 +522,55 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     public void setLatestIntegrity(Float latestIntegrity)
     {
         _latestIntegrity = latestIntegrity;
+    }
+
+    public String getFreezer()
+    {
+        return _freezer;
+    }
+
+    public void setFreezer(String freezer)
+    {
+        _freezer = freezer;
+    }
+
+    public String getFr_container()
+    {
+        return _fr_container;
+    }
+
+    public void setFr_container(String fr_container)
+    {
+        _fr_container = fr_container;
+    }
+
+    public String getFr_position()
+    {
+        return _fr_position;
+    }
+
+    public void setFr_position(String fr_position)
+    {
+        _fr_position = fr_position;
+    }
+
+    public String getFr_level1()
+    {
+        return _fr_level1;
+    }
+
+    public void setFr_level1(String fr_level1)
+    {
+        _fr_level1 = fr_level1;
+    }
+
+    public String getFr_level2()
+    {
+        return _fr_level2;
+    }
+
+    public void setFr_level2(String fr_level2)
+    {
+        _fr_level2 = fr_level2;
     }
 }
