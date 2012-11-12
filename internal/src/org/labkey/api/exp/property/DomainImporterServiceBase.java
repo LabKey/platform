@@ -109,7 +109,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
     {
         try
         {
-            return DataLoader.get().createLoader(getImportFile(), null, true, getContainer(), TabLoader.TSV_FILE_TYPE);
+            return DataLoader.get().createLoader(getImportFile(), null, true, getContainer(), null);
         }
         catch (IOException e)
         {
