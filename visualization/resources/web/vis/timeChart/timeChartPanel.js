@@ -153,6 +153,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.toggleOptionButtons(true);
                     this.chart.add(Ext4.create('LABKEY.vis.InitialMeasurePanel', {
                         subjectNounSingular: this.viewInfo.subjectNounSingular,
+                        helpText: this.getMeasurePickerHelpText(),
                         listeners: {
                             scope: this,
                             'initialMeasuresStoreLoaded': function(data) {
@@ -248,6 +249,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             filterQuery: this.chartInfo.filterQuery ? this.chartInfo.filterQuery : this.getFilterQuery(),
             viewInfo: this.viewInfo,
             filtersParentPanel: this.filtersPanel,
+            helpText: this.getMeasurePickerHelpText(),
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
@@ -2433,5 +2435,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
 
         return warningsExist;
+    },
+
+    getMeasurePickerHelpText: function() {
+        return {title: 'Which measures are included?', text: 'This grid contains dataset columns that have been designated as measures from the dataset definition. '
+            + '<br/><br/>It also includes measures from queries in the study schema that contain both the ' + this.subjectNounSingular + 'Id and ' + this.subjectNounSingular + 'Visit columns.'
+            + '<br/><br/>You can filter the measures in the grid using the filter textbox to the left. The filtered results will contain measures that have a match in the dataset, measure, or description column. '
+            + 'You can get back to the full list of measures at any time by removing the filter.'};
     }
 });

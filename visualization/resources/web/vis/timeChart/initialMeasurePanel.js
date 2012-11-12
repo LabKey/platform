@@ -56,8 +56,7 @@ Ext4.define('LABKEY.vis.InitialMeasurePanel', {
             allColumns: false,
             multiSelect : false,
             closeAction:'hide',
-            helpText: {title: 'Which measures are included?', text: 'This grid contains dataset columns that have been designated as measures from the dataset definition. '
-                + '<br/><br/>It also includes measures from queries in the study schema that contain both the ' + this.subjectNounSingular + 'Id and ' + this.subjectNounSingular + 'Visit columns.'},
+            helpText: this.helpText,
             listeners: {
                 scope: this,
                 'beforeMeasuresStoreLoad': function (mp, data) {

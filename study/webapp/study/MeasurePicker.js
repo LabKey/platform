@@ -418,6 +418,15 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         this.searchBox.on('change', function(cmp,e){taskFilterMeasures.delay(333);});
         tbarItems.push(this.searchBox);
 
+        this.clearFilterBtn = Ext4.create('Ext.Button', {
+            hidden: true,
+            iconCls:'iconDelete',
+            tooltip: 'Clear filter',
+            handler: function(){this.searchBox.setValue('');},
+            scope: this
+        });
+        tbarItems.push(this.clearFilterBtn);
+
         this.errorField = Ext4.create('Ext.form.DisplayField', {
             width: 250,
             hidden: true,
@@ -462,7 +471,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                             title: this.helpText.title,
                             html: this.helpText.text,
                             trackMouse: true,
-                            dismissDelay: 20000
+                            dismissDelay: 30000
                         });
                     }
                 }
@@ -568,9 +577,13 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 },
                 scope : this
             }]);
+            this.clearFilterBtn.show();
         }
         else
+        {
             this.measuresStore.clearFilter();
+            this.clearFilterBtn.hide();
+        }
 
         if(this.measuresStore.getCount() == 0){
             this.errorField.show();
