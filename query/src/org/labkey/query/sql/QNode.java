@@ -26,7 +26,6 @@ import javax.servlet.ServletException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -331,6 +330,20 @@ abstract public class QNode implements Cloneable
             	c.dump(out, nl + "    |", dumped);
     }
 
+
+
+    public void addFieldRefs(Object referant)
+    {
+        for (QNode child : childList())
+            child.addFieldRefs(referant);
+    }
+
+
+    public void releaseFieldRefs(Object referant)
+    {
+        for (QNode child : childList())
+            child.releaseFieldRefs(referant);
+    }
 
 
     public static class TestCase extends Assert

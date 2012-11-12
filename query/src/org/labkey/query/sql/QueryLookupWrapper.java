@@ -377,6 +377,14 @@ public class QueryLookupWrapper extends QueryRelation
         {
             return _wrapped.getValueSql(_source.getAlias());
         }
+
+        @Override
+        public int addRef(@NotNull Object refer)
+        {
+            if (0 == ref.count())
+                _wrapped.addRef(this);
+            return super.addRef(refer);
+        }
     }
 
 

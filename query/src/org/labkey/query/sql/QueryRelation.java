@@ -143,10 +143,10 @@ public abstract class QueryRelation
 
 
     /** a QField wraps a reference to a QueryRelation and a field name */
-    protected QField getField(FieldKey key, QNode expr)
+    protected QField getField(FieldKey key, QNode expr, Object referant)
     {
         if (_parent != null && !_inFromClause)
-            return _parent.getField(key, expr);
+            return _parent.getField(key, expr, referant);
         return new QField(null, key.getName(), expr);
     }
 
@@ -217,6 +217,27 @@ public abstract class QueryRelation
         public String toString()
         {
             return (null == getFieldKey() ? "" : (getFieldKey().toDisplayString() + " ")) + super.toString();
+        }
+
+
+        protected ReferenceCount ref = new ReferenceCount(null);
+
+        public int addRef(@NotNull Object refer)
+        {
+            return ref.increment(refer);
+        }
+
+        public int releaseRef(@NotNull Object refer)
+        {
+            return ref.increment(refer);
+        }
+
+        public boolean isReferencedByOthers(Object refer)
+        {
+            int count = ref.count();
+            if (count == 1)
+                return !ref.isReferencedBy(refer);
+            return count != 0;
         }
     }
 

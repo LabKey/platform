@@ -120,7 +120,7 @@ public class QJoin implements QJoinOrTable
         if (null != _on)
         {
             sql.append(" ON ");
-            select.resolveFields(_on, null).appendSql(sql);
+            select.resolveFields(_on, null, null).appendSql(sql);
         }
     }
 }

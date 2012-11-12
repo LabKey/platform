@@ -97,6 +97,8 @@ public class QueryPivot extends QueryRelation
         _from = from;
         _manager = new AliasManager(query.getSchema().getDbSchema());
 
+        _from.markAllSelected(this);
+
         QPivot pivotClause = root.getChildOfType(QPivot.class);
         QNode aggsList = pivotClause.childList().get(0);
         QIdentifier byId = (QIdentifier)pivotClause.childList().get(1);
@@ -109,7 +111,7 @@ public class QueryPivot extends QueryRelation
             parseError("Can not find pivot column: " + byId.getIdentifier(), byId);
             return;
         }
-        
+
         // get all the columns, but delete the pivot column
         Map<String,RelationColumn> allFromColumns = _from.getAllColumns();
         for (RelationColumn r : allFromColumns.values())
@@ -220,6 +222,9 @@ public class QueryPivot extends QueryRelation
 
         // make sure all group by columns are selected
         Map<String, QuerySelect.SelectColumn> map = _from.getGroupByColumns();
+        for (QuerySelect.SelectColumn c : map.values())
+            c.addRef(this);
+
         boolean pivotFound = false;
         for (Map.Entry<String, QuerySelect.SelectColumn> entry : map.entrySet())
         {
@@ -671,13 +676,14 @@ public class QueryPivot extends QueryRelation
                 comma = ",\n";
             }
         }
-        SQLFragment fromSql = _from._getSql(true);
+
+        SQLFragment fromSql = _from.getSql();
         if (null == fromSql)
         {
             assert !getParseErrors().isEmpty();
             return null;
         }
-        sql.append("\n FROM (").append(_from._getSql(true)).append(") ").append(tableAlias).append("\n");
+        sql.append("\n FROM (").append(fromSql).append(") ").append(tableAlias).append("\n");
 
         // UNDONE: separate grouping columns from extra 'fact' columns
         // sql.append("GROUP BY ");

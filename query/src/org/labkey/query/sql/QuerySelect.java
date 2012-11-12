@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -625,18 +624,22 @@ groupByLoop:
      * CONSIDER: mark method identifiers...
      */
     @Override
-    protected QField getField(FieldKey key, QNode expr)
+    protected QField getField(FieldKey key, QNode expr, Object referant)
     {
-        return getField(key, expr, false);
+        return getField(key, expr, referant, false);
     }
 
-    private QField getField(FieldKey key, QNode expr, boolean methodName)
+    private QField getField(FieldKey key, QNode expr, Object referant, boolean methodName)
     {
         if (!methodName)
         {
             RelationColumn column = _declaredFields.get(key);
             if (column != null)
+            {
+                if (null != referant)
+                    column.addRef(referant);
                 return new QField(column, expr);
+            }
         }
 
         if (key.getTable() == null)
@@ -650,7 +653,7 @@ groupByLoop:
             {
                 return new QField(table, key.getName(), expr);
             }
-            return super.getField(key,expr);
+            return super.getField(key, expr, referant);
         }
     }
 
@@ -885,8 +888,11 @@ groupByLoop:
     
     /*
      * Return the result of replacing field names in the expression with QField objects.
+     *
+     * referant is used for reference counting, this is who is pointing at these fields
+     * it might be a QJoin, QWhere, SelectColumn etc.
      */
-    QExpr resolveFields(QExpr expr, @Nullable QNode parent)
+    QExpr resolveFields(QExpr expr, @Nullable QNode parent, @Nullable Object referant)
     {
         if (expr instanceof QQuery)
         {
@@ -911,7 +917,7 @@ groupByLoop:
                 if (null != param)
                     return param;
             }
-            QField ret = getField(key, expr);
+            QField ret = getField(key, expr, referant);
             QueryParseException error = ret.fieldCheck(parent, getSqlDialect());
             if (error != null)
                 getParseErrors().add(error);
@@ -936,7 +942,7 @@ groupByLoop:
             if (child == methodName)
                 ret.appendChild(getField(((QExpr)child).getFieldKey(), expr, true));
             else
-                ret.appendChild(resolveFields((QExpr)child, expr));
+                ret.appendChild(resolveFields((QExpr)child, expr, referant));
         }
 
         QueryParseException error = ret.fieldCheck(parent, getSqlDialect());
@@ -1008,7 +1014,10 @@ groupByLoop:
 
         getSuggestedColumns(set);
 
-        final SQLFragment sql = _getSql(true);
+        // mark all top level columns selected, since we want to generate column info for all columns
+        markAllSelected(_query);
+
+        final SQLFragment sql = _getSql();
         if (null == sql)
             return null;
 
@@ -1064,11 +1073,11 @@ groupByLoop:
 
 //        SqlDialect dialect = getSqlDialect();
 
-        CaseInsensitiveHashSet aliasSet = new CaseInsensitiveHashSet();
+        CaseInsensitiveHashMap<SelectColumn> aliasSet = new CaseInsensitiveHashMap<SelectColumn>();
 
         for (SelectColumn col : _columns.values())
         {
-            aliasSet.add(col.getAlias());
+            aliasSet.put(col.getAlias(),col);
             col.getResolvedField();
         }
         if (getParseErrors().size() != 0)
@@ -1079,7 +1088,7 @@ groupByLoop:
             if (qt instanceof QJoin)
             {
                 if (null != ((QJoin)qt)._on)
-                    resolveFields(((QJoin)qt)._on, null);
+                    resolveFields(((QJoin)qt)._on, null, qt);
             }
             else if (qt instanceof QTable)
             {
@@ -1090,29 +1099,40 @@ groupByLoop:
 
         if (_where != null)
             for (QNode expr : _where.children())
-                resolveFields((QExpr)expr, null);
+                resolveFields((QExpr)expr, null, _where);
 
         if (_groupBy != null)
         {
             for (QNode expr : _groupBy.children())
-                resolveFields((QExpr)expr, _groupBy);
+                resolveFields((QExpr)expr, _groupBy, _groupBy);
         }
         if (_having != null)
         {
             for (QNode expr : _having.children())
-                resolveFields((QExpr)expr, null);
+                resolveFields((QExpr)expr, null, _having);
         }
         if (_orderBy != null)
         {
             for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
             {
                 QExpr expr = entry.getKey();
-                if (!(expr instanceof QIdentifier && aliasSet.contains(expr.getTokenText())))
-                    resolveFields(expr, _orderBy);
+                if (expr instanceof QIdentifier && aliasSet.containsKey(expr.getTokenText()))
+                    aliasSet.get(expr.getTokenText()).addRef(_orderBy);
+                else
+                    resolveFields(expr, _orderBy, _orderBy);
             }
         }
     }
 
+
+    public void markAllSelected(Object referant)
+    {
+        for (SelectColumn c : _columns.values())
+        {
+            c._selected = true;
+            c.addRef(referant);
+        }
+    }
 
     public SQLFragment getSql()
     {
@@ -1120,31 +1140,29 @@ groupByLoop:
         if (getParseErrors().size() != 0)
             return null;
 
-        return _getSql(false);
+        return _getSql();
     }
 
 
-    public SQLFragment _getSql(boolean selectAll)
+    public SQLFragment _getSql()
     {
         SqlBuilder sql = new SqlBuilder(_schema.getDbSchema());
 
         if (null == _distinct)
         {
             sql.pushPrefix("SELECT ");
-            selectAll = true;
         }
         else
         {
             sql.pushPrefix("SELECT DISTINCT ");
-            selectAll = true;
         }
 
         int count = 0;
         for (SelectColumn col : _columns.values())
-            if (col._selected)
+            if (0 < col.ref.count())
                 count++;
         if (count == 0)
-            selectAll = true;
+            markAllSelected(_query);
 
         // keep track of mapping from source alias to generated alias (used by ORDER BY)
         CaseInsensitiveHashMap<String> aliasMap = new CaseInsensitiveHashMap<String>();
@@ -1152,7 +1170,7 @@ groupByLoop:
         SqlDialect dialect = getSqlDialect();
         for (SelectColumn col : _columns.values())
         {
-            if (!selectAll && !col._selected)
+            if (0 == col.ref.count())
                 continue;
             String alias = col.getAlias();
             assert null != alias;
@@ -1187,7 +1205,7 @@ groupByLoop:
             for (QNode expr : _where.children())
             {
                 sql.append("(");
-                QExpr term = resolveFields((QExpr)expr, null);
+                QExpr term = resolveFields((QExpr)expr, null, _where);
                 term.appendSql(sql);
                 sql.append(")");
                 sql.nextPrefix(" AND ");
@@ -1200,7 +1218,7 @@ groupByLoop:
             for (QNode expr : _groupBy.children())
             {
                 sql.append("(");
-                QExpr gbExpr = resolveFields((QExpr)expr, _groupBy);
+                QExpr gbExpr = resolveFields((QExpr)expr, _groupBy, _groupBy);
                 // check here again for constants, after resolveFields()
                 if (gbExpr.isConstant())
                     parseError("Expression in Group By clause must not be a constant", expr);
@@ -1216,7 +1234,7 @@ groupByLoop:
             for (QNode expr : _having.children())
             {
                 sql.append("(");
-                QExpr term = resolveFields((QExpr)expr, null);
+                QExpr term = resolveFields((QExpr)expr, null, _having);
                 term.appendSql(sql);
                 sql.append(")");
                 sql.nextPrefix(" AND ");
@@ -1240,7 +1258,7 @@ groupByLoop:
                 }
                 else
                 {
-                    QExpr r = resolveFields(expr, _orderBy);
+                    QExpr r = resolveFields(expr, _orderBy, _orderBy);
                     r.appendSql(sql);
                 }
                 if (!entry.getValue().booleanValue())
@@ -1519,6 +1537,7 @@ groupByLoop:
             {
                 QField field = new QField(s, null);
                 SelectColumn selectColumn = new SelectColumn(field, true);
+                selectColumn._selected = true;
                 this._columns.put(selectColumn.getFieldKey(), selectColumn);
                 ret.add(selectColumn);
             }
@@ -1546,7 +1565,8 @@ groupByLoop:
         if (!(qexpr instanceof QField))
             return null;
 
-        RelationColumn fromParentColumn = ((QField)qexpr).getRelationColumn();
+        QField parentField = (QField)qexpr;
+        RelationColumn fromParentColumn = parentField.getRelationColumn();
         if (fromParentColumn == null)
             return null;
         RelationColumn fromLookupColumn = fromParentColumn.getTable().getLookupColumn(fromParentColumn, fk, name);
@@ -1776,7 +1796,11 @@ groupByLoop:
         public QExpr getResolvedField()
         {
             if (null == _resolved)
-                _resolved = resolveFields(getField(), null);
+            {
+                _resolved = resolveFields(getField(), null, null);
+                if (0 < ref.count())
+                    _resolved.addFieldRefs(this);
+            }
             return _resolved;
         }
 
@@ -1784,6 +1808,17 @@ groupByLoop:
         public String toString()
         {
             return super.toString() + " alias: " + this.getAlias();
+        }
+
+        @Override
+        public int addRef(Object refer)
+        {
+            if (0 == ref.count())
+            {
+                if (null != _resolved)
+                    _resolved.addFieldRefs(this);
+            }
+            return super.addRef(refer);
         }
     }
 }

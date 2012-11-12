@@ -2270,6 +2270,7 @@ query/src/org/labkey/query/sql/QuerySelect.java -text
 query/src/org/labkey/query/sql/QueryTable.java -text
 query/src/org/labkey/query/sql/QueryTableInfo.java -text
 query/src/org/labkey/query/sql/QueryUnion.java -text
+query/src/org/labkey/query/sql/ReferenceCount.java -text
 query/src/org/labkey/query/sql/SQLTableInfo.java -text
 query/src/org/labkey/query/sql/SourceBuilder.java -text
 query/src/org/labkey/query/sql/SqlBase.g -text

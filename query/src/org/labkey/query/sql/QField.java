@@ -24,12 +24,21 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+
 
 public class QField extends QInternalExpr
 {
+    static HashSet<Class> _legalReferants = new HashSet<Class>(Arrays.asList(
+            QuerySelect.SelectColumn.class, QJoin.class, QWhere.class, QOrder.class, QGroupBy.class));
+
     QueryRelation _table;
     String _name;
     QueryRelation.RelationColumn _column;
+    private final ReferenceCount refCount = new ReferenceCount(_legalReferants);
+
 
     private QField(QNode orig)
     {
@@ -37,12 +46,14 @@ public class QField extends QInternalExpr
             setLineAndColumn(orig);
     }
 
+
     public QField(QueryRelation table, String name, QNode orig)
     {
         this(orig);
         _table = table;
         _name = name;
     }
+
 
     public QField(QueryRelation.RelationColumn column, QNode orig)
     {
@@ -53,6 +64,31 @@ public class QField extends QInternalExpr
     }
 
 
+    @Override
+    public void addFieldRefs(Object referant)
+    {
+        if (0 == refCount.count())
+        {
+            QueryRelation.RelationColumn col = getRelationColumn();
+            if (null != col)
+                col.addRef(this);
+        }
+        refCount.increment(referant);
+    }
+
+
+    public void releaseFieldRefs(Object refer)
+    {
+        refCount.decrement(refer);
+        if (0 == refCount.count())
+        {
+            QueryRelation.RelationColumn col = getRelationColumn();
+            if (null != col)
+                col.releaseRef(this);
+        }
+    }
+
+
     public QueryRelation.RelationColumn getRelationColumn()
     {
         if (null == _column)
@@ -60,6 +96,8 @@ public class QField extends QInternalExpr
             if (null == _table)
                 return null;
             _column = _table.getColumn(_name);
+            if (null != _column && 0 < refCount.count())
+                _column.addRef(this);
         }
         return _column;
     }
