@@ -14,6 +14,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     constructor : function(config)
     {
         Ext.apply(this, config);
+        this.pageOptions = this.initPages();
+        this.requestId = config.requestId;
+
         Ext.util.Observable.prototype.constructor.call(this, config);
         this.sideBarTemplate = new Ext.XTemplate(
                 '<div class="labkey-ancillary-wizard-background">',
@@ -33,27 +36,69 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 '</div>'
 
         );
+
         this.sideBarTemplate.compile();
+
+    },
+
+    initPages : function(){
+        var pages = [];
+        pages[0] = {
+            panelType : 'name',
+            active :  (this.namePanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.namePanel
+        };
+        pages[1] = {
+            panelType : 'participants',
+            active : (this.participantsPanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.participantsPanel
+        };
+        pages[2] = {
+            panelType : 'datasets',
+            active : (this.datasetsPanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.datasetsPanel
+        };
+        pages[3] = {
+            panelType : 'visits',
+            active : (this.visitsPanel == false) ? false : this.mode == 'publish' || this.vistsPanel
+        };
+        pages[4] = {
+            panelType : 'lists',
+            active : (this.listsPanel == false) ? false : this.mode == 'publish' || this.listsPanel
+        };
+        pages[5] = {
+            panelType : 'views',
+            active : (this.viewsPanel == false) ? false : this.mode == 'publish' || this.viewsPanel
+        };
+        pages[6] = {
+            panelType : 'reports',
+            active : (this.reportsPanel == false) ? false : this.mode == 'publish' || this.reportsPanel
+        };
+        pages[7] = {
+            panelType : 'specimens',
+            active : (this.specimensPanel == false) ? false : this.mode == 'publish' || this.specimensPanel,
+        };
+        pages[8] = {
+            panelType : 'publishOptions',
+            active : (this.publishOptionsPanel == false) ? false : this.mode == 'publish' || this.publishOptionsPanel
+        };
+        return pages;
     },
 
     show : function() {
         this.steps = [];
+        this.info = {};
         this.currentStep = 0;
         this.lastStep = 0;
-        this.info = {};
 
-        this.steps.push(this.getNamePanel());
-        this.steps.push(this.getParticipantsPanel());
-        this.steps.push(this.getDatasetsPanel());
+        //TODO:  This format is not pleasing.
+        if(this.pageOptions[0].active == true) this.steps.push(this.getNamePanel());
+        if(this.pageOptions[1].active == true) this.steps.push(this.getParticipantsPanel());
+        if(this.pageOptions[2].active == true) this.steps.push(this.getDatasetsPanel());
 
-        if(this.mode == 'publish'){
-            this.steps.push(this.getVisitsPanel());
-            this.steps.push(this.getListsPanel());
-            this.steps.push(this.getViewsPanel());
-            this.steps.push(this.getReportsPanel());
-            this.steps.push(this.getSpecimensPanel());
-            this.steps.push(this.getPublishOptionsPanel());
-        }
+        if(this.pageOptions[3].active == true) this.steps.push(this.getVisitsPanel());
+        if(this.pageOptions[4].active == true) this.steps.push(this.getListsPanel());
+        if(this.pageOptions[5].active == true) this.steps.push(this.getViewsPanel());
+        if(this.pageOptions[6].active == true) this.steps.push(this.getReportsPanel());
+        if(this.pageOptions[7].active == true) this.steps.push(this.getSpecimensPanel());
+        if(this.pageOptions[8].active == true) this.steps.push(this.getPublishOptionsPanel());
 
         this.prevBtn = new Ext.Button({text: 'Previous', disabled: true, scope: this, handler: function(){
             this.lastStep = this.currentStep;
@@ -86,21 +131,31 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             bbar: ['->', this.prevBtn, this.nextBtn]
         });
 
-        var steps = [
-            {value: 'General Setup', currentStep: true},
-            {value: this.subject.nounPlural, currentStep: false},
-            {value: 'Datasets', currentStep: false}
-        ];
+        var setup = [
+            {value: 'General Setup', currentStep: true}
+         ];
+        if(this.pageOptions[1].active) {
+            setup.push({value: this.subject.nounPlural, currentStep: false});
+        }
 
-        if(this.mode == 'publish'){
-            steps.push(
-                    {value: this.studyType == "VISIT" ? 'Visits' : 'Timepoints', currentStep: false},
-                    {value: 'Lists', currentStep: false},
-                    {value: 'Views', currentStep: false},
-                    {value: 'Reports', currentStep: false},
-                    {value: 'Specimens', currentStep: false},
-                    {value: 'Publish Options', currentStep: false}
-            );
+        setup.push({value: 'Datasets', currentStep: false});
+
+        if(this.studyType){
+            setup.push({value: this.studyType == "VISIT" ? 'Visits' : 'Timepoints', currentStep: false});
+        }
+        setup.push(
+        {value: 'Lists', currentStep: false},
+        {value: 'Views', currentStep: false},
+        {value: 'Reports', currentStep: false},
+        {value: 'Specimens', currentStep: false},
+        {value: 'Publish Options', currentStep: false}
+        );
+
+        var steps = [];
+        for(var i = 0; i < this.pageOptions.length; i++){
+            if(this.pageOptions[i].active == true){
+                steps.push(setup[i]);
+            }
         }
 
         this.sideBar = new Ext.Panel({
@@ -128,7 +183,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         //To update the sideBar call this.sideBar.update({steps: [], currentStepIndex: int});
-        var title = this.mode == "ancillary" ? 'Create Ancillary Study' : 'Publish Study';
+        var title;
+        if(this.title) {
+            title = this.title;
+        }
+        else if (this.mode == "ancillary") title ='Create Ancillary Study';
+        else title = 'Publish Study';
 
         this.win = new Ext.Window({
             title: title,
@@ -175,7 +235,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     getNamePanel : function() {
-
         var items = [];
 
         this.info.name = this.studyName;
@@ -226,7 +285,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     ' Often, this document contains a study plan, the types of participants, as well as scheduling.' +
                 '</div>' +
             '</div>';
-
         var protocolDocField = new Ext.form.FileUploadField({
             emptyText: 'Select a protocol document',
             fieldLabel: 'Protocol',
@@ -563,7 +621,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
             return true;
         }, this);
-
+        this.pageOptions[1].value = this.selectedParticipantGroups;
         return this.participantPanel;
     },
 
@@ -648,6 +706,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             height: 50,
             width : 300
         });
+
         if (this.mode != 'publish')
             items.push(this.snapshotOptions);
 
@@ -663,6 +722,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var validate = function(cmp){
+
             if(this.mode == 'publish'){
                 if (this.lastStep > this.currentStep)
                     return;
@@ -678,7 +738,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         };
 
         panel.on('beforehide', validate, this);
-
         return panel;
     },
 
@@ -799,7 +858,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 return false;
             }, this);
         }, this);
-
+        this.pageOptions[5].value = this.selectedViews;
         return panel;
     },
 
@@ -882,6 +941,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
 
+        this.pageOptions[6].value = this.selectedReports;
         return new Ext.Panel({
             border: false,
             name: "Reports",
@@ -892,6 +952,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             items: items
         });
+
     },
 
     getSpecimensPanel: function(){
@@ -1017,7 +1078,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         };
 
         panel.on('beforehide', validate, this);
-
+        this.pageOptions[3].value = this.selectedVisits;
         return panel;
     },
 
@@ -1092,7 +1153,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             items: items
         });
-
+        this.pageOptions[4].value = this.selectedLists;
         return panel;
     },
 
@@ -1193,6 +1254,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.description = this.info.description;
         params.srcPath = LABKEY.ActionURL.getContainer();
         params.dstPath = this.info.dstPath;
+
         if(this.mode == 'publish'){
             params.useAlternateParticipantIds = this.alternateIdsCheckBox.getValue();
             params.shiftDates = this.shiftDatesCheckBox.getValue();
@@ -1202,21 +1264,22 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         }
 
         var hiddenFields = [];
-        if(this.existingGroupRadio.checked)
-        {
-            // If we chose an existing group then we just pass the rowid of the group, because of a bug in ie
-            // we add categories and datasets as hidden form fields to the form so the arrays get
-            // serialized correctly
-            for (var i=0; i < this.selectedParticipantGroups.length; i++)
+
+        if(this.pageOptions[1].active){
+            if(this.existingGroupRadio.checked)
             {
-                var category = this.selectedParticipantGroups[i];
-                var id = Ext.id();
-                hiddenFields.push(id);
-                this.nameFormPanel.add({xtype:'hidden', id: id, name: 'groups', value: category.id});
+                // If we chose an existing group then we just pass the rowid of the group, because of a bug in ie
+                // we add categories and datasets as hidden form fields to the form so the arrays get
+                // serialized correctly
+                for (var i=0; i < this.selectedParticipantGroups.length; i++)
+                {
+                    var category = this.selectedParticipantGroups[i];
+                    var id = Ext.id();
+                    hiddenFields.push(id);
+                    this.nameFormPanel.add({xtype:'hidden', id: id, name: 'groups', value: category.id});
+                }
             }
         }
-        params.copyParticipantGroups = true;//this.copyParticipantGroups.checked;
-
         for (var i=0; i < this.info.datasets.length; i++)
         {
             var ds = this.info.datasets[i];
@@ -1225,42 +1288,87 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             this.nameFormPanel.add({xtype:'hidden', id: id, name: 'datasets', value: ds.data.DataSetId});
         }
 
-        if(this.mode == 'publish'){
-            for(i = 0; i < this.selectedVisits.length; i++){
-                var visit = this.selectedVisits[i];
-                id = Ext.id();
-                hiddenFields.push(id);
-                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'visits', value: visit.data.RowId});
-            }
+        params.copyParticipantGroups = true;//this.copyParticipantGroups.checked;
 
-            for(i = 0; i < this.selectedViews.length; i++){
-                var view = this.selectedViews[i];
-                id = Ext.id();
-                hiddenFields.push(id);
-                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'views', value: view.data.id});
-            }
+        this.pageOptions[3].value = this.selectedVisits;
+        this.pageOptions[4].value = this.selectedLists;
+        this.pageOptions[5].value = this.selectedViews;
+        this.pageOptions[6].value = this.selectedReports;
 
-            for(i = 0; i < this.selectedReports.length; i++){
-                var report = this.selectedReports[i];
-                id = Ext.id();
-                hiddenFields.push(id);
-                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'reports', value: report.data.id});
-            }
 
-            for(i = 0; i < this.selectedLists.length; i++){
-                var list = this.selectedLists[i];
-                id = Ext.id();
-                hiddenFields.push(id);
-                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'lists', value: list.data.id});
-            }
+//        for(var outer = 3; outer < 7; outer++){
+//            console.log(this.pageOptions[outer].panelType + " : " + this.pageOptions[outer].active);
+//            if(this.pageOptions[outer].active == true){
+//                console.log("Processing");
+//                for(var inner = 0; inner < this.pageOptions[outer].value.length; inner++){
+//                    var item = this.pageOptions[outer].value[inner];
+//                    id = Ext.id();
+//                    hiddenFields.push(id);
+//                    console.log(item.data);
+//                    if(this.pageOptions[outer].name == 'visits')
+//                        this.nameFormPanel.add({xtype : 'hidden', id : id, name : this.pageOptions[outer].panelType, value : item.data.RowId});
+//                    else
+//                        this.nameFormPanel.add({xtype : 'hidden', id : id, name : this.pageOptions[outer].panelType, value : item.data.id});
+//
+//                }
+//            }
+//        }
 
+        if(this.pageOptions[8].active){
             id = Ext.id();
             hiddenFields.push(id);
             this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'publish', value: true});
         }
+        if(this.requestId){
+            id = Ext.id();
+            hiddenFields.push(id);
+            this.nameFormPanel.add({xtype: 'hidden', id : id, name : 'requestId', value : this.requestId});
+        }
+
+
+        //TODO:  Get rid of mode here, or at least make it work in the context.
+        if(this.mode == 'publish'){
+
+            if(this.pageOptions[3].active){
+                for(i = 0; i < this.selectedVisits.length; i++){
+                    var visit = this.selectedVisits[i];
+                    id = Ext.id();
+                    hiddenFields.push(id);
+                    this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'visits', value: visit.data.RowId});
+                }
+            }
+            if(this.pageOptions[4].active){
+                for(i = 0; i < this.selectedLists.length; i++){
+                    var list = this.selectedLists[i];
+                    id = Ext.id();
+                    hiddenFields.push(id);
+                    this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'lists', value: list.data.id});
+                }
+            }
+            if(this.pageOptions[5].active){
+                for(i = 0; i < this.selectedViews.length; i++){
+                    var view = this.selectedViews[i];
+                    id = Ext.id();
+                    hiddenFields.push(id);
+                    this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'views', value: view.data.id});
+                }
+            }
+            if(this.pageOptions[6].active){
+                for(i = 0; i < this.selectedReports.length; i++){
+                    var report = this.selectedReports[i];
+                    id = Ext.id();
+                    hiddenFields.push(id);
+                    this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'reports', value: report.data.id});
+                }
+            }
+
+
+        }
+
 
         this.nameFormPanel.doLayout();
 
+        //TODO:  Get rid of mode here, or at least make it work in the context.
         if(this.mode != 'publish'){
             var form = this.snapshotOptions.getForm();
             var refreshOptions = form.getValues();

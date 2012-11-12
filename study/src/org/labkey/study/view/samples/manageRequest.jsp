@@ -30,9 +30,22 @@
 <%@ page import="org.labkey.study.model.Specimen" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies(){
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
+        resources.add(ClientDependency.fromFilePath("study/StudyWizard.js"));
+        return resources;
+    }
+%>
 <%
+
     JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
     SpecimenController.ManageRequestBean bean = me.getModelBean();
     String comments = bean.getSampleRequest().getComments();
@@ -156,6 +169,24 @@
     {
         LABKEY.Utils.setCookie("selectedRequest", requestId, true);
     }
+
+    function showNewStudyWizard()
+    {
+        var init = function(){
+            var wizard = new LABKEY.study.CreateStudyWizard({
+                studyName : 'Request Study',
+                namePanel : true,
+                datasetsPanel : true
+            });
+
+            wizard.on('success', function(info){}, this);
+
+            // run the wizard
+            wizard.show();
+        };
+        Ext.onReady(init);
+    }
+
 </script>
 <labkey:errors/>
 <%
@@ -288,7 +319,7 @@
                 <%= importVialIdsButton %>
 <%
             }
-%>
+%>              <%=generateButton("Create Study", "javascript:void(0)", "showNewStudyWizard()")%>
                 <%= generateButton("Cancel Request", buildURL(SpecimenController.DeleteRequestAction.class, "id=" + bean.getSampleRequest().getRowId()),
                         "return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")%>
 <%
