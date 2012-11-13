@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.StringExpression;
 
@@ -133,7 +134,7 @@ public class QueryForeignKey implements ForeignKey
         return _lookupKey;
     }
 
-    public NamedObjectList getSelectList()
+    public NamedObjectList getSelectList(RenderContext ctx)
     {
         NamedObjectList ret = new NamedObjectList();
         TableInfo lookupTable = getLookupTableInfo();

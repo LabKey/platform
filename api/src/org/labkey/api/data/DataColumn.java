@@ -510,7 +510,7 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.equalsIgnoreCase("select"))
         {
-            NamedObjectList entryList = _boundColumn.getFk().getSelectList();
+            NamedObjectList entryList = _boundColumn.getFk().getSelectList(ctx);
             NamedObject[] entries = entryList.toArray();
             String valueStr = ConvertUtils.convert(value);
 

@@ -114,9 +114,9 @@ public class MultiValuedForeignKey implements ForeignKey
     }
 
     @Override
-    public NamedObjectList getSelectList()
+    public NamedObjectList getSelectList(RenderContext ctx)
     {
-        return _fk.getSelectList();
+        return _fk.getSelectList(ctx);
     }
 
     @Override

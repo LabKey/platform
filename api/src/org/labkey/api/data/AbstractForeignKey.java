@@ -131,7 +131,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         }
     }
 
-    public NamedObjectList getSelectList()
+    public NamedObjectList getSelectList(RenderContext ctx)
     {
         NamedObjectList ret = new NamedObjectList();
         TableInfo lookupTable = getLookupTableInfo();

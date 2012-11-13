@@ -52,8 +52,11 @@ public interface ForeignKey
      */
     StringExpression getURL(ColumnInfo parent);
 
-    /** Convenience for getLookupTableInfo.getSelectList(getLookupColumnName()) */
-    NamedObjectList getSelectList();
+    /**
+     * Convenience for getLookupTableInfo.getSelectList(getLookupColumnName())
+     * @param ctx RenderContext
+     */
+    NamedObjectList getSelectList(RenderContext ctx);
 
     /**
      * @return The container id of the foreign user schema table.  Null means current container.
