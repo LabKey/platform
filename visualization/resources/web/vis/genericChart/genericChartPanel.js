@@ -54,21 +54,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         method  : 'GET',
                         params  : params,
                         success : function(response){
-
                             var o = Ext4.decode(response.responseText);
                             if (this.savedColumns)
                                 this.initialColumnList = o.columns.concat(this.savedColumns);
                             else
                                 this.initialColumnList = o.columns;
-                            LABKEY.Query.selectRows(this.getQueryConfig());
+
+                            this.requestData();
+                            this.requestRender(false);
                         },
                         failure : this.onFailure,
                         scope   : this
                     });
 
                 }
-                else
-                    LABKEY.Query.selectRows(this.getQueryConfig());
+                else {
+                    this.requestData();
+                    this.requestRender(false);
+                }
             }
 
         }, this);
@@ -454,7 +457,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 beforeclose: function(){
                     // on close, we don't apply changes and let the panel restore its state
-                    if (this.initialPanelValues)
+                    if (this.initialPanelValues && this.initialPanelValues.measure)
                     {
                         this.yMeasureGrid.getSelectionModel().select([this.initialPanelValues.measure], false, true);
                         this.yMeasurePanel.restoreValues(this.initialPanelValues);
@@ -515,7 +518,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 beforeclose: function(){
                     // on close, we don't apply changes and let the panel restore its state
-                    if (this.initialPanelValues)
+                    if (this.initialPanelValues && this.initialPanelValues.measure)
                     {
                         this.xMeasureGrid.getSelectionModel().select([this.initialPanelValues.measure], false, true);
                         this.xMeasurePanel.restoreValues(this.initialPanelValues);
@@ -761,7 +764,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.chartDefinitionChanged = new Ext4.util.DelayedTask(function(){
             this.markDirty(true);
-            this.renderPlot();
+            this.requestRender(false);
         }, this);
 
         this.items.push(this.optionsWindow);
@@ -772,7 +775,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.callParent();
 
         this.on('tabchange', this.onTabChange, this);
-        this.on('renderPlot', this.renderPlot, this);
 
         if (this.reportId) {
             this.markDirty(false);
@@ -787,6 +789,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 this.optionsWindow.alignTo(this.showOptionsBtn, 'tl-tr', [-175, 30]);
             }
         }, this);
+
+        this.on('dataRequested', this.requestData, this);
 
         // customization
         this.on('enableCustomMode',  this.onEnableCustomMode,  this);
@@ -812,7 +816,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.viewPanel.on('resize', function(cmp) {
             // only re-render after the initial chart rendering
             if (this.chartData)
-                this.renderPlot();
+                this.requestRender();
         }, this);
 
         return this.viewPanel;
@@ -992,8 +996,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             requiredVersion : 12.1
         };
 
-        if (this.initialColumnList)
-            config.columns = this.initialColumnList;
+        config.columns = this.getQueryConfigColumns();
 
         if(!serialize){
             config.success = this.onSelectRowsSuccess;
@@ -1048,6 +1051,43 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         config['filterArray'] = filters;
 
         return config;
+    },
+
+    getQueryConfigColumns: function(){
+        var columns = null;
+
+        if(!this.editMode || this.firstLoad){
+            // If we're not in edit mode or if this is the first load we need to only load the minimum amount of data.
+            columns = [];
+
+            if(this.xAxisMeasure){
+                columns.push(this.xAxisMeasure.name);
+            } else if(this.autoColumnXName){
+                columns.push(this.autoColumnXName);
+            } else {
+                // Check if we have cohorts available.
+                if(this.initialColumnList){
+                    for(var i = 0; i < this.initialColumnList.length; i++){
+                        if(this.initialColumnList[i].indexOf('Cohort') > -1){
+                            columns.push(this.initialColumnList[i]);
+                        }
+                    }
+                }
+            }
+
+            if(this.yAxisMeasure){
+                columns.push(this.yAxisMeasure.name);
+            } else if(this.autoColumnYName){
+                columns.push(this.autoColumnYName);
+            }
+        } else {
+            // If we're in edit mode then we can load all of the columns.
+            if (this.initialColumnList){
+                columns = this.initialColumnList;
+            }
+        }
+
+        return columns;
     },
 
     getChartConfig : function() {
@@ -1841,6 +1881,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         } else{
             return newChartDiv.id;
         }
+
+        this.setRenderRequested(false); // We just rendered the plot, we don't need to request another render.
     },
 
     clearChartPanel: function(){
@@ -2097,7 +2139,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.xMeasureStore.loadRawData(this.chartData.metaData.fields);
         this.groupingMeasureStore.loadRawData(this.chartData.metaData.fields);
 
-        this.renderPlot();
+        this.setDataLoading(false);
+
+        if(this.isRenderRequested()){
+            // If it's already been requested then we just need to request it again, since
+            // this time we have the data to render.
+            this.requestRender(false);
+        }
+
+        if(this.firstLoad){
+            // Set first load to false after our first sucessful callback.
+            this.firstLoad = false;
+            this.fireEvent('dataRequested');
+        }
     },
 
     showYMeasureWindow: function(){
@@ -2216,5 +2270,34 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             + '<div style="margin-left: 50px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointName: "PointMeasure"</div>'
             + '<div style="margin-left: 40px;">}</div>'
             + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
+    },
+
+    setRenderRequested: function(requested){
+        this.renderRequested = requested;
+    },
+
+    isRenderRequested: function(){
+        return this.renderRequested;
+    },
+
+    setDataLoading: function(loading){
+        this.dataLoading = loading;
+    },
+
+    isDataLoading: function(){
+        return this.dataLoading;
+    },
+
+    requestData: function(){
+        this.setDataLoading(true);
+        LABKEY.Query.selectRows(this.getQueryConfig());
+    },
+
+    requestRender: function(forExport){
+        if(this.isDataLoading()){
+            this.setRenderRequested(true);
+        } else {
+            this.renderPlot(forExport);
+        }
     }
 });

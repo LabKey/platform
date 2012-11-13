@@ -71,7 +71,8 @@
             autoColumnYName  : <%=form.getAutoColumnYName() != null ? q(form.getAutoColumnYName()) : null%>,
             autoColumnXName  : <%=form.getAutoColumnXName() != null ? q(form.getAutoColumnXName()) : null%>,
             defaultNumberFormat: eval("<%=numberFormatFn%>"),
-            allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>
+            allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>,
+            firstLoad: true
         });
 
         var _resize = function(w,h) {
