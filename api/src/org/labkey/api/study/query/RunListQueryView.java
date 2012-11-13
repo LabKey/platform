@@ -71,7 +71,7 @@ public class RunListQueryView extends ExperimentRunListView
 
     public RunListQueryView(ExpProtocol protocol, ViewContext context)
     {
-        this(protocol, AssayService.get().createProtocolSchema(context.getUser(), context.getContainer(), protocol, null), context);
+        this(protocol, AssayService.get().getProvider(protocol).createProtocolSchema(context.getUser(), context.getContainer(), protocol, null), context);
     }
 
     public static AssayRunType getDefaultAssayRunFilter(ExpProtocol protocol, ViewContext context)

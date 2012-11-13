@@ -242,7 +242,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids);
         }
 
-        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(context.getUser(), getContainer(), _protocol, targetStudy);
+        AssayProtocolSchema schema = provider.createProtocolSchema(context.getUser(), getContainer(), _protocol, targetStudy);
 
         boolean mismatched = AssayPublishService.get().hasMismatchedInfo(allObjects, schema);
 

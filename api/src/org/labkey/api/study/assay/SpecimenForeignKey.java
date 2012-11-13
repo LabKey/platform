@@ -84,7 +84,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         FieldKey visitFK = _tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
         FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
         FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
-        AssayProtocolSchema assaySchema = AssayService.get().createProtocolSchema(studySchema.getUser(), _schema.getContainer(), _protocol, null);
+        AssayProtocolSchema assaySchema = _provider.createProtocolSchema(studySchema.getUser(), _schema.getContainer(), _protocol, null);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(assaySchema.createDataTable(), Arrays.asList(participantFK, visitFK, dateFK, drawDateFK));
 
         ColumnInfo participantIdCol = columns.get(participantFK);

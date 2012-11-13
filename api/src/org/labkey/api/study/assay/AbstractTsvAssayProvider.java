@@ -160,7 +160,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         }
 
         Container container = protocol.getContainer();
-        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(user, container, protocol, null);
+        AssayProtocolSchema schema = createProtocolSchema(user, container, protocol, null);
 
         @SuppressWarnings({"deprecation"})
         RunDataTable fromTable = new RunDataTable(schema, true);

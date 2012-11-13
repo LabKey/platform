@@ -48,7 +48,7 @@ public class ResultsQueryView extends AssayBaseQueryView
 
     public ResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
-        this(protocol, AssayService.get().createProtocolSchema(context.getUser(), context.getContainer(), protocol, null), settings);
+        this(protocol, AssayService.get().getProvider(protocol).createProtocolSchema(context.getUser(), context.getContainer(), protocol, null), settings);
     }
 
     public ResultsQueryView(ExpProtocol protocol, AssayProtocolSchema schema, QuerySettings settings)

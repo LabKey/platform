@@ -74,8 +74,6 @@ public class AssayService
         ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
 
         public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
-        public AssayProviderSchema createProviderSchema(User user, Container container, AssayProvider provider, @Nullable Container targetStudy);
-        public AssayProtocolSchema createProtocolSchema(User user, Container container, ExpProtocol protocol, @Nullable Container targetStudy);
 
         List<ExpProtocol> getAssayProtocols(Container container);
         List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
