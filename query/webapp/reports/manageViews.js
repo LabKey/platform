@@ -307,7 +307,7 @@ LABKEY.ViewsPanel.prototype = {
             {header:'Modified By', dataIndex:'modifiedBy', hidden:true},
             {header:'Modified', dataIndex:'modified', hidden:true},
             {header:'Permissions', dataIndex:'permissions'},
-            {header:'Query', dataIndex:'query'},
+            {header:'Query', dataIndex:'query', renderer : Ext.util.Format.htmlEncode},
             {header:'Description', dataIndex:'description', hidden:true},
             {header:'Schema', dataIndex:'schema', hidden:true}
         ];
