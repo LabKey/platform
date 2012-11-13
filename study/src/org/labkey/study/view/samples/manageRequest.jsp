@@ -190,6 +190,7 @@
     {
         var init = function(){
             var wizard = new LABKEY.study.CreateStudyWizard({
+                requestId : <%=bean.getSampleRequest().getRowId()%>,
                 studyName : <%=q(ancillaryStudyName)%>,
                 namePanel : true,
                 datasetsPanel : true
