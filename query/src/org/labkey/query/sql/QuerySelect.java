@@ -72,7 +72,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private QWhere _where;
     QWhere _having;
     QQuery _root;
-    private QDistinct _distinct;
+    QDistinct _distinct;
 
     private Map<FieldKey, QTable> _parsedTables;
     private List<QJoinOrTable> _parsedJoins;
@@ -1087,18 +1087,7 @@ groupByLoop:
             return;
 
         for (QJoinOrTable qt : _parsedJoins)
-        {
-            if (qt instanceof QJoin)
-            {
-                if (null != ((QJoin)qt)._on)
-                    resolveFields(((QJoin)qt)._on, null, qt);
-            }
-            else if (qt instanceof QTable)
-            {
-                if (((QTable)qt).getQueryRelation() instanceof QuerySelect)
-                    ((QuerySelect)((QTable)qt).getQueryRelation()).resolveFields();
-            }
-        }
+            resolveFields(qt);
 
         if (_where != null)
             for (QNode expr : _where.children())
@@ -1128,6 +1117,23 @@ groupByLoop:
     }
 
 
+    void resolveFields(QJoinOrTable qt)
+    {
+        if (qt instanceof QJoin)
+        {
+            if (null != ((QJoin)qt)._on)
+                resolveFields(((QJoin)qt)._on, null, qt);
+            resolveFields(((QJoin)qt)._left);
+            resolveFields(((QJoin)qt)._left);
+        }
+        else if (qt instanceof QTable)
+        {
+            if (((QTable)qt).getQueryRelation() instanceof QuerySelect)
+                ((QuerySelect)((QTable)qt).getQueryRelation()).resolveFields();
+        }
+    }
+
+
     public void markAllSelected(Object referant)
     {
         for (SelectColumn c : _columns.values())
@@ -1141,7 +1147,7 @@ groupByLoop:
     public void releaseAllSelected(Object referant)
     {
         for (SelectColumn column : _columns.values())
-            column.releaseRef(_orderBy);
+            column.releaseRef(referant);
     }
 
 
@@ -1205,6 +1211,7 @@ groupByLoop:
         else
         {
             sql.pushPrefix("SELECT DISTINCT ");
+            markAllSelected(_distinct);
         }
 
         int count = 0;
@@ -1535,6 +1542,8 @@ groupByLoop:
             return Collections.emptySet();
 
         if (this.isAggregate() || null != this._distinct)
+            return Collections.emptySet();
+        if (this._parent instanceof QueryUnion || this._parent instanceof QueryPivot)
             return Collections.emptySet();
 
         MultiHashMap<QueryRelation, RelationColumn> maps = new MultiHashMap<QueryRelation, RelationColumn>();
@@ -1990,7 +1999,9 @@ groupByLoop:
             _distinct = null;
         } */
 
-        _selectDoesNotGenerateSQL = true;
+        // run timecharttest to validate
+        // _selectDoesNotGenerateSQL = true;
+
         return true;
     }
 
