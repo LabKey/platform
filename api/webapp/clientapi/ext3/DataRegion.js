@@ -1105,13 +1105,13 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         // during query execution, so we didn't get column metadata back
         if (this.colHeaderRow)
         {
-            this.rowContent         = Ext.query(" > td[class*=labkey-column-header]",      this.colHeaderRow.id);
+            this.rowContent = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRow.id);
         }
         if (this.colHeaderRowSpacer)
         {
-            this.rowSpacerContent   = Ext.query(" > td[class*=labkey-column-header]",      this.colHeaderRowSpacer.id);
+            this.rowSpacerContent = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRowSpacer.id);
         }
-        this.firstRow           = Ext.query("tr[class=labkey-alternate-row]:first td", this.table.id);
+        this.firstRow = Ext.query("tr[class=labkey-alternate-row]:first td", this.table.id);
 
         // If no data rows exist just turn off header locking
         if (this.firstRow.length == 0)
@@ -1125,7 +1125,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }
 
         // performance degradation
-        if (((this.rowContent.length > 40) && !Ext.isWebKit) || (this.rowCount && this.rowCount > 1000))
+        if (this.rowContent.length > 80 || ((this.rowContent.length > 40) && !Ext.isWebKit) || (this.rowCount && this.rowCount > 1000))
         {
             this._allowHeaderLock = false;
             return;
@@ -1152,12 +1152,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         // initialize timer task for resizing and scrolling
         this.hdrCoord = [];
         this.resizeTask = new Ext.util.DelayedTask(function(){
-            this._resetHeader();
-            this._calculateHeader(true);
+            this._resetHeader(true);
             this.ensurePaginationVisible();
         }, this);
 
-        this._calculateHeader(true);
+        this._resetHeader(true);
     },
 
     ensurePaginationVisible : function() {
@@ -1183,20 +1182,17 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this._scrollContainer();
     },
 
-    /**
-     *
-     */
     _calculateHeaderLock : function(recalcPosition) {
-        var el, z, s, src;
+        var el, z, s, src, i;
 
-        for (var i=0; i < this.rowContent.length; i++) {
+        for (i=0; i < this.rowContent.length; i++) {
             src = Ext.get(this.firstRow[i]);
             el  = Ext.get(this.rowContent[i]);
 
             s = {width: src.getWidth(), height: el.getHeight()}; // note: width coming from data row not header
-            el.setSize(s);
+            el.setWidth(s.width); // 15420
 
-            z   = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
+            z = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
             z.setSize(s);
         }
 
@@ -1214,19 +1210,18 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      * @param o - The Ext.Element object to be measured againt that is considered the top of the Data Region.
      */
     _findPos : function() {
-        var o, xy;
+        var o, xy, curbottom, hdrOffset=0;
 
         if (this.includeHeader) {
             o = (this.hdrLocked ? this.headerSpacer : this.headerRow);
+            hdrOffset = this.headerSpacer.getComputedHeight();
         }
         else {
             o = (this.hdrLocked ? this.colHeaderRowSpacer : this.colHeaderRow);
         }
 
         xy = o.getXY();
-        var curbottom = xy[1] + this.table.getHeight();
-        curbottom    -= o.getComputedHeight()*2;
-        var hdrOffset = this.includeHeader ? this.headerSpacer.getComputedHeight() : 0;
+        curbottom = xy[1] + this.table.getHeight() - (o.getComputedHeight()*2);
 
         return [ xy[0], xy[1], curbottom, hdrOffset ];
     },
@@ -1273,7 +1268,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     /**
      * Adjusts the header styling to the best approximate of what the defaults are when the header is not locked
      */
-    _resetHeader : function() {
+    _resetHeader : function(recalc) {
         this.hdrLocked = false;
         this.headerRow.applyStyles("top: auto; position: static; min-width: 0;");
         this.headerRowContent.applyStyles("min-width: 0;");
@@ -1281,7 +1276,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.headerSpacer.dom.style.display = "none";
         this.headerSpacer.setHeight(this.headerRow.getHeight());
         this.colHeaderRowSpacer.dom.style.display = "none";
-        this._calculateHeader();
+        this._calculateHeader(recalc);
     },
 
     // private
