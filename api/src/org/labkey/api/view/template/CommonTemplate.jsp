@@ -64,13 +64,8 @@
 %>
 <!DOCTYPE html>
 <html>
-<head><%
-        if (null != gwtModules && gwtModules.size() > 0 && -1 != userAgent.indexOf("MSIE 9."))
-        {
-        %>
-    <meta http-equiv="X-UA-Compatible" content="IE=8" /><%
-        }
-
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" /><%
         if (bean.getFrameOption() == PageConfig.FrameOption.DENY)
         { %>
     <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%
