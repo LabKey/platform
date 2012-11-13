@@ -1,7 +1,6 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -33,7 +32,6 @@ public class ReferenceCount
     public int decrement(@NotNull Object referant)
     {
         assert null==_legal || _legal.contains(referant.getClass());
-        assert _refs.containsKey(referant);
         _refs.remove(referant);
         return _refs.size();
     }

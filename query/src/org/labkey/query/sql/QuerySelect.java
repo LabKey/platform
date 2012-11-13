@@ -58,7 +58,7 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class QuerySelect extends QueryRelation
+public class QuerySelect extends QueryRelation implements Cloneable
 {
     private String _queryText = null;
     private Map<FieldKey, SelectColumn> _columns;
@@ -70,7 +70,7 @@ public class QuerySelect extends QueryRelation
 
     private QSelect _select;
     private QWhere _where;
-    private QWhere _having;
+    QWhere _having;
     QQuery _root;
     private QDistinct _distinct;
 
@@ -82,6 +82,12 @@ public class QuerySelect extends QueryRelation
     private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<FieldKey, RelationColumn>();
     private SQLTableInfo _subqueryTable;
     private AliasManager _aliasManager;
+
+    /**
+     * If this node has exactly one FROM table, it may be occasionally possible to skip
+     * generating SQL for this node.
+     */
+    private boolean _selectDoesNotGenerateSQL = false;
 
     private Set<FieldKey> parametersInScope = new HashSet<FieldKey>(); 
 
@@ -97,6 +103,7 @@ public class QuerySelect extends QueryRelation
 
         _aliasManager = new AliasManager(schema.getDbSchema());
         _queryText = query._querySource;
+        _savedName = query._name;
 
         for (QParameter p : query._parameters)
             parametersInScope.add(new FieldKey(null, p.getName()));
@@ -1008,16 +1015,12 @@ groupByLoop:
     {
         Set<RelationColumn> set = new HashSet<RelationColumn>(_columns.values());
 
-        resolveFields();
-        if (getParseErrors().size() != 0)
-            return null;
-
         getSuggestedColumns(set);
 
         // mark all top level columns selected, since we want to generate column info for all columns
         markAllSelected(_query);
 
-        final SQLFragment sql = _getSql();
+        final SQLFragment sql = getSql();
         if (null == sql)
             return null;
 
@@ -1077,7 +1080,7 @@ groupByLoop:
 
         for (SelectColumn col : _columns.values())
         {
-            aliasSet.put(col.getAlias(),col);
+            aliasSet.put(col.getAlias(), col);
             col.getResolvedField();
         }
         if (getParseErrors().size() != 0)
@@ -1134,19 +1137,66 @@ groupByLoop:
         }
     }
 
+
+    public void releaseAllSelected(Object referant)
+    {
+        for (SelectColumn column : _columns.values())
+            column.releaseRef(_orderBy);
+    }
+
+
     public SQLFragment getSql()
     {
         resolveFields();
         if (getParseErrors().size() != 0)
             return null;
 
-        return _getSql();
+        SQLFragment sql = _getSql();
+        if (!AppProps.getInstance().isDevMode() || _inFromClause)
+            return sql;
+
+        SqlBuilder ret = new SqlBuilder(_schema.getDbSchema());
+        String comment = "<QuerySelect";
+        if (!StringUtils.isEmpty(_savedName))
+            comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
+        comment += ">";
+        ret.appendComment(comment);
+        if (null != _queryText)
+        {
+            // Handle any combination of line endings - \n (Unix), \r (Mac), \r\n (Windows), \n\r (nobody)
+            for (String s : _queryText.split("(\n\r?)|(\r\n?)"))
+                if (null != StringUtils.trimToNull(s))
+                {
+                    // balance quotes because postgres can't parse
+                    ret.appendComment("|         " + s + (StringUtils.countMatches(s, "'")%2==0?"":"'"));
+                }
+        }
+        ret.append(sql);
+        ret.appendComment("</" + comment.substring(1));
+        return ret;
     }
 
 
-    public SQLFragment _getSql()
+    private SQLFragment _getSql()
     {
+        optimize();
+
         SqlBuilder sql = new SqlBuilder(_schema.getDbSchema());
+
+        if (_selectDoesNotGenerateSQL)
+        {
+            assert _parsedJoins.size()==1;
+            assert _parsedTables.size()==1;
+            assert _onExpressions.size()==0;
+            assert _distinct == null;
+            assert _groupBy == null;
+            assert _having == null;
+            assert _where == null;
+            assert _orderBy == null;
+            assert _limit == null;
+            QueryRelation in = _tables.values().iterator().next();
+            return in.getSql();
+        }
 
         if (null == _distinct)
         {
@@ -1274,30 +1324,7 @@ groupByLoop:
         if (!getParseErrors().isEmpty())
             return null;
 
-        SqlBuilder ret = sql;
-
-        if (AppProps.getInstance().isDevMode() && !_inFromClause)
-        {
-            ret = new SqlBuilder(sql.getDialect());
-            String comment = "<QuerySelect";
-            if (!StringUtils.isEmpty(_savedName))
-                comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
-            comment += ">";
-            ret.appendComment(comment);
-            if (null != _queryText)
-            {
-                // Handle any combination of line endings - \n (Unix), \r (Mac), \r\n (Windows), \n\r (nobody)
-                for (String s : _queryText.split("(\n\r?)|(\r\n?)"))
-                    if (null != StringUtils.trimToNull(s))
-                    {
-                        // balance quotes because postgres can't parse
-                        ret.appendComment("|         " + s + (StringUtils.countMatches(s, "'")%2==0?"":"'"));
-                    }
-            }
-            ret.append(sql);
-            ret.appendComment("</QuerySelect>");
-        }
-        return ret;
+        return sql;
     }
 
 
@@ -1805,6 +1832,18 @@ groupByLoop:
         }
 
         @Override
+        public SQLFragment getValueSql(String tableAlias)
+        {
+            if (QuerySelect.this._selectDoesNotGenerateSQL)
+            {
+                QExpr expr = getResolvedField();
+                assert expr instanceof QField;
+                return ((QField)expr)._column.getValueSql(tableAlias);
+            }
+            return super.getValueSql(tableAlias);
+        }
+
+        @Override
         public String toString()
         {
             return super.toString() + " alias: " + this.getAlias();
@@ -1820,5 +1859,159 @@ groupByLoop:
             }
             return super.addRef(refer);
         }
+
+        @Override
+        public int releaseRef(@NotNull Object refer)
+        {
+            if (0 == ref.count())
+                return 0;
+            int count = super.releaseRef(refer);
+            if (0 == count)
+            {
+                if (null != _resolved)
+                    _resolved.releaseFieldRefs(this);
+            }
+            return count;
+        }
+    }
+
+
+    // optimization specific member variables
+    boolean _optOrderByAbove = false;
+    // used by QueryPivot.getPivotValues() which doesn't want to mess with
+    // the main query
+    boolean _allowStructuralOptimization = true;
+
+    void optimize()
+    {
+        // precompute select child
+        QueryRelation r = _tables.values().iterator().next();
+        if (r instanceof QueryLookupWrapper)
+        {
+            if (((QueryLookupWrapper)r)._hasLookups)
+                r = null;
+            else
+                r = ((QueryLookupWrapper)r)._source;
+        }
+        if (!(r instanceof QuerySelect))
+            r = null;
+        QuerySelect selectChild = (QuerySelect)r;
+
+        r = _parent;
+        if (r instanceof QueryLookupWrapper)
+            r = ((QueryLookupWrapper)r)._parent;
+        if (!(r instanceof QuerySelect))
+            r = null;
+        QuerySelect selectParent = (QuerySelect)r;
+
+        if (!_allowStructuralOptimization)
+        {
+            optimizeOrderBy(selectParent, selectChild);
+        }
+
+        // doesn't mess with references or structure
+        mergeWithChildSelect(selectParent, selectChild);
+    }
+
+
+    boolean optimizeOrderBy(@Nullable QuerySelect selectParent, @Nullable QuerySelect selectChild)
+    {
+        if (null == selectParent)
+            return false;
+        if (selectParent._optOrderByAbove || null != selectParent._orderBy || null != selectParent._distinct)
+            _optOrderByAbove = true;
+        if (!_optOrderByAbove)
+            return false;
+        if (null == _orderBy || null != _limit)
+            return false;
+        releaseAllSelected(_orderBy);
+        _orderBy = null;
+        return true;
+    }
+
+
+    boolean mergeWithChildSelect(@Nullable QuerySelect selectParent, @Nullable QuerySelect selectChild)
+    {
+        _selectDoesNotGenerateSQL = false;
+
+        if (_parsedTables.size() != 1)
+            return false;
+        if (_distinct != null)
+            return false;
+        if (_groupBy != null)
+            return false;
+        if (_having != null)
+            return false;
+        if (_where != null)
+            return false;
+        if (_orderBy != null)
+            return false;
+        if (_limit != null)
+            return false;
+
+        // don't remove if immediate parent is union, exactly column set and order are important
+        if (_parent instanceof QueryUnion)
+            return false;
+
+        for (SelectColumn c : _columns.values())
+        {
+            QExpr expr = c.getResolvedField();
+            if (!(expr instanceof QField))
+                return false;
+        }
+
+/*
+        // I think we could get distinct to work
+        // however, we should write a bunch of specific tests first
+        // also need to be wary of destructive optimization
+        // QueryPivot re-uses part of the query tree for getPivotValues()
+        if (null != selectChild._limit)
+            return false;
+        if (null != _distinct)
+        {
+            Map<FieldKey,SelectColumn> map = new HashMap<FieldKey, SelectColumn>();
+            for (SelectColumn col : from._columns.values())
+                if (col.ref.count() > 0)
+                    map.put(col.getFieldKey(), col);
+            for (SelectColumn c : _columns.values())
+            {
+                RelationColumn selectCol = ((QField)c.getResolvedField()).getRelationColumn();
+                if (null == selectCol)
+                    continue;
+                assert selectCol.getTable() == from;
+                map.remove(selectCol.getFieldKey());
+            }
+            // ORDER BY can cause a select reference, that's one reason we might bail here
+            if (!map.isEmpty())
+                return false;
+
+            if (null != from._distinct)
+                from._distinct = _distinct;
+            _distinct = null;
+        } */
+
+        _selectDoesNotGenerateSQL = true;
+        return true;
+    }
+
+
+    @Override
+    protected QuerySelect clone()
+    {
+        try
+        {
+            return (QuerySelect)super.clone();
+        }
+        catch (CloneNotSupportedException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+
+    QuerySelect shallowClone()
+    {
+        QuerySelect clone = this.clone();
+        return clone;
     }
 }

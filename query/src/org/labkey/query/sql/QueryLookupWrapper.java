@@ -385,6 +385,17 @@ public class QueryLookupWrapper extends QueryRelation
                 _wrapped.addRef(this);
             return super.addRef(refer);
         }
+
+        @Override
+        public int releaseRef(@NotNull Object refer)
+        {
+            if (0 == ref.count())
+                return 0;
+            int count = super.releaseRef(refer);
+            if (count == 0)
+                _wrapped.releaseRef(this);
+            return count;
+        }
     }
 
 

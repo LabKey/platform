@@ -97,8 +97,6 @@ public class QueryPivot extends QueryRelation
         _from = from;
         _manager = new AliasManager(query.getSchema().getDbSchema());
 
-        _from.markAllSelected(this);
-
         QPivot pivotClause = root.getChildOfType(QPivot.class);
         QNode aggsList = pivotClause.childList().get(0);
         QIdentifier byId = (QIdentifier)pivotClause.childList().get(1);
@@ -265,7 +263,22 @@ public class QueryPivot extends QueryRelation
                 // execute query
                 sqlPivotValues = new SQLFragment();
                 sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql("_pivotValues"));
-                SQLFragment fromSql = _from.getSql();
+
+
+                // if our optimizations get more clever, we may need to implement deepClone()
+                QuerySelect fromForPivotValues = _from.shallowClone();
+                fromForPivotValues._allowStructuralOptimization = false;
+                assert null == fromForPivotValues._orderBy;
+                if (null == fromForPivotValues._having)
+                {
+                    // release references, resolveFields() will add them back later for main query
+                    fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
+                    fromForPivotValues._groupBy = null;
+                }
+                fromForPivotValues.getColumn(_pivotColumn.getFieldKey().getName()).addRef(this);
+                SQLFragment fromSql = fromForPivotValues.getSql();
+
+
                 if (null == fromSql)
                 {
                     // If there are errors, it will get handled later
@@ -435,8 +448,7 @@ public class QueryPivot extends QueryRelation
             try
             {
                 pivotValues = getPivotValues();
-                // UNDONE: _from.getSql() has side-effect that seems to be important for declareFields()
-                _from.getSql();
+                _from.resolveFields();
             }
             catch (SQLException x)
             {
@@ -677,6 +689,7 @@ public class QueryPivot extends QueryRelation
             }
         }
 
+        _from.markAllSelected(this);
         SQLFragment fromSql = _from.getSql();
         if (null == fromSql)
         {

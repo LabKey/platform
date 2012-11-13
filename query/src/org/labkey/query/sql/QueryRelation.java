@@ -229,7 +229,7 @@ public abstract class QueryRelation
 
         public int releaseRef(@NotNull Object refer)
         {
-            return ref.increment(refer);
+            return ref.decrement(refer);
         }
 
         public boolean isReferencedByOthers(Object refer)

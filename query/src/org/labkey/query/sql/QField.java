@@ -79,6 +79,8 @@ public class QField extends QInternalExpr
 
     public void releaseFieldRefs(Object refer)
     {
+        if (0 == refCount.count())
+            return;
         refCount.decrement(refer);
         if (0 == refCount.count())
         {
