@@ -707,6 +707,11 @@
           <ns:column columnName="LatestYield">
               <ns:description>Processing yield value from latest event.</ns:description>
           </ns:column>
+          <ns:column columnName="freezer" />
+          <ns:column columnName="fr_container" />
+          <ns:column columnName="fr_position" />
+          <ns:column columnName="fr_level1" />
+          <ns:column columnName="fr_level2" />
       </ns:columns>
     </ns:table>
   <ns:table tableName="Specimen" tableDbType="TABLE">
