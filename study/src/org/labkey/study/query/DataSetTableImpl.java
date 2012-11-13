@@ -27,9 +27,11 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -296,6 +298,22 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 }
                 if (isVisibleByDefault(col))
                     defaultVisibleCols.add(FieldKey.fromParts(col.getName()));
+
+                // Add a magic lookup to an "GlobalUniqueId" columns that targets the SpecimenDetails query based on the
+                // GlobalUniqueId value instead of the real PK, which is RowId
+                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()) && col.getJdbcType() == JdbcType.VARCHAR && col.getFk() == null)
+                {
+                    col.setFk(new LookupForeignKey(SpecimenDetailTable.GLOBAL_UNIQUE_ID_COLUMN_NAME)
+                    {
+                        @Override
+                        public TableInfo getLookupTableInfo()
+                        {
+                            SpecimenDetailTable table = (SpecimenDetailTable)_schema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
+                            table.addCondition(new SimpleFilter(FieldKey.fromParts("Container"), _schema.getContainer().getId()));
+                            return table;
+                        }
+                    });
+                }
             }
         }
 
@@ -573,7 +591,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             // Provider must have been in a module that's no longer available
             return null;
         }
-        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(_schema.getUser(), protocol.getContainer(), protocol, null);
+        AssayProtocolSchema schema = provider.createProtocolSchema(_schema.getUser(), protocol.getContainer(), protocol, getContainer());
         ContainerFilterable result = schema.createDataTable(false);
         if (result != null)
         {

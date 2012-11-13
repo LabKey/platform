@@ -126,7 +126,7 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
             return new JSONArray();
         }
 
-        TableInfo tableInfo = AssayService.get().createProtocolSchema(user, data.getContainer(), protocol, null).createDataTable();
+        TableInfo tableInfo = provider.createProtocolSchema(user, data.getContainer(), protocol, null).createDataTable();
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fieldKeys);
         assert columns.size() == fieldKeys.size() : "Missing a column for at least one of the properties";
         SimpleFilter filter = new SimpleFilter(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME, data.getRowId());

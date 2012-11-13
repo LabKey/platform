@@ -136,6 +136,8 @@ public class SampleMindedTransformTask
         Map<String, Integer> primaryIds = new LinkedHashMap<String, Integer>(STANDARD_PRIMARY_TYPE_IDS);
         Map<String, Integer> derivativeIds = new LinkedHashMap<String, Integer>(STANDARD_DERIVATIVE_TYPE_IDS);
 
+        getJob().info("Starting to transform input file " + input + " to output file " + output);
+
         try
         {
             File labsFile = new File(input.getParent(), "labs.txt");

@@ -74,7 +74,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         File unzipDir = null;
         try
         {
-            // backwards compatibility, if we are givn a specimen archive as a zip file, we need to extract it
+            // backwards compatibility, if we are given a specimen archive as a zip file, we need to extract it
             if (inputFile != null)
             {
                 // Might need to transform to a file type that we know how to import

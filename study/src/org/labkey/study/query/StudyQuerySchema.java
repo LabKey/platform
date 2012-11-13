@@ -48,6 +48,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String SCHEMA_NAME = "study";
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
+    public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
 
     @Nullable // if no study defined in this container
     final StudyImpl _study;
@@ -151,7 +152,7 @@ public class StudyQuerySchema extends UserSchema
                 ret.add(StudyService.get().getSubjectVisitTableName(getContainer()));
 
             ret.add("SpecimenEvent");
-            ret.add("SpecimenDetail");
+            ret.add(SPECIMEN_DETAIL_TABLE_NAME);
             ret.add("SpecimenSummary");
             ret.add("SpecimenVialCount");
             ret.add(SIMPLE_SPECIMEN_TABLE_NAME);
@@ -316,7 +317,7 @@ public class StudyQuerySchema extends UserSchema
             SpecimenSummaryTable ret = new SpecimenSummaryTable(this);
             return ret;
         }
-        if ("SpecimenDetail".equalsIgnoreCase(name))
+        if (SPECIMEN_DETAIL_TABLE_NAME.equalsIgnoreCase(name))
         {
             SpecimenDetailTable ret = new SpecimenDetailTable(this);
             return ret;

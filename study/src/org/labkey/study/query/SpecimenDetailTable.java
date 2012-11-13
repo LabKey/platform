@@ -28,11 +28,13 @@ import java.util.*;
 
 public class SpecimenDetailTable extends AbstractSpecimenTable
 {
+    public static final String GLOBAL_UNIQUE_ID_COLUMN_NAME = "GlobalUniqueId";
+
     public SpecimenDetailTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail());
 
-        ColumnInfo guid = addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
+        ColumnInfo guid = addWrapColumn(_rootTable.getColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME));
         guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
 
         ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),

@@ -920,7 +920,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                         FieldKey objectIdFK = provider.getTableMetadata(protocol).getResultRowIdFieldKey();
                         FieldKey runFK = provider.getTableMetadata(protocol).getRunRowIdFieldKeyFromResults();
 
-                        AssayProtocolSchema schema = AssayService.get().createProtocolSchema(user, container, protocol, null);
+                        AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
 
                         // Do a query to get all the info we need to do the copy
                         TableInfo resultTable = schema.createDataTable(false);

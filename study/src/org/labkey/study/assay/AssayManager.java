@@ -155,22 +155,12 @@ public class AssayManager implements AssayService.Interface
 
     public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container)
     {
-        return createProtocolSchema(user, container, protocol, null).createRunsTable();
+        return provider.createProtocolSchema(user, container, protocol, null).createRunsTable();
     }
 
     public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy)
     {
         return new AssaySchemaImpl(user, container, targetStudy);
-    }
-
-    public AssayProviderSchema createProviderSchema(User user, Container container, AssayProvider provider, @Nullable Container targetStudy)
-    {
-        return provider.createProviderSchema(user, container, targetStudy);
-    }
-
-    public AssayProtocolSchema createProtocolSchema(User user, Container container, ExpProtocol protocol, @Nullable Container targetStudy)
-    {
-        return AssayService.get().getProvider(protocol).createProtocolSchema(user, container, protocol, targetStudy);
     }
 
     public List<ExpProtocol> getAssayProtocols(Container container)
