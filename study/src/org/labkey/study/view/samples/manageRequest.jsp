@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.study.Site"%>
@@ -32,6 +34,8 @@
 <%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
@@ -47,6 +51,7 @@
 <%
 
     JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
+    Container c = me.getViewContext().getContainer();
     SpecimenController.ManageRequestBean bean = me.getModelBean();
     String comments = bean.getSampleRequest().getComments();
     ViewContext context = me.getViewContext();
@@ -69,6 +74,17 @@
     String importVialIdsButton = SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
         generateButton("Upload Specimen Ids", buildURL(SpecimenController.ImportVialIdsAction.class,
                 "id=" + bean.getSampleRequest().getRowId()), null) : "";
+
+    Map<String, Container> folders = new HashMap<String, Container>();
+    for (Container child : ContainerManager.getChildren(c))
+        folders.put(child.getName(), child);
+
+    String ancillaryStudyName = "New Study";
+    int i = 1;
+    while (folders.containsKey(ancillaryStudyName))
+    {
+        ancillaryStudyName = "New Study " + i++;
+    }
 
 %>
 <script type="text/javascript">
@@ -174,7 +190,7 @@
     {
         var init = function(){
             var wizard = new LABKEY.study.CreateStudyWizard({
-                studyName : 'Request Study',
+                studyName : <%=q(ancillaryStudyName)%>,
                 namePanel : true,
                 datasetsPanel : true
             });

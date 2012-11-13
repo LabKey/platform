@@ -137,12 +137,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         if(this.pageOptions[1].active) {
             setup.push({value: this.subject.nounPlural, currentStep: false});
         }
-
+        else {
+            setup.push({value : 'Participants', currentStep : false});
+        }
         setup.push({value: 'Datasets', currentStep: false});
 
         if(this.studyType){
             setup.push({value: this.studyType == "VISIT" ? 'Visits' : 'Timepoints', currentStep: false});
         }
+
         setup.push(
         {value: 'Lists', currentStep: false},
         {value: 'Views', currentStep: false},
@@ -150,13 +153,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         {value: 'Specimens', currentStep: false},
         {value: 'Publish Options', currentStep: false}
         );
-
+        console.log(setup);
         var steps = [];
         for(var i = 0; i < this.pageOptions.length; i++){
             if(this.pageOptions[i].active == true){
+                console.log(this.pageOptions[i].panelType);
                 steps.push(setup[i]);
+                console.log(setup[i].value);
             }
         }
+
 
         this.sideBar = new Ext.Panel({
             //This is going to be where the sidebar content goes.
@@ -249,7 +255,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             fieldLabel: 'Location',
             name: 'studyFolder',
             width: 446,
-            readOnly: true,
+            editable: true,
             fieldClass: 'x-form-empty-field',
             value: this.info.dstPath,
             scope: this
