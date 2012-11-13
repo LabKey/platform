@@ -22,10 +22,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.security.User;
@@ -246,5 +248,29 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         });
 
         return wellMap;
+    }
+
+    protected enum QUAL_RESULT
+    {
+        POS(),
+        NEG(),
+        OUTLIER(),
+        ND();
+
+        QUAL_RESULT()
+        {
+
+        }
+
+        public Integer getRowId()
+        {
+            TableInfo ti = DbSchema.get("laboratory").getTable("qual_results");
+            TableSelector ts = new TableSelector(ti, Collections.singleton("rowid"), new SimpleFilter(FieldKey.fromString("meaning"), name()), null);
+            if (ts.getRowCount() == 0)
+                return null;
+
+            Integer[] rowIds = ts.getArray(Integer.class);
+            return rowIds[0];
+        }
     }
 }

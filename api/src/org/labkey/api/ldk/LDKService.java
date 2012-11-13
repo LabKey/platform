@@ -23,4 +23,6 @@ abstract public class LDKService
     }
 
     abstract public TableCustomizer getDefaultTableCustomizer();
+
+    abstract public TableCustomizer getBuiltInColumnsCustomizer();
 }

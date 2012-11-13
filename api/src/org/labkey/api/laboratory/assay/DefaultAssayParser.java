@@ -362,6 +362,11 @@ public class DefaultAssayParser implements AssayParser
 
     protected boolean mergeTemplateRow(String keyProperty, Map<String, Map<String, Object>> templateRows, Map<String, Object> map, BatchValidationException errors)
     {
+        return mergeTemplateRow(keyProperty, templateRows, map, errors, false);
+    }
+
+    protected boolean mergeTemplateRow(String keyProperty, Map<String, Map<String, Object>> templateRows, Map<String, Object> map, BatchValidationException errors, boolean ignoreMissing)
+    {
         String key = (String)map.get(keyProperty);
         Map<String, Object> templateRow = templateRows.get(key);
         if (templateRow != null)
@@ -379,7 +384,9 @@ public class DefaultAssayParser implements AssayParser
         }
         else
         {
-            errors.addRowError(new ValidationException("Unable to find sample information to match well: " + key));
+            if (!ignoreMissing)
+                errors.addRowError(new ValidationException("Unable to find sample information to match well: " + key));
+
             return false;
         }
     }
