@@ -24,7 +24,6 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
@@ -35,18 +34,16 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.MemberType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.view.ActionURL;
-import org.labkey.core.user.UserController;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 
 import java.util.ArrayList;
@@ -296,7 +293,6 @@ public class CoreQuerySchema extends UserSchema
     }
 
 
-
     public TableInfo getUsers()
     {
         if (getContainer().isRoot())
@@ -316,7 +312,7 @@ public class CoreQuerySchema extends UserSchema
                 _projectUserIds = new HashSet<Integer>(SecurityManager.getFolderUserids(getContainer()));
                 Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
 
-                for (User adminUser : SecurityManager.getGroupMembers(siteAdminGroup))
+                for (UserPrincipal adminUser : SecurityManager.getGroupMembers(siteAdminGroup, MemberType.USERS))
                 {
                     _projectUserIds.add(adminUser.getUserId());
                 }

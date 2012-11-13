@@ -44,25 +44,8 @@ import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.GroupManager;
-import org.labkey.api.security.InvalidGroupMembershipException;
-import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.PrincipalType;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.SecurityUrls;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -772,7 +755,7 @@ public class SecurityController extends SpringActionController
                 if (removeNames != null)
                 {
                     //get list of group members to determine how many there are
-                    Set<UserPrincipal> userMembers = SecurityManager.getGroupMembers(_group, SecurityManager.GroupMemberType.Users);
+                    Set<User> userMembers = SecurityManager.getGroupMembers(_group, MemberType.USERS);
 
                     //if this is the site admins group and user is attempting to remove all site admins, display error.
                     if (_group.getUserId() == Group.groupAdministrators && removeNames.length == userMembers.size())
@@ -952,7 +935,7 @@ public class SecurityController extends SpringActionController
         // validate that group is in the current project!
         Container c = getContainer();
         ensureGroupInContainer(group, c);
-        Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both);
+        Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, MemberType.BOTH);
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
         VBox view = new VBox(new GroupView(group, members, redundantMembers, messages, group.isSystemGroup(), errors));
 

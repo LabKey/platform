@@ -1135,7 +1135,7 @@ public class SecurityApiActions
             Group group = getGroup(form);
 
             //ensure there will still be someone in the admin group
-            if (group.isAdministrators() && SecurityManager.getGroupMembers(group).size() == 1)
+            if (group.isAdministrators() && SecurityManager.getGroupMembers(group, MemberType.USERS).size() == 1)
                 throw new IllegalArgumentException("The system administrators group must have at least one member!");
 
             for (int id : form.getPrincipalIds())

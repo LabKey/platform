@@ -64,6 +64,7 @@ import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -1851,7 +1852,8 @@ public class UserController extends SpringActionController
                 response.put("groupName", group.getName());
                 response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
 
-                users = SecurityManager.getGroupMembers(group);
+                // Direct members only... does not recurse into subgroups. TODO: Provide that ability?
+                users = SecurityManager.getGroupMembers(group, MemberType.USERS);
             }
             else
             {

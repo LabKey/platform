@@ -44,6 +44,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.MemberType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserDisplayNameComparator;
@@ -366,7 +367,7 @@ public class IssueManager
 
                 if (null != group)
                 {
-                    initialAssignedTo.addAll(SecurityManager.getGroupMembers(group));
+                    initialAssignedTo.addAll(SecurityManager.getAllGroupMembers(group, MemberType.USERS));
                 }
                 else
                 {
