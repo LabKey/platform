@@ -42,14 +42,14 @@ public enum PasswordRule
         @Override
         public String getFullRuleHTML()
         {
-            return "Passwords must be six characters or more and must not match your email address.";
+            return "Passwords must be six non-whitespace characters or more and must not match your email address.";
         }
 
         @NotNull
         @Override
         public String getSummaryRuleHTML()
         {
-            return "six characters or more, cannot match email address";
+            return "six non-whitespace characters or more, cannot match email address";
         }
         
         @Override
@@ -64,7 +64,7 @@ public enum PasswordRule
             if (!passwordPattern.matcher(password).matches())
             {
                 if (null != messages)
-                    messages.add("Your password must be six characters or more.");
+                    messages.add("Your password must be six non-whitespace characters or more.");
 
                 return false;
             }
