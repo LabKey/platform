@@ -1383,7 +1383,7 @@ public class SecurityManager
         if (group.isGuests() || group.isUsers())
             return "Can't add a member to the " + group.getName() + " group";
 
-        Set<UserPrincipal> members = getGroupMembers(group, GroupMemberType.Both);
+        Set<UserPrincipal> members = getGroupMembers(group, MemberType.BOTH);
 
         if (members.contains(principal))
             return ALREADY_A_MEMBER_ERROR_MESSAGE;
@@ -1537,56 +1537,64 @@ public class SecurityManager
         return groupList.toString();
     }
 
-    public static List<User> getGroupMembers(Group group)
-    {
-        String[] emails = getGroupMemberNames(group.getUserId());
-        List<User> users = new ArrayList<User>(emails.length);
-        for (String email : emails)
-        {
-            try
-            {
-                users.add(UserManager.getUser(new ValidEmail(email)));
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                // This is silly
-            }
-        }
-        return users;
-    }
 
-    public static enum GroupMemberType
+    // Returns the requested direct members of this group (non-recursive)
+    public static @NotNull <P extends UserPrincipal> Set<P> getGroupMembers(Group group, MemberType<P> memberType)
     {
-        Users,
-        Groups,
-        Both
-    }
-
-    @NotNull
-    public static Set<UserPrincipal> getGroupMembers(Group group, GroupMemberType memberType)
-    {
-        Set<UserPrincipal> principals = new LinkedHashSet<UserPrincipal>();
+        Set<P> principals = new LinkedHashSet<P>();
         int[] ids = GroupMembershipCache.getGroupMembers(group);
-
-        for (int id : ids)
-        {
-            UserPrincipal principal = getPrincipal(id);
-            if (null != principal && (GroupMemberType.Both == memberType
-                    || (GroupMemberType.Users == memberType && principal instanceof User)
-                    || (GroupMemberType.Groups == memberType && principal instanceof Group)))
-                principals.add(principal);
-        }
+        addMembers(principals, ids, memberType);
 
         return principals;
     }
+
+
+    // Returns all members of this group, including those in subgroups (recursive)
+    public static @NotNull <P extends UserPrincipal> Set<P> getAllGroupMembers(Group group, MemberType<P> memberType)
+    {
+        Set<Group> visitedGroups = new HashSet<Group>();
+        Set<P> members = new LinkedHashSet<P>();
+        LinkedList<Group> pendingGroups = new LinkedList<Group>();
+        pendingGroups.add(group);
+
+        while (!pendingGroups.isEmpty())
+        {
+            Group next = pendingGroups.removeFirst();
+
+            // In nested groups, a group could be present multiple times at different levels, so track visited
+            // groups and skip some work if we've already seen this group.
+            if (visitedGroups.add(next))
+            {
+                int[] ids = GroupMembershipCache.getGroupMembers(next);
+
+                // Consider: optimize with a single loop
+                addMembers(members, ids, memberType);
+                addMembers(pendingGroups, ids, MemberType.GROUPS);
+            }
+        }
+
+        return members;
+    }
+
+
+    private static <P extends UserPrincipal> void addMembers(Collection<P> principals, int[] ids, MemberType<P> memberType)
+    {
+        for (int id : ids)
+        {
+            P principal = memberType.getPrincipal(id);
+            if (null != principal)
+                principals.add(principal);
+        }
+    }
+
 
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
     public static Map<UserPrincipal, List<UserPrincipal>> getRedundantGroupMembers(Group group)
     {
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = new HashMap<UserPrincipal, List<UserPrincipal>>();
-        Set<UserPrincipal> origMembers = getGroupMembers(group, GroupMemberType.Both);
+        Set<UserPrincipal> origMembers = getGroupMembers(group, MemberType.BOTH);
         LinkedList<UserPrincipal> visited = new LinkedList<UserPrincipal>();
-        for (UserPrincipal memberGroup : getGroupMembers(group, GroupMemberType.Groups))
+        for (UserPrincipal memberGroup : getGroupMembers(group, MemberType.GROUPS))
         {
             visited.addLast(memberGroup);
             checkForRedundantMembers((Group)memberGroup, origMembers, redundantMembers, visited);
@@ -1597,7 +1605,8 @@ public class SecurityManager
 
     private static void checkForRedundantMembers(Group group, Set<UserPrincipal> origMembers, Map<UserPrincipal, List<UserPrincipal>> redundantMembers, LinkedList<UserPrincipal> visited)
     {
-        Set<UserPrincipal> members = getGroupMembers(group, GroupMemberType.Both);
+        Set<UserPrincipal> members = getGroupMembers(group, MemberType.BOTH);
+
         for (UserPrincipal principal : members)
         {
             visited.addLast(principal);
@@ -1644,7 +1653,7 @@ public class SecurityManager
      */
     private static void checkForMembership(UserPrincipal principal, Group group, LinkedList<UserPrincipal> visited, Set<List<UserPrincipal>> memberships)
     {
-        for (UserPrincipal member : SecurityManager.getGroupMembers(group, GroupMemberType.Both))
+        for (UserPrincipal member : SecurityManager.getGroupMembers(group, MemberType.BOTH))
         {
             if (visited.contains(member))
                 continue;
@@ -1658,7 +1667,7 @@ public class SecurityManager
             }
         }
 
-        for (UserPrincipal member : SecurityManager.getGroupMembers(group, GroupMemberType.Groups))
+        for (UserPrincipal member : SecurityManager.getGroupMembers(group, MemberType.GROUPS))
         {
             if (visited.contains(member) || member.equals(principal))
                 continue;
@@ -1737,7 +1746,7 @@ public class SecurityManager
 
        //get members for each group
         ArrayList<User> projectUsers = new ArrayList<User>();
-        Set<UserPrincipal> members;
+        Set<User> members;
 
         for (Group g : groups)
         {
@@ -1745,7 +1754,7 @@ public class SecurityManager
                 continue;
 
             // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
-            members = getGroupMembers(g, GroupMemberType.Users);
+            members = getGroupMembers(g, MemberType.USERS);
 
             //add this group's members to hashset
             if (!members.isEmpty())
@@ -1754,7 +1763,7 @@ public class SecurityManager
                 for (UserPrincipal member : members)
                 {
                     User user = UserManager.getUser(member.getUserId());
-                    if (emails.add(user.getEmail()))
+                    if (null != user && emails.add(user.getEmail()))
                         projectUsers.add(user);
                 }
             }
@@ -1844,6 +1853,7 @@ public class SecurityManager
     }
     
 
+    // Returns both users and groups, but direct members only (not recursive)
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId)
     {
         ResultSet rs = null;
@@ -1888,6 +1898,7 @@ public class SecurityManager
     }
 
 
+    // Returns both users and groups, but direct members only (not recursive)
     public static String[] getGroupMemberNames(Integer groupId)
     {
         List<Pair<Integer, String>> members = getGroupMemberNamesAndIds(groupId);
@@ -1896,18 +1907,6 @@ public class SecurityManager
         for (Pair<Integer, String> member : members)
             names[i++] = member.getValue();
         return names;
-    }
-
-
-    private static Integer[] getGroupMemberIds(Group group)
-    {
-        Selector selector = new SqlSelector(core.getSchema(), new SQLFragment(
-            "SELECT Members.UserId FROM " + core.getTableInfoMembers() + " Members" +
-            " JOIN " + core.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
-            " WHERE Members.GroupId = ?" +
-            " ORDER BY Users.Type, Users.Name", group.getUserId()));
-
-        return selector.getArray(Integer.class);
     }
 
 
@@ -2195,9 +2194,9 @@ public class SecurityManager
         public void testCircularGroupMembership() throws InvalidGroupMembershipException
         {
             LinkedList<Group> groups = new LinkedList<Group>();
+
             try
             {
-
                 int maxLoop = 20;
                 int count = 0;
 
@@ -2210,9 +2209,9 @@ public class SecurityManager
 //                    catch(Exception e){}
 //                }
 
-
                 groups.add(groupB);
                 addMember(groupA, groupB);
+
                 while(count++ < maxLoop)
                 {
                     Group newGroup = createGroup(project, "testGroup" + count);
@@ -2238,6 +2237,7 @@ public class SecurityManager
                 }
             }
         }
+
         @Test
         public void testAddMemberToGroup() throws InvalidGroupMembershipException
         {
@@ -2254,7 +2254,6 @@ public class SecurityManager
 
         private Object[][] getAddMemberErrorArgs()
         {
-
             Object[][] ret = {  {null, null, NULL_GROUP_ERROR_MESSAGE},
                                 {groupA, null, NULL_PRINCIPAL_ERROR_MESSAGE},
                                 {groupA, groupA, ADD_GROUP_TO_ITSELF_ERROR_MESSAGE}};

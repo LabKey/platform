@@ -110,6 +110,15 @@ public class NestedGroupsTest extends Assert
         addMember(divA, user);
         addMember(divA, projectX);
 
+        validateGroupMembers(divA, 1, 1, 1, 1);
+        validateGroupMembers(divB, 0, 0, 0, 0);
+        validateGroupMembers(divC, 0, 0, 0, 0);
+        validateGroupMembers(coders, 1, 0, 1, 0);
+        validateGroupMembers(testers, 0, 0, 0, 0);
+        validateGroupMembers(writers, 0, 0, 0, 0);
+        validateGroupMembers(projectX, 1, 0, 1, 0);
+        validateGroupMembers(all, 0, 6, 1, 7);
+
         // TODO: Create another group, add directly to "all", add user to new group, validate
         // TODO: Check permissions
 
@@ -260,7 +269,7 @@ public class NestedGroupsTest extends Assert
 
     private Set<UserPrincipal> getMembers(@Nullable Group group)
     {
-        return null != group ? SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both) : Collections.<UserPrincipal>emptySet();
+        return null != group ? SecurityManager.getGroupMembers(group, MemberType.BOTH) : Collections.<UserPrincipal>emptySet();
     }
 
     private void expected(int[] actualIds, UserPrincipal... expectedMembers)
@@ -309,6 +318,17 @@ public class NestedGroupsTest extends Assert
             set.add(userPrincipal.getUserId());
 
         validate(expected, set, members);
+    }
+
+    private void validateGroupMembers(Group group, int users, int groups, int recursiveUsers, int recursiveGroups)
+    {
+        assertEquals(users, SecurityManager.getGroupMembers(group, MemberType.USERS).size());
+        assertEquals(groups, SecurityManager.getGroupMembers(group, MemberType.GROUPS).size());
+        assertEquals(users + groups, SecurityManager.getGroupMembers(group, MemberType.BOTH).size());
+
+        assertEquals(recursiveUsers, SecurityManager.getAllGroupMembers(group, MemberType.USERS).size());
+        assertEquals(recursiveGroups, SecurityManager.getAllGroupMembers(group, MemberType.GROUPS).size());
+        assertEquals(recursiveUsers + recursiveGroups, SecurityManager.getAllGroupMembers(group, MemberType.BOTH).size());
     }
 
     private void cleanup()

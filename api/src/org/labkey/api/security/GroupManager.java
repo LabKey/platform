@@ -141,11 +141,10 @@ public class GroupManager
         while (!recurse.isEmpty())
         {
             Group group = recurse.removeFirst();
-            Set<UserPrincipal> set = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Groups);
+            Set<Group> set = SecurityManager.getGroupMembers(group, MemberType.GROUPS);
 
-            for (UserPrincipal principal : set)
+            for (Group g : set)
             {
-                Group g = (Group)principal;
                 sb.append("\t").append(group.getUserId()).append("->").append(g.getUserId()).append(";\n");
                 connected.add(group.getUserId());
                 connected.add(g.getUserId());
@@ -162,7 +161,7 @@ public class GroupManager
         {
             if (!hideUnconnected || connected.contains(g.getUserId()))
             {
-                int userCount = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Users).size();
+                int userCount = SecurityManager.getGroupMembers(g, MemberType.USERS).size();
 
                 sb.append("\t").append(g.getUserId()).append(" [");
                 appendDotAttribute(sb, false, "label", g.getName() + "\\n" + userCount + " users");
@@ -452,7 +451,7 @@ public class GroupManager
             return (Group)groupMap.get(g);  //it has already been copied
         }
 
-        Set<UserPrincipal> members = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Both);
+        Set<UserPrincipal> members = SecurityManager.getGroupMembers(g, MemberType.BOTH);
         Set<UserPrincipal> translatedMembers = new LinkedHashSet<UserPrincipal>();
 
         for (UserPrincipal m : members)
@@ -479,7 +478,7 @@ public class GroupManager
         if (SecurityManager.getGroupId(c, newGroupName, null, false) != null)
         {
             Group existingGroup = SecurityManager.getGroup(SecurityManager.getGroupId(c, newGroupName));
-            Set<UserPrincipal> existingMembers = SecurityManager.getGroupMembers(existingGroup, SecurityManager.GroupMemberType.Both);
+            Set<UserPrincipal> existingMembers = SecurityManager.getGroupMembers(existingGroup, MemberType.BOTH);
 
             if(existingMembers.equals(translatedMembers))
             {
