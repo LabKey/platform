@@ -34,6 +34,7 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
@@ -1024,7 +1025,7 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
-        public NamedObjectList getSelectList()
+        public NamedObjectList getSelectList(RenderContext ctx)
         {
             return null;
         }

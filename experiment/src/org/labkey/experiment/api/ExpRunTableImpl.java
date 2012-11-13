@@ -773,7 +773,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return result;
         }
 
-        public NamedObjectList getSelectList()
+        public NamedObjectList getSelectList(RenderContext ctx)
         {
             // XXX: NYI
             return new NamedObjectList();

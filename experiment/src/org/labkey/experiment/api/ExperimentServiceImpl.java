@@ -299,7 +299,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         if (rowids.length == 0)
             return null;
-        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), Table.ALL_COLUMNS, new SimpleFilter("RowId", rowids, CompareType.IN), null).getArray(Data.class));
+        Collection<Integer> ids = new ArrayList<Integer>(rowids.length);
+        for (int rowid : rowids)
+            ids.add(rowid);
+        return getExpDatas(ids);
     }
 
     public ExpData[] getExpDatas(Collection<Integer> rowids)
