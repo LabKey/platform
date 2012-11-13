@@ -266,17 +266,18 @@ public class QueryPivot extends QueryRelation
 
 
                 // if our optimizations get more clever, we may need to implement deepClone()
-                QuerySelect fromForPivotValues = _from.shallowClone();
-                fromForPivotValues._allowStructuralOptimization = false;
-                assert null == fromForPivotValues._orderBy;
-                if (null == fromForPivotValues._having)
-                {
-                    // release references, resolveFields() will add them back later for main query
-                    fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
-                    fromForPivotValues._groupBy = null;
-                }
-                fromForPivotValues.getColumn(_pivotColumn.getFieldKey().getName()).addRef(this);
-                SQLFragment fromSql = fromForPivotValues.getSql();
+//                QuerySelect fromForPivotValues = _from.shallowClone();
+//                fromForPivotValues._allowStructuralOptimization = false;
+//                assert null == fromForPivotValues._orderBy;
+//                if (null == fromForPivotValues._having)
+//                {
+//                    // release references, resolveFields() will add them back later for main query
+//                    fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
+//                    fromForPivotValues._groupBy = null;
+//                }
+//                fromForPivotValues.getColumn(_pivotColumn.getFieldKey().getName()).addRef(this);
+//                SQLFragment fromSql = fromForPivotValues.getSql();
+                SQLFragment fromSql = _from.getSql();
 
 
                 if (null == fromSql)
@@ -447,8 +448,11 @@ public class QueryPivot extends QueryRelation
             Map<String, IConstant> pivotValues;
             try
             {
+                // UNDONE: _from.getSql() has side-effect that seems to be important for declareFields()
+                _from.markAllSelected(this);
+                _from.getSql();
+
                 pivotValues = getPivotValues();
-                _from.resolveFields();
             }
             catch (SQLException x)
             {
@@ -730,8 +734,6 @@ public class QueryPivot extends QueryRelation
     @Override
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
-        // resolveFields() ?
-        // _from.getSuggestedColumns() ?
         return Collections.emptySet();
     }
 
