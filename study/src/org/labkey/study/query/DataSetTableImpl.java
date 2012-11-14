@@ -83,7 +83,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -753,17 +753,17 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
     }
 
     @Override
-    public Collection<ColumnInfo> getExtendedColumns(boolean hidden)
+    public Map<FieldKey, ColumnInfo> getExtendedColumns(boolean hidden)
     {
-        Collection<ColumnInfo> columns = super.getExtendedColumns(hidden);
+        Map<FieldKey, ColumnInfo> columns = super.getExtendedColumns(hidden);
 
         if (_dsd.isAssayData())
         {
             TableInfo assayResultTable = createAssayResultTable();
             if (assayResultTable != null)
             {
-                columns = new LinkedHashSet<ColumnInfo>(columns);
-                columns.addAll(assayResultTable.getExtendedColumns(hidden));
+                columns = new LinkedHashMap<FieldKey, ColumnInfo>(columns);
+                columns.putAll(assayResultTable.getExtendedColumns(hidden));
             }
         }
 

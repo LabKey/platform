@@ -183,13 +183,13 @@ public abstract class VisualizationProvider
             QueryDefinition query = entry.getKey();
             TableInfo table = entry.getValue();
 
-            Collection<ColumnInfo> columns;
+            Map<FieldKey, ColumnInfo> columns;
             if (columnMatchType.equals(ColumnMatchType.All))
                 columns = table.getExtendedColumns(true);
             else
                 columns = table.getExtendedColumns(false);
 
-            for (ColumnInfo col : columns)
+            for (ColumnInfo col : columns.values())
             {
                 // ignore hidden columns
                 if (columnMatchType.match(col))
