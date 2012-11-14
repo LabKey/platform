@@ -329,12 +329,7 @@ public class SampleMindedTransformTask
         outputRow.put("originating_location", siteId);
         outputRow.put("global_unique_specimen_id", barcode);
         String ptid = getNonNullValue(inputRow, "participantid");
-        // Prefix the PTID with the studynum value if it isn's already there
         String studyNum = getNonNullValue(inputRow, "studynum");
-        if (!ptid.startsWith(studyNum))
-        {
-            ptid = studyNum + ptid;
-        }
         outputRow.put("ptid", ptid);
         outputRow.put("tube_type", inputRow.get("vesseldomaintype"));
         // Fix up the visit number
