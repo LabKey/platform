@@ -165,7 +165,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             sql.append(")");
         }
 
-        if (!ctx.getSpecimens().isEmpty())
+        if (null != ctx.getSpecimens() && !ctx.getSpecimens().isEmpty())
         {
             List<Specimen> specimens = ctx.getSpecimens();
             List<String> uniqueIds = new LinkedList<String>();
