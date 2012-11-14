@@ -576,7 +576,7 @@ public class Issue extends Entity implements Serializable, Cloneable
                 v = new ValidEmail(id);
                 u = UserManager.getUser(v);
             } catch (ValidEmail.InvalidEmailException x) { }
-            if (v == null)
+            if (v == null || u == null)
                 try { u = UserManager.getUser(Integer.parseInt(id)); } catch (NumberFormatException x) { };
             if (v == null && u == null)
                 u = UserManager.getUserByDisplayName(id);
@@ -598,12 +598,16 @@ public class Issue extends Entity implements Serializable, Cloneable
                 continue;
             ValidEmail v = null;
             User u = null;
-            try { v = new ValidEmail(id); } catch (ValidEmail.InvalidEmailException x) { }
-            if (v == null)
+            try {
+                v = new ValidEmail(id);
+                u = UserManager.getUser(v);
+            } catch (ValidEmail.InvalidEmailException x) { }
+
+            if (v == null || u == null)
                 try { u = UserManager.getUser(Integer.parseInt(id)); } catch (NumberFormatException x) { };
             if (v == null && u == null)
                 u = UserManager.getUserByDisplayName(id);
-            if (v == null && u != null)
+            if (u != null)
                 try { v = new ValidEmail(u.getEmail()); } catch (ValidEmail.InvalidEmailException x) { }
             if (null != v)
                 ret.add(v);

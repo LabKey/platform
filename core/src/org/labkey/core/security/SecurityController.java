@@ -17,6 +17,7 @@ package org.labkey.core.security;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiAction;
@@ -1010,23 +1011,26 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class CompleteMemberAction extends SimpleViewAction<CompleteMemberForm>
+    public class CompleteMemberAction extends ApiAction<CompleteMemberForm>
     {
-        public ModelAndView getView(CompleteMemberForm form, BindException errors) throws Exception
+        @Override
+        public ApiResponse execute(CompleteMemberForm form, BindException errors) throws Exception
         {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
             Group[] allGroups = SecurityManager.getGroups(getContainer().getProject(), true);
             Collection<Group> validGroups = SecurityManager.getValidPrincipals(form.getGroup(), Arrays.asList(allGroups));
 
             Collection<User> validUsers = SecurityManager.getValidPrincipals(form.getGroup(), UserManager.getActiveUsers());
 
-            List<AjaxCompletion> completions = UserManager.getAjaxCompletions(form.getPrefix(), validGroups, validUsers, getViewContext().getUser());
-            PageFlowUtil.sendAjaxCompletions(getViewContext().getResponse(), completions);
-            return null;
-        }
+            List<JSONObject> completions = new ArrayList<JSONObject>();
 
-        public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(validGroups, validUsers, getViewContext().getUser(), true, false))
+                completions.add(completion.toJSON());
+
+            response.put("completions", completions);
+
+            return response;
         }
     }
 
@@ -1046,18 +1050,20 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class CompleteUserAction extends SimpleViewAction<CompleteUserForm>
+    public class CompleteUserAction extends ApiAction<CompleteUserForm>
     {
-        public ModelAndView getView(CompleteUserForm form, BindException errors) throws Exception
+        @Override
+        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
         {
-            List<AjaxCompletion> completions = UserManager.getAjaxCompletions(form.getPrefix(), getViewContext().getUser());
-            PageFlowUtil.sendAjaxCompletions(getViewContext().getResponse(), completions);
-            return null;
-        }
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<JSONObject> completions = new ArrayList<JSONObject>();
 
-        public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getViewContext().getUser()))
+                completions.add(completion.toJSON());
+
+            response.put("completions", completions);
+
+            return response;
         }
     }
 

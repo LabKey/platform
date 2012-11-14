@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm bean = me.getModelBean();

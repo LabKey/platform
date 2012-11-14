@@ -30,6 +30,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController.DownloadAction;
 import org.labkey.issue.model.Issue;
@@ -372,21 +373,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         {
             return filter(getNotifyListString(false));
         }
-        final HStringBuilder sb = new HStringBuilder();
-
-        sb.append("<script type=\"text/javascript\">LABKEY.requiresScript('completion.js');</script>");
-        sb.append("<textarea name=\"notifyList\" id=\"notifyList\" cols=\"30\" rows=\"4\" tabindex=\"10\"");
-        sb.append(" onKeyDown=\"return ctrlKeyCheck(event);\"");
-        sb.append(" onBlur=\"hideCompletionDiv();\"");
-        sb.append(" onchange=\"LABKEY.setDirty(true);return true;\"");
-        sb.append(" autocomplete=\"off\"");
-        sb.append(" onKeyUp=\"return handleChange(this, event, 'completeUser.view?issueId=");
-        sb.append(getIssue().getIssueId());
-        sb.append("&amp;prefix=');\"");
-        sb.append(">");
-        sb.append(filter(getNotifyListString(true)));
-        sb.append("</textarea>");
-        return sb.toHString();
+        return new HString("");
     }
 
 

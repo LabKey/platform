@@ -16,27 +16,29 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.security.PrincipalType" %>
+<%@ page import="org.labkey.api.security.SecurityUrls" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page import="org.labkey.api.security.UserUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.api.security.UserPrincipal" %>
-<%@ page import="org.labkey.api.security.SecurityUrls" %>
-<%@ page import="org.labkey.api.security.Group" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.PrincipalType" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page import="org.labkey.core.security.SecurityApiActions" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     GroupView.GroupBean bean = ((JspView<GroupView.GroupBean>)HttpView.currentView()).getModelBean();
     Container c = getViewContext().getContainer();
+
+    ActionURL completionUrl = new ActionURL(SecurityController.CompleteMemberAction.class, c);
+    completionUrl.addParameter("groupId", bean.group.getUserId());
 %>
 
 <style type="text/css">
@@ -100,16 +102,16 @@
         return ok;
     }
 
-Ext.onReady(function()
-{
-    form = new LABKEY.Form('groupMembersForm');
+    Ext.onReady(function()
+    {
+        form = new LABKEY.Form('groupMembersForm');
 
-    Ext.QuickTips.init();
-    Ext.apply(Ext.QuickTips.getQuickTip(), {
-        dismissDelay: 15000,
-        trackMouse: true
+        Ext.QuickTips.init();
+        Ext.apply(Ext.QuickTips.getQuickTip(), {
+            dismissDelay: 15000,
+            trackMouse: true
+        });
     });
-});
 
 </script>
 
@@ -247,13 +249,8 @@ else
 %><br>
 <div id="add-members">
 <span style="font-weight:bold">Add New Members</span> (enter one email address or group per line):<br>
-<textarea name="names" cols="60" rows="8"
-         onKeyDown="return ctrlKeyCheck(event);"
-         onBlur="hideCompletionDiv();"
-         autocomplete="off"
-         onKeyUp="return handleChange(this, event, 'completeMember.view?groupId=<%= bean.group.getUserId() %>&prefix=');">
-</textarea><br>
-<input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
+    <labkey:autoCompleteTextArea name="names" url="<%=completionUrl.getLocalURIString()%>" rows="8" cols="60"/>
+    <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
 if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.security.AuthenticationManager.ALL_DOMAINS.equals(bean.ldapDomain))
 {
     %>, non-<%= bean.ldapDomain %><%

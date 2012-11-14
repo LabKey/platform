@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.AjaxCompletionAction;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -542,6 +541,8 @@ public class IssuesController extends SpringActionController
             _issue = form.getBean();
             _issue.open(c, user);
             validateNotifyList(_issue, form, errors);
+            // convert from email addresses & display names to userids before we hit the database
+            _issue.parseNotifyList(_issue.getNotifyList().toString());
 
             ChangeSummary changeSummary;
 
@@ -684,6 +685,9 @@ public class IssuesController extends SpringActionController
                     issue.close(user);
                 else
                     issue.change(user);
+
+                // convert from email addresses & display names to userids before we hit the database
+                issue.parseNotifyList(issue.getNotifyList().toString());
 
                 changeSummary = createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnCaptions(), getUser());
                 IssueManager.saveIssue(user, c, issue);
@@ -1115,11 +1119,17 @@ public class IssuesController extends SpringActionController
         for (String rawEmail : invalidEmails)
         {
             rawEmail = rawEmail.trim();
+
             // Ignore lines of all whitespace, otherwise show an error.
             if (!"".equals(rawEmail))
             {
-                message.append("Failed to add user ").append(rawEmail).append(": Invalid email address");
-                errors.rejectValue("notifyList","Error",new Object[] {message.toString()}, message.toString());
+                // try to resolve by display names as well
+                User user = UserManager.getUserByDisplayName(rawEmail);
+                if (user == null)
+                {
+                    message.append("Failed to add user ").append(rawEmail).append(": Invalid email address");
+                    errors.rejectValue("notifyList","Error",new Object[] {message.toString()}, message.toString());
+                }
             }
         }
     }
@@ -1138,12 +1148,22 @@ public class IssuesController extends SpringActionController
 
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class CompleteUserAction extends AjaxCompletionAction<CompleteUserForm>
+    public class CompleteUserAction extends ApiAction<CompleteUserForm>
     {
-        public List<AjaxCompletion> getCompletions(CompleteUserForm form, BindException errors) throws Exception
+        @Override
+        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
         {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<JSONObject> completions = new ArrayList<JSONObject>();
+
+            boolean showEmailAddresses = SecurityManager.canSeeEmailAddresses(getContainer(), getUser());
             List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getViewContext().getContainer(), Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
-            return UserManager.getAjaxCompletions(form.getPrefix(), possibleUsers, getViewContext().getUser());
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, getViewContext().getUser(), showEmailAddresses, true))
+                    completions.add(completion.toJSON());
+
+            response.put("completions", completions);
+
+            return response;
         }
     }
 

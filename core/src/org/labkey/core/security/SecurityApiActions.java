@@ -595,8 +595,7 @@ public class SecurityApiActions
                 {
                     // Troubleshooter is the only role assignable in the root container
                     relevantRoles.add(RoleManager.getRole(TroubleshooterRole.class).getUniqueName());
-                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_EMAIL_PERMISSION))
-                        relevantRoles.add(RoleManager.getRole(SeeEmailAddressesRole.class).getUniqueName());
+                    relevantRoles.add(RoleManager.getRole(SeeEmailAddressesRole.class).getUniqueName());
                 }
                 else
                     // ExternalIndex case    

@@ -522,14 +522,6 @@ public class CoreQuerySchema extends UserSchema
         table.addCondition(new SQLFragment("1=2"));
     }
 
-    protected boolean canSeeEmailAddresses()
-    {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_EMAIL_PERMISSION))
-            return true;
-        return getContainer().hasPermission(getUser(),SeeUserEmailAddressesPermission.class) ||
-            ContainerManager.getRoot().hasPermission(getUser(),SeeUserEmailAddressesPermission.class);
-    }
-
     public boolean getMustCheckPermissions()
     {
         return _mustCheckPermissions;

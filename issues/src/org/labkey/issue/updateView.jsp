@@ -32,7 +32,9 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
     ViewContext context = me.getViewContext();
@@ -45,6 +47,7 @@
     final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId());
 
     BindException errors = bean.getErrors();
+    ActionURL completionUrl = new ActionURL(IssuesController.CompleteUserAction.class, c);
 %>
 
 <script type="text/javascript">
@@ -206,7 +209,9 @@
                         }
     %>
                         </td>
-                        <td><%=bean.getNotifyList()%></td>
+                        <td>
+                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=completionUrl.getLocalURIString()%>" rows="4" cols="30" value="<%=PageFlowUtil.filter(bean.getNotifyListString(false).toString())%>"/>
+                        </td>
                     </tr>
     <%
                 } else {
@@ -278,7 +283,7 @@
 <script type="text/javascript">
 
 var origComment = document.getElementById("comment").value;
-var origNotify = document.getElementById("notifyList").value;
+var origNotify = <%=q(bean.getNotifyListString(false).toString())%>;
 
 function isDirty()
 {

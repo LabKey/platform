@@ -38,6 +38,7 @@ import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -80,7 +81,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable
 
         wrapAllColumns();
 
-        if (canSeeEmailAddresses())
+        if (SecurityManager.canSeeEmailAddresses(getContainer(), getUser()))
             addWrapColumn(getRealTable().getColumn("Email"));
         else
         {
@@ -142,14 +143,6 @@ public class UsersTable extends SimpleUserSchema.SimpleTable
         }
 
         return !_illegalColumns.contains(col.getName());
-    }
-
-    protected boolean canSeeEmailAddresses()
-    {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_EMAIL_PERMISSION))
-            return true;
-        return getContainer().hasPermission(getUser(),SeeUserEmailAddressesPermission.class) ||
-            ContainerManager.getRoot().hasPermission(getUser(), SeeUserEmailAddressesPermission.class);
     }
 
     @Override

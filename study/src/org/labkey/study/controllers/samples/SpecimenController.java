@@ -19,8 +19,10 @@ package org.labkey.study.controllers.samples;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
@@ -5401,22 +5403,23 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class CompleteSpecimenAction extends SimpleViewAction<CompleteSpecimenForm>
+    public class CompleteSpecimenAction extends ApiAction<CompleteSpecimenForm>
     {
-        public ModelAndView getView(CompleteSpecimenForm form, BindException errors) throws Exception
+        @Override
+        public ApiResponse execute(CompleteSpecimenForm form, BindException errors) throws Exception
         {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
             Study study = getStudy();
             if (study == null)
                 throw new NotFoundException("No study exists in this folder.");
 
-            List<AjaxCompletion> completions = getAjaxCompletions(form.getPrefix(), study);
-            PageFlowUtil.sendAjaxCompletions(getViewContext().getResponse(), completions);
-            return null;
-        }
+            List<JSONObject> completions = new ArrayList<JSONObject>();
+            for (AjaxCompletion completion : getAjaxCompletions(form.getPrefix(), study))
+                completions.add(completion.toJSON());
 
-        public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
+            response.put("completions", completions);
+            return response;
         }
     }
 

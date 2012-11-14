@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -1023,11 +1024,19 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class CompleteUserAction extends AjaxCompletionAction<CompleteUserForm>
+    public class CompleteUserAction extends ApiAction<CompleteUserForm>
     {
-        public List<AjaxCompletion> getCompletions(CompleteUserForm form, BindException errors) throws Exception
+        @Override
+        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
         {
-            return UserManager.getAjaxCompletions(form.getPrefix(), getViewContext().getUser());
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<JSONObject> completions = new ArrayList<JSONObject>();
+
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getViewContext().getUser()))
+                completions.add(completion.toJSON());
+
+            response.put("completions", completions);
+            return response;
         }
     }
 

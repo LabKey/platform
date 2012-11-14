@@ -23,6 +23,9 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SampleManager;
@@ -427,19 +430,34 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             }
             else
             {
-                builder.append("<script type=\"text/javascript\">LABKEY.requiresScript('completion.js');</script>");
-                builder.append("<input type=\"text\" name=\"").append(inputName).append("\"onKeyDown=\"return ctrlKeyCheck(event);\" onBlur=\"hideCompletionDiv();\" autocomplete=\"off\" size=\"25\"");
-                builder.append("onKeyUp=\"return handleChange(this, event, 'completeSpecimen.view?type=ParticipantId&prefix=');\" value=\"");
-                if (selectedParticipantId != null)
-                {
-                    builder.append(selectedParticipantId);
-                }
-                else
-                {
-                    builder.append(participants[0].getParticipantId());     // Set to the first one
-                }
-                builder.append("\">");
-//                <input type='text' size='0' name='specimen1_ParticipantID' value="" onKeyDown="return ctrlKeyCheck(event);" onBlur="hideCompletionDiv();" autocomplete="off" onKeyUp="return handleChange(this, event, '/labkey/study-samples/home/New%20Demo%20Study/autoComplete.view?type=ParticipantId&prefix=');">
+                String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+                String completionUrl = new ActionURL(SpecimenController.CompleteSpecimenAction.class, getContainer()).addParameter("type", "ParticipantId").getLocalURIString();
+                String initValue = selectedParticipantId != null ? selectedParticipantId : participants[0].getParticipantId();
+
+                StringBuilder sb = new StringBuilder();
+
+                sb.append("<script type=\"text/javascript\">");
+                sb.append("LABKEY.requiresExt4Sandbox(true);\n");
+                sb.append("LABKEY.requiresScript('completion.js');\n");
+
+                sb.append("Ext4.onReady(function(){\n" +
+                    "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
+                    "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
+                    "            completionUrl   : " + PageFlowUtil.jsString(completionUrl) + ",\n" +
+                    "            tagConfig   : {\n" +
+                    "                tag     : 'input',\n" +
+                    "                type    : 'text',\n" +
+                    "                name    : " + PageFlowUtil.jsString(inputName) + ",\n" +
+                    "                size    : 25,\n" +
+                    "                value   : " + PageFlowUtil.jsString(initValue) + ",\n" +
+                    "                autocomplete : 'off'\n" +
+                    "            }\n" +
+                    "        });\n" +
+                    "      });\n");
+                sb.append("</script>\n");
+                sb.append("<div id='").append(renderId).append("'></div>");
+
+                builder.append(sb.toString());
             }
 
             return new Pair<String, String>(StudyService.get().getSubjectColumnName(getContainer()), builder.toString());

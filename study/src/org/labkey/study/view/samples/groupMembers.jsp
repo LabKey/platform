@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.study.controllers.samples.ShowGroupMembersAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <%
     JspView<ShowGroupMembersAction.GroupMembersBean> me = (JspView<ShowGroupMembersAction.GroupMembersBean>) HttpView.currentView();
     ShowGroupMembersAction.GroupMembersBean bean = me.getModelBean();
@@ -66,11 +65,9 @@
 
     <div id="add-members">
         Add New Members (enter one email address per line):<br>
-        <textarea name="names" cols="30" rows="8"
-                  onKeyDown="return ctrlKeyCheck(event);"
-                  onBlur="hideCompletionDiv();"
-                  autocomplete="off"
-                  onKeyUp="return handleChange(this, event, <%= q(bean.getCompleteUsersPrefix()) %>);"></textarea><br>
+        <labkey:autoCompleteTextArea name="names"
+                                     url="<%=q(bean.getCompleteUsersPrefix())%>"
+                                     rows="8" cols="30"/><br>
         <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all
         new<%
             if (bean.getLdapDomain() != null && bean.getLdapDomain().length() > 0 && !org.labkey.api.security.AuthenticationManager.ALL_DOMAINS.equals(bean.getLdapDomain()))

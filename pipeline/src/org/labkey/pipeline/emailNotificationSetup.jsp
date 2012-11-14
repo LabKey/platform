@@ -20,10 +20,10 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
-<script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 
 <%
     Container c = HttpView.currentContext().getContainer();
@@ -41,6 +41,8 @@
     String displayError = notifyOwnerOnError ||
             !StringUtils.isEmpty(notifyUsersOnError) ||
             !StringUtils.isEmpty(escalationUsers) ? "" : "none";
+
+    String completeUserUrl = new ActionURL(PipelineController.CompleteUserAction.class, c).getLocalURIString();
 %>
 <script type="text/javascript">
 
@@ -104,11 +106,11 @@
         <tr style="display:<%=displaySuccess%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess" <%=notifyOwnerOnSuccess ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send to owner")%></td></tr>
         <tr style="display:<%=displaySuccess%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_SUCCESS, c, "Additional users to notify<br/><i>Enter one or more email addresses, each on its own line:</i>")%></td></tr>
         <tr style="display:<%=displaySuccess%>"><td></td><td>
-            <textarea id="notifyUsersOnSuccess" name="notifyUsersOnSuccess" cols="60" rows="5"
-                      onKeyDown="return ctrlKeyCheck(event);"
-                      onBlur="hideCompletionDiv();"
-                      autocomplete="off"
-                      onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');"><%=notifyUsersOnSuccess%></textarea>
+            <labkey:autoCompleteTextArea
+                    name="notifyUsersOnSuccess"
+                    id="notifyUsersOnSuccess"
+                    url="<%=completeUserUrl%>" rows="5" cols="60"
+                    value="<%=notifyUsersOnSuccess%>"/>
             </td></tr>
         <tr style="display:<%=displaySuccess%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_SUCCESS_INTERVAL, c, "Notification frequency:")%>&nbsp;
             <select id="successNotifyInterval" name="successNotifyInterval" onchange="updateSuccessNotifyInterval();">
@@ -130,18 +132,18 @@
         <tr style="display:<%=displayError%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input type=checkbox id="notifyOwnerOnError" name="notifyOwnerOnError" <%=notifyOwnerOnError ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_ERROR, c, "Send to owner")%></td></tr>
         <tr style="display:<%=displayError%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_ERROR, c, "Additional users to notify:")%></td></tr>
         <tr style="display:<%=displayError%>"><td></td><td>
-            <textarea id="notifyUsersOnError" name="notifyUsersOnError" cols="60" rows="5"
-                      onKeyDown="return ctrlKeyCheck(event);"
-                      onBlur="hideCompletionDiv();"
-                      autocomplete="off"
-                      onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');"><%=notifyUsersOnError%></textarea>
+            <labkey:autoCompleteTextArea
+                    name="notifyUsersOnError"
+                    id="notifyUsersOnError"
+                    url="<%=completeUserUrl%>" rows="5" cols="60"
+                    value="<%=notifyUsersOnError%>"/>
         <tr style="display:<%=displayError%>"><td></td><td width="350"><%=getTitle(PipelineEmailPreferences.PREF_ESCALATION_USERS, c, "Escalation Users<br/><i>Email addresses entered here will appear in a view accesible from pipeline job details. Additional email messages can be sent from this view regarding a job failure.</i>")%></td></tr>
         <tr style="display:<%=displayError%>"><td></td><td>
-            <textarea id="escalationUsers" name="escalationUsers" cols="60" rows="5"
-                      onKeyDown="return ctrlKeyCheck(event);"
-                      onBlur="hideCompletionDiv();"
-                      autocomplete="off"
-                      onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');"><%=escalationUsers%></textarea>
+            <labkey:autoCompleteTextArea
+                    name="escalationUsers"
+                    id="escalationUsers"
+                    url="<%=completeUserUrl%>" rows="5" cols="60"
+                    value="<%=escalationUsers%>"/>
             </td></tr>
         <tr style="display:<%=displayError%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_FAILURE_INTERVAL, c, "Notification frequency:")%>&nbsp;
             <select id="failureNotifyInterval" name="failureNotifyInterval" onchange="updateFailureNotifyInterval();">

@@ -597,10 +597,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Rserve Reports",
                 "Use an R Server for R script evaluation instead of running R from a command shell.",
                 false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_EMAIL_PERMISSION,
-                "Require permission to view email addresses",
-                "Require explicit permission for non-admins to view users' email addresses.",
-                false);
 
         PropertyService.get().registerDomainKind(new UsersDomainKind());
     }

@@ -16,6 +16,10 @@
 
 package org.labkey.study.controllers.samples;
 
+import org.json.JSONObject;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
@@ -42,9 +46,10 @@ import java.util.List;
  * Date: Jul 21, 2009
  */
 @RequiresPermissionClass(ReadPermission.class)
-public class AutoCompleteAction extends SimpleViewAction<AutoCompleteAction.AutoCompletionForm>
+public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoCompletionForm>
 {
-    public ModelAndView getView(AutoCompletionForm form, BindException errors) throws Exception
+    @Override
+    public ApiResponse execute(AutoCompletionForm form, BindException errors) throws Exception
     {
         String column;
         TableInfo tinfo;
@@ -79,36 +84,31 @@ public class AutoCompleteAction extends SimpleViewAction<AutoCompleteAction.Auto
         ResultSet rs = null;
         try
         {
-            String valueParam = form.getPrefix() + "%";
             SQLFragment sql = new SQLFragment();
             sql.append("SELECT DISTINCT ");
             sql.append(column);
             sql.append(" FROM ");
             sql.append(tinfo.getSchema().getName()).append(".").append(tinfo.getName());
-            sql.append(" WHERE Container = ? AND CAST(").append(column).append(" AS ");
+            sql.append(" WHERE Container = ?");
             sql.add(getViewContext().getContainer().getId());
-            sql.append(tinfo.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) + ") ");
-            sql.append(insensitiveCompare ? tinfo.getSqlDialect().getCaseInsensitiveLikeOperator() : "LIKE");
-            sql.append(" ? ");
-            sql.add(valueParam);
             sql.append(" ORDER BY ").append(column);
             tinfo.getSqlDialect().limitRows(sql, 50);
             rs = Table.executeQuery(tinfo.getSchema(), sql);
             while (rs.next())
                 completions.add(new AjaxCompletion(rs.getObject(1).toString()));
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<JSONObject> jsonCompletions = new ArrayList<JSONObject>();
+            for (AjaxCompletion completion : completions)
+                jsonCompletions.add(completion.toJSON());
+
+            response.put("completions", jsonCompletions);
+            return response;
         }
         finally
         {
             if (rs != null) try { rs.close(); } catch (SQLException e) {}
         }
-
-        PageFlowUtil.sendAjaxCompletions(getViewContext().getResponse(), completions);
-        return null;
-    }
-
-    public NavTree appendNavTrail(NavTree root)
-    {
-        return null;
     }
 
     public static class AutoCompletionForm

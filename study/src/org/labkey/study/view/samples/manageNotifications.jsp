@@ -29,7 +29,6 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 
-<script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">
 function setElementDisplayByCheckbox(checkbox, element)
 {
@@ -135,11 +134,11 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr id="newRequestNotifyArea" style="display:<%= newRequestNotifyChecked ? "" : "none"%>">
             <th align="right" class="labkey-form-label local-left-label-width-th">Notify of new requests<br>(one per line):</th>
             <td>
-                <textarea name="newRequestNotify" id="newRequestNotify" cols="30" rows="3"
-                        onKeyDown="return ctrlKeyCheck(event);"
-                        onBlur="hideCompletionDiv();"
-                        autocomplete="off"
-                        onKeyUp="return handleChange(this, event, '<%= completionURLPrefix %>');"><%= h(bean.getNewRequestNotify()) %></textarea>
+                <labkey:autoCompleteTextArea name="newRequestNotify"
+                                             id="newRequestNotify"
+                                             url="<%=completionURLPrefix%>"
+                                             cols="30" rows="3"
+                                             value="<%=h(bean.getNewRequestNotify())%>"/>
             </td>
         </tr>
         <tr>
@@ -156,11 +155,11 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr id="ccArea" style="display:<%= ccChecked ? "" : "none"%>">
             <th align="right"class="labkey-form-label local-left-label-width-th">Always CC<br>(one per line):</th>
             <td>
-                <textarea name="cc" id="cc" cols="30" rows="3"
-                        onKeyDown="return ctrlKeyCheck(event);"
-                        onBlur="hideCompletionDiv();"
-                        autocomplete="off"
-                        onKeyUp="return handleChange(this, event, '<%= completionURLPrefix %>');"><%= h(bean.getCc() )%></textarea>
+                <labkey:autoCompleteTextArea name="cc"
+                                             id="cc"
+                                             url="<%=completionURLPrefix%>"
+                                             cols="30" rows="3"
+                                             value="<%=h(bean.getCc())%>"/>
             </td>
         </tr>
 

@@ -22,25 +22,27 @@
 <%@ page import="org.labkey.api.security.UserUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <%
     JspView<SecurityController.GroupsBean> me = (JspView<SecurityController.GroupsBean>) HttpView.currentView();
     SecurityController.GroupsBean groupsBean = me.getModelBean();
     Container container = groupsBean.getContainer();
+    ActionURL completionUrl = new ActionURL(SecurityController.CompleteUserAction.class, container);
+
     for (String message : groupsBean.getMessages())
     {
 %><b><%= message %></b><br>
 <% } %>
+
 <labkey:errors />
 
-<script type="text/javascript">
-LABKEY.requiresScript('completion.js');
-</script>
 <table width="100%">
     <%
         for (Group group : groupsBean.getGroups())
@@ -84,11 +86,7 @@ LABKEY.requiresScript('completion.js');
                                     New member email:
                                     <input type="hidden" name="group" value="<%= groupPath %>">
                                     <input type="hidden" name="quickUI" value="true">
-                                    <input type="text" name="names" size="30"
-                                           onKeyDown="return ctrlKeyCheck(event);"
-                                           onBlur="hideCompletionDiv();"
-                                           autocomplete="off"
-                                           onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');">
+                                    <labkey:autoCompleteText name="names" size="30" url="<%=completionUrl.getLocalURIString()%>"/>
                                     <input type="hidden" name="sendEmail" value="true">
                                     <%= generateSubmitButton("Add User")%>
                                 </form>

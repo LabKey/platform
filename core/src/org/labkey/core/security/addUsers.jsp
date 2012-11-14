@@ -28,7 +28,10 @@
 <%
     AddUsersForm form = (AddUsersForm)HttpView.currentModel();
 %>
-<script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
+<script type="text/javascript">
+    LABKEY.requiresExt4Sandbox(true);
+    LABKEY.requiresScript('completion.js');
+</script>
 <script type="text/javascript">
     var permissionLink_hide = '<a href="#blank" style="display:none" onclick="showUserAccess();">permissions<\/a>';
     var permissionLink_show = '<a href="#blank" class="labkey-button" onclick="showUserAccess();"><span>permissions</span><\/a>';
@@ -63,6 +66,22 @@
             }
         }
     }
+
+    Ext4.onReady(function(){
+
+        Ext4.create('LABKEY.element.AutoCompletionField', {
+            renderTo        : 'auto-completion-div',
+            completionUrl   : LABKEY.ActionURL.buildURL('security', 'completeUser.api'),
+            tagConfig   : {
+                tag     : 'input',
+                id      : 'cloneUser',
+                type    : 'text',
+                name    : 'cloneUser',
+                disabled: true,
+                autocomplete : 'off'
+            }
+        });
+    });
 </script>
 
 <form action="<%=buildURL(SecurityController.AddUsersAction.class)%>" method=post>
@@ -84,13 +103,7 @@
             </td>
         <tr>
             <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck" onclick="enableText();">Clone permissions from user:</td>
-            <td>
-                <input type=text name="cloneUser" id="cloneUser" disabled="true"
-                        onKeyDown="return ctrlKeyCheck(event);"
-                        onBlur="hideCompletionDiv();"
-                        autocomplete="off"
-                        onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');">
-            </td>
+            <td id="auto-completion-div"></td>
             <td><div id=permissions><a href="#blank" style="display:none" onclick="showUserAccess();">permissions</a></div></td>
         </tr>
         <tr><td colspan="3">

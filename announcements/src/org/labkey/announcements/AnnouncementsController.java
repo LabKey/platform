@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
@@ -29,7 +30,6 @@ import org.labkey.announcements.model.IndividualEmailPrefsSelector;
 import org.labkey.announcements.model.NormalMessageBoardPermissions;
 import org.labkey.announcements.model.Permissions;
 import org.labkey.announcements.model.SecureMessageBoardPermissions;
-import org.labkey.api.action.AjaxCompletionAction;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -988,21 +988,24 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static ActionURL getCompleteUserURL(Container c)
-    {
-        return new ActionURL(CompleteUserAction.class, c);
-    }
-
-
     @RequiresPermissionClass(InsertPermission.class)
-    public class CompleteUserAction extends AjaxCompletionAction<AjaxCompletionForm>
+    public class CompleteUserAction extends ApiAction<AjaxCompletionForm>
     {
-        public List<AjaxCompletion> getCompletions(AjaxCompletionForm form, BindException errors) throws Exception
+        @Override
+        public ApiResponse execute(AjaxCompletionForm form, BindException errors) throws Exception
         {
-            // Limit member list lookup to those with read permissions in this container.
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            List<JSONObject> completions = new ArrayList<JSONObject>();
             Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(ReadPermission.class);
             List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), perms);
-            return UserManager.getAjaxCompletions(form.getPrefix(), completionUsers, getViewContext().getUser());
+
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(completionUsers, getViewContext().getUser()))
+                completions.add(completion.toJSON());
+
+            response.put("completions", completions);
+
+            return response;
         }
     }
 
@@ -1024,21 +1027,9 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static String getMemberListTextArea(User user, Container c, AnnouncementModel ann, String emailList)
+    private static String getMemberList(User user, Container c, AnnouncementModel ann, String emailList)
     {
-        String completeUserUrl = getCompleteUserURL(c).getLocalURIString();
-
         StringBuilder sb = new StringBuilder();
-        sb.append("<script type=\"text/javascript\">LABKEY.requiresScript('completion.js');</script>");
-        sb.append("<textarea name=\"emailList\" id=\"emailList\" cols=\"30\" rows=\"5\"" );
-        sb.append(" onKeyDown=\"return ctrlKeyCheck(event);\"");
-        sb.append(" onBlur=\"hideCompletionDiv();\"");
-        sb.append(" autocomplete=\"off\"");
-        sb.append(" onKeyUp=\"return handleChange(this, event, '");
-        sb.append(completeUserUrl);
-        sb.append("prefix=');\"");
-        sb.append(">");
-
         if (emailList != null)
         {
             sb.append(emailList);
@@ -1052,9 +1043,6 @@ public class AnnouncementsController extends SpringActionController
         {
             sb.append(user.getEmail());
         }
-
-        sb.append("</textarea>");
-
         return sb.toString();
     }
 
@@ -1121,7 +1109,7 @@ public class AnnouncementsController extends SpringActionController
             bean.assignedToSelect = getAssignedToSelect(c, assignedTo, "assignedTo", getViewContext().getUser());
             bean.settings = settings;
             bean.statusSelect = getStatusSelect(settings, (String)form.get("status"));
-            bean.memberList = getMemberListTextArea(form.getUser(), c, latestPost, (String)(reshow ? form.get("emailList") : null));
+            bean.memberList = getMemberList(form.getUser(), c, latestPost, (String) (reshow ? form.get("emailList") : null));
             bean.currentRendererType = currentRendererType;
             bean.renderers = WikiRendererType.values();
             bean.form = form;
@@ -2625,7 +2613,7 @@ public class AnnouncementsController extends SpringActionController
                 settings = getSettings(c);
                 currentRendererType = WikiRendererType.valueOf(ann.getRendererType());
                 renderers = WikiRendererType.values();
-                memberList = getMemberListTextArea(form.getUser(), c, ann, null != reshowEmailList ? reshowEmailList : null);
+                memberList = getMemberList(form.getUser(), c, ann, null != reshowEmailList ? reshowEmailList : null);
                 statusSelect = getStatusSelect(settings, ann.getStatus());
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
                 returnURL = form.getReturnURLHelper();

@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory" %>
 <%@ page import="java.util.EnumSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart bean = me.getModelBean();
@@ -42,7 +43,6 @@
     boolean includePrivateData = Boolean.parseBoolean(bean.getPropertyMap().get(SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY));
     String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
 %>
-<script type="text/javascript">LABKEY.requiresScript("completion.js");</script>
 <p>Each <%= h(subjectNoun.toLowerCase()) %> webpart will display datasets from a single <%= h(subjectNoun.toLowerCase()) %>.</p>
 
 <form action="<%=postUrl%>" method="post">
@@ -52,13 +52,9 @@
             <%= StudyService.get().getSubjectColumnName(getViewContext().getContainer()) %>:
         </td>
         <td>
-            <input type="text"
-                   name="<%= SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY %>"
-                   value="<%= h(participantId)%>"
-                   onKeyDown="return ctrlKeyCheck(event);"
-                   onBlur="hideCompletionDiv();"
-                   autocomplete="off"
-                   onKeyUp="return handleChange(this, event, '<%= ptidCompletionBase %>');">
+            <labkey:autoCompleteText name="<%= SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY %>"
+                                     url="<%=ptidCompletionBase%>"
+                                     value="<%=h(participantId)%>"/>
         </td>
     </tr>
     <tr>

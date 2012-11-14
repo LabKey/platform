@@ -23,7 +23,9 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     HttpView<InsertBean> me = (HttpView<InsertBean>) HttpView.currentView();
     InsertBean bean = me.getModelBean();
@@ -33,6 +35,7 @@
     AnnouncementsController.AnnouncementForm form = bean.form;
     URLHelper cancelURL = bean.cancelURL;
     String insertUrl = AnnouncementsController.getInsertURL(c).getEncodedLocalURIString();
+    String completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, c).getLocalURIString();
 %>
 <%=formatMissedErrors("form")%>
 <script type="text/javascript">
@@ -68,7 +71,10 @@ Ext.onReady(function(){
     }
     if (settings.hasMemberList())
     {
-        %><tr><td class='labkey-form-label'>Members</td><td><%=bean.memberList%></td><td width="100%"><i><%
+        %><tr>
+            <td class='labkey-form-label'>Members</td>
+            <td><labkey:autoCompleteTextArea name="emailList" id="emailList" rows="5" cols="30" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td>
+            <td width="100%"><i><%
         if (settings.isSecure())
         {
             %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it.  These users will also<%
