@@ -192,7 +192,7 @@
                 {
     %>
                     <tr>
-                        <td class="labkey-form-label-nowrap"><%=h(bean.getLabel("NotifyList"))%><%=text(popup)%><br/><br/>
+                        <td class="labkey-form-label-nowrap"><%=text(bean.getLabel("NotifyList"))%><%=text(popup)%><br/><br/>
     <%
                         if (issue.getIssueId() == 0)
                         {
