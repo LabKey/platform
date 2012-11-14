@@ -171,28 +171,9 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
 
     private boolean isRobot()
     {
-        return  PageFlowUtil.isRobotUserAgent(getHeader("User-Agent"));
+        return PageFlowUtil.isRobotUserAgent(getHeader("User-Agent"));
     }
 
-
-    // TODO: Delete
-    public HString getParameter(HString s)
-    {
-        return new HString(super.getParameter(s.getSource()), true);
-    }
-
-
-    // TODO: Delete
-    public HString[] getParameterValues(HString s)
-    {
-        String[] values = getParameterValues(s.getSource());
-        if (values == null)
-            return null;
-        HString[] t  = new HString[values.length];
-        for (int i=0 ; i<values.length ; i++)
-            t[i] = new HString(values[i], true);
-        return t;
-    }
 
     // Methods below use reflection to pull Tomcat-specific implementation bits out of the request.  This can be helpful
     // for low-level, temporary debugging, but it's not portable across servlet containers or versions.

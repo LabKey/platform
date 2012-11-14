@@ -66,6 +66,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     PropertyValues _pvs;
     boolean _useBasicAuthentication = false;
 
+    private boolean _robot = false;  // Is this request form GoogleBot or some other crawler?
     private boolean _debug = false;
     protected boolean _print = false;
 
@@ -179,9 +180,11 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     private void handleSpecialProperties()
     {
+        _robot = PageFlowUtil.isRobotUserAgent(getViewContext().getRequest().getHeader("User-Agent"));
+
         // Special flag puts actions in "debug" mode, during which they should log extra information that would be
         // helpful for testing or debugging problems
-        if (null != StringUtils.trimToNull((String) getProperty("_debug")))
+        if (!_robot && null != StringUtils.trimToNull((String) getProperty("_debug")))
         {
             _debug = true;
         }
@@ -710,6 +713,11 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     protected List<AttachmentFile> getAttachmentFileList()
     {
         return SpringAttachmentFile.createList(getFileMap());
+    }
+
+    public boolean isRobot()
+    {
+        return _robot;
     }
 
     public boolean isPrint()
