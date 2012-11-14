@@ -68,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -671,19 +672,20 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
-    public Collection<ColumnInfo> getExtendedColumns(boolean hidden)
+    public Map<FieldKey, ColumnInfo> getExtendedColumns(boolean hidden)
     {
         List<ColumnInfo> columns = getColumns();
-        LinkedHashSet<ColumnInfo> ret = new LinkedHashSet<ColumnInfo>(columns.size());
+        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey, ColumnInfo>(columns.size());
         if (hidden)
         {
-            ret.addAll(columns);
+            for (ColumnInfo col : columns)
+                ret.put(col.getFieldKey(), col);
         }
 
         // Include any extra columns named by the default visible set
-        ret.addAll(QueryService.get().getColumns(this, getDefaultVisibleColumns()).values());
+        ret.putAll(QueryService.get().getColumns(this, getDefaultVisibleColumns(), columns));
 
-        return Collections.unmodifiableCollection(ret);
+        return Collections.unmodifiableMap(ret);
     }
 
 

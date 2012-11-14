@@ -133,7 +133,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * @param hidden Include hidden columns.
      * @return All columns.
      */
-    Collection<ColumnInfo> getExtendedColumns(boolean hidden);
+    Map<FieldKey, ColumnInfo> getExtendedColumns(boolean hidden);
 
     List<FieldKey> getDefaultVisibleColumns();
 
