@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
@@ -30,30 +31,33 @@ import java.io.Writer;
  */
 public abstract class AbstractFileDisplayColumn extends DataColumn
 {
+    MimeMap _map;
+
     public AbstractFileDisplayColumn(ColumnInfo col)
     {
         super(col);
+        _map = new MimeMap();
     }
 
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        renderIconAndFilename(ctx, out, (String)getValue(ctx), true);
+        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        renderIconAndFilename(ctx, out, getFileName(getValue(ctx)), true);
+        renderIconAndFilename(ctx, out, getFileName(getValue(ctx)), true, true);
     }
 
     /** @return the short name of the file (not including full path) */
     protected abstract String getFileName(Object value);
 
-    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link) throws IOException
+    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
     {
-       renderIconAndFilename(ctx, out, filename, null, link);
+       renderIconAndFilename(ctx, out, filename, null, link, thumbnail);
     }
     
-    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, boolean link) throws IOException
+    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, boolean link, boolean thumbnail) throws IOException
     {
         if (null != filename)
         {
@@ -71,9 +75,25 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 }
             }
 
-            out.write("<img src=\"" + ctx.getRequest().getContextPath());
-            out.write((null != fileIconUrl) ? fileIconUrl : Attachment.getFileIcon(filename));
-            out.write("\" alt=\"icon\"/>&nbsp;" + filename);
+            StringBuilder icon = new StringBuilder();
+            icon.append("<img src=\"").append(ctx.getRequest().getContextPath());
+            icon.append((null != fileIconUrl) ? fileIconUrl : Attachment.getFileIcon(filename));
+            icon.append("\" alt=\"icon\"");
+            icon.append("/>&nbsp;").append(filename);
+
+            if (thumbnail && _map.isInlineImageFor(filename))
+            {
+                StringBuilder thumbnailHtml = new StringBuilder();
+                thumbnailHtml.append("<img style=\"max-width:300px; height:auto;\" src=\"");
+                thumbnailHtml.append(PageFlowUtil.filter(url));
+                thumbnailHtml.append("\" />");
+
+                out.write(PageFlowUtil.helpPopup(filename, thumbnailHtml.toString(), true, icon.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
+            }
+            else
+            {
+                out.write(icon.toString());
+            }
 
             if (link && null != url)
             {
@@ -115,7 +135,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             String divId = GUID.makeGUID();
 
             out.write("<div id=\"" + divId + "\">");
-            renderIconAndFilename(ctx, out, filename, false);
+            renderIconAndFilename(ctx, out, filename, false, false);
             out.write("&nbsp;[<a href=\"javascript:{}\" onClick=\"");
 
             out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">Previous file " + filename + " will be removed.</span>")) + "\"");

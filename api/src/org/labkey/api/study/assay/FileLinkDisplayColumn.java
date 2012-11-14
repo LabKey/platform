@@ -27,6 +27,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -48,14 +49,14 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     private FieldKey _objectURIFieldKey;
 
     /** Use schemaName/queryName and pk FieldKey value to resolve File in CoreController.DownloadFileLinkAction. */
-    public FileLinkDisplayColumn(ColumnInfo col, PropertyDescriptor pd, Container container, @NotNull String schemaName, @NotNull String queryName, @NotNull FieldKey pkFieldKey)
+    public FileLinkDisplayColumn(ColumnInfo col, PropertyDescriptor pd, Container container, @NotNull SchemaKey schemaKey, @NotNull String queryName, @NotNull FieldKey pkFieldKey)
     {
         super(col);
 
         _pkFieldKey = pkFieldKey;
 
         ActionURL actionURL = PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd);
-        actionURL.addParameter(QueryParam.schemaName, schemaName);
+        actionURL.addParameter(QueryParam.schemaName, schemaKey.toString());
         actionURL.addParameter(QueryParam.queryName, queryName);
         DetailsURL url = new DetailsURL(actionURL, "pk", pkFieldKey);
         setURLExpression(url);
@@ -93,7 +94,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
-    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link) throws IOException
+    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
     {
         Object value = getValue(ctx);
         if (value != null)
@@ -102,21 +103,21 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             // It's probably a file, so check that first
             if (f.isFile())
             {
-                super.renderIconAndFilename(ctx, out, filename, link);
+                super.renderIconAndFilename(ctx, out, filename, link, thumbnail);
             }
             else if (f.isDirectory())
             {
-                super.renderIconAndFilename(ctx, out, filename, Attachment.getFileIcon(".folder"), link);
+                super.renderIconAndFilename(ctx, out, filename, Attachment.getFileIcon(".folder"), link, false);
             }
             else
             {
                 // It's not on the file system anymore, so don't offer a link and tell the user it's unavailable
-                super.renderIconAndFilename(ctx, out, filename + " (unavailable)", Attachment.getFileIcon(filename), false);
+                super.renderIconAndFilename(ctx, out, filename + " (unavailable)", Attachment.getFileIcon(filename), false, false);
             }
         }
         else
         {
-            super.renderIconAndFilename(ctx, out, filename, link);
+            super.renderIconAndFilename(ctx, out, filename, link, thumbnail);
         }
     }
 }

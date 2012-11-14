@@ -127,7 +127,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                     col.setName(domainProperty.getName());
                     PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
                     FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
-                    PropertyColumn.copyAttributes(_schema.getUser(), col, pd, schema.getContainer(), _schema.getName(), getPublicName(), pkFieldKey);
+                    PropertyColumn.copyAttributes(_schema.getUser(), col, pd, schema.getContainer(), _schema.getSchemaPath(), getPublicName(), pkFieldKey);
                 }
                 addColumn(col);
 
