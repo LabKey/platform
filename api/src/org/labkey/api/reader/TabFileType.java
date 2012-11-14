@@ -85,7 +85,7 @@ class TabFileType extends FileType
                 for (String columnHeader : fields)
                 {
                     columnHeader = columnHeader.trim();
-                    if (columnHeader.length() == 0 || StringUtils.isAlphanumericSpace(columnHeader))
+                    if (columnHeader.length() == 0 || !StringUtils.isAlphanumericSpace(columnHeader))
                         return false;
                 }
                 fieldLen = fields.length;
