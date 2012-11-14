@@ -270,6 +270,13 @@ public class FieldKey extends QueryKey<FieldKey>
         }
 
         @Test
+        public void testConcat()
+        {
+            assertEquals(FieldKey.fromParts(FieldKey.fromParts("Parent"), FieldKey.fromParts("Child")), FieldKey.fromParts("Parent", "Child"));
+            assertEquals(FieldKey.fromParts((FieldKey)null, FieldKey.fromParts("Parent"), FieldKey.fromParts("Child")), FieldKey.fromParts("Parent", "Child"));
+        }
+
+        @Test
         public void testEncode()
         {
             assertEquals("Slash$SSeparated", FieldKey.fromParts("Slash/Separated").toString());

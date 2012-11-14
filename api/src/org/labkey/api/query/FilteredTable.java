@@ -439,7 +439,9 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     {
         assert column.getParentTable() == getRealTable();
         ColumnInfo ret = new AliasedColumn(this, column.getName(), column);
-        if (column.isKeyField() && getColumn(column.getName()) != null)
+        // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
+        // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
+        if (column.isKeyField() && getColumnNameSet().contains(column.getName()))
         {
             ret.setKeyField(false);
         }

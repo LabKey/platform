@@ -16,6 +16,7 @@
 
 package org.labkey.api.collections;
 
+import java.util.Collection;
 import java.util.TreeSet;
 
 /*
@@ -28,5 +29,12 @@ public class CaseInsensitiveTreeSet extends TreeSet<String>
     public CaseInsensitiveTreeSet()
     {
         super(String.CASE_INSENSITIVE_ORDER);
+    }
+
+    /** Copy constructor */
+    public CaseInsensitiveTreeSet(Collection<String> c)
+    {
+        super(String.CASE_INSENSITIVE_ORDER);
+        addAll(c);
     }
 }

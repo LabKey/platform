@@ -25,6 +25,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 
 import java.util.Map;
@@ -34,16 +35,27 @@ public class QueryForeignKey implements ForeignKey
 {
     TableInfo _table;
     String _schemaName;
+    Container _container;
+    User _user;
     String _tableName;
     String _lookupKey;
     String _displayField;
     QuerySchema _schema;
 
+    public QueryForeignKey(String schemaName, Container container, User user, String tableName, String lookupKey, String displayField)
+    {
+        _schemaName = schemaName;
+        _container = container;
+        _user = user;
+        _tableName = tableName;
+        _lookupKey = lookupKey;
+        _displayField = displayField;
+    }
+
     public QueryForeignKey(QuerySchema schema, String tableName, String lookupKey, String displayField)
     {
-        if (schema instanceof UserSchema)
-            _schemaName = ((UserSchema)schema).getSchemaName();
         _schema = schema;
+        _schemaName = schema.getSchemaName();
         _tableName = tableName;
         _lookupKey = lookupKey;
         _displayField = displayField;
@@ -104,11 +116,21 @@ public class QueryForeignKey implements ForeignKey
 
     public TableInfo getLookupTableInfo()
     {
-        if (_table == null && _schema != null)
+        if (_table == null && getSchema() != null)
         {
-            _table = _schema.getTable(_tableName);
+            _table = getSchema().getTable(_tableName);
         }
         return _table;
+    }
+
+    private QuerySchema getSchema()
+    {
+        if (_schema == null && _container != null && _user != null && _schemaName != null)
+        {
+            _schema = QueryService.get().getUserSchema(_user, _container, _schemaName);
+        }
+        return _schema;
+
     }
 
     public String getLookupSchemaName()

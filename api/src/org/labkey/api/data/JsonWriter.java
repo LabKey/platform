@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public class JsonWriter
 {
-    public static List<Map<String,Object>> getNativeColProps(TableInfo tinfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
+    public static Map<FieldKey, Map<String,Object>> getNativeColProps(TableInfo tinfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
     {
         List<ColumnInfo> columns = new ArrayList<ColumnInfo>(tinfo.getColumns());
         LinkedHashMap<FieldKey, ColumnInfo> allColumns = QueryService.get().getColumns(tinfo, fields, columns);
@@ -49,12 +49,20 @@ public class JsonWriter
         return getNativeColProps(displayColumns, fieldKeyPrefix, includeDomainFormat);
     }
 
-    public static List<Map<String,Object>> getNativeColProps(Collection<DisplayColumn> columns, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
+    public static Map<FieldKey, Map<String,Object>> getNativeColProps(Collection<DisplayColumn> columns, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
     {
-        List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
+        Map<FieldKey, Map<String,Object>> colProps = new LinkedHashMap<FieldKey, Map<String,Object>>();
         for (DisplayColumn column : columns)
         {
-            colProps.add(JsonWriter.getMetaData(column, fieldKeyPrefix, true, true, includeDomainFormat));
+            Map<String, Object> metadata = JsonWriter.getMetaData(column, fieldKeyPrefix, true, true, includeDomainFormat);
+            ColumnInfo cinfo = column.getColumnInfo();
+            FieldKey fieldKey;
+            if (cinfo != null && null != cinfo.getFieldKey())
+                fieldKey = FieldKey.fromParts(fieldKeyPrefix, cinfo.getFieldKey());
+            else
+                fieldKey = new FieldKey(fieldKeyPrefix, column.getName());
+
+            colProps.put(fieldKey, metadata);
         }
         return colProps;
     }

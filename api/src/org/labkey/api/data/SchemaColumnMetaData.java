@@ -229,6 +229,7 @@ public class SchemaColumnMetaData
 
     void addColumn(ColumnInfo column)
     {
+        assert getColumn(column.getName()) == null : "Duplicate column " + column.getName() + " on table " + _tinfo.getName();
         _columns.add(column);
 //        assert !column.isAliasSet();       // TODO: Investigate -- had to comment this out since ExprColumn() sets alias
         assert null == column.getFieldKey().getParent();

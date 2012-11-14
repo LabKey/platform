@@ -424,7 +424,7 @@ abstract public class AbstractTableInfo implements TableInfo
         // assert column.getParentTable() == this;
         if (_columnMap.containsKey(column.getName()))
         {
-            throw new IllegalArgumentException("Column " + column.getName() + " already exists.");
+            throw new IllegalArgumentException("Column " + column.getName() + " already exists for table " + getName());
         }
         _columnMap.put(column.getName(), column);
         assert column.lockName();
@@ -668,7 +668,6 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public static ForeignKey makeForeignKey(QuerySchema fromSchema, ColumnType.Fk fk)
     {
-        QuerySchema fkSchema = fromSchema;
         if (fk.getFkDbSchema() != null)
         {
             Container targetContainer = fromSchema.getContainer();
@@ -680,11 +679,15 @@ abstract public class AbstractTableInfo implements TableInfo
                     return null;
                 }
             }
-            fkSchema = QueryService.get().getUserSchema(fromSchema.getUser(), targetContainer, fk.getFkDbSchema());
-            if (fkSchema == null)
-                return null;
+            if (!fromSchema.getSchemaName().equals(fk.getFkDbSchema()) || !targetContainer.equals(fromSchema.getContainer()))
+            {
+                // Let the QueryForeignKey lazily create the schema on demand
+                return new QueryForeignKey(fk.getFkDbSchema(), targetContainer, fromSchema.getUser(), fk.getFkTable(), fk.getFkColumnName(), fk.getFkDisplayColumnName());
+            }
         }
-        return new QueryForeignKey(fkSchema, fk.getFkTable(), fk.getFkColumnName(), null);
+
+        // We can reuse the same schema object
+        return new QueryForeignKey(fromSchema, fk.getFkTable(), fk.getFkColumnName(), fk.getFkDisplayColumnName());
     }
 
 
@@ -799,6 +802,10 @@ abstract public class AbstractTableInfo implements TableInfo
         if(xmlTable.getImportTemplates() != null)
             setImportTemplates(xmlTable.getImportTemplates().getTemplateArray());
 
+        // Optimization - only check for wrapped columns based on the "real" set of columns, not columns that are
+        // resolved by resolveColumn() for backwards compatibility
+        Set<String> columnNames = getColumnNameSet();
+
         if (xmlTable.getColumns() != null)
         {
             List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
@@ -811,11 +818,14 @@ abstract public class AbstractTableInfo implements TableInfo
                 }
                 else
                 {
-                    ColumnInfo column = getColumn(xmlColumn.getColumnName());
-
-                    if (column != null)
+                    if (columnNames.contains(xmlColumn.getColumnName()))
                     {
-                        initColumnFromXml(schema, column, xmlColumn, errors);
+                        ColumnInfo column = getColumn(xmlColumn.getColumnName());
+
+                        if (column != null)
+                        {
+                            initColumnFromXml(schema, column, xmlColumn, errors);
+                        }
                     }
                 }
             }
@@ -824,7 +834,7 @@ abstract public class AbstractTableInfo implements TableInfo
             {
                 ColumnInfo column = getColumn(wrappedColumnXml.getWrappedColumnName());
 
-                if (column != null && getColumn(wrappedColumnXml.getColumnName()) == null)
+                if (column != null && !getColumnNameSet().contains(wrappedColumnXml.getColumnName()))
                 {
                     ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
                     initColumnFromXml(schema, wrappedColumn, wrappedColumnXml, errors);

@@ -67,44 +67,15 @@ public class SimpleUserSchema extends UserSchema
 {
     // CaseInsensitiveTreeSet preserves case of the table names (from XML), unlike CaseInsensitiveHashSet
     private final Set<String> _available = new CaseInsensitiveTreeSet();
-    private final Set<String> _visible = new CaseInsensitiveTreeSet();
+    private Set<String> _visible;
 
     public SimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbschema)
     {
-        this(name, description, user, container, dbschema, getAvailableTableNames(dbschema), getHiddenTableNames(dbschema));
-    }
-
-    private static Collection<String> getAvailableTableNames(DbSchema dbschema)
-    {
-        if (null == dbschema)
-            return Collections.emptySet();
-
-        List<String> availableNames = new LinkedList<String>();
-
-        for (String metaDataName : dbschema.getTableNames())
-            availableNames.add(dbschema.getTable(metaDataName).getName());
-
-        return availableNames;
-    }
-
-    // CONSIDER: We could consult just the XML meta data to keep from loading table meta data from the database here,
-    // like we do for external schemas.  These schemas tend to have very few tables, however...
-    private static Collection<String> getHiddenTableNames(DbSchema dbschema)
-    {
-        if (null == dbschema)
-            return Collections.emptySet();
-
-        List<String> names = new LinkedList<String>();
-
-        for (String name : dbschema.getTableNames())
+        super(name, description, user, container, dbschema);
+        if (dbschema != null)
         {
-            SchemaTableInfo table = dbschema.getTable(name);
-
-            if (table.isHidden())
-                names.add(table.getName());
+            _available.addAll(dbschema.getTableNames());
         }
-
-        return names;
     }
 
     // Hidden tables are hidden from the UI but will still be addressible by Query (for fk lookups, etc.)
@@ -112,6 +83,7 @@ public class SimpleUserSchema extends UserSchema
     {
         super(name, description, user, container, dbschema);
         _available.addAll(availableTables);
+        _visible = new CaseInsensitiveTreeSet();
         _visible.addAll(availableTables);
         _visible.removeAll(hiddenTables);
     }
@@ -140,8 +112,21 @@ public class SimpleUserSchema extends UserSchema
     }
 
     @Override
-    public Set<String> getVisibleTableNames()
+    public synchronized Set<String> getVisibleTableNames()
     {
+        if (_visible == null)
+        {
+            _visible = new CaseInsensitiveTreeSet();
+            // Populate visible lazily if we haven't already
+            for (String tableName : _available)
+            {
+                SchemaTableInfo table = _dbSchema.getTable(tableName);
+
+                if (!table.isHidden())
+                    _visible.add(tableName);
+            }
+        }
+
         return Collections.unmodifiableSet(_visible);
     }
 
