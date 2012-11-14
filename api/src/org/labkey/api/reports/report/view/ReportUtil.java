@@ -526,7 +526,10 @@ public class ReportUtil
                          */
                         if (!inherited || !StringUtils.isBlank(reportKey))
                         {
-                            ActionURL editUrl = r.getEditReportURL(context);
+                            ActionURL editUrl = null;
+
+                            if (info.getEditable())
+                                editUrl = r.getEditReportURL(context);
                             ActionURL runUrl = r.getRunReportURL(context);
                             ActionURL detailsUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlReportDetails(c, r);
 
