@@ -469,7 +469,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             }
             if (allColsFound)
             {
-                where.append(separator).append(clause.getLabKeySQLWhereClause(filterColTypes));
+                where.append(separator).append(" (").append(clause.getLabKeySQLWhereClause(filterColTypes)).append(") ");
                 separator = " AND\n";
             }
             else
