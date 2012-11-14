@@ -1059,6 +1059,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if(!this.editMode || this.firstLoad){
             // If we're not in edit mode or if this is the first load we need to only load the minimum amount of data.
             columns = [];
+            var groupingData = this.getChartConfig().chartOptions.grouping;
 
             if(this.xAxisMeasure){
                 columns.push(this.xAxisMeasure.name);
@@ -1079,6 +1080,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 columns.push(this.yAxisMeasure.name);
             } else if(this.autoColumnYName){
                 columns.push(this.autoColumnYName);
+            }
+
+            if(groupingData.colorType === "measure"){
+                columns.push(groupingData.colorMeasure.name)
+            }
+
+            if(groupingData.pointType === "measure"){
+                columns.push(groupingData.pointMeasure.name);
             }
         } else {
             // If we're in edit mode then we can load all of the columns.
@@ -2191,11 +2200,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     getDefaultTitle: function(){
-        return this.queryName + ' - ' + this.yAxisMeasure.label
+        return this.queryName + (this.yAxisMeasure ? ' - ' + this.yAxisMeasure.label : '');
     },
 
     getDefaultYAxisLabel: function(){
-        return this.yAxisMeasure.label;
+        return this.yAxisMeasure ? this.yAxisMeasure.label : 'y-axis';
     },
 
     getDefaultXAxisLabel: function(){
