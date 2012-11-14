@@ -4454,6 +4454,8 @@ public class QueryController extends SpringActionController
             if (null == views)
                 views = Collections.emptyMap();
 
+            Map<FieldKey, Map<String, Object>> columnMetadata = new HashMap<FieldKey, Map<String, Object>>();
+
             List<Map<String, Object>> viewInfos = Collections.emptyList();
             if (getViewContext().getBindPropertyValues().contains("viewName"))
             {
@@ -4467,7 +4469,7 @@ public class QueryController extends SpringActionController
                 else if (viewName == null)
                 {
                     // The default view was requested but it hasn't been customized yet. Create the 'default default' view.
-                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(getViewContext(), schema, form.getQueryName(), null, form.isMetadata(), true));
+                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(getViewContext(), schema, form.getQueryName(), null, form.isMetadata(), true, columnMetadata));
                 }
             }
             else
@@ -4484,7 +4486,7 @@ public class QueryController extends SpringActionController
                 if (!foundDefault)
                 {
                     // The default view hasn't been customized yet. Create the 'default default' view.
-                    viewInfos.add(CustomViewUtil.toMap(getViewContext(), schema, form.getQueryName(), null, form.isMetadata(), true));
+                    viewInfos.add(CustomViewUtil.toMap(getViewContext(), schema, form.getQueryName(), null, form.isMetadata(), true, columnMetadata));
                 }
             }
 

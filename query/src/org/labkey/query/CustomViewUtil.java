@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -157,7 +158,7 @@ public class CustomViewUtil
         view.setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
     }
 
-    public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta, boolean initializeMissingView)
+    public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta, boolean initializeMissingView, Map<FieldKey, Map<String, Object>> columnMetadata)
             throws ServletException
     {
         //build a query view.  XXX: is this necessary?  Old version used queryView.getDisplayColumns() to get cols in the default view
@@ -181,7 +182,7 @@ public class CustomViewUtil
             }
         }
 
-        Map<String, Object> ret = toMap(view, context.getUser(), includeFieldMeta);
+        Map<String, Object> ret = toMap(view, context.getUser(), includeFieldMeta, columnMetadata);
         if (newView)
             ret.put("doesNotExist", true);
 
@@ -189,6 +190,11 @@ public class CustomViewUtil
     }
 
     public static Map<String, Object> toMap(CustomView view, User user, boolean includeFieldMeta)
+    {
+        return toMap(view, user, includeFieldMeta, new HashMap<FieldKey, Map<String, Object>>());
+    }
+
+    public static Map<String, Object> toMap(CustomView view, User user, boolean includeFieldMeta, Map<FieldKey, Map<String, Object>> columnMetadata)
     {
         Map<String, Object> ret = QueryService.get().getCustomViewProperties(view, user);
 
@@ -280,17 +286,33 @@ public class CustomViewUtil
 
         if (includeFieldMeta)
         {
-            Map<FieldKey, ColumnInfo> allCols = QueryService.get().getColumns(tinfo, allKeys);
-            List<Map<String, Object>> allColMaps = new ArrayList<Map<String, Object>>(allCols.size());
+            Set<FieldKey> uncachedFieldKeys = new HashSet<FieldKey>();
+            for (FieldKey key : allKeys)
+            {
+                if (!columnMetadata.containsKey(key))
+                {
+                    uncachedFieldKeys.add(key);
+                }
+            }
+
+
+            Map<FieldKey, ColumnInfo> allCols = QueryService.get().getColumns(tinfo, uncachedFieldKeys);
+            List<Map<String, Object>> allColMaps = new ArrayList<Map<String, Object>>(allKeys.size());
             for (FieldKey field : allKeys)
             {
-                // Column may be in select list but not present in the actual table
-                ColumnInfo col = allCols.get(field);
-                if (col != null)
+                Map<String, Object> metadata = columnMetadata.get(field);
+                if (metadata == null)
                 {
-                    DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
-                    allColMaps.add(JsonWriter.getMetaData(dc, null, false, true, false));
+                    // Column may be in select list but not present in the actual table
+                    ColumnInfo col = allCols.get(field);
+                    if (col != null)
+                    {
+                        DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
+                        metadata = JsonWriter.getMetaData(dc, null, false, true, false);
+                        columnMetadata.put(field, metadata);
+                    }
                 }
+                allColMaps.add(metadata);
             }
             // property name "fields" matches LABKEY.Query.ExtendedSelectRowsResults (ie, metaData.fields)
             ret.put("fields", allColMaps);

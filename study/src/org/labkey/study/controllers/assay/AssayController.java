@@ -326,7 +326,7 @@ public class AssayController extends SpringActionController
             {
                 displayColumns.add(column.getDisplayColumnFactory().createRenderer(column));
             }
-            return JsonWriter.getNativeColProps(displayColumns, null, true);
+            return new ArrayList<Map<String, Object>>(JsonWriter.getNativeColProps(displayColumns, null, true).values());
         }
 
         List<Map<String, Object>> propertyList = new ArrayList<Map<String, Object>>();

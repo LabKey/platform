@@ -416,11 +416,6 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         edit().setFlags(_mgr.setIsHidden(_cstmView.getFlags(), b));
     }
 
-    public Map<String, Object> toMap()
-    {
-        return CustomViewUtil.toMap(this, null, true);
-    }
-
     public void update(org.json.JSONObject jsonView, boolean saveFilterAndSort)
     {
         CustomViewUtil.update(this, jsonView, saveFilterAndSort);

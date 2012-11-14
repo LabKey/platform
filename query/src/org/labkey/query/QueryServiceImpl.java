@@ -23,18 +23,13 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jmock.Expectations;
-import org.jmock.Mockery;
-import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -56,10 +51,8 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.DefaultSchema;
@@ -83,12 +76,10 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.XmlBeansUtil;
@@ -128,6 +119,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -1105,7 +1097,7 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, Collection<QueryException> errors, Path dir)
+    public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, Path dir)
     {
         QueryDef queryDef = findMetadataOverrideImpl(schema, tableName, customQuery, allModules, dir);
         if (queryDef == null)
@@ -1141,16 +1133,48 @@ public class QueryServiceImpl extends QueryService
         return null;
     }
 
+    // Use a WeakHashMap to cache QueryDefs. This means that the cache entries will only be associated directly
+    // with the exact same UserSchema instance, regardless of whatever UserSchema.equals() returns. This means
+    // that the scope of the cache is very limited, and this is a very conservative cache.
+    private Map<ObjectIdentityCacheKey, Map<String, QueryDef>> _metadataCache = new WeakHashMap<ObjectIdentityCacheKey, Map<String, QueryDef>>();
+
+    /** Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality */
+    private static class ObjectIdentityCacheKey
+    {
+        private final Object _object;
+
+        private ObjectIdentityCacheKey(UserSchema object)
+        {
+            _object = object;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            return obj instanceof ObjectIdentityCacheKey && ((ObjectIdentityCacheKey)obj)._object == _object;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return System.identityHashCode(_object);
+        }
+    }
 
     // BUGBUG: Should we look in the session queries for metadata overrides?
-    public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, boolean allModules, Path dir)
+    public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @Nullable Path dir)
     {
-        if (dir == null)
+        ObjectIdentityCacheKey schemaCacheKey = new ObjectIdentityCacheKey(schema);
+        Map<String, QueryDef> queryDefs = _metadataCache.get(schemaCacheKey);
+        if (queryDefs == null)
         {
-            List<String> subDirs = new ArrayList<String>(schema.getSchemaPath().getParts().size() + 1);
-            subDirs.add(QueryService.MODULE_QUERIES_DIRECTORY);
-            subDirs.addAll(schema.getSchemaPath().getParts());
-            dir = new Path(subDirs.toArray(new String[subDirs.size()]));
+            queryDefs = new CaseInsensitiveHashMap<QueryDef>();
+            _metadataCache.put(schemaCacheKey, queryDefs);
+        }
+        // Check if we've already cached the QueryDef for this specific UserSchema object
+        if (queryDefs.containsKey(tableName))
+        {
+            return queryDefs.get(tableName);
         }
 
         String schemaName = schema.getSchemaPath().toString();
@@ -1162,6 +1186,7 @@ public class QueryServiceImpl extends QueryService
             queryDef = QueryManager.get().getQueryDef(container, schemaName, tableName, customQuery);
             if (queryDef != null && (customQuery || queryDef.getMetaData() != null))
             {
+                queryDefs.put(tableName, queryDef);
                 return queryDef;
             }
             container = container.getParent();
@@ -1172,7 +1197,16 @@ public class QueryServiceImpl extends QueryService
         queryDef = QueryManager.get().getQueryDef(ContainerManager.getSharedContainer(), schemaName, tableName, customQuery);
         if (queryDef != null && queryDef.getMetaData() != null)
         {
+            queryDefs.put(tableName, queryDef);
             return queryDef;
+        }
+
+        if (dir == null)
+        {
+            List<String> subDirs = new ArrayList<String>(schema.getSchemaPath().getParts().size() + 1);
+            subDirs.add(QueryService.MODULE_QUERIES_DIRECTORY);
+            subDirs.addAll(schema.getSchemaPath().getParts());
+            dir = new Path(subDirs.toArray(new String[subDirs.size()]));
         }
 
         // Finally, look for file-based definitions in modules
@@ -1218,12 +1252,14 @@ public class QueryServiceImpl extends QueryService
                     {
                         QueryDef result = metadataDef.toQueryDef(container);
                         result.setSchema(schemaName);
+                        queryDefs.put(tableName, result);
                         return result;
                     }
                 }
             }
         }
 
+        queryDefs.put(tableName, null);
         return null;
     }
 

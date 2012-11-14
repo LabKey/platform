@@ -130,6 +130,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
                 resp.put("viewDataUrl", viewDataUrl);
         }
 
+        Map<FieldKey, Map<String, Object>> columnMetadata;
+
         //if the caller asked us to chase a foreign key, do that.  Note that any call to get a lookup table can throw a
         // QueryParseException, so we wrap all FK accesses in a try/catch.
         try
@@ -176,7 +178,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             }
 
             //now the native columns plus any additional fields requested
-            resp.put("columns", JsonWriter.getNativeColProps(tinfo, fields, fk, false));
+            columnMetadata = JsonWriter.getNativeColProps(tinfo, fields, fk, false);
+            resp.put("columns", columnMetadata.values());
         }
         catch (QueryParseException e)
         {
@@ -200,7 +203,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             for (String viewName : viewNames)
             {
                 viewName = StringUtils.trimToNull(viewName);
-                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), viewName, true, form.isInitializeMissingView()));
+                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), viewName, true, form.isInitializeMissingView(), columnMetadata));
             }
 
             // Include information about where these views might be saved and if the user has permission

@@ -28,6 +28,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -43,7 +44,10 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
@@ -122,11 +126,17 @@ public abstract class BaseStudyTable extends FilteredTable
             {
                 return _schema.getTable(StudyService.get().getSubjectTableName(getContainer()));
             }
+
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                TableInfo table = getLookupTableInfo();
+                if (table == null)
+                    return null;
+                return LookupForeignKey.getDetailsURL(parent, table, _columnName);
+            }
         };
         lfk.addJoin(new FieldKey(null, "Container"), "Container", false);
         participantColumn.setFk(lfk);
-        if(lfk.getLookupTableInfo() != null)
-            participantColumn.setURL(LookupForeignKey.getDetailsURL(participantColumn, lfk.getLookupTableInfo(), subjectColName));
 
         // Don't setKeyField. Use addQueryFieldKeys where needed
 
