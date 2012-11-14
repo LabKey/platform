@@ -64,6 +64,7 @@ import org.labkey.api.module.SimpleAction;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
@@ -458,7 +459,7 @@ public class CoreController extends SpringActionController
         private Integer _propertyId;
         private Integer _objectId;
         private String _objectURI;
-        private String _schemaName;
+        private SchemaKey _schemaName;
         private String _queryName;
         private String _pk;
 
@@ -492,12 +493,12 @@ public class CoreController extends SpringActionController
             _objectURI = objectURI;
         }
 
-        public String getSchemaName()
+        public SchemaKey getSchemaName()
         {
             return _schemaName;
         }
 
-        public void setSchemaName(String schemaName)
+        public void setSchemaName(SchemaKey schemaName)
         {
             _schemaName = schemaName;
         }
