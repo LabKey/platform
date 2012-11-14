@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.json.JSONObject;
 import org.labkey.api.util.Pair;
 
 /**
@@ -43,5 +44,15 @@ public final class AjaxCompletion extends Pair<String, String>
     public String getInsertionText()
     {
         return getValue();
+    }
+
+    public JSONObject toJSON()
+    {
+        JSONObject json = new JSONObject();
+
+        json.put("name", getDisplayText());
+        json.put("value", getInsertionText());
+
+        return json;
     }
 }

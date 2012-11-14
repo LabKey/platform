@@ -2295,25 +2295,6 @@ public class PageFlowUtil
         }
     }
 
-
-    public static void sendAjaxCompletions(HttpServletResponse response, List<AjaxCompletion> completions) throws IOException
-    {
-        response.setContentType("text/xml");
-        response.setHeader("Cache-Control", "no-store");
-        Writer writer = response.getWriter();
-        writer.write("<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n");
-        writer.write("<completions>");
-        for (AjaxCompletion completion : completions)
-        {
-            writer.write("<completion>\n");
-            writer.write("    <display>" + filter(completion.getKey()) + "</display>");
-            writer.write("    <insert>" + filter(completion.getValue()) + "</insert>");
-            writer.write("</completion>\n");
-        }
-        writer.write("</completions>");
-    }
-
-
     /**
      * Returns a specified <code>UrlProvider</code> interface implementation, for use
      * in writing URLs implemented in other modules.

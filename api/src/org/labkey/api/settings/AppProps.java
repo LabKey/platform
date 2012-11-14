@@ -101,7 +101,6 @@ public class AppProps
     public static final String EXPERIMENTAL_CONTAINER_RELATIVE_URL = "containerRelativeURL";
     public static final String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     public static final String EXPERIMENTAL_RSERVE_REPORTING = "rserveReports";
-    public static final String EXPERIMENTAL_EMAIL_PERMISSION = "permissionToSeeEmailAddresses";
 
     // For Customisable web colour theme
     protected static final String WEB_THEME_CONFIG_NAME = "WebThemeConfig";

@@ -18,7 +18,6 @@ api/src/org/labkey/api/ProteinService.java -text
 api/src/org/labkey/api/ScrollableDataIterator.java -text
 api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
 api/src/org/labkey/api/action/AjaxAction.java -text
-api/src/org/labkey/api/action/AjaxCompletionAction.java -text
 api/src/org/labkey/api/action/ApiAction.java -text
 api/src/org/labkey/api/action/ApiBeanResponse.java -text
 api/src/org/labkey/api/action/ApiJsonWriter.java -text
@@ -527,6 +526,9 @@ api/src/org/labkey/api/jsp/JspContext.java -text
 api/src/org/labkey/api/jsp/JspLoader.java -text
 api/src/org/labkey/api/jsp/LabkeyJspFactory.java -text
 api/src/org/labkey/api/jsp/RecompilingJspClassLoader.java -text
+api/src/org/labkey/api/jsp/taglib/AutoCompleteTag.java -text
+api/src/org/labkey/api/jsp/taglib/AutoCompleteTextTag.java -text
+api/src/org/labkey/api/jsp/taglib/AutoCompleteTextareaTag.java -text
 api/src/org/labkey/api/jsp/taglib/ButtonTag.java -text
 api/src/org/labkey/api/jsp/taglib/CheckboxTag.java -text
 api/src/org/labkey/api/jsp/taglib/ClearAll.java -text
@@ -1280,7 +1282,6 @@ api/src/org/labkey/api/util/mime.txt -text
 api/src/org/labkey/api/view/AbstractView.java -text
 api/src/org/labkey/api/view/ActionWebPart.java -text
 api/src/org/labkey/api/view/AjaxCompletion.java -text
-api/src/org/labkey/api/view/AjaxCompletionView.java -text
 api/src/org/labkey/api/view/AjaxResponse.java -text
 api/src/org/labkey/api/view/AjaxXmlResponse.java -text
 api/src/org/labkey/api/view/AlwaysAvailableWebPartFactory.java -text

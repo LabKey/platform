@@ -63,7 +63,9 @@ import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -727,22 +729,37 @@ public class PublishResultsQueryView extends ResultsQueryView
                 String completionBase = getCompletionBase(ctx);
                 if (completionBase != null)
                 {
-                    if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
-                    {
-                        out.write("<script type=\"text/javascript\">LABKEY.requiresScript(\"completion.js\");</script>");
-                        ctx.put(RENDERED_REQUIRES_COMPLETION, true);
-                    }
-                    out.write("<input type=\"text\" name=\"" + _formElementName + "\"\n" +
-                            "value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\"\n" +
-                            "onKeyDown=\"return ctrlKeyCheck(event);\"\n" +
-                            "onBlur=\"hideCompletionDiv();\"\n" +
-                            "autocomplete=\"off\"\n");
-                    try
-                    {
-                        out.write("tabindex=\"" + ctx.getResultSet().getRow() + "\"\n");
+                    try {
+
+                        if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
+                        {
+                            out.write("<script type=\"text/javascript\">LABKEY.requiresExt4Sandbox(true);\nLABKEY.requiresScript(\"completion.js\");</script>");
+                            ctx.put(RENDERED_REQUIRES_COMPLETION, true);
+                        }
+                        String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+                        StringBuilder sb = new StringBuilder();
+
+                        sb.append("<script type=\"text/javascript\">");
+
+                        sb.append("Ext4.onReady(function(){\n" +
+                            "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
+                            "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
+                            "            completionUrl   : " + PageFlowUtil.jsString(completionBase) + ",\n" +
+                            "            tagConfig   : {\n" +
+                            "                tag     : 'input',\n" +
+                            "                type    : 'text',\n" +
+                            "                name    : " + PageFlowUtil.jsString(_formElementName) + ",\n" +
+                            "                tabindex: " + ctx.getResultSet().getRow() + ",\n" +
+                            "                autocomplete : 'off'\n" +
+                            "            }\n" +
+                            "        });\n" +
+                            "      });\n");
+                        sb.append("</script>\n");
+                        sb.append("<div id='").append(renderId).append("'></div>");
+
+                        out.write(sb.toString());
                     }
                     catch (SQLException e) {}
-                    out.write("onKeyUp=\"return handleChange(this, event, '" + completionBase + "');\">");
                 }
                 else
                 {

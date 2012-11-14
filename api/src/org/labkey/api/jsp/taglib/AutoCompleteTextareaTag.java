@@ -1,0 +1,61 @@
+package org.labkey.api.jsp.taglib;
+
+import org.labkey.api.util.PageFlowUtil;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: 11/12/12
+ */
+public class AutoCompleteTextareaTag extends AutoCompleteTag
+{
+    int _rows = 8;
+    int _cols = 60;
+
+    public int getRows()
+    {
+        return _rows;
+    }
+
+    public void setRows(int rows)
+    {
+        _rows = rows;
+    }
+
+    public int getCols()
+    {
+        return _cols;
+    }
+
+    public void setCols(int cols)
+    {
+        _cols = cols;
+    }
+
+    @Override
+    protected String getTagConfig()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(
+            "            tagConfig   : {\n" +
+            "                tag     : 'textarea',\n");
+        addOptionalAttrs(sb);
+        sb.append(
+            "                name    : " + PageFlowUtil.jsString(getName()) + ",\n" +
+            "                rows    : " + getRows() + ",\n" +
+            "                cols    : " + getCols() + ",\n" +
+            "                autocomplete : 'off'\n" +
+            "            }\n");
+
+        return sb.toString();
+    }
+
+    protected void addOptionalAttrs(StringBuilder sb)
+    {
+        super.addOptionalAttrs(sb);
+
+        if (getValue() != null)
+            sb.append("                html : ").append(PageFlowUtil.jsString(getValue())).append(",\n");
+    }
+}

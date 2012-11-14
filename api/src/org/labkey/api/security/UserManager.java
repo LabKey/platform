@@ -574,72 +574,83 @@ public class UserManager
     }
 
     // Get completions from list of all site users
-    public static List<AjaxCompletion> getAjaxCompletions(String prefix, User currentUser) throws SQLException
+    public static List<AjaxCompletion> getAjaxCompletions(User currentUser) throws SQLException
     {
-        return getAjaxCompletions(prefix, Collections.<Group>emptyList(), getActiveUsers(), currentUser);
+        return getAjaxCompletions(getActiveUsers(), currentUser, true, false);
     }
 
-    public static List<AjaxCompletion> getAjaxCompletions(String prefix, Collection<User> users, User currentUser)
+    public static List<AjaxCompletion> getAjaxCompletions(Collection<User> users, User currentUser)
     {
-        return getAjaxCompletions(prefix, Collections.<Group>emptyList(), users, currentUser);
+        return getAjaxCompletions(users, currentUser, true, false);
     }
 
-    // Get completions from specified list of groups and users
-    public static List<AjaxCompletion> getAjaxCompletions(String prefix, Collection<Group> groups, Collection<User> users, User currentUser)
+    /**
+     * Returns the ajax completion objects for the specified groups and users.
+     * @param showEmailAddresses true to display email addresses in the display values (for users)
+     * @param useDisplayNames true to use display names as the values (for users), else uses email addresses, this should only
+     *                        be used in the case where the controller action can parse users from display names.
+     */
+    public static List<AjaxCompletion> getAjaxCompletions(Collection<Group> groups, Collection<User> users, User currentUser,
+                                                          boolean showEmailAddresses, boolean useDisplayNames)
     {
         List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
 
-        if (prefix != null && prefix.length() != 0)
+        for (Group group : groups)
         {
-            String lowerPrefix = prefix.toLowerCase();
-
-            for (Group group : groups)
+            if (group.getName() != null)
             {
-                if (group.getName() != null && group.getName().toLowerCase().startsWith(lowerPrefix))
-                {
-                    String display = "<b>" + (group.getContainer() == null ? "Site: " : "") + group.getName() + "</b>"; 
-                    completions.add(new AjaxCompletion(display, group.getName()));
-                }
-            }
-
-            for (User user : users)
-            {
-                final String fullName = StringUtils.defaultString(user.getFirstName()) + " " + StringUtils.defaultString(user.getLastName());
-
-                if (fullName.toLowerCase().startsWith(lowerPrefix) ||
-                    user.getLastName() != null && user.getLastName().toLowerCase().startsWith(lowerPrefix))
-                {
-                    String display;
-                    if (user.getFirstName() != null || user.getLastName() != null)
-                    {
-                        StringBuilder builder = new StringBuilder();
-                        builder.append(StringUtils.trimToEmpty(user.getFirstName())).append(" ").
-                                append(StringUtils.trimToEmpty(user.getLastName()));
-                        builder.append(" (").append(user.getEmail()).append(")");
-                        display = builder.toString();
-                    }
-                    else
-                    {
-                        display = user.getEmail();
-                    }
-
-                    completions.add(new AjaxCompletion(PageFlowUtil.filter(display), user.getEmail()));
-                }
-                else if (user.getDisplayName(currentUser).compareToIgnoreCase(user.getEmail()) != 0 &&
-                        user.getDisplayName(currentUser).toLowerCase().startsWith(lowerPrefix))
-                {
-                    StringBuilder builder = new StringBuilder();
-                    builder.append(user.getDisplayName(currentUser)).append(" ");
-                    builder.append(" (").append(user.getEmail()).append(")");
-                    completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), user.getEmail()));
-                }
-                else if (user.getEmail() != null && user.getEmail().toLowerCase().startsWith(lowerPrefix))
-                {
-                    completions.add(new AjaxCompletion(user.getEmail(), user.getEmail()));
-                }
+                String display = (group.getContainer() == null ? "Site: " : "") + group.getName();
+                completions.add(new AjaxCompletion(display, group.getName()));
             }
         }
 
+        if (!users.isEmpty())
+            completions.addAll(getAjaxCompletions(users, currentUser, showEmailAddresses, useDisplayNames));
+        return completions;
+    }
+
+    /**
+     * Returns the ajax completion objects for the specified users.
+     * @param showEmailAddresses true to display email addresses in the display values
+     * @param useDisplayNames true to use display names as the values, else uses email addresses, this should only
+     *                        be used in the case where the controller action can parse users from display names.
+     */
+    public static List<AjaxCompletion> getAjaxCompletions(Collection<User> users, User currentUser,
+                                                          boolean showEmailAddresses, boolean useDisplayNames)
+    {
+        List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
+
+        for (User user : users)
+        {
+            final String fullName = StringUtils.defaultString(user.getFirstName()) + " " + StringUtils.defaultString(user.getLastName());
+            String email = useDisplayNames ? user.getDisplayName(currentUser) : user.getEmail();
+
+            if (fullName.trim().length() > 0)
+            {
+                StringBuilder builder = new StringBuilder();
+                builder.append(StringUtils.trimToEmpty(user.getFirstName())).append(" ").
+                        append(StringUtils.trimToEmpty(user.getLastName()));
+
+                if (showEmailAddresses)
+                    builder.append(" (").append(user.getEmail()).append(")");
+
+                completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), email));
+            }
+            else if (user.getDisplayName(currentUser).compareToIgnoreCase(user.getEmail()) != 0)
+            {
+                StringBuilder builder = new StringBuilder();
+                builder.append(user.getDisplayName(currentUser));
+
+                if (showEmailAddresses)
+                    builder.append(" (").append(user.getEmail()).append(")");
+
+                completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), email));
+            }
+            else if (user.getEmail() != null)
+            {
+                completions.add(new AjaxCompletion(email, email));
+            }
+        }
         return completions;
     }
 }

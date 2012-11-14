@@ -52,6 +52,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -2863,5 +2864,11 @@ public class SecurityManager
             default:
                 return group.getName();
         }
+    }
+
+    public static boolean canSeeEmailAddresses(Container c, User user)
+    {
+        return c.hasPermission(user, SeeUserEmailAddressesPermission.class) ||
+            ContainerManager.getRoot().hasPermission(user, SeeUserEmailAddressesPermission.class);
     }
 }
