@@ -2205,8 +2205,8 @@ query/src/org/labkey/query/reports/unknown.png -text
 query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
+query/src/org/labkey/query/reports/view/attachmentReport.jsp -text
 query/src/org/labkey/query/reports/view/configReportsAndScripts.jsp -text
-query/src/org/labkey/query/reports/view/createAttachmentReport.jsp -text
 query/src/org/labkey/query/reports/view/createQueryReport.jsp -text
 query/src/org/labkey/query/reports/view/linkReport.jsp -text
 query/src/org/labkey/query/reports/view/manageViews.jsp -text

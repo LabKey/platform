@@ -18,6 +18,7 @@ package org.labkey.query.reports;
 
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
@@ -27,9 +28,13 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
@@ -71,6 +76,18 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
     public String getType()
     {
         return TYPE;
+    }
+
+    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    {
+        // disallow a non admin user from editing a server AttachmentReport
+        if (StringUtils.isNotEmpty(getFilePath()) && !user.isAdministrator())
+        {
+            errors.add(new SimpleValidationError("You must be an administrator in order to edit this report."));
+            return false;
+        }
+
+        return super.canEdit(user, container, errors);
     }
 
     public String getTypeDescription()
@@ -137,15 +154,32 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
         return getDescriptor().getProperty(FILE_PATH);
     }
 
-    /*
-    UNDONE: The createAttachmentReport.jsp doesn't support editing yet.
     @Override
     public ActionURL getEditReportURL(ViewContext context)
     {
-        return ReportsController.getAttachmentReportURL(context.getContainer(), context.getActionURL()).
-            addParameter(ReportDescriptor.Prop.reportId, getReportId().toString());
+        ActionURL url = new ActionURL(ReportsController.UpdateAttachmentReportAction.class, context.getContainer());
+        url.addParameter("reportId", getReportId().toString());
+
+        // Total hack because Manage Views page calls this from an API action, but we want to return to
+        // the page URL. TODO: Report gathering APIs should take a page URL
+        String currentAction = context.getActionURL().getAction();
+
+        if ("manageViewsSummary".equals(currentAction))
+        {
+            String currentController = context.getActionURL().getController();
+            ActionURL returnURL = null;
+
+            if ("study-reports".equals(currentController))
+                returnURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageViewsURL(context.getContainer());
+            else if ("reports".equals(currentController))
+                returnURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer());
+
+            if (null != returnURL)
+                url.addReturnURL(returnURL);
+        }
+
+        return url;
     }
-    */
 
     enum Type
     {

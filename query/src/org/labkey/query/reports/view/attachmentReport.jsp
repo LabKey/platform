@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.DateUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
@@ -27,9 +28,19 @@
 </script>
 <%
     JspView<ReportsController.AttachmentReportForm> me = (JspView<ReportsController.AttachmentReportForm>) HttpView.currentView();
-    ReportsController.AttachmentReportForm bean = me.getModelBean();
+    ReportsController.AttachmentReportForm form = me.getModelBean();
+    boolean canUseDiskFile;
 
-    boolean canUseDiskFile = HttpView.currentContext().getUser().isAdministrator() && bean.getReportId() == null;
+    if (form.isUpdate())
+    {
+        canUseDiskFile = HttpView.currentContext().getUser().isAdministrator();
+    }
+    else
+    {
+        canUseDiskFile = HttpView.currentContext().getUser().isAdministrator() && form.getReportId() == null;
+    }
+
+    String action = (form.isUpdate() ? "update" : "create") + "attachmentReport";
 %>
 
 <table>
@@ -41,16 +52,62 @@
 
 <script type="text/javascript">
 
+    function selectFileUploadItem(fileUploadItems, attachmentType)
+    {
+        var item;
+
+        for (var i =0; i < fileUploadItems.length; i++)
+        {
+            item = fileUploadItems[i];
+            if (item.inputValue == attachmentType)
+            {
+                item.checked = true;
+                item.inputField.setVisible(true);
+                item.inputField.setDisabled(false);
+            }
+            else
+            {
+                // be sure to turn off the other items in the list
+                item.checked = false;
+                item.inputField.setVisible(false);
+                item.inputField.setDisabled(true);
+            }
+        }
+    }
+
     Ext4.onReady(function(){
 
-        var fileUploadField = Ext4.create('Ext.form.field.File', {
+        var fileUploadButton = Ext4.create('Ext.form.field.File', {
             name: 'uploadFile',
             id: 'uploadFile',
-            fieldLabel: "Choose a file",
-            allowBlank: false
+            buttonOnly : true,
+            buttonText: <%=q(form.isUpdate() ? "Edit..." : "Browse...")%>,
+            hideEmptyLabel: false,
+            listeners: {
+                scope: this,
+                change: function(field, fileName) {
+                    fileUploadTextField.setValue(fileName);
+                }
+            }
         });
 
         var extraItems;
+        var fileUploadTextField = Ext4.create('Ext.form.field.Text', {
+            name: "localFilePath",
+            fieldLabel: "Choose a file",
+            allowBlank: false,
+            readOnly: true,
+            listeners: {
+                scope: this,
+                enable: function (field) {
+                    fileUploadButton.setVisible(true);
+                },
+                disable: function (field) {
+                    // disable the fileUploadButton as well
+                    fileUploadButton.setVisible(false);
+                }
+            }
+        });
 
         <% if (canUseDiskFile) { %>
         var serverFileTextField = Ext4.create('Ext.form.field.Text', {
@@ -68,13 +125,13 @@
             items: [{
                 boxLabel: 'Upload file to server',
                 name: 'attachmentType',
-                inputValue: '<%=AttachmentReportForm.AttachmentReportType.local.toString()%>',
+                inputValue: <%=q(AttachmentReportForm.AttachmentReportType.local.toString())%>,
                 checked: true,
-                inputField: fileUploadField
+                inputField: fileUploadTextField
             },{
                 boxLabel: 'Full file path on server',
                 name: 'attachmentType',
-                inputValue: '<%=AttachmentReportForm.AttachmentReportType.server.toString()%>',
+                inputValue: <%=q(AttachmentReportForm.AttachmentReportType.server.toString())%>,
                 inputField: serverFileTextField
             }],
             listeners: {
@@ -94,19 +151,53 @@
             }
         };
 
-        extraItems = [ fileUploadRadioGroup, fileUploadField, serverFileTextField ];
+        extraItems = [ fileUploadRadioGroup, fileUploadTextField, fileUploadButton, serverFileTextField ];
         <% } else { %>
 
         var attachmentTypeField = {
             xtype:'hidden',
             name:'attachmentType',
-            value:'<%=AttachmentReportForm.AttachmentReportType.local.toString()%>'
+            value:<%=q(AttachmentReportForm.AttachmentReportType.local.toString())%>
         };
-        extraItems = [ attachmentTypeField, fileUploadField ];
+        extraItems = [ attachmentTypeField, fileUploadTextField, fileUploadButton ];
         <% } %>
 
+       <% if (form.isUpdate()) { %>
+            var attachmentType = <%=q(form.getAttachmentType().toString())%>;
+            var serverFilePath = <%=q(form.getFilePath())%>;
+            var uploadFileName = <%=q(form.getUploadFileName())%>;
+
+            // if the user is an admin then they can either upload a file from their local machine
+            // or reference a file that is on the server
+            <% if (canUseDiskFile) { %>
+                selectFileUploadItem(fileUploadRadioGroup.items, attachmentType);
+            <% } else { %>
+                fileUploadTextField.setVisible(true);
+                fileUploadTextField.setDisabled(false);
+            <% } %>
+
+            // now set the data.  If it is a server attachment type then set the serverFilePath
+            // outherwise just set the uploadFileName
+            if (attachmentType == <%=q(form.getAttachmentType().server.toString())%>) {
+                serverFileTextField.setValue(serverFilePath);
+            } else {
+                fileUploadTextField.setValue(uploadFileName);
+            }
+
+        extraItems.push({
+            xtype: "hidden",
+            name: "viewName",
+            value: <%=q(form.getViewName())%>
+        });
+        extraItems.push({
+            xtype: "hidden",
+            name: "reportId",
+            value: <%=q(form.getReportId().toString())%>
+        });
+    <% } %>
+
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
-            url : LABKEY.ActionURL.buildURL('reports', 'createAttachmentReport', null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
+            url : LABKEY.ActionURL.buildURL('reports',  <%=q(action)%>, null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
             standardSubmit  : true,
             bodyStyle       :'background-color: transparent;',
             bodyPadding     : 10,
@@ -126,6 +217,19 @@
                 description : true,
                 shared      : true
             },
+        <% if (form.isUpdate()) { %>
+            record : {
+                data : {
+                    name: <%=q(form.getViewName())%>,
+                    authorUserId: <%=form.getAuthor()%>,
+                    status: <%=q(form.getStatus().name())%>,
+                    refreshDate: <%=q(DateUtil.formatDate(form.getRefreshDate()))%>,
+                    category: <%=q(form.getCategory())%>,
+                    description: <%=q(form.getDescription())%>,
+                    shared: <%=form.getShared()%>
+                }
+            },
+        <% } %>
             extraItems : extraItems,
             renderTo    : 'attachmentReportForm',
             dockedItems: [{

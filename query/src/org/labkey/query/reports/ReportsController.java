@@ -33,6 +33,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
@@ -1222,7 +1223,8 @@ public class ReportsController extends SpringActionController
         public enum AttachmentReportType { local, server }
 
         private AttachmentReportType attachmentType;
-        private String filePath;
+        private String filePath; // only valid for AttachmentReportType.server
+        private String uploadFileName; // only valid for AttachmentReportType.local
 
         public AttachmentReportType getAttachmentType()
         {
@@ -1243,8 +1245,17 @@ public class ReportsController extends SpringActionController
         {
             this.filePath = filePath;
         }
-    }
 
+        public String getUploadFileName()
+        {
+            return uploadFileName;
+        }
+
+        public void setUploadFileName(String fileName)
+        {
+            this.uploadFileName = fileName;
+        }
+    }
 
     public static ActionURL getCreateAttachmentReportURL(Container c, ActionURL returnURL)
     {
@@ -1414,13 +1425,13 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class CreateAttachmentReportAction extends BaseReportAction<AttachmentReportForm, AttachmentReport>
+    public abstract class BaseAttachmentReportAction extends BaseReportAction<AttachmentReportForm, AttachmentReport>
     {
         @Override
         public ModelAndView getView(AttachmentReportForm form, boolean reshow, BindException errors) throws Exception
         {
             initialize(form);
-            return new JspView<AttachmentReportForm>("/org/labkey/query/reports/view/createAttachmentReport.jsp", form, errors);
+            return new JspView<AttachmentReportForm>("/org/labkey/query/reports/view/attachmentReport.jsp", form, errors);
         }
 
         @Override
@@ -1447,8 +1458,23 @@ public class ReportsController extends SpringActionController
             }
             else if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.local)
             {
-                if (0 == formFiles.length || formFiles[0].isEmpty())
-                    errors.reject("filePath", "You must specify a file");
+                // Require a file if we are creating a new report or if the report we are updating
+                // does not already have an attached file.  This could occur if the user updated
+                // the AttachmentReportType from server to local
+                boolean requireFile = true;
+
+                if (form.isUpdate())
+                {
+                    // if the form we are updating already has an attachment then it is okay not to submit one
+                    AttachmentReport report = (AttachmentReport) form.getReportId().getReport(getViewContext());
+                    requireFile = (null == report.getLatestVersion());
+                }
+
+                if (requireFile)
+                {
+                    if (0 == formFiles.length || formFiles[0].isEmpty())
+                        errors.reject("filePath", "You must specify a file");
+                }
             }
             else
             {
@@ -1466,18 +1492,31 @@ public class ReportsController extends SpringActionController
         @Override
         protected AttachmentReport initializeReportForSave(AttachmentReportForm form)
         {
-            AttachmentReport report = (AttachmentReport)ReportService.get().createReportInstance(AttachmentReport.TYPE);
+            AttachmentReport report = (AttachmentReport) (form.isUpdate() ? form.getReportId().getReport(getViewContext()) : ReportService.get().createReportInstance(AttachmentReport.TYPE));
 
-            if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.server)
+            if (getUser().isAdministrator())
             {
-                // Only site administrators can specify a path, #14445
-                if (getUser().isAdministrator())
+                // only an admin can create or update an attachment report with a server path
+                if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.server)
+                {
                     report.setFilePath(form.getFilePath());
+                }
+                else
+                {
+                    // an admin may edit an attachment report and change its type from server to local
+                    // for this case be sure to remove the file path before save
+                    report.setFilePath(null);
+                }
             }
 
             return report;
         }
 
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class CreateAttachmentReportAction extends BaseAttachmentReportAction
+    {
         @Override
         protected void afterReportSave(AttachmentReportForm form, AttachmentReport report) throws Exception
         {
@@ -1485,11 +1524,14 @@ public class ReportsController extends SpringActionController
             {
                 List<AttachmentFile> attachments = getAttachmentFileList();
                 if (attachments != null && attachments.size() > 0)
+                {
                     AttachmentService.get().addAttachments(report, attachments, getViewContext().getUser());
+                }
             }
 
             super.afterReportSave(form, report);
         }
+
 
         public NavTree appendNavTrail(NavTree root)
         {
@@ -1497,6 +1539,80 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(InsertPermission.class)
+    public class UpdateAttachmentReportAction extends BaseAttachmentReportAction
+    {
+
+        @Override
+        protected void initializeForm(AttachmentReportForm form, AttachmentReport report) throws Exception
+        {
+            super.initializeForm(form, report);
+            String filePath = report.getFilePath();
+
+            if (StringUtils.isNotEmpty(filePath))
+            {
+                form.setAttachmentType(AttachmentReportForm.AttachmentReportType.server);
+                form.setFilePath(filePath);
+            }
+            else
+            {
+                form.setAttachmentType(AttachmentReportForm.AttachmentReportType.local);
+                Attachment latest = report.getLatestVersion();
+                if (latest != null)
+                {
+                    form.setUploadFileName(latest.getName());
+                }
+                else
+                {
+                    // a report must have an attachment or server link somewhere
+                    throw new IllegalStateException();
+                }
+            }
+        }
+
+        @Override
+        protected void afterReportSave(AttachmentReportForm form, AttachmentReport report) throws Exception
+        {
+            //
+            // We need to deal with attachments because the following cases could occur on update
+            // 1) local -> server, remove existing attachments [admin only]
+            // 2) local -> local, remove existing attachments, add new ones
+            // 3) server -> local, no existing attachments, add new ones [admin only]
+            // 4) server -> server, no existing attachments, no new ones [admin only]
+            //
+            if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.local)
+            {
+                List<AttachmentFile> attachments = getAttachmentFileList();
+
+                //
+                // if the user has provided an attachment, then remove previous and add new
+                // otherwise, keep the existing attachment.  There is no way to "clear" an attchment.  An
+                // attachment report must either specify a local or server attachment.
+                //
+                if (attachments != null && attachments.size() > 0)
+                {
+                    // be sure to remove any existing local attachments
+                    AttachmentService.get().deleteAttachments(report);
+                    AttachmentService.get().addAttachments(report, attachments, getViewContext().getUser());
+                }
+            }
+            else
+            {
+                //
+                // updated attachment type is server so be sure to discard any attachments in case this
+                // attachment type was local previously
+                //
+                AttachmentService.get().deleteAttachments(report);
+            }
+
+            super.afterReportSave(form, report);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Update Attachment Report");
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class DownloadReportFileAction extends SimpleViewAction<AttachmentReportForm>
