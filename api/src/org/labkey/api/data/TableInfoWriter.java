@@ -143,20 +143,23 @@ public class TableInfoWriter
 
         if (null != fk && null != fk.getLookupColumnName())
         {
-            ColumnType.Fk fkXml = columnXml.addNewFk();
-
-            Container fkContainer = fk.getLookupContainer();
-
-            // Null means current container... which means don't set anything in the XML
-            if (null != fkContainer)
-            {
-                fkXml.setFkFolderPath(fkContainer.getPath());
-            }
-
             TableInfo tinfo = fk.getLookupTableInfo();
-            fkXml.setFkDbSchema(tinfo.getPublicSchemaName());
-            fkXml.setFkTable(tinfo.getPublicName());
-            fkXml.setFkColumnName(fk.getLookupColumnName());
+            if (tinfo != null)
+            {
+                ColumnType.Fk fkXml = columnXml.addNewFk();
+
+                Container fkContainer = fk.getLookupContainer();
+
+                // Null means current container... which means don't set anything in the XML
+                if (null != fkContainer)
+                {
+                    fkXml.setFkFolderPath(fkContainer.getPath());
+                }
+
+                fkXml.setFkDbSchema(tinfo.getPublicSchemaName());
+                fkXml.setFkTable(tinfo.getPublicName());
+                fkXml.setFkColumnName(fk.getLookupColumnName());
+            }
         }
 
         // TODO: Field validators?
