@@ -188,7 +188,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
 
             // Proper ConceptURI support is not implemented, but we use the 'VisitDate' concept in this isolated spot
             // as a marker to indicate which dataset column should be tagged as the visit date column during import:
-            if (column.getName().equals(_def.getVisitDateColumnName()))
+            if (column.getName().equalsIgnoreCase(_def.getVisitDateColumnName()))
                 return DataSetDefinition.getVisitDateURI();
             return null;
         }
