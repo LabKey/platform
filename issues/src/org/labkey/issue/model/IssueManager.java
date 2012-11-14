@@ -333,7 +333,7 @@ public class IssueManager
         Collection<User> initialAssignedTo = getInitialAssignedToList(c);
 
         // If this is an existing issue, add the user who opened the issue, unless they are a guest, or already in the list.
-        if (issue != null && 0 != issue.getIssueId())
+        if (initialAssignedTo != null && issue != null && 0 != issue.getIssueId())
         {
             User createdByUser = UserManager.getUser(issue.getCreatedBy());
 
@@ -367,11 +367,15 @@ public class IssueManager
 
                 if (null != group)
                 {
-                    initialAssignedTo.addAll(SecurityManager.getAllGroupMembers(group, MemberType.USERS));
+                    Set<User> groupMembers = SecurityManager.getAllGroupMembers(group, MemberType.USERS);
+                    if (groupMembers != null && groupMembers.size() > 0)
+                        initialAssignedTo.addAll(groupMembers);
                 }
                 else
                 {
-                    initialAssignedTo.addAll(SecurityManager.getProjectUsers(c.getProject()));
+                    List<User> projectUsers = SecurityManager.getProjectUsers(c.getProject());
+                    if(projectUsers != null && projectUsers.size() > 0)
+                        initialAssignedTo.addAll(projectUsers);
                 }
 
                 Iterator it = initialAssignedTo.iterator();
