@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
@@ -387,7 +388,8 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public Set<String> getColumnNameSet()
     {
-        return Collections.unmodifiableSet(_columnMap.keySet());
+        // Make the set case-insensitive
+        return Collections.unmodifiableSet(new CaseInsensitiveTreeSet(_columnMap.keySet()));
     }
 
     public String getName()

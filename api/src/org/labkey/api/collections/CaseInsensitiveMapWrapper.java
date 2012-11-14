@@ -97,12 +97,4 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
             put(entry.getKey(), entry.getValue());
         }
     }
-
-    @Override
-    public Set<String> keySet()
-    {
-        // We want our key set to the case insensitive too. Use the TreeSet implementation because it retains
-        // the original casing
-        return new CaseInsensitiveTreeSet(super.keySet());
-    }
 }

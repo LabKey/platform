@@ -15,6 +15,9 @@
  */
 package org.labkey.api.collections;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,5 +52,24 @@ public class Sets
         Set<String> set = newCaseInsensitiveHashSet(col.size());
         set.addAll(col);
         return set;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testSet()
+        {
+            Set<String> set = Sets.newCaseInsensitiveHashSet("test1", "test2");
+            assertTrue(set.contains("test1"));
+            assertTrue(set.contains("test2"));
+            assertTrue(set.contains("TEST1"));
+            assertTrue(set.contains("TEST2"));
+            assertFalse(set.contains("TEST2a"));
+            assertFalse(set.contains("test3"));
+
+            set.addAll(Sets.newCaseInsensitiveHashSet("test3"));
+            assertTrue(set.contains("test3"));
+            assertTrue(set.contains("TEST3"));
+        }
     }
 }

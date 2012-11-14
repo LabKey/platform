@@ -118,7 +118,7 @@ public class StorageProvisioner
                 {
                     // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                     // name as a built-in column. e.g. to allow setting overrides?
-                    log.info("StorageProvisioner ignored property with name of build-in column: " + property.getPropertyURI());
+                    log.info("StorageProvisioner ignored property with name of built-in column: " + property.getPropertyURI());
                     continue;
                 }
 
