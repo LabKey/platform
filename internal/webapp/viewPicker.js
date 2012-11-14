@@ -201,7 +201,7 @@ function populateColumns(columnCombo, details)
 
 function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema)
 {
-    var records = [["[current folder]", ""]];
+    var records = [["[current project]", ""]];
 
     var folders = details.containers;
     if (folders && folders.length > 0)
