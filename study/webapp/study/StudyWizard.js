@@ -1386,7 +1386,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var createForm = new Ext.form.BasicForm(this.nameFormPanel.getForm().getEl(), {
             method : 'POST',
-            url    : LABKEY.ActionURL.buildURL('study', 'createAncillaryStudy'),
+            url    : LABKEY.ActionURL.buildURL('study', 'createChildStudy'),
             fileUpload : true
         });
 

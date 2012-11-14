@@ -16,12 +16,11 @@
 package org.labkey.study.model;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Aug 25, 2011
  * Time: 3:51:31 PM
  */
-public class EmphasisStudyDefinition
+public class ChildStudyDefinition
 {
     private String _name;
     private String _description;
@@ -42,6 +41,9 @@ public class EmphasisStudyDefinition
     private int[] _groups = new int[0];
     private boolean _copyParticipantGroups;
     private boolean _publish;
+
+    private Integer _requestId;  // RowId of a specimen request
+    private Specimen[] _specimens = null;
 
     public String getName()
     {
@@ -207,5 +209,25 @@ public class EmphasisStudyDefinition
     public void setSpecimenRefresh(boolean specimenRefresh)
     {
         _specimenRefresh = specimenRefresh;
+    }
+
+    public Integer getRequestId()
+    {
+        return _requestId;
+    }
+
+    public void setRequestId(Integer requestId)
+    {
+        _requestId = requestId;
+    }
+
+    public Specimen[] getSpecimens()
+    {
+        return _specimens;
+    }
+
+    public void setSpecimens(Specimen[] specimens)
+    {
+        _specimens = specimens;
     }
 }

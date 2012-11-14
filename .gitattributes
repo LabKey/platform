@@ -2910,7 +2910,7 @@ study/src/org/labkey/study/assay/view/runDetails.jsp -text
 study/src/org/labkey/study/assay/view/tsvDataDescription.jsp -text
 study/src/org/labkey/study/controllers/BaseStudyController.java -text
 study/src/org/labkey/study/controllers/CohortController.java -text
-study/src/org/labkey/study/controllers/CreateAncillaryStudyAction.java -text
+study/src/org/labkey/study/controllers/CreateChildStudyAction.java -text
 study/src/org/labkey/study/controllers/DatasetController.java -text
 study/src/org/labkey/study/controllers/DatasetImportServiceImpl.java -text
 study/src/org/labkey/study/controllers/DatasetServiceImpl.java -text
@@ -2957,6 +2957,7 @@ study/src/org/labkey/study/designer/view/StudyDesignsWebPart.java -text
 study/src/org/labkey/study/designer/view/studyDesignSummary.jsp -text
 study/src/org/labkey/study/importer/AbstractStudyPiplineJob.java -text
 study/src/org/labkey/study/importer/CohortImporter.java -text
+study/src/org/labkey/study/importer/CreateChildStudyPipelineJob.java -text
 study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
 study/src/org/labkey/study/importer/DatasetCohortAssigner.java -text
 study/src/org/labkey/study/importer/DatasetImportUtils.java -text
@@ -2968,7 +2969,6 @@ study/src/org/labkey/study/importer/ParticipantCommentImporter.java -text
 study/src/org/labkey/study/importer/ParticipantGroupImporter.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
 study/src/org/labkey/study/importer/ProtocolDocumentImporter.java -text
-study/src/org/labkey/study/importer/PublishStudyPipelineJob.java -text
 study/src/org/labkey/study/importer/QcStatesImporter.java -text
 study/src/org/labkey/study/importer/RequestabilityManager.java -text
 study/src/org/labkey/study/importer/SchemaReader.java -text
@@ -2997,6 +2997,7 @@ study/src/org/labkey/study/model/AbstractStudyCachable.java -text
 study/src/org/labkey/study/model/AbstractStudyEntity.java -text
 study/src/org/labkey/study/model/AdditiveType.java -text
 study/src/org/labkey/study/model/BaseStudyDomainKind.java -text
+study/src/org/labkey/study/model/ChildStudyDefinition.java -text
 study/src/org/labkey/study/model/CohortDomainKind.java -text
 study/src/org/labkey/study/model/CohortImpl.java -text
 study/src/org/labkey/study/model/CohortManager.java -text
@@ -3008,7 +3009,6 @@ study/src/org/labkey/study/model/DatasetImportHelper.java -text
 study/src/org/labkey/study/model/DatasetReorderer.java -text
 study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
-study/src/org/labkey/study/model/EmphasisStudyDefinition.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/Participant.java -text
 study/src/org/labkey/study/model/ParticipantCategoryImpl.java -text

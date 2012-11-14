@@ -59,6 +59,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -94,6 +95,7 @@ import org.labkey.study.assay.TsvDataHandler;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.CohortController;
+import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.StudyController;
@@ -408,6 +410,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             Logger.getLogger(StudyModule.class).error("Error cleanup orphaned domains", sql);
         }
+
+        AdminConsole.addExperimentalFeatureFlag(CreateChildStudyAction.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
+            "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
     }
 
 

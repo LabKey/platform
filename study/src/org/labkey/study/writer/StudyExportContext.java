@@ -21,8 +21,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.ParticipantMapper;
+import org.labkey.study.model.Specimen;
 import org.labkey.study.model.StudyImpl;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -45,6 +45,7 @@ public class StudyExportContext extends AbstractContext
     private final ParticipantMapper _participantMapper;
     private Set<Integer> _visitIds = null;
     private List<String> _participants = new ArrayList<String>();
+    private List<Specimen> _specimens = null;
 
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, LoggerGetter logger)
     {
@@ -157,5 +158,15 @@ public class StudyExportContext extends AbstractContext
     public void setParticipants(List<String> participants)
     {
         _participants = participants;
+    }
+
+    public List<Specimen> getSpecimens()
+    {
+        return _specimens;
+    }
+
+    public void setSpecimens(List<Specimen> specimens)
+    {
+        _specimens = specimens;
     }
 }

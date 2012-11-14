@@ -36,6 +36,8 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
@@ -336,7 +338,13 @@
                 <%= importVialIdsButton %>
 <%
             }
+
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(CreateChildStudyAction.CREATE_SPECIMEN_STUDY))
+            {
 %>              <%=generateButton("Create Study", "javascript:void(0)", "showNewStudyWizard()")%>
+<%
+            }
+%>
                 <%= generateButton("Cancel Request", buildURL(SpecimenController.DeleteRequestAction.class, "id=" + bean.getSampleRequest().getRowId()),
                         "return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")%>
 <%

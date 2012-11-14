@@ -23,6 +23,7 @@ import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
+import org.labkey.study.model.Specimen;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -30,6 +31,7 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -151,6 +153,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             sql.append(convertListToString(new ArrayList<Integer>(ctx.getVisitIds()), false));
             sql.append(")");
         }
+
         if (!ctx.getParticipants().isEmpty())
         {
             if (ctx.isAlternateIds())
@@ -159,6 +162,19 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 sql.append("\n AND se.Ptid IN (");
 
             sql.append(convertListToString(ctx.getParticipants(), true));
+            sql.append(")");
+        }
+
+        if (!ctx.getSpecimens().isEmpty())
+        {
+            List<Specimen> specimens = ctx.getSpecimens();
+            List<String> uniqueIds = new LinkedList<String>();
+
+            for (Specimen specimen : specimens)
+                uniqueIds.add(specimen.getGlobalUniqueId());
+
+            sql.append("\n AND s.GlobalUniqueId IN (");
+            sql.append(convertListToString(uniqueIds, true));
             sql.append(")");
         }
 

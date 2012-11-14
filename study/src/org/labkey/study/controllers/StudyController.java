@@ -100,7 +100,6 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -158,7 +157,7 @@ public class StudyController extends BaseStudyController
     public static final String DATASET_VIEW_NAME_PARAMETER_NAME = "Dataset.viewName";
     private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
             StudyController.class,
-            CreateAncillaryStudyAction.class);
+            CreateChildStudyAction.class);
 
     public static class StudyUrlsImpl implements StudyUrls
     {

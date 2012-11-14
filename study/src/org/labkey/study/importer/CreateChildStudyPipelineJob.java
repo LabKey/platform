@@ -43,11 +43,12 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.EmphasisStudyDefinition;
+import org.labkey.study.model.ChildStudyDefinition;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.ParticipantMapper;
+import org.labkey.study.model.Specimen;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
@@ -69,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -77,9 +79,9 @@ import java.util.Set;
 * Date: 9/27/12
 * Time: 9:52 PM
 */
-public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
+public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 {
-    private EmphasisStudyDefinition _form;
+    private ChildStudyDefinition _form;
     private boolean _destFolderCreated;
 
     private transient Set<DataSetDefinition> _datasets = new HashSet<DataSetDefinition>();
@@ -90,7 +92,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
     private static final String CUSTOM_VIEWS_TYPE = "Custom Views";
     private static final String SPECIMEN_WRITER_TYPE = "Specimens"; // TODO: use SpecimenWriterArchive.SELECTION_TEXT
 
-    public PublishStudyPipelineJob(ViewContext context, PipeRoot root, EmphasisStudyDefinition form, boolean destFolderCreated)
+    public CreateChildStudyPipelineJob(ViewContext context, PipeRoot root, ChildStudyDefinition form, boolean destFolderCreated)
     {
         super(context.getContainer(), context.getUser(), context.getActionURL(), root);
 
@@ -215,8 +217,15 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
 
                 if (selectedVisits != null)
                     studyCtx.setVisitIds(selectedVisits);
+
+                // TODO: Need handlers for each "create study" type (ancillary, publish, specimen)
                 if (!_participantGroups.isEmpty())
                     studyCtx.setParticipants(getGroupParticipants(_form, studyCtx));
+                else if (null != _form.getSpecimens())
+                {
+                    studyCtx.setParticipants(getRequestParticipants(_form));
+                    studyCtx.setSpecimens(Arrays.asList(_form.getSpecimens()));
+                }
 
                 ctx.addContext(StudyExportContext.class, studyCtx);
 
@@ -293,7 +302,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
         return _sourceStudy;
     }
 
-    private Set<String> getDataTypesToExport(EmphasisStudyDefinition form)
+    private Set<String> getDataTypesToExport(ChildStudyDefinition form)
     {
         Set<String> dataTypes = new HashSet<String>();
         dataTypes.add(StudyWriterFactory.DATA_TYPE);
@@ -371,7 +380,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
         importer.process(null, folderImportContext, vf);
     }
 
-    private void importDatasetData(ViewContext context, EmphasisStudyDefinition form, StudyImpl destStudy, VirtualFile vf, BindException errors) throws Exception
+    private void importDatasetData(ViewContext context, ChildStudyDefinition form, StudyImpl destStudy, VirtualFile vf, BindException errors) throws Exception
     {
         User user = getUser();
 
@@ -448,7 +457,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
         }
     }
 
-    private void exportParticipantGroups(EmphasisStudyDefinition form, FolderExportContext ctx, VirtualFile vf) throws Exception
+    private void exportParticipantGroups(ChildStudyDefinition form, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         List<ParticipantGroup> groupsToCopy = new ArrayList<ParticipantGroup>();
         if (form.isCopyParticipantGroups())
@@ -468,7 +477,7 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
         }
     }
 
-    private List<String> getGroupParticipants(EmphasisStudyDefinition form, StudyExportContext ctx)
+    private List<String> getGroupParticipants(ChildStudyDefinition form, StudyExportContext ctx)
     {
         if (!_participantGroups.isEmpty())
         {
@@ -509,6 +518,16 @@ public class PublishStudyPipelineJob extends AbstractStudyPiplineJob
                 return (List<String>)selector.getCollection(String.class);
         }
         return Collections.emptyList();
+    }
+
+    private List<String> getRequestParticipants(ChildStudyDefinition form)
+    {
+        Set<String> ptids = new HashSet<String>();
+
+        for (Specimen specimen : form.getSpecimens())
+            ptids.add(specimen.getPtid());
+
+        return new LinkedList<String>(ptids);
     }
 
     /**

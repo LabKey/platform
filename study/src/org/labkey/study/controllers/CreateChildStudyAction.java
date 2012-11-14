@@ -31,10 +31,13 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.SampleManager;
 import org.labkey.study.StudyFolderType;
-import org.labkey.study.importer.PublishStudyPipelineJob;
-import org.labkey.study.model.EmphasisStudyDefinition;
+import org.labkey.study.importer.CreateChildStudyPipelineJob;
+import org.labkey.study.model.ChildStudyDefinition;
+import org.labkey.study.model.SampleRequest;
 import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.Specimen;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
@@ -49,21 +52,25 @@ import java.util.List;
  * Date: Sep 1, 2011
  * Time: 9:39:49 AM
  */
+
+// Used to create ancillary studies, study snapshots, and specimen-based studies
 @RequiresPermissionClass(AdminPermission.class)
-public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyDefinition>
+public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefinition>
 {
+    public static final String CREATE_SPECIMEN_STUDY = "CreateSpecimenStudy";
+
     private Container _dstContainer;
     private StudyImpl _sourceStudy;
     private boolean _destFolderCreated;
 
-    public CreateAncillaryStudyAction()
+    public CreateChildStudyAction()
     {
         super();
         setContentTypeOverride("text/html");
     }
 
     @Override
-    public ApiResponse execute(EmphasisStudyDefinition form, BindException errors) throws Exception
+    public ApiResponse execute(ChildStudyDefinition form, BindException errors) throws Exception
     {
         ApiSimpleResponse resp = new ApiSimpleResponse();
         StudyImpl newStudy = createNewStudy(form);
@@ -75,7 +82,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
             // run the remainder of the study creation as a pipeline job
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
-            PublishStudyPipelineJob job = new PublishStudyPipelineJob(getViewContext(), root, form, _destFolderCreated);
+            CreateChildStudyPipelineJob job = new CreateChildStudyPipelineJob(getViewContext(), root, form, _destFolderCreated);
             PipelineService.get().getPipelineQueue().addJob(job);
 
             String redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getViewContext().getContainer()).getLocalURIString();
@@ -90,7 +97,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     }
 
     @Override
-    public void validateForm(EmphasisStudyDefinition form, Errors errors)
+    public void validateForm(ChildStudyDefinition form, Errors errors)
     {
         Container c = ContainerManager.getForPath(form.getDstPath());
         _destFolderCreated = c == null;
@@ -130,9 +137,31 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             }
             throw new IllegalArgumentException(sb.toString());
         }
+
+        if (null != form.getRequestId())
+        {
+            // TODO: Hack! We want specimen studies to be published for now... wizard should post this
+            form.setPublish(true);
+            form.setIncludeSpecimens(true);
+            SampleRequest request = SampleManager.getInstance().getRequest(sourceContainer, form.getRequestId());
+
+            if (null == request)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Unable to locate specimen request with id " + form.getRequestId());
+            }
+            else
+            {
+                Specimen[] specimens = request.getSpecimens();
+
+                if (0 == specimens.length)
+                    errors.reject(SpringActionController.ERROR_MSG, "Specimen request is empty");
+                else
+                    form.setSpecimens(specimens);
+            }
+        }
     }
 
-    private StudyImpl createNewStudy(EmphasisStudyDefinition form) throws SQLException
+    private StudyImpl createNewStudy(ChildStudyDefinition form) throws SQLException
     {
         StudyImpl study = new StudyImpl(_dstContainer, form.getName());
 
