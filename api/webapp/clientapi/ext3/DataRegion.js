@@ -3056,7 +3056,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 }
 
                 if(this.filterType == 'include'){
-                    if('notin' == pair.operator){
+                    if ('notin' == pair.operator || 'neqornull' == pair.operator) {
                         filter = filter.getOpposite();
                         pair.value = this.getInverse(this.getLookupStore(), pair.value);
                     }
@@ -3228,8 +3228,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 },
                 viewready: function(grid){
                     var rows = grid.getSelectionModel().getSelections();
-                    if(rows && rows.length)
-                    grid.getSelectionModel().selectRecords(rows);
+                    if (rows && rows.length > 0)
+                        grid.getSelectionModel().selectRecords(rows);
                 }
             },
             //this is a hack to extend toggle behavior to the header cell, not just the checkbox next to it
