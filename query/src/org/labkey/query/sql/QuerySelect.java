@@ -1219,7 +1219,7 @@ groupByLoop:
 
 
         // FROM first, call getSql() on children first
-        SqlBuilder fromSql = new SqlBuilder(dialect);
+        SqlBuilder fromSql = new SqlBuilder(getDbSchema());
         fromSql.pushPrefix("\nFROM ");
         for (QJoinOrTable qt : _parsedJoins)
         {
