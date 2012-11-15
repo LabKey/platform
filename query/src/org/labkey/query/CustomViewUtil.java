@@ -312,7 +312,8 @@ public class CustomViewUtil
                         columnMetadata.put(field, metadata);
                     }
                 }
-                allColMaps.add(metadata);
+                if (metadata != null)
+                    allColMaps.add(metadata);
             }
             // property name "fields" matches LABKEY.Query.ExtendedSelectRowsResults (ie, metaData.fields)
             ret.put("fields", allColMaps);
