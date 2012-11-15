@@ -1301,25 +1301,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.pageOptions[5].value = this.selectedViews;
         this.pageOptions[6].value = this.selectedReports;
 
-
-//        for(var outer = 3; outer < 7; outer++){
-//            console.log(this.pageOptions[outer].panelType + " : " + this.pageOptions[outer].active);
-//            if(this.pageOptions[outer].active == true){
-//                console.log("Processing");
-//                for(var inner = 0; inner < this.pageOptions[outer].value.length; inner++){
-//                    var item = this.pageOptions[outer].value[inner];
-//                    id = Ext.id();
-//                    hiddenFields.push(id);
-//                    console.log(item.data);
-//                    if(this.pageOptions[outer].name == 'visits')
-//                        this.nameFormPanel.add({xtype : 'hidden', id : id, name : this.pageOptions[outer].panelType, value : item.data.RowId});
-//                    else
-//                        this.nameFormPanel.add({xtype : 'hidden', id : id, name : this.pageOptions[outer].panelType, value : item.data.id});
-//
-//                }
-//            }
-//        }
-
         if(this.pageOptions[8].active){
             id = Ext.id();
             hiddenFields.push(id);

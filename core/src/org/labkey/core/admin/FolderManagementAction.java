@@ -53,6 +53,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -297,6 +298,9 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private boolean handleImportPost(FolderManagementForm form, BindException errors) throws Exception
     {
+        if(form.origin == null){
+            form.setOrigin("Folder");
+        }
         Container container = getContainer();
         if (container.isRoot())
         {
@@ -329,16 +333,25 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 {
                     errors.reject("folderImport", "You must select a .folder.zip file to import.");
                 }
-                else if (!file.getOriginalFilename().endsWith(".folder.zip"))
+                else if (!file.getOriginalFilename().endsWith(".zip"))
                 {
                     errors.reject("folderImport", "You must select a .folder.zip file to import.");
                 }
                 else
                 {
-                    InputStream is = file.getInputStream();
-                    File zipFile = File.createTempFile("folder", ".zip");
-                    FileUtil.copyData(is, zipFile);
-                    PipelineService.get().importFolder(getViewContext(), errors, zipFile, file.getOriginalFilename());
+                    if(form.origin.equals("Study") || form.origin.equals("Reload")){
+                       InputStream is = file.getInputStream();
+
+                       File zipFile = File.createTempFile("study", ".zip");
+                       FileUtil.copyData(is, zipFile);
+                       StudyService.get().importStudy(getViewContext(), errors, zipFile, file.getOriginalFilename());
+                    }
+                    else {
+                       InputStream is = file.getInputStream();
+                       File zipFile = File.createTempFile("folder", ".zip");
+                       FileUtil.copyData(is, zipFile);
+                       PipelineService.get().importFolder(getViewContext(), errors, zipFile, file.getOriginalFilename());
+                    }
                 }
             }
         }
@@ -385,6 +398,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private String folderType;
         private boolean wizard;
         private String tabId;
+        private String origin;
 
         // missing value settings
         private boolean inheritMvIndicators;
@@ -453,6 +467,14 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public String getTabId()
         {
             return tabId;
+        }
+
+        public void setOrigin(String origin){
+            this.origin = origin;
+        }
+
+        public String getOrigin(){
+            return origin;
         }
 
         public boolean isFolderTreeTab()

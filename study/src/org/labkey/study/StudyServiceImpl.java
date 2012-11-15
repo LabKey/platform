@@ -45,6 +45,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
@@ -52,7 +53,9 @@ import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
+import org.springframework.validation.BindException;
 
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -774,5 +777,11 @@ public class StudyServiceImpl implements StudyService.Service
     public Study[] getAllStudies(Container root, User user)
     {
         return StudyManager.getInstance().getAllStudies(root, user);
+    }
+
+    @Override
+    public boolean importStudy(ViewContext context, BindException errors, File studyFile, String originalFilename) throws Exception
+    {
+        return StudyController.importStudy(context, errors, studyFile, originalFilename);
     }
 }

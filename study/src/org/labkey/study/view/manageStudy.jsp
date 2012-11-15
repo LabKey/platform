@@ -309,7 +309,7 @@
         exportURL.addParameter("exportType", "study");
 %>
 <%=generateButton("Export Study", exportURL)%>
-<%=generateButton("Reload Study", StudyController.ImportStudyAction.class)%>
+<%=generateButton("Reload Study", urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload"))%>
 <%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
 <%=generateButton("Create Ancillary Study", "javascript:void(0)", "showNewStudyWizard()")%>
 <%=generateButton("Publish Study", "javascript:void(0)", "showPublishStudyWizard()")%>

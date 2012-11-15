@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.view.StudySummaryWebPartFactory" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudySummaryWebPartFactory.StudySummaryBean> me = (JspView<StudySummaryWebPartFactory.StudySummaryBean>) HttpView.currentView();
@@ -47,8 +48,7 @@
 
             if (PipelineService.get().hasValidPipelineRoot(c))
             {
-                ActionURL importStudyURL = new ActionURL(StudyController.ImportStudyAction.class, c);
-                out.println(generateButton("Import Study", importStudyURL));
+                out.println(generateButton("Import Study", urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Study")));
             }
             else if (PipelineService.get().canModifyPipelineRoot(user, c))
             {

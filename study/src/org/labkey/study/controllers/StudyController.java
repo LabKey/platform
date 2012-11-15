@@ -4070,7 +4070,7 @@ public class StudyController extends BaseStudyController
 
                     File zipFile = File.createTempFile("study", ".zip");
                     FileUtil.copyData(is, zipFile);
-                    importStudy(errors, zipFile, file.getOriginalFilename());
+                    importStudy(getViewContext(), errors, zipFile, file.getOriginalFilename());
                 }
             }
 
@@ -4101,7 +4101,7 @@ public class StudyController extends BaseStudyController
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             BindException errors = new NullSafeBindException(c, "import");
 
-            boolean success = importStudy(errors, studyFile, studyFile.getName());
+            boolean success = importStudy(getViewContext(), errors, studyFile, studyFile.getName());
 
             if (success && !errors.hasErrors())
             {
@@ -4130,9 +4130,9 @@ public class StudyController extends BaseStudyController
     }
 
 
-    public boolean importStudy(BindException errors, File studyFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException, InvalidFileException
+    public static boolean importStudy(ViewContext context, BindException errors, File studyFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException, InvalidFileException
     {
-        Container c = getContainer();
+        Container c = context.getContainer();
         PipeRoot pipelineRoot = StudyReload.getPipelineRoot(c);
 
         File studyXml;
@@ -4190,8 +4190,8 @@ public class StudyController extends BaseStudyController
             studyXml = studyFile;
         }
 
-        User user = getUser();
-        ActionURL url = getViewContext().getActionURL();
+        User user = context.getUser();
+        ActionURL url = context.getActionURL();
         try
         {
             PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot));
