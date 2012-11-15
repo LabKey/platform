@@ -836,7 +836,15 @@ public class ReportsController extends SpringActionController
             if (null == _report)
                 return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to create report.</span>");
 
-            HttpView ret = _report.getRunReportView(getViewContext());
+            HttpView ret = null;
+            try
+            {
+                ret = _report.getRunReportView(getViewContext());
+            }
+            catch (RuntimeException e)
+            {
+                return new HtmlView("<span class=\"labkey-error\">" + e.getMessage() + ". Unable to create report.</span>");
+            }
 
             if (!isPrint() && !(ret instanceof HttpRedirectView))
             {
