@@ -72,6 +72,7 @@ public interface DataViewProvider
         // a list of standard properties
         enum Property {
             name,
+            viewName,
             description,
             visible,
             shared,
