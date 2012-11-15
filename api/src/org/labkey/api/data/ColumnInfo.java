@@ -1489,7 +1489,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             int type = d.sqlTypeIntFromSqlTypeName(getSqlTypeName());
             jdbcType = JdbcType.valueOf(type);
         }
-        return jdbcType;
+        return jdbcType == null ? JdbcType.OTHER : jdbcType;
     }
 
 
