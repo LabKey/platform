@@ -1729,7 +1729,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         {
             var chartSeries = seriesList[i];
 
-            var chartSeriesName = chartSeries.name;
+            var chartSeriesName = chartSeries.label;
             if (useUniqueSeriesNames)
             {
                 if (chartSeries.aliasLookupInfo.pivotValue)
@@ -1954,6 +1954,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         schemaName: md.dimension.schemaName,
                         queryName: md.dimension.queryName,
                         name: val,
+                        label: val,
                         measureIndex: i,
                         yAxisSide: md.measure.yAxis,
                         aliasLookupInfo: {measureName: md.measure.name, pivotValue: val}
@@ -1965,6 +1966,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     schemaName: md.measure.schemaName,
                     queryName: md.measure.queryName,
                     name: md.measure.name,
+                    label: md.measure.label,
                     measureIndex: i,
                     yAxisSide: md.measure.yAxis,
                     aliasLookupInfo: md.measure.alias ? {alias: md.measure.alias} : {measureName: md.measure.name}
