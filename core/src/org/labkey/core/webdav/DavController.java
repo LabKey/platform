@@ -3003,8 +3003,17 @@ public class DavController extends SpringActionController
             return null;
 
         String contentDisposition = getRequest().getParameter("contentDisposition");
-        if ("attachment".equals(contentDisposition) || "inline".equals(contentDisposition))
-            getResponse().setContentDisposition(contentDisposition);
+        if (!StringUtils.equals("attachment",contentDisposition) && !StringUtils.equals("inline",contentDisposition))
+            contentDisposition = null;
+        String filename = getRequest().getParameter("filename");
+        if (StringUtils.contains(filename,"\n\r\t\\/") || !ViewServlet.validChars(filename))
+            filename = null;
+        if (!StringUtils.isEmpty(contentDisposition) || !StringUtils.isEmpty(filename))
+        {
+            contentDisposition = StringUtils.defaultString(contentDisposition, "attachment");
+            filename = StringUtils.defaultString(filename, resource.getName());
+            getResponse().setContentDisposition(contentDisposition + "; filename=" + filename);
+        }
 
         // Find content type
         String contentType = resource.getContentType();
