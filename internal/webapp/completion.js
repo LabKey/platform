@@ -11,6 +11,8 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
     constructor : function(config) {
 
         this.completionTask = new Ext4.util.DelayedTask(this.complete, this);
+        this.hideCompletionTask = new Ext4.util.DelayedTask(this.hideCompletionDiv, this);
+
         this.optionSelectedIndex = 0;
 
         this.callParent([config]);
@@ -41,11 +43,34 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
                 Ext.EventManager.addListener(this.fieldId, 'keydown', this.onKeyDown, this);
                 Ext.EventManager.addListener(this.fieldId, 'keyup', this.onKeyUp, this);
-                Ext.EventManager.addListener(this.fieldId, 'blur', this.hideCompletionDiv, this);
+                Ext.EventManager.addListener(this.fieldId, 'blur', function(){this.hideCompletionTask.delay(250);}, this);
                 //Ext.EventManager.addListener(this.fieldId, 'change', function(){console.log('onChange');LABKEY.setDirty(true);});
 
             }, scope : this}
         };
+
+        this.tpl = new Ext4.XTemplate(
+            '<table class="labkey-completion">',
+                '<tpl for=".">',
+                '<tr style="cursor:pointer">',
+                    '<td  class="{style}" id="{["completionTR" + (xindex-1)]}">',
+                        '<span onclick="{[this.getClickHandler(values, (xindex-1))]}">{name}</span>',
+                        '<span style="display:none" id="{["insertSpan" + (xindex-1)]}">{value}</span>',
+                    '</td></tr>',
+            '</tpl></table>',
+            {
+                getClickHandler : function(data, idx) {
+
+                    var fnTxt = "(function(cmp, id){" +
+                        "var cmp = Ext4.getCmp(cmp);" +
+                        "if (cmp)" +
+                            "cmp.selectOption(id);" +
+                    "})('" + data.cmpId + "'," + idx + ")";
+
+                    return fnTxt;
+                }
+            }
+        );
 
         // create the store for the completion records
         Ext4.define('LABKEY.data.Completions', {
@@ -147,15 +172,19 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
     changeSelectedOption : function(forward)
     {
-        var oldSpan = document.getElementById("completionTR" + this.optionSelectedIndex);
-        var newIndex = -1;
+        var prevIdx = this.optionSelectedIndex;
         if (forward)
             this.optionSelectedIndex = this.optionSelectedIndex < this.optionCount - 1 ? this.optionSelectedIndex + 1 : 0;
         else
-            this.optionSelectedIndex = this.optionSelectedIndex > 0 ? this.optionSelectedIndex - 1 : this.optionCount - 1;
-        var newSpan = document.getElementById("completionTR" + this.optionSelectedIndex);
-        oldSpan.className = "labkey-completion-nohighlight";
-        newSpan.className = "labkey-completion-highlight";
+            this.optionSelectedIndex = this.optionSelectedIndex > 0 ? this.optionSelectedIndex - 1 : 0;
+
+        var el = Ext4.fly("completionTR" + prevIdx);
+        if (el)
+            el.replaceCls('labkey-completion-highlight', 'labkey-completion-nohighlight');
+
+        el = Ext4.fly("completionTR" + this.optionSelectedIndex);
+        if (el)
+            el.replaceCls('labkey-completion-nohighlight', 'labkey-completion-highlight');
     },
 
     onKeyUp : function(event, element, completionURLPrefix)
@@ -206,25 +235,19 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 return;
             }
 
-            var completionText = "<table class='labkey-completion' width='100%'>";
-
+            var data = [];
             for (var i=0; i < count; i++)
             {
-                var completion = matches.getAt(i);
-                var display = completion.get("name");
-                var insert = completion.get("value");
-                var styleClass = "labkey-completion-nohighlight";
-                if (i == this.optionSelectedIndex)
-                    styleClass = "labkey-completion-highlight";
+                var completion = matches.getAt(i).data;
 
-                completionText += "<tr class='" + styleClass + "' style='cursor:pointer'><td id='completionTR" + i + "'><span onclick='selectOption(" + i +
-                        ")'>" + display +
-                        "</span><span style='display:none' id='insertSpan" + i + "'>" + insert + "</span>" +
-                        "</td></tr>\n";
+                completion.style = (this.optionSelectedIndex == i) ? 'labkey-completion-highlight' : 'labkey-completion-nohighlight';
+                completion.cmpId = this.getId();
+
+                data.push(completion);
             }
+
             this.optionCount = count;
-            completionText += "</table>";
-            this.completionBody.dom.innerHTML = completionText;
+            this.completionBody.update(this.tpl.apply(data));
             this.showCompletionDiv(this.element);
         }
     },
@@ -292,6 +315,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
     hideCompletionDiv : function()
     {
         this.completionDiv.hide();
+        this.completionBody.update('');
     }
 });
 
