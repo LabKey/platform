@@ -3056,7 +3056,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 }
 
                 if(this.filterType == 'include'){
-                    if ('notin' == pair.operator || 'neqornull' == pair.operator) {
+                    if ('notin' == pair.operator || 'neqornull' == pair.operator || 'neq' == pair.operator) {
                         filter = filter.getOpposite();
                         pair.value = this.getInverse(this.getLookupStore(), pair.value);
                     }
