@@ -26,7 +26,10 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -193,6 +196,8 @@ public class StudyService
         Map<String, String> getAlternateIdMap(Container container);
     
         Study[] getAllStudies(Container root, User user);
+
+        abstract public boolean importStudy(ViewContext context, BindException errors, File studyFile, String originalFilename) throws Exception;
     }
 
     public static void register(Service serviceImpl)
