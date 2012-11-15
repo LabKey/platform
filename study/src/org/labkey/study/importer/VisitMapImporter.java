@@ -231,6 +231,7 @@ public class VisitMapImporter
                 visit.setShowByDefault(record.isShowByDefault());
                 visit.setChronologicalOrder(record.getChronologicalOrder());
                 visit.setDisplayOrder(record.getDisplayOrder());
+                visit.setSequenceNumHandling(record.getSequenceNumHandling());
                 int rowId = studyManager.createVisit(study, user, visit).getRowId();
                 record.setVisitRowId(rowId);
                 assert record.getVisitRowId() > 0;

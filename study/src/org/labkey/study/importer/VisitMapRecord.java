@@ -70,6 +70,7 @@ class VisitMapRecord
         _showByDefault = showByDefault;
         _displayOrder = displayOrder;
         _chronologicalOrder = chronologicalOrder;
+        _sequenceNumHandling = sequenceNumHandling;
 
         // These are not currently used
         _visitDateField = null;
@@ -77,7 +78,6 @@ class VisitMapRecord
         _visitOverdueAllowance = -1;
         _missedNotificationPlate = -1;
         _terminationWindow = null;
-        _sequenceNumHandling = sequenceNumHandling;
     }
 
     private VisitMapRecord(Map record)
@@ -133,6 +133,7 @@ class VisitMapRecord
     public boolean isShowByDefault()        { return _showByDefault; }
     public int getDisplayOrder()            { return _displayOrder; }
     public int getChronologicalOrder()      { return _chronologicalOrder; }
+    public String getSequenceNumHandling()    { return _sequenceNumHandling; }
 
 /*    private int toInt(String str, int defaultValue)
     {
