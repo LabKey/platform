@@ -2002,7 +2002,7 @@ public class StudyManager
      * @param performStudyResync whether or not to kick off our normal bookkeeping. If the whole study is being deleted,
      * we don't need to bother doing this, for example.
      */
-    public void deleteDataset(StudyImpl study, User user, DataSetDefinition ds, boolean performStudyResync) throws SQLException
+    public void deleteDataset(StudyImpl study, User user, DataSetDefinition ds, boolean performStudyResync)
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 
@@ -2017,13 +2017,13 @@ public class StudyManager
         {
             throw new RuntimeException(e);
         }
-        Table.execute(StudySchema.getInstance().getSchema(), "DELETE FROM " + _tableInfoVisitMap + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
+        new SqlExecutor(StudySchema.getInstance().getSchema(), new SQLFragment("DELETE FROM " + _tableInfoVisitMap + "\n" +
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId())).execute();
 
         // UNDONE: This is broken
         // this._dataSetHelper.delete(ds);
-        Table.execute(StudySchema.getInstance().getSchema(), "DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
+        new SqlExecutor(StudySchema.getInstance().getSchema(), new SQLFragment("DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId())).execute();
         _dataSetHelper.clearCache(study.getContainer());
 
         SecurityPolicyManager.deletePolicy(ds);
@@ -2047,7 +2047,7 @@ public class StudyManager
     /** delete a dataset type and data
      *  does not clear typeURI as we're about to delete the dataset
      */
-    private void deleteDatasetType(Study study, User user,  DataSetDefinition ds) throws SQLException
+    private void deleteDatasetType(Study study, User user,  DataSetDefinition ds)
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 

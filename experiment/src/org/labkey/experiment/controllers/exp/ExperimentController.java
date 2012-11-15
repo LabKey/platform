@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -111,13 +112,18 @@ import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.ParticipantVisit;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -2212,8 +2218,30 @@ public class ExperimentController extends SpringActionController
         {
             List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
             List<ExpProtocol> protocols = getProtocols(deleteForm);
+            String noun = "Assay Design";
+            List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<Pair<SecurableResource, ActionURL>>();
+            List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<Pair<SecurableResource, ActionURL>>();
+            for (ExpProtocol protocol : protocols)
+            {
+                if (AssayService.get().getProvider(protocol) == null)
+                {
+                    noun = "Protocol";
+                }
+                for (DataSet dataSet : StudyService.get().getDatasetsForAssayProtocol(protocol))
+                {
+                    Pair<SecurableResource, ActionURL> entry = new Pair<SecurableResource, ActionURL>(dataSet, PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataSet.getContainer(), dataSet.getDataSetId()));
+                    if (dataSet.canDelete(getUser()))
+                    {
+                        deleteableDatasets.add(entry);
+                    }
+                    else
+                    {
+                        noPermissionDatasets.add(entry);
+                    }
+                }
+            }
 
-            return new ConfirmDeleteView("Protocol", "protocolDetails", protocols, deleteForm, runs);
+            return new ConfirmDeleteView(noun, "protocolDetails", protocols, deleteForm, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
         }
 
         private List<ExpProtocol> getProtocols(DeleteForm deleteForm)
@@ -4541,6 +4569,17 @@ public class ExperimentController extends SpringActionController
         public ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL)
         {
             return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+        }
+
+        public ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL)
+        {
+            ActionURL result = new ActionURL(DeleteProtocolByRowIdsAction.class, protocol.getContainer());
+            result.addParameter("singleObjectRowId", protocol.getRowId());
+            if (returnURL != null)
+            {
+                result.addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+            }
+            return result;
         }
 
         public ActionURL getAddRunsToExperimentURL(Container c, ExpExperiment exp)

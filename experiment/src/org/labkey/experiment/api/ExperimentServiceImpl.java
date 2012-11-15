@@ -103,10 +103,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -1502,6 +1504,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 for (ExpExperiment batch : protocolToDelete.getBatches())
                 {
                     batch.delete(user);
+                }
+
+                List<DataSet> datasets = StudyService.get().getDatasetsForAssayProtocol(protocolToDelete);
+                for (DataSet dataset : datasets)
+                {
+                    dataset.delete(user);
                 }
             }
 

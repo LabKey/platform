@@ -21,6 +21,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.assay.AssayProvider;
@@ -67,11 +68,11 @@ public class TypeDisplayColumn extends DataColumn
             }
             else if (protocol != null)
             {
-                // We won't be showing our normal UI that lets an admin delete the design, so let the do it directly
+                // We won't be showing our normal UI that lets an admin delete the design, so let the user do it directly
                 // from here
                 if (protocol.getContainer().getPolicy().hasPermissions(ctx.getViewContext().getUser(), DesignAssayPermission.class, DeletePermission.class))
                 {
-                    out.write(PageFlowUtil.textLink("Delete Assay Design", "javascript: " + AssayHeaderView.getDeleteOnClick(protocol, ctx.getViewContext().getContainer())));
+                    out.write(PageFlowUtil.textLink("Delete Assay Design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(ctx.getContainer()))));
                 }
                 return;
             }

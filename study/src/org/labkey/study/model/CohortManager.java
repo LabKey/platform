@@ -108,7 +108,7 @@ public class CohortManager
             scope.closeConnection();
         }
     }
-    public void setManualCohortAssignment(StudyImpl study, User user, Map<String, Integer> p2c) throws SQLException
+    public void setManualCohortAssignment(StudyImpl study, User user, Map<String, Integer> p2c)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         try
@@ -124,6 +124,10 @@ public class CohortManager
             setCohortAssignment(study, user, p2c);
 
             scope.commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         finally
         {

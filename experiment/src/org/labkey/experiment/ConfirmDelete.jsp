@@ -27,6 +27,9 @@
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.api.data.Entity" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.security.SecurableResource" %>
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -38,32 +41,88 @@
 <% if (bean.getObjects().isEmpty())
 {
     %><p>There are no selected objects to delete.</p>
-    <%= bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty() ? generateButton("OK", buildURL(ExperimentController.BeginAction.class)) : generateButton("OK", bean.getReturnUrl())%><%
+    <%= text(bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty() ? generateButton("OK", buildURL(ExperimentController.BeginAction.class)) : generateButton("OK", bean.getReturnUrl()))%><%
 }
 else
 { %>
-    <p>Are you sure you want to delete the following <%= bean.getObjectType() %><%= bean.getObjects().size() > 1 ? (bean.getObjectType().endsWith("h") ? "es" : "s") : "" %>?</p>
+    <p>Are you sure you want to delete the following <%= h(bean.getObjectType()) %><%= h(bean.getObjects().size() > 1 ? (bean.getObjectType().endsWith("h") ? "es" : "s") : "") %>?</p>
 
     <ul>
     <% for (ExpObject object : bean.getObjects()) { %>
-        <li><a href="<%= bean.getDetailAction() %>.view?rowId=<%= object.getRowId() %>"><%= object.getName() %></a></li>
+        <li><a href="<%= h(bean.getDetailAction()) %>.view?rowId=<%= object.getRowId() %>"><%= h(object.getName()) %></a></li>
     <% } %>
     </ul>
 
-    <% if (bean.getRunsWithPermission().size() > 0) { %>
-        The following run<%= bean.getRunsWithPermission().size() > 1 ? "s" : "" %> will also be deleted:
+    <% if (bean.getDeleteableExtras().size() > 0) { %>
+        <%= h(bean.getDeleteableExtras().size() > 1 ? Integer.toString(bean.getDeleteableExtras().size()) : "One") %> <%= h(bean.getExtraNoun())%><%= h(bean.getDeleteableExtras().size() > 1 ? "s" : "") %> will also be deleted:
 
         <ul>
-        <% for (Map.Entry<ExpRun, Container> runEntry : bean.getRunsWithPermission().entrySet()) {
+        <%  int count = 0;
+            for (Pair<SecurableResource, ActionURL> entry : bean.getDeleteableExtras()) {
+            if (count >= 50)
+            {
+                %>(<%= bean.getRunsWithPermission().size() - count %> <%= h(bean.getExtraNoun()) %>s omitted from list)<%
+                break;
+            }
+            count++;
+            %>
+            <li>
+                <a href="<%= entry.getValue() %>"><%= h(entry.getKey().getResourceName()) %></a>
+                <% if (!entry.getKey().getResourceContainer().equals(currentContainer))
+                { %>
+                    (in <a href="<%= entry.getKey().getResourceContainer().getStartURL(bean.getViewContext().getUser()) %>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
+                <% } %>
+            </li>
+        <% } %>
+        </ul>
+    <% } %>
+
+<% if (bean.getNoPermissionExtras().size() > 0) { %>
+    <span class="labkey-error">The <%= h(bean.getObjectType()) %><%= h(bean.getObjects().size() > 1 ? "s" : "") %> are also referenced by the following
+        <%= h(bean.getExtraNoun()) %><%= h(bean.getNoPermissionExtras().size() > 1 ? "s" : "") %>, which you do not have permission to delete:</span>
+
+    <ul>
+    <%  int count = 0;
+    for (Pair<SecurableResource, ActionURL> entry : bean.getNoPermissionExtras()) {
+        if (count >= 50)
+        {
+            %>(<%= bean.getNoPermissionExtras().size() - count %> <%= h(bean.getExtraNoun()) %>s omitted from list)<%
+            break;
+        }
+        count++;
+        %>
+        <li>
+            <a href="<%= h(entry.getValue()) %>"><%= h(entry.getKey().getResourceName()) %></a>
+            <% if (!entry.getKey().getResourceContainer().equals(currentContainer))
+            { %>
+                (in <a href="<%= entry.getKey().getResourceContainer().getStartURL(bean.getViewContext().getUser()) %>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
+            <% } %>
+        </li>
+    <% } %>
+    </ul>
+<% } %>
+
+    <% if (bean.getRunsWithPermission().size() > 0) { %>
+        <%= h(bean.getRunsWithPermission().size() > 1 ? Integer.toString(bean.getRunsWithPermission().size()) : "One") %> run<%= h(bean.getRunsWithPermission().size() > 1 ? "s" : "") %> will also be deleted:
+
+        <ul>
+        <%  int count = 0;
+            for (Map.Entry<ExpRun, Container> runEntry : bean.getRunsWithPermission().entrySet()) {
             ExpRun run = runEntry.getKey();
             Container runContainer = runEntry.getValue();
+            if (count >= 50)
+            {
+                %>(<%= bean.getRunsWithPermission().size() - count %> runs omitted from list)<%
+                break;
+            }
+            count++;
             %>
             <li>
                 <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraphURL(run); %>
-                <a href="<%= url %>"><%= run.getName() %></a>
+                <a href="<%= url %>"><%= h(run.getName()) %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
-                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext().getUser()) %>"><%= runContainer.getPath() %></a>)
+                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext().getUser()) %>"><%= h(runContainer.getPath()) %></a>)
                 <% } %>
             </li>
         <% } %>
@@ -71,20 +130,27 @@ else
     <% } %>
 
     <% if (bean.getRunsWithoutPermission().size() > 0) { %>
-        <span class="labkey-error">The <%= bean.getObjectType() %><%= bean.getObjects().size() > 1 ? "s" : "" %> are also referenced by the following
-            run<%= bean.getRunsWithoutPermission().size() > 1 ? "s" : "" %>, which you do not have permission to delete:</span>
+        <span class="labkey-error">The <%= h(bean.getObjectType()) %><%= h(bean.getObjects().size() > 1 ? "s" : "") %> are also referenced by the following
+            run<%= h(bean.getRunsWithoutPermission().size() > 1 ? "s" : "") %>, which you do not have permission to delete:</span>
 
         <ul>
-        <% for (Map.Entry<ExpRun, Container> runEntry : bean.getRunsWithoutPermission().entrySet()) {
+        <%  int count = 0;
+        for (Map.Entry<ExpRun, Container> runEntry : bean.getRunsWithoutPermission().entrySet()) {
             ExpRun run = runEntry.getKey();
             Container runContainer = runEntry.getValue();
+            if (count >= 50)
+            {
+                %>(<%= bean.getRunsWithoutPermission().size() - count %> runs omitted from list)<%
+                break;
+            }
+            count++;
             %>
             <li>
                 <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraphURL(run); %>
-                <a href="<%= url %>"><%= run.getName() %></a>
+                <a href="<%= url %>"><%= h(run.getName()) %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
-                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext().getUser()) %>"><%= runContainer.getPath() %></a>)
+                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext().getUser()) %>"><%= h(runContainer.getPath()) %></a>)
                 <% } %>
             </li>
         <% } %>
@@ -97,7 +163,7 @@ else
             {
                 for (String selectedValue : bean.getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME))
                 { %>
-                    <input type="hidden" name="<%= DataRegion.SELECT_CHECKBOX_NAME%>" value="<%= selectedValue %>" /><%
+                    <input type="hidden" name="<%= h(DataRegion.SELECT_CHECKBOX_NAME) %>" value="<%= h(selectedValue) %>" /><%
                 }
             }
         %>
@@ -105,17 +171,17 @@ else
             <input type="hidden" name="singleObjectRowId" value="<%= bean.getSingleObjectRowId() %>" />
         <% }
         if (bean.getDataRegionSelectionKey() != null) { %>
-            <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
+            <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%= h(bean.getDataRegionSelectionKey()) %>" />
         <% }
         if (bean.getReturnUrl() != null)
         { %>
             <input type="hidden" name="returnURL" value="<%= h(bean.getReturnUrl()) %>"/>
         <% } %>
         <input type="hidden" name="forceDelete" value="true"/>
-        <% if (bean.getRunsWithoutPermission().isEmpty() )
+        <% if (bean.getRunsWithoutPermission().isEmpty() && bean.getNoPermissionExtras().isEmpty() )
         { %>
             <%= generateSubmitButton("Confirm Delete") %>
         <% } %>
-        <%= bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty()? generateButton("Cancel", buildURL(ExperimentController.BeginAction.class)) : generateButton("Cancel", bean.getReturnUrl())%>
+        <%= text(bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty()? generateButton("Cancel", buildURL(ExperimentController.BeginAction.class)) : generateButton("Cancel", bean.getReturnUrl()))%>
     </form>
 <% } %>

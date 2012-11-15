@@ -28,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.*;
 import org.labkey.api.etl.DataIteratorUtil;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.SecurableResource;
@@ -601,10 +602,10 @@ public class StudyServiceImpl implements StudyService.Service
         return result;
     }
 
-    public List<DataSet> getDatasetsForAssayProtocol(int protocolId)
+    public List<DataSet> getDatasetsForAssayProtocol(ExpProtocol protocol)
     {
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
-        SimpleFilter filter = new SimpleFilter("protocolid", protocolId);
+        SimpleFilter filter = new SimpleFilter("protocolid", protocol.getRowId());
         List<DataSet> result = new ArrayList<DataSet>();
         ResultSet rs = null;
         try

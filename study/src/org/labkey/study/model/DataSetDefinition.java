@@ -691,6 +691,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
     @Override
+    public boolean canDelete(UserPrincipal user)
+    {
+        return getContainer().hasPermission(user, AdminPermission.class);
+    }
+
+    @Override
     public KeyType getKeyType()
     {
         if (isDemographicData())
@@ -764,6 +770,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         // NOTE: Also consider comparing ConceptURI of the properties
 
         return true;
+    }
+
+    @Override
+    public void delete(User user)
+    {
+        if (!canDelete(user))
+        {
+            throw new UnauthorizedException("No permission to delete dataset " + getName() + " for study in " + getContainer().getPath());
+        }
+        StudyManager.getInstance().deleteDataset(getStudy(), user, this, true);
     }
 
     // The set of allowed extra key lookup types that we can join across.
