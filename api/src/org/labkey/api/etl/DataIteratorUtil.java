@@ -22,12 +22,22 @@ import org.junit.Assert;
 import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderService;
+import org.labkey.api.reader.TabLoader;
+import org.labkey.api.security.User;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.Pair;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -212,6 +222,40 @@ public class DataIteratorUtil
             ret.add(null==m ? null : m.first);
         return ret;
     }
+
+
+
+
+    // NOTE: first consider if using QueryUpdateService is better
+    // this is just a point-to-point copy _without_ triggers
+    public static int copy(File from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
+    {
+        DataLoader loader = DataLoaderService.get().createLoader(from, null, true, c, TabLoader.TSV_FILE_TYPE);
+        loader.setInferTypes(false);
+        return copy(loader, to, c, user);
+    }
+
+
+    public static int copy(DataIterator from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
+    {
+        DataIteratorBuilder builder = new DataIteratorBuilder.Wrapper(from);
+        return copy(builder, to, c, user);
+    }
+
+
+    // NOTE: first consider if using QueryUpdateService is better
+    // this is just a point-to-point copy _without_ triggers
+    public static int copy(DataIteratorBuilder from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
+    {
+        BatchValidationException errors = new BatchValidationException();
+        DataIteratorContext context = new DataIteratorContext(errors);
+        StandardETL etl = StandardETL.forInsert(to, from, c, user, context);
+        DataIteratorBuilder insert = ((UpdateableTableInfo)to).persistRows(etl, context);
+        Pump pump = new Pump(insert, context);
+        pump.run();
+        return pump.getRowCount();
+    }
+
 
 
     /*
