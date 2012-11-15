@@ -869,6 +869,7 @@ table.labkey-completion-text
 .labkey-completion-highlight
 {
     background-color: #E7EFF4;
+    font-weight: bold;
 }
 
 .labkey-completion-nohighlight

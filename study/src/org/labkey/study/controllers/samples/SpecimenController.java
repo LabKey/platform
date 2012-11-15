@@ -5415,7 +5415,7 @@ public class SpecimenController extends BaseStudyController
                 throw new NotFoundException("No study exists in this folder.");
 
             List<JSONObject> completions = new ArrayList<JSONObject>();
-            for (AjaxCompletion completion : getAjaxCompletions(form.getPrefix(), study))
+            for (AjaxCompletion completion : getAjaxCompletions(study))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);
@@ -5423,35 +5423,16 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static List<AjaxCompletion> getAjaxCompletions(String prefix, Study study) throws SQLException
+    public static List<AjaxCompletion> getAjaxCompletions(Study study) throws SQLException
     {
         List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
-        if (prefix != null && prefix.length() != 0)
-        {
-            String allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(study.getContainer())) +  " (Large Report)";
-            String lowerPrefix = prefix.toLowerCase();
+        String allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(study.getContainer())) +  " (Large Report)";
 
-            if (allString.toLowerCase().startsWith(lowerPrefix))
-                completions.add(new AjaxCompletion(allString, allString));
+        completions.add(new AjaxCompletion(allString, allString));
 
-            Table.TableResultSet results = StudyManager.getInstance().getParticipantIdsStartsWith(study, lowerPrefix);
-            try
-            {
-                int count = 0;
+        for (String ptid : StudyManager.getInstance().getParticipantIds(study))
+            completions.add(new AjaxCompletion(ptid, ptid));
 
-                Iterator<Map<String, Object>> iter = results.iterator();
-                while (iter.hasNext())
-                {
-                    String participantId = (String)iter.next().get("ParticipantId");
-                    completions.add(new AjaxCompletion(participantId, participantId));
-                    count += 1;
-                }
-            }
-            finally
-            {
-                results.close();
-            }
-        }
         return completions;
     }
 }

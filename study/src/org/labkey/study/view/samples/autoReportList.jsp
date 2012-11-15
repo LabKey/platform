@@ -90,7 +90,6 @@ This folder does not contain a study.
 %>
 <% if (bean.isListView())
     WebPartView.startTitleFrame(out, category, null, "100%", null); %>
-<table cellspacing="0" cellpadding="3">
 <%
         int formRowIndex = 0;
         String rowClass;
@@ -101,6 +100,7 @@ This folder does not contain a study.
             String formName = "form" + showHideSuffix;
 %>
     <form action="<%=  new ActionURL(factory.getAction(), container).getLocalURIString() %>" name="<%= formName %>" method="GET">
+    <table cellspacing="0" cellpadding="3">
         <%
             if (bean.isListView())
             {
