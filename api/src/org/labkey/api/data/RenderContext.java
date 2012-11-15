@@ -324,7 +324,7 @@ public class RenderContext implements Map<String, Object>, Serializable
                 return Table.selectAggregatesForDisplayAsync(tinfo, aggregates, cols, parameters, filter, getCache(), getViewContext().getResponse());
             }
 
-            return Table.selectAggregatesForDisplay(tinfo, aggregates, cols, parameters, filter, getCache());
+            return Table.selectAggregatesForDisplay(tinfo, aggregates, cols, parameters, filter);
         }
 
         return Collections.emptyMap();

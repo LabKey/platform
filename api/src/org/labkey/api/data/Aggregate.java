@@ -80,8 +80,8 @@ public class Aggregate
 
     public static class Result
     {
-        private Aggregate _aggregate;
-        private Object _value;
+        private final Aggregate _aggregate;
+        private final Object _value;
 
         public Result(Aggregate aggregate, Object value)
         {
@@ -97,6 +97,12 @@ public class Aggregate
         public Object getValue()
         {
             return _value;
+        }
+
+        @Override
+        public String toString()
+        {
+            return _aggregate.getDisplayString() + ": " + _value;
         }
     }
 

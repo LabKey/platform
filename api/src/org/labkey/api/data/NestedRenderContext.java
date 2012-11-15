@@ -172,7 +172,7 @@ public class NestedRenderContext extends RenderContext
                 return Table.selectAggregatesForDisplayAsync(aggTableInfo, aggregatesIn, Collections.<ColumnInfo>emptyList(), null, new SimpleFilter(), getCache(), getViewContext().getResponse());
             }
 
-            return Table.selectAggregatesForDisplay(aggTableInfo, aggregatesIn, Collections.<ColumnInfo>emptyList(), null, new SimpleFilter(), getCache());
+            return Table.selectAggregatesForDisplay(aggTableInfo, aggregatesIn, Collections.<ColumnInfo>emptyList(), null, new SimpleFilter());
         }
 
         return Collections.emptyMap();

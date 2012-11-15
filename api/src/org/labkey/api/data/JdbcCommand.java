@@ -52,7 +52,7 @@ public abstract class JdbcCommand
         return null == _conn ? _scope.getConnection(_log) : _conn;
     }
 
-    protected void close(@Nullable ResultSet rs, Connection conn)
+    protected void close(@Nullable ResultSet rs, @Nullable Connection conn)
     {
         // Close Connection only if we got it from the scope (i.e., _conn is null)
         @Nullable Connection connToClose = (null == _conn ? conn : null);

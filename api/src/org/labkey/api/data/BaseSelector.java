@@ -76,22 +76,28 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
     }
 
     // Standard internal handleResultSet method used by everything except ResultSets
-    private <K> K handleResultSet(SqlFactory sqlFactory, ResultSetHandler<K> handler)
+    protected <K> K handleResultSet(SqlFactory sqlFactory, ResultSetHandler<K> handler)
     {
         return handleResultSet(sqlFactory, handler, true, false, false);
     }
 
     private <K> K handleResultSet(SqlFactory sqlFactory, ResultSetHandler<K> handler, boolean closeOnSuccess, boolean scrollable, boolean tweakJdbcParameters)
     {
-        DbScope scope = getScope();
-        SQLFragment sql = sqlFactory.getSql();
         boolean queryFailed = false;
-
         Connection conn = null;
         ResultSet rs = null;
 
+        SQLFragment sql = sqlFactory.getSql();
+
         try
         {
+            if (null == sql)
+            {
+                return handler.handle(null, null, null);
+            }
+
+            DbScope scope = getScope();
+
             conn = getConnection();
 
             if (tweakJdbcParameters && Table.isSelect(sql.getSQL()) && !scope.isTransactionActive())

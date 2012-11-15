@@ -73,6 +73,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -598,61 +599,6 @@ public class Table
         }
     }
 
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    private static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, long scrollOffset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log, @Nullable Integer statementMaxRows)
-            throws SQLException
-    {
-        if (log == null) log = _log;
-        Connection conn = null;
-        ResultSet rs = null;
-        boolean queryFailed = false;
-
-        try
-        {
-            conn = schema.getScope().getConnection(log);
-            if (isSelect(sql) && !schema.getScope().isTransactionActive())
-            {
-                // Only fiddle with the Connection settings if we're not inside of a transaction so we won't mess
-                // up any state the caller is relying on. Also, only do this when we're fairly certain that it's
-                // a read-only statement (starting with SELECT)
-                schema.getSqlDialect().configureToDisableJdbcCaching(conn);
-            }
-
-            rs = _executeQuery(conn, sql, parameters, scrollable, asyncRequest, statementMaxRows);
-
-            while (scrollOffset > 0 && rs.next())
-                scrollOffset--;
-
-            if (cache)
-                return cacheResultSet(schema.getSqlDialect(), rs, maxRows, null != asyncRequest ? asyncRequest.getCreationStackTrace() : null);
-            else
-                return new ResultSetImpl(conn, schema.getScope(), rs, maxRows);
-        }
-        catch(SQLException e)
-        {
-            logException(sql, parameters, conn, e);
-            queryFailed = true;
-            throw(e);
-        }
-        catch(RuntimeException e)  // For example, AsyncQueryRequest.CancelledException
-        {
-            queryFailed = true;
-            throw(e);
-        }
-        finally
-        {
-            // Close everything for cached result sets and exceptions only
-            if (cache || queryFailed)
-                doFinally(rs, null, conn, schema.getScope());
-        }
-    }
 
     /** @return if this is a statement that starts with SELECT, ignoring comment lines that start with "--" */
     static boolean isSelect(String sql)
@@ -1297,14 +1243,14 @@ public class Table
 
 
     public static Map<String, List<Aggregate.Result>>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
-            Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, Filter filter, boolean cache) throws SQLException
+                                                                                Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter) throws SQLException
     {
-        return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, cache, null);
+        return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, null);
     }
 
     private static Map<String, List<Aggregate.Result>> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
-            Collection<ColumnInfo> select, Map<String, Object> parameters, Filter filter, boolean cache, @Nullable AsyncQueryRequest asyncRequest)
-            throws SQLException
+                                                                                  Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter,
+                                                                                  @Nullable AsyncQueryRequest asyncRequest) throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, null, aggregates);
@@ -1314,7 +1260,7 @@ public class Table
 
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(table, columns.values());
 
-        StringBuilder sql = new StringBuilder();
+        SQLFragment sql = new SQLFragment();
         sql.append("SELECT ");
         boolean first = true;
 
@@ -1336,12 +1282,15 @@ public class Table
         if (first)
             return results;
 
-        sql.append(" FROM (").append(innerSql.getSQL()).append(") S");
+        sql.append(" FROM (").append(innerSql).append(") S");
 
         Table.TableResultSet rs = null;
         try
         {
-            rs = (Table.TableResultSet) executeQuery(table.getSchema(), sql.toString(), innerSql.getParams().toArray(), ALL_ROWS, NO_OFFSET, cache, false, asyncRequest, null, null);
+            SqlSelector selector = new SqlSelector(table.getSchema(), sql);
+            selector.setAsyncRequest(asyncRequest);
+            rs = selector.getResultSet();
+
             boolean next = rs.next();
             if (!next)
                 throw new IllegalStateException("Expected a non-empty resultset from aggregate query.");
@@ -1369,7 +1318,7 @@ public class Table
         {
             public Map<String, List<Aggregate.Result>> call() throws Exception
             {
-                return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, cache, asyncRequest);
+                return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, asyncRequest);
             }
         });
     }
@@ -1825,6 +1774,69 @@ public class Table
         }
 
 
+        @Test
+        public void testAggregates() throws SQLException
+        {
+            TableInfo tinfo = CoreSchema.getInstance().getTableInfoContainers();
+            List<Aggregate> aggregates = new LinkedList<Aggregate>();
+
+            // Test no aggregates case
+            Map<String, List<Aggregate.Result>> aggregateMap = selectAggregatesForDisplay(tinfo, aggregates, Collections.<ColumnInfo>emptyList(), null, null);
+            assertTrue(aggregateMap.isEmpty());
+            Map<String, List<Aggregate.Result>> aggregateMap2 = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
+            assertTrue(aggregateMap2.isEmpty());
+
+            aggregates.add(Aggregate.createCountStar());
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.COUNT));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.SUM));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.AVG));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MIN));
+            aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MAX));
+            aggregates.add(new Aggregate(tinfo.getColumn("Parent"), Aggregate.Type.COUNT_DISTINCT));
+            aggregates.add(new Aggregate(tinfo.getColumn("CreatedBy"), Aggregate.Type.COUNT));
+
+            aggregateMap = selectAggregatesForDisplay(tinfo, aggregates, Collections.<ColumnInfo>emptyList(), null, null);
+            aggregateMap2 = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
+
+            String sql =
+                    "SELECT " +
+                        "CAST(COUNT(*) AS BIGINT) AS CountStar, " +
+                        "CAST(COUNT(RowId) AS BIGINT) AS CountRowId, " +
+                        "CAST(SUM(RowId) AS BIGINT) AS SumRowId, " +
+                        "AVG(RowId) AS AvgRowId, " +
+                        "CAST(MIN(RowId) AS BIGINT) AS MinRowId, " +
+                        "CAST(MAX(RowId) AS BIGINT) AS MaxRowId, " +
+                        "CAST(COUNT(DISTINCT Parent) AS BIGINT) AS CountDistinctParent, " +
+                        "CAST(COUNT(CreatedBy) AS BIGINT) AS CountCreatedBy " +
+                    "FROM core.Containers";
+            Map expected = new SqlSelector(tinfo.getSchema(), sql).getObject(Map.class);
+
+            verifyAggregates(expected, aggregateMap);
+            verifyAggregates(expected, aggregateMap2);
+        }
+
+
+        private void verifyAggregates(Map expected, Map<String, List<Aggregate.Result>> aggregateMap)
+        {
+            verifyAggregate(expected.get("CountStar"), aggregateMap.get("*").get(0).getValue());
+            verifyAggregate(expected.get("CountRowId"), aggregateMap.get("RowId").get(0).getValue());
+            verifyAggregate(expected.get("SumRowId"), aggregateMap.get("RowId").get(1).getValue());
+            verifyAggregate(expected.get("AvgRowId"), aggregateMap.get("RowId").get(2).getValue());
+            verifyAggregate(expected.get("MinRowId"), aggregateMap.get("RowId").get(3).getValue());
+            verifyAggregate(expected.get("MaxRowId"), aggregateMap.get("RowId").get(4).getValue());
+        }
+
+
+        private void verifyAggregate(Object expected, Object actual)
+        {
+            // Address AVG on SQL Server... expected query returns Integer type but aggregate converts to Long
+            if (expected.getClass() != actual.getClass())
+                assertEquals(((Number)expected).longValue(), ((Number)actual).longValue());
+            else
+                assertEquals(expected, actual);
+        }
+
+
         private Map<String, String> _quickMap(String q)
         {
             Map<String, String> m = new HashMap<String, String>();
@@ -1835,17 +1847,6 @@ public class Table
         }
     }
 
-
-    static public LinkedHashMap<FieldKey, ColumnInfo> createFieldKeyMap(TableInfo table)
-    {
-        LinkedHashMap<FieldKey,ColumnInfo> ret = new LinkedHashMap<FieldKey,ColumnInfo>();
-        for (ColumnInfo column : table.getColumns())
-        {
-            ret.put(column.getFieldKey(), column);
-        }
-        return ret;
-    }
-    
 
     static public Map<FieldKey, ColumnInfo> createColumnMap(TableInfo table, @Nullable Collection<ColumnInfo> columns)
     {

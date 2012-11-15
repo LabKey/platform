@@ -18,15 +18,19 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -196,6 +200,38 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
             return super.exists(sqlFactory);  // Normal case... wrap an EXISTS query around the "SELECT 1 FROM..." sub-select
     }
 
+    public Map<String, List<Aggregate.Result>> getAggregates(final List<Aggregate> aggregates)
+    {
+        AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, _columns);
+
+        return handleResultSet(sqlFactory, new ResultSetHandler<Map<String, List<Aggregate.Result>>>()
+        {
+            @Override
+            public Map<String, List<Aggregate.Result>> handle(@Nullable ResultSet rs, Connection conn, DbScope scope) throws SQLException
+            {
+                Map<String, List<Aggregate.Result>> results = new HashMap<String, List<Aggregate.Result>>();
+
+                // null == rs is the short-circuit case... SqlFactory didn't find any aggregate columns, so
+                // query wasn't executed. Just return an empty map in this case.
+                if (null != rs)
+                {
+                    if (!rs.next())
+                        throw new IllegalStateException("Expected a non-empty resultset from aggregate query.");
+
+                    for (Aggregate agg : aggregates)
+                    {
+                        if(!results.containsKey(agg.getColumnName()))
+                            results.put(agg.getColumnName(), new ArrayList<Aggregate.Result>());
+
+                        results.get(agg.getColumnName()).add(agg.getResult(rs));
+                    }
+                }
+
+                return results;
+            }
+        });
+    }
+
     @Override
     protected TableSqlFactory getSqlFactory()
     {
@@ -332,5 +368,48 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
     {
         ColumnInfo column = new ExprColumn(table, "One", new SQLFragment("1"), JdbcType.INTEGER);
         return Collections.singleton(column);
+    }
+
+
+    protected class AggregateSqlFactory extends PreventSortTableSqlFactory
+    {
+        private final List<Aggregate> _aggregates;
+
+        public AggregateSqlFactory(Filter filter, List<Aggregate> aggregates, Collection<ColumnInfo> columns)
+        {
+            super(filter, columns);
+            _aggregates = aggregates;
+        }
+
+        @Override
+        public SQLFragment getSql()
+        {
+            SQLFragment innerSql = super.getSql();
+
+            SQLFragment aggregateSql = new SQLFragment();
+            aggregateSql.append("SELECT ");
+            boolean first = true;
+
+            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(_table, _columns);
+
+            for (Aggregate agg : _aggregates)
+            {
+                if (agg.isCountStar() || columnMap.containsKey(agg.getFieldKey()))
+                {
+                    if (first)
+                        first = false;
+                    else
+                        aggregateSql.append(", ");
+
+                    aggregateSql.append(agg.getSQL(_table.getSqlDialect(), columnMap));
+                }
+            }
+
+            // if we didn't find any columns, then skip the SQL call completely... we'll return an empty map
+            if (first)
+                return null;
+
+            return aggregateSql.append(" FROM (").append(innerSql).append(") S");
+        }
     }
 }
