@@ -243,6 +243,7 @@ public class ReportViewProvider implements DataViewProvider
     public static class EditInfoImpl implements DataViewProvider.EditInfo
     {
         private static final String[] _editableProperties = {
+                Property.viewName.name(),
                 Property.description.name(),
                 Property.category.name(),
                 Property.visible.name(),
@@ -302,6 +303,9 @@ public class ReportViewProvider implements DataViewProvider
 
                     report.getDescriptor().setCategory(category);
 
+                    if (props.containsKey(Property.viewName.name()))
+                        report.getDescriptor().setReportName(StringUtils.trimToNull(String.valueOf(props.get(Property.viewName.name()))));
+
                     if (props.containsKey(Property.description.name()))
                         report.getDescriptor().setReportDescription(StringUtils.trimToNull(String.valueOf(props.get(Property.description.name()))));
 
@@ -316,6 +320,9 @@ public class ReportViewProvider implements DataViewProvider
 
                     ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), report.getDescriptor().getReportKey(), report);
 
+                    //
+                    // TODO:  move into saveReport above
+                    //
                     if (props.containsKey(Property.author.name()))
                         ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.author.name(), props.get(Property.author.name()));
                     if (props.containsKey(Property.status.name()))

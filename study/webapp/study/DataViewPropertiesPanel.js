@@ -63,7 +63,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         var formItems = [];
 
         formItems.push({
-            xtype      : (this.data.name ? 'displayfield' : 'textfield'),
+            xtype      : 'textfield',
             allowBlank : false,
             name       : 'viewName',
             fieldLabel : 'Name',
@@ -71,18 +71,27 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         });
 
         if (this.visibleFields['author']) {
-            formItems.push({
-                xtype       : 'combo',
-                fieldLabel  : 'Author',
-                name        : 'author',
+            var authorField = Ext4.create('Ext.form.field.ComboBox', {
+                fieldLabel: 'Author',
+                name: 'author',
+                typeAhead: true,
+                editable: true, // required for typeAhead
+                forceSelection : true, // user must pick from list
                 store       : this.initializeUserStore(),
-                editable    : false,
                 value       : this.data.authorUserId ? this.data.authorUserId : null,
-                queryMode      : 'local',
-                displayField   : 'DisplayName',
-                valueField     : 'UserId',
-                emptyText      : 'None'
+                queryMode : 'local',
+                displayField : 'DisplayName',
+                valueField : 'UserId',
+                emptyText: 'None'
             });
+
+            // since forceSelection is true  we must set the initial value
+            // after the store is loaded
+            authorField.store.on('load', function() {
+                authorField.setValue(authorField.initialConfig.value);
+            });
+
+            formItems.push(authorField);
         }
 
         if (this.visibleFields['status']) {

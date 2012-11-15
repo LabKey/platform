@@ -85,11 +85,6 @@
 
         extraItems.push({
             xtype: "hidden",
-            name: "viewName",
-            value: <%=q(form.getViewName())%>
-        });
-        extraItems.push({
-            xtype: "hidden",
             name: "reportId",
             value: <%=q(form.getReportId().toString())%>
         });
