@@ -737,6 +737,7 @@ public class ReportUtil
         private String _description;
         private String _queryName;
         private String _schemaName;
+        private String _viewName;
         private ReportIdentifier _reportId;
         private String _componentId;
         private boolean _public;
@@ -811,6 +812,16 @@ public class ReportUtil
             _public = isPublic;
         }
 
+        public String getViewName()
+        {
+            return _viewName;
+        }
+
+        public void setViewName(String viewName)
+        {
+            _viewName = viewName;
+        }
+
         @Override
         public void bindProperties(Map<String, Object> props)
         {
@@ -818,6 +829,7 @@ public class ReportUtil
             _description = (String)props.get("description");
             _schemaName = (String)props.get("schemaName");
             _queryName = (String)props.get("queryName");
+            _viewName = (String)props.get("viewName");
             _public = BooleanUtils.toBooleanDefaultIfNull((Boolean)props.get("public"), true);
 
             Object reportId = props.get("reportId");
@@ -834,6 +846,7 @@ public class ReportUtil
             json.put("description", descriptor.getReportDescription());
             json.put("schemaName", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
             json.put("queryName", descriptor.getProperty(ReportDescriptor.Prop.queryName));
+            json.put("viewName", descriptor.getProperty(ReportDescriptor.Prop.viewName));
 
             json.put("editable", report.canEdit(user, container));
             json.put("public", descriptor.getOwner() == null);
