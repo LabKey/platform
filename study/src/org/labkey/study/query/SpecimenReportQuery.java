@@ -93,7 +93,7 @@ public class SpecimenReportQuery
             "  Vial.%s, \n" +
             "  '' || CAST(Vial.PrimaryType AS VARCHAR) || '-' || CAST(Vial.DerivativeType AS VARCHAR) || '-' || CAST(Request.Destination AS VARCHAR) AS PivotColumn,\n" +
             "  Vial.DerivativeType, \n" +
-            "  Request.Destination, \n" +
+            "  Request.Destination \n" +
             "FROM VialRequest) X\n" +
             "\n" +
             "GROUP BY\n" +
