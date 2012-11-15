@@ -230,32 +230,35 @@ public class DataIteratorUtil
     // this is just a point-to-point copy _without_ triggers
     public static int copy(File from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
     {
+
+        BatchValidationException errors = new BatchValidationException();
+        DataIteratorContext context = new DataIteratorContext(errors);
         DataLoader loader = DataLoaderService.get().createLoader(from, null, true, c, TabLoader.TSV_FILE_TYPE);
         loader.setInferTypes(false);
-        return copy(loader, to, c, user);
+        int count = copy(context, loader, to, c, user);
+        if (errors.hasErrors())
+            throw errors;
+        return count;
     }
 
 
-    public static int copy(DataIterator from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
+    public static int copy(DataIteratorContext context, DataIterator from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
     {
         DataIteratorBuilder builder = new DataIteratorBuilder.Wrapper(from);
-        return copy(builder, to, c, user);
+        return copy(context, builder, to, c, user);
     }
 
 
     // NOTE: first consider if using QueryUpdateService is better
     // this is just a point-to-point copy _without_ triggers
-    public static int copy(DataIteratorBuilder from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
+    public static int copy(DataIteratorContext context, DataIteratorBuilder from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
     {
-        BatchValidationException errors = new BatchValidationException();
-        DataIteratorContext context = new DataIteratorContext(errors);
         StandardETL etl = StandardETL.forInsert(to, from, c, user, context);
         DataIteratorBuilder insert = ((UpdateableTableInfo)to).persistRows(etl, context);
         Pump pump = new Pump(insert, context);
         pump.run();
         return pump.getRowCount();
     }
-
 
 
     /*
