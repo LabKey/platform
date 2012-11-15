@@ -449,10 +449,16 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         if (!this.renderTo)
             Ext.Msg.alert("Configuration Error", "You must supply a renderTo property either in the configuration object, or as a parameter to the render() method!");
 
-        var params = this.createParams();
+        var params = this.createParams(), json = {};
+
+        // ensure SQL is not on the URL -- we allow any property to be pulled through when creating parameters.
+        if (params['sql'])
+        {
+            json.sql = params.sql;
+            delete params.sql;
+        }
 
         //add the button bar config if any
-        var json = {};
         if (this.buttonBar && (this.buttonBar.position || (this.buttonBar.items && this.buttonBar.items.length > 0)))
             json.buttonBar = this.processButtonBar();
 
@@ -496,9 +502,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         Ext.Ajax.request({
             timeout: (this.timeout == undefined) ? 30000 : this.timeout,
             url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
+            method: 'POST',
+            params: params,
+            jsonData: json,
             success: function(response, options) {
-                if (timerId > 0)
+                if (timerId > 0) {
                     clearTimeout(timerId);
+                }
 
                 var targetElem = Ext.get(this.renderTo);
                 if (targetElem)
@@ -575,9 +585,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                         Ext.Msg.alert("Rendering Error", "The element '" + this.renderTo + "' does not exist in the document!");
                 }
             }, this, true),
-            method: 'POST',
-            params: params,
-            jsonData: json,
             scope: this
         });
     },

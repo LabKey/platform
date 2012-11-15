@@ -99,13 +99,16 @@ public class QueryWebPart extends WebPartView
 
             if (queryName == null)
             {
-                String sql = _properties.get("sql");
+                Object sql = _extendedProperties.get("sql");
+                if (null == sql)
+                    sql = _properties.get("sql");
 
                 // execute arbitrary sql
                 if (sql != null)
                 {
+                    String _sql = sql.toString();
                     _hasSql = true;
-                    QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, sql, _metadata);
+                    QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, _sql, _metadata);
 
                     _settings.setQueryName(def.getName());
                     queryName = _settings.getQueryName();
