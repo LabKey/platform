@@ -123,6 +123,14 @@ public class StandardETL implements DataIteratorBuilder
 
         DataIterator input = _inputBuilder.getDataIterator(context);
 
+        if (null == input)
+        {
+            if (context.getErrors().hasErrors())
+                return null;
+            // going to crash anyway, might as well do it now
+            throw new NullPointerException("null dataiterator returned");
+        }
+
         //
         // pass through all the source columns
         // associate each with a target column if possible and handle convert, validate

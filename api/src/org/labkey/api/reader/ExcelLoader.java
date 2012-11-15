@@ -324,21 +324,20 @@ public class ExcelLoader extends DataLoader
 //    }
 
 
-    private LinkedList<ArrayList<Object>> _parsedGridXLSX = null;
+    private List<ArrayList<Object>> _parsedGridXLSX = null;
 
-    private LinkedList<ArrayList<Object>> getParsedGridXLSX() throws IOException, InvalidFormatException
+    private List<ArrayList<Object>> getParsedGridXLSX() throws IOException, InvalidFormatException
     {
         if (null == _parsedGridXLSX)
             _parsedGridXLSX = loadSheetFromXLSX();
         return _parsedGridXLSX;
     }
 
-    private LinkedList<ArrayList<Object>> loadSheetFromXLSX() throws IOException, InvalidFormatException
+    private List<ArrayList<Object>> loadSheetFromXLSX() throws IOException, InvalidFormatException
     {
         try
         {
-            LinkedList<ArrayList<Object>> output = new LinkedList<ArrayList<Object>>();
-
+            LinkedList<ArrayList<Object>> collect = new LinkedList<ArrayList<Object>>();
             OPCPackage xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
             ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(xlsxPackage);
             XSSFReader xssfReader = new XSSFReader(xlsxPackage);
@@ -351,11 +350,13 @@ public class ExcelLoader extends DataLoader
                 SAXParserFactory saxFactory = SAXParserFactory.newInstance();
                 SAXParser saxParser = saxFactory.newSAXParser();
                 XMLReader sheetParser = saxParser.getXMLReader();
-                SheetHandler handler = new SheetHandler(styles, strings, 1, output);
+                SheetHandler handler = new SheetHandler(styles, strings, 1, collect);
                 sheetParser.setContentHandler(handler);
                 sheetParser.parse(sheetSource);
             }
-            return output;
+            ArrayList<ArrayList<Object>> ret = new ArrayList<ArrayList<Object>>(collect.size());
+            ret.addAll(collect);
+            return ret;
         }
         catch (InvalidOperationException x)
         {
@@ -748,8 +749,11 @@ public class ExcelLoader extends DataLoader
                         try
                         {
                             int idx = Integer.parseInt(sstIndex);
-                            XSSFRichTextString rtss = new XSSFRichTextString(sharedStringsTable.getEntryAt(idx));
-                            thisValue = rtss.toString();
+                            String raw = sharedStringsTable.getEntryAt(idx);
+//                          XSSFRichTextString is really expensive, put this back if we need it (examples anyone?)
+//                            XSSFRichTextString rtss = new XSSFRichTextString(sharedStringsTable.getEntryAt(idx));
+//                            thisValue = rtss.toString();
+                            thisValue = raw;
                         }
                         catch (NumberFormatException ex)
                         {
@@ -761,8 +765,12 @@ public class ExcelLoader extends DataLoader
                         boolean isDateFormat = null!=this.formatString && org.apache.poi.ss.usermodel.DateUtil.isADateFormat(this.formatIndex, this.formatString);
                         // since Excel auto-converts lots of things that are not numbers, such particpantids and sometimes dates
                         // convert to string and let DataLoader sort it out
-                        if (this.formatString != null && (useFormats || isDateFormat))
+                        if (StringUtils.isEmpty(value))
+                            thisValue = "";
+                        else if (this.formatString != null && (useFormats || isDateFormat))
+                        {
                             thisValue = formatter.formatRawCellContents(Double.parseDouble(value.toString()), this.formatIndex, this.formatString);
+                        }
                         else
                             thisValue = value.toString();
                         break;
@@ -776,6 +784,7 @@ public class ExcelLoader extends DataLoader
                     currentRow.add(null);
                 debugPrint("row:" + output.size() + " col:" + thisColumn + " " + thisValue);
                 currentRow.set(thisColumn, thisValue);
+                value.setLength(0);
             }
             else if ("row".equals(name))
             {
