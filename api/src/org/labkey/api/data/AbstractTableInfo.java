@@ -653,7 +653,7 @@ abstract public class AbstractTableInfo implements TableInfo
         }
 
         // Include any extra columns named by the default visible set
-        ret.putAll(QueryService.get().getColumns(this, getDefaultVisibleColumns(), columns));
+        ret.putAll(QueryService.get().getColumns(this, getDefaultVisibleColumns()));
 
         return Collections.unmodifiableMap(ret);
     }
