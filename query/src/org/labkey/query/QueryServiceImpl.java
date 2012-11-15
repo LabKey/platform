@@ -1142,29 +1142,47 @@ public class QueryServiceImpl extends QueryService
     private static class ObjectIdentityCacheKey
     {
         private final Object _object;
+        private final boolean _customQuery;
+        private final boolean _allModules;
+        private final Path _dir;
 
-        private ObjectIdentityCacheKey(UserSchema object)
+        private ObjectIdentityCacheKey(UserSchema object, boolean customQuery, boolean allModules, @Nullable Path dir)
         {
             _object = object;
+            _customQuery = customQuery;
+            _allModules = allModules;
+            _dir = dir;
         }
 
         @Override
-        public boolean equals(Object obj)
+        public boolean equals(Object o)
         {
-            return obj instanceof ObjectIdentityCacheKey && ((ObjectIdentityCacheKey)obj)._object == _object;
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ObjectIdentityCacheKey that = (ObjectIdentityCacheKey) o;
+
+            if (_allModules != that._allModules) return false;
+            if (_customQuery != that._customQuery) return false;
+            if (_dir != null ? !_dir.equals(that._dir) : that._dir != null) return false;
+            return that._object == _object;
         }
 
         @Override
         public int hashCode()
         {
-            return System.identityHashCode(_object);
+            int result = System.identityHashCode(_object);
+            result = 31 * result + (_customQuery ? 1 : 0);
+            result = 31 * result + (_allModules ? 1 : 0);
+            result = 31 * result + (_dir != null ? _dir.hashCode() : 0);
+            return result;
         }
     }
 
     // BUGBUG: Should we look in the session queries for metadata overrides?
     public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @Nullable Path dir)
     {
-        ObjectIdentityCacheKey schemaCacheKey = new ObjectIdentityCacheKey(schema);
+        ObjectIdentityCacheKey schemaCacheKey = new ObjectIdentityCacheKey(schema, customQuery, allModules, dir);
         Map<String, QueryDef> queryDefs = _metadataCache.get(schemaCacheKey);
         if (queryDefs == null)
         {
