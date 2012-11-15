@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
@@ -35,6 +36,8 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getRunTextURL(Container c, int rowId);
     ActionURL getRunTextURL(ExpRun run);
+
+    public ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL);
 
     ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL);
 

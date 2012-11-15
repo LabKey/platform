@@ -97,8 +97,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
 
             if (allowDelete(_protocol))
             {
-                String onClickDelete = getDeleteOnClick(_protocol, getViewContext().getContainer());
-                manageMenu.addChild("delete assay design", "javascript: " + onClickDelete);
+                manageMenu.addChild("delete assay design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(_protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getViewContext().getContainer())));
             }
 
             ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolURL(_protocol.getContainer(), _protocol);

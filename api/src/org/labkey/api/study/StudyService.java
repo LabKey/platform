@@ -19,6 +19,7 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
@@ -159,7 +160,7 @@ public class StudyService
         /**
          * Returns the set of containers which have ever had data copied from the provided protocol
          */
-        public List<DataSet> getDatasetsForAssayProtocol(int protocolId);
+        public List<DataSet> getDatasetsForAssayProtocol(ExpProtocol protocol);
 
         public List<SecurableResource> getSecurableResources(Container container, User user);
 

@@ -92,9 +92,21 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     void save(User user) throws SQLException;
 
+    /**
+     * @return whether the user has permission to read rows from this dataset
+     */
     public boolean canRead(UserPrincipal user);
 
+    /**
+     * @return whether the user has permission to write to the dataset
+     */
     public boolean canWrite(UserPrincipal user);
+
+    /**
+     * @return whether the user has permission to delete the entire dataset. Use canWrite() to check if user can delete
+     * rows from the dataset.
+     */
+    public boolean canDelete(UserPrincipal user);
 
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
 
@@ -113,6 +125,8 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
      * @return true if the extra key for this DataSet matches the extra key for the passed in dataset
      */
     public boolean hasMatchingExtraKey(DataSet pkDataSet);
+
+    public void delete(User user);
 
     // constants for dataset types
     public static final String TYPE_STANDARD = "Standard";

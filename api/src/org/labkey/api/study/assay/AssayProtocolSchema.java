@@ -547,7 +547,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         Set<String> visibleColumnNames = new HashSet<String>();
         int datasetIndex = 0;
         Set<String> usedColumnNames = new HashSet<String>();
-        for (final DataSet assayDataSet : StudyService.get().getDatasetsForAssayProtocol(getProtocol().getRowId()))
+        for (final DataSet assayDataSet : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
         {
             if (!assayDataSet.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataSet.canRead(getUser()))
             {
