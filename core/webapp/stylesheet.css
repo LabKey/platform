@@ -156,6 +156,8 @@ table#header
     top: 0; right: 0;
     padding-right: 10px;
     padding-top: 6px;
+    /* Hack to keep IE7 from stretching the headerDiv across the whole width of the page */
+    *width: 500px;
 }
 
 
