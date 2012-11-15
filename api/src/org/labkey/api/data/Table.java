@@ -172,7 +172,7 @@ public class Table
 
 
     // 92 usages
-    @Deprecated // Use SqlSelector
+    @Deprecated // Use SqlExecutor
     public static int execute(DbSchema schema, SQLFragment f) throws SQLException
     {
         return new LegacySqlExecutor(schema, f).execute();
@@ -180,7 +180,7 @@ public class Table
 
 
     // 333 usages
-    @Deprecated // Use SqlSelector
+    @Deprecated // Use SqlExecutor
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
         return new LegacySqlExecutor(schema, new SQLFragment(sql, parameters)).execute();
@@ -197,7 +197,7 @@ public class Table
 
 
     // 7 usages
-    // return a result from a one column resultset. K should be a string or number type
+    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
     @Deprecated // Use TableSelector
     public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
     {
@@ -205,7 +205,7 @@ public class Table
     }
 
     // 11 usages
-    // return a result from a one column resultset. K should be a string or number type
+    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
     @Deprecated // Use SqlSelector
     public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
     {
@@ -213,7 +213,7 @@ public class Table
     }
 
     // 19 usages
-    // return a result from a one column resultset. K should be a string or number type
+    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
     @Deprecated // Use SqlSelector
     public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {

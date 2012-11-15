@@ -164,7 +164,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
         final ArrayList<K> list;
         final Table.Getter getter = Table.Getter.forClass(clazz);
 
-        // This is a simple object (Number, String, Date, etc.)
+        // If we have a Getter, then use it (simple object case: Number, String, Date, etc.)
         if (null != getter)
         {
             list = new ArrayList<K>();
@@ -177,6 +177,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
                 }
             }, factory);
         }
+        // If not, we're generating maps or beans
         else
         {
             list = handleResultSet(factory, new ResultSetHandler<ArrayList<K>>()
