@@ -102,7 +102,7 @@ public abstract class EmailPrefsSelector
         // log information to mothership (to help track this down) and return false (to avoid subsequent NPE).
         if (null == up)
         {
-            ExceptionUtil.logExceptionToMothership(HttpView.currentRequest(), new IllegalStateException("UserPreference is null for user: " + user.getEmail() + ", ann: " + ann + ", c: " + _c.toString()));
+            ExceptionUtil.logExceptionToMothership(HttpView.currentRequest(), new IllegalStateException("UserPreference is null for user: " + user.getEmail() + ", ann: " + (null != ann ? ann.getRowId() : null) + ", c: " + _c.toString()));
             return false;
         }
 
