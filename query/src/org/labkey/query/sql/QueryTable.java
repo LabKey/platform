@@ -280,6 +280,10 @@ public class QueryTable extends QueryRelation
         if (!joins.isEmpty())
             _generateSelectSQL = true;
 
+        // UNDONE: this breaks grouping queries on lookups columns in SQL Server
+        // e.g. grouping by a property column (lists)
+        _generateSelectSQL = true;
+
         if (!_generateSelectSQL)
             return tableFromSql;
         else
