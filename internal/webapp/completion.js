@@ -10,6 +10,11 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
     constructor : function(config) {
 
+        Ext4.applyIf(config, {
+            sharedStore     : false,
+            sharedStoreId   : 'autocomplete-shared-store'
+        });
+
         this.completionTask = new Ext4.util.DelayedTask(this.complete, this);
         this.hideCompletionTask = new Ext4.util.DelayedTask(this.hideCompletionDiv, this);
 
@@ -71,40 +76,47 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 }
             }
         );
-
-        // create the store for the completion records
-        Ext4.define('LABKEY.data.Completions', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'name'},
-                {name : 'value'}
-            ]
-        });
-
-        var config = {
-            model   : 'LABKEY.data.Completions',
-            autoLoad: true,
-            pageSize: 10000,
-            proxy   : {
-                type   : 'ajax',
-                url : this.completionUrl ,
-                reader : {
-                    type : 'json',
-                    root : 'completions'
-                }
-            },
-            listeners : {
-                load : {
-                    fn : function(s, recs, success, operation, ops) {
-                        this.completionStoreLoaded = true;
-                    },
-                    scope : this
-                }
-            }
-        }
-        this.completionStore = Ext4.create('Ext.data.Store', config);
+        this.createCompletionStore();
 
         this.callParent([arguments]);
+    },
+
+    createCompletionStore : function() {
+
+        var storeId;
+        if (this.sharedStore)
+        {
+            storeId = this.sharedStoreId;
+            this.completionStore = Ext4.data.StoreManager.lookup(storeId);
+        }
+
+        if (!this.completionStore)
+        {
+            // create the store for the completion records
+            Ext4.define('LABKEY.data.Completions', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'name'},
+                    {name : 'value'}
+                ]
+            });
+
+            var config = {
+                model   : 'LABKEY.data.Completions',
+                autoLoad: true,
+                pageSize: 10000,
+                storeId : storeId,
+                proxy   : {
+                    type   : 'ajax',
+                    url : this.completionUrl ,
+                    reader : {
+                        type : 'json',
+                        root : 'completions'
+                    }
+                }
+            }
+            this.completionStore = Ext4.create('Ext.data.Store', config);
+        }
     },
 
     isCtrlKey : function(event)
@@ -204,7 +216,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
             typedString = typedString.substring(newline, typedString.length);
         if (!typedString)
             this.hideCompletionDiv();
-        else if (this.completionStoreLoaded)
+        else
             this.onHandleChange(typedString);
     },
 
@@ -300,14 +312,14 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
         if (!offsetElem)
             return false;
 
-        posTop += elem.offsetHeight;
+        //posTop += elem.offsetHeight;
 */
 /*
         div.style.top = posTop + 'px';
         div.style.left = posLeft + 'px';
 */
         //div.style.display = "block";
-        this.completionDiv.setXY([posLeft, posTop]);
+        this.completionDiv.setLeftTop(posLeft, posTop);
         this.completionDiv.setVisible(true, true);
         return false;
     },

@@ -738,6 +738,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                         }
                         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
                         StringBuilder sb = new StringBuilder();
+                        String value = PageFlowUtil.filter(getValue(ctx));
 
                         sb.append("<script type=\"text/javascript\">");
 
@@ -745,10 +746,12 @@ public class PublishResultsQueryView extends ResultsQueryView
                             "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
                             "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
                             "            completionUrl   : " + PageFlowUtil.jsString(completionBase) + ",\n" +
+                            "            sharedStore     : true,\n" +
                             "            tagConfig   : {\n" +
                             "                tag     : 'input',\n" +
                             "                type    : 'text',\n" +
                             "                name    : " + PageFlowUtil.jsString(_formElementName) + ",\n" +
+                            "                value   : " + PageFlowUtil.jsString(value) + ",\n" +
                             "                tabindex: " + ctx.getResultSet().getRow() + ",\n" +
                             "                autocomplete : 'off'\n" +
                             "            }\n" +
