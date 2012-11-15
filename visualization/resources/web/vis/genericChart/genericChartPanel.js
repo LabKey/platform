@@ -45,9 +45,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     params = {
                         schemaName  : this.schemaName,
                         queryName   : this.queryName,
+                        viewName    : this.viewName,
+                        dataRegionName : this.dataRegionName,
                         includeCohort : true,
-                        includeParticipantCategory : true,
-                        includeDefault : this.savedColumns ? false : true
+                        includeParticipantCategory : true
                     };
                     Ext4.Ajax.request({
                         url     : LABKEY.ActionURL.buildURL('visualization', 'getGenericReportColumns.api'),
@@ -1328,6 +1329,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             public      : this.reportPermission.getValue().public || false,
             schemaName  : this.schemaName,
             queryName   : this.queryName,
+            viewName    : this.viewName,
+            dataRegionName: this.dataRegionName,
             renderType  : this.renderType,
             jsonData    : {
                 queryConfig : this.getQueryConfig(true),
@@ -1511,6 +1514,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.schemaName = config.schemaName;
         this.queryName = config.queryName;
         this.renderType = config.renderType;
+        this.viewName = config.viewName;
+        this.dataRegionName = config.dataRegionName;
 
         if (this.reportName)
             this.reportName.setValue(config.name);

@@ -39,6 +39,7 @@ import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ShowRows;
@@ -131,9 +132,7 @@ public class VisualizationController extends SpringActionController
     public static class VisualizationUrlsImpl implements VisualizationUrls
     {
         private static final String VISUALIZATION_NAME_PARAM = "name";
-        private static final String VISUALIZATION_SCHEMA_PARAM = "schemaName";
         private static final String VISUALIZATION_FILTER_URL = "filterUrl";
-        private static final String VISUALIZATION_QUERY_PARAM = "queryName";
         private static final String VISUALIZATION_EDIT_PARAM = "edit";
         private static final String VISUALIZATION_ID_PARAM = "reportId";
 
@@ -156,10 +155,13 @@ public class VisualizationController extends SpringActionController
         {
             String queryName = settings.getQueryName();
             if (queryName != null)
-                url.addParameter(VISUALIZATION_QUERY_PARAM, queryName);
+                url.addParameter(QueryParam.queryName, queryName);
             String schemaName = settings.getSchemaName();
             if (schemaName != null)
-                url.addParameter(VISUALIZATION_SCHEMA_PARAM, schemaName);
+                url.addParameter(QueryParam.schemaName, schemaName);
+            String viewName = settings.getViewName();
+            if (viewName != null)
+                url.addParameter(QueryParam.viewName, viewName);
 
             // Get URL (column-header) filters:
             ActionURL filterURL = settings.getSortFilterURL();
@@ -183,10 +185,10 @@ public class VisualizationController extends SpringActionController
             ActionURL url = getBaseTimeChartURL(container, true);
             String queryName = report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
             if (queryName != null)
-                url.addParameter(VISUALIZATION_QUERY_PARAM, queryName);
+                url.addParameter(QueryParam.queryName, queryName);
             String schemaName = report.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
             if (schemaName != null)
-                url.addParameter(VISUALIZATION_SCHEMA_PARAM, schemaName);
+                url.addParameter(QueryParam.schemaName, schemaName);
             url.addParameter(VISUALIZATION_ID_PARAM, report.getDescriptor().getReportId().toString());
             url.addParameter(VISUALIZATION_NAME_PARAM, report.getDescriptor().getReportName());
             return url;
@@ -198,10 +200,10 @@ public class VisualizationController extends SpringActionController
             ActionURL url = getBaseTimeChartURL(container, false);
             String queryName = report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
             if (queryName != null)
-                url.addParameter(VISUALIZATION_QUERY_PARAM, queryName);
+                url.addParameter(QueryParam.queryName, queryName);
             String schemaName = report.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
             if (schemaName != null)
-                url.addParameter(VISUALIZATION_SCHEMA_PARAM, schemaName);
+                url.addParameter(QueryParam.schemaName, schemaName);
             url.addParameter(VISUALIZATION_ID_PARAM, report.getDescriptor().getReportId().toString());
             url.addParameter(VISUALIZATION_NAME_PARAM, report.getDescriptor().getReportName());
             return url;
@@ -1552,6 +1554,10 @@ public class VisualizationController extends SpringActionController
                     descriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
                 if (form.getQueryName() != null)
                     descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
+                if (form.getViewName() != null)
+                    descriptor.setProperty(ReportDescriptor.Prop.viewName, form.getViewName());
+                if (form.getDataRegionName() != null)
+                    descriptor.setProperty(ReportDescriptor.Prop.dataRegionName, form.getDataRegionName());
                 if (form.getRenderType() != null)
                     descriptor.setProperty(GenericChartReportDescriptor.Prop.renderType, form.getRenderType());
                 if (form.getJsonData() != null)
@@ -1597,12 +1603,15 @@ public class VisualizationController extends SpringActionController
         public ApiResponse execute(ColumnListForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
             List<String> columns = new ArrayList<String>();
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
 
-            if (schema != null)
+           if(schema != null)
             {
                 TableInfo table = schema.getTable(form.getQueryName());
+                QuerySettings querySettings = schema.getSettings(getViewContext(), form.getDataRegionName(), form.getQueryName(), form.getViewName());
+                QueryView queryView = schema.createView(getViewContext(), querySettings, errors);
+
                 if (table != null)
                 {
                     Study study = StudyService.get().getStudy(getContainer());
@@ -1624,14 +1633,15 @@ public class VisualizationController extends SpringActionController
                             }
                         }
                     }
+                }
 
-                    if (form.isIncludeDefault())
-                    {
-                        for (FieldKey fk : table.getDefaultVisibleColumns())
-                            columns.add(fk.toString());
-                    }
+                if (queryView != null)
+                {
+                    for (DisplayColumn column : queryView.getDisplayColumns())
+                        columns.add(column.getName());
                 }
             }
+
             response.put("columns", columns);
 
             return response;
@@ -1640,18 +1650,18 @@ public class VisualizationController extends SpringActionController
 
     public static class ColumnListForm extends ReportUtil.JsonReportForm
     {
-        private boolean _includeDefault;
         private boolean _includeCohort;
         private boolean _includeParticipantCategory;
+        private String _dataRegionName;
 
-        public boolean isIncludeDefault()
+        public String getDataRegionName()
         {
-            return _includeDefault;
+            return _dataRegionName;
         }
 
-        public void setIncludeDefault(boolean includeDefault)
+        public void setDataRegionName(String dataRegionName)
         {
-            _includeDefault = includeDefault;
+            _dataRegionName = dataRegionName;
         }
 
         public boolean isIncludeCohort()
