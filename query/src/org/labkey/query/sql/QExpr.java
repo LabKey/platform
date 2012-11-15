@@ -89,12 +89,19 @@ abstract public class QExpr extends QNode
         return false;
     }
 
+
     public ColumnInfo createColumnInfo(SQLTableInfo table, String name)
     {
-        DbSchema schema = table.getSchema();
-        SQLFragment sql = getSqlFragment(schema);
-        return new ExprColumn(table, name, sql, getSqlType());
+        return new ExprColumn(table, name, new SQLFragment("{{expr}}"), getSqlType())
+        {
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                return getSqlFragment(getParentTable().getSchema());
+            }
+        };
     }
+
 
     public QueryParseException fieldCheck(QNode parent, SqlDialect d)
     {

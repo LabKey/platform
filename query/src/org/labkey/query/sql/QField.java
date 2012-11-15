@@ -117,7 +117,7 @@ public class QField extends QInternalExpr
             builder.append("#ERROR: " + message + "#");
             return;
         }
-        builder.append(col.getValueSql(_table.getAlias()));
+        builder.append(col.getValueSql());
     }
 
 
@@ -169,7 +169,7 @@ public class QField extends QInternalExpr
 
     public ColumnInfo createColumnInfo(SQLTableInfo table, String alias)
     {
-        ExprColumn ret = new ExprColumn(table, alias, getRelationColumn().getValueSql(_table.getAlias()), getRelationColumn().getJdbcType());
+        ExprColumn ret = new ExprColumn(table, alias, getRelationColumn().getValueSql(), getRelationColumn().getJdbcType());
         getRelationColumn().copyColumnAttributesTo(ret);
         return ret;
     }

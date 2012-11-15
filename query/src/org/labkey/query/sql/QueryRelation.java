@@ -123,6 +123,19 @@ public abstract class QueryRelation
     /** generate server SQL */
     public abstract SQLFragment getSql();
 
+    public SQLFragment getFromSql()
+    {
+        SQLFragment sql = getSql();
+        if (null == sql)
+            return null;
+        SQLFragment ret = new SQLFragment();
+        ret.append("(");
+        ret.append(sql);
+        ret.append(") ");
+        ret.append(getAlias());
+        return ret;
+    }
+
     /** used w/ Query.setRootTable(), generate a labkey SQL */
     abstract String getQueryText();
 
@@ -186,9 +199,12 @@ public abstract class QueryRelation
         @NotNull
         public abstract JdbcType getJdbcType();
 
-        public SQLFragment getValueSql(String tableAlias)
+        public SQLFragment getValueSql()
         {
-            return new SQLFragment(StringUtils.defaultString(tableAlias, getTable().getAlias()) + "." + getDialect(this).makeLegalIdentifier(getAlias()));
+            assert ref.count() > 0;
+            String tableName = getTable().getAlias();
+            String columnName = getDialect(this).makeLegalIdentifier(getAlias());
+            return new SQLFragment(tableName + "." + columnName);
         }
 
         abstract void copyColumnAttributesTo(ColumnInfo to);
@@ -252,12 +268,13 @@ public abstract class QueryRelation
             super(column.getFieldKey(), parent);
             setAlias(column.getAlias());
             column.copyColumnAttributesTo(this);
+            column.addRef(this);
             _column = column;
         }
 
         public SQLFragment getValueSql(String tableAlias)
         {
-            return _column.getValueSql(tableAlias);
+            return new SQLFragment(tableAlias + "." + getParentTable().getSqlDialect().makeLegalIdentifier(getAlias()));
         }
     }
 }

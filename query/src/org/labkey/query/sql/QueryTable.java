@@ -55,6 +55,8 @@ public class QueryTable extends QueryRelation
     final TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<FieldKey,TableColumn>();
     String _innerAlias;
 
+    Boolean _generateSelectSQL = null;
+
     public QueryTable(Query query, QuerySchema schema, TableInfo table, String alias)
     {
         super(query,schema,alias);
@@ -186,8 +188,47 @@ public class QueryTable extends QueryRelation
         return r;
     }
 
+    @Override
+    public SQLFragment getFromSql()
+    {
+        SQLFragment ret = new SQLFragment();
+        String comment = "<QueryTable";
+        if (!StringUtils.isEmpty(_savedName))
+            comment += " savedName='" + _savedName + "'";
+        comment += " name='" + this._tableInfo.getName() + "' class='" + this._tableInfo.getClass().getSimpleName() + "'>";
+        assert ret.appendComment(comment, _schema.getDbSchema().getSqlDialect());
+
+        SQLFragment sql = _getSql();
+        if (_generateSelectSQL)
+            ret.append("(");
+        ret.append(sql);
+        if (_generateSelectSQL)
+            ret.append(") ").append(getAlias());
+
+        if (!_generateSelectSQL)
+            ret.appendComment("no SELECT generated for this QueryTable: " + this.getAlias(), this._tableInfo.getSqlDialect());
+        assert ret.appendComment("</QueryTable>", _schema.getDbSchema().getSqlDialect());
+        return ret;
+    }
+
 
     public SQLFragment getSql()
+    {
+        SQLFragment ret = new SQLFragment();
+        String comment = "<QueryTable";
+        if (!StringUtils.isEmpty(_savedName))
+            comment += " savedName='" + _savedName + "'";
+        comment += " name='" + this._tableInfo.getName() + "' class='" + this._tableInfo.getClass().getSimpleName() + "'>";
+        assert ret.appendComment(comment, _schema.getDbSchema().getSqlDialect());
+
+        ret.append(_getSql());
+
+        ret.appendComment("</QueryTable>", _schema.getDbSchema().getSqlDialect());
+        return ret;
+    }
+
+
+    private SQLFragment _getSql()
     {
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         SQLFragment sql = new SQLFragment();
@@ -200,20 +241,27 @@ public class QueryTable extends QueryRelation
         else
             _innerAlias = makeRelationName(_tableInfo.getName());
 
-        String comment = "<QueryTable";
-        if (!StringUtils.isEmpty(_savedName))
-            comment += " savedName='" + _savedName + "'";
-        comment += " name='" + this._tableInfo.getName() + "' class='" + this._tableInfo.getClass().getSimpleName() + "'>";
-        assert sql.appendComment(comment, _schema.getDbSchema().getSqlDialect());
-
         for (ColumnInfo c : _tableInfo.getColumns())
+        {
             if (c.isKeyField())
-                getColumn(c.getName());
+            {
+                RelationColumn keyField = getColumn(c.getName());
+                if (null != keyField)
+                    keyField.addRef(this);
+            }
+        }
+
+        _generateSelectSQL = false;
+        SQLFragment tableFromSql = _tableInfo.getFromSQL(_innerAlias);
 
         sql.append("SELECT ");
         String comma = "";
         for (RelationColumn col : _selectedColumns.values())
         {
+            if (col.ref.count() == 0)
+                continue;
+            if (null != col.getFieldKey().getParent())
+                _generateSelectSQL = true;
             col.declareJoins(_innerAlias, joins);
             sql.append(comma);
             SQLFragment f = col.getInternalSql();
@@ -226,11 +274,16 @@ public class QueryTable extends QueryRelation
             comma = ", ";
         }
         sql.append("\nFROM ");
-        sql.append(_tableInfo.getFromSQL(_innerAlias));
+        sql.append(tableFromSql);
         for (SQLFragment j : joins.values())
             sql.append(j);
-        assert sql.appendComment("</QueryTable>", _schema.getDbSchema().getSqlDialect());
-        return sql;
+        if (!joins.isEmpty())
+            _generateSelectSQL = true;
+
+        if (!_generateSelectSQL)
+            return tableFromSql;
+        else
+            return sql;
     }
 
 
@@ -274,6 +327,17 @@ public class QueryTable extends QueryRelation
         void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
             _col.declareJoins(parentAlias, map);
+        }
+
+        @Override
+        public SQLFragment getValueSql()
+        {
+            assert ref.count() > 0;
+            assert null != _generateSelectSQL;
+            if (_generateSelectSQL)
+                return super.getValueSql();
+            else
+                return _col.getValueSql(_innerAlias);
         }
 
         SQLFragment getInternalSql()

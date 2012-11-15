@@ -214,12 +214,24 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    @Override
+    public SQLFragment getFromSql()
+    {
+        if (!_hasLookups)
+            return _source.getFromSql();
+        else
+            return super.getFromSql();
+    }
+
+
     public SQLFragment getSql()
     {
         if (!_hasLookups)
         {
             return _source.getSql();
         }
+
+        SQLFragment sourceFromSql = _source.getFromSql();
 
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         SqlBuilder sql = new SqlBuilder(getSchema().getDbSchema());
@@ -242,10 +254,7 @@ public class QueryLookupWrapper extends QueryRelation
             comma = ", ";
         }
         sql.append("\nFROM ");
-        sql.append("(\n");
-        sql.append(_source.getSql());
-        sql.append(") ");
-        sql.append(_source.getAlias());
+        sql.append(sourceFromSql);
 
         for (SQLFragment j : joins.values())
             sql.append(j);
@@ -365,17 +374,17 @@ public class QueryLookupWrapper extends QueryRelation
             }
         }
 
-        public SQLFragment getValueSql(String tableAlias)
+        public SQLFragment getValueSql()
         {
             if (!_hasLookups)
-                return _wrapped.getValueSql(tableAlias);
+                return _wrapped.getValueSql();
             else
-                return super.getValueSql(tableAlias);
+                return super.getValueSql();
         }
 
         SQLFragment getInternalSql()
         {
-            return _wrapped.getValueSql(_source.getAlias());
+            return _wrapped.getValueSql();
         }
 
         @Override

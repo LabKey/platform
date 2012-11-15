@@ -36,7 +36,7 @@ public class QMethodCall extends QExpr
 
     public void appendSql(SqlBuilder builder)
     {
-        MethodInfo method = getMethod(builder.getDbSchema().getSqlDialect());
+        MethodInfo method = getMethod(builder.getDialect());
         if (method == null)
         {
             builder.appendStringLiteral("Unrecognized method " + getField().getFieldKey());

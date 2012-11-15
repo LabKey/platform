@@ -87,14 +87,14 @@ public class QuerySelect extends QueryRelation implements Cloneable
      * If this node has exactly one FROM table, it may be occasionally possible to skip
      * generating SQL for this node.
      */
-    private boolean _selectDoesNotGenerateSQL = false;
+    private Boolean _generateSelectSQL = true;
 
     private Set<FieldKey> parametersInScope = new HashSet<FieldKey>(); 
 
 
     private QuerySelect(@NotNull Query query, @NotNull QuerySchema schema, String alias)
     {
-        super(query, schema, alias == null ? "_select" + query.incrementAliasCounter() : alias);
+        super(query, schema, StringUtils.defaultString(alias, "_select" + query.incrementAliasCounter()));
         _inFromClause = false;
 
         // subqueryTable is only for expr.createColumnInfo()
@@ -1024,7 +1024,7 @@ groupByLoop:
         if (null == sql)
             return null;
 
-        QueryTableInfo ret = new QueryTableInfo(this, "_select")
+        QueryTableInfo ret = new QueryTableInfo(this, getAlias())
         {
             @NotNull
             @Override
@@ -1187,9 +1187,10 @@ groupByLoop:
     {
         optimize();
 
-        SqlBuilder sql = new SqlBuilder(_schema.getDbSchema());
+        SqlDialect dialect = getSqlDialect();
+        SqlBuilder sql = new SqlBuilder(getDbSchema());
 
-        if (_selectDoesNotGenerateSQL)
+        if (!_generateSelectSQL)
         {
             assert _parsedJoins.size()==1;
             assert _parsedTables.size()==1;
@@ -1201,18 +1202,13 @@ groupByLoop:
             assert _orderBy == null;
             assert _limit == null;
             QueryRelation in = _tables.values().iterator().next();
-            return in.getSql();
+            SQLFragment fromSql = in.getFromSql();
+            fromSql.appendComment("no SELECT generated for this QuerySelect: " + getAlias(), dialect);
+            return fromSql;
         }
 
-        if (null == _distinct)
-        {
-            sql.pushPrefix("SELECT ");
-        }
-        else
-        {
-            sql.pushPrefix("SELECT DISTINCT ");
+        if (null != _distinct)
             markAllSelected(_distinct);
-        }
 
         int count = 0;
         for (SelectColumn col : _columns.values())
@@ -1221,40 +1217,50 @@ groupByLoop:
         if (count == 0)
             markAllSelected(_query);
 
+
+        // FROM first, call getSql() on children first
+        SqlBuilder fromSql = new SqlBuilder(dialect);
+        fromSql.pushPrefix("\nFROM ");
+        for (QJoinOrTable qt : _parsedJoins)
+        {
+            qt.appendSql(fromSql, this);
+            fromSql.nextPrefix(",");
+        }
+        fromSql.popPrefix();
+
+
         // keep track of mapping from source alias to generated alias (used by ORDER BY)
         CaseInsensitiveHashMap<String> aliasMap = new CaseInsensitiveHashMap<String>();
-        
-        SqlDialect dialect = getSqlDialect();
+
+        if (null == _distinct)
+            sql.pushPrefix("SELECT ");
+        else
+            sql.pushPrefix("SELECT DISTINCT ");
+
         for (SelectColumn col : _columns.values())
         {
             if (0 == col.ref.count())
                 continue;
-            String alias = col.getAlias();
-            assert null != alias;
-            if (alias == null)
+            String colAlias = col.getAlias();
+            assert null != colAlias;
+            if (colAlias == null)
             {
                 parseError("Column requires alias", col.getField());
                 return null;
             }
             sql.append(col.getInternalSql());
             sql.append(" AS ");
-            String sqlAlias = dialect.makeLegalIdentifier(alias);
+            String sqlAlias = dialect.makeLegalIdentifier(colAlias);
             sql.append(sqlAlias);
-            aliasMap.put(alias,sqlAlias);
+            aliasMap.put(colAlias,sqlAlias);
             sql.nextPrefix(",\n");
             count++;
         }
+        sql.popPrefix();
         if (getParseErrors().size() != 0)
             return null;
 
-        sql.popPrefix();
-        sql.pushPrefix("\nFROM ");
-        for (QJoinOrTable qt : _parsedJoins)
-        {
-            qt.appendSql(sql, this);
-            sql.nextPrefix(",");
-        }
-        sql.popPrefix();
+        sql.append(fromSql);
 
         if (_where != null)
         {
@@ -1841,15 +1847,16 @@ groupByLoop:
         }
 
         @Override
-        public SQLFragment getValueSql(String tableAlias)
+        public SQLFragment getValueSql()
         {
-            if (QuerySelect.this._selectDoesNotGenerateSQL)
+            assert null != _generateSelectSQL;
+            if (!QuerySelect.this._generateSelectSQL)
             {
                 QExpr expr = getResolvedField();
                 assert expr instanceof QField;
-                return ((QField)expr)._column.getValueSql(tableAlias);
+                return ((QField)expr)._column.getValueSql();
             }
-            return super.getValueSql(tableAlias);
+            return super.getValueSql();
         }
 
         @Override
@@ -1902,9 +1909,9 @@ groupByLoop:
             else
                 r = ((QueryLookupWrapper)r)._source;
         }
-        if (!(r instanceof QuerySelect))
+        if (!(r instanceof QuerySelect) && !(r instanceof QueryTable))
             r = null;
-        QuerySelect selectChild = (QuerySelect)r;
+        QueryRelation childSelectOrTable = r;
 
         r = _parent;
         if (r instanceof QueryLookupWrapper)
@@ -1915,15 +1922,15 @@ groupByLoop:
 
         if (!_allowStructuralOptimization)
         {
-            optimizeOrderBy(selectParent, selectChild);
+            optimizeOrderBy(selectParent, childSelectOrTable);
         }
 
         // doesn't mess with references or structure
-        mergeWithChildSelect(selectParent, selectChild);
+        mergeWithChildSelect(selectParent, childSelectOrTable);
     }
 
 
-    boolean optimizeOrderBy(@Nullable QuerySelect selectParent, @Nullable QuerySelect selectChild)
+    boolean optimizeOrderBy(@Nullable QuerySelect selectParent, @Nullable QueryRelation childRelation)
     {
         if (null == selectParent)
             return false;
@@ -1939,11 +1946,11 @@ groupByLoop:
     }
 
 
-    boolean mergeWithChildSelect(@Nullable QuerySelect selectParent, @Nullable QuerySelect selectChild)
+    boolean mergeWithChildSelect(@Nullable QuerySelect selectParent, @Nullable QueryRelation childRelation)
     {
-        _selectDoesNotGenerateSQL = false;
+        _generateSelectSQL = true;
 
-        if (_parsedTables.size() != 1)
+        if (null == selectParent || null == childRelation)
             return false;
         if (_distinct != null)
             return false;
@@ -1958,7 +1965,8 @@ groupByLoop:
         if (_limit != null)
             return false;
 
-        // don't remove if immediate parent is union, exactly column set and order are important
+        // don't remove if immediate parent is union, exact column set and order are important
+        // null == selectParent check should be sufficient also
         if (_parent instanceof QueryUnion)
             return false;
 
@@ -2000,7 +2008,7 @@ groupByLoop:
         } */
 
         // run timecharttest to validate
-        // _selectDoesNotGenerateSQL = true;
+        //_generateSelectSQL = false;
 
         return true;
     }

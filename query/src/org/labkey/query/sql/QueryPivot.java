@@ -263,23 +263,31 @@ public class QueryPivot extends QueryRelation
                 // CONSIDER: _from.clone() and then simplify the select
                 // execute query
                 sqlPivotValues = new SQLFragment();
-                sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql("_pivotValues"));
+                sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
 
 
                 // if our optimizations get more clever, we may need to implement deepClone()
 //                QuerySelect fromForPivotValues = _from.shallowClone();
-//                fromForPivotValues._allowStructuralOptimization = false;
-//                assert null == fromForPivotValues._orderBy;
+//                fromForPivotValues.releaseAllSelected(this);
+//                if (null != fromForPivotValues._distinct)
+//                {
+//                    fromForPivotValues.releaseAllSelected(this);
+//                    fromForPivotValues._distinct = null;
+//                }
+//                _pivotColumn.addRef(this);
 //                if (null == fromForPivotValues._having)
 //                {
-//                    // release references, resolveFields() will add them back later for main query
 //                    fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
 //                    fromForPivotValues._groupBy = null;
 //                }
-//                fromForPivotValues.getColumn(_pivotColumn.getFieldKey().getName()).addRef(this);
+//                fromForPivotValues._allowStructuralOptimization = false;
 //                SQLFragment fromSql = fromForPivotValues.getSql();
-                SQLFragment fromSql = _from.getSql();
-
+//                // the fields and columns are shared, to be safe fix up reference counts
+//                _from._groupBy.addFieldRefs(_from._groupBy);
+//                if (null != _from._distinct)
+//                    _from.markAllSelected(_from._distinct);
+//                _from.markAllSelected(this);
+                SQLFragment fromSql = _from.getFromSql();
 
                 if (null == fromSql)
                 {
@@ -287,7 +295,7 @@ public class QueryPivot extends QueryRelation
                     assert !getParseErrors().isEmpty();
                     return _pivotValues;
                 }
-                sqlPivotValues.append("\nFROM (").append(fromSql).append(") _pivotValues");
+                sqlPivotValues.append("\nFROM ").append(fromSql);
                 sqlPivotValues.append("\nORDER BY 1 ASC");
             }
             rs = Table.executeQuery(getSchema().getDbSchema(), sqlPivotValues);
@@ -603,12 +611,12 @@ public class QueryPivot extends QueryRelation
             }
 
             @Override
-            public SQLFragment getValueSql(String tableAlias)
+            public SQLFragment getValueSql()
             {
                 if (null == c)
                     return new SQLFragment(NullColumnInfo.nullValue(getSqlDialect().sqlTypeNameFromSqlType(getJdbcType().sqlType)));
                 else
-                    return new SQLFragment(tableAlias + "." + alias);
+                    return new SQLFragment(getTable().getAlias() + "." + alias);
             }
         };
     }
@@ -639,14 +647,14 @@ public class QueryPivot extends QueryRelation
 
             if (isKey)
             {
-                sql.append(comma).append(col.getValueSql(tableAlias)).append(" AS ").append(col.getAlias());
+                sql.append(comma).append(col.getValueSql()).append(" AS ").append(col.getAlias());
                 comma = ",\n";
                 continue;
             }
 
             if (!isAgg)
             {
-                sql.append(comma).append("MAX(").append(col.getValueSql(tableAlias)).append(") AS ").append(col.getAlias());
+                sql.append(comma).append("MAX(").append(col.getValueSql()).append(") AS ").append(col.getAlias());
                 comma = ",\n";
                 continue;
             }
@@ -660,7 +668,7 @@ public class QueryPivot extends QueryRelation
             else
             {
                 String agg = type.name();
-                sql.append(comma).append(agg).append("(").append(col.getValueSql(tableAlias)).append(") AS ").append(col.getAlias());
+                sql.append(comma).append(agg).append("(").append(col.getValueSql()).append(") AS ").append(col.getAlias());
                 comma = ",\n";
             }
 
@@ -684,33 +692,32 @@ public class QueryPivot extends QueryRelation
             {
                 QNode value = (QNode)pivotValue.getValue();
                 String alias = makePivotColumnAlias(col.getAlias(), pivotValue.getKey());
-                sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql(tableAlias));
+                sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql());
                 if (value instanceof QNull)
                     sql.append(" IS NULL");
                 else
                     sql.append("=").append(value.getSourceText());
-                sql.append(") THEN (").append(col.getValueSql(tableAlias)).append(") ELSE NULL END) AS ").append(alias);
+                sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").append(alias);
                 comma = ",\n";
             }
         }
 
         _from.markAllSelected(this);
-        SQLFragment fromSql = _from.getSql();
+        SQLFragment fromSql = _from.getFromSql();
         if (null == fromSql)
         {
             assert !getParseErrors().isEmpty();
             return null;
         }
-        sql.append("\n FROM (").append(fromSql).append(") ").append(tableAlias).append("\n");
+        sql.append("\n FROM ").append(fromSql).append("\n");
 
         // UNDONE: separate grouping columns from extra 'fact' columns
-        // sql.append("GROUP BY ");
         sql.pushPrefix("GROUP BY ");
         for (RelationColumn col : _grouping.values())
         {
             if (_aggregates.containsKey(col.getFieldKey().getName()))
                 continue;
-            sql.append(col.getValueSql(tableAlias));
+            sql.append(col.getValueSql());
             sql.nextPrefix(",");
         }
         sql.appendComment("</QueryPivot>", getSqlDialect());
