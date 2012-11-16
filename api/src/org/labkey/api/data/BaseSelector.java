@@ -47,7 +47,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
 
     protected BaseSelector(DbScope scope)
     {
-        super(scope, null);
+        super(scope, null);     // TODO: Constructor that takes a Connection?
     }
 
     // SELECTOR and getThis() make it easier to chain setMaxRows() and setOffset() while returning the correct selector type from subclasses

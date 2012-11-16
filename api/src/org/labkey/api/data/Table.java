@@ -1243,84 +1243,22 @@ public class Table
 
 
     public static Map<String, List<Aggregate.Result>>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
-                                                                                Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter) throws SQLException
+                            Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter)
     {
-        return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, null);
-    }
+        TableSelector selector = new TableSelector(table, select, filter, null);
+        selector.setNamedParameters(parameters);
 
-    private static Map<String, List<Aggregate.Result>> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
-                                                                                  Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter,
-                                                                                  @Nullable AsyncQueryRequest asyncRequest) throws SQLException
-    {
-        Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
-        ensureRequiredColumns(table, columns, filter, null, aggregates);
-        SQLFragment innerSql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, ALL_ROWS, NO_OFFSET, false);
-        QueryService.get().bindNamedParameters(innerSql, parameters);
-        QueryService.get().validateNamedParameters(innerSql);
-
-        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(table, columns.values());
-
-        SQLFragment sql = new SQLFragment();
-        sql.append("SELECT ");
-        boolean first = true;
-
-        for (Aggregate agg : aggregates)
-        {
-            if (agg.isCountStar() || columnMap.containsKey(agg.getFieldKey()))
-            {
-                if (first)
-                    first = false;
-                else
-                    sql.append(", ");
-                sql.append(agg.getSQL(table.getSqlDialect(), columnMap));
-            }
-        }
-
-        Map<String, List<Aggregate.Result>> results = new HashMap<String, List<Aggregate.Result>>();
-
-        // if we didn't find any columns, then skip the SQL call completely
-        if (first)
-            return results;
-
-        sql.append(" FROM (").append(innerSql).append(") S");
-
-        Table.TableResultSet rs = null;
-        try
-        {
-            SqlSelector selector = new SqlSelector(table.getSchema(), sql);
-            selector.setAsyncRequest(asyncRequest);
-            rs = selector.getResultSet();
-
-            boolean next = rs.next();
-            if (!next)
-                throw new IllegalStateException("Expected a non-empty resultset from aggregate query.");
-            for (Aggregate agg : aggregates)
-            {
-                if(!results.containsKey(agg.getColumnName()))
-                    results.put(agg.getColumnName(), new ArrayList<Aggregate.Result>());
-
-                results.get(agg.getColumnName()).add(agg.getResult(rs));
-            }
-            return results;
-        }
-        finally
-        {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {_log.error("unexpected error", e);}
-        }
+        return selector.getAggregates(aggregates);
     }
 
     public static Map<String, List<Aggregate.Result>> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates,
-            final Collection<ColumnInfo> select, final @Nullable Map<String,Object> parameters, final Filter filter, final boolean cache, HttpServletResponse response)
-            throws SQLException, IOException
+              Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, Filter filter, HttpServletResponse response)
+            throws IOException
     {
-        final AsyncQueryRequest<Map<String, List<Aggregate.Result>>> asyncRequest = new AsyncQueryRequest<Map<String, List<Aggregate.Result>>>(response);
-        return asyncRequest.waitForResult(new Callable<Map<String, List<Aggregate.Result>>>()
-        {
-            public Map<String, List<Aggregate.Result>> call() throws Exception
-            {
-                return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, asyncRequest);
-            }
-        });
+        TableSelector selector = new TableSelector(table, select, filter, null);
+        selector.setNamedParameters(parameters);
+
+        return selector.getAggregatesAsync(aggregates, response);
     }
 
 
@@ -1781,10 +1719,8 @@ public class Table
             List<Aggregate> aggregates = new LinkedList<Aggregate>();
 
             // Test no aggregates case
-            Map<String, List<Aggregate.Result>> aggregateMap = selectAggregatesForDisplay(tinfo, aggregates, Collections.<ColumnInfo>emptyList(), null, null);
+            Map<String, List<Aggregate.Result>> aggregateMap = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
             assertTrue(aggregateMap.isEmpty());
-            Map<String, List<Aggregate.Result>> aggregateMap2 = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
-            assertTrue(aggregateMap2.isEmpty());
 
             aggregates.add(Aggregate.createCountStar());
             aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.COUNT));
@@ -1795,8 +1731,7 @@ public class Table
             aggregates.add(new Aggregate(tinfo.getColumn("Parent"), Aggregate.Type.COUNT_DISTINCT));
             aggregates.add(new Aggregate(tinfo.getColumn("CreatedBy"), Aggregate.Type.COUNT));
 
-            aggregateMap = selectAggregatesForDisplay(tinfo, aggregates, Collections.<ColumnInfo>emptyList(), null, null);
-            aggregateMap2 = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
+            aggregateMap = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
 
             String sql =
                     "SELECT " +
@@ -1812,7 +1747,6 @@ public class Table
             Map expected = new SqlSelector(tinfo.getSchema(), sql).getObject(Map.class);
 
             verifyAggregates(expected, aggregateMap);
-            verifyAggregates(expected, aggregateMap2);
         }
 
 

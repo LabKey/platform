@@ -353,7 +353,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             }
 
             @Override
-            public Transaction getCurrentTransaction()
+            public @Nullable Transaction getCurrentTransaction()
             {
                 if (null != overrideTransactionActive)
                 {

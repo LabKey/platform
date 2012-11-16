@@ -131,7 +131,7 @@ public class NestedRenderContext extends RenderContext
 
     @Override
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn,
-            Map<String,Object> parameters,  boolean async) throws SQLException, IOException
+            Map<String, Object> parameters, boolean async) throws IOException
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
@@ -167,12 +167,12 @@ public class NestedRenderContext extends RenderContext
         
         if (!aggregatesIn.isEmpty())
         {
-            if (async)
-            {
-                return Table.selectAggregatesForDisplayAsync(aggTableInfo, aggregatesIn, Collections.<ColumnInfo>emptyList(), null, new SimpleFilter(), getCache(), getViewContext().getResponse());
-            }
+            TableSelector selector = new TableSelector(aggTableInfo, Collections.<ColumnInfo>emptyList(), null, null);
 
-            return Table.selectAggregatesForDisplay(aggTableInfo, aggregatesIn, Collections.<ColumnInfo>emptyList(), null, new SimpleFilter());
+            if (async)
+                return selector.getAggregatesAsync(aggregatesIn, getViewContext().getResponse());
+            else
+                return selector.getAggregates(aggregatesIn);
         }
 
         return Collections.emptyMap();

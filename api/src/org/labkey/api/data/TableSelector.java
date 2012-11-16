@@ -220,7 +220,7 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
 
                     for (Aggregate agg : aggregates)
                     {
-                        if(!results.containsKey(agg.getColumnName()))
+                        if (!results.containsKey(agg.getColumnName()))
                             results.put(agg.getColumnName(), new ArrayList<Aggregate.Result>());
 
                         results.get(agg.getColumnName()).add(agg.getResult(rs));
@@ -230,6 +230,28 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
                 return results;
             }
         });
+    }
+
+    public Map<String, List<Aggregate.Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response) throws IOException
+    {
+        setLogger(ConnectionWrapper.getConnectionLogger());
+        AsyncQueryRequest<Map<String, List<Aggregate.Result>>> asyncRequest = new AsyncQueryRequest<Map<String, List<Aggregate.Result>>>(response);
+        setAsyncRequest(asyncRequest);
+
+        try
+        {
+            return asyncRequest.waitForResult(new Callable<Map<String, List<Aggregate.Result>>>()
+            {
+                public Map<String, List<Aggregate.Result>> call() throws Exception
+                {
+                    return getAggregates(aggregates);
+                }
+            });
+        }
+        catch (SQLException e)
+        {
+            throw getExceptionFramework().translate(getScope(), "Message", null, e);
+        }
     }
 
     @Override

@@ -280,7 +280,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         return _rs;
     }
 
-    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String,Object> parameters, boolean async) throws SQLException, IOException
+    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String,Object> parameters, boolean async) throws IOException
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
@@ -319,12 +319,12 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (!aggregates.isEmpty())
         {
-            if (async)
-            {
-                return Table.selectAggregatesForDisplayAsync(tinfo, aggregates, cols, parameters, filter, getCache(), getViewContext().getResponse());
-            }
+            TableSelector selector = new TableSelector(tinfo, cols, filter, null).setNamedParameters(parameters);
 
-            return Table.selectAggregatesForDisplay(tinfo, aggregates, cols, parameters, filter);
+            if (async)
+                return selector.getAggregatesAsync(aggregates, getViewContext().getResponse());
+            else
+                return selector.getAggregates(aggregates);
         }
 
         return Collections.emptyMap();
