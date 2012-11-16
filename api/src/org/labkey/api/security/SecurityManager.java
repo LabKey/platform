@@ -1467,7 +1467,7 @@ public class SecurityManager
         }
     }
 
-    public static List<User> getProjectUsers(Container c)
+    public static @NotNull List<User> getProjectUsers(Container c)
     {
         return getProjectUsers(c, false);
     }
@@ -1737,7 +1737,7 @@ public class SecurityManager
     }
 
     // TODO: Should return a set
-    public static List<User> getProjectUsers(Container c, boolean includeGlobal)
+    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal)
     {
         if (c != null && !c.isProject())
             c = c.getProject();
