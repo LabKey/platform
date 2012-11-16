@@ -99,7 +99,7 @@ public class QueryWebPart extends WebPartView
 
             if (queryName == null)
             {
-                Object sql = _extendedProperties.get("sql");
+                Object sql = null==_extendedProperties ? null : _extendedProperties.get("sql");
                 if (null == sql)
                     sql = _properties.get("sql");
 
