@@ -481,8 +481,10 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
     showDimensionFilterPanel: function() {
         // delete/destoy any dimension filter panels that have been tagged
         Ext4.each(this.panelsToDestroy, function(panel){
+            if (this.filterPanelToExpand && panel.getId() == this.filterPanelToExpand.getId())
+                this.filterPanelToExpand = undefined;
             panel.destroy();
-        });
+        }, this);
         this.panelsToDestroy = [];
 
         // show any dimension filter panels that were added (only show unique panels)
