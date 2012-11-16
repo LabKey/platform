@@ -498,9 +498,10 @@ var statFnPlot = new LABKEY.vis.Plot({
     layers: [new LABKEY.vis.Layer({
         geom: new LABKEY.vis.Geom.Path({color: '#8ABEDE'})
     }), new LABKEY.vis.Layer({
-        geom: new LABKEY.vis.Geom.Point({color: '#8ABEDE'})
+        geom: new LABKEY.vis.Geom.Point({color: '#8ABEDE'}),
+        aes: {hoverText: function(row){return row.x;}}
     })],
-    data: LABKEY.vis.Stat.fn(function(x){return Math.log(x) * 2;}, 40, 1, 500),
+    data: LABKEY.vis.Stat.fn(function(x){return Math.log(x) * 2;}, 20, 1, 15),
     aes: {x: 'x', y: 'y'}
 });
 

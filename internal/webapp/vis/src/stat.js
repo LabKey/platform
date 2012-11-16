@@ -80,11 +80,18 @@ LABKEY.vis.Stat.sortNumericDescending = function(data, accessor){
 
 
 LABKEY.vis.Stat.fn = function(fn, n, min, max){
-    var data = [];
-    var stepSize = Math.abs((max - min) / n);
+    if(n === undefined || n === null || n < 2){
+        // We need at least 2 points to make a line.
+        n = 2;
+    }
 
-    for(var i = min; i < max; i+=stepSize){
-        data.push({x: i, y: fn(i)});
+    var data = [],
+        stepSize = Math.abs((max - min) / (n-1)),
+        count = min;
+
+    for(var i = 0; i < n; i++){
+        data.push({x: count, y: fn(count)});
+        count += stepSize;
     }
 
     return data;
