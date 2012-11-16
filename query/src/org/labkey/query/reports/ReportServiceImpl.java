@@ -808,6 +808,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         _uncacheDependent(view);
     }
 
+    @Nullable
     private Report _deserialize(Container container, User user, XmlObject reportXml) throws IOException, XmlValidationException
     {
         ReportDescriptor descriptor = ReportDescriptor.createFromXmlObject(container, user, reportXml);
@@ -832,6 +833,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return null;
     }
 
+    @Nullable
     private Report deserialize(Container container, User user, XmlObject reportXml) throws IOException, XmlValidationException
     {
         if (null != reportXml)
@@ -840,7 +842,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
             // reset any report identifier, we want to treat an imported report as a new
             // report instance
-            report.getDescriptor().setReportId(new DbReportIdentifier(-1));
+            if (report != null)
+                report.getDescriptor().setReportId(new DbReportIdentifier(-1));
 
             return report;
         }
@@ -848,39 +851,41 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         throw new IllegalArgumentException("Report XML file does not exist.");
     }
 
-    @Override
+    @Override @Nullable
     public Report importReport(final User user, final Container container, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException
     {
         Report report = deserialize(container, user, reportXml);
-        ReportDescriptor descriptor = report.getDescriptor();
-        String key = descriptor.getReportKey();
-
-        if (StringUtils.isBlank(key))
+        if (report != null)
         {
-            // use the default key used by query views
-            key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
-        }
+            ReportDescriptor descriptor = report.getDescriptor();
+            String key = descriptor.getReportKey();
 
-        Report[] existingReports = getReports(user, container, key);
-
-        for (Report existingReport : existingReports)
-        {
-            if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
+            if (StringUtils.isBlank(key))
             {
-                deleteReport(new ContainerUser(){
-                    public User getUser() {return user;}
-                    public Container getContainer() {return container;}
-                }, existingReport);
+                // use the default key used by query views
+                key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
             }
+
+            Report[] existingReports = getReports(user, container, key);
+
+            for (Report existingReport : existingReports)
+            {
+                if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
+                {
+                    deleteReport(new ContainerUser(){
+                        public User getUser() {return user;}
+                        public Container getContainer() {return container;}
+                    }, existingReport);
+                }
+            }
+
+            int rowId = _saveReport(user, container, key, descriptor).getRowId();
+            descriptor.setReportId(new DbReportIdentifier(rowId));
+
+            // re-load the report to get the updated property information (i.e container, etc.)
+            report = ReportService.get().getReport(rowId);
+            report.afterSave(container, user, root);
         }
-
-        int rowId = _saveReport(user, container, key, descriptor).getRowId();
-        descriptor.setReportId(new DbReportIdentifier(rowId));
-
-        // re-load the report to get the updated property information (i.e container, etc.)
-        report = ReportService.get().getReport(rowId);
-        report.afterSave(container, user, root);
-
         return report;
     }
 
