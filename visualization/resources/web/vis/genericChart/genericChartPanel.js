@@ -1743,17 +1743,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.viewPanel.add(newChartDiv);
 
         // TODO: make line charts render if this.xAxisMeasure.type == "date"
-        if(this.renderType == 'box_plot' ||
-                (this.renderType == 'auto_plot' && (!this.xAxisMeasure || this.xAxisMeasure.normalizedType == 'string' || this.xAxisMeasure.normalizedType == 'boolean'))) {
+        if(!this.xAxisMeasure || this.isBoxPlot(this.renderType, this.xAxisMeasure.normalizedType)) {
 
             if(this.xAxisMeasure){
-                measures.x.acc = function(row){
-                    var value = row[measures.x.name].displayValue ? row[measures.x.name].displayValue : row[measures.x.name].value;
-                    if(value === null){
-                        value = "Not in " + measures.x.label;
-                    }
-                    return value;
-                };
+                measures.x.acc = this.getDiscreteXAcc(measures);
             } else {
                 measures.x.acc = function(row){return measures.x.name};
             }
@@ -1784,15 +1777,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 color: '#' + chartOptions.lineColor,
                 fill: '#' + chartOptions.fillColor
             });
-        } else if(this.renderType == 'scatter_plot' ||
-                (this.renderType == 'auto_plot' && this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'date')){
-
-            measures.x.acc = function(row){
-                return row[measures.x.name].value;
-            };
-
+        } else if(this.isScatterPlot(this.renderType, this.xAxisMeasure.normalizedType)){
             if(this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double'){
+                measures.x.acc = function(row){return row[measures.x.name].value;};
                 scales.x = {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType};
+
                 if(scales.x.trans === 'log'){
                     // Check for values < 0, show error accordingly.
                     for(var i = 0; i < this.chartData.rows.length; i++){
@@ -1807,6 +1796,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     }
                 }
             } else {
+                measures.x.acc = this.getDiscreteXAcc(measures);
                 scales.x = {scaleType: 'discrete'};
             }
 
@@ -1829,7 +1819,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     scales.y.tickFormat = getFormatFn.call(this, field);
                 }
 
-                if(this.xAxisMeasure && field.name == this.xAxisMeasure.name && field.caption != 'Cohort'){
+                if(this.xAxisMeasure && field.name == this.xAxisMeasure.name){
                     scales.x.tickFormat = getFormatFn.call(this, field);
                 }
             }
@@ -1897,6 +1887,32 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         this.setRenderRequested(false); // We just rendered the plot, we don't need to request another render.
+    },
+
+    isScatterPlot: function(renderType, xAxisType){
+        if(renderType === 'scatter_plot'){
+            return true;
+        }
+
+        return (renderType === 'auto_plot' && (xAxisType == 'int' || xAxisType == 'float' || xAxisType == 'date'));
+    },
+
+    isBoxPlot: function(renderType, xAxisType){
+        if(renderType === 'box_plot'){
+            return true;
+        }
+
+        return (renderType == 'auto_plot' && (xAxisType == 'string' || xAxisType == 'boolean'));
+    },
+
+    getDiscreteXAcc: function(measures){
+        return function(row){
+            var value = row[measures.x.name].displayValue ? row[measures.x.name].displayValue : row[measures.x.name].value;
+            if(value === null){
+                value = "Not in " + measures.x.label;
+            }
+            return value;
+        };
     },
 
     clearChartPanel: function(){

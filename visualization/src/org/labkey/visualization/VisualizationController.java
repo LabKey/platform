@@ -49,12 +49,10 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -98,7 +96,6 @@ import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationUrls;
-import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.sql.StudyVisualizationProvider;
 import org.labkey.visualization.sql.VisualizationProvider;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
@@ -114,7 +111,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -1603,7 +1600,7 @@ public class VisualizationController extends SpringActionController
         public ApiResponse execute(ColumnListForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            List<String> columns = new ArrayList<String>();
+            HashSet<String> columns = new HashSet<String>();
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
 
            if(schema != null)
@@ -1637,8 +1634,13 @@ public class VisualizationController extends SpringActionController
 
                 if (queryView != null)
                 {
-                    for (DisplayColumn column : queryView.getDisplayColumns())
-                        columns.add(column.getName());
+                    for (DisplayColumn column : queryView.getDisplayColumns()){
+                        ColumnInfo colInfo = column.getColumnInfo();
+                        if (colInfo != null)
+                        {
+                            columns.add(colInfo.getFieldKey().toString());
+                        }
+                    }
                 }
             }
 
