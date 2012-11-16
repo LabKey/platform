@@ -12,7 +12,8 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
         Ext4.applyIf(config, {
             sharedStore     : false,
-            sharedStoreId   : 'autocomplete-shared-store'
+            sharedStoreId   : 'autocomplete-shared-store',
+            maxDivHeight    : 190                         // max height of the completion div before overflow
         });
 
         this.completionTask = new Ext4.util.DelayedTask(this.complete, this);
@@ -186,7 +187,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
     {
         var prevIdx = this.optionSelectedIndex;
         if (forward)
-            this.optionSelectedIndex = this.optionSelectedIndex < this.optionCount - 1 ? this.optionSelectedIndex + 1 : 0;
+            this.optionSelectedIndex = this.optionSelectedIndex < this.optionCount - 1 ? this.optionSelectedIndex + 1 : this.optionCount-1;
         else
             this.optionSelectedIndex = this.optionSelectedIndex > 0 ? this.optionSelectedIndex - 1 : 0;
 
@@ -197,6 +198,13 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
         el = Ext4.fly("completionTR" + this.optionSelectedIndex);
         if (el)
             el.replaceCls('labkey-completion-nohighlight', 'labkey-completion-highlight');
+
+        // scroll the hilighted element into view if necessary
+        var delta = el.dom.offsetTop - this.completionDiv.getScroll().top;
+        if (delta < 0)
+            this.completionDiv.scroll('up', Math.abs(delta));
+        else if (delta >= this.maxDivHeight)
+            this.completionDiv.scroll('down', el.getHeight() + (delta - this.maxDivHeight));
     },
 
     onKeyUp : function(event, element, completionURLPrefix)
