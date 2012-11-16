@@ -869,10 +869,21 @@ LABKEY.Query = new function()
          * Returns the set of schemas available in the specified container.
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName Get schemas under the given schemaName.
+         * @param {String} config.apiVersion Version of the API. Changed the structure of the server's response.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
-         * <li><b>schemasInfo:</b> An object with a property called "schemas," which contains an array of schema names.</li>
+         * <li><b>schemasInfo:</b> An object with a property called "schemas". If no apiVersion is specified, or it is
+         * less than 9.3, it will be an array of schema names. If apiVersion is 9.3 or greater, it will be a map where
+         * the keys are schemaNames and the values are objects with the following properties:
+         *     <ul>
+         *         <li><b>schemaName</b>: the short name of the schema</li>
+         *         <li><b>fullyQualifiedName</b>: the fully qualified name of the schema, encoded as a string with
+         *         "." separators as described in {@link LABKEY.SchemaKey}</li>
+         *         <li><b>description</b>: a short description of the schema</li>
+         *         <li><b>schemas</b>: a map of child schemas, with values in the same structure as this object</li>
+         *     </ul>
+         * </li>
          * </ul>
          * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:

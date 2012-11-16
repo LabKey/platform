@@ -23,7 +23,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewForm;
 
 /**
@@ -109,6 +111,12 @@ public class ProtocolIdForm extends ViewForm
                                                           !protocol.getContainer().equals(ContainerManager.getSharedContainer()) &&
                                                           !(getContainer().isWorkbook() && protocol.getContainer().equals(getContainer().getParent()))))
             {
+                if (protocol != null && protocol.getContainer().hasPermission(getUser(), ReadPermission.class))
+                {
+                    ActionURL url = getViewContext().cloneActionURL();
+                    url.setContainer(protocol.getContainer());
+                    throw new RedirectException(url);
+                }
                 throw new NotFoundException("Assay " + getRowId() + " does not exist in " + getContainer().getPath());
             }
 
