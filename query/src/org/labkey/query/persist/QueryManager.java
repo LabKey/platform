@@ -35,7 +35,6 @@ import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
@@ -514,15 +513,15 @@ public class QueryManager
      * Experimental.  The goal is to provide a more thorough validation of query metadata, including warnings of potentially
      * invalid conditions, like autoincrement columns set userEditable=true.
      */
-    public Set<String> validateQueryMetadata(String schemaName, String queryName, User user, Container container) throws SQLException, QueryParseException
+    public Set<String> validateQueryMetadata(SchemaKey schemaPath, String queryName, User user, Container container) throws SQLException, QueryParseException
     {
-        UserSchema schema = (UserSchema) DefaultSchema.get(user, container).getSchema(schemaName);
+        UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
-            throw new IllegalArgumentException("Could not find the schema '" + schemaName + "'!");
+            throw new IllegalArgumentException("Could not find the schema '" + schemaPath.getName() + "'!");
 
         TableInfo table = schema.getTable(queryName);
         if (null == table)
-            throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaName + "'!");
+            throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.getName() + "'!");
 
         //validate foreign keys and other metadata warnings
         Set<String> queryErrors = new HashSet<String>();
@@ -582,10 +581,10 @@ public class QueryManager
 //        if(col.isShownInUpdateView() && !col.isUserEditable())
 //            queryErrors.add("INFO: " + errorBase + " has shownInUpdateView=true, but it is not userEditable");
 
-        if(col.isShownInInsertView() && col.isHidden())
-            queryErrors.add("INFO: " + errorBase + " has shownInInsertView=true, but it is hidden");
-        if(col.isShownInUpdateView() && col.isHidden())
-            queryErrors.add("INFO: " + errorBase + " has shownInUpdateView=true, but it is hidden");
+//        if(col.isShownInInsertView() && col.isHidden())
+//            queryErrors.add("INFO: " + errorBase + " has shownInInsertView=true, but it is hidden");
+//        if(col.isShownInUpdateView() && col.isHidden())
+//            queryErrors.add("INFO: " + errorBase + " has shownInUpdateView=true, but it is hidden");
 
         try
         {
@@ -714,19 +713,19 @@ public class QueryManager
      * Experimental.  The goal is to provide a more thorough validation of saved views, including errors like invalid
      * column names or case errors (which cause problems for case-sensitive js)
      */
-    public Set<String> validateQueryViews(String schemaName, String queryName, User user, Container container) throws SQLException, QueryParseException
+    public Set<String> validateQueryViews(SchemaKey schemaPath, String queryName, User user, Container container) throws SQLException, QueryParseException
     {
-        UserSchema schema = (UserSchema) DefaultSchema.get(user, container).getSchema(schemaName);
+        UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
-            throw new IllegalArgumentException("Could not find the schema '" + schemaName + "'!");
+            throw new IllegalArgumentException("Could not find the schema '" + schemaPath.getName() + "'!");
 
         TableInfo table = schema.getTable(queryName);
         if (null == table)
-            throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaName + "'!");
+            throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schema.getSchemaName() + "'!");
 
         //validate views
         Set<String> queryErrors = new HashSet<String>();
-        List<CustomView> views = QueryService.get().getCustomViews(user, container, schemaName, queryName);
+        List<CustomView> views = QueryService.get().getCustomViews(user, container, schema.getSchemaName(), queryName);
         for (CustomView v : views)
         {
             validateViewColumns(user, container, v, "columns", v.getColumns(), queryErrors, table);

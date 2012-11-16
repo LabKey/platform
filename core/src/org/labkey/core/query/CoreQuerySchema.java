@@ -18,7 +18,6 @@ package org.labkey.core.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
@@ -41,8 +40,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 
@@ -133,6 +130,9 @@ public class CoreQuerySchema extends UserSchema
         ColumnInfo col = groups.wrapColumn(principalsBase.getColumn("UserId"));
         col.setKeyField(true);
         col.setReadOnly(true);
+        col.setUserEditable(false);
+        col.setShownInInsertView(false);
+        col.setShownInUpdateView(false);
         groups.addColumn(col);
 
         col = groups.wrapColumn(principalsBase.getColumn("Name"));
@@ -200,6 +200,9 @@ public class CoreQuerySchema extends UserSchema
         col.setKeyField(true);
         col.setHidden(true);
         col.setReadOnly(true);
+        col.setUserEditable(false);
+        col.setShownInInsertView(false);
+        col.setShownInUpdateView(false);
         principals.addColumn(col);
 
         col = principals.wrapColumn(principalsBase.getColumn("Name"));

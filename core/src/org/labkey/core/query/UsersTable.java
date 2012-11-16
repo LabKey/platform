@@ -17,7 +17,6 @@ package org.labkey.core.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SchemaTableInfo;
@@ -37,13 +36,11 @@ import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.core.user.UserController;
 
@@ -111,6 +108,9 @@ public class UsersTable extends SimpleUserSchema.SimpleTable
                 ActionURL url = detailsURL.getActionURL();
                 url.setAction(UserController.DetailsAction.class);
                 setDetailsURL(new DetailsURL(url));
+                userIdCol.setUserEditable(false);
+                userIdCol.setShownInInsertView(false);
+                userIdCol.setShownInUpdateView(false);
             }
         }
     }

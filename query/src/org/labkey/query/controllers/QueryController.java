@@ -4740,8 +4740,9 @@ public class QueryController extends SpringActionController
             TableInfo table = schema.getTable(form.getQueryName());
             QueryManager.get().validateQuery(table, true);
 
-            Set<String> queryErrors = QueryManager.get().validateQueryMetadata(form.getSchema().getName(), form.getQueryName(), getUser(), getContainer());
-            queryErrors.addAll(QueryManager.get().validateQueryViews(form.getSchema().getName(), form.getQueryName(), getUser(), getContainer()));
+            SchemaKey schemaKey = SchemaKey.fromString(form.getSchemaName());
+            Set<String> queryErrors = QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer());
+            queryErrors.addAll(QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer()));
 
             for (String e : queryErrors)
             {
