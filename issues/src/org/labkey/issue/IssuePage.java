@@ -328,14 +328,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         HStringBuilder select = new HStringBuilder();
         select.append("<option value=\"\"></option>");
 
-        if (members != null)
+        for (User member : members)
         {
-            for (User member : members)
-            {
-                select.append("<option value=").append(member.getUserId()).append(">");
-                select.append(member.getDisplayName(_user));
-                select.append("</option>\n");
-            }
+            select.append("<option value=").append(member.getUserId()).append(">");
+            select.append(member.getDisplayName(_user));
+            select.append("</option>\n");
         }
 
         return select.toHString();

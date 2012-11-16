@@ -328,16 +328,16 @@ public class IssueManager
 
     private static final Comparator<User> USER_COMPARATOR = new UserDisplayNameComparator();
 
-    public static Collection<User> getAssignedToList(Container c, Issue issue)
+    public static @NotNull Collection<User> getAssignedToList(Container c, Issue issue)
     {
         Collection<User> initialAssignedTo = getInitialAssignedToList(c);
 
-        // If this is an existing issue, add the user who opened the issue, unless they are a guest, or already in the list.
-        if (initialAssignedTo != null && issue != null && 0 != issue.getIssueId())
+        // If this is an existing issue, add the user who opened the issue, unless they are a guest, inactive, or already in the list.
+        if (issue != null && 0 != issue.getIssueId())
         {
             User createdByUser = UserManager.getUser(issue.getCreatedBy());
 
-            if (createdByUser != null && !createdByUser.isGuest() && !initialAssignedTo.contains(createdByUser))
+            if (createdByUser != null && !createdByUser.isGuest() && createdByUser.isActive() && !initialAssignedTo.contains(createdByUser))
             {
                 Set<User> modifiedAssignedTo = new TreeSet<User>(USER_COMPARATOR);
                 modifiedAssignedTo.addAll(initialAssignedTo);
@@ -354,7 +354,7 @@ public class IssueManager
 
     // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.
-    private static Collection<User> getInitialAssignedToList(final Container c)
+    private static @NotNull Collection<User> getInitialAssignedToList(final Container c)
     {
         String cacheKey = getCacheKey(c);
 
@@ -368,13 +368,13 @@ public class IssueManager
                 if (null != group)
                 {
                     Set<User> groupMembers = SecurityManager.getAllGroupMembers(group, MemberType.USERS);
-                    if (groupMembers != null && groupMembers.size() > 0)
+                    if (!groupMembers.isEmpty())
                         initialAssignedTo.addAll(groupMembers);
                 }
                 else
                 {
                     List<User> projectUsers = SecurityManager.getProjectUsers(c.getProject());
-                    if(projectUsers != null && projectUsers.size() > 0)
+                    if (!projectUsers.isEmpty())
                         initialAssignedTo.addAll(projectUsers);
                 }
 
