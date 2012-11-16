@@ -177,7 +177,7 @@ public class AssayController extends SpringActionController
     {
         public ModelAndView getView(ProtocolIdForm o, BindException errors) throws Exception
         {
-            return AssayService.get().createAssayListView(getViewContext(), false);
+            return AssayService.get().createAssayListView(getViewContext(), false, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

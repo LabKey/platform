@@ -26,6 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.assay.AssayController;
+import org.springframework.validation.BindException;
 
 /**
  * User: brittp
@@ -34,16 +35,15 @@ import org.labkey.study.controllers.assay.AssayController;
  */
 public class AssayListQueryView extends QueryView
 {
-    public AssayListQueryView(ViewContext context, QuerySettings settings)
+    public AssayListQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        super(new AssaySchemaImpl(context.getUser(), context.getContainer(), null), settings);
+        super(new AssaySchemaImpl(context.getUser(), context.getContainer(), null), settings, errors);
         setShowExportButtons(false);
         setShowDetailsColumn(false);
         setShowRecordSelectors(false);
         setShadeAlternatingRows(true);
         setShowBorders(true);
         getSettings().setAllowChooseQuery(false);
-        disableContainerFilterSelection();
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)

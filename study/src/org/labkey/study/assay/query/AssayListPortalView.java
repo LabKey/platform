@@ -23,6 +23,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.*;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.study.controllers.assay.AssayController;
+import org.springframework.validation.BindException;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -33,9 +34,9 @@ import java.util.ArrayList;
  */
 public class AssayListPortalView extends AssayListQueryView
 {
-    public AssayListPortalView(ViewContext context, QuerySettings settings)
+    public AssayListPortalView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        super(context, settings);
+        super(context, settings, errors);
     }
 
     protected DataRegion createDataRegion()
@@ -71,6 +72,7 @@ public class AssayListPortalView extends AssayListQueryView
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
+        bar.add(createViewButton(getItemFilter()));
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());

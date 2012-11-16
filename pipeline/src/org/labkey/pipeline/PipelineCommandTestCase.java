@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.cmd.BooleanToSwitch;
 import org.labkey.api.pipeline.cmd.ListToCommandArgs;
 import org.labkey.api.pipeline.cmd.RequiredSwitch;
+import org.labkey.api.pipeline.cmd.SubstitutionWithSwitch;
 import org.labkey.api.pipeline.cmd.TaskToCommandArgs;
 import org.labkey.api.pipeline.cmd.UnixCompactSwitchFormat;
 import org.labkey.api.pipeline.cmd.UnixNewSwitchFormat;
@@ -51,6 +52,22 @@ public class PipelineCommandTestCase extends Assert
     {
         _context = new Mockery();
         _context.setImposteriser(ClassImposteriser.INSTANCE);
+    }
+
+    @Test
+    public void testSubstitution() throws Exception
+    {
+        SubstitutionWithSwitch sws = new SubstitutionWithSwitch();
+        UnixSwitchFormat switchFormat = new UnixNewSwitchFormat();
+        switchFormat.setSeparator(" ");
+        sws.setSwitchFormat(switchFormat);
+        sws.setSwitchName("filter");
+        sws.setRegex("([0-9]+)\\-([0-9]+)");
+        sws.setSubstitution("mzWindow [${1},${2}]");
+        String[] args = sws.toArgs("0-2000");
+        assertEquals("Wrong number of args", 2, args.length);
+        assertEquals("Wrong argument value", "--filter", args[0]);
+        assertEquals("Wrong argument value", "mzWindow [0,2000]", args[1]);
     }
 
     @Test

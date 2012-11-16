@@ -4194,6 +4194,7 @@ public class QueryController extends SpringActionController
                         JSONObject schemaProps = new JSONObject();
 
                         schemaProps.put("schemaName", schema.getName());
+                        schemaProps.put("fullyQualifiedName", schema.getSchemaName());
                         schemaProps.put("description", schema.getDescription());
                         NavTree tree = schema.getSchemaBrowserLinks(user);
                         if (tree != null && tree.hasChildren())

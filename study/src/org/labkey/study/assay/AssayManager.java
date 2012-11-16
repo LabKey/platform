@@ -62,6 +62,7 @@ import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
+import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
@@ -225,16 +226,17 @@ public class AssayManager implements AssayService.Interface
         return Collections.unmodifiableList(result);
     }
 
-    public WebPartView createAssayListView(ViewContext context, boolean portalView)
+    @Override
+    public WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors)
     {
         String name = AssaySchema.ASSAY_LIST_TABLE_NAME;
         UserSchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer(), null);
         QuerySettings settings = schema.getSettings(context, name, name);
         QueryView queryView;
         if (portalView)
-            queryView = new AssayListPortalView(context, settings);
+            queryView = new AssayListPortalView(context, settings, errors);
         else
-            queryView = new AssayListQueryView(context, settings);
+            queryView = new AssayListQueryView(context, settings, errors);
 
         VBox vbox = new VBox();
         if (portalView)

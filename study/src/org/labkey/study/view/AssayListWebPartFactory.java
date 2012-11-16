@@ -33,7 +33,7 @@ public class AssayListWebPartFactory extends BaseWebPartFactory
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
-        WebPartView listView = AssayService.get().createAssayListView(portalCtx, true);
+        WebPartView listView = AssayService.get().createAssayListView(portalCtx, true, null);
         ActionURL url = new ActionURL(AssayController.BeginAction.class, portalCtx.getContainer());
         listView.setTitle("Assay List");
         listView.setTitleHref(url);

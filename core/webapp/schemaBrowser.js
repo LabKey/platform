@@ -1039,6 +1039,14 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             includeSystemQueries: Ext.get("lk-vq-systemqueries").dom.checked,
             containerPath: this.currentContainer
         });
+        // Be sure to recurse into child schemas, if any
+        LABKEY.Query.getSchemas({
+            schemaName: schemaName,
+            successCallback: this.onChildSchemas,
+            scope: this,
+            apiVersion: 12.3,
+            containerPath: this.currentContainer
+        });
     },
 
     onQueries : function(queriesInfo) {
@@ -1048,6 +1056,14 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             this.validateQuery();
         else
             this.advance();
+    },
+
+    onChildSchemas : function(schemasInfo) {
+        // Add child schemas to the list
+        for (var childSchemaName in schemasInfo)
+        {
+            this.schemaNames.push(schemasInfo[childSchemaName].fullyQualifiedName);
+        }
     },
 
     validateQuery : function() {
@@ -1212,7 +1228,93 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
 });
 
 
-LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel,
+LABKEY.ext.SchemaBrowserPanel = Ext.extend(Ext.Panel,
+{
+    formatSchemaList : function (sortedNames, schemas, title)
+    {
+        var rows = [];
+        for (var idx = 0; idx < sortedNames.length; ++idx)
+        {
+            var schema = schemas[sortedNames[idx]];
+            rows.push({
+                tag:'tr',
+                children:[
+                    {
+                        tag:'td',
+                        children:[
+                            {
+                                tag:'span',
+                                cls:'labkey-link',
+                                html:Ext.util.Format.htmlEncode(sortedNames[idx])
+                            }
+                        ]
+                    },
+                    {
+                        tag:'td',
+                        html:Ext.util.Format.htmlEncode(schema.description)
+                    }
+                ]
+            });
+        }
+
+        var headerRows = [];
+        if (title)
+        {
+            headerRows.push({
+                tag: 'tr',
+                children: [{
+                    tag: 'td',
+                    colspan: 2,
+                    cls: 'lk-qd-collist-title',
+                    html: title
+                }]
+            })
+        }
+        headerRows.push({
+            tag:'tr',
+            children:[
+                {
+                    tag:'th',
+                    html:'Name'
+                },
+                {
+                    tag:'th',
+                    html:'Description'
+                }
+            ]
+        });
+
+        var table = this.body.createChild({
+            tag:'table',
+            cls:'lk-qd-coltable',
+            children:[
+                {
+                    tag:'thead',
+                    children: headerRows
+                },
+                {
+                    tag:'tbody',
+                    children:rows
+                }
+            ]
+        });
+
+        var nameLinks = table.query("tbody tr td span");
+        for (idx = 0; idx < nameLinks.length; ++idx)
+        {
+            Ext.get(nameLinks[idx]).on("click", function (evt, t)
+            {
+                var schemaName = LABKEY.SchemaKey.fromString(t.innerHTML);
+                var schema = schemas[schemaName];
+                this.fireEvent("schemaclick", LABKEY.SchemaKey.fromString(schema.fullyQualifiedName));
+            }, this);
+        }
+    }
+});
+
+Ext.reg('labkey-schema-browser-panel', LABKEY.ext.SchemaBrowserPanel);
+
+LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
 {
     initComponent : function() {
         this.bodyStyle = "padding: 5px";
@@ -1243,91 +1345,36 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel,
 
         //create a sorted list of schema names
         var sortedNames = [];
+        var schemas = {};
         for (var schemaName in schemaTree.schemas)
         {
             sortedNames.push(schemaName);
+            schemas[schemaName] = this.queryCache.lookupSchema(schemaTree, schemaName);
         }
         sortedNames.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());}); // 10572
 
         //IE won't let you create the table rows incrementally
         //so build the rows as a data structure first and then
         //do one createChild() for the whole table
-        var rows = [];
-        for (var idx = 0; idx < sortedNames.length; ++idx)
-        {
-            var schema = this.queryCache.lookupSchema(schemaTree, sortedNames[idx]);
-            rows.push({
-                tag: 'tr',
-                children: [
-                    {
-                        tag: 'td',
-                        children: [
-                            {
-                                tag: 'span',
-                                cls: 'labkey-link',
-                                html: Ext.util.Format.htmlEncode(sortedNames[idx])
-                            }
-                        ]
-                    },
-                    {
-                        tag: 'td',
-                        html: Ext.util.Format.htmlEncode(schema.description)
-                    }
-                ]
-            });
-        }
-
-        var table = this.body.createChild({
-            tag: 'table',
-            cls: 'lk-qd-coltable',
-            children: [
-                {
-                    tag: 'thead',
-                    children: [
-                        {
-                            tag: 'tr',
-                            children: [
-                                {
-                                    tag: 'th',
-                                    html: 'Name'
-                                },
-                                {
-                                    tag: 'th',
-                                    html: 'Description'
-                                }
-
-                            ]
-                        }
-                    ]
-                },
-                {
-                    tag: 'tbody',
-                    children: rows
-                }
-            ]
-        });
-
-        var nameLinks = table.query("tbody tr td span");
-        for (idx = 0; idx < nameLinks.length; ++idx)
-        {
-            Ext.get(nameLinks[idx]).on("click", function(evt,t){
-                var schemaName = LABKEY.SchemaKey.fromString(t.innerHTML);
-                this.fireEvent("schemaclick", schemaName);
-            }, this);
-        }
-    }
+        this.formatSchemaList(sortedNames, schemas);
+}
 });
 
 Ext.reg('labkey-schema-browser-home-panel', LABKEY.ext.SchemaBrowserHomePanel);
 
-
-LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel,
+LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
 {
     initComponent : function()
     {
         this.bodyStyle = "padding: 5px";
         this.addEvents("queryclick");
         LABKEY.ext.SchemaSummaryPanel.superclass.initComponent.apply(this, arguments);
+
+        this.addListener("schemaclick",
+            function(schemaName){
+                this.schemaBrowser.selectSchema(schemaName);
+                this.schemaBrowser.showPanel(this.schemaBrowser.sspPrefix + schemaName);
+            }, this);
     },
 
     onRender : function()
@@ -1363,6 +1410,15 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel,
             html: Ext.util.Format.htmlEncode(schema.description)
         });
 
+        //create a list for child schemas
+        var childSchemaNames = [];
+        for (var childSchemaName in schema.schemas)
+        {
+            childSchemaNames.push(childSchemaName);
+        }
+        if (childSchemaNames.length > 0)
+            childSchemaNames.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());});
+
         //create one list for user-defined and one for built-in
         var userDefined = [];
         var builtIn = [];
@@ -1382,6 +1438,8 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel,
             builtIn.sort(function(a,b){return a.name.localeCompare(b.name);});
 
         var rows = [];
+        if (childSchemaNames.length > 0)
+            rows.push(this.formatSchemaList(childSchemaNames, schema.schemas, "Child Schemas"));
         if (userDefined.length > 0)
             rows.push(this.formatQueryList(userDefined, "User-Defined Queries"));
         if (builtIn.length > 0)
@@ -1614,6 +1672,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 {
                     id: "lk-vq-panel",
                     closable: true,
+                    queryCache: this._qcache,
                     title: "Validate Queries",
                     listeners: {
                         queryclick: {
@@ -1654,6 +1713,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     cache: this._qcache,
                     schemaName: schemaPath,
                     id: id,
+                    schemaBrowser: this,
                     title: Ext.util.Format.htmlEncode(schemaPath.toDisplayString()),
                     autoScroll: true,
                     listeners: {
