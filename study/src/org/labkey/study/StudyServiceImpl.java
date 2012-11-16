@@ -29,6 +29,9 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.*;
 import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.SecurableResource;
@@ -48,6 +51,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
+import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.*;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
@@ -780,8 +784,13 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public boolean importStudy(ViewContext context, BindException errors, File studyFile, String originalFilename) throws Exception
-    {
-        return StudyController.importStudy(context, errors, studyFile, originalFilename);
+    public boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot){
+        try{
+            PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot));
+            return true;
+        }
+        catch (PipelineValidationException e){
+            return false;
+        }
     }
 }

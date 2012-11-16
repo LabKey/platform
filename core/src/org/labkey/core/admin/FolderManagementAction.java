@@ -65,9 +65,11 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
+import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.query.CoreQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -75,6 +77,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.Writer;
@@ -339,18 +342,70 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 }
                 else
                 {
-                    if(form.origin.equals("Study") || form.origin.equals("Reload")){
-                       InputStream is = file.getInputStream();
+                    InputStream is = file.getInputStream();
+                    File zipFile = File.createTempFile("folder", ".zip");
+                    FileUtil.copyData(is, zipFile);
 
-                       File zipFile = File.createTempFile("study", ".zip");
-                       FileUtil.copyData(is, zipFile);
-                       StudyService.get().importStudy(getViewContext(), errors, zipFile, file.getOriginalFilename());
+                    ViewContext context = getViewContext();
+                    Container c = context.getContainer();
+                    if (!PipelineService.get().hasValidPipelineRoot(c))
+                    {
+                        return false;
+                    }
+
+                    PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
+
+                    File folderXml;
+                    boolean isStudy = false;
+
+                    if (zipFile.getName().endsWith(".zip"))
+                    {
+                        String dirName = "unzip";
+                        File importDir = pipelineRoot.resolvePath(dirName);
+
+                        if (importDir.exists() && !FileUtil.deleteDir(importDir))
+                        {
+                            errors.reject("studyImport", "Import failed: Could not delete the directory \"" + dirName + "\"");
+                            return false;
+                        }
+
+                        try
+                        {
+                            ZipUtil.unzipToDirectory(zipFile, importDir);
+                        }
+                        catch (FileNotFoundException e)
+                        {
+                            errors.reject("folderImport", "File not found.");
+                            return false;
+                        }
+                        catch (IOException e)
+                        {
+                            errors.reject("folderImport", "This file does not appear to be a valid .zip file.");
+                            return false;
+                        }
+
+                        folderXml = new File(importDir, "folder.xml");
+                        if(!folderXml.exists()){
+                            folderXml = new File(importDir, "study.xml");
+                            isStudy = true;
+                        }
+                        if(!folderXml.exists()){
+                            errors.reject("folderImport", "This file doesn't contain an appropriate xml.");
+                        }
                     }
                     else {
-                       InputStream is = file.getInputStream();
-                       File zipFile = File.createTempFile("folder", ".zip");
-                       FileUtil.copyData(is, zipFile);
-                       PipelineService.get().importFolder(getViewContext(), errors, zipFile, file.getOriginalFilename());
+                        folderXml = zipFile;
+                        errors.reject("folderImport", "Please submit an appropriate .zip file.");
+                    }
+
+                    User user = context.getUser();
+                    ActionURL url = context.getActionURL();
+
+                    if(isStudy){
+                       StudyService.get().runStudyImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot);
+                    }
+                    else {
+                       PipelineService.get().runFolderImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot);
                     }
                 }
             }

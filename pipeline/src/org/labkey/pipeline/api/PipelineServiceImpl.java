@@ -35,6 +35,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
+import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
@@ -515,15 +516,21 @@ public class PipelineServiceImpl extends PipelineService
         }
     }
 
-    @Override
-    public boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws Exception
-    {
-        return PipelineController.importFolder(context, errors, folderFile, originalFilename);
-    }
-
     public TableInfo getJobsTable(User user, Container container)
     {
         return new PipelineQuerySchema(user, container).getTable(PipelineQuerySchema.JOB_TABLE_NAME);
+    }
+
+    @Override
+    public boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot)
+    {
+        try{
+            PipelineService.get().queueJob(new FolderImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot));
+            return true;
+        }
+        catch (PipelineValidationException e){
+            return false;
+        }
     }
 
     public int getJobId(User u, Container c, String jobGUID)
