@@ -866,15 +866,16 @@ table.labkey-completion-text
     padding: 0;
 }
 
-.labkey-completion-highlight
+.labkey-completion-highlight, .labkey-completion td.labkey-completion-highlight
 {
     background-color: #E7EFF4;
-    font-weight: bold;
+    border: none;
 }
 
-.labkey-completion-nohighlight
+.labkey-completion-nohighlight, .labkey-completion td.labkey-completion-nohighlight
 {
     background-color: #FFFFFF;
+    border: none;
 }
 
 /* This is used to adjust some views so that when elements are taken away, they still
