@@ -35,6 +35,7 @@ import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -162,9 +163,10 @@ public class GroupManager
             if (!hideUnconnected || connected.contains(g.getUserId()))
             {
                 int userCount = SecurityManager.getGroupMembers(g, MemberType.USERS).size();
+                int groupCount = SecurityManager.getGroupMembers(g, MemberType.GROUPS).size();
 
                 sb.append("\t").append(g.getUserId()).append(" [");
-                appendDotAttribute(sb, false, "label", g.getName() + "\\n" + userCount + " users");
+                appendDotAttribute(sb, false, "label", g.getName() + (userCount > 0 ? "\\n " + StringUtilsLabKey.pluralize(userCount, "user") : "") + (groupCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(groupCount, "group") : ""));
 
                 if (g.isProjectGroup() || user.isAdministrator())
                 {

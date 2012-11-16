@@ -130,6 +130,20 @@ public class StringUtilsLabKey
     }
 
 
+    // Outputs a formatted count and a noun that's pluralized (by simply adding "s")
+    public static String pluralize(long count, String singular)
+    {
+        return pluralize(count, singular, singular + "s");
+    }
+
+
+    // Outputs a formatted count and a noun that's pluralized (outputting the plural parameter if appropriate)
+    public static String pluralize(long count, String singular, String plural)
+    {
+        return Formats.commaf0.format(count) + " " + (1 == count ? singular : plural);
+    }
+
+
     public static class TestCase extends Assert
     {
         @Test
