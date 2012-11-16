@@ -39,11 +39,16 @@ LABKEY.vis.SVGConverter = {
         else
             throw "Unknown format: " + format;
 
-        var newForm = Ext4.DomHelper.append(document.getElementsByTagName('body')[0],
-        {tag:"form", method:"POST", action:LABKEY.ActionURL.buildURL("visualization", action), target:'_blank',
-            children:[{tag:"input", type:"hidden", name:"svg"}]});
-        newForm.svg.value = svg;
-        newForm.submit();
+        // use multipart post (i.e hidden fileuploadfield) in case the SVG source is large (i.e. > 2 MB)
+        var exportForm = Ext4.create('Ext.form.Panel', {
+            hidden: true,
+            standardSubmit: true,
+            items: [
+                {xtype : 'hidden', name : 'svg', value: svg},
+                {xtype : 'fileuploadfield', name : 'file', hidden : true}
+            ]
+        });
+        exportForm.submit({url: LABKEY.ActionURL.buildURL('visualization', action), target: '_blank', scope: this});
     },
 
     /** Transforms the given svg root node and all of its children into an XML string,
