@@ -1901,7 +1901,7 @@ groupByLoop:
     void optimize()
     {
         // precompute select child
-        QueryRelation r = _tables.values().iterator().next();
+        QueryRelation r = _tables.size() == 1 ? _tables.values().iterator().next() : null;
         if (r instanceof QueryLookupWrapper)
         {
             if (((QueryLookupWrapper)r)._hasLookups)
