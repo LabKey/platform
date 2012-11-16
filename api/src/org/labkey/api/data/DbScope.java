@@ -76,11 +76,9 @@ public class DbScope
     private final String _driverVersion;
     private final DbSchemaCache _schemaCache;
     private final SchemaTableInfoCache _tableCache;
+    private final ThreadLocal<Transaction> _transaction = new ThreadLocal<Transaction>();
 
     private SqlDialect _dialect;
-
-    private static final ThreadLocal<Transaction> _transaction = new ThreadLocal<Transaction>();
-
 
     // Used only for testing
     protected DbScope()
@@ -249,7 +247,7 @@ public class DbScope
 
     public void commitTransaction() throws SQLException
     {
-        Transaction t = _transaction.get();
+        Transaction t = getCurrentTransaction();
         if (t == null)
         {
             throw new IllegalStateException("No transaction is associated with this thread");
@@ -278,7 +276,7 @@ public class DbScope
     }
 
 
-    public Transaction getCurrentTransaction()
+    public @Nullable Transaction getCurrentTransaction()
     {
         return _transaction.get();
     }
@@ -291,7 +289,7 @@ public class DbScope
 
     public Connection getConnection(@Nullable Logger log) throws SQLException
     {
-        Transaction t = _transaction.get();
+        Transaction t = getCurrentTransaction();
 
         if (null == t)
             return _getConnection(log);
@@ -476,7 +474,7 @@ public class DbScope
 
     public void closeConnection()
     {
-        Transaction t = _transaction.get();
+        Transaction t = getCurrentTransaction();
         if (null != t)
         {
             if (t._closesToIgnore == 0)
@@ -578,7 +576,7 @@ public class DbScope
      */
     public void addCommitTask(Runnable task)
     {
-        Transaction t = _transaction.get();
+        Transaction t = getCurrentTransaction();
 
         if (null == t)
         {
@@ -820,7 +818,7 @@ public class DbScope
         {
             for (DbScope scope : _scopes.values())
             {
-                Transaction t = _transaction.get();
+                Transaction t = scope.getCurrentTransaction();
                 if (t != null)
                 {
                     try
