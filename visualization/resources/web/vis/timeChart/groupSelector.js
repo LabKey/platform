@@ -78,7 +78,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
         {
             this.selection = [];
             Ext4.each(this.subject.groups, function(group){
-                this.selection.push({type:group.type, label:group.label});
+                this.selection.push({type:group.type || 'participantGroup', label:group.label});
             }, this);
         }
 

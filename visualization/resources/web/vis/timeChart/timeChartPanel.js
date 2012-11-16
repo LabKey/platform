@@ -1204,6 +1204,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 {
                     this.clearChartPanel(msg);
                     this.disablePdfExportButtons();
+                    this.toggleSaveButtons(true);
                     return;
                 }
                 else
