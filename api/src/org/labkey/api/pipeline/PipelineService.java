@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -117,9 +118,9 @@ abstract public class PipelineService
 
     abstract public boolean hasSiteDefaultRoot(Container container);
 
-    abstract public boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws Exception;
-
     abstract public TableInfo getJobsTable(User user, Container container);
+
+    abstract public boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot);
 
     abstract public int getJobId(User u, Container c, String jobGUID);
 }

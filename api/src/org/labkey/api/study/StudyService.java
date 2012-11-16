@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
@@ -197,7 +198,7 @@ public class StudyService
     
         Study[] getAllStudies(Container root, User user);
 
-        abstract public boolean importStudy(ViewContext context, BindException errors, File studyFile, String originalFilename) throws Exception;
+        boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot);
     }
 
     public static void register(Service serviceImpl)
