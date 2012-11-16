@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by IntelliJ IDEA.
@@ -89,7 +90,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     private static final Map<String, Boolean> _factoryInitialized = new HashMap<String, Boolean>();
 
     private Queue<Pair<User, AuditLogEvent>> _eventQueue = new LinkedList<Pair<User, AuditLogEvent>>();
-    private boolean _logToDatabase = false;
+    private AtomicBoolean  _logToDatabase = new AtomicBoolean(false);
     private static final Object STARTUP_LOCK = new Object();
 
     public static AuditLogImpl get()
@@ -106,7 +107,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         synchronized (STARTUP_LOCK)
         {
-            _logToDatabase = true;
+            _logToDatabase.set(true);
 
             while (!_eventQueue.isEmpty())
             {
@@ -221,16 +222,19 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     private void initializeAuditFactory(User user, AuditLogEvent event) throws Exception
     {
-        if (!_factoryInitialized.containsKey(event.getEventType()))
+        synchronized (STARTUP_LOCK)
         {
-            _log.info("Initializing audit event factory for: " + event.getEventType());
-            AuditViewFactory factory = getAuditViewFactory(event.getEventType());
-            if (factory != null)
+            if (!_factoryInitialized.containsKey(event.getEventType()))
             {
-                Container c = ContainerManager.getForId(event.getContainerId());
-                factory.initialize(new DefaultContainerUser(c, user));
+                _log.info("Initializing audit event factory for: " + event.getEventType());
+                AuditViewFactory factory = getAuditViewFactory(event.getEventType());
+                if (factory != null)
+                {
+                    Container c = ContainerManager.getForId(event.getContainerId());
+                    factory.initialize(new DefaultContainerUser(c, user));
+                }
+                _factoryInitialized.put(event.getEventType(), true);
             }
-            _factoryInitialized.put(event.getEventType(), true);
         }
     }
 
@@ -246,20 +250,29 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                 Container root = ContainerManager.getRoot();
                 event.setContainerId(root.getId());
             }
-            /**
-             * This is necessary because audit log service needs to be registered in the constructor
-             * of the audit module, but the schema may not be created or updated at that point.  Events
-             * that occur before startup is complete are therefore queued up and recorded after startup.
-             */
-            synchronized (STARTUP_LOCK)
+
+            if (!_logToDatabase.get())
             {
-                if (_logToDatabase)
+                /**
+                 * This is necessary because audit log service needs to be registered in the constructor
+                 * of the audit module, but the schema may not be created or updated at that point.  Events
+                 * that occur before startup is complete are therefore queued up and recorded after startup.
+                 */
+                synchronized (STARTUP_LOCK)
                 {
-                    initializeAuditFactory(user, event);
-                    return LogManager.get().insertEvent(user, event);
+                    if (_logToDatabase.get())
+                    {
+                        initializeAuditFactory(user, event);
+                        return LogManager.get().insertEvent(user, event);
+                    }
+                    else
+                        _eventQueue.add(new Pair<User, AuditLogEvent>(user, event));
                 }
-                else
-                    _eventQueue.add(new Pair<User, AuditLogEvent>(user, event));
+            }
+            else
+            {
+                initializeAuditFactory(user, event);
+                return LogManager.get().insertEvent(user, event);
             }
         }
         catch (Exception e)
