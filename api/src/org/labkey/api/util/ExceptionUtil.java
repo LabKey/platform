@@ -108,7 +108,7 @@ public class ExceptionUtil
             ex = cause;
             cause = null;
 
-            if (ex.getClass() == RuntimeException.class || ex.getClass() == RuntimeSQLException.class || ex instanceof InvocationTargetException || ex instanceof com.google.gwt.user.server.rpc.UnexpectedException)
+            if (ex.getClass() == RuntimeException.class || ex.getClass() == UnexpectedException.class || ex.getClass() == RuntimeSQLException.class || ex instanceof InvocationTargetException || ex instanceof com.google.gwt.user.server.rpc.UnexpectedException)
             {
                 cause = ex.getCause();
             }
