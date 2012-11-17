@@ -19,6 +19,8 @@ package org.labkey.study.visitmanager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -131,102 +133,95 @@ public class SequenceVisitManager extends VisitManager
         TableInfo tableSpecimen = getSpecimenTable(getStudy());
         TableInfo tableStudyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), user);
 
-        try
-        {
-            //
-            // populate ParticipantVisit
-            //
-            SQLFragment sqlInsertParticipantVisit = new SQLFragment();
-            sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
-            sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
-            sqlInsertParticipantVisit.append("SELECT ?, ParticipantId, SequenceNum,\n");
-            sqlInsertParticipantVisit.add(getStudy().getContainer());
-            sqlInsertParticipantVisit.append("MIN(").append(getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).append(") AS ParticipantSequenceNum\n");
-            sqlInsertParticipantVisit.append("FROM ").append(tableStudyData, "SD").append("\n");
-            sqlInsertParticipantVisit.append("WHERE NOT EXISTS (SELECT ParticipantId, SequenceNum FROM ");
-            sqlInsertParticipantVisit.append(tableParticipantVisit, "PV").append("\n");
-            sqlInsertParticipantVisit.append("WHERE Container = ? AND SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum)\n");
-            sqlInsertParticipantVisit.add(getStudy().getContainer());
-            sqlInsertParticipantVisit.append("GROUP BY ParticipantId, SequenceNum");
-            Table.execute(schema, sqlInsertParticipantVisit);
+        //
+        // populate ParticipantVisit
+        //
+        SQLFragment sqlInsertParticipantVisit = new SQLFragment();
+        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
+        sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
+        sqlInsertParticipantVisit.append("SELECT ?, ParticipantId, SequenceNum,\n");
+        sqlInsertParticipantVisit.add(getStudy().getContainer());
+        sqlInsertParticipantVisit.append("MIN(").append(getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).append(") AS ParticipantSequenceNum\n");
+        sqlInsertParticipantVisit.append("FROM ").append(tableStudyData, "SD").append("\n");
+        sqlInsertParticipantVisit.append("WHERE NOT EXISTS (SELECT ParticipantId, SequenceNum FROM ");
+        sqlInsertParticipantVisit.append(tableParticipantVisit, "PV").append("\n");
+        sqlInsertParticipantVisit.append("WHERE Container = ? AND SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum)\n");
+        sqlInsertParticipantVisit.add(getStudy().getContainer());
+        sqlInsertParticipantVisit.append("GROUP BY ParticipantId, SequenceNum");
+        new SqlExecutor(schema, sqlInsertParticipantVisit).execute();
 
-            //
-            // Delete ParticipantVisit where the participant does not exist anymore
-            //
-            String sqlDeleteParticiapantVisit = "DELETE FROM " + tableParticipantVisit + " WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM " + tableParticipant + " WHERE Container= ?)";
-            Table.execute(schema, sqlDeleteParticiapantVisit, getStudy().getContainer(), getStudy().getContainer());
+        //
+        // Delete ParticipantVisit where the participant does not exist anymore
+        //
+        String sqlDeleteParticiapantVisit = "DELETE FROM " + tableParticipantVisit + " WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM " + tableParticipant + " WHERE Container= ?)";
+        new SqlExecutor(schema, new SQLFragment(sqlDeleteParticiapantVisit, getStudy().getContainer(), getStudy().getContainer())).execute();
 
-            // after assigning visit dates to all study data-generated visits, we insert any extra ptid/sequencenum/date combinations
-            // that are found in the specimen archives.  We simply trust the specimen draw date in this case, rather than relying on the
-            // visit table to tell us which date corresponds to which visit:
-            sqlInsertParticipantVisit = new SQLFragment();
-            sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
-            sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
-            sqlInsertParticipantVisit.append("SELECT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum,\n");
-            sqlInsertParticipantVisit.append("MIN(").append(getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceNum\n");
-            sqlInsertParticipantVisit.append("FROM ").append(tableSpecimen, "Specimen").append("\n");
-            sqlInsertParticipantVisit.append("WHERE Container = ? AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (");
-            sqlInsertParticipantVisit.add(getStudy().getContainer());
-            sqlInsertParticipantVisit.append("SELECT ParticipantId, SequenceNum FROM ").append(tableParticipantVisit, "PV").append("\n");
-            sqlInsertParticipantVisit.append("WHERE Container = ? AND Specimen.Ptid = PV.ParticipantId AND Specimen.VisitValue = PV.SequenceNum)\n");
-            sqlInsertParticipantVisit.add(getStudy().getContainer());
-            sqlInsertParticipantVisit.append("GROUP BY Container, Ptid, VisitValue");
-            Table.execute(schema, sqlInsertParticipantVisit);
+        // after assigning visit dates to all study data-generated visits, we insert any extra ptid/sequencenum/date combinations
+        // that are found in the specimen archives.  We simply trust the specimen draw date in this case, rather than relying on the
+        // visit table to tell us which date corresponds to which visit:
+        sqlInsertParticipantVisit = new SQLFragment();
+        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
+        sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
+        sqlInsertParticipantVisit.append("SELECT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum,\n");
+        sqlInsertParticipantVisit.append("MIN(").append(getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceNum\n");
+        sqlInsertParticipantVisit.append("FROM ").append(tableSpecimen, "Specimen").append("\n");
+        sqlInsertParticipantVisit.append("WHERE Container = ? AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (");
+        sqlInsertParticipantVisit.add(getStudy().getContainer());
+        sqlInsertParticipantVisit.append("SELECT ParticipantId, SequenceNum FROM ").append(tableParticipantVisit, "PV").append("\n");
+        sqlInsertParticipantVisit.append("WHERE Container = ? AND Specimen.Ptid = PV.ParticipantId AND Specimen.VisitValue = PV.SequenceNum)\n");
+        sqlInsertParticipantVisit.add(getStudy().getContainer());
+        sqlInsertParticipantVisit.append("GROUP BY Container, Ptid, VisitValue");
+        new SqlExecutor(schema, sqlInsertParticipantVisit).execute();
 
-            //
-            // fill in VisitRowId (need this to do the VisitDate computation)
-            //
-            _updateVisitRowId();
+        //
+        // fill in VisitRowId (need this to do the VisitDate computation)
+        //
+        _updateVisitRowId();
 
-            //
-            // upate VisitDate
-            //
+        //
+        // upate VisitDate
+        //
 
-            // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
-            SQLFragment sqlUpdateVisitDates = new SQLFragment();
-            sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n" +
-                    "SET VisitDate = \n" +
-                    " (\n" +
-                    " SELECT DISTINCT(SD._VisitDate)\n" +
-                    " FROM ").append(tableStudyData.getFromSQL("SD")).append(",  " + tableVisit + " V\n" +
-                    " WHERE  ParticipantVisit.VisitRowId = V.RowId AND" +    // 'join' V
-                    "   SD.ParticipantId = ParticipantVisit.ParticipantId AND SD.SequenceNum = ParticipantVisit.SequenceNum AND\n" +    // 'join' SD
-                    "   SD.DatasetId = V.VisitDateDatasetId AND V.Container=?\n" +
-                    " )\n");
-            if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
-                sqlUpdateVisitDates.append("FROM " + tableParticipantVisit + " ParticipantVisit\n");
-            sqlUpdateVisitDates.append("WHERE Container=?");
-            sqlUpdateVisitDates.add(getStudy().getContainer());
-            sqlUpdateVisitDates.add(getStudy().getContainer());
-            
-            Table.execute(schema, sqlUpdateVisitDates);
+        // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
+        SQLFragment sqlUpdateVisitDates = new SQLFragment();
+        sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n" +
+                "SET VisitDate = \n" +
+                " (\n" +
+                " SELECT DISTINCT(SD._VisitDate)\n" +
+                " FROM ").append(tableStudyData.getFromSQL("SD")).append(",  " + tableVisit + " V\n" +
+                " WHERE  ParticipantVisit.VisitRowId = V.RowId AND" +    // 'join' V
+                "   SD.ParticipantId = ParticipantVisit.ParticipantId AND SD.SequenceNum = ParticipantVisit.SequenceNum AND\n" +    // 'join' SD
+                "   SD.DatasetId = V.VisitDateDatasetId AND V.Container=?\n" +
+                " )\n");
+        if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
+            sqlUpdateVisitDates.append("FROM " + tableParticipantVisit + " ParticipantVisit\n");
+        sqlUpdateVisitDates.append("WHERE Container=?");
+        sqlUpdateVisitDates.add(getStudy().getContainer());
+        sqlUpdateVisitDates.add(getStudy().getContainer());
 
-            /* infer ParticipantVisit.VisitDate if it seems unambiguous
-            String sqlCopyVisitDates = "UPDATE " + tableParticipantVisit + "\n" +
-                    "SET VisitDate = \n" +
-                    " (\n" +
-                    " SELECT MIN(SD.VisitDate)\n" +
-                    " FROM " + tableStudyData + " SD\n" +
-                    " WHERE SD.ParticipantId = ParticipantVisit.ParticipantId AND SD.SequenceNum = ParticipantVisit.SequenceNum AND\n" +
-                    "   SD.Container=? AND SD.VisitDate IS NOT NULL\n" +
-                    " GROUP BY SD.ParticipantId, SD.SequenceNum\n" +
-                    " HAVING COUNT(DISTINCT SD.VisitDate) = 1\n" +
-                    " )\n";
-            if (schema.getSqlDialect() instanceof SqlDialectMicrosoftSQLServer) // for SQL Server 2000
-                sqlCopyVisitDates += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
-            sqlCopyVisitDates += "WHERE Container=? AND VisitDate IS NULL";
-            Table.execute(schema, sqlCopyVisitDates,
-                    new Object[]{study.getContainer(), study.getContainer()});
-            */
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        new SqlExecutor(schema, sqlUpdateVisitDates).execute();
+
+        /* infer ParticipantVisit.VisitDate if it seems unambiguous
+        String sqlCopyVisitDates = "UPDATE " + tableParticipantVisit + "\n" +
+                "SET VisitDate = \n" +
+                " (\n" +
+                " SELECT MIN(SD.VisitDate)\n" +
+                " FROM " + tableStudyData + " SD\n" +
+                " WHERE SD.ParticipantId = ParticipantVisit.ParticipantId AND SD.SequenceNum = ParticipantVisit.SequenceNum AND\n" +
+                "   SD.Container=? AND SD.VisitDate IS NOT NULL\n" +
+                " GROUP BY SD.ParticipantId, SD.SequenceNum\n" +
+                " HAVING COUNT(DISTINCT SD.VisitDate) = 1\n" +
+                " )\n";
+        if (schema.getSqlDialect() instanceof SqlDialectMicrosoftSQLServer) // for SQL Server 2000
+            sqlCopyVisitDates += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
+        sqlCopyVisitDates += "WHERE Container=? AND VisitDate IS NULL";
+        Table.execute(schema, sqlCopyVisitDates,
+                new Object[]{study.getContainer(), study.getContainer()});
+        */
     }
 
 
-    private void _updateVisitRowId() throws SQLException
+    private void _updateVisitRowId()
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -243,7 +238,7 @@ public class SequenceVisitManager extends VisitManager
         if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
             sqlUpdateVisitRowId += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
         sqlUpdateVisitRowId += "WHERE Container=?";
-        Table.execute(schema, sqlUpdateVisitRowId, getStudy().getContainer(), getStudy().getContainer());
+        new SqlExecutor(schema, new SQLFragment(sqlUpdateVisitRowId, getStudy().getContainer(), getStudy().getContainer())).execute();
     }
 
 
@@ -252,18 +247,16 @@ public class SequenceVisitManager extends VisitManager
     {
         try
         {
-            String c = getStudy().getContainer().getId();
-
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
 
             SQLFragment sql = new SQLFragment("SELECT DISTINCT SequenceNum\n" +
                     "FROM " + tableParticipantVisit + "\n"+
                     "WHERE container = ? AND VisitRowId IS NULL");
-            sql.add(c);
+            sql.add(getStudy().getContainer().getId());
 
             TreeSet<Double> sequenceNums = new TreeSet<Double>();
-            Table.TableResultSet rs = Table.executeQuery(schema, sql);
+            Table.TableResultSet rs = new SqlSelector(schema, sql).getResultSet();
             try
             {
                 while (rs.next())

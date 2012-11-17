@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.axis.utils.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
@@ -71,7 +72,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
 
-    public VisitImpl(Container container, double seqMin, double seqMax, String label, Type type)
+    public VisitImpl(Container container, double seqMin, double seqMax, String label, @Nullable Type type)
     {
         this(container, seqMin, seqMax, label, null == type ? null : type.getCode());
     }

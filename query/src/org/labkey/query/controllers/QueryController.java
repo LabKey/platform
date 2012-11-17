@@ -2176,6 +2176,8 @@ public class QueryController extends SpringActionController
         private Integer _limit;
         private String _sort;
         private String _dir;
+        private boolean _includeDetailsColumn = false;
+        private boolean _includeUpdateColumn = false;
         private String _containerFilter;
         private boolean _includeTotalCount = true;
         private boolean _includeStyle = false;
@@ -2249,6 +2251,26 @@ public class QueryController extends SpringActionController
         {
             _includeStyle = includeStyle;
         }
+
+        public boolean isIncludeDetailsColumn()
+        {
+            return _includeDetailsColumn;
+        }
+
+        public void setIncludeDetailsColumn(boolean includeDetailsColumn)
+        {
+            _includeDetailsColumn = includeDetailsColumn;
+        }
+
+        public boolean isIncludeUpdateColumn()
+        {
+            return _includeUpdateColumn;
+        }
+
+        public void setIncludeUpdateColumn(boolean includeUpdateColumn)
+        {
+            _includeUpdateColumn = includeUpdateColumn;
+        }
     }
 
 
@@ -2311,14 +2333,16 @@ public class QueryController extends SpringActionController
             if (getRequestedApiVersion() >= 9.1)
             {
                 ExtendedApiQueryResponse response = new ExtendedApiQueryResponse(view, getViewContext(), isEditable, true,
-                        form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
+                        form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
                 response.includeStyle(form.isIncludeStyle());
                 return response;
             }
             else
             {
                 return new ApiQueryResponse(view, getViewContext(), isEditable, true,
-                        form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
+                        form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
             }
         }
     }
@@ -2474,10 +2498,12 @@ public class QueryController extends SpringActionController
 
             if (getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isEditable,
-                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null, metaDataOnly);
+                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
             else
                 return new ApiQueryResponse(view, getViewContext(), isEditable,
-                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null, metaDataOnly);
+                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
         }
     }
 

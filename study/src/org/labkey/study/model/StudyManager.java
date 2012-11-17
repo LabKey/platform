@@ -683,7 +683,7 @@ public class StudyManager
     }
 
 
-    public boolean ensureVisits(Study study, User user, Set<Double> sequencenums, Visit.Type type)
+    public boolean ensureVisits(Study study, User user, Set<Double> sequencenums, @Nullable Visit.Type type)
     {
         VisitImpl[] visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         boolean created = false;
@@ -700,7 +700,7 @@ public class StudyManager
     }
 
 
-    private VisitImpl ensureVisitWithoutSaving(Study study, double sequencenum, Visit.Type type, VisitImpl[] existingVisits)
+    private VisitImpl ensureVisitWithoutSaving(Study study, double sequencenum, @Nullable Visit.Type type, VisitImpl[] existingVisits)
     {
         // Remember the SequenceNums closest to the requested id in case we need to create one
         double nextVisit = Double.POSITIVE_INFINITY;
