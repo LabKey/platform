@@ -126,7 +126,8 @@ Ext4.define('Security.panel.PermissionEditor', {
 
         var items = [this.getPolicyEditor()];
 
-        if (LABKEY.Security.currentUser.isSystemAdmin) {
+        // Not shown at root level since a root group is a site group
+        if (LABKEY.Security.currentUser.isSystemAdmin && !this.isSiteRoot) {
             items.push(this.getGroupTabConfig(this.securityCache.projectId, true));
         }
 
@@ -243,6 +244,7 @@ Ext4.define('Security.panel.PermissionEditor', {
             title  : projectId === '' ? 'Site Groups' : 'Project Groups',
             itemId : projectId === '' ? 'sitegroups' : 'projectgroups', // required for URL lookup
             border : false,
+            autoScroll: true, // 16379
             deferredRender : false,
             items  : items
         };

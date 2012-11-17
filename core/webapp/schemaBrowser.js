@@ -1029,6 +1029,13 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
 
     validateSchema : function() {
         var schemaName = this.schemaNames[this.curSchemaIdx];
+        if (!this.isValidSchemaName(schemaName)) {
+            var status = 'FAILED: Unable to resolve invalid schema name: \'' + Ext.util.Format.htmlEncode(schemaName) + '\'';
+            this.setStatusIcon("iconAjaxLoadingRed");
+            this.numErrors++;
+            this.addValidationError(schemaName, undefined, {exception : status});
+            return;
+        }
         this.setStatus(this.getStatusPrefix.call(this) + ": Validating queries in schema '" + Ext.util.Format.htmlEncode(schemaName) + "'...");
         LABKEY.Query.getQueries({
             schemaName: schemaName,
@@ -1042,11 +1049,17 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
         // Be sure to recurse into child schemas, if any
         LABKEY.Query.getSchemas({
             schemaName: schemaName,
-            successCallback: this.onChildSchemas,
+            successCallback: function(schemasInfo) {
+                this.onChildSchemas(schemasInfo, schemaName);
+            },
             scope: this,
             apiVersion: 12.3,
             containerPath: this.currentContainer
         });
+    },
+
+    isValidSchemaName : function(schemaName) {
+        return !(undefined === schemaName || null == schemaName || '' == schemaName);
     },
 
     onQueries : function(queriesInfo) {
@@ -1058,10 +1071,18 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             this.advance();
     },
 
-    onChildSchemas : function(schemasInfo) {
+    onChildSchemas : function(schemasInfo, schemaName) {
         // Add child schemas to the list
         for (var childSchemaName in schemasInfo)
         {
+            var fqn = schemasInfo[childSchemaName].fullyQualifiedName;
+            if (!this.isValidSchemaName(fqn)) {
+                var status = 'FAILED: Unable to resolve qualified schema name: \'' + Ext.util.Format.htmlEncode(fqn) + '\' of child schema \'' + Ext.util.Format.htmlEncode(childSchemaName) + '\'';
+                this.setStatusIcon("iconAjaxLoadingRed");
+                this.numErrors++;
+                this.addValidationError(schemaName, childSchemaName, {exception : status});
+                return;
+            }
             this.schemaNames.push(schemasInfo[childSchemaName].fullyQualifiedName);
         }
     },

@@ -28,7 +28,7 @@
     ViewContext ctx = me.getViewContext();
     Container c = ctx.getContainerNoTab();
 %>
-<div id="someUniqueElement"></div>
+<div id="fmp"></div>
 <script type="text/javascript">
     LABKEY.requiresExt4Sandbox();
     LABKEY.requiresScript("admin/FolderManagementPanel.js");
@@ -38,8 +38,9 @@
     Ext4.onReady(function() {
 
         var folderPanel = Ext4.create('LABKEY.ext.panel.FolderManagementPanel', {
-            renderTo : 'someUniqueElement',
+            renderTo : 'fmp',
             height   : 700,
+            minWidth : 600,
             selected : <%= c.getRowId() %>,
             requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
             showContainerTabs : false
@@ -52,8 +53,8 @@
             LABKEY.Utils.resizeToViewport(folderPanel, w, h);
         };
 
-        Ext.EventManager.onWindowResize(_resize);
-        Ext.EventManager.fireWindowResize();
+        Ext4.EventManager.onWindowResize(_resize);
+        Ext4.EventManager.fireWindowResize();
 
     });
 </script>
