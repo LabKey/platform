@@ -3703,7 +3703,7 @@ input[type="checkbox"], input[type="radio"] {
 .labkey-app-bar ul li {
     white-space: nowrap;
 
-    padding: 8px 28px 6px 28px;
+    padding:  8px 8px 8px 20px;
     float: left;
     line-height : 14px;
     text-decoration : none;
@@ -3728,11 +3728,6 @@ input[type="checkbox"], input[type="radio"] {
 
 .labkey-app-bar ul li a {
     font-weight: bold;
-}
-
-.labkey-app-bar ul li span.labkey-tab-menu {
-    margin-right: -16px;
-    margin-left: 6px;
 }
 
 li.labkey-app-bar-tab-active {

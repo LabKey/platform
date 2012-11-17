@@ -44,6 +44,7 @@
     Integer createdBy = reportDescriptor.getCreatedBy();
     Date createdDate = reportDescriptor.getCreated();
     Date modifiedDate = reportDescriptor.getModified();
+    Boolean isShared = reportDescriptor.getOwner() == null ? true : false;
     Date refreshDate = null;
 
     ActionURL vewReportURL = report.getRunReportURL(context);
@@ -83,22 +84,35 @@
         </td>
     </tr>
 
-    <tr>
+        <tr>
         <td class="labkey-form-label">
-            Description:
+            Author:
         </td>
         <td>
-            <%=h(description)%>
+            <%
+                if(authorId != null)
+                {
+            %>
+                <%= UserManager.getUser(authorId) != null ? h(UserManager.getUser(authorId).getDisplayName(context.getUser())) : ""%>
+            <%
+                }
+            %>
         </td>
     </tr>
 
     <tr>
         <td class="labkey-form-label">
-            Category:
+            Created By:
         </td>
-
         <td>
-            <%=h(category)%>
+            <%
+                if(createdBy != null)
+                {
+            %>
+                <%= UserManager.getUser(createdBy) != null ? h(UserManager.getUser(createdBy).getDisplayName(context.getUser())) : ""%>
+            <%
+                }
+            %>
         </td>
     </tr>
 
@@ -112,69 +126,68 @@
         </td>
     </tr>
 
-    <%
-        if(authorId != null)
-        {
-    %>
     <tr>
         <td class="labkey-form-label">
-            Author:
+            Data Cut Date:
         </td>
         <td>
-            <%= UserManager.getUser(authorId) != null ? h(UserManager.getUser(authorId).getDisplayName(context.getUser())) : ""%>
-        </td>
-    </tr>
-    <%
-        }
 
-        if(createdBy != null)
-        {
-    %>
-    <tr>
-        <td class="labkey-form-label">
-            Created By:
-        </td>
-        <td>
-            <%= UserManager.getUser(createdBy) != null ? h(UserManager.getUser(createdBy).getDisplayName(context.getUser())) : ""%>
+            <%=refreshDate != null && refreshDate.getTime() > 0 ? h(DateUtil.formatDateTime(refreshDate)) : ""%>
         </td>
     </tr>
-    <%
-        }
-    %>
+
+    <tr>
+        <td class="labkey-form-label">
+            Category:
+        </td>
+
+        <td>
+            <%=h(category)%>
+        </td>
+    </tr>
+
+     <tr>
+        <td class="labkey-form-label">
+            Description:
+        </td>
+        <td>
+            <%=h(description)%>
+        </td>
+    </tr>
+
+     <tr>
+        <td class="labkey-form-label">
+            Shared:
+        </td>
+        <td>
+            <%=isShared ? "Yes" : "No"%>
+        </td>
+    </tr>
 
     <tr>
         <td class="labkey-form-label">
             Type:
         </td>
         <td>
-             <%=type%>
+             <%=h(type)%>
         </td>
     </tr>
     
     <tr>
         <td class="labkey-form-label">
-            Date Created:
+            Created:
         </td>
         <td>
-             <%=h(DateUtil.formatDateTime(createdDate))%>
+             <%=createdDate != null && createdDate.getTime() > 0 ?  h(DateUtil.formatDateTime(createdDate)) : ""%>
         </td>
     </tr>
 
     <tr>
         <td class="labkey-form-label">
-            Last Modified:
+            Modified:
         </td>
         <td>
-            <%=h(DateUtil.formatDateTime(modifiedDate))%>
-        </td>
-    </tr>
-
-    <tr>
-        <td class="labkey-form-label">
-            Data Cut Date:
-        </td>
-        <td>
-            <%=h(DateUtil.formatDateTime(refreshDate))%>
+            <%=modifiedDate != null && modifiedDate.getTime() > 0 ? h(DateUtil.formatDateTime(modifiedDate)) : ""%>
         </td>
     </tr>
 

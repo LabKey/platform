@@ -221,6 +221,26 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 ]
             });
         }
+
+        if (this.visibleFields['created'] && this.data.created) {
+
+            formItems.push({
+                xtype      : 'displayfield',
+                fieldLabel : 'Created On',
+                value      : Ext4.util.Format.date(this.data.created, 'Y-m-d H:i'),
+                readOnly   : true
+            });
+        }
+
+        if (this.visibleFields['modified'] && this.data.modified) {
+
+            formItems.push({
+                xtype      : 'displayfield',
+                fieldLabel : 'Last Modified',
+                value      : Ext4.util.Format.date(this.data.modified, 'Y-m-d H:i'),
+                readOnly   : true
+            });
+        }
                                                    
         if (this.visibleFields['customThumbnail']) {
             formItems.push({
@@ -267,26 +287,6 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                     value : null
                 });
             }
-        }
-
-        if (this.visibleFields['created'] && this.data.created) {
-
-            formItems.push({
-                xtype      : 'displayfield',
-                fieldLabel : 'Created On',
-                value      : Ext4.util.Format.date(this.data.created, 'Y-m-d H:i'),
-                readOnly   : true
-            });
-        }
-
-        if (this.visibleFields['modified'] && this.data.modified) {
-
-            formItems.push({
-                xtype      : 'displayfield',
-                fieldLabel : 'Last Modified',
-                value      : Ext4.util.Format.date(this.data.modified, 'Y-m-d H:i'),
-                readOnly   : true
-            });
         }
 
         this.items = formItems;
