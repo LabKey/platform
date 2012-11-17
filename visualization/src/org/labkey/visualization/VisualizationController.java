@@ -847,7 +847,7 @@ public class VisualizationController extends SpringActionController
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             return new ExtendedApiQueryResponse(view, getViewContext(), false,
-                    false, schemaName, def.getName(), 0, null, metaDataOnly);
+                    false, schemaName, def.getName(), 0, null, metaDataOnly, false, false);
         }
     }
 
