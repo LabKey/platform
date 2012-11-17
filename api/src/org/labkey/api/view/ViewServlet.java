@@ -82,6 +82,7 @@ public class ViewServlet extends HttpServlet
     private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<Boolean>();
 
     private static Map<Class, String> _pageFlowClassToName = null;
+    private static volatile boolean _shuttingDown = false;
 
     public static String getPageFlowName(Class controllerClass)
     {
@@ -103,6 +104,12 @@ public class ViewServlet extends HttpServlet
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
+        if (_shuttingDown)
+        {
+            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "The server is shutting down");
+            return;
+        }
+
         long startTime = System.currentTimeMillis();
 
         request.setAttribute(REQUEST_STARTTIME, startTime);
@@ -263,6 +270,16 @@ public class ViewServlet extends HttpServlet
             _pageFlowClassToName.putAll(module.getPageFlowClassToName());
     }
 
+
+    public static void setShuttingDown()
+    {
+        _shuttingDown = true;
+    }
+
+    public static boolean isShuttingDown()
+    {
+        return _shuttingDown;
+    }
 
     public static Controller getController(Module module, Class controllerClass) throws IllegalAccessException, InstantiationException
     {

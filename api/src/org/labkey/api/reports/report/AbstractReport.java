@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
@@ -47,7 +46,6 @@ import org.labkey.api.writer.VirtualFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 

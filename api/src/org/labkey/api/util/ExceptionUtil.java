@@ -192,6 +192,9 @@ public class ExceptionUtil
     /** request may be null if this is coming from a background thread or init */
     public static void logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
     {
+        if (ViewServlet.isShuttingDown())
+            return;
+
         Map<Enum, String> decorations = getExceptionDecorations(ex);
 
         ex = unwrapException(ex);
@@ -505,7 +508,19 @@ public class ExceptionUtil
             }
         }
 
-        if (ex instanceof NotFoundException)
+        if (ViewServlet.isShuttingDown())
+        {
+            try
+            {
+                response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "The server is shutting down");
+            }
+            catch (IOException e)
+            {
+                // Do nothing
+            }
+            return null;
+        }
+        else if (ex instanceof NotFoundException)
         {
             responseStatus = HttpServletResponse.SC_NOT_FOUND;
             if (ex.getMessage() != null)

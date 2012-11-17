@@ -22,11 +22,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.CacheProvider;
 import org.labkey.api.cache.SimpleCache;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.ShutdownListener;
 
-import javax.servlet.ServletContextEvent;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -36,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Time: 1:46:40 PM
  */
 // Do not use CacheProvider implementations directly; use CacheManager.getCache() to get a cache
-public class EhCacheProvider implements CacheProvider, ShutdownListener
+public class EhCacheProvider implements CacheProvider
 {
     private static final Logger LOG = Logger.getLogger(EhCacheProvider.class);
     private static final EhCacheProvider INSTANCE = new EhCacheProvider();
@@ -56,8 +53,6 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
         {
             IOUtils.closeQuietly(is);
         }
-
-        ContextListener.addShutdownListener(INSTANCE);
     }
 
     public static EhCacheProvider getInstance()
@@ -69,13 +64,7 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
     {
     }
 
-    @Override
-    public void shutdownPre(ServletContextEvent servletContextEvent)
-    {
-    }
-
-    @Override
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    public void shutdown()
     {
         LOG.info("Shutting down Ehcache");
         MANAGER.shutdown();

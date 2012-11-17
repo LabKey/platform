@@ -15,22 +15,25 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.view.ViewServlet;
 import org.springframework.web.context.ContextLoaderListener;
+
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ContextListener implements ServletContextListener
 {
-    private static Logger _log = Logger.getLogger(ContextListener.class);
-    private static final List<ShutdownListener> _shutdownListeners = new ArrayList<ShutdownListener>();
-    private static final List<StartupListener> _startupListeners = new ArrayList<StartupListener>();
-    private static ContextLoaderListener _springContextListener;
+    private static final Logger _log = Logger.getLogger(ContextListener.class);
+    private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<ShutdownListener>();
+    private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<StartupListener>();
+    private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
 
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
@@ -39,11 +42,11 @@ public class ContextListener implements ServletContextListener
 
     public void contextDestroyed(ServletContextEvent servletContextEvent)
     {
-        List<ShutdownListener> shutdownListeners;
-        synchronized (_shutdownListeners)
-        {
-             shutdownListeners = new ArrayList<ShutdownListener>(_shutdownListeners);
-        }
+        ViewServlet.setShuttingDown();
+
+        // Want exact same list for shutdownPre() and shutdownStarted()
+        List<ShutdownListener> shutdownListeners = _shutdownListeners;
+
         for (ShutdownListener listener : shutdownListeners)
         {
             try
@@ -52,7 +55,7 @@ public class ContextListener implements ServletContextListener
             }
             catch (Exception e)
             {
-                _log.error(e);
+                _log.error("Exception during shutdownPre(): ", e);
             }
         }
         for (ShutdownListener listener : shutdownListeners)
@@ -63,10 +66,11 @@ public class ContextListener implements ServletContextListener
             }
             catch (Exception e)
             {
-                _log.error(e);
+                _log.error("Exception during shutdownStarted(): ", e);
             }
         }
         getSpringContextListener().contextDestroyed(servletContextEvent);
+        CacheManager.shutdown();   // Don't use a listener... we want this shutdown late
         org.apache.log4j.LogManager.shutdown();
         org.apache.log4j.LogManager.resetConfiguration();
         org.apache.commons.beanutils.PropertyUtils.clearDescriptors();
@@ -77,28 +81,19 @@ public class ContextListener implements ServletContextListener
 
     public static void addShutdownListener(ShutdownListener listener)
     {
-        synchronized (_shutdownListeners)
-        {
-            _shutdownListeners.add(listener);
-        }
+        _shutdownListeners.add(listener);
     }
 
     public static void removeShutdownListener(ShutdownListener listener)
     {
-        synchronized (_shutdownListeners)
-        {
-            _shutdownListeners.remove(listener);
-        }
+        _shutdownListeners.remove(listener);
     }
 
     public static void moduleStartupComplete(ServletContext servletContext)
     {
-        StartupListener[] a;
-        synchronized (_startupListeners)
-        {
-            a = _startupListeners.toArray(new StartupListener[_startupListeners.size()]);
-        }
-        for (StartupListener listener : a)
+        List<StartupListener> startupListeners = _startupListeners;
+
+        for (StartupListener listener : startupListeners)
         {
             try
             {
@@ -114,24 +109,16 @@ public class ContextListener implements ServletContextListener
 
     public static void addStartupListener(StartupListener listener)
     {
-        synchronized (_startupListeners)
-        {
-            _startupListeners.add(listener);
-        }
+        _startupListeners.add(listener);
     }
 
     public static void removeStartupListener(StartupListener listener)
     {
-        synchronized (_startupListeners)
-        {
-            _startupListeners.remove(listener);
-        }
+        _startupListeners.remove(listener);
     }
 
-    public static synchronized ContextLoaderListener getSpringContextListener()
+    public static ContextLoaderListener getSpringContextListener()
     {
-        if (_springContextListener == null)
-            _springContextListener = new ContextLoaderListener();
         return _springContextListener;
     }
 }

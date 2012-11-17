@@ -28,6 +28,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.ResultSetUtil;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -41,6 +42,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,7 +51,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -1060,6 +1065,101 @@ public class DbScope
                         scope.releaseConnection(conn);
                 }
             }
+        }
+    }
+
+
+    // Test that a transaction in one scope doesn't affect other scopes. Start a transaction in the labkeyScope
+    // and the SELECT 10 rows from a random table in a random schema in every other datasource.
+    public static class MultiScopeTransactionTestCase extends Assert
+    {
+        @Test
+        public void test() throws SQLException
+        {
+            DbScope labkeyScope = DbScope.getLabkeyScope();
+            List<TableInfo> tablesToTest = new LinkedList<TableInfo>();
+
+            for (DbScope scope : DbScope.getDbScopes())
+            {
+                ResultSet rs = null;
+                Connection conn = null;
+
+                try
+                {
+                    SqlDialect dialect = scope.getSqlDialect();
+                    conn = scope.getConnection();
+                    DatabaseMetaData dbmd = conn.getMetaData();
+
+                    if (scope.getSqlDialect().treatCatalogsAsSchemas())
+                        rs = dbmd.getCatalogs();
+                    else
+                        rs = dbmd.getSchemas();
+
+                    Collection<String> schemaNames = new LinkedList<String>();
+
+                    while(rs.next())
+                    {
+                        String schemaName = rs.getString(1).trim();
+
+                        if (dialect.isSystemSchema(schemaName))
+                            continue;
+
+                        schemaNames.add(schemaName);
+                    }
+
+                    if (schemaNames.isEmpty())
+                        continue;
+
+                    DbSchema schema = scope.getSchema(pickRandomElement(schemaNames));
+                    Collection<String> tableNames = schema.getTableNames();
+
+                    if (tableNames.isEmpty())
+                        continue;
+
+                    tablesToTest.add(schema.getTable(pickRandomElement(tableNames)));
+                }
+                finally
+                {
+                    ResultSetUtil.close(rs);
+                    if (null != conn)
+                        conn.close();
+                }
+            }
+
+            try
+            {
+                labkeyScope.ensureTransaction();
+
+                for (TableInfo table : tablesToTest)
+                {
+                    TableSelector selector = new TableSelector(table);
+                    selector.setMaxRows(10);
+                    selector.getCollection(Map.class);
+                }
+            }
+            finally
+            {
+                labkeyScope.closeConnection();
+            }
+        }
+
+
+        private <E> E pickRandomElement(Collection<E> collection)
+        {
+            int size = collection.size();
+            assert size > 0;
+
+            Iterator<E> iter = collection.iterator();
+            int i = new Random().nextInt(size);
+            E element;
+
+            do
+            {
+                element = iter.next();
+            }
+            while (i-- > 0);
+
+            return element;
         }
     }
 }

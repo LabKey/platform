@@ -35,4 +35,5 @@ public interface CacheProvider
      * @return                   A new cache created by the provider
      */
     <K, V> SimpleCache<K, V> getSimpleCache(String debugName, int limit, long defaultTimeToLive, long defaultTimeToIdle, boolean temporary);
+    void shutdown();
 }

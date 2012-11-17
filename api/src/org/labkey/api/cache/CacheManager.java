@@ -142,4 +142,9 @@ public class CacheManager
     {
         return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getTransactionStats(), cache.size(), cache.getLimit());
     }
+
+    public static void shutdown()
+    {
+        PROVIDER.shutdown();
+    }
 }
