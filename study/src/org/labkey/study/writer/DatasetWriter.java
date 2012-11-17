@@ -36,6 +36,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -192,6 +193,10 @@ public class DatasetWriter implements InternalStudyWriter
         // Write out all the dataset .tsv files
         for (DataSetDefinition def : datasets)
         {
+            // no data to export for placeholder datasets
+            if (def.getType().equals(DataSet.TYPE_PLACEHOLDER))
+                continue;
+
             TableInfo ti = schema.getTable(def.getName());
             Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.isRemoveProtected());
             // need to make sure the SequenceNum column is included for visit based demographic datasets, issue #16146
@@ -341,6 +346,10 @@ public class DatasetWriter implements InternalStudyWriter
 
     public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DataSetDefinition def, boolean metaData, boolean removeProtected)
     {
+        // tinfo can be null if the dataset is a Placeholder
+        if (tinfo == null)
+            return Collections.emptyList();
+
         List<ColumnInfo> inColumns = tinfo.getColumns();
         Collection<ColumnInfo> outColumns = new LinkedHashSet<ColumnInfo>(inColumns.size());
 

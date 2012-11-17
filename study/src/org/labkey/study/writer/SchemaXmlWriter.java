@@ -81,15 +81,42 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
 
         for (DataSetDefinition def : definitions)
         {
-            TableInfo ti = schema.getTable(def.getName());
             TableType tableXml = tablesXml.addNewTable();
-            DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, _defaultDateFormat, ctx.isRemoveProtected());
-            w.writeTable(tableXml);
+            if (def.getType().equals(DataSet.TYPE_PLACEHOLDER))
+            {
+                PlaceholderDatasetWriter w = new PlaceholderDatasetWriter(def);
+                w.writeTable(tableXml);
+            }
+            else
+            {
+                TableInfo ti = schema.getTable(def.getName());
+                DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, _defaultDateFormat, ctx.isRemoveProtected());
+                w.writeTable(tableXml);
+            }
         }
 
         vf.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
     }
 
+    private class PlaceholderDatasetWriter
+    {
+        private final DataSetDefinition _def;
+
+        private PlaceholderDatasetWriter(DataSetDefinition def)
+        {
+            _def = def;
+        }
+
+        public void writeTable(TableType tableXml)
+        {
+            tableXml.setTableName(_def.getName());
+            tableXml.setTableDbType("TABLE");
+            if (null != _def.getLabel())
+                tableXml.setTableTitle(_def.getLabel());
+            if (null != _def.getDescription())
+                tableXml.setDescription(_def.getDescription());
+        }
+    }
 
     private class DatasetTableInfoWriter extends TableInfoWriter
     {
