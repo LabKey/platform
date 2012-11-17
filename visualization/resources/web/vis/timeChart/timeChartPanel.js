@@ -1726,6 +1726,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             uniqueChartSeriesNames.push(seriesList[i].name);
         }
 
+        console.log("# of series:", seriesList.length);
+
         for (var i = seriesList.length -1; i >= 0; i--)
         {
             var chartSeries = seriesList[i];
@@ -1742,18 +1744,26 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             var columnName = individualColumnAliases ? this.getColumnAlias(individualColumnAliases, chartSeries.aliasLookupInfo) : this.getColumnAlias(aggregateColumnAliases, chartSeries.aliasLookupInfo);
             if(individualData && individualColumnAliases){
                 var pathLayerConfig = {
-                    name: chartSeriesName,
                     geom: new LABKEY.vis.Geom.Path({size: chartInfo.lineWidth}),
                     aes: generateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName)
                 };
+
+                if(seriesList.length > 1){
+                    pathLayerConfig.name = chartSeriesName;
+                }
+
                 layers.push(new LABKEY.vis.Layer(pathLayerConfig));
 
                 if(!chartInfo.hideDataPoints){
                     var pointLayerConfig = {
-                        name: chartSeriesName,
                         geom: new LABKEY.vis.Geom.Point(),
                         aes: generateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName)
                     };
+
+                    if(seriesList.length > 1){
+                        pointLayerConfig.name = chartSeriesName;
+                    }
+
                     if(studyType == 'date'){
                         pointLayerConfig.aes.hoverText = hoverTextFn(individualSubjectColumn, intervalKey, chartSeriesName, columnName, null, null, null);
                     } else {
@@ -1782,30 +1792,42 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 var errorColumnName = errorBarType ? this.getColumnAlias(aggregateColumnAliases, chartSeries.aliasLookupInfo) + errorBarType : null;
 
                 var aggregatePathLayerConfig = {
-                    name: chartSeriesName,
                     data: aggregateData,
                     geom: new LABKEY.vis.Geom.Path({size: chartInfo.lineWidth}),
                     aes: generateAggregateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName)
                 };
+
+                if(seriesList.length > 1){
+                    aggregatePathLayerConfig.name = chartSeriesName;
+                }
+
                 layers.push(new LABKEY.vis.Layer(aggregatePathLayerConfig));
 
                 if(errorColumnName){
                     var aggregateErrorLayerConfig = {
-                        name: chartSeriesName,
                         data: aggregateData,
                         geom: new LABKEY.vis.Geom.ErrorBar(),
                         aes: generateAggregateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName)
                     };
+
+                    if(seriesList.length > 1){
+                        aggregateErrorLayerConfig.name = chartSeriesName;
+                    }
+
                     layers.push(new LABKEY.vis.Layer(aggregateErrorLayerConfig));
                 }
 
                 if(!chartInfo.hideDataPoints){
                     var aggregatePointLayerConfig = {
-                        name: chartSeriesName,
                         data: aggregateData,
                         geom: new LABKEY.vis.Geom.Point(),
                         aes: generateAggregateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName)
                     };
+
+                    if(seriesList.length > 1){
+                        aggregatePointLayerConfig.name = chartSeriesName;
+                    }
+
                     if(studyType == 'date'){
                         aggregatePointLayerConfig.aes.hoverText = hoverTextFn(aggregateSubjectColumn, intervalKey, chartSeriesName, columnName, null, errorColumnName, chartInfo.errorBars)
                     } else {
