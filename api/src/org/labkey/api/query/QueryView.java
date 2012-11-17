@@ -2029,6 +2029,8 @@ public class QueryView extends WebPartView<Object>
         if (table != null)
         {
             _initializeButtonBar = false;
+            setShowDetailsColumn(response.isIncludeDetailsColumn());
+            setShowUpdateColumn(response.isIncludeUpdateColumn());
             DataView view = createDataView();
             DataRegion rgn = view.getDataRegion();
             rgn.setShowPaginationCount(!response.isMetaDataOnly());
@@ -2042,7 +2044,7 @@ public class QueryView extends WebPartView<Object>
             }
 
             rgn.setAllowAsync(false);
-            response.initialize(view.getRenderContext(), rgn, table, getExportColumns(rgn.getDisplayColumns()));
+            response.initialize(view.getRenderContext(), rgn, table, response.isIncludeDetailsColumn() ? rgn.getDisplayColumns() : getExportColumns(rgn.getDisplayColumns()));
         }
         else
         {

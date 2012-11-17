@@ -53,10 +53,10 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 
     public ExtendedApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable,
                                     boolean includeLookupInfo, String schemaName, String queryName,
-                                    long offset, List<FieldKey> fieldKeys, boolean metaDataOnly)
+                                    long offset, List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn)
             throws Exception
     {
-        super(view, viewContext, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly);
+        super(view, viewContext, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn);
     }
 
     public void includeStyle(boolean withStyle)
@@ -112,7 +112,12 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         }
 
         //put the column map into the row map using the column name as the key
-        row.put(dc.getColumnInfo().getName(), colMap);
+        String columnName = getColumnName(dc);
+
+        if (columnName != null)
+        {
+            row.put(columnName, colMap);
+        }
     }
 
     @Override

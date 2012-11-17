@@ -188,6 +188,9 @@ LABKEY.Query = new function()
          * If true, all information required to recreate the query will be stored on the server and a unique query name will be passed to the
          * success callback.  This temporary query name can be used by all other API methods, including Query Web Part creation, for as long
          * as the current user's session remains active.
+         * @param {Boolean} [config.includeDetailsColumn] Include the Details link column in the set of columns (defaults to false).
+         *       If included, the column will have the name "~~Details~~". The underlying table/query must support details links
+         *       or the column will be omitted in the response.
          * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
          *        references underlying queries that are parameterized.
          * @param {Double} [config.requiredVersion] Set this field to "9.1" to receive the {@link LABKEY.Query.ExtendedSelectRowsResults} format
@@ -368,6 +371,12 @@ LABKEY.Query = new function()
         *        Use this along with the maxRows config property to request pages of data.
         * @param {Boolean} [config.includeTotalCount] Include the total number of rows available (defaults to true).
         *       If false totalCount will equal number of rows returned (equal to maxRows unless maxRows == 0).
+        * @param {Boolean} [config.includeDetailsColumn] Include the Details link column in the set of columns (defaults to false).
+        *       If included, the column will have the name "~~Details~~". The underlying table/query must support details links
+        *       or the column will be omitted in the response.
+        * @param {Boolean} [config.includeUpdateColumn] Include the Update (or edit) link column in the set of columns (defaults to false).
+        *       If included, the column will have the name "~~Update~~". The underlying table/query must support update links
+        *       or the column will be omitted in the response.
         * @param {String} [config.selectionKey] Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
         *         Not used unless <code>config.showRows</code> is 'selected' or 'unselected'.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
@@ -477,6 +486,12 @@ LABKEY.Query = new function()
 
             if (config.includeTotalCount)
                 dataObject.includeTotalCount = config.includeTotalCount;
+
+            if (config.includeDetailsColumn)
+                dataObject.includeDetailsColumn = config.includeDetailsColumn;
+
+            if (config.includeUpdateColumn)
+                dataObject.includeUpdateColumn = config.includeUpdateColumn;
 
             if (config.includeStyle)
                 dataObject.includeStyle = config.includeStyle;

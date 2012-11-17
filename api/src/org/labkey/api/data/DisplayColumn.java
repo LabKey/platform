@@ -715,7 +715,7 @@ public abstract class DisplayColumn extends RenderColumn
     public String getCaption(RenderContext ctx, boolean htmlEncode)
     {
         if(!htmlEncode)
-            return _caption.eval(ctx);
+            return _caption == null ? getName() : _caption.eval(ctx);
         else
         {
             StringWriter writer = new StringWriter();

@@ -35,6 +35,7 @@ public class DetailsColumn extends UrlColumn
     public DetailsColumn(StringExpression url, TableInfo table)
     {
         super(url, "details");
+        setName("Details");
         tinfo = table;
 
         setGridHeaderClass("");

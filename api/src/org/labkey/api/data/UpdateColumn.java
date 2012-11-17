@@ -30,6 +30,7 @@ public class UpdateColumn extends UrlColumn
     public UpdateColumn(StringExpression urlExpression)
     {
         super(urlExpression, "edit");
+        setName("Update");
         setGridHeaderClass("");
         setWidth("0");
         addDisplayClass("labkey-update");

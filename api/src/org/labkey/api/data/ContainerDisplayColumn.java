@@ -296,7 +296,7 @@ public class ContainerDisplayColumn extends DataColumn
 
             QueryView view = new QueryView(us, qs, errors);
             ViewContext vc = new ViewContext();
-            ExtendedApiQueryResponse resp = new ExtendedApiQueryResponse(view, vc, false, false, "auditLog", "ContainerAuditEvent", 0, fieldKeys, false);
+            ExtendedApiQueryResponse resp = new ExtendedApiQueryResponse(view, vc, false, false, "auditLog", "ContainerAuditEvent", 0, fieldKeys, false, false, false);
             Writer writer = new StringWriter();
             ApiResponseWriter apiWriter = new ApiJsonWriter(writer);
             resp.render(apiWriter);

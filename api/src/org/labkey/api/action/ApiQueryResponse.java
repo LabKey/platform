@@ -21,6 +21,7 @@ import org.json.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.LookupColumn;
@@ -29,6 +30,7 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
@@ -71,9 +73,12 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     private boolean _metaDataOnly = false;
     private Map<String, Object> _extraReturnProperties;
     private DataRegion _dataRegion;
+    private boolean _includeDetailsColumn;
+    private boolean _includeUpdateColumn;
 
     public ApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable, boolean includeLookupInfo,
-                            String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly) throws Exception
+                            String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly,
+                            boolean includeDetailsColumn, boolean includeUpdateColumn) throws Exception
     {
         _viewContext = viewContext;
         _schemaEditable = schemaEditable;
@@ -83,6 +88,8 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         _offset = offset;
         _fieldKeys = fieldKeys;
         _metaDataOnly = metaDataOnly;
+        _includeDetailsColumn = includeDetailsColumn;
+        _includeUpdateColumn = includeUpdateColumn;
         view.exportToApiResponse(this);
     }
 
@@ -279,11 +286,11 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         ArrayList<Map<String, Object>> fields = new ArrayList<Map<String,Object>>();
         for (DisplayColumn dc : displayColumns)
         {
-            if (dc.isQueryColumn())
+            if (includeColumnInResponse(dc))
             {
                 Map<String,Object> fmdata = JsonWriter.getMetaData(dc, null, false, includeLookupInfo, false);
                 //if the column type is file, include an extra column for the url
-                if ("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
+                if (dc.getColumnInfo() != null && "file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
                 {
                     fmdata.put("file", true);
                     Map<String,Object> urlmdata = getFileUrlMeta(dc);
@@ -305,27 +312,16 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return urlmdata;
     }
 
-    protected DisplayColumn getDisplayCol(ColumnInfo col)
-    {
-        DisplayColumn ret = null;
-        for (DisplayColumn dc : _displayColumns)
-        {
-            if (null != dc.getColumnInfo() && dc.getColumnInfo().equals(col))
-                ret = dc;
-        }
-        return ret;
-    }
-
     protected List<Map<String,Object>> getColumnModel() throws Exception
     {
         ArrayList<Map<String,Object>> cols = new ArrayList<Map<String,Object>>();
         for (DisplayColumn dc : _displayColumns)
         {
-            if (dc.isQueryColumn())
+            if (includeColumnInResponse(dc))
             {
                 cols.add(getColModel(dc));
 
-                if ("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
+                if (dc.getColumnInfo() != null && "file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
                 {
                     Map<String,Object> urlmdata = getFileUrlMeta(dc);
                     if (null != urlmdata)
@@ -343,10 +339,10 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         ColumnInfo colInfo = dc.getColumnInfo();
 
         // see  Ext.grid.ColumnModel Ext.grid.Column
-        extGridColumn.put("dataIndex", colInfo.getName());
+        extGridColumn.put("dataIndex", getColumnName(dc));
         extGridColumn.put("sortable", dc.isSortable());
         extGridColumn.put("editable", isEditable(dc));
-        extGridColumn.put("hidden", colInfo.isHidden() || colInfo.isAutoIncrement()); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
+        extGridColumn.put("hidden", colInfo != null && (colInfo.isHidden() || colInfo.isAutoIncrement())); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
         if (dc.getTextAlign() != null)
             extGridColumn.put("align", dc.getTextAlign());
         if (dc.getCaption() != null)
@@ -368,10 +364,13 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         }
 
         /** These are not part of Ext.Grid.Column, don't know why they are hear (MAB) */
-        extGridColumn.put("required", !colInfo.isNullable());
-        if (isEditable(dc) && null != colInfo.getDefaultValue())
+        extGridColumn.put("required", colInfo != null && !colInfo.isNullable());
+        if (colInfo != null && isEditable(dc) && null != colInfo.getDefaultValue())
             extGridColumn.put("defaultValue", colInfo.getDefaultValue());
-        extGridColumn.put("scale", dc.getColumnInfo().getScale());
+        if (colInfo != null)
+        {
+            extGridColumn.put("scale", colInfo.getScale());
+        }
         return extGridColumn;
     }
 
@@ -412,10 +411,15 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         Map<String,Object> row = new HashMap<String,Object>();
         for (DisplayColumn dc : _displayColumns)
         {
-            if (dc.isQueryColumn())
+            if (includeColumnInResponse(dc))
                 putValue(row, dc);
         }
         return row;
+    }
+
+    private boolean includeColumnInResponse(DisplayColumn dc)
+    {
+        return dc.isQueryColumn() || (dc instanceof DetailsColumn && _includeDetailsColumn) || (dc instanceof UpdateColumn && _includeUpdateColumn);
     }
 
     protected void putValue(Map<String,Object> row, DisplayColumn dc) throws Exception
@@ -474,5 +478,33 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     public boolean isMetaDataOnly()
     {
         return _metaDataOnly;
+    }
+
+    public boolean isIncludeUpdateColumn()
+    {
+        return _includeUpdateColumn;
+    }
+
+    public boolean isIncludeDetailsColumn()
+    {
+        return _includeDetailsColumn;
+    }
+
+    protected String getColumnName(DisplayColumn dc)
+    {
+        String columnName = null;
+        if (dc.getColumnInfo() != null)
+        {
+            columnName = dc.getColumnInfo().getName();
+        }
+        else if (dc instanceof UpdateColumn)
+        {
+            columnName = "~~Update~~";
+        }
+        else if (dc instanceof DetailsColumn)
+        {
+            columnName = "~~Details~~";
+        }
+        return columnName;
     }
 }
