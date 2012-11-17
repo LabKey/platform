@@ -16,17 +16,12 @@
 package org.labkey.query.reports;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.reports.model.ViewCategory;
-import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.RedirectReport;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.util.DateUtil;
 
-import java.util.Date;
 import java.util.List;
 
 /**

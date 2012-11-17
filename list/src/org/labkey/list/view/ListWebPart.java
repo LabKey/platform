@@ -16,16 +16,15 @@
 
 package org.labkey.list.view;
 
-import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListService;
-import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
-import java.util.Map;
-import java.util.TreeSet;
 
 public class ListWebPart extends WebPartView<ViewContext>
 {

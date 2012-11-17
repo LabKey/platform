@@ -226,7 +226,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
 
             formItems.push({
                 xtype      : 'displayfield',
-                fieldLabel : 'Created On',
+                fieldLabel : 'Created',
                 value      : Ext4.util.Format.date(this.data.created, 'Y-m-d H:i'),
                 readOnly   : true
             });
@@ -236,7 +236,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
 
             formItems.push({
                 xtype      : 'displayfield',
-                fieldLabel : 'Last Modified',
+                fieldLabel : 'Modified',
                 value      : Ext4.util.Format.date(this.data.modified, 'Y-m-d H:i'),
                 readOnly   : true
             });

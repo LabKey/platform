@@ -708,6 +708,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 PageFlowUtil.TestCase.class,
                 ResultSetUtil.TestCase.class,
                 ArrayListMap.TestCase.class,
+                DbScope.MultiScopeTransactionTestCase.class,
                 DbScope.DialectTestCase.class,
                 ValidEmail.TestCase.class,
                 RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,

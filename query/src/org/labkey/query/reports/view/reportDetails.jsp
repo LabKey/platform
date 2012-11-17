@@ -93,23 +93,7 @@
                 if(authorId != null)
                 {
             %>
-                <%= UserManager.getUser(authorId) != null ? h(UserManager.getUser(authorId).getDisplayName(context.getUser())) : ""%>
-            <%
-                }
-            %>
-        </td>
-    </tr>
-
-    <tr>
-        <td class="labkey-form-label">
-            Created By:
-        </td>
-        <td>
-            <%
-                if(createdBy != null)
-                {
-            %>
-                <%= UserManager.getUser(createdBy) != null ? h(UserManager.getUser(createdBy).getDisplayName(context.getUser())) : ""%>
+                <%= h(UserManager.getUser(authorId) != null ? UserManager.getUser(authorId).getDisplayName(context.getUser()) : "")%>
             <%
                 }
             %>
@@ -131,8 +115,7 @@
             Data Cut Date:
         </td>
         <td>
-
-            <%=refreshDate != null && refreshDate.getTime() > 0 ? h(DateUtil.formatDateTime(refreshDate)) : ""%>
+            <%=h(refreshDate != null && refreshDate.getTime() > 0 ? DateUtil.formatDateTime(refreshDate) : "")%>
         </td>
     </tr>
 
@@ -160,7 +143,16 @@
             Shared:
         </td>
         <td>
-            <%=isShared ? "Yes" : "No"%>
+            <%=text(isShared ? "Yes" : "No")%>
+        </td>
+    </tr>
+
+     <tr>
+        <td class="labkey-form-label">
+            Visibility:
+        </td>
+        <td>
+            <%=text(reportDescriptor.isHidden() ? "Hidden" : "Visible")%>
         </td>
     </tr>
 
@@ -175,10 +167,26 @@
     
     <tr>
         <td class="labkey-form-label">
+            Created By:
+        </td>
+        <td>
+            <%
+                if(createdBy != null)
+                {
+            %>
+                <%= h(UserManager.getUser(createdBy) != null ? UserManager.getUser(createdBy).getDisplayName(context.getUser()) : "")%>
+            <%
+                }
+            %>
+        </td>
+    </tr>
+
+    <tr>
+        <td class="labkey-form-label">
             Created:
         </td>
         <td>
-             <%=createdDate != null && createdDate.getTime() > 0 ?  h(DateUtil.formatDateTime(createdDate)) : ""%>
+             <%=h(createdDate != null && createdDate.getTime() > 0 ? DateUtil.formatDateTime(createdDate) : "")%>
         </td>
     </tr>
 
@@ -187,13 +195,13 @@
             Modified:
         </td>
         <td>
-            <%=modifiedDate != null && modifiedDate.getTime() > 0 ? h(DateUtil.formatDateTime(modifiedDate)) : ""%>
+            <%=h(modifiedDate != null && modifiedDate.getTime() > 0 ? DateUtil.formatDateTime(modifiedDate) : "")%>
         </td>
     </tr>
 
     <tr>
         <td valign="top" class="labkey-form-label">
-            Report Thumbnail:
+            Thumbnail:
         </td>
         <td>
             <img src="<%=h(thumbnailUrl)%>">

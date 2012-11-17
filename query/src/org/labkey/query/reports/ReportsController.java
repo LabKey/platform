@@ -1427,9 +1427,17 @@ public class ReportsController extends SpringActionController
 
         public ActionURL getSuccessURL(F uploadForm)
         {
-            return uploadForm.getReturnActionURL();
-        }
+            ActionURL defaultURL = null;
+            ReportIdentifier id = uploadForm.getReportId();
 
+            if (null != id)
+            {
+                Report r = id.getReport(getViewContext());
+                defaultURL = new ReportUrlsImpl().urlReportDetails(getViewContext().getContainer(), r);
+            }
+
+            return uploadForm.getReturnActionURL(defaultURL);
+        }
     }
 
     @RequiresPermissionClass(InsertPermission.class)
@@ -1550,7 +1558,6 @@ public class ReportsController extends SpringActionController
     @RequiresPermissionClass(InsertPermission.class)
     public class UpdateAttachmentReportAction extends BaseAttachmentReportAction
     {
-
         @Override
         protected void initializeForm(AttachmentReportForm form, AttachmentReport report) throws Exception
         {
@@ -1642,7 +1649,7 @@ public class ReportsController extends SpringActionController
                 AttachmentReport aReport = (AttachmentReport)report;
 
                 if (null == aReport.getFilePath())
-                    throw new NotFoundException();
+                    throw new NotFoundException("Report is not a server file attachment report");
 
                 File file = new File(aReport.getFilePath());
                 if (!file.exists())
