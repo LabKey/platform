@@ -203,7 +203,6 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromString("UserCount"));
         defaultCols.add(FieldKey.fromString("ActiveUserCount"));
         defaultCols.add(FieldKey.fromString("ContainerCount"));
-        defaultCols.add(FieldKey.fromString("ExceptionCount"));
         defaultCols.add(FieldKey.fromString("HeapSize"));
         defaultCols.add(FieldKey.fromString("ServletContainer"));
         result.setDefaultVisibleColumns(defaultCols);
