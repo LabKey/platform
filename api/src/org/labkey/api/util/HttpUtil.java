@@ -129,7 +129,10 @@ public class HttpUtil
         ArrayList<String> errors = new ArrayList<String>();
         Document document = TidyUtil.convertHtmlToDocument(content, true, errors);
         if (!errors.isEmpty())
-            throw new RuntimeException("Error converting to XHTML document: " + errors.get(0));
+        {
+            LOG.warn("Error converting to XHTML document: " + errors.get(0));
+            return null;
+        }
 
         // find meta redirects
         String refresh = metaRefresh(document);

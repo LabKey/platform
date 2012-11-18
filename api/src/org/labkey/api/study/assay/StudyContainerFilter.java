@@ -68,6 +68,6 @@ public class StudyContainerFilter extends ContainerFilter
 
     public Type getType()
     {
-        throw new UnsupportedOperationException();
+        return null;
     }
 }

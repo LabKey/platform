@@ -257,7 +257,10 @@ public class ImageUtil
         }
 
         Pair<Document, URI> content = HttpUtil.getXHTML(uri);
-        return webImage(content.first, content.second, width, height);
+        if (content != null)
+            return webImage(content.first, content.second, width, height);
+
+        return null;
     }
 
     private static BufferedImage webImage(Document document, URI baseURI, int width, int height)

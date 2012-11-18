@@ -77,7 +77,7 @@ public class RExportScriptModel extends ExportScriptModel
     public String getContainerFilterString()
     {
         ContainerFilter containerFilter = super.getContainerFilter();
-        if (null == containerFilter)
+        if (null == containerFilter || null == containerFilter.getType())
             return "NULL";
         else
             return (" \"" + (containerFilter.getType().name()) + "\" " );                           

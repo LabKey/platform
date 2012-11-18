@@ -110,7 +110,7 @@ public class CreatePerlScriptModel extends ExportScriptModel
 
         ContainerFilter containerFilter = getContainerFilter();
 
-        if (null != containerFilter)
+        if (null != containerFilter && null != containerFilter.getType())
             params.append(indent).append("-containerFilterName => '").append(containerFilter.getType().name()).append("',\n");
 
         params.append(indent).append("-sort => ").append(getSort());

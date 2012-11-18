@@ -51,7 +51,7 @@ public class AssayRunType extends ExperimentRunType
     {
         TableInfo table = view.getDataRegion().getTable();
         ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(context.getContainer(), _protocol, ShowSelectedDataAction.class);
-        if (table.getContainerFilter() != null)
+        if (table.getContainerFilter() != null && table.getContainerFilter().getType() != null)
             target.addParameter("containerFilterName", table.getContainerFilter().getType().name());
         ActionButton viewSelectedButton = new ActionButton(target, "Show Results");
         viewSelectedButton.setURL(target);
@@ -69,7 +69,7 @@ public class AssayRunType extends ExperimentRunType
             {
                 ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(context.getContainer(), _protocol);
                 copyURL.addParameter("runIds", true);
-                if (table.getContainerFilter() != null)
+                if (table.getContainerFilter() != null && table.getContainerFilter().getType() != null)
                     copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());
                 ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
                 copySelectedButton.setDisplayPermission(InsertPermission.class);

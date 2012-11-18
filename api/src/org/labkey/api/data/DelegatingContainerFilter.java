@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Collection;
 
 /**
@@ -30,11 +32,13 @@ public class DelegatingContainerFilter extends ContainerFilter
         _source = source;
     }
 
+    @Nullable
     public Collection<String> getIds(Container currentContainer)
     {
         return _source.getContainerFilter().getIds(currentContainer);
     }
 
+    @Nullable
     public Type getType()
     {
         return _source.getContainerFilter().getType();

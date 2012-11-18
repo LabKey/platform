@@ -101,7 +101,7 @@ public class CreateJavaScriptModel extends ExportScriptModel
 
         ContainerFilter containerFilter = getContainerFilter();
 
-        if (null != containerFilter)
+        if (null != containerFilter && null != containerFilter.getType())
             params.append(indent).append("containerFilter: '").append(containerFilter.getType().name()).append("',\n");
 
         params.append(indent).append("sort: ").append(getSort());

@@ -46,6 +46,11 @@ public abstract class ContainerFilter
     @Nullable
     protected abstract Collection<String> getIds(Container currentContainer);
 
+    /**
+     * May return null if the ContainerFilter has no corresponding ContainerFilter.Type.
+     * @return
+     */
+    @Nullable
     public abstract Type getType();
 
     /**
@@ -310,7 +315,7 @@ public abstract class ContainerFilter
 
         public Type getType()
         {
-            throw new UnsupportedOperationException();
+            return null;
         }
     };
 
@@ -342,7 +347,7 @@ public abstract class ContainerFilter
 
         public Type getType()
         {
-            throw new UnsupportedOperationException();
+            return null;
         }
     }
 
@@ -377,7 +382,7 @@ public abstract class ContainerFilter
 
         public Type getType()
         {
-            throw new UnsupportedOperationException();
+            return null;
         }
     }
 
@@ -783,7 +788,7 @@ public abstract class ContainerFilter
 
         public Type getType()
         {
-            throw new UnsupportedOperationException();
+            return null;
         }
     }
 
