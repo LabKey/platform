@@ -883,7 +883,7 @@ public class AssayController extends SpringActionController
                 result.addFilter(AssayProtocolSchema.DATA_TABLE_NAME,
                         AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, batchIds[0]);
             }
-            if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
+            if (containerFilter != null && containerFilter.getType() != null)
                 result.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.getType().name());
             return result;
         }
@@ -896,7 +896,7 @@ public class AssayController extends SpringActionController
         public ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
         {
             ActionURL url = getProtocolURL(container, protocol, AssayBatchesAction.class);
-            if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
+            if (containerFilter != null && containerFilter.getType() != null)
             {
                 url.addParameter(protocol.getName() + " Batches." + QueryParam.containerFilterName, containerFilter.getType().name());
             }
@@ -947,7 +947,7 @@ public class AssayController extends SpringActionController
                 result.addFilter(resultsTableName,
                         tableMetadata.getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
             }
-            if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
+            if (containerFilter != null && containerFilter.getType() != null)
                 result.addParameter("Data." + QueryParam.containerFilterName, containerFilter.getType().name());
             return result;
         }
@@ -955,10 +955,8 @@ public class AssayController extends SpringActionController
         public ActionURL getShowUploadJobsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
         {
             ActionURL result = getProtocolURL(container, protocol, ShowUploadJobsAction.class);
-            if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
-            {
+            if (containerFilter != null && containerFilter.getType() != null)
                 result.addParameter("StatusFiles." + QueryParam.containerFilterName, containerFilter.getType().name());
-            }
             return result;
         }
 

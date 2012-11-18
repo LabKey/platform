@@ -2779,6 +2779,7 @@ public class AdminController extends SpringActionController
 
 
     // TODO: Check permissions, what if guests have read perm?, different containers?
+    @RequiresLogin
     @RequiresPermissionClass(ReadPermission.class)
     public class SetAdminModeAction extends SimpleRedirectAction<UserPrefsForm>
     {

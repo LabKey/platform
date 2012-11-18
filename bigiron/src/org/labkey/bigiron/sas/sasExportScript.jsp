@@ -39,5 +39,5 @@
             queryName="<%=model.getQueryName()%>"<% if (null != model.getViewName()) {%>,
             viewName="<%=model.getViewName()%>"<% } if (null != model.getSort()) {%>,
             sort=<%=model.getSort()%><% } if (null != model.getFilters()) {%>,
-            filter=<%=model.getFilters()%><% } if (null != containerFilter) {%>,
+            filter=<%=model.getFilters()%><% } if (null != containerFilter && null != containerFilter.getType()) {%>,
             containerFilter="<%= containerFilter.getType().name() %>"<% } %>);

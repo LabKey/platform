@@ -841,7 +841,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         if (protocol != null)
         {
             ActionURL url = new ActionURL(AssayController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
-            if (containerFilter != null)
+            if (containerFilter != null && containerFilter.getType() != null)
                 url.addParameter("containerFilterName", containerFilter.getType().name());
             return url;
         }
