@@ -2332,6 +2332,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return new SQLFragment("''");
 
         ArrayList<SQLFragment> parts = new ArrayList<SQLFragment>();
+        parts.add(new SQLFragment("''"));
         parts.add(new SQLFragment("?", getURNPrefix()));
         parts.add(new SQLFragment("participantid"));
 
