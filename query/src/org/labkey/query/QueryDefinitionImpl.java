@@ -368,7 +368,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
 
         if (errors.isEmpty())
+        {
+            // Apply ContainerContext to any URLs added in metadata override.
+            ((QueryTableInfo)ret).afterConstruct();
             ((QueryTableInfo)ret).remapFieldKeys();
+        }
 
         return ret;
     }
@@ -467,7 +471,31 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public ActionURL urlFor(QueryAction action, Container container)
     {
-        return QueryService.get().urlDefault(container, action, getSchemaName(), getName());
+        ActionURL url = null;
+        TableInfo table = getTable(null, true);
+        if (table != null)
+        {
+            switch (action)
+            {
+                case insertQueryRow:
+                    url = table.getInsertURL(container);
+                    break;
+                case deleteQueryRows:
+                    url = table.getDeleteURL(container);
+                    break;
+                case executeQuery:
+                    url = table.getGridURL(container);
+                    break;
+                case importData:
+                    url = table.getImportDataURL(container);
+                    break;
+            }
+        }
+
+        if (url == AbstractTableInfo.LINK_DISABLER_ACTION_URL)
+            return null;
+
+        return url != null ? url : QueryService.get().urlDefault(container, action, getSchemaName(), getName());
     }
 
     public ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pks)
@@ -485,33 +513,54 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public StringExpression urlExpr(QueryAction action, Container container)
     {
-        ActionURL url = urlFor(action, container);
-        if (url != null)
+        StringExpression expr = null;
+        List<QueryException> errors = new ArrayList<QueryException>();
+        TableInfo table = getTable(errors, true);
+        if (table != null)
         {
-            // Query's pk columns may not correspond to the main table's pk columns.
-            // Adding the pk URL parameters will probably only work for simple queries.
-            Query query = getQuery(getSchema());
-            TableInfo table = query.getTableInfo();
-            if (table != null)
+            switch (action)
             {
-                List<String> pkColumnNames = table.getPkColumnNames();
-                if (pkColumnNames.size() > 0)
-                {
-                    Map<String, String> params = new HashMap<String, String>();
-                    for (String columnName : pkColumnNames)
-                    {
-                        params.put(columnName, columnName);
-                    }
-                    return new DetailsURL(url, params);
-                }
+                case detailsQueryRow:
+                    expr = table.getDetailsURL(null, container);
+                    break;
+
+                case updateQueryRow:
+                    expr = table.getUpdateURL(null, container);
+                    break;
             }
-            else
+
+            if (expr == AbstractTableInfo.LINK_DISABLER)
+                return null;
+        }
+
+        if (expr == null)
+        {
+            ActionURL url = urlFor(action, container);
+            if (url != null)
             {
-                return StringExpressionFactory.create(url.getLocalURIString());
+                // Query's pk columns may not correspond to the main table's pk columns.
+                // Adding the pk URL parameters will probably only work for simple queries.
+                if (table != null)
+                {
+                    List<String> pkColumnNames = table.getPkColumnNames();
+                    if (pkColumnNames.size() > 0)
+                    {
+                        Map<String, String> params = new HashMap<String, String>();
+                        for (String columnName : pkColumnNames)
+                        {
+                            params.put(columnName, columnName);
+                        }
+                        expr = new DetailsURL(url, params);
+                    }
+                }
+                else
+                {
+                    expr = StringExpressionFactory.create(url.getLocalURIString());
+                }
             }
         }
 
-        return null;
+        return expr;
     }
 
     public String getDescription()

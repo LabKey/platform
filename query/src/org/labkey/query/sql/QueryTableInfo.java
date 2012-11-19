@@ -119,13 +119,6 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
-    @Override
-    public ContainerContext getContainerContext()
-    {
-        return _relation.getDefaultContainerContext();
-    }
-
-
     // map output column to its related columns (grouped by source querytable)
     Map<FieldKey, Map<FieldKey,FieldKey>> mapFieldKeyToSiblings = new TreeMap<FieldKey, Map<FieldKey,FieldKey>>();
 

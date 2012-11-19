@@ -176,11 +176,13 @@ public abstract class QueryRelation
     public abstract Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected);
 
 
-    public ContainerContext getDefaultContainerContext()
+    public FieldKey getContainerFieldKey()
     {
-        return null==_schema ? null : _schema.getContainer();
+        RelationColumn col = getColumn("container");
+        if (col == null)
+            col = getColumn("folder");
+        return col != null ? col.getFieldKey() : null;
     }
-
 
     /**
      * Why RelationColumn??

@@ -36,6 +36,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.query.design.DgColumn;
@@ -1795,7 +1796,11 @@ groupByLoop:
             }
 
             if (to.getURL() instanceof DetailsURL)
-                ((DetailsURL)to.getURL()).setContainerContext(getDefaultContainerContext(), false);
+            {
+                FieldKey containerFieldKey = getContainerFieldKey();
+                if (containerFieldKey != null)
+                    ((DetailsURL)to.getURL()).setContainerContext(new ContainerContext.FieldKeyContext(containerFieldKey), false);
+            }
 
             if (_parsedTables.size() != 1)
                 to.setKeyField(false);

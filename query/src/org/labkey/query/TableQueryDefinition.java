@@ -147,53 +147,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         return url != null ? url : super.urlFor(action, container, pks);
     }
 
-    public StringExpression urlExpr(QueryAction action, Container container)
-    {
-        StringExpression expr = null;
-        List<QueryException> errors = new ArrayList<QueryException>();
-        TableInfo table = getTable(errors, true);
-        if (table == null)
-            return null;
 
-        switch (action)
-        {
-            case detailsQueryRow:
-                expr = table.getDetailsURL(null, container);
-                break;
-
-            case updateQueryRow:
-                expr = table.getUpdateURL(null, container);
-                break;
-        }
-
-        if (expr == AbstractTableInfo.LINK_DISABLER)
-        {
-            return null;
-        }
-
-        if (expr == null)
-        {
-            // XXX: is this the best place to create a generic query action expression url?
-            ActionURL url = super.urlFor(action, container);
-            if (url != null)
-            {
-                List<String> pkColumnNames = table.getPkColumnNames();
-                if (pkColumnNames.size() > 0)
-                {
-                    Map<String, String> params = new HashMap<String, String>();
-                    for (String columnName : pkColumnNames)
-                    {
-                        params.put(columnName, columnName);
-                    }
-                    return new DetailsURL(url, params);
-                }
-            }
-        }
-
-        return expr;
-    }
-
-    
     @Override
     public String getDescription()
     {
