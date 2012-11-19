@@ -46,6 +46,12 @@
     boolean isAdmin = c.hasPermission(getViewContext().getUser(), SharedParticipantGroupPermission.class) || c.hasPermission(getViewContext().getUser(), AdminPermission.class);
 %>
 
+<style type="text/css">
+    div.labkey-filter-dialog {
+        z-index: 20000 !important;
+    }
+</style>
+
 <p><%= PageFlowUtil.filter(subjectNounSingular) %> groups allow you to quickly filter data in a study to groups of <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> you define.
     Use this page to define a group and add <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> to it.</p>
 <div id="participantCategoriesGrid"></div>
@@ -55,6 +61,10 @@
 (function(){
 
     Ext4.onReady(function() {
+
+        Ext.override(Ext.menu.Menu, {
+            zIndex : 20000
+        });
 
         var editParticipantGroup = function(row){
             var dialog = Ext4.create('Study.window.ParticipantGroup', {
@@ -74,6 +84,7 @@
             });
 
             dialog.show();
+
 
         }
 
