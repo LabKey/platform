@@ -107,9 +107,11 @@ public class TableSelectorTestCase extends Assert
 
     private void verifyResultSets(TableSelector selector, int expectedRowCount, boolean expectedComplete) throws SQLException
     {
-        // Test normal cached ResultSet, uncached ResultSet, and Results
+        // Test normal cached ResultSet, uncached ResultSet, scrollable ResultSet, and Results
         verifyResultSet(selector.getResultSet(), expectedRowCount, expectedComplete);
         verifyResultSet(selector.getResultSet(false, false), expectedRowCount, expectedComplete);
+        verifyResultSet(selector.getResultSet(true, false), expectedRowCount, expectedComplete);
+        verifyResultSet(selector.getResultSet(true, true), expectedRowCount, expectedComplete);
         verifyResultSet(selector.getResults(), expectedRowCount, expectedComplete);
     }
 

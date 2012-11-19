@@ -3608,7 +3608,7 @@ public class OntologyManager
         {
             rs = Table.executeQuery(getExpSchema(),
                     "SELECT * FROM exp.PropertyDescriptor WHERE Container=? AND rangeuri='xsd:nil'",
-                    new Object[] {shared.getId()}, Table.ALL_ROWS, false); // new Object[] {shared});
+                    new Object[] {shared.getId()}, false); // new Object[] {shared});
             ConceptMapFactory f = new ConceptMapFactory(rs);
             while (rs.next())
             {

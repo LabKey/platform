@@ -154,48 +154,7 @@ public class Table
 
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
-    // 21 usages
-    @NotNull
-    @Deprecated // Use SqlSelector
-    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sqlf).getArray(clss);
-    }
-
-
-    // 42 usages
-    @NotNull
-    @Deprecated // Use SqlSelector
-    public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
-    }
-
-
-    // 92 usages
-    @Deprecated // Use SqlExecutor
-    public static int execute(DbSchema schema, SQLFragment f) throws SQLException
-    {
-        return new LegacySqlExecutor(schema, f).execute();
-    }
-
-
-    // 333 usages
-    @Deprecated // Use SqlExecutor
-    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
-    {
-        return new LegacySqlExecutor(schema, new SQLFragment(sql, parameters)).execute();
-    }
-
-
-    // 82 usages
-    /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
-    @Deprecated // Use SqlSelector
-    public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
-    }
-
+    // ===== TableSelector methods below =====
 
     // 7 usages
     // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
@@ -204,39 +163,6 @@ public class Table
     {
         return new LegacyTableSelector(table.getColumn(column), filter, sort).getArray(c);
     }
-
-    // 11 usages
-    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated // Use SqlSelector
-    public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).getArray(c);
-    }
-
-    // 19 usages
-    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated // Use SqlSelector
-    public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
-    }
-
-
-    // 3 usages
-    /**
-     * This is a shortcut method that can be used for two-column ResultSets
-     * The first column is key, the second column is the value
-     */
-    @Deprecated // Use SqlSelector
-    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, @Nullable Map<Object, Object> m)
-            throws SQLException
-    {
-        if (null == m)
-            return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
-        else
-            return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
-    }
-
 
     // 6 usages
     @Deprecated // Use TableSelector
@@ -327,84 +253,6 @@ public class Table
         return new LegacyTableSelector(table, columns, filter, sort).getResults();
     }
 
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    // 62 usages
-    @Deprecated // Use TableSelector
-    public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
-    }
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    // 42 usages
-    @Deprecated // Use TableSelector
-    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).getResultSet();
-    }
-
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    // 3 usages
-    @Deprecated // Use TableSelector
-    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
-    }
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    // 10 usages
-    @Deprecated // Use TableSelector
-    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows, boolean cache, boolean scrollable) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet(scrollable, cache);
-    }
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    // 7 usages
-    @Deprecated // Use TableSelector
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
-            throws SQLException
-    {
-        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(false, cache);
-    }
-
     // 6 usages
     @Deprecated // Use TableSelector instead
     public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
@@ -426,6 +274,124 @@ public class Table
         selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
 
         return selector.getResults();
+    }
+
+    // ===== SqlExecutor methods below =====
+
+    // 92 usages
+    @Deprecated // Use SqlExecutor
+    public static int execute(DbSchema schema, SQLFragment f) throws SQLException
+    {
+        return new LegacySqlExecutor(schema, f).execute();
+    }
+
+    // 333 usages
+    @Deprecated // Use SqlExecutor
+    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
+    {
+        return new LegacySqlExecutor(schema, new SQLFragment(sql, parameters)).execute();
+    }
+
+
+    // ===== SqlSelector methods below =====
+
+    // 21 usages
+    @NotNull
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sqlf).getArray(clss);
+    }
+
+    // 42 usages
+    @NotNull
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
+    }
+
+    // 82 usages
+    /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
+    @Deprecated // Use SqlSelector
+    public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
+    }
+
+    // 11 usages
+    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).getArray(c);
+    }
+
+    // 19 usages
+    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
+    }
+
+    // 3 usages
+    /**
+     * This is a shortcut method that can be used for two-column ResultSets
+     * The first column is key, the second column is the value
+     */
+    @Deprecated // Use SqlSelector
+    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, @Nullable Map<Object, Object> m)
+            throws SQLException
+    {
+        if (null == m)
+            return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
+        else
+            return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
+    }
+
+    // 62 usages
+    @Deprecated // Use SqlSelector
+    public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
+    }
+
+    // 41 usages
+    @Deprecated // Use SqlSelector
+    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).getResultSet();
+    }
+
+    // 10 usages
+    @Deprecated // Use SqlSelector
+    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, boolean cache, boolean scrollable) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).getResultSet(scrollable, cache);
+    }
+
+    // 2 usages
+    @Deprecated // Use SqlSelector    // TODO: Note, this is misleading... query still returns Table.ALL_ROWS
+    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
+    }
+
+    // 1 usage
+    @Deprecated // Use SqlSelector    // TODO: Note, this is misleading... query still returns Table.ALL_ROWS
+    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
+            throws SQLException
+    {
+        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(false, cache);
+    }
+
+    // 6 usages
+    @Deprecated // Use SqlSelector
+    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, boolean cache)
+            throws SQLException
+    {
+        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).getResultSet(false, cache);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -1239,26 +1205,6 @@ public class Table
     public static SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
-    }
-
-
-    public static Map<String, List<Aggregate.Result>>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
-                            Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter)
-    {
-        TableSelector selector = new TableSelector(table, select, filter, null);
-        selector.setNamedParameters(parameters);
-
-        return selector.getAggregates(aggregates);
-    }
-
-    public static Map<String, List<Aggregate.Result>> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates,
-              Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, Filter filter, HttpServletResponse response)
-            throws IOException
-    {
-        TableSelector selector = new TableSelector(table, select, filter, null);
-        selector.setNamedParameters(parameters);
-
-        return selector.getAggregatesAsync(aggregates, response);
     }
 
 

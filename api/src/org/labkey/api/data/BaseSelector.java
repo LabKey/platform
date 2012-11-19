@@ -159,6 +159,8 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
         return getResultSet(false, true);
     }
 
+    // TODO: Consider getResultSet(boolean cache)... which would necessitate reordering these parameters
+
     @Override
     public Table.TableResultSet getResultSet(boolean scrollable, boolean cache) throws SQLException
     {
