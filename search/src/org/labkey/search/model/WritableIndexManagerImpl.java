@@ -179,7 +179,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             try
             {
                 _iw.commit();
-                _manager.maybeReopen();
+                _manager.maybeRefresh();
             }
             catch (IOException e)
             {
