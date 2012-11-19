@@ -205,8 +205,8 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
             // XXX: Why would the DetailsURL not have a ContainerContext but the lookupTable does?
             // Usually, the DetailsURL has recieved a ContainerContext (set in AbstractTableInfo.getDetailsURL(...))
             // from the lookupTable and it's FieldKeyContext has been fixed up.
-            if (!url.hasContainerContext())
-                _log.warn("Table's DetailURL does not have a container context. Table: " + lookupTable.getPublicSchemaName() + "." + lookupTable.getName() + ", column: " + parent.getName());
+            //if (!url.hasContainerContext())
+            //    _log.warn("Table's DetailURL does not have a container context. Table: " + lookupTable.getPublicSchemaName() + "." + lookupTable.getName() + ", column: " + parent.getName());
             url.setContainerContext(cc, false);
         }
         return url;
