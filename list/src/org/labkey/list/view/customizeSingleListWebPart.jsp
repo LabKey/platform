@@ -78,6 +78,7 @@ If you want to let users change the list that's displayed or customize the view 
         });
         var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
             defaultSchema : 'lists',
+            fieldLabel : 'List',
             name : 'listId',
             valueField : 'listId',
             initialValue : <%=PageFlowUtil.jsString(props.get("listId"))%>
