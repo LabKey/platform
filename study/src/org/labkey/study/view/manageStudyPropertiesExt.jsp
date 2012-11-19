@@ -517,7 +517,19 @@ function renderFormPanel(data, editable){
 
         // stupid date conversion...
         if (items[i].xtype == 'datefield')
+        {
             items[i].value = (value != null && value != '') ? new Date(value) : '';
+            items[i].listeners = {
+                render : {
+                    fn : function(cmp){
+                        // hack to fix Ext bug with initializing date values, erroneously setting the
+                        // field dirty state
+                        if (cmp.isDirty())
+                            cmp.originalValue = cmp.getValue();
+                    }
+                }
+            }
+        }
         else
             items[i].value = value;
     }
