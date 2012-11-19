@@ -40,6 +40,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Site;
@@ -73,6 +74,7 @@ import org.labkey.study.model.Specimen;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.samples.notifications.DefaultRequestNotification;
 import org.labkey.study.samples.notifications.NotificationRecipientSet;
@@ -929,9 +931,7 @@ public class SpecimenUtils
     public TSVGridWriter getSpecimenListTsvWriter(SampleRequest sampleRequest, SiteImpl srcSite,
                                                    SiteImpl destSite, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
-        DataRegion dr = new DataRegion();
-        dr.setTable(StudySchema.getInstance().getTableInfoSpecimenDetail());
-        dr.setColumns(getColumnsForWriters());
+        DataRegion dr = createDataRegionForWriters(sampleRequest);
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcSite, type));
@@ -939,16 +939,13 @@ public class SpecimenUtils
         List<DisplayColumn> cols = dr.getDisplayColumns();
         TSVGridWriter tsv = new TSVGridWriter(rs, cols);
         tsv.setFilenamePrefix(getSpecimenListFileName(srcSite, destSite));
-        tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
         return tsv;
     }
 
     public ExcelWriter getSpecimenListXlsWriter(SampleRequest sampleRequest, SiteImpl srcSite,
                                                  SiteImpl destSite, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
-        DataRegion dr = new DataRegion();
-        dr.setTable(StudySchema.getInstance().getTableInfoSpecimenDetail());
-        dr.setColumns(getColumnsForWriters());
+        DataRegion dr = createDataRegionForWriters(sampleRequest);
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcSite, type));
@@ -959,13 +956,17 @@ public class SpecimenUtils
         return xl;
     }
 
-    private List<ColumnInfo> getColumnsForWriters()
+    private DataRegion createDataRegionForWriters(SampleRequest sampleRequest)
     {
-        return StudySchema.getInstance().getTableInfoSpecimenDetail().getColumns(
-                "GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
-                        "DrawTimestamp, ProtocolNumber, PrimaryTypeId, " +
-                        "TotalCellCount, originatinglocationid, FirstProcessedByInitials, " +
-                        "Freezer, Fr_container, Fr_position, Fr_level1, Fr_level2");
+        DataRegion dr = new DataRegion();
+        Container container = sampleRequest.getContainer();
+        StudyQuerySchema querySchema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), getViewContext().getUser(), true);
+        TableInfo table = querySchema.getTable(StudyQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME, true);
+        QueryDefinition queryDef = querySchema.getQueryDefForTable(StudyQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME);
+        List<ColumnInfo> columns = queryDef.getColumns(null, table);
+        dr.setTable(table);
+        dr.setColumns(columns);
+        return dr;
     }
 
     private String getShortSiteLabel(SiteImpl site)

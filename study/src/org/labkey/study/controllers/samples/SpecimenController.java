@@ -2893,7 +2893,6 @@ public class SpecimenController extends BaseStudyController
                 if (EXPORT_TSV.equals(form.getExport()))
                 {
                     TSVGridWriter writer = getUtils().getSpecimenListTsvWriter(sampleRequest, sourceSite, destSite, type);
-                    writer.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
                     writer.write(getViewContext().getResponse());
                 }
                 else if (EXPORT_XLS.equals(form.getExport()))

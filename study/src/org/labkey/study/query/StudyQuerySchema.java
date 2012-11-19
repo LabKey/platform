@@ -50,6 +50,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
     public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
     public static final String PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME = "ParticipantGroupCohortUnion";
+    public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
 
     @Nullable // if no study defined in this container
     final StudyImpl _study;
@@ -184,6 +185,8 @@ public class StudyQuerySchema extends UserSchema
             ret.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
             ret.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
             ret.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
+
+            ret.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
 
             // Add only datasets that the user can read
             User user = getUser();
@@ -410,6 +413,11 @@ public class StudyQuerySchema extends UserSchema
         if (SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION.equalsIgnoreCase(name))
         {
             return new SpecimenPivotByRequestingLocation(this);
+        }
+        if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            FilteredTable ret = new LocationSpecimenListTable(this);
+            return ret;
         }
 
         //might be a dataset--try getting by name first, then by label

@@ -3099,6 +3099,7 @@ study/src/org/labkey/study/query/DataSetsTable.java -text
 study/src/org/labkey/study/query/DatasetUpdateService.java -text
 study/src/org/labkey/study/query/DerivativeTypeTable.java -text
 study/src/org/labkey/study/query/ExtensibleObjectQueryView.java -text
+study/src/org/labkey/study/query/LocationSpecimenListTable.java -text
 study/src/org/labkey/study/query/ParticipantCategoryTable.java -text
 study/src/org/labkey/study/query/ParticipantDataSetTable.java -text
 study/src/org/labkey/study/query/ParticipantGroupCohortUnionTable.java -text
