@@ -15,11 +15,13 @@
  */
 package org.labkey.api.laboratory.assay;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -129,6 +131,7 @@ public class DefaultAssayParser implements AssayParser
             configureColumns(propertyNameToDescriptor, loader);
             List<Map<String, Object>> rows = loader.load();
             rows = processRowsFromFile(rows);
+            performDefaultChecks(rows);
             return rows;
         }
         catch (IOException e)
@@ -151,6 +154,46 @@ public class DefaultAssayParser implements AssayParser
         return rows;
     }
 
+    protected void performDefaultChecks(List<Map<String, Object>> rows) throws BatchValidationException
+    {
+        BatchValidationException errors = new BatchValidationException();
+
+
+        Domain dataDomain = getProvider().getResultsDomain(getProtocol());
+        Map<String, DomainProperty> importMap = dataDomain.createImportMap(false);
+        Map<String, PropertyDescriptor> propertyNameToDescriptor = getPropertyMap(importMap);
+
+        int idx = 0;
+        for (Map<String, Object> row : rows)
+        {
+            idx++;
+            for (String name : propertyNameToDescriptor.keySet())
+            {
+                if (row.containsKey(name))
+                {
+                    PropertyDescriptor pd = propertyNameToDescriptor.get(name);
+                    if (pd.isRequired() && row.get(name) == null)
+                    {
+                        errors.addRowError(new ValidationException("Row " + idx + ": missing required field '" + pd.getLabel() + "'"));
+                        continue;
+                    }
+
+                    try
+                    {
+                        ConvertHelper.convert(row.get(name), pd.getJavaClass());
+                    }
+                    catch (ConversionException e)
+                    {
+                        errors.addRowError(new ValidationException("Row " + idx + ": unable to convert value: '" + row.get(name).toString() + "' to type " + pd.getJdbcType()));
+                        continue;
+                    }
+                }
+            }
+        }
+
+        if (errors.hasErrors())
+            throw errors;
+    }
     protected void appendPromotedResultFields(Map<String, Object> row)
     {
         if (_jsonData != null && _jsonData.has("Results"))

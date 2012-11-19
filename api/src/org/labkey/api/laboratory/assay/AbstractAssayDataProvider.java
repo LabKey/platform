@@ -33,9 +33,11 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -165,8 +167,13 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         JSONObject domainMeta = new JSONObject();
 
         JSONObject runMeta = new JSONObject();
-        runMeta.put("Name", new JSONObject().put("hidden", true));
-        runMeta.put("runDate", new JSONObject().put("hidden", true));
+        JSONObject nameField = new JSONObject();
+        nameField.put("hidden", true);
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-mm-dd");
+        nameField.put("value", ctx.getUser().getDisplayName(ctx.getUser()) + "_" + format.format(new Date()));
+        runMeta.put("Name", nameField);
+
+                runMeta.put("runDate", new JSONObject().put("hidden", true));
         runMeta.put("comments", new JSONObject().put("hidden", true));
         runMeta.put("performedBy", new JSONObject().put("hidden", true));
         domainMeta.put("Run", runMeta);

@@ -234,8 +234,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
     protected Map<Object, Object> getWellMap96(final String keyProperty, final String valueProperty)
     {
         TableInfo ti = DbSchema.get("laboratory").getTable("well_layout");
-        TableSelector ts = new TableSelector(ti);
-
+        TableSelector ts = new TableSelector(ti, new SimpleFilter(FieldKey.fromString("plate"), 1), null);
 
         final Map<Object, Object> wellMap = new HashMap<Object, Object>();
         ts.forEach(new Selector.ForEachBlock<ResultSet>()
