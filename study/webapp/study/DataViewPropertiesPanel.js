@@ -75,6 +75,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 fieldLabel: 'Author',
                 name: 'author',
                 typeAhead: true,
+                typeAheadDelay : 75,
                 editable: true, // required for typeAhead
                 forceSelection : true, // user must pick from list
                 store       : this.initializeUserStore(),
@@ -112,7 +113,10 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 fieldLabel  : 'Status',
                 name        : 'status',
                 store       : statusStore,
-                editable    : false,
+                editable    : true,
+                forceSelection : true,
+                typeAhead   : true,
+                typeAheadDelay : 75,
                 value       : this.data.status != null && this.data.status != '' ? this.data.status : undefined,
                 queryMode      : 'local',
                 displayField   : 'label',
@@ -319,7 +323,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             listeners : {
                 load : function(s, recs, success, operation, ops) {
                     s.sort('DisplayName', 'ASC');
-                    s.insert(0, {UserId : -1, DisplayName : 'None '});
+                    s.insert(0, {UserId : -1, DisplayName : 'None'});
                 }
             }
         };
