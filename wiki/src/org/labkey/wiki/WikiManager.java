@@ -690,7 +690,7 @@ public class WikiManager implements WikiService
                 f.append(" AND P.name = ?");
                 f.add(name);
             }
-            rs = Table.executeQuery(comm.getSchema(), f, Table.ALL_ROWS, false, false);
+            rs = Table.executeQuery(comm.getSchema(), f, false, false);
 
             HashMap<String, AttachmentParent> ids = new HashMap<String, AttachmentParent>();
             // AGGH wiki doesn't have a title!

@@ -2572,25 +2572,6 @@ public class StudyManager
         return selector.getArray(String.class);
     }
 
-    public Table.TableResultSet getParticipantIdsStartsWith(Study study, String lowerCasePrefix)
-    {
-        try
-        {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-
-            SQLFragment sql = new SQLFragment(String.format(
-                    "SELECT ParticipantId FROM %s WHERE Container = ? AND ParticipantId %s '%s%%' ORDER BY ParticipantId",
-                    _tableInfoParticipant, schema.getSqlDialect().getCaseInsensitiveLikeOperator(), lowerCasePrefix),
-                    study.getContainer().getId());
-
-            return Table.executeQuery(schema, sql, 5000);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
     public static final int ALTERNATEID_DEFAULT_NUM_DIGITS = 6;
 
     public void clearAlternateParticipantIds(Study study)
@@ -3361,7 +3342,7 @@ public class StudyManager
                 f.append(" WHERE container = ?");
                 f.add(c);
             }
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, Table.ALL_ROWS, false, false);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, false, false);
 
             while (rs.next())
             {
@@ -3388,7 +3369,7 @@ public class StudyManager
         }
     }
 
-    private static void indexDataset(SearchService.IndexTask task, DataSetDefinition dsd)
+    private static void indexDataset(@Nullable SearchService.IndexTask task, DataSetDefinition dsd)
     {
         if (dsd.getType().equals(DataSet.TYPE_PLACEHOLDER))
             return;
@@ -3441,7 +3422,7 @@ public class StudyManager
         try
         {
             SQLFragment f = new SQLFragment("SELECT DISTINCT container FROM study.participant");
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, Table.ALL_ROWS, false, false);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, false, false);
             while (rs.next())
             {
                 final String id = rs.getString(1);
@@ -3531,7 +3512,7 @@ public class StudyManager
                 }
                 f.append(")");
             }
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, Table.ALL_ROWS, false, false);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, false, false);
 
             ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);
             indexURL.setExtraPath(c.getId());
@@ -3609,7 +3590,7 @@ public class StudyManager
                 f.append(" WHERE container = ?");
                 f.add(c);
             }
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, Table.ALL_ROWS, false, false);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, false, false);
             ss.addParticipantIds(rs);
         }
         catch (SQLException x)

@@ -118,7 +118,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
 
         try
         {
-            _rs = Table.executeQuery(core.getSchema(), _sqlDocument, new Object[]{_attachment.getParent(), _attachment.getName()}, Table.ALL_ROWS, false);
+            _rs = Table.executeQuery(core.getSchema(), _sqlDocument, new Object[]{_attachment.getParent(), _attachment.getName()}, false);
 
             if (!_rs.next())
                 throw new FileNotFoundException("Attachment could not be retrieved from database: " + _attachment.getName());

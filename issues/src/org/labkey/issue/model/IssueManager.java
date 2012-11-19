@@ -762,7 +762,7 @@ public class IssueManager
         ResultSet rs = null;
         try
         {
-            rs = Table.executeQuery(_issuesSchema.getSchema(), f, Table.ALL_ROWS, false, false);
+            rs = Table.executeQuery(_issuesSchema.getSchema(), f, false, false);
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             int currentIssueId = -1;
 

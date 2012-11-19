@@ -186,7 +186,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         try
         {
             // Note: must be uncached result set -- this query can be very large
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Table.ALL_ROWS, false);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), false);
 
             gridWriter = new TSVGridWriter(new ResultsImpl(rs, selectColumns), displayColumns);
             gridWriter.write(pw);
