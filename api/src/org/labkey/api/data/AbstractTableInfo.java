@@ -1084,7 +1084,13 @@ abstract public class AbstractTableInfo implements TableInfo
     @Nullable
     public FieldKey getContainerFieldKey()
     {
-        // UNDONE: Eventually this should default to 'if (getColumn("Container") != null) return getColumn("Container").getFieldKey();'
+        ColumnInfo col = getColumn("container");
+        if (col == null)
+            col = getColumn("folder");
+
+        if (col != null && col.getJdbcType() == JdbcType.GUID)
+            return col.getFieldKey();
+
         return null;
     }
 
