@@ -468,7 +468,7 @@ public class Sort
 
     public List<SortField> getSortList()
     {
-        return _sortList;
+        return Collections.unmodifiableList(_sortList);
     }
 
     public String getURLParamValue()

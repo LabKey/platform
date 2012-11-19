@@ -333,8 +333,12 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     public Sort buildSort(TableInfo tinfo, ActionURL url, String name)
     {
+        // Create a copy of the sort so that QueryService.ensureRequiredColumns() can
+        // safely remove any unresolved columns from the sort without affecting others.
+        Sort sort = new Sort();
         Sort baseSort = getBaseSort();
-        Sort sort = null != baseSort ? baseSort : new Sort();
+        if (baseSort != null)
+            sort.insertSort(baseSort);
         sort.addURLSort(url, name);
         return sort;
     }
