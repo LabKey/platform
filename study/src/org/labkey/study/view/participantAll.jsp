@@ -495,14 +495,19 @@ ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext c
     final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
     if (sortMap != null && !sortMap.isEmpty())
     {
-        ColumnInfo[] ret = new ColumnInfo[sortMap.size()];
+        ArrayList<ColumnInfo> list = new ArrayList<ColumnInfo>(sortMap.size());
         for (ColumnInfo col : cols)
         {
             if (sortMap.containsKey(col.getName()))
-                ret[sortMap.get(col.getName())] = col;
+            {
+                int index = sortMap.get(col.getName());
+                while (list.size() <= index)
+                    list.add(null);
+                list.set(index, col);
+            }
         }
         List<ColumnInfo> results = new ArrayList<ColumnInfo>();
-        for (ColumnInfo col : ret)
+        for (ColumnInfo col : list)
             if (col != null)
                 results.add(col);
         return results.toArray(new ColumnInfo[results.size()]);
