@@ -95,18 +95,18 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
         DailyDigestEmailPrefsSelector sel = new DailyDigestEmailPrefsSelector(c);
 
-        for (User user : sel.getNotificationCandidates())
+        for (User recipient : sel.getNotificationCandidates())
         {
             List<AnnouncementModel> announcementModelList = new ArrayList<AnnouncementModel>(announcementModels.length);
 
             for (AnnouncementModel ann : announcementModels)
-                if (sel.shouldSend(ann, user))
+                if (sel.shouldSend(ann, recipient))
                     announcementModelList.add(ann);
 
             if (!announcementModelList.isEmpty())
             {
-                Permissions perm = AnnouncementsController.getPermissions(c, user, settings);
-                MailHelper.ViewMessage m = getDailyDigestMessage(c, settings, perm, announcementModelList, user);
+                Permissions perm = AnnouncementsController.getPermissions(c, recipient, settings);
+                MailHelper.ViewMessage m = getDailyDigestMessage(c, settings, perm, announcementModelList, recipient);
 
                 try
                 {
@@ -128,9 +128,9 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         return announcementModels;
     }
 
-    private static MailHelper.ViewMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User user) throws Exception
+    private static MailHelper.ViewMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User recipient) throws Exception
     {
-        MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), user.getEmail());
+        MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), recipient.getEmail());
         m.setSubject("New posts to " + c.getPath());
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
@@ -157,10 +157,9 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         page.c = c;
         page.announcementModels = announcementModels;
         page.boardPath = c.getPath();
-        ActionURL boardUrl = AnnouncementsController.getBeginURL(c);
-        page.boardUrl = boardUrl.getURIString();
+        page.boardURL = AnnouncementsController.getBeginURL(c);
         page.siteUrl = ActionURL.getBaseServerURL();
-        page.removeUrl = new ActionURL(AnnouncementsController.EmailPreferencesAction.class, c).getURIString();
+        page.removeURL = new ActionURL(AnnouncementsController.EmailPreferencesAction.class, c);
         page.includeGroups = perm.includeGroups();
 
         return page;

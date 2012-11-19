@@ -17,11 +17,12 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %><%@ page import="org.labkey.announcements.model.AnnouncementModel" %><%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page extends="org.labkey.announcements.DailyDigestPage" %>The following new posts were made yesterday in folder: <%=c.getPath()%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page extends="org.labkey.announcements.DailyDigestPage" %>The following new posts were made yesterday in folder: <%=text(c.getPath())%>
 
 <%
     String previousThread = null;
-    String threadUrl = null;
+    ActionURL threadURL = null;
 
     for (AnnouncementModel ann : announcementModels)
     {
@@ -32,23 +33,23 @@
             else
                 previousThread = ann.getParent();
 
-            if (null != threadUrl)
+            if (null != threadURL)
             {
                 %>
-View this <%=conversationName%> here:
+View this <%=text(conversationName)%> here:
 
-<%=threadUrl%>
+<%=text(threadURL.getURIString())%>
 
 
 <%
             }
 
-            threadUrl = AnnouncementsController.getThreadURL(c, previousThread, ann.getRowId()).getURIString();
-%><%=ann.getTitle()%>
+            threadURL = AnnouncementsController.getThreadURL(c, previousThread, ann.getRowId());
+%><%=text(ann.getTitle())%>
 
 <%
         }
-%><%=ann.getCreatedByName(includeGroups, HttpView.currentContext().getUser())%><% if (null == ann.getParent()) { %> created this <%=conversationName%><% } else { %> responded<% } %> at <%=DateUtil.formatDateTime(ann.getCreated())%><%
+%><%=text(ann.getCreatedByName(includeGroups, HttpView.currentContext().getUser()))%><% if (null == ann.getParent()) { %> created this <%=text(conversationName)%><% } else { %> responded<% } %> at <%=text(DateUtil.formatDateTime(ann.getCreated()))%><%
 
         int attachmentCount = ann.getAttachments().size();
 
@@ -58,15 +59,15 @@ View this <%=conversationName%> here:
             out.println();
     }
 
-    if (null != threadUrl)
+    if (null != threadURL)
     {
        %>
-View this <%=conversationName%> here:
+View this <%=text(conversationName)%> here:
 
-<%=threadUrl%>
+<%=text(threadURL.getURIString())%>
 
 <%  }  %>
 
 
-You have received this email because you are signed up for a daily digest of new posts to <%=boardPath%> at <%=siteUrl%>.
-If you no longer wish to receive these notifications, please change your email preferences here: <%=removeUrl%>
+You have received this email because you are signed up for a daily digest of new posts to <%=text(boardPath)%> at <%=text(siteUrl)%>.
+If you no longer wish to receive these notifications, please change your email preferences here: <%=text(removeURL.getURIString())%>

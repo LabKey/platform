@@ -20,6 +20,7 @@ import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.data.Container;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.view.ActionURL;
 
 import java.util.List;
 
@@ -29,9 +30,9 @@ abstract public class DailyDigestPage extends JspBase
     public List<AnnouncementModel> announcementModels;
     public String conversationName;
     public DiscussionService.Settings settings;
-    public String boardUrl;
+    public ActionURL boardURL;
     public String boardPath;
     public String siteUrl;
-    public String removeUrl;
+    public ActionURL removeURL;
     public boolean includeGroups;
 }

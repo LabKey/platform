@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.announcements.DailyDigestPage" %>
 <html>
 <head>
@@ -31,7 +32,7 @@
     <tr><td><b>The following new posts were made yesterday in folder: <%=h(c.getPath())%></b></td></tr><%
 
     String previousThread = null;
-    String threadUrl = null;
+    ActionURL threadURL = null;
 
     for (AnnouncementModel ann : announcementModels)
     {
@@ -42,31 +43,31 @@
             else
                 previousThread = ann.getParent();
 
-            if (null != threadUrl)
+            if (null != threadURL)
             {
-                %><tr><td><a href="<%=threadUrl%>">View this <%=conversationName%></a></td></tr><%
+                %><tr><td><a href="<%=h(threadURL)%>">View this <%=h(conversationName)%></a></td></tr><%
             }
 
-            threadUrl = h(AnnouncementsController.getThreadURL(c, previousThread, ann.getRowId()).getURIString());%>
-            <tr><td>&nbsp;</td></tr><tr class="labkey-alternate-row"><td colspan="2" class="labkey-bordered"><%=ann.getTitle()%></td></tr><%
+            threadURL = AnnouncementsController.getThreadURL(c, previousThread, ann.getRowId());%>
+            <tr><td>&nbsp;</td></tr><tr class="labkey-alternate-row"><td colspan="2" class="labkey-bordered"><%=h(ann.getTitle())%></td></tr><%
         }
 
         int attachmentCount = ann.getAttachments().size();
 
         %>
-            <tr><td><%=ann.getCreatedByName(includeGroups, HttpView.currentContext().getUser())%><% if (null == ann.getParent()) { %> created this <%=conversationName%><% } else { %> responded <% } %> at <%=DateUtil.formatDateTime(ann.getCreated())%><%=(attachmentCount > 0 ? " and attached " + attachmentCount + " document" + (attachmentCount > 1 ? "s" : "") : "")%></td></tr><%
+            <tr><td><%=h(ann.getCreatedByName(includeGroups, HttpView.currentContext().getUser()))%><% if (null == ann.getParent()) { %> created this <%=h(conversationName)%><% } else { %> responded <% } %> at <%=h(DateUtil.formatDateTime(ann.getCreated()))%><%=h(attachmentCount > 0 ? " and attached " + attachmentCount + " document" + (attachmentCount > 1 ? "s" : "") : "")%></td></tr><%
 
         if (!settings.isSecure())
         {
             String body = ann.getFormattedHtml();
             %>
-            <tr><td style="padding-left:35px;"><%=body%></td></tr><%
+            <tr><td style="padding-left:35px;"><%=text(body)%></td></tr><%
         }
     }
 
-    if (null != threadUrl)
+    if (null != threadURL)
     {
-        %><tr><td><a href="<%=threadUrl%>">View this <%=conversationName%></a></td></tr><%
+        %><tr><td><a href="<%=threadURL%>">View this <%=h(conversationName)%></a></td></tr><%
     }
 
     %>
@@ -77,8 +78,8 @@
 <hr size="1">
 
 <table width=100%>
-    <tr><td>You have received this email because you are signed up for a daily digest of new posts to <a href="<%=boardUrl%>"><%= PageFlowUtil.filter(boardPath) %></a> at <a href="<%=siteUrl%>"><%=siteUrl%></a>.
-  If you no longer wish to receive these notifications, please <a href="<%=removeUrl%>">change your email preferences</a>.</td></tr>
+    <tr><td>You have received this email because you are signed up for a daily digest of new posts to <a href="<%=h(boardURL.getURIString())%>"><%= PageFlowUtil.filter(boardPath) %></a> at <a href="<%=h(siteUrl)%>"><%=h(siteUrl)%></a>.
+  If you no longer wish to receive these notifications, please <a href="<%=h(removeURL.getURIString())%>">change your email preferences</a>.</td></tr>
 </table>    
 </body>
 </html>

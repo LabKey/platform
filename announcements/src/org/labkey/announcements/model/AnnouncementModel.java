@@ -25,6 +25,7 @@ import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Transient;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -262,6 +263,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         _rendererType = WikiRendererType.valueOf(rendererType);
     }
 
+    @Transient
     public String getFormattedHtml()
     {
         return getFormattedHtml(null);

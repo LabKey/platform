@@ -17,15 +17,15 @@
 %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition"%>
 <%@ page import="org.labkey.api.exp.list.ListService" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="java.util.Comparator" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -54,9 +54,9 @@
     }
 
     //to sort on values
-    TreeMap<String, String> sortedListOptions = new TreeMap<String, String>(new Comparator() {
-        public int compare(Object o1, Object o2) {
-            return listOptions.get(o1).compareTo(listOptions.get(o2));
+    TreeMap<String, String> sortedListOptions = new TreeMap<String, String>(new Comparator<String>() {
+        public int compare(String s1, String s2) {
+            return listOptions.get(s1).compareTo(listOptions.get(s2));
         }
     });
     sortedListOptions.putAll(listOptions);
@@ -75,7 +75,7 @@ If you want to let users change the list that's displayed or customize the view 
             name : 'title',
             value :  <%=PageFlowUtil.jsString(h(props.get("title")))%>,
             fieldLabel : 'Title'
-        })
+        });
         var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
             defaultSchema : 'lists',
             name : 'listId',
@@ -106,7 +106,7 @@ If you want to let users change the list that's displayed or customize the view 
                     }
                 }
             }
-        })
+        });
 
         var myPanel = Ext4.create('Ext.form.Panel', {
             border : false,

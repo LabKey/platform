@@ -17,21 +17,24 @@
 package org.labkey.announcements;
 
 import org.labkey.announcements.model.AnnouncementModel;
+import org.labkey.api.data.Container;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.announcements.DiscussionService;
-
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 abstract public class EmailNotificationPage extends JspBase
 {
-    public String threadURL;
+    public Container c;
+    public User recipient;
+    public ActionURL threadURL;
     public String boardPath;
-    public String boardURL;
-    public String srcURL;
+    public ActionURL boardURL;
     public String siteURL;
     public AnnouncementModel announcementModel;
     public String body;
     public DiscussionService.Settings settings;
-    public String removeUrl;
+    public ActionURL removeURL;
     public Reason reason;
     public boolean includeGroups;
 

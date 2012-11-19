@@ -16,14 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 <%
-    Container c = getViewContext().getContainer();
-    User user = getViewContext().getUser();
-
     StringBuilder sb = new StringBuilder();
     String separator = "";
 
@@ -41,28 +37,28 @@
 %>
 <html>
 <head>
-<base href="<%=h(getViewContext().getActionURL().getBaseServerURI() + getViewContext().getContextPath())%>">
-<%=PageFlowUtil.getStylesheetIncludes(c, user)%>
+<base href="<%=h(ActionURL.getBaseServerURL())%>">
+<%=PageFlowUtil.getStylesheetIncludes(c, recipient)%>
 </head>
 
 <body>
 <table width=100%>
     <tr class="labkey-alternate-row"><td colspan="2" class="labkey-bordered" style="border-right: 0 none">
-    <%=announcementModel.getCreatedByName(includeGroups, user) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) + "."%></td>
+    <%=h(announcementModel.getCreatedByName(includeGroups, recipient) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) + ".")%></td>
     <td align="right" class="labkey-bordered" style="border-left: 0 none"><%=formatDateTime(announcementModel.getCreated())%></td></tr><%
 
     if (null != body)
     { %>
     <tr><td colspan="3" id="message-body">
-        <%=body%>
+        <%=text(body)%>
     </td></tr><%
     }
 
     %>
     <tr><td colspan="3">&nbsp;</td></tr>
-    <tr><td colspan="3"><a href="<%=threadURL%>">View this <%=settings.getConversationName().toLowerCase()%></a></td></tr>
+    <tr><td colspan="3"><a href="<%=h(threadURL.getURIString())%>">View this <%=h(settings.getConversationName().toLowerCase())%></a></td></tr>
     <tr><td colspan="3">&nbsp;</td></tr>
-    <tr><td colspan="3"><%= sb.toString() %></td></tr>
+    <tr><td colspan="3"><%=h(sb)%></td></tr>
 </table>
 
 <br>
@@ -74,13 +70,13 @@
         switch(reason)
         {
             case signedUp:
-    %>you are signed up to receive notifications about new posts to <a href="<%=boardURL%>"><%= PageFlowUtil.filter(boardPath) %></a> at <a href="<%=siteURL%>"><%=siteURL%></a>.
-If you no longer wish to receive these notifications you can <a href="<%=removeUrl%>">change your email preferences</a>.<%
+    %>you are signed up to receive notifications about new posts to <a href="<%=h(boardURL.getURIString())%>"><%=h(boardPath)%></a> at <a href="<%=h(siteURL)%>"><%=h(siteURL)%></a>.
+If you no longer wish to receive these notifications you can <a href="<%=h(removeURL.getURIString())%>">change your email preferences</a>.<%
             break;
 
             case memberList:
-    %>you are on the member list for this <%=settings.getConversationName().toLowerCase()%>.  If you no longer wish to receive these
-notifications you can remove yourself from the member list by <a href="<%=removeUrl%>">clicking here</a>.<%
+    %>you are on the member list for this <%=h(settings.getConversationName().toLowerCase())%>.  If you no longer wish to receive these
+notifications you can remove yourself from the member list by <a href="<%=h(removeURL.getURIString())%>">clicking here</a>.<%
             break;
         }
     %></td></tr>

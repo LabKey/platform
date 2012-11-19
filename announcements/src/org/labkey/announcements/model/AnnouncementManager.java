@@ -54,6 +54,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -62,9 +63,11 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -324,85 +327,111 @@ public class AnnouncementManager
             }
             sendNotificationEmails(insert, currentRendererType, c, user);
         }
-        
+
         return ann;
     }
 
-    private static void sendNotificationEmails(AnnouncementModel a, WikiRendererType currentRendererType, Container c, User user) throws MessagingException
+    // Render and send all the email notifications on a background thread, #13143
+    private static void sendNotificationEmails(final AnnouncementModel a, final WikiRendererType currentRendererType, final Container c, final User user)
     {
-        DiscussionService.Settings settings = DiscussionService.get().getSettings(c);
-
-        boolean isResponse = null != a.getParent();
-        AnnouncementModel parent = a;
-        if (isResponse)
-            parent = AnnouncementManager.getAnnouncement(c, a.getParent());
-
-        //  See bug #6585 -- thread might have been deleted already
-        if (null == parent)
-            return;
-
-        String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-        String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-
-        // Email all copies of this message in a background thread
-        MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer();
-        emailer.setUser(user);
-
-        // Send a notification email to everyone on the member list.  This email will include a link that removes the user from the member list.
-        IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
-
-        Set<User> users = sel.getNotificationUsers(a);
-
-        if (!users.isEmpty())
-        {
-            List<User> memberList = getMemberList(a);
-
-            for (User userToEmail : users)
+        Thread renderAndEmailThread = new Thread() {
+            @Override
+            public void run()
             {
-                // Make sure the user hasn't lost their permission to read in this container since they were
-                // subscribed
-                if (c.hasPermission(userToEmail, ReadPermission.class))
+                DiscussionService.Settings settings = DiscussionService.get().getSettings(c);
+
+                boolean isResponse = null != a.getParent();
+                AnnouncementModel parent = a;
+                if (isResponse)
+                    parent = AnnouncementManager.getAnnouncement(c, a.getParent());
+
+                //  See bug #6585 -- thread might have been deleted already
+                if (null == parent)
+                    return;
+
+                // Send a notification email to everyone on the member list.
+                IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
+                Set<User> recipients = sel.getNotificationUsers(a);
+
+                if (!recipients.isEmpty())
                 {
-                    MailHelper.ViewMessage m;
-                    Permissions perm = AnnouncementsController.getPermissions(c, userToEmail, settings);
+                    MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer();
+                    emailer.setUser(user);    // For audit purposes
 
-                    if (memberList.contains(userToEmail))
+                    String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                    String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+
+                    List<User> memberList = getMemberList(a);
+
+                    for (User recipient : recipients)
                     {
-                        ActionURL removeMeURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
-                        removeMeURL.addParameter("userId", String.valueOf(userToEmail.getUserId()));
-                        removeMeURL.addParameter("messageId", String.valueOf(parent.getRowId()));
-                        m = getMessage(c, settings, perm, parent, a, isResponse, removeMeURL.getURIString(), currentRendererType, EmailNotificationPage.Reason.memberList);
-                    }
-                    else
-                    {
-                        ActionURL changeEmailURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifer());
-                        m = getMessage(c, settings, perm, parent, a, isResponse, changeEmailURL.getURIString(), currentRendererType, EmailNotificationPage.Reason.signedUp);
+                        // Make sure the user hasn't lost their permission to read in this container since they were
+                        // subscribed
+                        if (c.hasPermission(recipient, ReadPermission.class))
+                        {
+                            Permissions perm = AnnouncementsController.getPermissions(c, recipient, settings);
+                            ActionURL changePreferenceURL;
+                            EmailNotificationPage.Reason reason;
+
+                            if (memberList.contains(recipient))
+                            {
+                                reason = EmailNotificationPage.Reason.memberList;
+                                changePreferenceURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
+                                changePreferenceURL.addParameter("userId", String.valueOf(recipient.getUserId()));
+                                changePreferenceURL.addParameter("messageId", String.valueOf(parent.getRowId()));
+                            }
+                            else
+                            {
+                                reason = EmailNotificationPage.Reason.signedUp;
+                                changePreferenceURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifer());
+                            }
+
+                            try
+                            {
+                                MailHelper.ViewMessage m = getMessage(c, recipient, settings, perm, parent, a, isResponse, changePreferenceURL, currentRendererType, reason);
+                                m.setHeader("References", references);
+                                m.setHeader("Message-ID", messageId);
+
+                                emailer.addMessage(recipient.getEmail(), m);
+                            }
+                            catch (MessagingException e)
+                            {
+                                ExceptionUtil.logExceptionToMothership(null, e);
+                            }
+                        }
                     }
 
-                    m.setHeader("References", references);
-                    m.setHeader("Message-ID", messageId);
-                    emailer.addMessage(userToEmail.getEmail(), m);
+                    emailer.run();  // We're already in a background thread... no need to start another one
                 }
             }
-        }
+        };
 
-        emailer.start();
+        renderAndEmailThread.start();
     }
 
-    private static MailHelper.ViewMessage getMessage(Container c, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason) throws MessagingException
+    private static MailHelper.ViewMessage getMessage(Container c, User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason) throws MessagingException
     {
+        ActionURL threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
+
         MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
         m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
+        int stackSize = HttpView.getStackSize();
+
         try
         {
-            EmailNotificationPage page = createEmailNotificationTemplate("emailNotificationPlain.jsp", false, c, settings, perm, parent, a, removeUrl, currentRendererType, reason);
+            // Hack! Mock up a ViewContext with the recipient as the user, so embedded webparts get rendered with that
+            // user's permissions, etc. Push it to the stack so the renderer sees it and pop it in finally below.
+            // TODO: push the context through or come up with a cleaner solution.
+            ViewContext context = ViewContext.getMockViewContext(recipient, c, threadURL, true);
+
+            EmailNotificationPage page = createEmailNotificationTemplate("emailNotificationPlain.jsp", false, c, recipient, settings, perm, parent, a, removeURL, currentRendererType, reason);
             JspView view = new JspView(page);
             view.setFrame(WebPartView.FrameType.NOT_HTML);
             m.setTemplateContent(request, view, "text/plain");
 
-            page = createEmailNotificationTemplate("emailNotification.jsp", true, c, settings, perm, parent, a, removeUrl, currentRendererType, reason);
+            page = createEmailNotificationTemplate("emailNotification.jsp", true, c, recipient, settings, perm, parent, a, removeURL, currentRendererType, reason);
             view = new JspView(page);
             view.setFrame(WebPartView.FrameType.NONE);
             m.setTemplateContent(request, view, "text/html");
@@ -413,19 +442,25 @@ public class AnnouncementManager
         {
             throw new MessagingException(e.getMessage(), e);
         }
+        finally
+        {
+            HttpView.resetStackSize(stackSize);
+        }
     }
 
-    private static EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
-            AnnouncementModel a, String removeUrl, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason)
+    private static EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c,
+        User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
+        AnnouncementModel a, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason)
     {
         EmailNotificationPage page = (EmailNotificationPage) JspLoader.createPage(AnnouncementsController.class, templateName);
 
+        page.c = c;
+        page.recipient = recipient;
         page.settings = settings;
-        page.threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId()).getURIString();
+        page.threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
         page.boardPath = c.getPath();
-        ActionURL boardURL = AnnouncementsController.getBeginURL(c);
-        page.boardURL = boardURL.getURIString();
-        page.removeUrl = removeUrl;
+        page.boardURL = AnnouncementsController.getBeginURL(c);
+        page.removeURL = removeURL;
         page.siteURL = ActionURL.getBaseServerURL();
         page.announcementModel = a;
         page.reason = reason;

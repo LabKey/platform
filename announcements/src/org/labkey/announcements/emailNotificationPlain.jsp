@@ -15,14 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
-<%
-    User user = getViewContext().getUser();
-%>
 
-<%=announcementModel.getCreatedByName(includeGroups, user) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) %> at <%=formatDateTime(announcementModel.getCreated())%>.<%
+<%=text(announcementModel.getCreatedByName(includeGroups, recipient) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase())) %> at <%=formatDateTime(announcementModel.getCreated())%>.<%
 
     StringBuilder sb = new StringBuilder();
     String separator = "";
@@ -43,27 +39,27 @@
 
     if (null != body)
     {
-        out.print(body);
+        out.print(text(body));
     }
 %>
-View this <%=settings.getConversationName().toLowerCase()%> here:
+View this <%=text(settings.getConversationName().toLowerCase())%> here:
 
-<%=threadURL%>
+<%=text(threadURL.getURIString())%>
 
 
 You have received this email because <%
     switch(reason)
     {
         case signedUp:
-%>you are signed up to receive notifications about new posts to <%=boardPath%> at <%=siteURL%>.
+%>you are signed up to receive notifications about new posts to <%=text(boardPath)%> at <%=text(siteURL)%>.
 If you no longer wish to receive these notifications you can change your email preferences by
-navigating here: <%=removeUrl%>.<%
+navigating here: <%=text(removeURL.getURIString())%>.<%
         break;
 
         case memberList:
-%>you are on the member list for this <%=settings.getConversationName().toLowerCase()%>.
+%>you are on the member list for this <%=text(settings.getConversationName().toLowerCase())%>.
 If you no longer wish to receive these notifications you can remove yourself from
-the member list by navigating here: <%=removeUrl%><%
+the member list by navigating here: <%=text(removeURL.getURIString())%><%
         break;
     }
 %>
