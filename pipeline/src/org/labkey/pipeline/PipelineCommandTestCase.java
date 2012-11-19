@@ -71,6 +71,20 @@ public class PipelineCommandTestCase extends Assert
     }
 
     @Test
+    public void testNullSubstitution() throws Exception
+    {
+        SubstitutionWithSwitch sws = new SubstitutionWithSwitch();
+        UnixSwitchFormat switchFormat = new UnixNewSwitchFormat();
+        switchFormat.setSeparator(" ");
+        sws.setSwitchFormat(switchFormat);
+        sws.setSwitchName("filter");
+        sws.setRegex("([0-9]+)\\-([0-9]+)");
+        sws.setSubstitution("mzWindow [${1},${2}]");
+        String[] args = sws.toArgs(null);
+        assertEquals("Wrong number of args", 0, args.length);
+    }
+
+    @Test
     public void testPipelineIndividualCmds() throws Exception
     {
         // test the different PipelineCommands used in the ms2Context.xml
