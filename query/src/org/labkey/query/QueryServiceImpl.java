@@ -950,16 +950,18 @@ public class QueryServiceImpl extends QueryService
 
     public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
     {
+        HashMap<FieldKey,ColumnInfo> hm = new HashMap<FieldKey, ColumnInfo>();
+        return ensureRequiredColumns(table,columns,filter,sort,unresolvedColumns,hm);
+    }
+
+
+    // mapping may include multiple fieldkeys pointing at same columninfo (see ColumnInfo.resolveColumn());
+    public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns, Map<FieldKey,ColumnInfo> columnMap /* IN/OUT */)
+    {
         AliasManager manager = new AliasManager(table, columns);
-        Set<FieldKey> selectedColumns = new HashSet<FieldKey>();
-        Map<FieldKey, ColumnInfo> columnMap = new HashMap<FieldKey,ColumnInfo>();
 
         for (ColumnInfo column : columns)
-        {
-            FieldKey key = column.getFieldKey();
-            selectedColumns.add(key);
-            columnMap.put(key, column);
-        }
+            columnMap.put(column.getFieldKey(), column);
 
         Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
 
@@ -972,20 +974,30 @@ public class QueryServiceImpl extends QueryService
 
         ArrayList<ColumnInfo> ret = null;
 
-        for (FieldKey field : fieldKeys)
+        for (FieldKey fieldKey : fieldKeys)
         {
-            if (field == null)
+            if (fieldKey == null)
                 continue;
 
-            if (selectedColumns.contains(field))
+            if (columnMap.containsKey(fieldKey))
                 continue;
 
-            ColumnInfo column = getColumn(manager, table, columnMap, field);
+            ColumnInfo column = getColumn(manager, table, columnMap, fieldKey);
 
             if (column != null)
             {
                 assert Table.checkColumn(table, column, "ensureRequiredColumns():");
-                assert field.getTable() == null || columnMap.containsKey(field);
+                assert fieldKey.getTable() == null || columnMap.containsKey(fieldKey);
+
+                // getColumn() might return a column with a different field key than we asked for!
+                if (!column.getFieldKey().equals(fieldKey))
+                {
+                    if (columnMap.containsKey(column.getFieldKey()))
+                    {
+                        columnMap.put(fieldKey, columnMap.get(column.getFieldKey()));
+                        continue;
+                    }
+                }
 
                 if (null == ret)
                     ret = new ArrayList<ColumnInfo>(columns);
@@ -995,7 +1007,7 @@ public class QueryServiceImpl extends QueryService
             else
             {
                 if (unresolvedColumns != null)
-                    unresolvedColumns.add(field);
+                    unresolvedColumns.add(fieldKey);
             }
         }
 
@@ -1380,12 +1392,19 @@ public class QueryServiceImpl extends QueryService
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(selectColumns);
-        allColumns = (List<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null);
+        Map<FieldKey, ColumnInfo> columnMap = new HashMap<FieldKey, ColumnInfo>();
+        allColumns = (List<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap);
 
         // Check columns again: ensureRequiredColumns() may have added new columns
         assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()", true);
 
-        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(table, allColumns);
+        // I think this is for some custom filter/sorts that do not declare fields, but assume all table fields are available
+        for (ColumnInfo c : table.getColumns())
+        {
+            if (!columnMap.containsKey(c.getFieldKey()))
+                columnMap.put(c.getFieldKey(), c);
+        }
+
         boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
         SQLFragment outerSelect = new SQLFragment("SELECT *");
         SQLFragment selectFrag = new SQLFragment("SELECT");
