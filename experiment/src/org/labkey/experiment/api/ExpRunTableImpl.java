@@ -301,6 +301,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     ret.setKeyField(true);
                 ret.setFk(new RowIdForeignKey(ret));
                 ret.setHidden(true);
+                ret.setURL(DetailsURL.fromString("/experiment/showRunText.view?rowId=${rowid}"));
                 return ret;
             }
             case Flag:
