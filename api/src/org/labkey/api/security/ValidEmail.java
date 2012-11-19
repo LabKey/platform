@@ -187,7 +187,23 @@ public class ValidEmail
             String[] validEmails = new String[]{
                     "xxx@test.com",
                     "   xxx@test.com    ",
-                    "xxx@test.test.com"};
+                    "xxx@test.test.com",
+
+                    // Following taken from http://en.wikipedia.org/wiki/Email_address. Note that JavaMail InternetAddress
+                    // doesn't seem to support some of the more unusual valid examples (double-quoting with symbols)
+                    "niceandsimple@example.com",
+                    "very.common@example.com",
+                    "a.little.lengthy.but.fine@dept.example.com",
+                    "disposable.style.email.with+symbol@example.com",
+                    "user@[IPv6:2001:db8:1ff::a0b:dbd0]",
+                    "\"much.more unusual\"@example.com",
+//                    "\"very.unusual.@.unusual.com\"@example.com",
+//                    "\"very.(),:;<>[]\\\".VERY.\\\"very@\\\\ \\\"very\\\".unusual\"@strange.example.com",
+                    "0@a",
+                    "postbox@com (top-level domains are valid hostnames)",
+                    "!#$%&'*+-/=?^_`{}|~@example.org",
+//                    "\"()<>[]:,;@\\\\\\\"!#$%&'*+-/=?^_`{}| ~  ? ^_`{}|~.a\"@example.org",
+                    "\"\"@example.org"};
 
             for (String valid : validEmails)
                 verifyValid(valid);

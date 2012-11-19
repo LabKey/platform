@@ -480,6 +480,9 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         HttpServletRequest request = HttpView.currentRequest();
         HttpServletResponse response = HttpView.currentResponse();
 
+        if (null == response)
+            response = new MockHttpServletResponse();
+
         include(mv, writer, request, response);
     }
 

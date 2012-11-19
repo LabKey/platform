@@ -20,7 +20,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 10, 2012
  * Time: 4:00:15 PM
