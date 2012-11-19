@@ -317,6 +317,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         };
         runTable.getColumn(ExpRunTable.Column.ReplacedByRun).setFk(assayRunFK);
         runTable.getColumn(ExpRunTable.Column.ReplacesRun).setFk(assayRunFK);
+        runTable.getColumn(ExpRunTable.Column.RowId).setURL(new DetailsURL(new ActionURL(AssayDetailRedirectAction.class, getContainer()), Collections.singletonMap("runId", "rowId")));
 
         runTable.addColumn(new AssayQCFlagColumn(runTable, getProtocol().getName()));
         ColumnInfo qcEnabled = runTable.addColumn(new ExprColumn(runTable, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(runTable.getSqlDialect(), "Enabled"), JdbcType.VARCHAR));
