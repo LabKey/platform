@@ -46,9 +46,12 @@ public class SubstitutionWithSwitch extends AbstractValueToNamedSwitch
 
     public String[] toArgs(String value)
     {
-        String valueSubst = _converter.makeSubstitution(value);
-        if (valueSubst != null)
-            return getSwitchFormat().format(getSwitchName(), valueSubst);
+        if (value != null)
+        {
+            String valueSubst = _converter.makeSubstitution(value);
+            if (valueSubst != null)
+                return getSwitchFormat().format(getSwitchName(), valueSubst);
+        }
 
         return new String[0];
     }
