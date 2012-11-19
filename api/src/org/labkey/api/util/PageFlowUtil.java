@@ -2007,7 +2007,9 @@ public class PageFlowUtil
         json.put("extJsRoot", extJsRoot);
         json.put("devMode", AppProps.getInstance().isDevMode());
         json.put("homeContainer", ContainerManager.getHomeContainer().getName());
-        json.put("sharedContainer", ContainerManager.getSharedContainer().getName());
+        Container shared = ContainerManager.getSharedContainer();
+        if (null != shared) // not good
+            json.put("sharedContainer", shared.getName());
         json.put("hash", getServerSessionHash());
 
         //TODO: these should be passed in by callers
