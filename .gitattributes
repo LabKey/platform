@@ -3101,6 +3101,7 @@ study/src/org/labkey/study/query/DerivativeTypeTable.java -text
 study/src/org/labkey/study/query/ExtensibleObjectQueryView.java -text
 study/src/org/labkey/study/query/ParticipantCategoryTable.java -text
 study/src/org/labkey/study/query/ParticipantDataSetTable.java -text
+study/src/org/labkey/study/query/ParticipantGroupCohortUnionTable.java -text
 study/src/org/labkey/study/query/ParticipantGroupMapTable.java -text
 study/src/org/labkey/study/query/ParticipantGroupTable.java -text
 study/src/org/labkey/study/query/ParticipantTable.java -text

@@ -2179,6 +2179,9 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantView());
 
+            // participant group cohort union view
+            assert deletedTables.add(StudySchema.getInstance().getSchema().getTable(StudyQuerySchema.PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME));
+
             //
             // plate service
             //

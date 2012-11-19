@@ -20,4 +20,5 @@ EXEC core.fn_dropifexists 'SpecimenSummary', 'study', 'VIEW', NULL
 EXEC core.fn_dropifexists 'SpecimenDetail', 'study', 'VIEW', NULL
 EXEC core.fn_dropifexists 'VialCounts', 'study', 'VIEW', NULL
 EXEC core.fn_dropifexists 'LockedSpecimens', 'study', 'VIEW', NULL
+EXEC core.fn_dropifexists 'ParticipantGroupCohortUnion', 'study', 'VIEW', NULL
 GO

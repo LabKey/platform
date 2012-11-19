@@ -1761,6 +1761,17 @@
         <ns:column columnName="Container"/>
     </ns:columns>
   </ns:table>
+  <ns:table tableName="ParticipantGroupCohortUnion" tableDbType="VIEW">
+    <ns:columns>
+        <ns:column columnName="Id">
+            <ns:isHidden>true</ns:isHidden>
+        </ns:column>
+        <ns:column columnName="ParticipantId"/>
+        <ns:column columnName="Container"/>
+        <ns:column columnName="GroupId"/>
+        <ns:column columnName="CohortId"/>
+    </ns:columns>
+  </ns:table>
   <ns:table tableName="StudySnapshot" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="RowId"/>

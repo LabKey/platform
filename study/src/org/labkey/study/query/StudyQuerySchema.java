@@ -49,6 +49,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
     public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
+    public static final String PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME = "ParticipantGroupCohortUnion";
 
     @Nullable // if no study defined in this container
     final StudyImpl _study;
@@ -177,6 +178,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add(StudyService.get().getSubjectCategoryTableName(getContainer()));
             ret.add(StudyService.get().getSubjectGroupTableName(getContainer()));
             ret.add(StudyService.get().getSubjectGroupMapTableName(getContainer()));
+            ret.add(PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME);
 
             // specimen report pivots
             ret.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
@@ -310,6 +312,11 @@ public class StudyQuerySchema extends UserSchema
         if (StudyService.get().getSubjectGroupMapTableName(getContainer()).equalsIgnoreCase(name))
         {
             ParticipantGroupMapTable ret = new ParticipantGroupMapTable(this); 
+            return ret;
+        }
+        if (PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            ParticipantGroupCohortUnionTable ret = new ParticipantGroupCohortUnionTable(this);
             return ret;
         }
         if ("SpecimenSummary".equalsIgnoreCase(name))

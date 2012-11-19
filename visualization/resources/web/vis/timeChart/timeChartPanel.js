@@ -930,8 +930,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         {
             //Get data for Aggregates.
             var groups = [];
-            for(var i = 0; i < this.chartInfo.subject.groups.length; i++){
-                groups.push(this.chartInfo.subject.groups[i].id);
+            for (var i = 0; i < this.chartInfo.subject.groups.length; i++){
+                var group = this.chartInfo.subject.groups[i];
+
+                // encode the group id & type, so we can distinguish between cohort and participant
+                // group in the union table
+                groups.push(group.id + '-' + group.type);
             }
 
             LABKEY.Visualization.getData({
@@ -986,7 +990,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 },
                 measures: this.chartInfo.measures,
                 viewInfo: this.viewInfo,
-                groupBys: [{schemaName: 'study', queryName: this.viewInfo.subjectNounSingular + 'GroupMap', name: 'GroupId', values: groups}],
+                groupBys: [{schemaName: 'study', queryName: 'ParticipantGroupCohortUnion', name: 'Id', values: groups}],
                 sorts: this.getDataSortArray(),
                 limit : this.dataLimit,
                 filterUrl: this.chartInfo.filterUrl,
@@ -1446,7 +1450,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 // Display aggregate lines
                 var groupedAggregateData = null;
                 if (this.aggregateData)
-                    groupedAggregateData = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.GroupId.displayValue});
+                    groupedAggregateData = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.Id.displayValue});
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
@@ -1658,7 +1662,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var xMin = null, xMax = null, xTrans = null;
         var intervalKey = null;
         var individualSubjectColumn = individualColumnAliases ? this.getColumnAlias(individualColumnAliases, viewInfo.subjectColumn) : null;
-        var aggregateSubjectColumn = "GroupId";
+        var aggregateSubjectColumn = "Id";
         var xAes, xTickFormat, tickMap = {};
         var visitMap = individualVisitMap ? individualVisitMap : aggregateVisitMap;
 

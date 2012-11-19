@@ -66,3 +66,19 @@ CREATE VIEW study.SpecimenDetail AS
     FROM study.Vial AS Vial
         INNER JOIN study.Specimen AS Specimen
         ON Vial.SpecimenId = Specimen.RowId;
+
+
+CREATE VIEW study.ParticipantGroupCohortUnion AS
+    SELECT Container,
+        ParticipantId,
+        GroupId,
+        null AS CohortId,
+        GroupId || '-participantGroup' as Id
+    FROM study.ParticipantGroupMap
+    UNION
+    SELECT Container,
+        ParticipantId,
+        null AS GroupId,
+        Currentcohortid AS CohortId,
+        CurrentCohortId || '-cohort' as Id
+    FROM study.Participant;
