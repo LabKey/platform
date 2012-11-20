@@ -28,6 +28,7 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.ObjectFactory;
@@ -49,6 +50,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserDisplayNameComparator;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
@@ -59,6 +62,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.AbstractDocumentResource;
@@ -1082,6 +1086,33 @@ public class IssueManager
             }
         }
 
+        @Test
+        public void testEmailHiding() throws IOException, SQLException, ServletException
+        {
+            Container fakeRoot = ContainerManager.createFakeContainer(null, null);
+
+            User user = UserManager.getGuestUser();
+            boolean showEmailAddresses = SecurityManager.canSeeEmailAddresses(fakeRoot, user);
+            assertFalse("readers should not see emails", showEmailAddresses);
+            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(fakeRoot, Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, user, showEmailAddresses, true))
+            {
+                User u = UserManager.getUserByDisplayName(completion.getInsertionText());
+                if (u != null)
+                    assertFalse("readers should not see emails", completion.getDisplayText().toLowerCase().contains(u.getEmail().toLowerCase()));
+            }
+
+            // this should be an admin...
+            user = TestContext.get().getUser();
+            showEmailAddresses = SecurityManager.canSeeEmailAddresses(fakeRoot, user);
+            assertTrue("admins should see emails", showEmailAddresses);
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, user, showEmailAddresses, true))
+            {
+                User u = UserManager.getUserByDisplayName(completion.getInsertionText());
+                if (u != null)
+                    assertTrue("admins should see emails", completion.getDisplayText().toLowerCase().contains(u.getEmail().toLowerCase()));
+            }
+        }
 
         @After
         public void tearDown()
