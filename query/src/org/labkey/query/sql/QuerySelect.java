@@ -1159,7 +1159,10 @@ groupByLoop:
             return null;
 
         SQLFragment sql = _getSql();
-        if (!AppProps.getInstance().isDevMode() || _inFromClause)
+        if (getParseErrors().size() != 0)
+            return null;
+
+        if (!AppProps.getInstance().isDevMode() || _inFromClause || null == sql)
             return sql;
 
         SqlBuilder ret = new SqlBuilder(_schema.getDbSchema());
