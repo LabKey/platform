@@ -46,6 +46,7 @@ public class ExprColumn extends ColumnInfo
         setShownInUpdateView(false);
         setShownInInsertView(false);
         setUserEditable(false);
+        setCalculated(true);
         // Unless otherwise configured, guess that it might be nullable
         setNullable(true);
         _dependentColumns = dependentColumns;

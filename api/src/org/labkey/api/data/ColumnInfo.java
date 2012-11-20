@@ -128,6 +128,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _lockName = false;
+    /**
+     * True if this column isn't really part of the database. It might be a calculated value, or an alternate
+     * representation of another "real" ColumnInfo, like a wrapped column.
+     */
+    private boolean _calculated = false;
 
     // Only set if we have an associated mv column for this column
     private FieldKey _mvColumnName = null;
@@ -345,6 +350,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         setCrosstabColumnDimension(col.getCrosstabColumnDimension());
         setCrosstabColumnMember(col.getCrosstabColumnMember());
+
+        setCalculated(col.isCalculated());
     }
 
 
@@ -1744,5 +1751,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public boolean inferIsShownInInsertView()
     {
         return !isNullable() && isUserEditable() && !isAutoIncrement() && isShownInInsertView();
+    }
+
+    public boolean isCalculated()
+    {
+        return _calculated;
+    }
+
+    public void setCalculated(boolean calculated)
+    {
+        _calculated = calculated;
     }
 }

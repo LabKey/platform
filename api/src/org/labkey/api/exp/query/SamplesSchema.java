@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
@@ -40,7 +41,7 @@ public class SamplesSchema extends AbstractExpSchema
 
     static private Map<String, ExpSampleSet> getSampleSetMap(Container container, User user)
     {
-        Map<String, ExpSampleSet> map = new TreeMap<String, ExpSampleSet>();
+        Map<String, ExpSampleSet> map = new CaseInsensitiveTreeMap<ExpSampleSet>();
         // User can be null if we're running in a background thread, such as doing a study export
         for (ExpSampleSet ss : ExperimentService.get().getSampleSets(container, user, user != null))
         {

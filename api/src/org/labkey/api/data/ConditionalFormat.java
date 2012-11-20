@@ -249,13 +249,13 @@ public class ConditionalFormat extends GWTConditionalFormat
                         xmlFilter.setValue(paramValues[0].toString());
                     }
                 }
-                else if (filterClause instanceof SimpleFilter.InClause)
+                else if (filterClause instanceof SimpleFilter.MultiValuedFilterClause)
                 {
-                    SimpleFilter.InClause inClause = (SimpleFilter.InClause)filterClause;
-                    xmlFilter.setOperator(OperatorType.IN);
+                    SimpleFilter.MultiValuedFilterClause multiValuedFilterClause = (SimpleFilter.MultiValuedFilterClause)filterClause;
+                    xmlFilter.setOperator(multiValuedFilterClause.getCompareType().getXmlType());
                     StringBuilder values = new StringBuilder();
                     String separator = "";
-                    for (Object inValue : inClause.getParamVals())
+                    for (Object inValue : multiValuedFilterClause.getParamVals())
                     {
                         values.append(separator);
                         separator = ";";

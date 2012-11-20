@@ -23,13 +23,19 @@ import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
+import org.springframework.jdbc.support.SQLExceptionTranslator;
 
 import java.io.InputStream;
 import java.sql.Connection;
@@ -554,7 +560,7 @@ public class Parameter
         }
 
 
-        public void put(String name, Object value)
+        public void put(String name, Object value) throws ValidationException
         {
             try
             {
@@ -567,6 +573,12 @@ public class Parameter
             }
             catch (SQLException sqlx)
             {
+                SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(ExperimentService.get().getSchema().getScope().getDataSource());
+                DataAccessException translated = translator.translate("Message", null, sqlx);
+                if (translated instanceof DataIntegrityViolationException)
+                {
+                    throw new ValidationException(sqlx.getMessage() == null ? translated.getMessage() : sqlx.getMessage());
+                }
                 throw new RuntimeSQLException(sqlx);
             }
         }

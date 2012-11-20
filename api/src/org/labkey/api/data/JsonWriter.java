@@ -131,6 +131,7 @@ public class JsonWriter
         boolean userEditable = cinfo != null && cinfo.isUserEditable();
         props.put("isUserEditable", userEditable);
         props.put("userEditable", userEditable);
+        props.put("calculated", cinfo == null || cinfo.isCalculated());
         boolean versionColumn = cinfo != null && cinfo.isVersionColumn();
         props.put("isVersionField", versionColumn);
         props.put("versionField", versionColumn);

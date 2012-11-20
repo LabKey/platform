@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
@@ -69,7 +70,7 @@ public class SpecimenService
 
         Lsid getSpecimenMaterialLsid(Container studyContainer, String id);
 
-        void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException;
+        void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException;
     }
 
     public static void register(Service serviceImpl)

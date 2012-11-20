@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.query.ValidationException;
 
 import java.util.Map;
 import java.sql.SQLException;
@@ -51,7 +52,7 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
     }
 
     @Override
-    public void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target)
+    public void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target) throws ValidationException
     {
         target.put("DataId", _data.getRowId());
     }

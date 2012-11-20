@@ -547,7 +547,7 @@ public class OntologyManager
          * 
          * TODO maybe this can be handled declaratively? see UpdateableTableInfo
          */
-        void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target);
+        void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target) throws ValidationException;
     }
 
 
