@@ -15,7 +15,6 @@ Ext4.define('Study.window.ParticipantGroup', {
 
         //var h = config.hideDataRegion ? 500 : Ext4.getBody().getViewSize().height * 75;
         var h = 500;
-        if(h < 500) h = 500;
 
         Ext4.apply(config, {
             title : 'Define ' + Ext4.util.Format.htmlEncode(config.subject.nounSingular) + ' Group',
