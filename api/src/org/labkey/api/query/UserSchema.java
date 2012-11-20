@@ -185,7 +185,10 @@ abstract public class UserSchema extends AbstractSchema
         else
         {
             QueryDefinition def = getQueryDefs().get(name);
-
+            if (!includeExtraMetadata && def.isMetadataEditable())
+            {
+                def.setMetadataXml(null);
+            }
             if (def == null)
                 return null;
 
