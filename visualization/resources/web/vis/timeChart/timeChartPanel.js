@@ -1730,8 +1730,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             uniqueChartSeriesNames.push(seriesList[i].name);
         }
 
-        console.log("# of series:", seriesList.length);
-
         for (var i = seriesList.length -1; i >= 0; i--)
         {
             var chartSeries = seriesList[i];
