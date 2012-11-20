@@ -4410,6 +4410,9 @@ public class StudyController extends BaseStudyController
         {
             int[] allIds = form.getIds() == null ? new int[0] : form.getIds();
             int[] visibleIds = form.getVisible() == null ? new int[0] : form.getVisible();
+            String[] labels = form.getLabel() == null ? new String[0] : form.getLabel();
+            String[] typeStrs = form.getExtraData()== null ? new String[0] : form.getExtraData();
+
             Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
             for (int id : visibleIds)
                 visible.add(id);
@@ -4419,8 +4422,9 @@ public class StudyController extends BaseStudyController
             {
                 VisitImpl def = StudyManager.getInstance().getVisitForRowId(getStudy(), allIds[i]);
                 boolean show = visible.contains(allIds[i]);
-                String label = form.getLabel()[i];
-                String typeStr = form.getExtraData()[i];
+                String label = (i < labels.length) ? labels[i] : null;
+                String typeStr = (i < typeStrs.length) ? typeStrs[i] : null;
+
                 Integer cohortId = null;
                 if (form.getCohort() != null && form.getCohort()[i] != -1)
                     cohortId = form.getCohort()[i];

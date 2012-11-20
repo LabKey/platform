@@ -988,7 +988,10 @@ public class ReportsController extends SpringActionController
                 if (!reportErrors.isEmpty())
                 {
                     for (ValidationError error : reportErrors)
-                        errors.reject(ERROR_MSG, error.getMessage());
+                    {
+                        String message = error.getMessage() != null ? error.getMessage() : "A validation error occurred";
+                        errors.reject(ERROR_MSG, message);
+                    }
                 }
             }
             catch (Exception e)
