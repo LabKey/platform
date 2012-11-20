@@ -23,6 +23,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.study.assay.AssaySchema;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.assay.AssayController;
 
@@ -48,6 +49,7 @@ public class AssayListTable extends FilteredTable
 
         ActionURL url = new ActionURL(AssayController.AssayBeginAction.class, _schema.getContainer());
         DetailsURL detailsURL = new DetailsURL(url, "rowId", FieldKey.fromParts("RowId"));
+        detailsURL.setContainerContext(_schema.getContainer());
 
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         ColumnInfo nameCol = addWrapColumn(_rootTable.getColumn("Name"));
