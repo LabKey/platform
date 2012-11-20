@@ -377,6 +377,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         descriptor.setDescriptorType(getDescriptorType());
         descriptor.setReportName(getReportName());
         descriptor.setReportKey(getReportKey());
+        descriptor.setHidden(isHidden());
 
         if (getCategory() != null)
             descriptor.setCategory(getCategory().getLabel());
@@ -502,6 +503,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         {
             descriptor.setReportName(d.getReportName());
             descriptor.setReportKey(d.getReportKey());
+            descriptor.setHidden(d.getHidden());
             List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
 
             for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
