@@ -769,7 +769,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         var sourceDirty = !this.query.builtIn && this.getSourceEditor().isQueryDirty(true);
         var metaDirty   = this.getMetadataEditor().isQueryDirty(true);
         var dirty = sourceDirty || metaDirty;
-        if (!dirty && !force) {
+        if (!dirty && !force && this._dataLoaded) {
             this._executing = false;
             return;
         }
@@ -827,6 +827,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         if (_meta && _meta.length > 0)
             config.metadata = { type : 'xml', value: _meta };
 
+        this._dataLoaded = true;
         var qwp = new LABKEY.QueryWebPart(config);
     },
 
