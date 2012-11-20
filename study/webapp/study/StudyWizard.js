@@ -439,6 +439,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         items.push(this.nameFormPanel);
 
         var panel = new Ext.Panel({
+            cls : 'extContainer',
             border: false,
             name: "General Setup",
             layout: 'vbox',
