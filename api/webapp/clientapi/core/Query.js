@@ -420,6 +420,8 @@ LABKEY.Query = new function()
 		*/
         selectRows : function(config)
         {
+            var method = 'GET';
+
             //check for old-style separate arguments
             if (arguments.length > 1)
             {
@@ -496,13 +498,16 @@ LABKEY.Query = new function()
             if (config.includeStyle)
                 dataObject.includeStyle = config.includeStyle;
 
+            if (config.method && (config.method.toUpperCase() === 'GET' || config.method.toUpperCase() === 'POST'))
+                method = config.method.toUpperCase();
+
             var requestConfig = {
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
-                method : 'GET',
+                method : method,
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : dataObject
-            }
+            };
 
             if (LABKEY.ExtAdapter.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;
