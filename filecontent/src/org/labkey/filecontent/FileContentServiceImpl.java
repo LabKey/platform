@@ -44,6 +44,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContainerUtil;
@@ -86,7 +87,6 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public FileContentServiceImpl()
     {
-        ContainerManager.addContainerListener(this);
     }
 
     public @Nullable File getFileRoot(Container c, ContentType type)
@@ -754,5 +754,10 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public void addFileMoveListener(FileMoveListener listener)
     {
         _fileMoveListeners.add(listener);
+    }
+
+    public static FileContentServiceImpl getInstance()
+    {
+        return (FileContentServiceImpl) ServiceRegistry.get(FileContentService.class);
     }
 }

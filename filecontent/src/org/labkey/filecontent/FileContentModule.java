@@ -91,6 +91,7 @@ public class FileContentModule extends DefaultModule
         // initialize message config provider
         MessageConfigService.getInstance().registerConfigType(new FileEmailConfig());
         ContainerManager.addContainerListener(new FileContentContainerListener());
+        ContainerManager.addContainerListener(FileContentServiceImpl.getInstance());
     }
 
     @Override
