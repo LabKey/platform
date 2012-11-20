@@ -666,6 +666,41 @@ public class Portal
         }
     }
 
+    public static void ensureIndexesDontConflict(Container c)
+    {
+        ArrayList<Portal.PortalPage> pages = new ArrayList<Portal.PortalPage>(Portal.getPages(c).values());
+        Collections.sort(pages, new Comparator<Portal.PortalPage>()
+        {
+            public int compare(Portal.PortalPage w1, Portal.PortalPage w2)
+            {
+                return w1.getIndex() - w2.getIndex();
+            }
+        });
+
+        boolean clearCache = false;
+        for (int i = 1; i < pages.size(); i += 1)
+        {
+            Portal.PortalPage page = pages.get(i);
+            int increment = pages.get(i-1).getIndex() - page.getIndex() + 1;
+            if (increment > 0)
+            {
+                // Previous page's index is same or greate; need to bump current page's index
+                page.setIndex(page.getIndex() + increment);
+                try
+                {
+                    Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+                    clearCache = true;
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+            }
+        }
+
+        if (clearCache)
+            WebPartCache.remove(c);
+    }
 
     public static void saveParts(Container c, String pageId, WebPart[] newParts)
     {

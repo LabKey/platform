@@ -211,7 +211,7 @@ public class CustomFolderType implements FolderType
     }
 
     @Override
-    public List<Portal.PortalPage> resetDefaultTabs(Container c)
+    public void resetDefaultTabs(Container c)
     {
         throw new UnsupportedOperationException();
     }

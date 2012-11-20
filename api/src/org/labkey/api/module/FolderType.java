@@ -73,7 +73,7 @@ public interface FolderType
     public boolean hasConfigurableTabs();
 
     /** If configurable, reset to the default set, throwing away tab configuration if it's customized. */
-    public List<Portal.PortalPage> resetDefaultTabs(Container c);
+    public void resetDefaultTabs(Container c);
 
     /**
      * Description of this folder type. Used to let users know what to expect.

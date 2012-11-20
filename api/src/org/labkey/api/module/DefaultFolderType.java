@@ -187,8 +187,11 @@ public class DefaultFolderType implements FolderType
 
         if (hasConfigurableTabs())
         {
+            // Find or create pages for all default tabs; then ensure the indexes don't conflict
             resetDefaultTabs(c);
+            Portal.ensureIndexesDontConflict(c);
         }
+
         for (FolderTab folderTab : getDefaultTabs())
         {
             folderTab.initializeContent(c);
@@ -200,11 +203,10 @@ public class DefaultFolderType implements FolderType
         }
     }
 
-
-    public ArrayList<Portal.PortalPage> resetDefaultTabs(Container c)
+    @Override
+    public void resetDefaultTabs(Container c)
     {
         Portal.resetPages(c, getDefaultTabs(), false);
-        return new ArrayList<Portal.PortalPage>(Portal.getPages(c).values());
     }
 
 
