@@ -47,13 +47,9 @@ LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentA
 
 LABKEY.vis.Geom.XY.prototype.getVal = function(scale, map, row){
     // Takes a row, returns the scaled y value.
-    var isValid = function(value){
-        return !(value == undefined || value == null || (typeof value == "number" && isNaN(value)));
-    };
-
     var value= map.getValue(row);
 
-    if(!isValid(value)){
+    if(!LABKEY.vis.isValid(value)){
         if(this.plotNullPoints){
             return scale(scale.domain()[0]) - 5;
         } else {
@@ -193,7 +189,7 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
             var groupData = groupedData[group];
             var color = this.color;
             var path = LABKEY.vis.makePath(groupData, xAccessor, yAccessor);
-            
+
             if(path != ''){
                 if(this.colorMap && this.colorMap.name == this.group.name){
                     // If we have a colorMap and it maps to the same thing as groupedData, then we pass in the group to get the desired color.
@@ -250,10 +246,16 @@ LABKEY.vis.Geom.ErrorBar.prototype.render = function(paper, grid, scales, data, 
         var errorAtPoint = this.errorMap.getValue(data[i]);
         var yBottom = -yScale(y - errorAtPoint);
         var yTop = -yScale(y + errorAtPoint);
-        var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + name) : this.color;
+        var color;
 
-        var errorBarPath = LABKEY.vis.makeLine(x - 6, yTop, x+6, yTop) + LABKEY.vis.makeLine(x, yTop, x, yBottom) + LABKEY.vis.makeLine(x-6, yBottom, x+6, yBottom); //top bar, middle bar, bottom bar
-        var errorBar = paper.path(errorBarPath).attr('stroke-width', this.size).attr('stroke', color).attr('fill', color);
+        if(LABKEY.vis.isValid(yBottom) && LABKEY.vis.isValid(yTop)){
+            color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + name) : this.color;
+            var topBar = LABKEY.vis.makeLine(x - 6, yTop, x+6, yTop),
+                middleBar = LABKEY.vis.makeLine(x, yTop, x, yBottom),
+                bottomBar = LABKEY.vis.makeLine(x-6, yBottom, x+6, yBottom);
+
+            var errorBar = paper.path(topBar + middleBar + bottomBar).attr('stroke-width', this.size).attr('stroke', color).attr('fill', color);
+        }
     }
 
     return true;

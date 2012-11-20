@@ -79,3 +79,7 @@ LABKEY.vis.groupData = function(data, groupAccessor){
     }
     return groupedData;
 };
+
+LABKEY.vis.isValid = function(value){
+    return !(value == undefined || value == null || (typeof value == "number" && isNaN(value)));
+};
