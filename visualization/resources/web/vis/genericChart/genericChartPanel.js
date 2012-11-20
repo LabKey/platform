@@ -994,7 +994,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
             maxRows     : 5000,
-            requiredVersion : 12.1
+            requiredVersion : 12.1,
+            method: 'POST'
         };
 
         config.columns = this.getQueryConfigColumns();
