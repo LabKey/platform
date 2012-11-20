@@ -47,6 +47,7 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.list.xml.ListsDocument;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -154,14 +155,21 @@ public class ListImporter
                 String legalName = FileUtil.makeLegalName(name);
                 String fileName = legalName + ".tsv";
                 InputStream tsv = listsDir.getInputStream(fileName);
-                if (null != tsv)
+                try
                 {
-                    BatchValidationException batchErrors = new BatchValidationException();
-                    DataLoader loader = DataLoader.get().createLoader(fileName, null, tsv, true, null, TabLoader.TSV_FILE_TYPE);
-                    int count = def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null);
-                    for (ValidationException v : batchErrors.getRowErrors())
-                        errors.add(v.getMessage());
-                    // TODO: Error the entire job on import error?
+                    if (null != tsv)
+                    {
+                        BatchValidationException batchErrors = new BatchValidationException();
+                        DataLoader loader = DataLoader.get().createLoader(fileName, null, tsv, true, null, TabLoader.TSV_FILE_TYPE);
+                        int count = def.insertListItems(user, loader, batchErrors, listsDir.getDir(legalName), null);
+                        for (ValidationException v : batchErrors.getRowErrors())
+                            errors.add(v.getMessage());
+                        // TODO: Error the entire job on import error?
+                    }
+                }
+                finally
+                {
+                    if (tsv != null) { try { tsv.close(); } catch (IOException ignored) {} }
                 }
             }
         }

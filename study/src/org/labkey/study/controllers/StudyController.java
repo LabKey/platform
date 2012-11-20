@@ -4069,6 +4069,7 @@ public class StudyController extends BaseStudyController
                     InputStream is = file.getInputStream();
 
                     File zipFile = File.createTempFile("study", ".zip");
+                    zipFile.deleteOnExit();
                     FileUtil.copyData(is, zipFile);
                     importStudy(getViewContext(), errors, zipFile, file.getOriginalFilename());
                 }

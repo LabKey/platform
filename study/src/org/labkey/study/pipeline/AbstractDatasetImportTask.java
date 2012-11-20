@@ -18,6 +18,7 @@ package org.labkey.study.pipeline;
 
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
+import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
@@ -146,6 +147,10 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), datasets);
 
                 ctx.getLogger().info("Finished updating participants");
+            }
+            catch (CancelledException e)
+            {
+                throw e;
             }
             catch (RuntimeException x)
             {

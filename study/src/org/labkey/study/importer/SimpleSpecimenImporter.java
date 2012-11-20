@@ -28,6 +28,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.reader.TabLoader;
@@ -108,7 +109,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return _columnLabels;
     }
 
-    public void process(User user, Container container, File tsvFile, boolean merge, Logger logger) throws SQLException, IOException, ConversionException
+    public void process(User user, Container container, File tsvFile, boolean merge, Logger logger) throws SQLException, IOException, ConversionException, ValidationException
     {
         TabLoader tl = new TabLoader(tsvFile);
         tl.setThrowOnErrors(true);
@@ -194,13 +195,13 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return cols;
     }
 
-    public void process(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException
+    public void process(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
     {
         _process(user, container, rows, merge, Logger.getLogger(getClass()));
     }
 
     // Avoid conflict with SpecimenImporter.process() (has similar signature)
-    private void _process(User user, Container container, List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException
+    private void _process(User user, Container container, List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
     {
         //Map from column name to
         Study study = StudyManager.getInstance().getStudy(container);
@@ -248,6 +249,12 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             super.process(user, container, inputs, merge, logger);
         }
         catch (SQLException ex)
+        {
+            if (logger != null)
+                logger.error("Error during import", ex);
+            throw ex;
+        }
+        catch (ValidationException ex)
         {
             if (logger != null)
                 logger.error("Error during import", ex);

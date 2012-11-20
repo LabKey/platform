@@ -29,6 +29,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
@@ -571,7 +572,7 @@ public class SpecimenImporter
 
     private static final int SQL_BATCH_SIZE = 100;
 
-    public void process(User user, Container container, VirtualFile specimensDir, boolean merge, Logger logger) throws SQLException, IOException
+    public void process(User user, Container container, VirtualFile specimensDir, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
     {
         Map<String, InputStream> isMap = new HashMap<String, InputStream>();
         createFilemap(specimensDir, isMap);
@@ -640,7 +641,7 @@ public class SpecimenImporter
         return updated;
     }
 
-    protected void process(User user, Container container, Map<String, Iterable<Map<String, Object>>> iterMap, boolean merge, Logger logger) throws SQLException, IOException
+    protected void process(User user, Container container, Map<String, Iterable<Map<String, Object>>> iterMap, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         _logger = logger;
@@ -728,7 +729,7 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws SQLException, IOException
+    private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws SQLException, IOException, ValidationException
     {
         if (!merge)
         {
@@ -1474,7 +1475,7 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimens(SpecimenLoadInfo info, boolean merge) throws IOException, SQLException
+    private void populateSpecimens(SpecimenLoadInfo info, boolean merge) throws IOException, SQLException, ValidationException
     {
         String participantSequenceNumExpr = VisitManager.getParticipantSequenceNumExpr(info._schema, "PTID", "VisitValue");
 
@@ -1553,7 +1554,7 @@ public class SpecimenImporter
         return vialListSql;
     }
 
-    private void populateVials(SpecimenLoadInfo info, boolean merge) throws SQLException
+    private void populateVials(SpecimenLoadInfo info, boolean merge) throws SQLException, ValidationException
     {
         String prefix = ",\n    ";
         SQLFragment insertSelectSql = new SQLFragment();
@@ -1635,7 +1636,7 @@ public class SpecimenImporter
             info(param.toString());
     }
 
-    private void populateVialEvents(SpecimenLoadInfo info, boolean merge) throws SQLException
+    private void populateVialEvents(SpecimenLoadInfo info, boolean merge) throws SQLException, ValidationException
     {
         SQLFragment insertSelectSql = new SQLFragment();
         insertSelectSql.append("SELECT study.Vial.Container, study.Vial.RowId AS VialId, \n");
@@ -1709,7 +1710,7 @@ public class SpecimenImporter
     private <T extends ImportableColumn> Pair<List<T>, Integer> mergeTable(
             DbSchema schema, Container container, String tableName,
             Collection<T> potentialColumns, Iterable<Map<String, Object>> values, boolean addEntityId)
-        throws SQLException
+            throws SQLException, ValidationException
     {
         ComputedColumn entityIdCol = null;
         if (addEntityId)
@@ -1748,7 +1749,7 @@ public class SpecimenImporter
             DbSchema schema, Container container, String tableName,
             Collection<T> potentialColumns, Iterable<Map<String, Object>> values,
             ComputedColumn idCol)
-        throws SQLException
+        throws SQLException, ValidationException
     {
         if (values == null)
         {
@@ -2550,7 +2551,7 @@ public class SpecimenImporter
         }
 
         @Test
-        public void mergeTest() throws SQLException
+        public void mergeTest() throws Exception
         {
             Container c = JunitUtil.getTestContainer();
 

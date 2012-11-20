@@ -344,6 +344,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 {
                     InputStream is = file.getInputStream();
                     File zipFile = File.createTempFile("folder", ".zip");
+                    zipFile.deleteOnExit();
                     FileUtil.copyData(is, zipFile);
 
                     ViewContext context = getViewContext();
@@ -358,7 +359,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     File folderXml;
                     boolean isStudy = false;
 
-                    if (zipFile.getName().endsWith(".zip"))
+                    if (zipFile.getName().toLowerCase().endsWith(".zip"))
                     {
                         String dirName = "unzip";
                         File importDir = pipelineRoot.resolvePath(dirName);
@@ -397,6 +398,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                         folderXml = zipFile;
                         errors.reject("folderImport", "Please submit an appropriate .zip file.");
                     }
+                    zipFile.delete();
 
                     User user = context.getUser();
                     ActionURL url = context.getActionURL();

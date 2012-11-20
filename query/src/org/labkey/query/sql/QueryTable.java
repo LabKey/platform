@@ -367,6 +367,7 @@ public class QueryTable extends QueryRelation
         void copyColumnAttributesTo(ColumnInfo to)
         {
             to.copyAttributesFrom(_col);
+            to.setCalculated(true);
             // always copy format, we don't care about preserving set/unset-ness
             to.setFormat(_col.getFormat());
             to.copyURLFrom(_col, null, null);

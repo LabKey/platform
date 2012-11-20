@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
@@ -805,7 +806,7 @@ public class AssayController extends SpringActionController
 
     public static class AssayUrlsImpl implements AssayUrls
     {
-        public ActionURL getProtocolURL(Container container, ExpProtocol protocol, Class<? extends Controller> action)
+        public ActionURL getProtocolURL(Container container, @Nullable ExpProtocol protocol, Class<? extends Controller> action)
         {
             ActionURL url = new ActionURL(action, container);
             if (protocol != null)
@@ -813,7 +814,7 @@ public class AssayController extends SpringActionController
             return url;
         }
 
-        public @Nullable ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, ActionURL returnURL)
+        public @Nullable ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, @Nullable ActionURL returnURL)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
             return getDesignerURL(container, provider, protocol, copy, returnURL);
@@ -825,7 +826,7 @@ public class AssayController extends SpringActionController
             return getDesignerURL(container, provider, null, false, returnURL);
         }
 
-        private ActionURL getDesignerURL(Container container, AssayProvider provider, ExpProtocol protocol, boolean copy, ActionURL returnURL)
+        private ActionURL getDesignerURL(Container container, @NotNull AssayProvider provider, @Nullable ExpProtocol protocol, boolean copy, ActionURL returnURL)
         {
             if (provider == null)
                 return null;
@@ -863,7 +864,7 @@ public class AssayController extends SpringActionController
             return getAssayRunsURL(container, protocol, null);
         }
 
-        public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... batchIds)
+        public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, int... batchIds)
         {
             ActionURL result = getProtocolURL(container, protocol, AssayRunsAction.class);
             if (batchIds.length > 1)
@@ -884,7 +885,7 @@ public class AssayController extends SpringActionController
                         AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, batchIds[0]);
             }
             if (containerFilter != null && containerFilter.getType() != null)
-                result.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.getType().name());
+                result.addParameter("Runs." + QueryParam.containerFilterName, containerFilter.getType().name());
             return result;
         }
 
@@ -898,7 +899,7 @@ public class AssayController extends SpringActionController
             ActionURL url = getProtocolURL(container, protocol, AssayBatchesAction.class);
             if (containerFilter != null && containerFilter.getType() != null)
             {
-                url.addParameter(protocol.getName() + " Batches." + QueryParam.containerFilterName, containerFilter.getType().name());
+                url.addParameter("Batches." + QueryParam.containerFilterName, containerFilter.getType().name());
             }
             return url;
         }
@@ -908,7 +909,7 @@ public class AssayController extends SpringActionController
             return getAssayResultsURL(container, protocol, null, runIds);
         }
 
-        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds)
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, int... runIds)
         {
             ActionURL result = getProtocolURL(container, protocol, AssayResultsAction.class);
             AssayProvider provider = AssayService.get().getProvider(protocol);

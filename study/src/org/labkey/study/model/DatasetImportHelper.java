@@ -20,6 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -209,7 +210,7 @@ class DatasetImportHelper implements OntologyManager.UpdateableTableImportHelper
     }
 
     @Override
-    public void bindAdditionalParameters(Map<String, Object> row, Parameter.ParameterMap target)
+    public void bindAdditionalParameters(Map<String, Object> row, Parameter.ParameterMap target) throws ValidationException
     {
         Object key = getKey(row);
         target.put("_key", key==null ? "" : String.valueOf(key));

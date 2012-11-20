@@ -23,6 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
@@ -326,7 +327,7 @@ public class StudyDesignManager
 
     public Study generateStudyFromDesign(User user, Container parent, String folderName, Date startDate,
                                          String subjectNounSingular, String subjectNounPlural, String subjectColumnName, StudyDesignInfo info,
-                                         List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws SQLException, XmlException, IOException, ServletException
+                                         List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws SQLException, XmlException, IOException, ServletException, ValidationException
     {
         Container studyFolder = parent.getChild(folderName);
         if (null == studyFolder)

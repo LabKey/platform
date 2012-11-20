@@ -339,6 +339,7 @@ public class PropertyController extends SpringActionController
             String prefix = filename.substring(0, dotIndex);
 
             File tempFile = File.createTempFile(prefix, suffix);
+            tempFile.deleteOnExit();
             InputStream input = file.getInputStream();
             OutputStream output = new FileOutputStream(tempFile);
             DataLoader dataLoader = null;

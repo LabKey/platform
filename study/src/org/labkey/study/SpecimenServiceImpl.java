@@ -23,6 +23,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
@@ -243,7 +244,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     }
 
     @Override
-    public void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException
+    public void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
     {
         // CONSIDER: move ShowUploadSpecimensAction validation to importer.process()
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
