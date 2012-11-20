@@ -734,6 +734,9 @@ public class IssuesController extends SpringActionController
 
         public ActionURL getSuccessURL(IssuesForm form)
         {
+            if(getIssue(form.getIssueId(), false).getStatus().equals("closed"))
+                return issueURL(ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+            
             return form.getForwardURL();
         }
     }

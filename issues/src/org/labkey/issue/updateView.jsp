@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.data.DataRegion"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -33,6 +32,7 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -48,6 +48,16 @@
 
     BindException errors = bean.getErrors();
     ActionURL completionUrl = new ActionURL(IssuesController.CompleteUserAction.class, c);
+    ActionURL cancelURL = null;
+
+    if (issue.getIssueId() > 0)
+    {
+        cancelURL = IssuesController.issueURL(context.getContainer(), IssuesController.DetailsAction.class).addParameter("issueId", issue.getIssueId());
+    }
+    else
+    {
+        cancelURL = IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+    }
 %>
 
 <script type="text/javascript">
@@ -99,7 +109,7 @@
 
     <table>
         <tr>
-            <td align="right" valign="top"><%=PageFlowUtil.generateSubmitButton("Save", null, "name=\"" + bean.getAction() + "\"", true, true)%><%= generateButton("Cancel", IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
+            <td align="right" valign="top"><%=PageFlowUtil.generateSubmitButton("Save", null, "name=\"" + bean.getAction() + "\"", true, true)%><%= generateButton("Cancel", cancelURL)%></td>
         </tr>
         <tr>
 <%
@@ -245,7 +255,7 @@
 <% } %>
     </td></tr>
     <tr>
-        <td align="right" valign="top"><%=PageFlowUtil.generateSubmitButton("Save", null, "name=\"" + bean.getAction() + "\"", true, true)%><%= generateButton("Cancel", IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
+        <td align="right" valign="top"><%=PageFlowUtil.generateSubmitButton("Save", null, "name=\"" + bean.getAction() + "\"", true, true)%><%= generateButton("Cancel", cancelURL)%></td>
     </tr>
     </table>
     
