@@ -5346,6 +5346,12 @@ public class AdminController extends SpringActionController
                 CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container));
                 Portal.PortalPage page = pages.get(form.getTabType());
 
+                if (null == page)
+                {
+                    errors.reject(ERROR_MSG, "Page cannot be found. Check with your system administrator.");
+                    return false;
+                }
+
                 if(form.getTabName() != null && !form.getTabName().equals(""))
                 {
                     page.setCaption(form.getTabName());

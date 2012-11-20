@@ -84,6 +84,7 @@
             populateTypeSummary(allTypes.primaryTypes, 'primaryTypes');
             populateTypeSummary(allTypes.derivativeTypes, 'derivativeTypes');
         }
+        document.getElementById('specimen-browse-webpart-content').setAttribute('style', 'display: inline');
     }
 
     Ext.onReady(function() {
@@ -92,7 +93,7 @@
         });
     });
 </script>
-<span id="specimen-browse-webpart-content">
+<span id="specimen-browse-webpart-content" style="display: none">
 <table class="labkey-manage-display" style="width: 100%;">
     <tbody>
     <tr><!-- removed lines beneath headings --> <!-- using labkey nav tree markup, which probably doesn't display in wikis --> <!-- hardcoding plus minus images for looks only --> <!-- removed search links, as that's now handled by a new webpart --> <!-- left column -->
