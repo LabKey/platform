@@ -472,28 +472,31 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public ActionURL urlFor(QueryAction action, Container container)
     {
         ActionURL url = null;
-        TableInfo table = getTable(null, true);
-        if (table != null)
+        if (action == QueryAction.insertQueryRow || action == QueryAction.deleteQueryRows || action == QueryAction.executeQuery || action == QueryAction.importData)
         {
-            switch (action)
+            TableInfo table = getTable(null, true);
+            if (table != null)
             {
-                case insertQueryRow:
-                    url = table.getInsertURL(container);
-                    break;
-                case deleteQueryRows:
-                    url = table.getDeleteURL(container);
-                    break;
-                case executeQuery:
-                    url = table.getGridURL(container);
-                    break;
-                case importData:
-                    url = table.getImportDataURL(container);
-                    break;
+                switch (action)
+                {
+                    case insertQueryRow:
+                        url = table.getInsertURL(container);
+                        break;
+                    case deleteQueryRows:
+                        url = table.getDeleteURL(container);
+                        break;
+                    case executeQuery:
+                        url = table.getGridURL(container);
+                        break;
+                    case importData:
+                        url = table.getImportDataURL(container);
+                        break;
+                }
             }
-        }
 
-        if (url == AbstractTableInfo.LINK_DISABLER_ACTION_URL)
-            return null;
+            if (url == AbstractTableInfo.LINK_DISABLER_ACTION_URL)
+                return null;
+        }
 
         return url != null ? url : QueryService.get().urlDefault(container, action, getSchemaName(), getName());
     }
@@ -514,23 +517,26 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public StringExpression urlExpr(QueryAction action, Container container)
     {
         StringExpression expr = null;
-        List<QueryException> errors = new ArrayList<QueryException>();
-        TableInfo table = getTable(errors, true);
-        if (table != null)
+        TableInfo table = null;
+        if (action == QueryAction.detailsQueryRow || action == QueryAction.updateQueryRow)
         {
-            switch (action)
+            table = getTable(null, true);
+            if (table != null)
             {
-                case detailsQueryRow:
-                    expr = table.getDetailsURL(null, container);
-                    break;
+                switch (action)
+                {
+                    case detailsQueryRow:
+                        expr = table.getDetailsURL(null, container);
+                        break;
 
-                case updateQueryRow:
-                    expr = table.getUpdateURL(null, container);
-                    break;
+                    case updateQueryRow:
+                        expr = table.getUpdateURL(null, container);
+                        break;
+                }
+
+                if (expr == AbstractTableInfo.LINK_DISABLER)
+                    return null;
             }
-
-            if (expr == AbstractTableInfo.LINK_DISABLER)
-                return null;
         }
 
         if (expr == null)
@@ -540,6 +546,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             {
                 // Query's pk columns may not correspond to the main table's pk columns.
                 // Adding the pk URL parameters will probably only work for simple queries.
+                if (table == null)
+                    table = getTable(null, true);
                 if (table != null)
                 {
                     List<String> pkColumnNames = table.getPkColumnNames();
