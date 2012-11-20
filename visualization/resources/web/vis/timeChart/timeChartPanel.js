@@ -2468,7 +2468,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     getMeasurePickerHelpText: function() {
         return {title: 'Which measures are included?', text: 'This grid contains dataset columns that have been designated as measures from the dataset definition. '
-            + '<br/><br/>It also includes measures from queries in the study schema that contain both the ' + this.subjectNounSingular + 'Id and ' + this.subjectNounSingular + 'Visit columns.'
+            + '<br/><br/>It also includes measures from queries in the study schema that contain both the ' + this.viewInfo.subjectNounSingular + 'Id and ' + this.viewInfo.subjectNounSingular + 'Visit columns.'
             + '<br/><br/>You can filter the measures in the grid using the filter textbox to the left. The filtered results will contain measures that have a match in the dataset, measure, or description column. '
             + 'You can get back to the full list of measures at any time by removing the filter.'};
     }
