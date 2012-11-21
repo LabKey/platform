@@ -113,6 +113,7 @@ import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -168,6 +169,7 @@ public class ReportsController extends SpringActionController
 {
     private static final Logger _log = Logger.getLogger(ReportsController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
+    private static final MimeMap _mimeMap = new MimeMap();
 
     public static final String TAB_SOURCE = "source";
     public static final String TAB_VIEW = "view";
@@ -1658,7 +1660,10 @@ public class ReportsController extends SpringActionController
                 if (!file.exists())
                     throw new NotFoundException("Could not find file with name " + aReport.getFilePath());
 
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
+                boolean isInlineImage = _mimeMap.isInlineImageFor(aReport.getFilePath());
+                boolean asAttachment = !isInlineImage;
+
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file, asAttachment);
             }
             return null;
         }
