@@ -54,7 +54,5 @@
         };
 
         Ext4.EventManager.onWindowResize(_resize);
-        Ext4.EventManager.fireWindowResize();
-
     });
 </script>
