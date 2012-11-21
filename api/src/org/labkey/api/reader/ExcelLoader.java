@@ -740,8 +740,9 @@ public class ExcelLoader extends DataLoader
                         break;
 
                     case INLINESTR:
-                        XSSFRichTextString rtsi = new XSSFRichTextString(value.toString());
-                        thisValue = rtsi.toString();
+//                        XSSFRichTextString rtsi = new XSSFRichTextString(value.toString());
+//                        thisValue = rtsi.toString();
+                        thisValue = value.toString();
                         break;
 
                     case SSTINDEX:

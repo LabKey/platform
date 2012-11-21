@@ -1618,6 +1618,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                         value = "'" + escapeSql((String) o) + "'";
                     else
                         value = String.valueOf(o);
+                    if (value.length() > 100)
+                        value = value.substring(0,100) + ". . .";
                     logEntry.append("\n    --?[").append(i).append("] ").append(value);
                 }
                 catch (Exception ex)
