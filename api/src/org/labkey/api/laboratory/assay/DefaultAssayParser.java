@@ -16,6 +16,7 @@
 package org.labkey.api.laboratory.assay;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,7 +35,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -419,8 +419,13 @@ public class DefaultAssayParser implements AssayParser
                 if (!"rowid".equalsIgnoreCase(prop))
                 {
                     Object value = templateRow.get(prop);
-                    if (value != null && !org.apache.commons.lang3.StringUtils.isEmpty(value.toString()))
-                        map.put(prop, templateRow.get(prop));
+                    if (value != null && !StringUtils.isEmpty(value.toString()))
+                    {
+                        if (map.get(prop) != null && !map.get(prop).equals(templateRow.get(prop)))
+                            _log.info("Property exists for " + prop + ", " + map.get(prop) + ", " + templateRow.get(prop));
+                        else
+                            map.put(prop, templateRow.get(prop));
+                    }
                 }
             }
             return true;
