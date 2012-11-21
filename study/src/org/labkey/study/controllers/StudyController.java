@@ -7300,15 +7300,26 @@ public class StudyController extends BaseStudyController
         public ApiResponse execute(BrowseStudyForm browseDataForm, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Study study = StudyManager.getInstance().getStudy(getContainer());
+            StudyManager manager = StudyManager.getInstance();
+            Study study = manager.getStudy(getContainer());
             StudySchedule schedule = new StudySchedule();
             CohortImpl cohort = null;
 
+            if (browseDataForm.getCohortId() != null)
+            {
+                cohort = manager.getCohortForRowId(getContainer(), getUser(), browseDataForm.getCohortId());
+            }
+
+            if (cohort == null && browseDataForm.getCohortLabel() != null)
+            {
+                cohort = manager.getCohortByLabel(getContainer(), getUser(), browseDataForm.getCohortLabel());
+            }
+
             if (study != null)
             {
-                schedule.setVisits(StudyManager.getInstance().getVisits(study, null, getUser(), Visit.Order.DISPLAY));
+                schedule.setVisits(manager.getVisits(study, cohort, getUser(), Visit.Order.DISPLAY));
                 schedule.setDatasets(
-                        StudyManager.getInstance().getDataSetDefinitions(study, cohort, new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}),
+                        manager.getDataSetDefinitions(study, cohort, new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}),
                         DataViewService.get().getViews(getViewContext(), Collections.singletonList(DatasetViewProvider.TYPE)));
 
                 response.put("schedule", schedule.toJSON(getUser()));
@@ -7328,13 +7339,24 @@ public class StudyController extends BaseStudyController
         public ApiResponse execute(BrowseStudyForm browseDataForm, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Study study = StudyManager.getInstance().getStudy(getContainer());
+            StudyManager manager = StudyManager.getInstance();
+            Study study = manager.getStudy(getContainer());
             StudySchedule schedule = new StudySchedule();
             CohortImpl cohort = null;
 
+            if (browseDataForm.getCohortId() != null)
+            {
+                cohort = manager.getCohortForRowId(getContainer(), getUser(), browseDataForm.getCohortId());
+            }
+
+            if (cohort == null && browseDataForm.getCohortLabel() != null)
+            {
+                cohort = manager.getCohortByLabel(getContainer(), getUser(), browseDataForm.getCohortLabel());
+            }
+
             if (study != null)
             {
-                schedule.setVisits(StudyManager.getInstance().getVisits(study, cohort, getUser(), Visit.Order.DISPLAY));
+                schedule.setVisits(manager.getVisits(study, cohort, getUser(), Visit.Order.DISPLAY));
 
                 response.put("schedule", schedule.toJSON(getUser()));
                 response.put("success", true);
@@ -7389,6 +7411,28 @@ public class StudyController extends BaseStudyController
 
     public static class BrowseStudyForm
     {
+        private Integer _cohortId;
+        private String _cohortLabel;
+
+        public Integer getCohortId()
+        {
+            return _cohortId;
+        }
+
+        public void setCohortId(Integer cohortId)
+        {
+            _cohortId = cohortId;
+        }
+
+        public String getCohortLabel()
+        {
+            return _cohortLabel;
+        }
+
+        public void setCohortLabel(String cohortLabel)
+        {
+            _cohortLabel = cohortLabel;
+        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
