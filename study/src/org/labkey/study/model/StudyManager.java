@@ -2696,6 +2696,7 @@ public class StudyManager
         //
         // create columns to properties map
         //
+        loader.setInferTypes(false);
         ColumnDescriptor[] cols = loader.getColumns();
         for (ColumnDescriptor col : cols)
         {

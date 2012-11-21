@@ -2492,9 +2492,8 @@ public class QueryController extends SpringActionController
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
             view.setShowPagination(form.isIncludeTotalCount());
 
-            boolean isEditable = isQueryEditable(view.getTable());
-
-
+            TableInfo t = view.getTable();
+            boolean isEditable = null != t && isQueryEditable(view.getTable());
 
             if (getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isEditable,
