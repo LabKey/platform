@@ -349,7 +349,10 @@ public class SchemaColumnMetaData
             for (String name : _pkColumnNames)
             {
                 ColumnInfo col = getColumn(name);
-                assert null != col;
+
+                if (null == col)
+                    throw new IllegalStateException("Primary key name \"" + name + "\" with no corresponding column in table " + _tinfo.toString());
+
                 cols.add(col);
             }
 
