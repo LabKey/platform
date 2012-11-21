@@ -239,7 +239,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             }
 
             //listen for changes in underlying data in lookup store
-            if(meta.lookup && meta.lookups !== false){
+            if(meta.lookup && meta.lookups !== false && meta.lookup.isPublic){
                 var lookupStore = LABKEY.ext.Ext4Helper.getLookupStore(meta);
 
                 //this causes the whole grid to rerender, which is very expensive.  better solution?
@@ -293,7 +293,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
                 //TODO: this should probably take into account mean vs max, and somehow account for line wrapping on really long text
                 var avgLen = values.length ? (Ext4.Array.sum(values) / values.length) : 1;
 
-                col.width = Math.max(avgLen, col.header.length) * this.charWidth + this.colPadding;
+                col.width = Math.max(avgLen, col.header ? col.header.length : 0) * this.charWidth + this.colPadding;
                 col.width = Math.min(col.width, this.maxColWidth);
             }
 

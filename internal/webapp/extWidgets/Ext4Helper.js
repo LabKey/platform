@@ -619,7 +619,7 @@ LABKEY.ext.Ext4Helper = new function(){
                         break;
                     case "string":
                     default:
-                        displayValue = displayValue.toString();
+                        displayValue = displayValue ? displayValue.toString() : "";
                 }
             }
 

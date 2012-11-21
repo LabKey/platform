@@ -48,7 +48,6 @@ public abstract class ContainerFilter
 
     /**
      * May return null if the ContainerFilter has no corresponding ContainerFilter.Type.
-     * @return
      */
     @Nullable
     public abstract Type getType();
