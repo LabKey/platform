@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.jfree.util.StringUtils;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.query.FieldKey;
 
 import java.util.ArrayList;
@@ -85,7 +87,11 @@ public abstract class TSVColumnWriter extends TSVWriter
                 String name;
                 if (columnInfo != null)
                 {
-                    name = FieldKey.fromString(columnInfo.getName()).toDisplayString();
+                    name = columnInfo.getName();
+                    // Importers don't expect "_MVIndicator"
+                    if (columnInfo.isMvIndicatorColumn() && StringUtils.endsWithIgnoreCase(name, "_" + MvColumn.MV_INDICATOR_SUFFIX))
+                        name = name.substring(0, name.length()-MvColumn.MV_INDICATOR_SUFFIX.length()-1) + MvColumn.MV_INDICATOR_SUFFIX;
+                    name = FieldKey.fromString(name).toDisplayString();
                 }
                 else
                 {

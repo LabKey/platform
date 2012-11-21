@@ -2434,6 +2434,7 @@ public class OntologyManager
     {
         ListImportPropertyDescriptors ret = new ListImportPropertyDescriptors();
         CaseInsensitiveHashSet all = new CaseInsensitiveHashSet();
+        CaseInsensitiveHashSet mvColumns = new CaseInsensitiveHashSet();
 
         for (Map<String, Object> m : maps)
         {
@@ -2457,6 +2458,12 @@ public class OntologyManager
                 continue;
             }
 
+            if (StringUtils.endsWithIgnoreCase(name,MV_INDICATOR_SUFFIX))
+            {
+                mvColumns.add(name);
+                continue;
+            }
+
             PropertyDescriptor pd = _propertyDescriptorFromRowMap(container, domainURI, propertyURI, name, m, errors);
 
             if (pd != null)
@@ -2476,6 +2483,27 @@ public class OntologyManager
                 ret.add(domainName, domainURI, pd);
             }
         }
+
+        if (!mvColumns.isEmpty())
+        {
+            // There really shouldn't be mvindicator columns in the map, so this is just being defensive
+            // they should be implied by isMvEnabled() in the parent column
+            CaseInsensitiveHashMap<PropertyDescriptor> nameMap = new CaseInsensitiveHashMap<PropertyDescriptor>();
+            for (ImportPropertyDescriptor ipd : ret.properties)
+                nameMap.put(ipd.pd.getName(), ipd.pd);
+            for (String mv : mvColumns)
+            {
+                String data = mv.substring(0, mv.length()-MV_INDICATOR_SUFFIX.length());
+                if (data.endsWith("_"))
+                    data = data.substring(0,data.length()-1);
+                PropertyDescriptor pd = nameMap.get(data);
+                if (null == pd)
+                    errors.add("Missing value field does not have corresponding data field: " + mv);
+                else
+                    pd.setMvEnabled(true);
+            }
+        }
+
         return ret;
     }
 

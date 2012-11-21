@@ -65,6 +65,8 @@ public class TableInfoWriter
 
         for (ColumnInfo column : _columns)
         {
+            if (column.isMvIndicatorColumn())
+                continue;
             ColumnType columnXml = columnsXml.addNewColumn();
             writeColumn(column, columnXml);
         }
