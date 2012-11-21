@@ -352,6 +352,11 @@ public class Sort
         return index;
     }
 
+    public SortField deleteSortColumn(int index)
+    {
+        return _sortList.remove(index);
+    }
+
     public SortField getSortColumn(FieldKey fieldKey)
     {
         for (SortField sf : _sortList)
