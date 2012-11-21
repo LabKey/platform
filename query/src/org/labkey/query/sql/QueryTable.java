@@ -26,6 +26,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -256,11 +257,13 @@ public class QueryTable extends QueryRelation
 
         sql.append("SELECT ");
         String comma = "";
-        for (RelationColumn col : _selectedColumns.values())
+        for (TableColumn col : _selectedColumns.values())
         {
             if (col.ref.count() == 0)
                 continue;
             if (null != col.getFieldKey().getParent())
+                _generateSelectSQL = true;
+            if (col._col instanceof PropertyColumn)
                 _generateSelectSQL = true;
             col.declareJoins(_innerAlias, joins);
             sql.append(comma);
@@ -280,9 +283,9 @@ public class QueryTable extends QueryRelation
         if (!joins.isEmpty())
             _generateSelectSQL = true;
 
-        // UNDONE: this breaks grouping queries on lookups columns in SQL Server
-        // e.g. grouping by a property column (lists)
-        _generateSelectSQL = true;
+        if (null == _parent || _parent instanceof QuerySelect && ((QuerySelect)_parent).isAggregate())
+            _generateSelectSQL = true;
+        _generateSelectSQL=true;
 
         if (!_generateSelectSQL)
             return tableFromSql;

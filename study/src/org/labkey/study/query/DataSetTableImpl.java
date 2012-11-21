@@ -531,6 +531,11 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         {
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
             result = columns.get(fieldKey);
+            if (null != result)
+            {
+                result.setFieldKey(new FieldKey(null,name));
+                result.setAlias("_DataSetTableImpl_resolvefield$" + result.getAlias());
+            }
         }
         return result;
     }

@@ -265,29 +265,35 @@ public class QueryPivot extends QueryRelation
                 sqlPivotValues = new SQLFragment();
                 sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
 
-
-                // if our optimizations get more clever, we may need to implement deepClone()
-//                QuerySelect fromForPivotValues = _from.shallowClone();
-//                fromForPivotValues.releaseAllSelected(this);
-//                if (null != fromForPivotValues._distinct)
-//                {
-//                    fromForPivotValues.releaseAllSelected(this);
-//                    fromForPivotValues._distinct = null;
-//                }
-//                _pivotColumn.addRef(this);
-//                if (null == fromForPivotValues._having)
-//                {
-//                    fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
-//                    fromForPivotValues._groupBy = null;
-//                }
-//                fromForPivotValues._allowStructuralOptimization = false;
-//                SQLFragment fromSql = fromForPivotValues.getSql();
-//                // the fields and columns are shared, to be safe fix up reference counts
-//                _from._groupBy.addFieldRefs(_from._groupBy);
-//                if (null != _from._distinct)
-//                    _from.markAllSelected(_from._distinct);
-//                _from.markAllSelected(this);
-                SQLFragment fromSql = _from.getFromSql();
+                SQLFragment fromSql;
+                if (1==1)   // optimized version
+                {
+                    // if our optimizations get more clever, we may need to implement deepClone()
+                    QuerySelect fromForPivotValues = _from.shallowClone();
+                    fromForPivotValues.releaseAllSelected(this);
+                    if (null != fromForPivotValues._distinct)
+                    {
+                        fromForPivotValues.releaseAllSelected(this);
+                        fromForPivotValues._distinct = null;
+                    }
+                    _pivotColumn.addRef(this);
+                    if (null == fromForPivotValues._having)
+                    {
+                        fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
+                        fromForPivotValues._groupBy = null;
+                    }
+                    fromForPivotValues._allowStructuralOptimization = false;
+                    fromSql = fromForPivotValues.getFromSql();
+                    // the fields and columns are shared, to be safe fix up reference counts
+                    _from._groupBy.addFieldRefs(_from._groupBy);
+                    if (null != _from._distinct)
+                        _from.markAllSelected(_from._distinct);
+                    _from.markAllSelected(this);
+                }
+                else
+                {
+                    fromSql = _from.getFromSql();
+                }
 
                 if (null == fromSql)
                 {
