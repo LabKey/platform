@@ -1374,7 +1374,7 @@ public class QueryServiceImpl extends QueryService
         bindNamedParameters(sql, parameters);
         validateNamedParameters(sql);
 		ResultSet rs = Table.executeQuery(table.getSchema(), sql);
-        return new ResultsImpl(rs, columns);
+        return new ResultsImpl(rs, columns);       // TODO: If ResultsImpl() throws, rs is never closed
     }
 
 
