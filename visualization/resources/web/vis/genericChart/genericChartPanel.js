@@ -976,6 +976,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             },
             buttonBar   : {
                 position : 'none'
+            },
+            listeners : {
+                render : function() {
+                    var dr = LABKEY.DataRegions[this.dataRegionName];
+                    if (dr) {
+                        dr.disableHeaderLock();
+                    }
+                },
+                scope  : wp
             }
         });
 

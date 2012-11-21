@@ -170,6 +170,11 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 emptyText      : 'Uncategorized',
                 listeners      : {
                     render : {fn : function(combo){combo.setRawValue(this.data.category);}, scope : this}
+                },
+                listConfig : {
+                    getInnerTpl : function(dfield) {
+                        return '{' + dfield + ':htmlEncode}' ; // 15202
+                    }
                 }
             });
         }
