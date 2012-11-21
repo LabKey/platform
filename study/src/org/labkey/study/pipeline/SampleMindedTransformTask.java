@@ -338,7 +338,7 @@ public class SampleMindedTransformTask
         {
             visit = visit.substring("visit".length()).trim();
         }
-        if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit))
+        if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit) || "CIB".equalsIgnoreCase(visit) || "PT1".equalsIgnoreCase(visit))
         {
             visit = "999";
         }
