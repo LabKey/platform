@@ -1248,7 +1248,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     onFinish : function() {
 
-        if (this.mode == 'ancillary' && !this.info.datasets || (this.info.datasets.length == 0))
+        if (( this.mode == 'ancillary' && !this.info.datasets ))
         {
             Ext.MessageBox.alert('Error', 'You must select at least one dataset to create the new study from.');
             return;
@@ -1287,12 +1287,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 }
             }
         }
-        for (var i=0; i < this.info.datasets.length; i++)
-        {
-            var ds = this.info.datasets[i];
-            var id = Ext.id();
-            hiddenFields.push(id);
-            this.nameFormPanel.add({xtype:'hidden', id: id, name: 'datasets', value: ds.data.DataSetId});
+        if(this.info.datasets){
+            for (var i=0; i < this.info.datasets.length; i++)
+            {
+                var ds = this.info.datasets[i];
+                var id = Ext.id();
+                hiddenFields.push(id);
+                this.nameFormPanel.add({xtype:'hidden', id: id, name: 'datasets', value: ds.data.DataSetId});
+            }
         }
 
         params.copyParticipantGroups = true;//this.copyParticipantGroups.checked;
