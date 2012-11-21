@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -120,6 +121,22 @@ public class QueryUpdateAuditViewFactory extends SimpleAuditViewFactory
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
         view.setSort(new Sort("-Date"));
 
+/*
+        Set<FieldKey> currentColumns = new HashSet<FieldKey>();
+        for (DisplayColumn dc : view.getDisplayColumns())
+            currentColumns.add(dc.getColumnInfo().getFieldKey());
+
+        List<FieldKey> extraColumns = new ArrayList<FieldKey>();
+        extraColumns.add(FieldKey.fromParts("OldValues"));
+        extraColumns.add(FieldKey.fromParts("NewValues"));
+        extraColumns.add(FieldKey.fromParts("DataChanges"));
+
+        for (ColumnInfo column : QueryService.get().getColumns(view.getTable(), extraColumns).values())
+        {
+            if (!currentColumns.contains(column.getFieldKey()))
+                view.addDisplayColumn(column.getRenderer());
+        }
+*/
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Key1"), keyValue);
         filter.addCondition(FieldKey.fromParts("Key2"), schemaName);
         filter.addCondition(FieldKey.fromParts("Key3"), queryName);

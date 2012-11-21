@@ -350,6 +350,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
         AuditQueryViewImpl view = new AuditQueryViewImpl(schema, settings, filter);
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
+        view.setShowImportDataButton(false);
+
         return view;
     }
 

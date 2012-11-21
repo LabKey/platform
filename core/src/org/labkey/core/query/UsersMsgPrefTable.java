@@ -24,10 +24,13 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -50,13 +53,11 @@ import java.util.Map;
  *
  * Only exposes folder-level user settings, not subforum subscriptions.
  */
-public class UsersMsgPrefTable extends FilteredTable
+public class UsersMsgPrefTable extends UsersTable
 {
-    public UsersMsgPrefTable(TableInfo tInfo, Container container)
+    public UsersMsgPrefTable(UserSchema schema, SchemaTableInfo tInfo)
     {
-        super(tInfo, container);
-
-        wrapAllColumns(true);
+        super(schema, tInfo);
 
         ColumnInfo msgCol = addColumn(new EmailSettingsColumn("MessageSettings", "messages", this));
         msgCol.setDisplayColumnFactory(new DisplayColumnFactory(){
@@ -80,7 +81,7 @@ public class UsersMsgPrefTable extends FilteredTable
 
         for (User user : UserManager.getActiveUsers())
         {
-            if (container.hasPermission(user, ReadPermission.class))
+            if (schema.getContainer().hasPermission(user, ReadPermission.class))
                 userIds.add(user.getUserId());
         }
 
@@ -88,6 +89,12 @@ public class UsersMsgPrefTable extends FilteredTable
             addInClause(getRealTable().getColumn("UserId"), userIds);
 
         setDefaultVisibleColumns(getDefaultColumns());
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return null;
     }
 
     private List<FieldKey> getDefaultColumns()

@@ -39,6 +39,7 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ViewCategory;
@@ -549,6 +550,33 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             report.beforeSave(context);
 
             final ReportDescriptor descriptor = report.getDescriptor();
+
+            // last chance to validate permissions, this should be done in the controller actions, so
+            // just throw an exception if validation fails
+            List<ValidationError> errors = new ArrayList<ValidationError>();
+            if (descriptor.isNew())
+            {
+                if (descriptor.getOwner() == null)
+                    report.canShare(context.getUser(), context.getContainer(), errors);
+            }
+            else
+            {
+                if (report.canEdit(context.getUser(), context.getContainer(), errors))
+                {
+                    if (descriptor.getOwner() == null)
+                        report.canShare(context.getUser(), context.getContainer(), errors);
+                }
+            }
+
+            if (!errors.isEmpty())
+            {
+                StringBuilder sb = new StringBuilder();
+                for (ValidationError error : errors)
+                    sb.append(error.getMessage()).append("\n");
+
+                throw new RuntimeException(sb.toString());
+            }
+
             final ReportDB r = _saveReport(context.getUser(), context.getContainer(), key, descriptor);
             scope.commitTransaction();
             return r;
