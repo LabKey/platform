@@ -28,13 +28,14 @@ import java.io.PrintWriter;
 
 public class ListWebPart extends WebPartView<ViewContext>
 {
-    static public BaseWebPartFactory FACTORY = new AlwaysAvailableWebPartFactory("Lists")
+    public static final BaseWebPartFactory FACTORY = new AlwaysAvailableWebPartFactory("Lists")
     {
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
             return new ListWebPart(portalCtx);
         }
     };
+
     public ListWebPart(ViewContext portalCtx)
     {
         super(new ViewContext(portalCtx));
