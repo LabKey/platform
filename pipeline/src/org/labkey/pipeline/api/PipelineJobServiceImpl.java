@@ -574,7 +574,12 @@ public class PipelineJobServiceImpl extends PipelineJobService
             PipelineJobServiceImpl impl = new PipelineJobServiceImpl(null, false);
             ConfigPropertiesImpl props = new ConfigPropertiesImpl();
             ApplicationPropertiesImpl appProps = new ApplicationPropertiesImpl();
-            String homeDir = System.getProperty("user.home");
+            String homeDir = System.getProperty("java.io.tmpdir");
+            if (homeDir.endsWith("\\") || homeDir.endsWith("/"))
+            {
+                // Strip off trailing slash
+                homeDir = homeDir.substring(0, homeDir.length() - 1);
+            }
             appProps.setToolsDirectory(homeDir);
             impl.setAppProperties(appProps);
             impl.setConfigProperties(props);
