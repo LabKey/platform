@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
@@ -574,7 +575,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             PipelineJobServiceImpl impl = new PipelineJobServiceImpl(null, false);
             ConfigPropertiesImpl props = new ConfigPropertiesImpl();
             ApplicationPropertiesImpl appProps = new ApplicationPropertiesImpl();
-            String homeDir = System.getProperty("java.io.tmpdir");
+            String homeDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(System.getProperty("java.io.tmpdir"))).toString();
             if (homeDir.endsWith("\\") || homeDir.endsWith("/"))
             {
                 // Strip off trailing slash
