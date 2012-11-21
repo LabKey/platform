@@ -28,10 +28,10 @@ public class FlagColumn extends PropertyColumn
     String _urlFlagged;
     String _urlUnflagged;
 
-    public FlagColumn(ColumnInfo parent, String urlFlagged, String urlUnflagged, Container container, User user)
+    public FlagColumn(ColumnInfo parent, String urlFlagged, String urlUnflagged, Container container, User user, String name)
     {
         super(ExperimentProperty.COMMENT.getPropertyDescriptor(), parent, container, user, false);
-        setFieldKey(new FieldKey(parent.getFieldKey(),"$"));
+        setFieldKey(new FieldKey(parent.getFieldKey(),name));
         setAlias(parent.getAlias() + "$");
         _urlFlagged = urlFlagged;
         _urlUnflagged = urlUnflagged;

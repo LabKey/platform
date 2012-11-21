@@ -219,7 +219,8 @@ var submit_onClick;
             name       : 'q',
             emptyText  : 'Search ' + serverDescription,
             cls        : 'labkey-main-search',
-            focusClass : 'labkey-main-search'
+            focusClass : 'labkey-main-search',
+            width      : 235
         });
 
         var handler = function(item)

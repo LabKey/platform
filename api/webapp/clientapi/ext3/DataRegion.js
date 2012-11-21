@@ -1085,6 +1085,20 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         return this._allowHeaderLock === true;
     },
 
+    disableHeaderLock : function() {
+        if (this.headerLock())
+        {
+            this._allowHeaderLock = false;
+            this.resizeTask.cancel();
+
+            Ext.EventManager.un(window, 'load', this._resizeContainer, this);
+            Ext.EventManager.un(window, 'resize', this._resizeContainer, this);
+            Ext.EventManager.un(window, 'scroll', this._scrollContainer, this);
+            Ext.EventManager.un(document, 'DOMNodeInserted', this._resizeContainer, this);
+            delete this.resizeTask;
+        }
+    },
+
     _initHeaderLock : function() {
         // initialize constants
         this.headerRow          = Ext.get('dataregion_header_row_' + this.name);
@@ -2667,11 +2681,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 return;
             }
 
-            if(
-                (store.getCount() >= this.MAX_FILTER_CHOICES) ||
+            if ((store.getCount() >= this.MAX_FILTER_CHOICES) ||
                 (store.fields && store.getCount() === 0) || //Issue 13946: faceted filtering: loading mask doesn't go away if the lookup returns zero rows
                 this.forceAdvancedFilters
-            ){
+               )
+            {
                 this.facetingAvailable = false;
             }
             else {
@@ -3811,6 +3825,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return val
     },
 
+    // TODO: Migrate to use LABKEY.Query.selectDistinctRows
     getLookupValueSql: function(dataRegion, column)
     {
         // Build up a SELECT DISTINCT query to get all of the values that are currently in use
@@ -3820,18 +3835,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
         var fieldKey;
         if(column.displayField){
-            fieldKey = column.displayField.split("/");
+            fieldKey = LABKEY.FieldKey.fromString(column.displayField);
         }
         else {
-            fieldKey = column.fieldKeyArray;
+            fieldKey = LABKEY.FieldKey.fromParts(column.fieldKeyArray);
         }
 
-        for (var i = 0; i < fieldKey.length; i++)
-        {
-            sql += "\"" + fieldKey[i].replace("\"", "\"\"") + "\"";
-            if(i < fieldKey.length - 1)
-                sql += '.';
-        }
+        sql += fieldKey.toSQLString();
+
         sql += ' AS value FROM "' + dataRegion.queryName.replace("\"", "\"\"") + '" t';
         sql += ') s';
 

@@ -5,8 +5,6 @@
  */
 LABKEY.requiresScript('/extWidgets/Ext4Helper.js');
 
-Ext4.namespace('LABKEY.ext4');
-
 /**
  * Constructs a new LabKey Store using the supplied configuration.
  * @class LabKey extension to the <a href="http://docs.sencha.com/ext-js/4-0/#!/api/Ext.data.Store">Ext.data.Store</a> class,
@@ -106,7 +104,7 @@ Ext4.namespace('LABKEY.ext4');
  */
 
 
-LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
+Ext4.define('LABKEY.ext4.Store', {
     extend: 'Ext.data.Store',
     alias: 'store.labkey-store',
     //the page size defaults to 25, which can give odd behavior for combos or other applications.

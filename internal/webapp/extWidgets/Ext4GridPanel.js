@@ -4,8 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-Ext4.namespace('LABKEY.ext4');
-
 /**
  * Constructs a new LabKey GridPanel using the supplied configuration.
  *
@@ -143,7 +141,16 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         this.mon(this.headerCt, 'menucreate', this.onMenuCreate, this);
     }
 
-    ,onMenuCreate: Ext4.emptyFn
+    ,onMenuCreate: function(header, menu) {
+        menu.insert(2, {xtype : 'menuseparator'});
+        menu.insert(3, {text: 'Filter...', handler : this.onShowFilter, scope : this});
+        menu.remove(4);
+    }
+
+    ,onShowFilter : function(x,y,z) {
+        console.log('would show filter');
+        console.log([x,y,z]);
+    }
 
     ,initStore: function(){
         if(!this.store){

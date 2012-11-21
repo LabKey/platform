@@ -49,7 +49,7 @@ public class FlagForeignKey extends AbstractForeignKey
         }
         if (!displayField.equalsIgnoreCase(DISPLAYFIELD_NAME))
             return null;
-        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _container, _user);
+        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _container, _user, displayField);
     }
 
     public TableInfo getLookupTableInfo()
