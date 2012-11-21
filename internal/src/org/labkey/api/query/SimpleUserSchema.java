@@ -55,8 +55,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -74,7 +72,12 @@ public class SimpleUserSchema extends UserSchema
         super(name, description, user, container, dbschema);
         if (dbschema != null)
         {
-            _available.addAll(dbschema.getTableNames());
+            // Ask the table for its name to get the canonical casing instead of whatever might have been returned
+            // by JDBC metadata
+            for (String tableName : dbschema.getTableNames())
+            {
+                _available.add(dbschema.getTable(tableName).getName());
+            }
         }
     }
 
