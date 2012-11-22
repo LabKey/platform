@@ -217,7 +217,7 @@ public class ReportViewProvider implements DataViewProvider
                     if (!StringUtils.isEmpty(iconPath))
                         info.setIcon(iconPath);
 
-                    // see to-do below regarding static vs. dynamic thumbnail providers  
+                    // see to-do below regarding static vs. dynamic thumbnail providers
                     info.setAllowCustomThumbnail(r instanceof DynamicThumbnailProvider);
 
                     info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r));
@@ -318,17 +318,14 @@ public class ReportViewProvider implements DataViewProvider
                     else
                         report.getDescriptor().setOwner(context.getUser().getUserId());
 
-                    ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), report.getDescriptor().getReportKey(), report);
-
-                    //
-                    // TODO:  move into saveReport above
-                    //
                     if (props.containsKey(Property.author.name()))
-                        ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.author.name(), props.get(Property.author.name()));
+                        report.getDescriptor().setAuthor(props.get(Property.author.name()));
                     if (props.containsKey(Property.status.name()))
-                        ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.status.name(), props.get(Property.status.name()));
+                        report.getDescriptor().setStatus((String)props.get(Property.status.name()));
                     if (props.containsKey(Property.refreshDate.name()))
-                        ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.refreshDate.name(), props.get(Property.refreshDate.name()));
+                        report.getDescriptor().setRefeshDate(props.get(Property.refreshDate.name()));
+
+                    ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), report.getDescriptor().getReportKey(), report);
 
                     if (props.containsKey(Property.customThumbnail.name()))
                     {

@@ -1318,20 +1318,13 @@ public class ReportsController extends SpringActionController
             if (null != report.getDescriptor().getCategory())
                 form.setCategory(report.getDescriptor().getCategory().getLabel());
 
-            Map<String, Object> map = new HashMap<String, Object>();
-
-            for (Pair<DomainProperty, Object> pair : ReportPropsManager.get().getProperties(report.getEntityId(), getContainer()))
-                map.put(pair.getKey().getName(), pair.getValue());
-
-            // TODO: Why are author IDs returned as doubles?
-            Object authorId = map.get(Property.author.name());
+            Integer authorId = report.getDescriptor().getAuthor();
             if (null != authorId)
-                form.setAuthor(((Number)authorId).intValue());
+                form.setAuthor(authorId);
 
-            String status = (String)map.get(Property.status.name());
+            String status = report.getDescriptor().getStatus();
             form.setStatus(null != status ? ViewInfo.Status.valueOf(status) : ViewInfo.Status.None);
-
-            form.setRefreshDate((Date)map.get(Property.refreshDate.name()));
+            form.setRefreshDate(report.getDescriptor().getRefreshDate());
         }
 
 
@@ -1391,6 +1384,17 @@ public class ReportsController extends SpringActionController
                 else
                     descriptor.setOwner(null);
 
+                User author = UserManager.getUser(form.getAuthor());
+                ViewInfo.Status status = form.getStatus();
+                Date refreshDate = form.getRefreshDate();
+
+                if (author != null)
+                    descriptor.setAuthor(author.getUserId());
+                if (status != null)
+                    descriptor.setStatus(status.name());
+                if (refreshDate != null)
+                    descriptor.setRefreshDate(refreshDate);
+
                 int id = ReportService.get().saveReport(getViewContext(), getReportKey(report, form), report);
 
                 report = (R)ReportService.get().getReport(id);
@@ -1416,18 +1420,6 @@ public class ReportsController extends SpringActionController
 
         protected void afterReportSave(F form, R report) throws Exception
         {
-            // author field
-            User author = UserManager.getUser(form.getAuthor());
-            ViewInfo.Status status = form.getStatus();
-
-            // additional properties
-            String entityId = report.getEntityId();
-            if (author != null)
-                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), Property.author.name(), author.getUserId());
-            if (status != null)
-                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), Property.status.name(), status.name());
-            if (form.getRefreshDate() != null)
-                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), Property.refreshDate.name(), form.getRefreshDate());
         }
 
         public ActionURL getSuccessURL(F uploadForm)

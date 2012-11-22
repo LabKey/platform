@@ -42,6 +42,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -579,6 +580,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
             final ReportDB r = _saveReport(context.getUser(), context.getContainer(), key, descriptor);
             scope.commitTransaction();
+            _saveReportProperties(context.getContainer(), r.getEntityId(), descriptor);
             return r;
         }
         finally
@@ -611,6 +613,22 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return reportDB;
     }
 
+    private void _saveReportProperties(Container c, String entityId, ReportDescriptor descriptor) throws SQLException
+    {
+        // consider: make this more generic instead of picking out these specific properties
+        try {
+            if (null != descriptor.getAuthorAsObject())
+                ReportPropsManager.get().setPropertyValue(entityId, c, ReportDescriptor.Prop.author.name(), descriptor.getAuthorAsObject());
+            if (null != descriptor.getStatus())
+                ReportPropsManager.get().setPropertyValue(entityId, c, ReportDescriptor.Prop.status.name(), descriptor.getStatus());
+            if (null != descriptor.getRefreshDateAsObject())
+                ReportPropsManager.get().setPropertyValue(entityId, c, ReportDescriptor.Prop.refreshDate.name(), descriptor.getRefreshDateAsObject());
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Report _getInstance(ReportDB r)
     {
         if (r != null)
@@ -628,6 +646,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
                     if (r.getCategoryId() != null)
                         descriptor.setCategory(ViewCategoryManager.getInstance().getCategory(r.getCategoryId()));
+
+                    descriptor.initProperties();
 
                     String type = descriptor.getReportType();
                     Report report = createReportInstance(type);
