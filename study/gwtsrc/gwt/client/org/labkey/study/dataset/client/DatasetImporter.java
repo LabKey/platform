@@ -20,6 +20,7 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import gwt.client.org.labkey.study.StudyApplication;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.domain.DomainImporter;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterServiceAsync;
@@ -48,15 +49,27 @@ public class DatasetImporter implements EntryPoint
         root.add(vPanel);
 
         List<String> columnsToMap = new ArrayList<String>();
+        List<GWTPropertyDescriptor> baseColumnMetadata = new ArrayList<GWTPropertyDescriptor>();
+
         columnsToMap.add(PropertyUtil.getServerProperty("subjectColumnName"));
+        baseColumnMetadata.add(new GWTPropertyDescriptor(PropertyUtil.getServerProperty("subjectColumnName"), "xsd:string"));
 
         String timepointTypeString = PropertyUtil.getServerProperty("timepointType");
         if ("DATE".equals(timepointTypeString))
+        {
             columnsToMap.add("Visit Date");
+            baseColumnMetadata.add(new GWTPropertyDescriptor("Visit Date", "xsd:datetime"));
+        }
         else if ("VISIT".equals(timepointTypeString))
+        {
             columnsToMap.add("Sequence Num");
+            baseColumnMetadata.add(new GWTPropertyDescriptor("Sequence Num", "xsd:double"));
+        }
         else
+        {
             columnsToMap.add("Date");
+            baseColumnMetadata.add(new GWTPropertyDescriptor("Date", "xsd:datetime"));
+        }
 
         Set<String> baseColumnNames = new HashSet<String>();
         String baseColNamesString = PropertyUtil.getServerProperty("baseColumnNames");
@@ -64,7 +77,7 @@ public class DatasetImporter implements EntryPoint
         for (String s : baseColArray)
             baseColumnNames.add(s);
 
-        domainImporter = new DomainImporter(getService(), columnsToMap, baseColumnNames);
+        domainImporter = new DomainImporter(getService(), columnsToMap, baseColumnNames, baseColumnMetadata);
         vPanel.add(domainImporter.getMainPanel());
     }
 

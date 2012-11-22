@@ -488,7 +488,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
         switch (evt.property)
         {
-            case Name:
+            case Name:          // container rename event
             {
                 String oldValue = (String) propertyChangeEvent.getOldValue();
                 String newValue = (String) propertyChangeEvent.getNewValue();
@@ -519,7 +519,10 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                 }
                 break;
             }
-            case Parent:
+
+            // this looks to be obsolete code
+/*
+            case Parent:        // container move event
             {
                 Container oldParent = (Container) propertyChangeEvent.getOldValue();
                 File oldParentFile = null;
@@ -552,6 +555,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                 oldDir.renameTo(newDir);
                 break;
             }
+*/
         }
     }
 
