@@ -148,6 +148,7 @@ public class IssuesController extends SpringActionController
     private static final Logger _log = Logger.getLogger(IssuesController.class);
     private static final String helpTopic = "issues";
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(IssuesController.class);
+    private static final int MAX_STRING_FIELD_LENGTH = 200;
 
     public IssuesController() throws Exception
     {
@@ -527,6 +528,7 @@ public class IssuesController extends SpringActionController
             {
                 validateRequiredFields(form, errors);
                 validateNotifyList(form.getBean(), form, errors);
+                validateStringFields(form, errors);
             }
         }
 
@@ -730,6 +732,7 @@ public class IssuesController extends SpringActionController
         {
             validateRequiredFields(form, errors);
             validateNotifyList(form.getBean(), form, errors);
+            validateStringFields(form, errors);
         }
 
         public ActionURL getSuccessURL(IssuesForm form)
@@ -1031,6 +1034,25 @@ public class IssuesController extends SpringActionController
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName.getSource());
         }
+    }
+
+    private void validateStringFields (IssuesForm form, Errors errors)
+    {
+        final Map<String, String> fields = form.getStrings();
+        final IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
+        Map<String, HString> columnCaptions = ccc.getColumnHCaptions();
+        String lengthError = " cannot be longer than " + MAX_STRING_FIELD_LENGTH + " characters.";
+
+        if (fields.containsKey("string1") && fields.get("string1").length() > MAX_STRING_FIELD_LENGTH)
+            errors.reject(ERROR_MSG, columnCaptions.get("string1").toString() + lengthError);
+        if (fields.containsKey("string2") && fields.get("string2").length() > MAX_STRING_FIELD_LENGTH)
+            errors.reject(ERROR_MSG, columnCaptions.get("string2").toString() + lengthError);
+        if (fields.containsKey("string3") && fields.get("string3").length() > MAX_STRING_FIELD_LENGTH)
+            errors.reject(ERROR_MSG, columnCaptions.get("string3").toString() + lengthError);
+        if (fields.containsKey("string4") && fields.get("string4").length() > MAX_STRING_FIELD_LENGTH)
+            errors.reject(ERROR_MSG, columnCaptions.get("string4").toString() + lengthError);
+        if (fields.containsKey("string5") && fields.get("string5").length() > MAX_STRING_FIELD_LENGTH)
+            errors.reject(ERROR_MSG, columnCaptions.get("string5").toString() + lengthError);
     }
     
     private void validateRequiredFields(IssuesForm form, Errors errors)

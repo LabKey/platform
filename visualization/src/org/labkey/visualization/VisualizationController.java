@@ -1615,6 +1615,13 @@ public class VisualizationController extends SpringActionController
 
                     if (study != null)
                     {
+                        // We need the subject info from the study in order to set up the sort order for measure choices.
+                        Map<String, String> subjectInfo = new HashMap<String, String>();
+                        subjectInfo.put("nounSingular", study.getSubjectNounSingular());
+                        subjectInfo.put("nounPlural", study.getSubjectNounPlural());
+                        subjectInfo.put("column", study.getSubjectColumnName());
+                        response.put("subject", subjectInfo);
+
                         if (form.isIncludeCohort())
                         {
                             FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), "Cohort");

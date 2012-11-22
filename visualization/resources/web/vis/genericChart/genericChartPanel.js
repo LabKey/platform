@@ -61,6 +61,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                             else
                                 this.initialColumnList = o.columns;
 
+                            this.subject = o.subject;
                             this.requestData();
                             this.requestRender(false);
                         },
@@ -213,9 +214,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             tbarItems.push(this.showOptionsBtn);
             tbarItems.push(this.groupingBtn);
             tbarItems.push(this.developerBtn);
-            tbarItems.push('->');
-            tbarItems.push(this.saveBtn);
-            tbarItems.push(this.saveAsBtn);
+            if(this.canEdit){
+                tbarItems.push('->');
+                tbarItems.push(this.saveBtn);
+                tbarItems.push(this.saveAsBtn);
+            }
         }
         else if (this.allowEditMode)
         {
@@ -2175,8 +2178,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     onSelectRowsSuccess: function(response){
         this.viewPanel.getEl().unmask();
         this.chartData = response;
-        this.yMeasureStore.loadRawData(this.chartData.metaData.fields);
-        this.xMeasureStore.loadRawData(this.chartData.metaData.fields);
+        var sortedFields = this.sortFields(this.chartData.metaData.fields);
+        this.yMeasureStore.loadRawData(sortedFields);
+        this.xMeasureStore.loadRawData(sortedFields);
         this.groupingMeasureStore.loadRawData(this.chartData.metaData.fields);
 
         this.setDataLoading(false);
@@ -2191,6 +2195,38 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             // Set first load to false after our first sucessful callback.
             this.firstLoad = false;
             this.fireEvent('dataRequested');
+        }
+    },
+
+    sortFields: function(fields){
+        // Sorts fields by their shortCaption, but puts
+        // participant groups/categories/cohort at the beginning.
+        var otherFields = [],
+            participantFields = [],
+            sortFunction = function(a, b){
+                if(a.shortCaption < b.shortCaption){
+                    return -1;
+                } else if(a.shortCaption > b.shortCaption) {
+                    return 1;
+                }
+                return 0;
+            };
+
+        if(this.subject){
+            for(var i = 0; i < fields.length; i++){
+                if(fields[i].name.indexOf(this.subject.column) > -1){
+                    participantFields.push(fields[i]);
+                } else {
+                    otherFields.push(fields[i]);
+                }
+            }
+            
+            participantFields.sort(sortFunction);
+            otherFields.sort(sortFunction);
+
+            return participantFields.concat(otherFields);
+        } else {
+            return fields.sort(sortFunction);
         }
     },
 

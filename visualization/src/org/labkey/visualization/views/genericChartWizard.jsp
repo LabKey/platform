@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.util.ExtUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.data.PropertyManager" %>
+<%@ page import="org.labkey.api.reports.Report" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VisualizationController.GenericReportForm> me = (JspView<VisualizationController.GenericReportForm>) HttpView.currentView();
@@ -33,11 +35,25 @@
     VisualizationController.GenericReportForm form = me.getModelBean();
     String numberFormat = PropertyManager.getProperties(ctx.getContainer(), "DefaultStudyFormatStrings").get("NumberFormatString");
     String numberFormatFn;
+    boolean canEdit = false;
+
     if(numberFormat == null)
     {
         numberFormat = Formats.f1.toPattern();
     }
     numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
+
+    if (form.getReportId() != null)
+    {
+
+        Report report = form.getReportId().getReport(ctx);
+        if(report != null)
+            canEdit = report.canEdit(ctx.getUser(), ctx.getContainer());
+    }
+    else
+    {
+        canEdit = ctx.hasPermission(ReadPermission.class) && ! ctx.getUser().isGuest();
+    }
 
     String renderId = "generic-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
@@ -66,6 +82,7 @@
             id              : '<%=form.getComponentId() %>',
             baseUrl         : '<%=ctx.getActionURL()%>',
             renderTo        : '<%=text(renderId)%>',
+            canEdit         : <%=canEdit%>,
             allowShare      : <%=c.hasPermission(ctx.getUser(), ShareReportPermission.class)%>,
             isDeveloper     : <%=ctx.getUser().isDeveloper()%>,
             hideSave        : <%=ctx.getUser().isGuest()%>,
