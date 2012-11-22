@@ -2959,7 +2959,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             return;
         }
 
-        var filterConfig = this.getComboConfig(0);
+        var filterConfig = this.getComboConfig(-1);
         filterConfig.hidden = true;
         filterConfig.value = 'in';
         filterConfig.initialValue = 'in';
@@ -3352,6 +3352,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             xtype: 'combo',
             itemId: 'filterComboBox' + idx,
             filterIndex: idx,
+            name: 'filterType_'+(idx + 1),   //for compatibility with tests...
             listWidth: (this._jsonType == 'date' || this._jsonType == 'boolean') ? null : 380,
             emptyText: idx === 0 ? 'Choose a filter:' : 'No other filter',
             autoSelect: false,
