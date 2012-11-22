@@ -322,7 +322,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             Map<String, MultipartFile> map = getFileMap();
             if (map.isEmpty())
             {
-                errors.reject("folderImport", "You must select a .folder.zip file to import.");
+                errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
             }
             else if (map.size() > 1)
             {
@@ -334,11 +334,11 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
                 if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
                 {
-                    errors.reject("folderImport", "You must select a .folder.zip file to import.");
+                    errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
                 }
                 else if (!file.getOriginalFilename().endsWith(".zip"))
                 {
-                    errors.reject("folderImport", "You must select a .folder.zip file to import.");
+                    errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
                 }
                 else
                 {
@@ -381,7 +381,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                         }
                         catch (IOException e)
                         {
-                            errors.reject("folderImport", "This file does not appear to be a valid .zip file.");
+                            errors.reject("folderImport", "This file does not appear to be a valid zip archive file.");
                             return false;
                         }
 
@@ -396,7 +396,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     }
                     else {
                         folderXml = zipFile;
-                        errors.reject("folderImport", "Please submit an appropriate .zip file.");
+                        errors.reject("folderImport", "Please submit an appropriate zip archive file.");
                     }
                     zipFile.delete();
 
