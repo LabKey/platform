@@ -28,6 +28,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.ReportService;
@@ -74,7 +75,13 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
     protected Map<String, Object> _props = new LinkedHashMap<String, Object>();
 
-    public enum Prop implements ReportProperty
+    // For clients of the descriptor and reports,
+    // hide the fact that refreshDate, status, and author are stored via the
+    // report property manager.  Do not include as _props above or you'll
+    // serialize these twice
+    protected Map<String, Object> _mapReportProps = new HashMap<String, Object>();
+
+public enum Prop implements ReportProperty
     {
         descriptorType,
         reportId,
@@ -91,7 +98,8 @@ public class ReportDescriptor extends Entity implements SecurableResource
         cached,
         version,
         author,         // author is treated as metadata instead of a first-class field
-        status,
+        refreshDate,    // same
+        status,         // same
         json,
         modified,
     }
@@ -158,7 +166,10 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return getProperty(Prop.reportDescription);
     }
 
-    public void setProperty(String key, String value){_props.put(key, value);}
+    public void setProperty(String key, String value)
+    {
+        _props.put(key, value);
+    }
 
     public void setProperties(List<Pair<String,String>> props)
     {
@@ -223,17 +234,61 @@ public class ReportDescriptor extends Entity implements SecurableResource
     @Nullable
     public Integer getAuthor()
     {
-        String value = getProperty(Prop.author);
-        if (value != null && NumberUtils.isDigits(value))
-            return NumberUtils.toInt(value);
+        Object authorId  =  _mapReportProps.get(Prop.author.name());
+        // TODO: Why are author IDs returned as doubles?
+        if (null != authorId)
+        {
+            return ((Number)authorId).intValue();
+        }
 
         return null;
     }
 
+    public Object getAuthorAsObject()
+    {
+        return _mapReportProps.get(Prop.author.name());
+    }
+
+    //ReportViewProvider will set these as objects
+    public void setAuthor(Object author)
+    {
+        _mapReportProps.put(Prop.author.name(), author);
+    }
+
+    public Object getRefreshDateAsObject()
+    {
+        return _mapReportProps.get(Prop.refreshDate.name());
+    }
+
+    public void setRefeshDate(Object refreshDate)
+    {
+        _mapReportProps.put(Prop.refreshDate.name(), refreshDate);
+    }
+
     public void setAuthor(Integer author)
     {
-        if (author != null)
-            setProperty(Prop.author, String.valueOf(author));
+        _mapReportProps.put(Prop.author.name(), author);
+    }
+
+    @Nullable
+    public Date getRefreshDate()
+    {
+        return (Date) _mapReportProps.get(Prop.refreshDate.name());
+    }
+
+    public void setRefreshDate(Date refreshDate)
+    {
+        _mapReportProps.put(Prop.refreshDate.name(), refreshDate);
+    }
+
+    public String getStatus()
+    {
+        return (String) _mapReportProps.get(Prop.status.name());
+    }
+
+    public void setStatus(String value)
+    {
+         _mapReportProps.put(Prop.status.name(), value);
     }
 
     public void initFromQueryString(String queryString)
@@ -266,6 +321,23 @@ public class ReportDescriptor extends Entity implements SecurableResource
         for (Map.Entry<String,Object> entry : m.entrySet())
         {
             _props.put(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public void initProperties()
+    {
+        if (getReportId() != null )
+        {
+            try
+            {
+                // now initialize the property manager props
+                for (Pair<DomainProperty, Object> pair : ReportPropsManager.get().getProperties(getEntityId(), lookupContainer()))
+                    _mapReportProps.put(pair.getKey().getName(), pair.getValue());
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
         }
     }
 
