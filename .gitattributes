@@ -3277,7 +3277,6 @@ study/src/org/labkey/study/view/editVisit.jsp -text
 study/src/org/labkey/study/view/externalReportDesigner.jsp -text
 study/src/org/labkey/study/view/importDataType.jsp -text
 study/src/org/labkey/study/view/importDataset.jsp -text
-study/src/org/labkey/study/view/importStudy.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/importVisitAliases.jsp -text
 study/src/org/labkey/study/view/manageAlternateIds.jsp -text

@@ -4025,7 +4025,7 @@ public class StudyController extends BaseStudyController
             }
             else
             {
-                return new JspView<Boolean>("/org/labkey/study/view/importStudy.jsp", _reload, errors);
+                return new JspView<Boolean>("/org/labkey/core/admin/importFolder.jsp", _reload, errors);
             }
         }
 
