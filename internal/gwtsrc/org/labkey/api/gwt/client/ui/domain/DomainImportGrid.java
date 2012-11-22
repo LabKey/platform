@@ -32,6 +32,7 @@ import com.extjs.gxt.ui.client.widget.form.LabelField;
 import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
 import com.extjs.gxt.ui.client.widget.form.SimpleComboValue;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.DockPanel;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
@@ -348,7 +349,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             for (String destinationColumn : columnsToMap)
             {
                 SimpleComboBox selector = new SimpleComboBox<String>();
-                Set<String> aliases = null;
+                Set<String> aliases = new HashSet<String>();
 
                 GWTPropertyDescriptor prop = extraInfoMap.get(destinationColumn);
                 if (prop != null)
@@ -364,37 +365,52 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                 selector.addListener(Events.Change, changeListener);
                 selector.setName(destinationColumn);
 
+                // add an entry in the mapping dropdown for each inferred field
                 for (InferencedColumn column : inferredColumns)
                 {
                     String name = column.getPropertyDescriptor().getName();
                     selector.add(name);
-
-                    // look to pre-initialize the selection with matching values
-                    if (StringUtils.isEmpty(String.valueOf(selector.getSimpleValue())))
-                    {
-                        if (areColumnNamesEquivalent(name, destinationColumn))
-                        {
-                            selector.setSimpleValue(name);
-                        }
-                        else if (aliases != null)
-                        {
-                            // if the column has import aliases, try to use those as an additional match criteria
-                            for (String alias : aliases)
-                            {
-                                if (areColumnNamesEquivalent(name, alias))
-                                {
-                                    selector.setSimpleValue(name);
-                                    break;
-                                }
-                            }
-                        }
-                    }
                 }
+
+                // initialize the selection with the best match
+                GWTPropertyDescriptor matchedCol = findClosestColumn(destinationColumn, prop, aliases, inferredColumns);
+                if (matchedCol != null)
+                    selector.setSimpleValue(matchedCol.getName());
+
                 _columnSelectors.add(selector);
 
                 selector.setFieldLabel(destinationColumn);
                 add(selector);
             }
+        }
+
+        public GWTPropertyDescriptor findClosestColumn(String colName, GWTPropertyDescriptor colMetaData, Set<String> aliases, List<InferencedColumn> columns)
+        {
+            // if we have extended metadata for the target column, try to match using property descriptor type information,
+            // or column aliases (if present)
+            if (colMetaData != null)
+            {
+                for (InferencedColumn column : columns)
+                {
+                    if (areColumnTypesEquivalent(colMetaData, column.getPropertyDescriptor()))
+                        return column.getPropertyDescriptor();
+
+                    // if the column has import aliases, try to use those as an additional match criteria
+                    for (String alias : aliases)
+                    {
+                        if (areColumnNamesEquivalent(alias, column.getPropertyDescriptor().getName()))
+                            return column.getPropertyDescriptor();
+                    }
+                }
+            }
+
+            // else if no match found, try the simple column name matching
+            for (InferencedColumn column : columns)
+            {
+                if (areColumnNamesEquivalent(colName, column.getPropertyDescriptor().getName()))
+                    return column.getPropertyDescriptor();
+            }
+            return null;
         }
 
         public Set<String> getMappedColumnNames()
@@ -426,6 +442,28 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             }
 
             return result;
+        }
+
+        /**
+         * Try to find a reasonable match in column names, like "Visit Date" and "Date",
+         * or "ParticipantID" and "participant id".
+         */
+        private boolean areColumnTypesEquivalent(GWTPropertyDescriptor col1, GWTPropertyDescriptor col2)
+        {
+            String name1 = col1.getName().replaceAll(" ", "");
+            String name2 = col2.getName().replaceAll(" ", "");
+
+            // if the names are an exact match (less whitespace)
+            if (name1.equalsIgnoreCase(name2))
+                return true;
+
+            // if the columns are the same type and one of the names represents a subset
+            if (col1.getRangeURI().equalsIgnoreCase(col2.getRangeURI()))
+            {
+                if ((name1.indexOf(name2) >= 0) || (name2.indexOf(name1) >= 0))
+                    return true;
+            }
+            return false;
         }
 
         /**

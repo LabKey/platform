@@ -34,6 +34,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.FileUploadWithListeners;
 import org.labkey.api.gwt.client.ui.ImageButton;
+import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.incubator.ProgressBar;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -91,6 +92,11 @@ public class DomainImporter
     private ImageButton _cancelButton;
 
     public DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap, Set<String> baseColumnNames)
+    {
+        this(service, columnsToMap, baseColumnNames, new ArrayList<GWTPropertyDescriptor>());
+    }
+
+    public DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap, Set<String> baseColumnNames, List<GWTPropertyDescriptor> baseColumnMetadata)
     {
         this.service = service;
         this.columnsToMap = columnsToMap;
@@ -154,6 +160,7 @@ public class DomainImporter
 
             mainPanel.add(_cancelButton);
         }
+        setColumnsToMap(baseColumnMetadata);
     }
 
     /**
