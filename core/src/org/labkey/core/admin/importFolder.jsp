@@ -84,7 +84,7 @@ Folder From Template" option from the folder creation page.
     <tr>
         <td><%=generateSubmitButton("Reload Study From Local Zip Archive")%></td>
 
-<% } else if(requestOrigin.equals("here")) { %>
+<% } else { %>
     <tr><td class="labkey-announcement-title" align=left><span>Import Folder From Local Zip Archive</span></td></tr>
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>To import a folder from a zip archive on your local machine (for example, a folder that you have exported and saved
@@ -122,7 +122,7 @@ Folder From Template" option from the folder creation page.
         <td><%=generateButton("Reload Folder Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
     </tr>
 
-<% } else if(requestOrigin.equals("here")) { %>
+<% } else { %>
     <tr><td class="labkey-announcement-title" align=left><span>Import Folder From Server-Accessible Archive</span></td></tr>
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>
