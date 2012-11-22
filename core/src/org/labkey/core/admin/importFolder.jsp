@@ -48,7 +48,7 @@
     using the study export feature.  Using export and import, a study can be moved from one server to another or a new study can
     be created using a standard template.
     <p>
-        <span style='font-style: italic;'>Notice: study archives have been deprecated in favor of folder archives.  Files will be exported as folder archives.
+       For more information about exporting, importing, and reloading studies, see <%=helpLink("importExportStudy", "the study documentation")%>.
     </p>
     <% } else if(requestOrigin.equals("Reload")){%>
     You can reload a folder archive to update an existing study with new settings and data.  A folder archive is a .folder.zip file
@@ -56,13 +56,21 @@
     created using the study export feature or via scripts that write data from a master repository into the correct formats.  You may also reload using a
     study archive, which has the format .study.zip
     Note: Reloading a study will replace existing study data with the data in the archive.
+
+    <p>
+        For more information about exporting, importing, and reloading studies, see <%=helpLink("importExportStudy", "the study documentation")%>.
+    </p>
     <% } else {%>
 
-You can import a folder archive to create and populate a new folder.  A folder archive is a .folder.zip file or a collection of
-individual files that comforms to the LabKey folder export conventions and formats.  In most cases, a folder archive is created
-using the folder export feature.  Using export and import, a folder can be moved from one server to another or a new folder can
-be created using a standard template. You can also populate a new folder from a template folder on the current server using the "Create
-Folder From Template" option from the folder creation page.
+    You can import a folder archive to create and populate a new folder.  A folder archive is a .folder.zip file or a collection of
+    individual files that comforms to the LabKey folder export conventions and formats.  In most cases, a folder archive is created
+    using the folder export feature.  Using export and import, a folder can be moved from one server to another or a new folder can
+    be created using a standard template. You can also populate a new folder from a template folder on the current server using the "Create
+    Folder From Template" option from the folder creation page.
+
+    <p>
+        For more information about exporting, importing, and reloading folders, see <%=helpLink("importExportStudy", "the study documentation")%>.
+    </p>
 <% } %>
 <%--<p>For more information about exporting, importing, and reloading folders, see <%=helpLink("importExportFolder", "the folder documentation")%>.</p>--%>
 </td></tr>
@@ -70,7 +78,7 @@ Folder From Template" option from the folder creation page.
     <tr><td class="labkey-announcement-title" align=left><span>Import Study From Local Zip Archive</span></td></tr>
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>To import a study from a zip archive on your local machine (for example, a folder that you have exported and saved
-        to your local hard drive), browse to a .folder.zip archive, open it, and click the "Import Study From Local Zip Archive" button below.</td></tr>
+        to your local hard drive), browse to a zip archive file, open it, and click the "Import Study From Local Zip Archive" button below.</td></tr>
     <tr><td><input type="file" name="folderZip" size="50"></td></tr>
     <tr>
         <td><%=generateSubmitButton("Import Study From Local Zip Archive")%></td>
@@ -79,7 +87,7 @@ Folder From Template" option from the folder creation page.
     <tr><td class="labkey-announcement-title" align=left><span>Reload Study From Local Zip Archive</span></td></tr>
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>To reload a study from a zip archive on your local machine (for example, a folder that you have exported and saved
-        to your local hard drive), browse to a .folder.zip archive, open it, and click the "Reload Study From Local Zip Archive" button below.</td></tr>
+        to your local hard drive), browse to a zip archive file, open it, and click the "Reload Study From Local Zip Archive" button below.</td></tr>
     <tr><td><input type="file" name="folderZip" size="50"></td></tr>
     <tr>
         <td><%=generateSubmitButton("Reload Study From Local Zip Archive")%></td>
@@ -88,7 +96,7 @@ Folder From Template" option from the folder creation page.
     <tr><td class="labkey-announcement-title" align=left><span>Import Folder From Local Zip Archive</span></td></tr>
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>To import a folder from a zip archive on your local machine (for example, a folder that you have exported and saved
-        to your local hard drive), browse to a .folder.zip archive, open it, and click the "Import Folder From Local Zip Archive" button below.</td></tr>
+        to your local hard drive), browse to a zip archive file, open it, and click the "Import Folder From Local Zip Archive" button below.</td></tr>
     <tr><td><input type="file" name="folderZip" size="50"></td></tr>
     <tr>
         <td><%=generateSubmitButton("Import Folder From Local Zip Archive")%></td>
@@ -105,7 +113,7 @@ Folder From Template" option from the folder creation page.
     <tr><td class="labkey-title-area-line"></td></tr>
         <tr><td>
             To import a study from a server-accessible archive, click the "Import Study Using Pipeline"
-            button below, navigate to a .folder.zip archive or a study.xml file, and click the "Import Data" button.
+            button below, navigate to a zip archive or a study.xml file, and click the "Import Data" button.
         </td></tr>
     <tr>
         <td><%=generateButton("Import Study Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
@@ -116,7 +124,7 @@ Folder From Template" option from the folder creation page.
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>
         To reload a folder from a server-accessible archive, click the "Reload Folder Using Pipeline"
-        button below, navigate to a .folder.zip (or .study.xml) archive file, and click the "Import Data" button.
+        button below, navigate to a zip (or .study.xml) archive file, and click the "Import Data" button.
     </td></tr>
     <tr>
         <td><%=generateButton("Reload Folder Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
@@ -127,7 +135,7 @@ Folder From Template" option from the folder creation page.
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>
         To import a folder from a server-accessible archive, click the "Import Folder Using Pipeline"
-        button below, navigate to a .folder.zip archive file, and click the "Import Data" button.
+        button below, navigate to a zip archive file, and click the "Import Data" button.
     </td></tr>
     <tr>
         <td><%=generateButton("Import Folder Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
