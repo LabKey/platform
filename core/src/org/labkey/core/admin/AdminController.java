@@ -1176,7 +1176,7 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                return new AdminUrlsImpl().getCustomizeSiteURL();
+                return new AdminUrlsImpl().getAdminConsoleURL();
             }
         }
     }
