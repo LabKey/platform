@@ -1278,7 +1278,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static void createStudy(StudyImpl study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
+    public static StudyImpl createStudy(StudyImpl study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
     {
         if (null == study)
         {
@@ -1286,7 +1286,6 @@ public class StudyController extends BaseStudyController
             study.setTimepointType(form.getTimepointType());
             study.setStartDate(form.getStartDate());
             study.setSecurityType(form.getSecurityType());
-            study.setDescription(form.getDescription());
             study.setSubjectNounSingular(form.getSubjectNounSingular());
             study.setSubjectNounPlural(form.getSubjectNounPlural());
             study.setSubjectColumnName(form.getSubjectColumnName());
@@ -1298,8 +1297,9 @@ public class StudyController extends BaseStudyController
             study.setInvestigator(form.getInvestigator());
             study.setAlternateIdPrefix(form.getAlternateIdPrefix());
             study.setAlternateIdDigits(form.getAlternateIdDigits());
-            StudyManager.getInstance().createStudy(user, study);
+            study = StudyManager.getInstance().createStudy(user, study);
         }
+        return study;
     }
 
     public static void updateRepositorySettings(Container c, boolean simple)

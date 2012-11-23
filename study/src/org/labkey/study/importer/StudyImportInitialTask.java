@@ -98,54 +98,14 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 else if (studyXml.isSetDateBased())
                     studyForm.setTimepointType(studyXml.getDateBased() ? TimepointType.DATE : TimepointType.VISIT);
 
-                if (studyXml.isSetStartDate())
-                    studyForm.setStartDate(studyXml.getStartDate().getTime());
-
-                if (studyXml.isSetDefaultTimepointDuration())
-                    studyForm.setDefaultTimepointDuration(studyXml.getDefaultTimepointDuration());
-
                 if (studyXml.isSetSecurityType())
                     studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
 
-                if (studyXml.getSubjectColumnName() != null)
-                    studyForm.setSubjectColumnName(studyXml.getSubjectColumnName());
-
-                if (studyXml.getSubjectNounSingular() != null)
-                    studyForm.setSubjectNounSingular(studyXml.getSubjectNounSingular());
-
-                if (studyXml.getSubjectNounPlural() != null)
-                    studyForm.setSubjectNounPlural(studyXml.getSubjectNounPlural());
-
-                if (studyXml.getDescription() != null)
-                    studyForm.setDescription(studyXml.getDescription());
-                // Issue 15789: Carriage returns in protocol description are not round-tripped
-                else if (studyXml.getStudyDescription() != null && studyXml.getStudyDescription().getDescription() != null)
-                    studyForm.setDescription(studyXml.getStudyDescription().getDescription());
-                
-                if (studyXml.getDescriptionRendererType() != null)
-                    studyForm.setDescriptionRendererType(studyXml.getDescriptionRendererType());
-                // Issue 15789: Carriage returns in protocol description are not round-tripped
-                else if (studyXml.getStudyDescription() != null && studyXml.getStudyDescription().getRendererType() != null)
-                    studyForm.setDescriptionRendererType(studyXml.getStudyDescription().getRendererType());
-
-                if (studyXml.getInvestigator() != null)
-                    studyForm.setInvestigator(studyXml.getInvestigator());
-
-                if (studyXml.getGrant() != null)
-                    studyForm.setGrant(studyXml.getGrant());
-
-                if (studyXml.getAlternateIdPrefix() != null)
-                    studyForm.setAlternateIdPrefix(studyXml.getAlternateIdPrefix());
-
-                if (studyXml.isSetAlternateIdDigits())
-                    studyForm.setAlternateIdDigits(studyXml.getAlternateIdDigits());
-
-                StudyController.createStudy(study, ctx.getContainer(), ctx.getUser(), studyForm);
+                study = StudyController.createStudy(study, ctx.getContainer(), ctx.getUser(), studyForm);
             }
             else
             {
                 ctx.getLogger().info("Reloading study from " + originalFileName);
-                ctx.getLogger().info("Loading top-level study properties");
 
                 TimepointType timepointType = study.getTimepointType();
                 if (studyXml.isSetTimepointType())
@@ -155,48 +115,58 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
                 if (study.getTimepointType() != timepointType)
                     throw new PipelineJobException("Can't change timepoint style from '" + study.getTimepointType() + "' to '" + timepointType + "' when reloading an existing study.");
-
-                // TODO: Change these props and save only if values have changed
-                study = study.createMutable();
-
-                if (studyXml.isSetLabel())
-                    study.setLabel(studyXml.getLabel());
-
-                if (studyXml.isSetStartDate())
-                    study.setStartDate(studyXml.getStartDate().getTime());
-
-                if (studyXml.isSetSecurityType())
-                    study.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
-
-                if (studyXml.getSubjectColumnName() != null)
-                    study.setSubjectColumnName(studyXml.getSubjectColumnName());
-
-                if (studyXml.getSubjectNounSingular() != null)
-                    study.setSubjectNounSingular(studyXml.getSubjectNounSingular());
-
-                if (studyXml.getSubjectNounPlural() != null)
-                    study.setSubjectNounPlural(studyXml.getSubjectNounPlural());
-
-                if (studyXml.isSetInvestigator())
-                    study.setInvestigator(studyXml.getInvestigator());
-
-                if (studyXml.isSetGrant())
-                    study.setGrant(studyXml.getGrant());
-
-                if (studyXml.isSetDescription())
-                    study.setDescription(studyXml.getDescription());
-                // Issue 15789: Carriage returns in protocol description are not round-tripped
-                else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetDescription())
-                    study.setDescription(studyXml.getStudyDescription().getDescription());
-
-                if (studyXml.isSetDescriptionRendererType())
-                    study.setDescriptionRendererType(studyXml.getDescriptionRendererType());
-                // Issue 15789: Carriage returns in protocol description are not round-tripped
-                else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetRendererType())
-                    study.setDescriptionRendererType(studyXml.getStudyDescription().getRendererType());
-
-                StudyManager.getInstance().updateStudy(ctx.getUser(), study);
             }
+
+            ctx.getLogger().info("Loading top-level study properties");
+            // TODO: Change these props and save only if values have changed
+            study = study.createMutable();
+
+            if (studyXml.isSetLabel())
+                study.setLabel(studyXml.getLabel());
+
+            if (studyXml.isSetSecurityType())
+                study.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
+
+            if (studyXml.isSetDefaultTimepointDuration())
+                study.setDefaultTimepointDuration(studyXml.getDefaultTimepointDuration());
+
+            if (studyXml.isSetStartDate())
+                study.setStartDate(studyXml.getStartDate().getTime());
+
+            if (studyXml.getSubjectColumnName() != null)
+                study.setSubjectColumnName(studyXml.getSubjectColumnName());
+
+            if (studyXml.getSubjectNounSingular() != null)
+                study.setSubjectNounSingular(studyXml.getSubjectNounSingular());
+
+            if (studyXml.getSubjectNounPlural() != null)
+                study.setSubjectNounPlural(studyXml.getSubjectNounPlural());
+
+            if (studyXml.isSetInvestigator())
+                study.setInvestigator(studyXml.getInvestigator());
+
+            if (studyXml.isSetGrant())
+                study.setGrant(studyXml.getGrant());
+
+            if (studyXml.isSetDescription())
+                study.setDescription(studyXml.getDescription());
+            // Issue 15789: Carriage returns in protocol description are not round-tripped
+            else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetDescription())
+                study.setDescription(studyXml.getStudyDescription().getDescription());
+
+            if (studyXml.isSetDescriptionRendererType())
+                study.setDescriptionRendererType(studyXml.getDescriptionRendererType());
+            // Issue 15789: Carriage returns in protocol description are not round-tripped
+            else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetRendererType())
+                study.setDescriptionRendererType(studyXml.getStudyDescription().getRendererType());
+
+            if (studyXml.getAlternateIdPrefix() != null)
+                study.setAlternateIdPrefix(studyXml.getAlternateIdPrefix());
+
+            if (studyXml.isSetAlternateIdDigits())
+                study.setAlternateIdDigits(studyXml.getAlternateIdDigits());
+
+            StudyManager.getInstance().updateStudy(ctx.getUser(), study);
 
             VirtualFile vf = ctx.getRoot();
 

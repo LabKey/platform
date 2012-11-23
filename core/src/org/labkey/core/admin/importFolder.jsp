@@ -54,7 +54,7 @@
     You can reload a folder archive to update an existing study with new settings and data.  A folder archive is a .folder.zip file
     or a collection of individual files that comforms to the LabKey study export conventions and formats.  A folder archive can be
     created using the study export feature or via scripts that write data from a master repository into the correct formats.  You may also reload using a
-    study archive, which has the format .study.zip
+    study archive, which has the format .study.zip.
     Note: Reloading a study will replace existing study data with the data in the archive.
 
     <p>
@@ -69,10 +69,9 @@
     Folder From Template" option from the folder creation page.
 
     <p>
-        For more information about exporting, importing, and reloading folders, see <%=helpLink("importExportStudy", "the study documentation")%>.
+        For more information about exporting and importing folders, see <%=helpLink("importExportFolder", "the folder documentation")%>.
     </p>
 <% } %>
-<%--<p>For more information about exporting, importing, and reloading folders, see <%=helpLink("importExportFolder", "the folder documentation")%>.</p>--%>
 </td></tr>
 <% if(requestOrigin.equals("Study")){%>
     <tr><td class="labkey-announcement-title" align=left><span>Import Study From Local Zip Archive</span></td></tr>
@@ -124,7 +123,7 @@
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>
         To reload a folder from a server-accessible archive, click the "Reload Folder Using Pipeline"
-        button below, navigate to a zip (or .study.xml) archive file, and click the "Import Data" button.
+        button below, navigate to a zip archive or a study.xml file, and click the "Import Data" button.
     </td></tr>
     <tr>
         <td><%=generateButton("Reload Folder Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
@@ -135,7 +134,7 @@
     <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>
         To import a folder from a server-accessible archive, click the "Import Folder Using Pipeline"
-        button below, navigate to a zip archive file, and click the "Import Data" button.
+        button below, navigate to a zip archive or a folder.xml file, and click the "Import Data" button.
     </td></tr>
     <tr>
         <td><%=generateButton("Import Folder Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
