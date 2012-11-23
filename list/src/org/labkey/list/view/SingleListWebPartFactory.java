@@ -52,6 +52,8 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
         try
         {
             ListQueryForm form = new ListQueryForm(Integer.parseInt(listIdParam), portalCtx);
+            form.setDataRegionName("list" + webPart.getIndex());
+            form.bindParameters(portalCtx.getBindPropertyValues());
 
             if (null == form.getList())
                 return new HtmlView(title, "List does not exist");
@@ -88,7 +90,6 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
             QuerySettings settings = getSettings();
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
-            settings.setDataRegionName("list" + webPart.getIndex());
         }
     }
 
