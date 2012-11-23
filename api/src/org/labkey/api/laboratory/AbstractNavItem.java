@@ -16,6 +16,7 @@
 package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.User;
@@ -31,20 +32,19 @@ import java.util.Map;
  */
 abstract public class AbstractNavItem implements NavItem
 {
+    protected String _ownerKey;
+
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject ret = new JSONObject();
         ret.put("name", getName());
         ret.put("label", getLabel());
         ret.put("category", getCategory());
-        ret.put("importIntoWorkbooks", isImportIntoWorkbooks());
-        ret.put("rendererName", getRendererName());
+        ret.put("renderer", getRendererName());
         ret.put("visible", isVisible(c, u));
+        ret.put("providerName", getDataProvider() == null ? null : getDataProvider().getName());
         ret.put("key", getPropertyManagerKey());
-
-        ret.put("importUrl", getUrlObject(getImportUrl(c, u)));
-        ret.put("searchUrl", getUrlObject(getSearchUrl(c, u)));
-        ret.put("browseUrl", getUrlObject(getBrowseUrl(c, u)));
+        ret.put("ownerKey", getOwnerKey());
 
         return ret;
     }
@@ -71,7 +71,7 @@ abstract public class AbstractNavItem implements NavItem
                 return false;
         }
 
-        Map<String, String> map = PropertyManager.getProperties(targetContainer, NavItem.PROPERTY_CATEGORY);
+        Map<String, String> map = new CaseInsensitiveHashMap(PropertyManager.getProperties(targetContainer, NavItem.PROPERTY_CATEGORY));
         if (map.containsKey(getPropertyManagerKey()))
             return Boolean.parseBoolean(map.get(getPropertyManagerKey()));
 
@@ -80,12 +80,22 @@ abstract public class AbstractNavItem implements NavItem
 
     public String getPropertyManagerKey()
     {
-        return getDataProvider().getKey() + "||" + getCategory() + "||" + getName();
+        return getDataProvider().getKey() + "||" + getCategory() + "||" + getName() + "||" + getLabel();
     }
 
     public static String inferDataProviderNameFromKey(String key)
     {
         String[] tokens = key.split("\\|\\|");
         return tokens[0] + "||" + tokens[1] + "||" + tokens[2];
+    }
+
+    public String getOwnerKey()
+    {
+        return _ownerKey;
+    }
+
+    public void setOwnerKey(String ownerKey)
+    {
+        _ownerKey = ownerKey;
     }
 }

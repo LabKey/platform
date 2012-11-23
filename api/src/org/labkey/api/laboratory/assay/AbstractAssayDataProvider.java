@@ -20,15 +20,21 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.laboratory.AbstractDataProvider;
+import org.labkey.api.laboratory.AbstractNavItem;
 import org.labkey.api.laboratory.NavItem;
 import org.labkey.api.laboratory.SimpleQueryNavItem;
+import org.labkey.api.laboratory.SingleNavItem;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
@@ -203,18 +209,21 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         List<NavItem> items = new ArrayList<NavItem>();
         for (ExpProtocol p : getProtocols(c))
         {
-            boolean visible = new AssayNavItem(this, p).isVisible(c, u);
-            if (visible)
-            {
-                AssayProtocolSchema schema = getAssayProvider().createProtocolSchema(u, c, p, null);
-                items.add(new SimpleQueryNavItem(this, schema.getSchemaName(), AssayProtocolSchema.DATA_TABLE_NAME, _providerName, p.getName() + ": Raw Data"));
+            AssayNavItem nav = new AssayNavItem(this, p);
+            AssayProtocolSchema schema = getAssayProvider().createProtocolSchema(u, c, p, null);
+            SimpleQueryNavItem item = new SimpleQueryNavItem(this, schema.getSchemaName(), AssayProtocolSchema.DATA_TABLE_NAME, _providerName, p.getName() + ": Raw Data");
+            item.setVisible(nav.isVisible(c, u));
+            item.setOwnerKey(nav.getPropertyManagerKey());
+            items.add(item);
 
-                //for file-based assays, append any associated queries
-                List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();
-                for (QueryDefinition qd : queries)
-                {
-                    items.add(new SimpleQueryNavItem(this, qd.getSchema().getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + qd.getName()));
-                }
+            //for file-based assays, append any associated queries
+            List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();
+            for (QueryDefinition qd : queries)
+            {
+                SimpleQueryNavItem qItem = new SimpleQueryNavItem(this, schema.getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + qd.getName());
+                qItem.setVisible(nav.isVisible(c, u));
+                qItem.setOwnerKey(nav.getPropertyManagerKey());
+                items.add(qItem);
             }
         }
         return items;
@@ -234,5 +243,32 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
     public Module getOwningModule()
     {
         return _module;
+    }
+
+    public List<NavItem> getSummary(Container c, User u)
+    {
+        List<NavItem> items = new ArrayList<NavItem>();
+
+        for (ExpProtocol p : getProtocols(c))
+        {
+            boolean visible = new AssayNavItem(this, p).isVisible(c, u);
+            if (visible)
+            {
+                ExpRun[] runs = p.getExpRuns();
+                Integer totalRuns = 0;
+                for (ExpRun run : runs)
+                {
+                    Container runContainer = run.getContainer();
+                    if (runContainer.equals(c) || (runContainer.isWorkbookOrTab() && c.equals(runContainer.getParent())))
+                    {
+                        totalRuns++;
+                    }
+                }
+
+                items.add(new SingleNavItem(this, p.getName() + " Runs", totalRuns.toString(), new DetailsURL(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, p)), AbstractNavItem.Category.data.name()));
+            }
+        }
+
+        return items;
     }
 }

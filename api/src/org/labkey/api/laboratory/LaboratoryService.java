@@ -83,4 +83,6 @@ abstract public class LaboratoryService
     abstract public List<NavItem> getDataItems(Container c, User u);
 
     abstract public void ensureAssayColumns(User u, String providerName);
+
+    abstract public void sortNavItems(List<NavItem> navItems);
 }

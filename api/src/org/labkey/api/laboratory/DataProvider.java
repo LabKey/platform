@@ -90,4 +90,6 @@ public interface DataProvider
      * @return The module which provides this DataProvider
      */
     public Module getOwningModule();
+
+    public List<NavItem> getSummary(Container c, User u);
 }

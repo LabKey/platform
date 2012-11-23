@@ -15,6 +15,7 @@
  */
 package org.labkey.api.laboratory;
 
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.User;
@@ -26,17 +27,17 @@ import org.labkey.api.view.ActionURL;
  * Date: 10/8/12
  * Time: 10:09 PM
  */
-public class UrlNavItem extends AbstractNavItem
+public class SimpleNavItem extends AbstractNavItem
 {
-    private DataProvider _provider;
-    private DetailsURL _url;
-    private String _label;
-    private String _category;
+    protected DataProvider _provider;
+    protected DetailsURL _labelUrl;
+    protected String _label;
+    protected String _category;
 
-    public UrlNavItem(DataProvider provider, DetailsURL url, String label, String category)
+    public SimpleNavItem(DataProvider provider, DetailsURL labelUrl, String label, String category)
     {
         _provider = provider;
-        _url = url;
+        _labelUrl = labelUrl;
         _label = label;
         _category = category;
     }
@@ -58,12 +59,7 @@ public class UrlNavItem extends AbstractNavItem
 
     public String getRendererName()
     {
-        return "navItemRenderer";
-    }
-
-    public boolean isImportIntoWorkbooks()
-    {
-        return false;
+        return "defaultRenderer";
     }
 
     public boolean getDefaultVisibility(Container c, User u)
@@ -71,23 +67,22 @@ public class UrlNavItem extends AbstractNavItem
         return true;
     }
 
-    public ActionURL getImportUrl(Container c, User u)
+    public ActionURL getLabelUrl(Container c, User u)
     {
-        return null;
-    }
-
-    public ActionURL getSearchUrl(Container c, User u)
-    {
-        return null;
-    }
-
-    public ActionURL getBrowseUrl(Container c, User u)
-    {
-        return _url.copy(c).getActionURL();
+        return _labelUrl == null ? null : _labelUrl.copy(c).getActionURL();
     }
 
     public DataProvider getDataProvider()
     {
         return _provider;
+    }
+
+    public JSONObject toJSON(Container c, User u)
+    {
+        JSONObject ret = super.toJSON(c, u);
+        ret.put("url", getUrlObject(getLabelUrl(c, u)));
+        ret.put("browseUrl", getUrlObject(getLabelUrl(c, u)));
+
+        return ret;
     }
 }

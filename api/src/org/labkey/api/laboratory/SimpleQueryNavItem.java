@@ -29,13 +29,14 @@ import org.labkey.api.view.ActionURL;
  * Date: 10/1/12
  * Time: 12:27 PM
  */
-public class SimpleQueryNavItem extends AbstractNavItem
+public class SimpleQueryNavItem extends AbstractImportingNavItem
 {
     private String _schema;
     private String _query;
     private String _label;
     private String _category;
     private DataProvider _dataProvider;
+    private boolean _visible = true;
 
     public SimpleQueryNavItem(DataProvider provider, String schema, String query, String category)
     {
@@ -70,11 +71,6 @@ public class SimpleQueryNavItem extends AbstractNavItem
         return _category;
     }
 
-    public String getRendererName()
-    {
-        return "navItemRenderer";
-    }
-
     public boolean isImportIntoWorkbooks()
     {
         return true;
@@ -82,7 +78,7 @@ public class SimpleQueryNavItem extends AbstractNavItem
 
     public boolean getDefaultVisibility(Container c, User u)
     {
-        return true;
+        return _visible;
     }
 
     public ActionURL getImportUrl(Container c, User u)
@@ -117,5 +113,20 @@ public class SimpleQueryNavItem extends AbstractNavItem
     public DataProvider getDataProvider()
     {
         return _dataProvider;
+    }
+
+    public String getSchema()
+    {
+        return _schema;
+    }
+
+    public String getQuery()
+    {
+        return _query;
+    }
+
+    public void setVisible(boolean visible)
+    {
+        _visible = visible;
     }
 }

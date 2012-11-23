@@ -30,7 +30,7 @@ import org.labkey.api.view.ActionURL;
  * Date: 10/1/12
  * Time: 1:40 PM
  */
-public class SimpleSettingsItem extends AbstractNavItem implements SettingsNavItem
+public class SimpleSettingsItem extends AbstractImportingNavItem implements SettingsNavItem
 {
     String _schema;
     String _query;
@@ -80,11 +80,6 @@ public class SimpleSettingsItem extends AbstractNavItem implements SettingsNavIt
     public String getCategory()
     {
         return _category;
-    }
-
-    public String getRendererName()
-    {
-        return "navItemRenderer";
     }
 
     public boolean isImportIntoWorkbooks()
