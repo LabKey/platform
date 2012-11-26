@@ -153,7 +153,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         {value: 'Specimens', currentStep: false},
         {value: 'Publish Options', currentStep: false}
         );
-        console.log(setup);
+
         var steps = [];
         for(var i = 0; i < this.pageOptions.length; i++){
             if(this.pageOptions[i].active == true){
@@ -727,24 +727,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 pack: 'start'
             }
         });
-
-        var validate = function(cmp){
-
-            if(this.mode == 'publish'){
-                if (this.lastStep > this.currentStep)
-                    return;
-
-                if (!this.info.datasets || (this.info.datasets.length == 0))
-                {
-                    Ext.MessageBox.alert('Error', 'You must select at least one dataset to create the new study from.');
-                    this.currentStep--;
-                    this.updateStep();
-                    return false;
-                }
-            }
-        };
-
-        panel.on('beforehide', validate, this);
+        
         return panel;
     },
 
@@ -1247,13 +1230,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     onFinish : function() {
-
-        if (( this.mode == 'ancillary' && !this.info.datasets ))
-        {
-            Ext.MessageBox.alert('Error', 'You must select at least one dataset to create the new study from.');
-            return;
-        }
-
         // prepare the params to post to the api action
         var params = {};
 

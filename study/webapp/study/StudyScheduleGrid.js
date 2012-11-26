@@ -294,6 +294,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             }
         });
 
+        this.centerPanel.setHeight((this.schedule.data.length + 2) * 30);
         this.centerPanel.removeAll();
         this.centerPanel.add(this.gridPanel);
 
