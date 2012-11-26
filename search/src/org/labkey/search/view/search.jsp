@@ -122,6 +122,12 @@
     {
         %>
         <input type="hidden" id="hidden-template" name="template" value="<%=form.getTemplate()%>"><%
+    }
+
+    if (null != getViewContext().getActionURL().getParameter("status"))
+    {
+        %>
+        <input type="hidden" id="search-type" name="status" value="<%=getViewContext().getActionURL().getParameter("status")%>"><%
     }   %>
 
         </td></tr>
