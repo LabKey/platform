@@ -226,7 +226,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
 
     getGroupSearchItems: function(){
         return [
-            [this.studyProps.ParticipantNounSingular, 'study', this.studyProps.ParticipantNounSingular, this.studyProps.ParticipantColumnName, this.studyProps.ParticipantColumnName, this.studyProps.ParticipantColumnName, 'Any ' + this.studyProps.ParticipantNounSingular, null],
+            [this.studyProps.ParticipantNounSingular, 'study', this.studyProps.ParticipantTableName, this.studyProps.ParticipantColumnName, this.studyProps.ParticipantColumnName, this.studyProps.ParticipantColumnName, 'Any ' + this.studyProps.ParticipantNounSingular, null],
             ['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,Label'],
             ['Primary Type', 'study', 'SpecimenPrimaryType', 'PrimaryType/Description', 'Description', 'Description', 'Any Primary Type', null],
             ['Derivative Type', 'study', 'SpecimenDerivative', 'DerivativeType/Description', 'Description', 'Description', 'Any Derivative Type', null],
