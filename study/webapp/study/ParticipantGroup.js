@@ -294,13 +294,15 @@ Ext4.define('Study.window.ParticipantGroup', {
 
     getGroupData : function(){
         var fieldValues = this.queryById('simplePanel').getValues(),
-            ptids = fieldValues['participantIdentifiers'].split(','),
+            ptidsPre = fieldValues['participantIdentifiers'].split(','),
             categoryLabel,
             categoryId,
             categoryType,
             categoryCombo = Ext4.ComponentQuery.query('combo[id=participantCategory]')[0],
             categoryStore = categoryCombo.getStore();
-
+        for(var i = 0; i < ptidsPre.length; i++){
+            ptidsPre[i] = ptidsPre[i].split('\n');
+        }
         if(typeof categoryCombo.getValue() == 'number'){
             categoryId = categoryCombo.getValue();
             categoryLabel = categoryStore.getAt(categoryStore.find("rowId", categoryId)).data.label;
@@ -312,9 +314,13 @@ Ext4.define('Study.window.ParticipantGroup', {
                 categoryId = this.category.rowId;
             }
         }
-
-        for(var i = 0; i < ptids.length; i++){
-            ptids[i] = ptids[i].trim();
+        var ptids = [];
+        for(var i = 0, count = 0; i < ptidsPre.length; i++){
+            for(var q = 0; q < ptidsPre[i].length; q++, count++){
+                if(ptidsPre[i][q].trim() != "")
+                    ptids[count] = ptidsPre[i][q].trim();
+                else count--;
+            }
         }
 
         var groupData = {
