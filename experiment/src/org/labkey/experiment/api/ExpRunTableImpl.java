@@ -267,6 +267,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 ColumnInfo lsidColumn = wrapColumn(alias, _rootTable.getColumn("LSID"));
                 lsidColumn.setShownInInsertView(false);
                 lsidColumn.setShownInUpdateView(false);
+                lsidColumn.setShownInDetailsView(false);
                 lsidColumn.setUserEditable(false);
                 return lsidColumn;
             case Modified:

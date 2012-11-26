@@ -53,13 +53,13 @@ while (!stack.isEmpty())
         CustomPropertyRenderer renderer = form.getRenderers().get(value.getPropertyURI());
         if (renderer.shouldRender(value, values)) { %>
             <tr>
-                <td class="labkey-form-label"><% int i = 0; while(i < stack.size() - 1) { i++; %>&nbsp;&nbsp;&nbsp;&nbsp;<% } %><%= renderer.getDescription(value, values) %></td>
-                <td><%= renderer.getValue(value, values, me.getViewContext()) %></td>
+                <td class="labkey-form-label"><% int i = 0; while(i < stack.size() - 1) { i++; %>&nbsp;&nbsp;&nbsp;&nbsp;<% } %><%= text(renderer.getDescription(value, values)) %></td>
+                <td><%= text(renderer.getValue(value, values, me.getViewContext())) %></td>
             </tr> <%
         }
         if (value.retrieveChildProperties().size() > 0)
         {
-            stack.add(new ArrayList(value.retrieveChildProperties().values()));
+            stack.add(new ArrayList<ObjectProperty>(value.retrieveChildProperties().values()));
             indices.add(0);
         }
     }
