@@ -48,7 +48,19 @@ public class AssayListTable extends FilteredTable
         _schema = schema;
 
         ActionURL url = new ActionURL(AssayController.AssayBeginAction.class, _schema.getContainer());
-        DetailsURL detailsURL = new DetailsURL(url, "rowId", FieldKey.fromParts("RowId"));
+        DetailsURL detailsURL = new DetailsURL(url, "rowId", FieldKey.fromParts("RowId"))
+        {
+            @Override
+            public void setContainerContext(ContainerContext cc, boolean overwrite)
+            {
+                // Don't let our context be stomped over by the one using the Container/Folder column. We want to stay
+                // in the current container, even when the protocol is defined in another container.
+                if (_containerContext == null)
+                {
+                    super.setContainerContext(cc, overwrite);
+                }
+            }
+        };
         detailsURL.setContainerContext(_schema.getContainer());
 
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
