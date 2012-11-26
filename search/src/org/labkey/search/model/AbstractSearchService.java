@@ -1554,10 +1554,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     "WHERE LastIndexed < ?",
                     new Date(HeartBeat.currentTimeMillis() - 7*24*60*60*1000L));
             Table.execute(search, "DELETE FROM search.CrawlResources WHERE parent NOT IN (SELECT id FROM search.CrawlCollections)");
-            if (search.getSqlDialect().isPostgreSQL())
-            {
-                Table.execute(search, "CLUSTER search.CrawlResources");
-            }
+//            if (search.getSqlDialect().isPostgreSQL())
+//            {
+//                Table.execute(search, "CLUSTER search.CrawlResources");
+//            }
         }
         catch (SQLException x)
         {
