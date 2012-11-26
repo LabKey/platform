@@ -74,12 +74,12 @@ CREATE VIEW study.ParticipantGroupCohortUnion AS
         ParticipantId,
         GroupId,
         null AS CohortId,
-        CAST(GroupId AS NVARCHAR) + '-participantGroup' as Id
+        CAST(GroupId AS NVARCHAR) + '-participantGroup' as UniqueId
     FROM study.ParticipantGroupMap
     UNION
     SELECT Container,
         ParticipantId,
         null AS GroupId,
         Currentcohortid AS CohortId,
-        CAST(CurrentCohortId AS NVARCHAR) + '-cohort' as Id
+        CAST(CurrentCohortId AS NVARCHAR) + '-cohort' as UniqueId
     FROM study.Participant;

@@ -65,7 +65,7 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
             addColumn(currentCohortColumn);
         }
 
-        ColumnInfo col = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("id")));
+        ColumnInfo col = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("UniqueId")));
         col.setHidden(true);
         col.setDisplayColumnFactory(new DisplayColumnFactory()
         {

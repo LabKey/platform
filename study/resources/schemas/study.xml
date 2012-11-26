@@ -1763,7 +1763,7 @@
   </ns:table>
   <ns:table tableName="ParticipantGroupCohortUnion" tableDbType="VIEW">
     <ns:columns>
-        <ns:column columnName="Id">
+        <ns:column columnName="UniqueId">
             <ns:isHidden>true</ns:isHidden>
         </ns:column>
         <ns:column columnName="ParticipantId"/>

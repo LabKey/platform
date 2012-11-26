@@ -990,7 +990,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 },
                 measures: this.chartInfo.measures,
                 viewInfo: this.viewInfo,
-                groupBys: [{schemaName: 'study', queryName: 'ParticipantGroupCohortUnion', name: 'Id', values: groups}],
+                groupBys: [{schemaName: 'study', queryName: 'ParticipantGroupCohortUnion', name: 'UniqueId', values: groups}],
                 sorts: this.getDataSortArray(),
                 limit : this.dataLimit,
                 filterUrl: this.chartInfo.filterUrl,
@@ -1450,7 +1450,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 // Display aggregate lines
                 var groupedAggregateData = null;
                 if (this.aggregateData)
-                    groupedAggregateData = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.Id.displayValue});
+                    groupedAggregateData = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.UniqueId.displayValue});
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
@@ -1662,7 +1662,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var xMin = null, xMax = null, xTrans = null;
         var intervalKey = null;
         var individualSubjectColumn = individualColumnAliases ? this.getColumnAlias(individualColumnAliases, viewInfo.subjectColumn) : null;
-        var aggregateSubjectColumn = "Id";
+        var aggregateSubjectColumn = "UniqueId";
         var xAes, xTickFormat, tickMap = {};
         var visitMap = individualVisitMap ? individualVisitMap : aggregateVisitMap;
 
