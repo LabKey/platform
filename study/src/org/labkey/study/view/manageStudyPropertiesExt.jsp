@@ -148,7 +148,6 @@ function addExtFilePickerHandler()
     studyPropertiesFormPanel.doLayout();
 }
 
-//TODO:  This concerns me slightly.  I doubt it'll be able ot find this component.
 function removeNewAttachment(btn)
 {
     // In order to 'remove' an attachment before it is submitted we must hide and disable it. We CANNOT destroy the
@@ -378,7 +377,7 @@ function renderFormPanel(data, editable){
         labelWidth : 150,
         padding : 5,
         hiddenName : 'DescriptionRendererType',
-        name : 'RendererTypeDisplayName',
+        name : 'DescriptionRendererType',
         triggerAction : 'all',
         queryMode: 'local',
         valueField: 'renderType',
