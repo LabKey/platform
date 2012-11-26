@@ -1303,7 +1303,7 @@ public class PipelineController extends SpringActionController
         User user = context.getUser();
         ActionURL url = context.getActionURL();
 
-        PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, errors, pipelineRoot));
+        PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot));
 
         return !errors.hasErrors();
     }

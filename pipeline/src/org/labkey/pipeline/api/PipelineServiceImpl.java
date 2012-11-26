@@ -525,7 +525,7 @@ public class PipelineServiceImpl extends PipelineService
     public boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot)
     {
         try{
-            PipelineService.get().queueJob(new FolderImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot));
+            PipelineService.get().queueJob(new FolderImportJob(c, user, url, studyXml, originalFilename, pipelineRoot));
             return true;
         }
         catch (PipelineValidationException e){

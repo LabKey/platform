@@ -47,14 +47,12 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
     private final FolderImportContext _ctx;
     private final VirtualFile _root;
     private final String _originalFilename;
-    private final BindException _errors;
 
-    public FolderImportJob(Container c, User user, ActionURL url, File folderXml, String originalFilename, BindException errors, PipeRoot pipeRoot)
+    public FolderImportJob(Container c, User user, ActionURL url, File folderXml, String originalFilename, PipeRoot pipeRoot)
     {
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
         _root = new FileSystemFile(folderXml.getParentFile());
         _originalFilename = originalFilename;
-        _errors = errors;
         setLogFile(FolderImportProvider.logForInputFile(new File(folderXml.getParentFile(), "folder_load")));
         _ctx = new FolderImportContext(user, c, folderXml, new PipelineJobLoggerGetter(this), _root);
 
