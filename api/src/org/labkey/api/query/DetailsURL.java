@@ -40,7 +40,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     public static Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");
     public static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class?.*");
 
-    private ContainerContext _containerContext;
+    protected ContainerContext _containerContext;
 
     // constructor parameters
     ActionURL _url;
