@@ -24,12 +24,16 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.io.File;
@@ -44,6 +48,7 @@ import java.util.Set;
 */
 public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 {
+    private final Container _container;
     private FieldKey _pkFieldKey;
 
     private FieldKey _objectURIFieldKey;
@@ -52,7 +57,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     public FileLinkDisplayColumn(ColumnInfo col, PropertyDescriptor pd, Container container, @NotNull SchemaKey schemaKey, @NotNull String queryName, @NotNull FieldKey pkFieldKey)
     {
         super(col);
-
+        _container = container;
         _pkFieldKey = pkFieldKey;
 
         ActionURL actionURL = PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd);
@@ -66,7 +71,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     public FileLinkDisplayColumn(ColumnInfo col, PropertyDescriptor pd, Container container, @NotNull FieldKey objectURIFieldKey)
     {
         super(col);
-
+        _container = container;
         _objectURIFieldKey = objectURIFieldKey;
 
         DetailsURL url = new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd), "objectURI", objectURIFieldKey);
@@ -86,9 +91,38 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     @Override
     protected String getFileName(Object value)
     {
+        String result = null;
         if (value instanceof String)
         {
-            return new File((String)value).getName();
+            File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(value.toString()));
+            NetworkDrive.ensureDrive(f.getPath());
+            result = relativize(f, ServiceRegistry.get(FileContentService.class).getFileRoot(_container, FileContentService.ContentType.files));
+            if (result == null)
+            {
+                result = relativize(f, ServiceRegistry.get(FileContentService.class).getFileRoot(_container, FileContentService.ContentType.pipeline));
+            }
+            if (result == null)
+            {
+                result = f.getName();
+            }
+        }
+        return result;
+    }
+
+    public static String relativize(File f, File fileRoot)
+    {
+        if (fileRoot != null)
+        {
+            NetworkDrive.ensureDrive(fileRoot.getPath());
+            fileRoot = FileUtil.getAbsoluteCaseSensitiveFile(fileRoot);
+            if (URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
+            {
+                try
+                {
+                    return FileUtil.relativize(fileRoot, f, false);
+                }
+                catch (IOException ignored) {}
+            }
         }
         return null;
     }
@@ -119,5 +153,11 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         {
             super.renderIconAndFilename(ctx, out, filename, link, thumbnail);
         }
+    }
+
+    @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        return getFileName(super.getDisplayValue(ctx));
     }
 }

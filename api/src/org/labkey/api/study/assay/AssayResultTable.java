@@ -417,12 +417,6 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     }
 
     @Override
-    public void afterConstruct()
-    {
-        super.afterConstruct();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     public FieldKey getContainerFieldKey()
     {
         return new FieldKey(null, "Folder");
