@@ -305,10 +305,8 @@
 <%
     if (c.hasPermission(user, AdminPermission.class))
     {
-        ActionURL exportURL = PageFlowUtil.urlProvider(AdminUrls.class).getExportFolderURL(c);
-        exportURL.addParameter("exportType", "study");
 %>
-<%=generateButton("Export Study", exportURL)%>
+<%=generateButton("Export Study", urlProvider(AdminUrls.class).getExportFolderURL(c).addParameter("exportType", "study"))%>
 <%=generateButton("Reload Study", urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload"))%>
 <%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
 <%=generateButton("Create Ancillary Study", "javascript:void(0)", "showNewStudyWizard()")%>

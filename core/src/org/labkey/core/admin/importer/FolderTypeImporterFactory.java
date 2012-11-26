@@ -74,7 +74,14 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                         activeModules.add(module);
                 }
 
-                c.setFolderType(folderType, activeModules);
+                if (null != folderType)
+                {
+                    c.setFolderType(folderType, activeModules);
+                }
+                else
+                {
+                    ctx.getLogger().warn("Unknown folder type: '" + folderTypeXml.getName() + "'. Folder type and active modules not set.");
+                }
 
                 Module defaultModule = ModuleLoader.getInstance().getModule(folderTypeXml.getDefaultModule());
                 if (null != defaultModule)
