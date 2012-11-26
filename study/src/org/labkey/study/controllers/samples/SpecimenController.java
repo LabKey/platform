@@ -4063,7 +4063,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ManageActorsAction()
         {
-            super("manageActors", "Manage Speciment Request Actors", "specimenRequest");
+            super("manageActors", "Manage Specimen Request Actors", "specimenRequest");
         }
 
         public boolean handlePost(ActorEditForm form, BindException errors) throws Exception
