@@ -548,7 +548,7 @@ public class ListController extends SpringActionController
             }
             else
             {
-                throw new RuntimeSQLException(e);
+                errors.reject(ERROR_MSG, e.getMessage());
             }
         }
 
