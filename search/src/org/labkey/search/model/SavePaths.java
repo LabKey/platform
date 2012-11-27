@@ -74,8 +74,12 @@ public class SavePaths implements DavCrawler.SavePaths
         if (null == last) last = nullDate;
         if (null == next) next = oldDate;
 
+        DbSchema search = getSearchSchema();
+        SqlDialect d = search.getSqlDialect();
+
         SQLFragment upd = new SQLFragment(
-                "UPDATE search.CrawlCollections SET LastCrawled=?, NextCrawl=? ",
+                String.format("UPDATE search.CrawlCollections %s SET LastCrawled=?, NextCrawl=? ",
+                        d.isSqlServer() ? "WITH (UPDLOCK)" : ""),
                 last, next);
         upd.append(" WHERE " );
         SQLFragment f = pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr);
@@ -336,7 +340,8 @@ public class SavePaths implements DavCrawler.SavePaths
             if (!paths.isEmpty())
             {
                 SQLFragment upd = new SQLFragment(
-                        "UPDATE search.CrawlCollections SET LastCrawled=? WHERE Path IN ",
+                        "UPDATE search.CrawlCollections " + (getSearchSchema().getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "") + "\n" +
+                        "SET LastCrawled=? WHERE Path IN ",
                         now);
                 String comma = "(";
                 for (String path : paths)

@@ -15,8 +15,8 @@
  */
 package org.labkey.search.model;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.GUID;
@@ -39,26 +39,10 @@ import java.io.File;
  * Date: Dec 12, 2009
  * Time: 3:51:51 PM
  */
-public class CrawlerTest extends junit.framework.TestCase
+public class CrawlerTest extends Assert
 {
-    public CrawlerTest()
-    {
-        super();
-    }
 
-
-    public CrawlerTest(String name)
-    {
-        super(name);
-    }
-
-
-    public static Test suite()
-    {
-        return new TestSuite(CrawlerTest.class);
-    }
-
-    
+    @Test
     public void test() throws Exception
     {
         DavCrawler cr = new DavCrawler();
