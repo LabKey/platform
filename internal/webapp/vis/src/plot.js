@@ -321,14 +321,14 @@ LABKEY.vis.Plot = function(config){
             this.paper.rect(this.grid.leftEdge, (this.grid.height - this.grid.topEdge),(this.grid.rightEdge - this.grid.leftEdge), (this.grid.topEdge - this.grid.bottomEdge)).attr('fill', this.gridColor).attr('fill', this.gridColor).attr('stroke', 'none');
         }
 
-        if(this.labels.main && this.labels.main.value){
+        if(this.labels.main){
             this.setMainLabel(this.labels.main.value, this.labels.main.lookClickable);
         }
 
 		// Now that we have all the scales situated we need to render the axis lines, tick marks, and titles.
 		this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge, -this.grid.bottomEdge +.5, this.grid.rightEdge, -this.grid.bottomEdge+.5)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
-        if(this.labels.x && this.labels.x.value){
+        if(this.labels.x){
             this.setXLabel(this.labels.x.value, this.labels.x.lookClickable);
         }
 
@@ -378,7 +378,7 @@ LABKEY.vis.Plot = function(config){
 
 			this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge +.5, -this.grid.bottomEdge + 1, this.grid.leftEdge+.5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
-            if(this.labels.yLeft && this.labels.yLeft.value){
+            if(this.labels.yLeft){
                 this.setYLeftLabel(this.labels.yLeft.value, this.labels.yLeft.lookClickable);
             }
 
@@ -409,7 +409,7 @@ LABKEY.vis.Plot = function(config){
 
             this.paper.path(LABKEY.vis.makeLine(this.grid.rightEdge + .5, -this.grid.bottomEdge + 1, this.grid.rightEdge + .5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
-            if(this.labels.yRight && this.labels.yRight.value){
+            if(this.labels.yRight){
                 this.setYRightLabel(this.labels.yRight.value, this.labels.yRight.lookClickable);
             }
 
@@ -675,7 +675,7 @@ LABKEY.vis.Plot = function(config){
         return clickArea;
     };
 
-    var setLabel = function(name, x, y, value, lookClickable, render){
+    var setLabel = function(name, type, x, y, value, lookClickable, render){
         if(!this.labels[name]){
             this.labels[name] = {};
         }
@@ -694,6 +694,9 @@ LABKEY.vis.Plot = function(config){
             } else if(!labelElements[name]){
                 labelElements[name] = {};
             }
+
+            if (value == "" && this.labels[name].lookClickable === true)
+                value = "Edit " + type;
 
             labelElements[name].text = renderLabel.call(this, x, y, value);
             // TODO: Automatically detect the default font to use for labels.
@@ -730,33 +733,33 @@ LABKEY.vis.Plot = function(config){
 
     this.setMainLabel = function(value, lookClickable){
         if(this.paper){
-            setLabel.call(this, 'main', this.grid.width / 2, 30, value, lookClickable, true);
+            setLabel.call(this, 'main', 'Title', this.grid.width / 2, 30, value, lookClickable, true);
         } else {
-            setLabel.call(this, 'main', this.grid.width / 2, 30, value, lookClickable, false);
+            setLabel.call(this, 'main', 'Title', this.grid.width / 2, 30, value, lookClickable, false);
         }
     };
 
     this.setXLabel = function(value, lookClickable){
         if(this.paper){
-           setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, lookClickable, true);
+           setLabel.call(this, 'x', 'Axis', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, lookClickable, true);
         } else {
-            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, lookClickable, false);
+            setLabel.call(this, 'x', 'Axis', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, lookClickable, false);
         }
     };
 
     this.setYRightLabel = function(value, lookClickable){
         if(this.paper){
-            setLabel.call(this, 'yRight', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, true);
+            setLabel.call(this, 'yRight', 'Axis', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, true);
         } else {
-            setLabel.call(this, 'yRight', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, false);
+            setLabel.call(this, 'yRight', 'Axis', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, false);
         }
     };
     
     this.setYLeftLabel = this.setYLabel = function(value, lookClickable){
         if(this.paper){
-            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, lookClickable, true);
+            setLabel.call(this, 'yLeft', 'Axis', this.grid.leftEdge - 55, this.grid.height / 2, value, lookClickable, true);
         } else {
-            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, lookClickable, false);
+            setLabel.call(this, 'yLeft', 'Axis', this.grid.leftEdge - 55, this.grid.height / 2, value, lookClickable, false);
         }
     };
 
