@@ -20,6 +20,7 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionTableInfo;
@@ -106,41 +107,50 @@ public abstract class SnapshotDependency
         {
             if (sourceData.getType() == SourceDataType.Type.dataset)
             {
-                DataSet dsDef = (DataSet)sourceData.getValue();
-
-                // check if container is still valid
-                Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<Integer, QuerySnapshotDefinition>();
-                if (isContainerValid(sourceData.getContainer()))
+                try
                 {
-                    List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudyManager.getSchemaName());
-                    if (!snapshots.isEmpty())
+                    DataSet dsDef = (DataSet)sourceData.getValue();
+
+                    // check if container is still valid
+                    Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<Integer, QuerySnapshotDefinition>();
+                    if (isContainerValid(sourceData.getContainer()))
                     {
-                        Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
-                        if (d != null)
+                        List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudyManager.getSchemaName());
+                        if (!snapshots.isEmpty())
                         {
-                            try {
-                                for (DomainProperty prop : d.getProperties())
-                                {
-                                    for (QuerySnapshotDefinition snapshot : snapshots)
+                            Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
+                            if (d != null)
+                            {
+                                try {
+                                    for (DomainProperty prop : d.getProperties())
                                     {
-                                        if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, prop.getPropertyURI()))
+                                        for (QuerySnapshotDefinition snapshot : snapshots)
                                         {
-                                            dependencies.put(snapshot.getId(), snapshot);
+                                            if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, prop.getPropertyURI()))
+                                            {
+                                                dependencies.put(snapshot.getId(), snapshot);
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            catch (ServletException e)
-                            {
-                                throw new RuntimeException(e);
+                                catch (ServletException e)
+                                {
+                                    throw new RuntimeException(e);
+                                }
                             }
                         }
                     }
-                }
-                else
-                    _log.info("Failed checking dependencies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
+                    else
+                        _log.info("Failed checking dependencies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
 
-                return new ArrayList<QuerySnapshotDefinition>(dependencies.values());
+                    return new ArrayList<QuerySnapshotDefinition>(dependencies.values());
+                }
+                catch (ConvertHelper.ContainerConversionException e)
+                {
+                    // ignore container conversion errors, most likely a race condition where the container has been deleted but
+                    // the dependency thread continues to check (issue: 11659)
+                    _log.info("Failed checking dependencies for container: " + sourceData.getContainer().getPath(), e);
+                }
             }
             return Collections.emptyList();
         }
