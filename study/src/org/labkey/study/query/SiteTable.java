@@ -51,4 +51,10 @@ public class SiteTable extends BaseStudyTable
             }
         }
     }
+
+    @Override
+    public String getTitleColumn()
+    {
+        return "Label";
+    }
 }
