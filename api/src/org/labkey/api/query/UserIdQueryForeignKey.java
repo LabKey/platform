@@ -49,4 +49,28 @@ public class UserIdQueryForeignKey extends LookupForeignKey
         }
         return _coreSchema.getTable("users");
     }
+
+
+    /* set foreign key and display column */
+    static public ColumnInfo initColumn(User user, Container container, ColumnInfo column, boolean guestAsBlank)
+    {
+        column.setFk(new UserIdQueryForeignKey(user, container));
+        column.setDisplayColumnFactory(guestAsBlank ? _factoryBlank : _factoryGuest);
+        return column;
+    }
+
+    static DisplayColumnFactory _factoryBlank =  new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new UserIdRenderer.GuestAsBlank(colInfo);
+                }
+            };
+    static DisplayColumnFactory _factoryGuest =  new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new UserIdRenderer(colInfo);
+                }
+            };
 }
