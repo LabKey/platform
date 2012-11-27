@@ -157,12 +157,12 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                     scope: this,
                     'load': function() {
                         // if the zerodatecol value has loaded, check if this is a saved chart or if we need to reset the label to the default
-                        if (this.axis.label && this.zeroDateCombo && this.zeroDateCombo.getValue())
+                        if (this.axis.label != undefined && this.zeroDateCombo && this.zeroDateCombo.getValue())
                         {
-                            this.userEditedLabel = this.axis.label != this.getDefaultLabel();
+                            this.userEditedLabel = true;
                             this.labelResetButton.setDisabled(!this.userEditedLabel);
                         }
-                        else if (!this.axis.label && this.zeroDateCombo && this.zeroDateCombo.getValue())
+                        else if (this.axis.label == undefined && this.zeroDateCombo && this.zeroDateCombo.getValue())
                             this.resetLabel();
                     }
                 }
@@ -470,12 +470,12 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         this.setZeroDateByLabel(store.getAt(index).get('longlabel'));
 
                     // if the interval value has loaded, check if this is a saved chart or if we need to reset the label to the default
-                    if (this.axis.label && this.intervalCombo && this.intervalCombo.getValue())
+                    if (this.axis.label != undefined && this.intervalCombo && this.intervalCombo.getValue())
                     {
-                        this.userEditedLabel = this.axis.label != this.getDefaultLabel();
+                        this.userEditedLabel = true;
                         this.labelResetButton.setDisabled(!this.userEditedLabel);
                     }
-                    else if (!this.axis.label && this.intervalCombo && this.intervalCombo.getValue())
+                    else if (this.axis.label == undefined && this.intervalCombo && this.intervalCombo.getValue())
                         this.resetLabel();
 
                     // this is one of the requests being tracked, see if the rest are done

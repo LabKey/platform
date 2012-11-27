@@ -21,12 +21,8 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
             range: {type: "automatic"}
         });
 
-        // track if the axis label is something other than the default
-        if(config.axis.label){
-            config.userEditedLabel = (config.axis.label == config.defaultLabel ? false : true);
-        } else {
-            config.userEditedLabel = false;
-        }
+        // track if the axis label is defined
+        config.userEditedLabel = config.axis.label != undefined;
 
         this.callParent([config]);
 

@@ -1405,7 +1405,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             this.editorXAxisPanel.getTime(),
                             this.viewInfo,
                             this.chartInfo,
-                            this.chartInfo.title + ': ' + participant,
+                            this.concatChartTitle(this.chartInfo.title, participant),
                             seriesList,
                             dataPerParticipant[participant],
                             this.individualData.columnAliases,
@@ -1423,7 +1423,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
 
                     this.exportPdfMenu.add({
-                        text: this.chartInfo.title + ': ' + participant,
+                        text: this.concatChartTitle(this.chartInfo.title, participant),
                         handler: createExportMenuHandler(newChart.renderTo),
                         scope: this
                     });
@@ -1464,7 +1464,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             this.editorXAxisPanel.getTime(),
                             this.viewInfo,
                             this.chartInfo,
-                            this.chartInfo.title + ': ' + group.label,
+                            this.concatChartTitle(this.chartInfo.title, group.label),
                             seriesList,
                             groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
                             this.individualData ? this.individualData.columnAliases : null,
@@ -1482,7 +1482,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
 
                     this.exportPdfMenu.add({
-                        text: this.chartInfo.title + ': ' + group.label,
+                        text: this.concatChartTitle(this.chartInfo.title, group.label),
                         handler: createExportMenuHandler(newChart.renderTo),
                         scope: this
                     });
@@ -1507,7 +1507,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             this.editorXAxisPanel.getTime(),
                             this.viewInfo,
                             this.chartInfo,
-                            this.chartInfo.title + ': ' + seriesList[i].name,
+                            this.concatChartTitle(this.chartInfo.title, seriesList[i].label),
                             [seriesList[i]],
                             this.individualData ? this.individualData.rows : null,
                             this.individualData ? this.individualData.columnAliases : null,
@@ -1525,7 +1525,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
 
                     this.exportPdfMenu.add({
-                        text: this.chartInfo.title + ': ' + seriesList[i].name,
+                        text: this.concatChartTitle(this.chartInfo.title, seriesList[i].label),
                         handler: createExportMenuHandler(newChart.renderTo),
                         scope: this
                     });
@@ -1582,6 +1582,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
 
         this.unmaskPanel();
+    },
+
+    concatChartTitle: function(mainTitle, subTitle) {
+        return mainTitle + (mainTitle ? ': ' : '') + subTitle;
     },
 
     exportFirstChartToPdf : function() {
@@ -2127,7 +2131,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             errorBars: "None",
             aggregateType: "Mean",
             subject: {},
-            title: '',
             filterUrl: LABKEY.Visualization.getDataFilterFromURL(),
             filterQuery: this.getFilterQuery()
         }

@@ -13,8 +13,8 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
     extend : 'LABKEY.vis.GenericOptionsPanel',
 
     constructor : function(config){
-        // track if the title is something other than the default
-        config.userEditedTitle = (config.mainTitle ? true : false);
+        // track if the title is defined
+        config.userEditedTitle = (config.mainTitle != undefined);
 
         this.callParent([config]);
 
