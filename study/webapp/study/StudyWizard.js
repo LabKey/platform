@@ -255,7 +255,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             fieldLabel: 'Location',
             name: 'studyFolder',
             width: 446,
-            editable: true,
+            readOnly: true,
             fieldClass: 'x-form-empty-field',
             value: this.info.dstPath,
             scope: this
