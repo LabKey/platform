@@ -249,6 +249,10 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                             value = ResultSetUtil.mapDatabaseDoubleToJavaDouble((Double) value);
                         BeanUtils.copyProperty(bean, prop, value);
                     }
+                    catch (ConvertHelper.ContainerConversionException e)
+                    {
+                        throw new ConvertHelper.ContainerConversionException(e.getMessage());
+                    }
                     catch (ConversionException e)
                     {
                         throw new UnexpectedException(e, "Failed to copy property '" + prop + "' on class " + _class.getName());
