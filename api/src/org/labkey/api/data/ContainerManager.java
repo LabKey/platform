@@ -212,12 +212,9 @@ public class ContainerManager
             }
         }
 
-        if (Container.TYPE.tab == type)
-        {
-            //parent must be normal
-            if (Container.TYPE.normal != parent.getType())
-                throw new IllegalArgumentException("Parent of a container tab must not be a container tab container!");
-        }
+        //parent must be normal (not workbook or container tab)
+        if (Container.TYPE.normal != parent.getType())
+            throw new IllegalArgumentException("Parent of a container must not be a container tab or workbook!");
 
         StringBuilder error = new StringBuilder();
         if (!Container.isLegalName(name, error))
