@@ -458,14 +458,14 @@ LABKEY.Portal = new function()
                 url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
                 method: 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(response, options){
-                    if(config.folderTabCaption && response.pageIdToSwap && response.pageIdToSwap !== response.pageId){
+                    if(config.folderLabel && response.pageIdToSwap && response.pageIdToSwap !== response.pageId){
                         var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
                         for(var i = 0; i < tabs.length; i++){
                             var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
                             var anchors = tabEl.query('a');
                             var anchorText = anchors[0].text || anchors[0].innerText;
 
-                            if(anchorText === config.folderTabCaption){
+                            if(anchorText === config.folderLabel){
                                 // Found the tab, swap it with the previous tab.
                                 if(tabs[i - 1]){
                                     tabEl.insertBefore(tabs[i -1]);
@@ -495,14 +495,14 @@ LABKEY.Portal = new function()
                 url: LABKEY.ActionURL.buildURL('admin', 'moveTab', LABKEY.container.path),
                 method: 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(response, options){
-                    if(config.folderTabCaption && response.pageIdToSwap && response.pageIdToSwap !== response.pageId){
+                    if(config.folderLabel && response.pageIdToSwap && response.pageIdToSwap !== response.pageId){
                         var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
                         for(var i = 0; i < tabs.length; i++){
                             var tabEl = LABKEY.ExtAdapter.get(tabs[i]);
                             var anchors = tabEl.query('a');
                             var anchorText = anchors[0].text || anchors[0].innerText;
 
-                            if(anchorText === config.folderTabCaption){
+                            if(anchorText === config.folderLabel){
                                 // Found the tab, swap it with the previous tab.
                                 if(tabs[i + 1] && tabs[i + 1].getAttribute('id') !== 'addTab'){
                                     tabEl.insertAfter(tabs[i + 1]);

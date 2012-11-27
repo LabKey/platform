@@ -189,7 +189,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
                 NavTree nav = new NavTree(label, folderTab.getURL(container, ctx.getUser()));
                 nav.setId("portal:" + portalPage.getPageId());
-                nav.addChild(getTabMenu(ctx, folderTab, portalPage));
+                nav.addChild(getTabMenu(ctx, folderTab, portalPage, label));
                 buttons.add(nav);
                 navMap.put(portalPage.getPageId(), nav);
                 // Stop looking for a tab to select if we've already found one
@@ -374,12 +374,12 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         return _defaultTab == null ? getDefaultTabs().get(0) : _defaultTab;
     }
 
-    private NavTree getTabMenu(ViewContext ctx, FolderTab folderTab, Portal.PortalPage portalPage)
+    private NavTree getTabMenu(ViewContext ctx, FolderTab folderTab, Portal.PortalPage portalPage, String folderLabel)
     {
         NavTree menu = new NavTree("Tab Administration");
         ActionURL removeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getHidePortalPageURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
         NavTree moveMenu = new NavTree("Move");
-        String moveConfig = "{pageId: \"" + portalPage.getPageId() + "\", folderTabCaption:\"" + folderTab.getCaption(ctx) +"\"}";
+        String moveConfig = "{pageId: \"" + portalPage.getPageId() + "\", folderLabel:\"" + folderLabel +"\"}";
 
         moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + moveConfig + ");"));
         moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + moveConfig + ");"));
