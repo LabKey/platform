@@ -23,10 +23,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Dec 7, 2006
- * Time: 4:14:27 PM
  */
 public class DefaultModelAndView<ModelBean> extends ModelAndView
 {

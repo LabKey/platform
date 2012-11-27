@@ -1112,11 +1112,20 @@ public class DbScope
 
                     DbSchema schema = scope.getSchema(pickRandomElement(schemaNames));
                     Collection<String> tableNames = schema.getTableNames();
+                    List<TableInfo> tables = new ArrayList<TableInfo>(tableNames.size());
 
-                    if (tableNames.isEmpty())
+                    for (String name : tableNames)
+                    {
+                        TableInfo table = schema.getTable(name);
+
+                        if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
+                            tables.add(table);
+                    }
+
+                    if (tables.isEmpty())
                         continue;
 
-                    tablesToTest.add(schema.getTable(pickRandomElement(tableNames)));
+                    tablesToTest.add(pickRandomElement(tables));
                 }
                 finally
                 {

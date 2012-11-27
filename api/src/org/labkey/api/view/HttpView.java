@@ -276,7 +276,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     // only used to satisfy HasViewContext
     public void setViewContext(ViewContext context)
     {
-        throw new IllegalStateException();   
+        _viewContext = context;
     }
 
     public ViewContext getViewContext()

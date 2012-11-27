@@ -37,7 +37,8 @@ public class DailyMessageDigest extends MessageDigest
         return _instance;
     }
 
-    private DailyMessageDigest(){}
+    // Use only for testing
+    public DailyMessageDigest(){}
 
     @Override
     protected Timer createTimer(TimerTask task)

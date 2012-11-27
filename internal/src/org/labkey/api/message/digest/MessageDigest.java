@@ -39,9 +39,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public abstract class MessageDigest
 {
     private static final String LAST_KEY = "LastSuccessfulSend";
-    Timer _timer = null;
-    MessageDigestTask _timerTask = null;
-    final private List<Provider> _providers = new CopyOnWriteArrayList<Provider>();
+    private Timer _timer = null;
+    private MessageDigestTask _timerTask = null;
+    private final List<Provider> _providers = new CopyOnWriteArrayList<Provider>();
 
     private static final Logger _log = Logger.getLogger(MessageDigest.class);
 
