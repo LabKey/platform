@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -49,6 +48,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -155,9 +155,11 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 
         // Make standard created & modified columns available.
         addColumn("Created", false);
-        addColumn("CreatedBy", false);
+        ColumnInfo createdBy = addColumn("CreatedBy", false);
+        UserIdQueryForeignKey.initColumn(user, listDef.getContainer(), createdBy, true);
         addColumn("Modified", false);
-        addColumn("ModifiedBy", false);
+        ColumnInfo modifiedBy = addColumn("ModifiedBy", false);
+        UserIdQueryForeignKey.initColumn(user, listDef.getContainer(), modifiedBy, true);
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
@@ -184,11 +186,11 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     }
     
 
-    private void addColumn(String name, boolean hidden)
+    private ColumnInfo addColumn(String name, boolean hidden)
     {
         ColumnInfo column = wrapColumn(getRealTable().getColumn(name));
         column.setHidden(hidden);
-        addColumn(column);
+        return addColumn(column);
     }
 
 
@@ -327,7 +329,8 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     {
         // NOTE: it's a little ambiguious how to factor code between persistRows() and createImportETL()
         data = new _DataIteratorBuilder(data, context);
-        DataIteratorBuilder ins = TableInsertDataIterator.create(data, this, _list.getContainer(), context);
+        DataIteratorBuilder ins;
+        ins = TableInsertDataIterator.create(data, this, _list.getContainer(), context);
         return ins;
     }
 

@@ -49,6 +49,7 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -207,6 +208,8 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             )
             {
                 ColumnInfo c = addWrapColumn(baseColumn);
+                if (baseColumn.getName().equalsIgnoreCase("CreatedBy") || baseColumn.getName().equalsIgnoreCase("ModifiedBy"))
+                    UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
                 c.setUserEditable(false);
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
