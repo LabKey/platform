@@ -146,6 +146,12 @@ public class DataColumn extends DisplayColumn
         return _boundColumn;
     }
 
+    @Override
+    public ColumnInfo getDisplayColumnInfo()
+    {
+        return _displayColumn;
+    }
+
     public boolean isFilterable()
     {
         return _filterColumn != null;

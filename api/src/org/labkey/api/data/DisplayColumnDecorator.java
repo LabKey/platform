@@ -167,6 +167,12 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public ColumnInfo getDisplayColumnInfo()
+    {
+        return _column.getDisplayColumnInfo();
+    }
+
+    @Override
     public Object getValue(RenderContext ctx)
     {
         return _column.getValue(ctx);

@@ -148,7 +148,7 @@ public class JsonWriter
 
         props.put("protected", cinfo != null && cinfo.isProtected());
 
-        ColumnInfo displayField = cinfo != null ? cinfo.getDisplayField() : null;
+        ColumnInfo displayField = dc.getDisplayColumnInfo();
         if (displayField != null && displayField != cinfo)
         {
             props.put("displayField", displayField.getFieldKey().toString());

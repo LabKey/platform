@@ -160,6 +160,11 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract ColumnInfo getColumnInfo();
 
+    public ColumnInfo getDisplayColumnInfo()
+    {
+        return getColumnInfo();
+    }
+
     public abstract Object getValue(RenderContext ctx);
 
     public abstract Class getValueClass();
