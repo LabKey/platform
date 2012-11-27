@@ -22,6 +22,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
+import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.DailyDigestEmailPrefsSelector;
@@ -38,6 +39,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -62,6 +64,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -1650,6 +1653,29 @@ public class AnnouncementsController extends SpringActionController
                 resp.put("success", false);
 
             return resp;
+        }
+    }
+
+    // Used for testing the daily digest email notifications
+    @RequiresSiteAdmin
+    public class SendDailyDigest extends SimpleRedirectAction
+    {
+        @Override
+        public URLHelper getRedirectURL(Object o) throws Exception
+        {
+            // Normally, daily digest stops at previous midnight; override to include all messages through now
+            DailyMessageDigest messageDigest = new DailyMessageDigest() {
+                @Override
+                protected Date getEndRange(Date current, Date last)
+                {
+                    return current;
+                }
+            };
+            // Just announcements
+            messageDigest.addProvider(new AnnouncementDigestProvider());
+            messageDigest.sendMessageDigest();
+
+            return getBeginURL(getContainer());
         }
     }
 

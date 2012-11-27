@@ -33,7 +33,9 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 
 import javax.servlet.ServletException;
@@ -130,21 +132,38 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
     private static MailHelper.ViewMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User recipient) throws Exception
     {
-        MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), recipient.getEmail());
-        m.setSubject("New posts to " + c.getPath());
-        HttpServletRequest request = AppProps.getInstance().createMockRequest();
+        ActionURL boardURL = AnnouncementsController.getBeginURL(c);
+        int stackSize = HttpView.getStackSize();
 
-        DailyDigestPage page = createPage("dailyDigestPlain.jsp", c, settings, perm, announcementModels);
-        JspView view = new JspView(page);
-        view.setFrame(WebPartView.FrameType.NOT_HTML);
-        m.setTemplateContent(request, view, "text/plain");
+        try
+        {
+            // Hack! Mock up a ViewContext with the recipient as the user, so embedded webparts get rendered with that
+            // user's permissions, etc. Push it to the stack so the renderer sees it and pop it in finally below.
+            // TODO: push the context through or come up with a cleaner solution.
+            ViewContext context = ViewContext.getMockViewContext(recipient, c, boardURL, true);
 
-        page = createPage("dailyDigest.jsp", c, settings, perm, announcementModels);
-        view = new JspView(page);
-        view.setFrame(WebPartView.FrameType.NONE);
-        m.setTemplateContent(request, view, "text/html");
+            MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), recipient.getEmail());
+            m.setSubject("New posts to " + c.getPath());
+            HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
-        return m;
+            DailyDigestPage page = createPage("dailyDigestPlain.jsp", c, settings, perm, announcementModels);
+            JspView view = new JspView(page);
+            view.setViewContext(context);
+            view.setFrame(WebPartView.FrameType.NOT_HTML);
+            m.setTemplateContent(request, view, "text/plain");
+
+            page = createPage("dailyDigest.jsp", c, settings, perm, announcementModels);
+            view = new JspView(page);
+            view.setViewContext(context);
+            view.setFrame(WebPartView.FrameType.NONE);
+            m.setTemplateContent(request, view, "text/html");
+
+            return m;
+        }
+        finally
+        {
+            HttpView.resetStackSize(stackSize);
+        }
     }
 
 
