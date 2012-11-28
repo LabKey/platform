@@ -125,7 +125,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
             column.setParentIsObjectId(true);
             column.setReadOnly(false);
             column.setScale(property.getScale()); // UNDONE: PropertyDescriptor does not have getScale() so have to set here, move to PropertyColumn
-            addColumn(column);
+            safeAddColumn(column);
             defaultColumnsCandidates.add(column);
 
             if (property.isMvEnabled())
