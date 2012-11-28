@@ -49,7 +49,7 @@ public class DefaultCustomPropertyRenderer implements CustomPropertyRenderer
             o = FileLinkDisplayColumn.relativize(f, ServiceRegistry.get(FileContentService.class).getFileRoot(context.getContainer(), FileContentService.ContentType.files));
             if (o == null)
             {
-                FileLinkDisplayColumn.relativize(f, ServiceRegistry.get(FileContentService.class).getFileRoot(context.getContainer(), FileContentService.ContentType.pipeline));
+                o = FileLinkDisplayColumn.relativize(f, ServiceRegistry.get(FileContentService.class).getFileRoot(context.getContainer(), FileContentService.ContentType.pipeline));
             }
             if (o == null)
             {
