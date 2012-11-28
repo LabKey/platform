@@ -29,6 +29,7 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
+<%@ page import="org.labkey.api.query.CustomView" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -57,9 +58,11 @@
 
             if (queryDef != null)
             {
-                for (String viewName : queryDef.getCustomViews(getUser(), getViewContext().getRequest()).keySet())
+                for (Map.Entry<String, CustomView> entry : queryDef.getCustomViews(getUser(), getViewContext().getRequest()).entrySet())
                 {
-                    if (viewName != null)
+                    String viewName = entry.getKey();
+                    // Filter out hidden views
+                    if (viewName != null && !entry.getValue().isHidden())
                         viewNames.add(viewName);
                 }
             }
