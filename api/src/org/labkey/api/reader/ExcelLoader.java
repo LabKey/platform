@@ -335,10 +335,11 @@ public class ExcelLoader extends DataLoader
 
     private List<ArrayList<Object>> loadSheetFromXLSX() throws IOException, InvalidFormatException
     {
+        OPCPackage xlsxPackage = null;
         try
         {
             LinkedList<ArrayList<Object>> collect = new LinkedList<ArrayList<Object>>();
-            OPCPackage xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
+            xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
             ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(xlsxPackage);
             XSSFReader xssfReader = new XSSFReader(xlsxPackage);
             StylesTable styles = xssfReader.getStylesTable();
@@ -373,6 +374,11 @@ public class ExcelLoader extends DataLoader
         catch (Exception x)
         {
             throw new IOException(x);
+        }
+        finally
+        {
+            if (null != xlsxPackage)
+                xlsxPackage.revert();
         }
     }
 
