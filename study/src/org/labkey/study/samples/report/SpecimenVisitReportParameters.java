@@ -444,6 +444,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                     "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
                     "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
                     "            completionUrl   : " + PageFlowUtil.jsString(completionUrl) + ",\n" +
+                    "            sharedStore     : true,\n" +
                     "            tagConfig   : {\n" +
                     "                tag     : 'input',\n" +
                     "                type    : 'text',\n" +

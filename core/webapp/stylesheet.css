@@ -1100,13 +1100,13 @@ in the table tag.  They are necessary so that the borders take precedence correc
 }
 
 /* Used for the normal rows in data regions, sometimes these rows are not given a class */
-.labkey-row td, .labkey-row th, tr.labkey-row
+.labkey-row td, .labkey-row th, tr.labkey-row, div.labkey-row
 {
     background: #FFFFFF;
 }
 
 /* Used for the shaded alternate rows */
-.labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row, td.labkey-alternate-row, th.labkey-alternate-row
+.labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row, td.labkey-alternate-row, th.labkey-alternate-row, div.labkey-alternate-row
 {
     background: #F4F4F4;
 }

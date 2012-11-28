@@ -90,6 +90,7 @@ This folder does not contain a study.
 %>
 <% if (bean.isListView())
     WebPartView.startTitleFrame(out, category, null, "100%", null); %>
+<table cellspacing="0" cellpadding="3">
 <%
         int formRowIndex = 0;
         String rowClass;
@@ -99,25 +100,23 @@ This folder does not contain a study.
             String showHideSuffix = "_" + categoryIndex + "_" + formRowIndex;
             String formName = "form" + showHideSuffix;
 %>
+    <tr><td>
     <form action="<%=  new ActionURL(factory.getAction(), container).getLocalURIString() %>" name="<%= formName %>" method="GET">
-    <table cellspacing="0" cellpadding="3">
         <%
             if (bean.isListView())
             {
         %>
-            <tr class="<%= rowClass %>">
-                <th style="text-align:right"><%= h(factory.getLabel())%></th>
-                <td class="<%= rowClass %>">
+            <div class="<%= rowClass %>">
+                <div style="text-align:right"><span class="labkey-strong"><%= h(factory.getLabel())%></span>
                     <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
-                <td valign="top" align="left" class="<%= rowClass %>">
                     <%= generateSubmitButton("View") %>
-                </td>
-            </tr>
+                </div>
+            </div>
         <%
             }
         %>
-        <tr class="<%= rowClass %>">
-            <td colspan="3">
+        <div class="<%= rowClass %>">
+            <div>
                 <span id="reportParameters<%= showHideSuffix %>" style="display:<%= bean.isListView() ? "none" : "block" %>">
                     <table>
                 <%
@@ -308,11 +307,12 @@ This folder does not contain a study.
                 %>
                 </table>
                 </span>
-            </td>
-        </tr>
+            </div>
+        </div>
         <input type="hidden" name="_print" value="">
         <input type="hidden" name="excelExport" value="">
     </form>
+    </td></tr>
 <%
         }
 %>

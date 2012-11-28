@@ -80,13 +80,13 @@
                     <%
                     }
                     %>
-                        <tr>
+                        <tr>     asdfasdf
                             <td colspan="3">
                                 <form action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST">
                                     New member email:
                                     <input type="hidden" name="group" value="<%= groupPath %>">
                                     <input type="hidden" name="quickUI" value="true">
-                                    <labkey:autoCompleteText name="names" size="30" url="<%=completionUrl.getLocalURIString()%>"/>
+                                    <labkey:autoCompleteText name="names" size="30" url="<%=h(completionUrl.getLocalURIString())%>"/>
                                     <input type="hidden" name="sendEmail" value="true">
                                     <%= generateSubmitButton("Add User")%>
                                 </form>
