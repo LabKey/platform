@@ -441,6 +441,233 @@ LABKEY.Assay = new function()
                 requestConfig.timeout = config.timeout;
 
             LABKEY.Ajax.request(requestConfig);
+        },
+
+        /**
+         * @private
+         * Create an assay run and import results.
+         * <b>NOTE: This is an experimental API and may change without warning.</b>
+         *
+         * @param {Number} config.assayId The assay protocol id.
+         * @param {String} [config.containerPath] The path to the container in which the assay run will be imported,
+         *       if different than the current container. If not supplied, the current container's path will be used.
+         * @param {String} [config.name] The name of a run to create. If not provided, the run will be given the same name as the uploaded file or "[Untitled]".
+         * @param {String} [config.comments] Run comments.
+         * @param {Object} [config.properties] JSON formatted run properties.
+         * @param {Number} [config.batchId] The id of an existing {LABKEY.Exp.RunGroup} to add this run into.
+         * @param {Object} [config.batchProperties] JSON formatted batch properties.
+         * Only used if batchId is not provided when creating a new batch.
+         * @param {Array} config.files Array of <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> objects
+         * or form file input elements to import.
+         * @param {Function} config.success The success callback function will be called with the following arguments:
+         * <ul>
+         *     <li><b>json</b>: The success response object contains two properties:
+         *         <ul>
+         *             <li><b>success</b>: true</li>
+         *             <li><b>successurl</b>: The url to browse the newly imported assay run.</li>
+         *             <li><b>assayId</b>: The assay id.</li>
+         *             <li><b>batchId</b>: The previously existing or newly created batch id.</li>
+         *             <li><b>runId</b>: The newly created run id.</li>
+         *         </ul>
+         *     </li>
+         *     <li><b>response</b>: The XMLHttpResponseObject used to submit the request.</li>
+         * </ul>
+         * @param {Function} config.failure The error callback function will be called with the following arguments:
+         * <ul>
+         *     <li><b>errorInfo:</b> an object describing the error with the following fields:
+         *         <ul>
+         *             <li><b>exception:</b> the exception message</li>
+         *             <li><b>exceptionClass:</b> the Java class of the exception thrown on the server</li>
+         *             <li><b>stackTrace:</b> the Java stack trace at the point when the exception occurred</li>
+         *         </ul>
+         *     </li>
+         * <li><b>response:</b> the XMLHttpResponseObject used to submit the request.</li>
+         *
+         * @example Here is an example of retrieving one or more File objects from a form <code>&lt;input&gt;</code>
+         * element and submitting them together to create a new run.
+         * &lt;input id='myfiles' type='file' multiple>
+         * &lt;a href='#' onclick='doSubmit()'>Submit&lt;/a>
+         * &lt;script>
+         *     function doSubmit() {
+         *         LABKEY.Assay.importRun({
+         *             assayId: 3,
+         *             name: "new run",
+         *             properties: {
+         *                 "Run Field": "value"
+         *             },
+         *             batchProperties: {
+         *                 "Batch Field": "value"
+         *             },
+         *             files: [ document.getElementById('myfiles') ],
+         *             success: function (json, response) {
+         *                 window.location = json.successurl;
+         *             },
+         *             failure: error (json, response) {
+         *             }
+         *         });
+         *     }
+         * &lt;/script>
+         *
+         * @example Alternatively, you may use an HTML form to submit the multipart/form-data without using the JavaScript API.
+         * &lt;form action='./assay.importRun.api' method='POST' enctype='multipart/form-data'>
+         *     &lt;input name='assayId' type='text' />
+         *     &lt;input name='name' type='text' />
+         *     &lt;input name='file' type='file' />
+         *     &lt;input name='submit' type='submit' />
+         * &lt;/form>
+         */
+        importRun : function (config)
+        {
+            if (window.FormData)
+            {
+                var files = [];
+                if (config.files) {
+                    for (var i = 0; i < config.files.length; i++) {
+                        var f = config.files[i];
+                        if (f instanceof window.File) {
+                            files.push(f);
+                        }
+                        else if (f.tagName == "INPUT") {
+                            for (var j = 0; j < f.files.length; j++) {
+                                files.push(f.files[j]);
+                            }
+                        }
+                    }
+                }
+
+                if (files.length == 0)
+                    throw new Error("At least one file is required");
+
+                var formData = new window.FormData();
+                formData.append("assayId", config.assayId);
+                formData.append("name", config.name);
+                formData.append("comment", config.comment);
+                if (config.batchId)
+                    formData.append("batchId", config.batchId);
+
+                if (config.properties) {
+                    for (var key in config.properties)
+                        formData.append("properties['" + key + "']", config.properties[key]);
+                }
+
+                if (config.batchProperties) {
+                    for (var key in config.batchProperties)
+                        formData.append("batchProperties['" + key + "']", config.batchProperties[key]);
+                }
+
+                formData.append("file", files[0]);
+                for (var i = 1; i < files.length; i++) {
+                    formData.append("file" + i, files[i]);
+                }
+
+                var success = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false);
+                var failure = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true);
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', LABKEY.ActionURL.buildURL("assay", "importRun", config.containerPath));
+                xhr.onprogress = function (evt) {
+                    if (evt.lengthComputable) {
+                        var loaded = evt.loaded / evt.total;
+                        console.log("  percent complete: " + (100 * loaded) + " ...");
+                    }
+                    else {
+                        console.log("  loading ...");
+                    }
+                };
+                xhr.onerror = function (evt) {
+                    //console.error(evt);
+                    failure.call(config.scope || this);
+                };
+                xhr.onload = function (evt) {
+                    //console.log(evt);
+
+                    if (evt.target.status === 200)
+                        success.call(config.scope || window, xhr);
+                    else
+                        failure.call(config.scope || window, xhr);
+                };
+
+                xhr.send(formData);
+            }
+            else
+            {
+                var fileInputs = [];
+                if (config.files) {
+                    for (var i = 0; i < config.files.length; i++) {
+                        var f = config.files[i];
+                        if (f.tagName == "INPUT") {
+                            fileInputs.push(f);
+                        }
+                    }
+                }
+
+                if (fileInputs.length == 0)
+                    throw new Error("At least one file input is required");
+
+                var values = {
+                    assayId: config.assayId,
+                    name: config.name,
+                    comment: config.comment
+                };
+
+                if (config.batchId)
+                    values["batchId"] = config.batchId;
+
+                if (config.properties) {
+                    for (var key in config.properties)
+                        values["properties['" + key + "']"] = config.properties[key];
+                }
+
+                if (config.batchProperties) {
+                    for (var key in config.batchProperties)
+                        values["batchProperties['" + key + "']"] = config.batchProperties[key];
+                }
+
+                // XXX: All this hackery is unnecessary if all of the fileInputs originate from the same form.
+                // Create a dummy form to hang the file inputs off of.
+                // Ext.Ajax.request() will use this form in a hidden iframe to submit the file inputs.
+                var form = document.createElement("form");
+
+                // The browser won't allow us to copy file input elements onto the dummy form.
+                // As a workaround, we move the file input to the dummy form and move it back once the submit is complete.
+                // We clone the original file input and insert it into the original form only for cosmetic purposes (which may not work well with Ext forms).
+                var clones = [];
+                for (var i = 0; i < fileInputs.length; i++) {
+                    var name = "file";
+                    if (i > 0)
+                        name = name + i;
+
+                    var input = fileInputs[i];
+                    var clone = input.cloneNode();
+                    input.parentElement.insertBefore(clone, input);
+                    clones.push(clone);
+
+                    input.originalName = input.name;
+                    input.name = name;
+                    form.appendChild(input);
+                }
+
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL("assay", "importRun", config.containerPath),
+                    isUpload: true,
+                    method: 'POST',
+                    params: values,
+                    form: form,
+                    success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
+                    failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                    callback: function (options, success, response) {
+                        // restore file input in original location
+                        for (var i = 0; i < fileInputs.length; i++) {
+                            var input = fileInputs[i];
+                            input.name = input.originalName;
+
+                            var clone = clones[i];
+                            clone.parentElement.insertBefore(input, clone);
+                            clone.parentElement.removeChild(clone);
+                        }
+                    }
+                });
+            }
         }
     };
 };
