@@ -425,7 +425,8 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     protected void putValue(Map<String,Object> row, DisplayColumn dc) throws Exception
     {
         Object value = getColumnValue(dc);
-        row.put(dc.getColumnInfo().getName(), value);
+        String colName = getColumnName(dc);
+        row.put(colName, value);
 
         //if the display column has a url, include that as another row property
         //with the name "<URL_COL_PREFIX><colname>"
@@ -433,7 +434,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         {
             String url = dc.renderURL(_ctx);
             if (null != url)
-                row.put(URL_COL_PREFIX + dc.getColumnInfo().getName(), url);
+                row.put(URL_COL_PREFIX + colName, url);
         }
     }
 
