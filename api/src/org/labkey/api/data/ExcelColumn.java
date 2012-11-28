@@ -264,8 +264,11 @@ public class ExcelColumn extends RenderColumn
                     break;
                 case(TYPE_INT):
                 case(TYPE_DOUBLE):
-                    cell.setCellValue(((java.lang.Number) o).doubleValue());
-                    cell.setCellStyle(_style);
+                    if (o instanceof Number)
+                    {
+                        cell.setCellValue(((java.lang.Number) o).doubleValue());
+                        cell.setCellStyle(_style);
+                    }
                     break;
                 case(TYPE_STRING):
                 default:
