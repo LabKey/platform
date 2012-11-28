@@ -126,7 +126,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class QueryServiceImpl extends QueryService
 {
-    private static final Cache<String, Object> MODULE_RESOURCES_CACHE = CacheManager.getCache(10000, CacheManager.DAY, "Module resources cache");
+    private static final Cache<String, Collection<? extends Resource>> MODULE_RESOURCES_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module resources cache");
+    private static final Cache<String, ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query defs cache");
+    private static final Cache<String, ModuleCustomViewDef> MODULE_CUSTOM_VIEWS_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module custom view defs cache");
+    private static final Cache<String, ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query metadata defs cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
     private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
     private static final String CUSTOMVIEW_SET_CACHE_ENTRY = "CUSTOMVIEW:";
@@ -327,7 +330,7 @@ public class QueryServiceImpl extends QueryService
                 //in production, cache the set of query defs for each module on first request
                 String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString() + "." + schemaName + "." + path;
                 //noinspection unchecked
-                queries = (Collection<? extends Resource>) MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
+                queries = MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
 
                 if (null == queries)
                 {
@@ -341,12 +344,15 @@ public class QueryServiceImpl extends QueryService
             {
                 for (Resource query : queries)
                 {
-                    String cacheKey = query.getPath().toString();
-                    ModuleQueryDef moduleQueryDef = (ModuleQueryDef) MODULE_RESOURCES_CACHE.get(cacheKey);
+                    // Include both schemaName and path in key because some queries come from the same file on disk
+                    // but are exposed in multiple schemas. For example, we support queries supplied as part
+                    // of an assay provider that are exposed as part of each assay design of that type. See issue 16595
+                    String cacheKey = query.getPath().toString() + "||" + schemaName;
+                    ModuleQueryDef moduleQueryDef = MODULE_QUERY_DEFS_CACHE.get(cacheKey);
                     if (null == moduleQueryDef || moduleQueryDef.isStale())
                     {
                         moduleQueryDef = new ModuleQueryDef(query, schemaName, module.getName());
-                        MODULE_RESOURCES_CACHE.put(cacheKey, moduleQueryDef);
+                        MODULE_QUERY_DEFS_CACHE.put(cacheKey, moduleQueryDef);
                     }
 
                     ret.add(new ModuleCustomQueryDefinition(moduleQueryDef, user, container));
@@ -485,7 +491,7 @@ public class QueryServiceImpl extends QueryService
             {
                 //in production, cache the set of custom view defs for each module on first request
                 String fileSetCacheKey = CUSTOMVIEW_SET_CACHE_ENTRY + module.toString() + "." + schema + "." + query;
-                views = (Collection<? extends Resource>)MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
+                views = MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
 
                 if (null == views)
                 {
@@ -499,14 +505,14 @@ public class QueryServiceImpl extends QueryService
             {
                 for (Resource view : views)
                 {
-                    String cacheKey = view.getPath().toString();
-                    ModuleCustomViewDef moduleCustomViewDef = (ModuleCustomViewDef)MODULE_RESOURCES_CACHE.get(cacheKey);
+                    String cacheKey = view.getPath() + "||" + schema + "||" + query;
+                    ModuleCustomViewDef moduleCustomViewDef = MODULE_CUSTOM_VIEWS_CACHE.get(cacheKey);
                     if (null == moduleCustomViewDef || moduleCustomViewDef.isStale())
                     {
                         try
                         {
                             moduleCustomViewDef = new ModuleCustomViewDef(view, schema, query);
-                            MODULE_RESOURCES_CACHE.put(cacheKey, moduleCustomViewDef);
+                            MODULE_CUSTOM_VIEWS_CACHE.put(cacheKey, moduleCustomViewDef);
                         }
                         catch (UnexpectedException ex)
                         {
@@ -1259,7 +1265,7 @@ public class QueryServiceImpl extends QueryService
                 //in production, cache the set of query defs for each module on first request
                 String fileSetCacheKey = QUERYDEF_METADATA_SET_CACHE_ENTRY + module.toString() + "." + dir.toString();
                 //noinspection unchecked
-                queryMetadatas = (Collection<? extends Resource>) MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
+                queryMetadatas = MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
 
                 if (null == queryMetadatas)
                 {
@@ -1274,11 +1280,11 @@ public class QueryServiceImpl extends QueryService
                 for (Resource query : queryMetadatas)
                 {
                     String cacheKey = query.getPath().toString();
-                    ModuleQueryMetadataDef metadataDef = (ModuleQueryMetadataDef) MODULE_RESOURCES_CACHE.get(cacheKey);
+                    ModuleQueryMetadataDef metadataDef = MODULE_QUERY_METADATA_DEF_CACHE.get(cacheKey);
                     if (null == metadataDef || metadataDef.isStale())
                     {
                         metadataDef = new ModuleQueryMetadataDef(query);
-                        MODULE_RESOURCES_CACHE.put(cacheKey, metadataDef);
+                        MODULE_QUERY_METADATA_DEF_CACHE.put(cacheKey, metadataDef);
                     }
 
                     if (metadataDef.getName().equalsIgnoreCase(tableName))
