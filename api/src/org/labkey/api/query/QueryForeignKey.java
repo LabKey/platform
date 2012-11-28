@@ -79,7 +79,11 @@ public class QueryForeignKey implements ForeignKey
             lookupTable = getLookupTableInfo();
             if (foreignKey.getParentTable() != null && foreignKey.getParentTable().supportsContainerFilter() && lookupTable != null && lookupTable.supportsContainerFilter())
             {
-                ((ContainerFilterable)lookupTable).setContainerFilter(new DelegatingContainerFilter(foreignKey.getParentTable(), true));
+                ContainerFilterable table = (ContainerFilterable) lookupTable;
+                if (table.hasDefaultContainerFilter())
+                {
+                    table.setContainerFilter(new DelegatingContainerFilter(foreignKey.getParentTable(), true));
+                }
             }
         }
         catch (QueryParseException qpe)

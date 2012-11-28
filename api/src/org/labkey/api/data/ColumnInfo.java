@@ -1112,6 +1112,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             {
                 return null;
             }
+            if (foreignKey.getParentTable() != null && foreignKey.getParentTable().supportsContainerFilter() && lookupTable.supportsContainerFilter())
+            {
+                ContainerFilterable table = (ContainerFilterable) lookupTable;
+                if (table.hasDefaultContainerFilter())
+                {
+                    table.setContainerFilter(new DelegatingContainerFilter(foreignKey.getParentTable(), true));
+                }
+            }
             ColumnInfo lookupColumn;
             if (displayField != null)
             {
