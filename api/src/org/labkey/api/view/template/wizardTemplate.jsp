@@ -35,6 +35,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags(me.getViewContext().getActionURL()) %>
