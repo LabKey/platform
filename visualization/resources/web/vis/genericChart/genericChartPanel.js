@@ -1562,7 +1562,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 this.optionsPanel.setPanelOptionValues({renderType: this.renderType});
             } else {
                 this.optionsPanel.setPanelOptionValues(json.chartConfig.chartOptions);
-                if(json.chartConfig.chartOptions.mainTitle){
+                if(json.chartConfig.chartOptions.mainTitle != null && json.chartConfig.chartOptions.mainTitle != undefined){
                     this.mainTitlePanel.setMainTitle(json.chartConfig.chartOptions.mainTitle, true);
                     if(this.getDefaultTitle() != this.mainTitlePanel.getPanelOptionValues().title){
                         this.mainTitlePanel.userEditedTitle = true;
@@ -1838,23 +1838,47 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         }
 
+        var mainLabel = chartOptions.mainTitle;
+        var yLabel = (chartOptions.yAxis.label != null && chartOptions.yAxis.label != undefined) ?
+                chartOptions.yAxis.label :
+                Ext4.util.Format.htmlEncode(this.yAxisMeasure.label);
+        var xLabel = chartOptions.xAxis.label ? chartOptions.xAxis.label : "";
+
+        if(this.editMode){
+            if(mainLabel == null || Ext4.util.Format.trim(mainLabel) == ""){
+                mainLabel = "Edit Title";
+            }
+            
+            if(yLabel == null || Ext4.util.Format.trim(yLabel) == ""){
+                yLabel = "Edit Axis Label";
+            }
+            
+            if(xLabel == null || Ext4.util.Format.trim(xLabel) == ""){
+                if(this.xAxisMeasure){
+                    xLabel = "Edit Axis Label";
+                } else {
+                    xLabel = "Choose a column";
+                }
+            }
+        }
+
         labels = {
             main: {
-                value: chartOptions.mainTitle,
+                value: mainLabel,
                 lookClickable: !forExport && this.editMode,
                 listeners: {
                     click: mainTitleClickHandler(this)
                 }
             },
             y: {
-                value: chartOptions.yAxis.label ? chartOptions.yAxis.label : Ext4.util.Format.htmlEncode(this.yAxisMeasure.label),
+                value: yLabel,
                 lookClickable: !forExport && this.editMode,
                 listeners: {
                     click: this.editMode ? yClickHandler(this) : null
                 }
             },
             x: {
-                value: chartOptions.xAxis.label ? chartOptions.xAxis.label : "Choose a column",
+                value: xLabel,
                 lookClickable: !forExport && this.editMode,
                 listeners: {
                     click: this.editMode ? xClickHandler(this) : null
@@ -2246,14 +2270,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getChartOptions: function(){
         var chartOptions = {};
+        var mainTitle = this.mainTitlePanel.getPanelOptionValues().title;
 
         Ext.apply(chartOptions, this.optionsPanel.getPanelOptionValues());
 
-        if(!this.mainTitlePanel.userEditedTitle || this.mainTitlePanel.getPanelOptionValues().title == ''){
+        if(!this.mainTitlePanel.userEditedTitle || mainTitle == null || mainTitle == undefined){
             chartOptions.mainTitle = this.getDefaultTitle();
             this.mainTitlePanel.setMainTitle(chartOptions.mainTitle, true);
         } else {
-            chartOptions.mainTitle = this.mainTitlePanel.getPanelOptionValues().title;
+            chartOptions.mainTitle = mainTitle;
         }
 
         chartOptions.yAxis = this.yMeasurePanel.getPanelOptionValues();
