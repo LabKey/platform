@@ -10,11 +10,12 @@ LABKEY.requiresScript("/extWidgets/Ext4FormPanel.js");
 Ext4.define('LABKEY.ext.ImportPanel', {
     extend: 'Ext.tab.Panel',
     initComponent: function(){
+        this.viewName = this.viewName || '~~INSERT~~';
+
         this.store = this.store || Ext4.create('LABKEY.ext4.Store', {
             schemaName: this.schemaName,
             queryName: this.queryName,
             viewName: this.viewName,
-            columns: '*',
             maxRows: 0,
             autoLoad: true,
             listeners: {
@@ -55,7 +56,7 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 schemaName: this.schemaName,
                 queryName: this.queryName,
                 viewName: this.viewName,
-                columns: '*',
+                columns: this.columns,
                 listeners: {
                     uploadcomplete: function(panel, response){
                         Ext4.Msg.alert("Success", response.successMessage, function(btn){

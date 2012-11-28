@@ -852,7 +852,7 @@ LABKEY.ext.Ext4Helper = new function(){
          */
         shouldShowInInsertView: function(meta){
             return Ext4.isDefined(meta.shownInInsertView) ?  meta.shownInInsertView :
-                (!meta.isHidden && !meta.hidden && meta.userEditable!==false && !meta.autoIncrement);
+                (!meta.calculated && !meta.isHidden && !meta.hidden && meta.userEditable!==false && !meta.autoIncrement);
         },
 
         /**
@@ -870,7 +870,7 @@ LABKEY.ext.Ext4Helper = new function(){
          */
         shouldShowInUpdateView: function(meta){
             return Ext4.isDefined(meta.shownInUpdateView) ? meta.shownInUpdateView :
-                (!meta.isHidden && !meta.hidden && meta.userEditable!==false && !meta.autoIncrement && meta.readOnly!==false)
+                (!meta.calculated && !meta.isHidden && !meta.hidden && meta.userEditable!==false && !meta.autoIncrement && meta.readOnly!==false)
         },
 
         //private
@@ -925,6 +925,16 @@ LABKEY.ext.Ext4Helper = new function(){
             'float': 'FLOAT',
             'date': 'DATE',
             'boolean': 'BOOL'
+        },
+
+        //private
+        //NOTE: the intention of this method is to provide a standard, low-level way to translating Labkey metadata names into ext ones.
+        translateMetadata: function(field){
+            field.fieldLabel = Ext4.util.Format.htmlEncode(field.label || field.caption || field.header || field.name);
+            field.dataIndex = field.dataIndex || field.name;
+            field.editable = (field.userEditable!==false && !field.readOnly && !field.autoIncrement && !field.calculated);
+            field.allowBlank = field.nullable;
+            field.jsonType = field.jsonType || LABKEY.ext.Ext4Helper.findJsonType(field);
         }
     }
 };
