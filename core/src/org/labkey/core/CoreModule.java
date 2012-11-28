@@ -51,6 +51,7 @@ import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reader.DataLoaderService;
@@ -674,7 +675,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 CoreModule.TestCase.class,
                 PortalJUnitTest.class,
                 ContainerDisplayColumn.TestCase.class,
-                SimpleFilter.InClauseTestCase.class
+                SimpleFilter.InClauseTestCase.class,
+                AliasManager.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 
