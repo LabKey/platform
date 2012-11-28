@@ -22,11 +22,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.view.ListController;
 
-import java.sql.SQLException;
 import java.util.Map;
 
 public class ListServiceImpl implements ListService.Interface
