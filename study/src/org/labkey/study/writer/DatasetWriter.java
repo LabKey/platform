@@ -246,21 +246,6 @@ public class DatasetWriter implements InternalStudyWriter
             Results rs = QueryService.get().select(ti, columns, filter, sort);
             writeResultsToTSV(rs, vf, def.getFileName());
         }
-
-        // write out the date offset and alternate id data from the study.participant table for reference
-        if (ctx.isShiftDates() || ctx.isAlternateIds())
-        {
-            TableInfo participantTableInfo = StudySchema.getInstance().getTableInfoParticipant();
-            List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
-            cols.add(participantTableInfo.getColumn("participantid"));
-            cols.add(participantTableInfo.getColumn("alternateid"));
-            cols.add(participantTableInfo.getColumn("dateoffset"));
-            SimpleFilter containerFilter = new SimpleFilter();
-            containerFilter.addCondition(participantTableInfo.getColumn("container"), ctx.getContainer());
-            Sort participantSort = new Sort("participantid");
-            Results participantResults = QueryService.get().select(participantTableInfo, cols, containerFilter, participantSort);
-            writeResultsToTSV(participantResults, vf, "participant.tsv");
-        }
     }
 
     private void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws SQLException, IOException
