@@ -91,7 +91,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     @Override
     protected String getFileName(Object value)
     {
-        String result = null;
+        String result = value == null ? null : value.toString();
         if (value instanceof String)
         {
             File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(value.toString()));

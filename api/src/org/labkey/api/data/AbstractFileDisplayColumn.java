@@ -46,7 +46,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        renderIconAndFilename(ctx, out, getFileName(getValue(ctx)), true, true);
+        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
     }
 
     /** @return the short name of the file (not including full path) */
@@ -79,7 +79,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             icon.append("<img src=\"").append(ctx.getRequest().getContextPath());
             icon.append((null != fileIconUrl) ? fileIconUrl : Attachment.getFileIcon(filename));
             icon.append("\" alt=\"icon\"");
-            icon.append("/>&nbsp;").append(filename);
+            icon.append("/>&nbsp;").append(getFileName(filename));
 
             if (thumbnail && _map.isInlineImageFor(filename))
             {
