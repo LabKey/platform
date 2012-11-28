@@ -443,7 +443,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      *
      * see StudyManager.importDatasetTSV()
      */
-    public TableInfo getTableInfo(User user) throws UnauthorizedException
+    public DatasetSchemaTableInfo getTableInfo(User user) throws UnauthorizedException
     {
         return getTableInfo(user, true);
     }

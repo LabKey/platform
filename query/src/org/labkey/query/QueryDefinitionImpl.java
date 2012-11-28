@@ -286,10 +286,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
 
+    @NotNull
     public UserSchema getSchema()
     {
         if (null == _schema)
             _schema = QueryService.get().getUserSchema(getUser(), getContainer(), getSchemaPath());
+        if (_schema == null)
+        {
+            throw new IllegalStateException("Could not find schema " + getSchemaPath() + " in " + getContainer().getPath() + " for user " + getUser() + " with query " + getName());
+        }
         assert _schema.getSchemaPath().equals(getSchemaPath()) : "Paths were not equal: " + _schema.getSchemaPath() + " vs " + getSchemaPath();
         return _schema;
     }
