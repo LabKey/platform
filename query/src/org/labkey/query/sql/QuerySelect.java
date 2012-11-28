@@ -1027,12 +1027,19 @@ groupByLoop:
 
         QueryTableInfo ret = new QueryTableInfo(this, getAlias())
         {
+            // Hold a separate reference so we can null it out if the container filter changes
+            private SQLFragment _sql = sql;
+
             @NotNull
             @Override
             public SQLFragment getFromSQL(String alias)
             {
                 SQLFragment f = new SQLFragment();
-                f.append("(").append(sql).append(") ").append(alias);
+                if (_sql == null)
+                {
+                    _sql = getSql();
+                }
+                f.append("(").append(_sql).append(") ").append(alias);
                 return f;
             }
 
@@ -1040,6 +1047,14 @@ groupByLoop:
             public boolean hasSort()
             {
                 return _orderBy != null && !_orderBy.childList().isEmpty();
+            }
+
+            @Override
+            public void setContainerFilter(@NotNull ContainerFilter containerFilter)
+            {
+                super.setContainerFilter(containerFilter);
+                // This changes the SQL we'll need to generate, so clear out the cached version
+                _sql = null;
             }
 
             @Override

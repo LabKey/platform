@@ -88,7 +88,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
 
     public boolean hasDefaultContainerFilter()
     {
-        return false;
+        return _containerFilter == null;
     }
 
     @NotNull
