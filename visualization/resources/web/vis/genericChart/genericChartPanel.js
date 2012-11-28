@@ -1844,7 +1844,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 Ext4.util.Format.htmlEncode(this.yAxisMeasure.label);
         var xLabel = chartOptions.xAxis.label ? chartOptions.xAxis.label : "";
 
-        if(this.editMode){
+        if(!forExport && this.editMode){
             if(mainLabel == null || Ext4.util.Format.trim(mainLabel) == ""){
                 mainLabel = "Edit Title";
             }
@@ -1867,7 +1867,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 value: mainLabel,
                 lookClickable: !forExport && this.editMode,
                 listeners: {
-                    click: mainTitleClickHandler(this)
+                    click: this.editMode ? mainTitleClickHandler(this) : null
                 }
             },
             y: {

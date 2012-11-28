@@ -1873,6 +1873,15 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         };
 
+        // issue 16602: allow blank titles, but default to "Edit XXXX" for edit mode
+        if (this.editMode)
+        {
+            mainTitle = mainTitle == null || Ext4.util.Format.trim(mainTitle) == "" ? "Edit Title" : mainTitle;
+            xTitle = xTitle == null || Ext4.util.Format.trim(xTitle) == "" ? "Edit Axis Label" : xTitle;
+            yLeftTitle = yLeftTitle == null || Ext4.util.Format.trim(yLeftTitle) == "" ? "Edit Axis Label" : yLeftTitle;
+            yRightTitle = yRightTitle == null || Ext4.util.Format.trim(yRightTitle) == "" ? "Edit Axis Label" : yRightTitle;
+        }
+
         var plotConfig = {
             renderTo: newChartDiv.getId(),
             clipRect: true,
