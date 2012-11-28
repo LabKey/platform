@@ -525,7 +525,13 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
         Set<String> ptids = new HashSet<String>();
 
         for (Specimen specimen : form.getSpecimens())
-            ptids.add(specimen.getPtid());
+        {
+            String ptid = specimen.getPtid();
+
+            // PTID can be null
+            if (null != ptid)
+                ptids.add(specimen.getPtid());
+        }
 
         return new LinkedList<String>(ptids);
     }
