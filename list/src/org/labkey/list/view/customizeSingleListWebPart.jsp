@@ -73,7 +73,7 @@ If you want to let users change the list that's displayed or customize the view 
         var sqvModel = Ext4.create('LABKEY.SQVModel', {});
         var title = Ext4.create('Ext.form.field.Text', {
             name : 'title',
-            value :  <%=PageFlowUtil.jsString(h(props.get("title")))%>,
+            value :  <%=PageFlowUtil.jsString(props.get("title"))%>,
             fieldLabel : 'Title'
         });
         var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
@@ -86,7 +86,7 @@ If you want to let users change the list that's displayed or customize the view 
 
         var viewCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({
             name : 'viewName',
-            initialValue : <%=PageFlowUtil.jsString(h(props.get("viewName")))%>
+            initialValue : <%=PageFlowUtil.jsString(props.get("viewName"))%>
         }));
 
         var submitButton = Ext4.create('Ext.button.Button', {
