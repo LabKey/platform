@@ -17,31 +17,34 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 public class AliasManager
 {
     SqlDialect _dialect;
     Map<String, String> _aliases = new CaseInsensitiveHashMap<String>();
-    Map<FieldKey, String> _keys = new HashMap<FieldKey,String>();
 
+    private AliasManager(SqlDialect d)
+    {
+        _dialect = d;
+    }
 
     public AliasManager(DbSchema schema)
     {
         _dialect = null==schema ? null :  schema.getSqlDialect();
     }
-
 
     public AliasManager(@NotNull TableInfo table, @Nullable Collection<ColumnInfo> columns)
     {
@@ -75,22 +78,55 @@ public class AliasManager
 
     private static String legalNameFromName(String str)
     {
-        StringBuilder buf = null;
-        for (int i = 0; i < str.length(); i ++)
+        int i;
+        char ch=0;
+
+        for (i = 0; i < str.length(); i ++)
         {
-            if (isLegalNameChar(str.charAt(i), i == 0))
-                continue;
-            if (buf == null)
-            {
-                buf = new StringBuilder(str.length());
-            }
-            buf.append(str.substring(buf.length(), i));
-            buf.append("_");
+            ch = str.charAt(i);
+            if (!isLegalNameChar(ch, i==0))
+                break;
         }
-        if (buf == null)
+        if (i==str.length())
             return str;
-        buf.append(str.substring(buf.length(), str.length()));
-        return buf.toString();
+
+        StringBuilder sb = new StringBuilder(str.length()+20);
+        if (i==0 && isLegalNameChar(ch, false))
+        {
+            i++;
+            sb.append('_').append(ch);
+        }
+        else
+        {
+            sb.append(str.substring(0, i));
+        }
+
+        for ( ; i < str.length() ; i ++)
+        {
+            ch = str.charAt(i);
+            boolean isLegal = isLegalNameChar(ch, i==0);
+            if (isLegal)
+            {
+                sb.append(ch);
+            }
+            else
+            {
+                switch (ch)
+                {
+                    case '+' : sb.append("_plus_"); break;
+                    case '-' : sb.append("_minus_"); break;
+                    case '(' : sb.append("_lp_"); break;
+                    case ')' : sb.append("_rp_"); break;
+                    case '/' : sb.append("_fs_"); break;
+                    case '\\' : sb.append("_bs_"); break;
+                    case '&' : sb.append("_amp_"); break;
+                    case '<' : sb.append("_lt_"); break;
+                    case '>' : sb.append("_gt_"); break;
+                    default: sb.append("_"); break;
+                }
+            }
+        }
+        return null == sb ? str : sb.toString();
     }
 
 
@@ -100,13 +136,13 @@ public class AliasManager
     }
 
 
-    public static String makeLegalName(String str, SqlDialect dialect)
+    public static String makeLegalName(String str, @Nullable SqlDialect dialect)
     {
         return makeLegalName(str, dialect, true);
     }
 
 
-    public static String makeLegalName(String str, SqlDialect dialect, boolean truncate)
+    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate)
     {
         String ret = legalNameFromName(str);
         if (null != dialect && dialect.isReserved(str))
@@ -117,7 +153,7 @@ public class AliasManager
     }
 
 
-    public static String makeLegalName(FieldKey key, SqlDialect dialect)
+    public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect)
     {
         if (key.getParent() == null)
             return makeLegalName(key.getName(), dialect);
@@ -230,5 +266,48 @@ public class AliasManager
     public void unclaimAlias(ColumnInfo column)
     {
         _aliases.remove(column.getAlias());
+    }
+
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test_legalNameFromname()
+        {
+            assertEquals("bob", legalNameFromName("bob"));
+            assertEquals("bob1", legalNameFromName("bob1"));
+            assertEquals("_1", legalNameFromName("1"));
+            assertEquals("_1bob", legalNameFromName("1bob"));
+            assertEquals("_bob", legalNameFromName("?bob"));
+            assertEquals("bob_", legalNameFromName("bob?"));
+            assertEquals("bob_by", legalNameFromName("bob?by"));
+            assertFalse(legalNameFromName("bob+").equals(legalNameFromName("bob-")));
+        }
+
+        @Test
+        public void test_decideAlias()
+        {
+            AliasManager m = new AliasManager(new MockSqlDialect()
+            {
+                @Override
+                public boolean isReserved(String word)
+                {
+                    return "select".equals(word);
+                }
+            });
+
+            assertEquals("fred", m.decideAlias("fred"));
+            assertEquals("fred1", m.decideAlias("fred"));
+            assertEquals("fred2", m.decideAlias("fred"));
+
+            assertEquals("_1fred", m.decideAlias("1fred"));
+            assertEquals("_1fred1", m.decideAlias("1fred"));
+            assertEquals("_1fred2", m.decideAlias("1fred"));
+
+            assertEquals("_select", m.decideAlias("select"));
+
+            assertEquals(40, m.decideAlias("This is a very long name for a column, but it happens! go figure.").length());
+        }
     }
 }
