@@ -319,7 +319,7 @@ public class DotGraph
         }
         if (label != null && !(src instanceof GroupedNode) && !(trgt instanceof GroupedNode))
         {
-            connect += " [ style=\"setlinewidth(3)\" label = \"" + label + "\" fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + " ]";
+            connect += " [ style=\"setlinewidth(3)\" label = \"" + escape(label) + "\" fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + " ]";
         }
         else
         {
@@ -483,16 +483,21 @@ public class DotGraph
             if (null != shape)
             {
                 out.println(key + "["
-                        + "label=\"" + label + "\", tooltip=\"" + tooltip + "\" "
+                        + "label=\"" + escape(label) + "\", tooltip=\"" + escape(tooltip) + "\" "
                         + ",style=\"filled" + (bold ? ", setlinewidth(6)" : ", setlinewidth(2)") + "\" "
                         + ", fillcolor=\"" + color + "\" shape=" + shape
                         + ((null != height) ? ", height=\"" + height + "\"" : "")
                         + ((null != width) ? ", width=\"" + width + "\"" : "")
                         + ((null != width) || (null != height) ? ", fixedsize=true" : "")
-                        + ((null != link) ? ",  URL=\"" + link + "\"" : "")
+                        + ((null != link) ? ",  URL=\"" + escape(link) + "\"" : "")
                         + "]");
             }
         }
+    }
+
+    private String escape(String s)
+    {
+        return s == null ? null : s.replace("\"", "\\\"");
     }
 
     private class MNode extends DotNode
@@ -606,12 +611,12 @@ public class DotGraph
             label += " (" + gMap.keySet().size() + " entries)";
             if (null != shape)
             {
-                out.println(key + "[label=\"" + label
+                out.println(key + "[label=\"" + escape(label)
                         + "\",style=\"filled\", fillcolor=\"" + color + "\" shape=" + shape
                         + ((null != height) ? ", height=\"" + height + "\"" : "")
                         + ((null != width) ? ", width=\"" + width + "\"" : "")
                         + ((null != width) || (null != height) ? ", fixedsize=true" : "")
-                        + ((null != link) ? ",  URL=\"" + link + "\"" : "")
+                        + ((null != link) ? ",  URL=\"" + escape(link) + "\"" : "")
                         + "]");
             }
         }
