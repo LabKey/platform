@@ -8,6 +8,7 @@ Ext4.onReady(function(){
         store: Ext4.create('LABKEY.ext4.Store', {
             schemaName: LABKEY.ActionURL.getParameter('schemaName'),
             queryName: LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'),
+            veryName: LABKEY.ActionURL.getParameter('viewName') || LABKEY.ActionURL.getParameter('query.viewName') || '~~UPDATE~~',
             columns: LABKEY.ActionURL.getParameter('columns') || LABKEY.ActionURL.getParameter('query.columns') || '*',
             filterArray: [
                 LABKEY.Filter.create(LABKEY.ActionURL.getParameter('keyField'), LABKEY.ActionURL.getParameter('key'), LABKEY.Filter.Types.EQUALS)

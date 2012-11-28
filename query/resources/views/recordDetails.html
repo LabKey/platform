@@ -19,8 +19,8 @@ Ext4.onReady(function(){
         store: {
             schemaName: LABKEY.ActionURL.getParameter('schemaName'),
             queryName: queryName,
-            viewName: LABKEY.ActionURL.getParameter('viewName') || LABKEY.ActionURL.getParameter('query.viewName'),
-            columns: LABKEY.ActionURL.getParameter('columns') || LABKEY.ActionURL.getParameter('query.columns') || '*',
+            viewName: LABKEY.ActionURL.getParameter('viewName') || LABKEY.ActionURL.getParameter('query.viewName') || '~~DETAILS~~',
+            columns: LABKEY.ActionURL.getParameter('columns') || LABKEY.ActionURL.getParameter('query.columns'),
             maxRows: 2,
             listeners: {
                 load: function(store){
