@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Created by IntelliJ IDEA.
@@ -231,6 +232,9 @@ public class QueryTable extends QueryRelation
 
     private SQLFragment _getSql()
     {
+        // set of non-lookup columns
+        Set<FieldKey> tableColumns = new TreeSet<FieldKey>();
+
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         SQLFragment sql = new SQLFragment();
 
@@ -253,7 +257,6 @@ public class QueryTable extends QueryRelation
         }
 
         _generateSelectSQL = false;
-        SQLFragment tableFromSql = _tableInfo.getFromSQL(_innerAlias);
 
         sql.append("SELECT ");
         String comma = "";
@@ -263,6 +266,8 @@ public class QueryTable extends QueryRelation
                 continue;
             if (null != col.getFieldKey().getParent())
                 _generateSelectSQL = true;
+            else
+                tableColumns.add(col.getFieldKey());
             if (col._col instanceof PropertyColumn)
                 _generateSelectSQL = true;
             col.declareJoins(_innerAlias, joins);
@@ -277,6 +282,9 @@ public class QueryTable extends QueryRelation
             comma = ", ";
         }
         sql.append("\nFROM ");
+
+        SQLFragment tableFromSql = _tableInfo.getFromSQL(_innerAlias, tableColumns);
+
         sql.append(tableFromSql);
         for (SQLFragment j : joins.values())
             sql.append(j);

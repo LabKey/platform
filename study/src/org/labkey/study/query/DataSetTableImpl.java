@@ -556,10 +556,15 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         return mainAlias + "_AR";
     }
 
+
+
+
     @NotNull
-    @Override
-    public SQLFragment getFromSQL(String alias)
+    private SQLFragment _getFromSQL(String alias, boolean includeParticipantVisit)
     {
+        if (!includeParticipantVisit && !_dsd.isAssayData())
+            return super.getFromSQL(alias);
+
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
 
         SQLFragment from = new SQLFragment();
@@ -585,6 +590,27 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
 
         return from;
     }
+
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        return _getFromSQL(alias, true);
+    }
+
+
+    @Override
+    public SQLFragment getFromSQL(String alias, Set<FieldKey> cols)
+    {
+        boolean includePV = false;
+        if (cols.contains(new FieldKey(null, "VisitRowId")))
+            includePV = true;
+        else if (_schema.getStudy().getTimepointType() == TimepointType.DATE && cols.contains(new FieldKey(null, "Day")))
+            includePV = true;
+        return _getFromSQL(alias, includePV);
+    }
+
 
     private TableInfo createAssayResultTable()
     {
