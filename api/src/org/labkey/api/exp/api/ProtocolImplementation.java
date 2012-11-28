@@ -55,7 +55,6 @@ public class ProtocolImplementation
      * Called after a ExpRun and all it's ExpDatas have been deleted.
      * @param container The container the run was deleted from.
      * @param user The user who deleted the run.
-     * @throws SQLException
      */
     public void onRunDeleted(Container container, User user)
     {

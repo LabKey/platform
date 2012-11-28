@@ -25,6 +25,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -115,7 +116,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
             // Only override if the new table doesn't already have some special filter
             if (newTable.hasDefaultContainerFilter())
-                newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable()));
+                newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable(), true));
         }
         LookupColumn result = LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
         if (result != null)

@@ -21,6 +21,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.RenderContext;
@@ -78,7 +79,7 @@ public class QueryForeignKey implements ForeignKey
             lookupTable = getLookupTableInfo();
             if (foreignKey.getParentTable() != null && foreignKey.getParentTable().supportsContainerFilter() && lookupTable != null && lookupTable.supportsContainerFilter())
             {
-                ((ContainerFilterable)lookupTable).setContainerFilter(foreignKey.getParentTable().getContainerFilter());
+                ((ContainerFilterable)lookupTable).setContainerFilter(new DelegatingContainerFilter(foreignKey.getParentTable(), true));
             }
         }
         catch (QueryParseException qpe)

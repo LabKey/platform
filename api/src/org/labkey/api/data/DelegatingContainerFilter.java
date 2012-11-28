@@ -25,16 +25,30 @@ import java.util.Collection;
  */
 public class DelegatingContainerFilter extends ContainerFilter
 {
-    private TableInfo _source;
+    private final TableInfo _source;
+    private final boolean _promoteWorkbooksToParentContainer;
 
     public DelegatingContainerFilter(TableInfo source)
     {
+        this(source, false);
+    }
+
+    /** @param promoteWorkbooksToParentContainer if true, when evaluating this ContainerFilter, in workbooks use the parent
+     *                                           container instead of the workbook container as the base. See issue 16596
+     */
+    public DelegatingContainerFilter(TableInfo source, boolean promoteWorkbooksToParentContainer)
+    {
         _source = source;
+        _promoteWorkbooksToParentContainer = promoteWorkbooksToParentContainer;
     }
 
     @Nullable
     public Collection<String> getIds(Container currentContainer)
     {
+        if (_promoteWorkbooksToParentContainer && currentContainer.isWorkbook())
+        {
+            currentContainer = currentContainer.getParent();
+        }
         return _source.getContainerFilter().getIds(currentContainer);
     }
 

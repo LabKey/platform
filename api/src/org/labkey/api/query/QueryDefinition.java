@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
@@ -85,7 +86,7 @@ public interface QueryDefinition
     /** Used for URLs that require row-level info, like details or update URLs */
     ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pkValues);
     StringExpression urlExpr(QueryAction action, Container container);
-    UserSchema getSchema();
+    @NotNull UserSchema getSchema();
 
     /**
      * Returns whether this is a table-based query definition (versus a custom query).
