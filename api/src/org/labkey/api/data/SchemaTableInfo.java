@@ -77,7 +77,7 @@ import java.util.concurrent.TimeUnit;
 
 
 public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
- {
+{
     private static final Logger _log = Logger.getLogger(SchemaTableInfo.class);
 
     // Table properties
@@ -177,8 +177,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
     }
 
+    @Override
+    public SQLFragment getFromSQL(String alias, Set<FieldKey> cols)
+    {
+        return getFromSQL(alias);
+    }
 
-    public DbSchema getSchema()
+     public DbSchema getSchema()
     {
         return _parentSchema;
     }

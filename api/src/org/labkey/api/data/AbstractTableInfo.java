@@ -217,6 +217,11 @@ abstract public class AbstractTableInfo implements TableInfo
             return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
     }
 
+    @Override
+    public SQLFragment getFromSQL(String alias, Set<FieldKey> cols)
+    {
+        return getFromSQL(alias);
+    }
 
     // don't have to implement if you override getFromSql(String alias)
     abstract protected SQLFragment getFromSQL();

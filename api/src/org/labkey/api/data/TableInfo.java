@@ -78,6 +78,16 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      **/
     SQLFragment getFromSQL(String alias);
 
+    /* For most tables this is the same as getFromSQL().
+     * However, for some tables that want to help optimize generated SQL
+     * we can ask for the columns we need to be accessible.
+     *
+     * Only columns returned by getColumn() or resolveColumn() should be handed in (no lookups)
+     *
+     * This is really intended for QueryTable
+     */
+    SQLFragment getFromSQL(String alias, Set<FieldKey> cols);
+
     DbSchema getSchema();
 
     /** getSchema().getSqlDialect() */
