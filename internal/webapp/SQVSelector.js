@@ -109,6 +109,7 @@ Ext4.define('LABKEY.SQVModel', {
                         this.schemaCombo = cb;
                     },
                     select :  function(cb){
+                        cb.setValue(Ext4.htmlDecode(cb.getRawValue()));
                         if(this.queryCombo){
                             this.changeQueryStore(cb.getRawValue());
                         }
@@ -143,6 +144,8 @@ Ext4.define('LABKEY.SQVModel', {
                      },
                      select :  function(cb){
                          var schema = "";
+                         cb.setValue(Ext4.htmlDecode(cb.getRawValue()));
+
                          if(cb.defaultSchema){
                             schema = cb.defaultSchema;
                          }
@@ -184,6 +187,9 @@ Ext4.define('LABKEY.SQVModel', {
                 listeners : {
                     afterrender : function(cb) {
                         this.viewCombo = cb;
+                    },
+                    select : function(cb){
+                        cb.setValue(Ext4.htmlDecode(cb.getRawValue()));
                     },
                     dataloaded : function(cb){
                         xx = cb;
