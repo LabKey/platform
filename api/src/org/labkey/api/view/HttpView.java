@@ -181,6 +181,8 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             // container is usually derived from URL helper, might be different for webparts?
             if (null == context.getContainer())
                 context.setContainer(top.getContainer());
+            if (null == context.getUser())
+                context.setUser(top.getUser());
             if (null == context.getActionURL())
             {
                 ActionURL url = top.getActionURL();

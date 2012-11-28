@@ -583,9 +583,12 @@ public class DataRegion extends AbstractDataRegion
         if (oldRegion != this)
             ctx.setCurrentRegion(this);
 
+        Results rs = null;
+        boolean success = false;
+
         try
         {
-            Results rs = ctx.getResults();
+            rs = ctx.getResults();
             if (null == rs)
             {
                 TableInfo tinfoMain = getTable();
@@ -600,11 +603,16 @@ public class DataRegion extends AbstractDataRegion
             }
 
             getAggregateResults(ctx);
+            success = true;
             return rs;
         }
         finally
         {
             ctx.setCurrentRegion(oldRegion);
+
+            // If getAggregateResults() throws then we won't be returning rs... so close it now
+            if (!success)
+                ResultSetUtil.close(rs);
         }
     }
 
