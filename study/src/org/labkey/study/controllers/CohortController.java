@@ -134,6 +134,11 @@ public class CohortController extends BaseStudyController
             if (form.isClearParticipants())
             {
                 CohortManager.getInstance().clearParticipantCohorts(study);
+                if (!form.isManualCohortAssignment())
+                {
+                    CohortManager.getInstance().setAutomaticCohortAssignment(study, getUser(), -1,
+                            null, form.isAdvancedCohortSupport(), true);
+                }
                 return true;
             }
 
@@ -317,6 +322,7 @@ public class CohortController extends BaseStudyController
                 // Need to update the URL to be the insert action
                 buttonBar.getList().remove(0);
                 buttonBar.add(0, ActionButton.BUTTON_DO_INSERT);
+                cancelButton.setDisplayModes(DataRegion.MODE_INSERT);
             }
             dataRegion.setButtonBar(buttonBar);
 
