@@ -1230,6 +1230,12 @@ public class ModuleLoader implements Filter
         }
     }
 
+    // TODO: Remove once we've investigated #16113
+    public void logResourceFinders()
+    {
+        _log.info(_resourceFinders);
+    }
+
     public Collection<ResourceFinder> getResourceFindersForPath(String path)
     {
         //NOTE: jasper encodes underscores in JSPs, so decode this here

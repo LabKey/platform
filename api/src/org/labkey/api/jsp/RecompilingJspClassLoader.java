@@ -18,6 +18,7 @@ package org.labkey.api.jsp;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jasper.JspC;
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.settings.AppProps;
@@ -48,6 +49,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private static final Map<ResourceFinder, ClassLoader> _classLoaders = new HashMap<ResourceFinder, ClassLoader>();
     private static final boolean TEST = false;          // Set to true to force a re-compile of each JSP the first time it's encountered
     private static final Set<String> _compiledJsps = new HashSet<String>();    // Used during test mode
+    private static final Set<String> _badPaths = new ConcurrentHashSet<String>();
 
     @Override
     public Class loadClass(ServletContext context, String packageName, String jspFilename) throws ClassNotFoundException
@@ -57,7 +59,13 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
         if (null == finders)
         {
-            _log.info("No ResourceFinders for " + compiledJspPath);
+            // TODO: Remove once we've investigated #16113
+            if (!_badPaths.contains(compiledJspPath))
+            {
+                _log.info("No ResourceFinders for " + compiledJspPath);
+                ModuleLoader.getInstance().logResourceFinders();
+                _badPaths.add(compiledJspPath);
+            }
         }
         else
         {
@@ -72,9 +80,10 @@ public class RecompilingJspClassLoader extends JspClassLoader
                 if (classFile.exists() || (null != sourceFile && sourceFile.exists()))
                     return getCompiledClassFile(classFile, jspTempBuildDirectory, finder, packageName, jspFilename);
             }
+
+            _log.warn("Can't load " + compiledJspPath);
         }
 
-        _log.warn("Can't load " + compiledJspPath);
         return super.loadClass(context, packageName, jspFilename);
     }
 
