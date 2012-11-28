@@ -31,6 +31,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -457,8 +458,13 @@ public class SimpleFilter implements Filter
         @NotNull protected FieldKey _fieldKey;
         public static final int MAX_FILTER_VALUES_TO_DISPLAY = 10;
 
-        public MultiValuedFilterClause(FieldKey fieldKey, Collection params)
+        public MultiValuedFilterClause(FieldKey fieldKey, Collection<?> params)
         {
+            if (params.contains(null)) //params.size() == 0 ||
+            {
+                _includeNull = true;
+                params.remove(null);
+            }
             if (params.contains("")) //params.size() == 0 ||
             {
                 _includeNull = true;
@@ -479,34 +485,34 @@ public class SimpleFilter implements Filter
     public static class InClause extends MultiValuedFilterClause
     {
         @Deprecated // Use FieldKey version instead.
-        public InClause(String colName, Collection params)
+        public InClause(String colName, Collection<?> params)
         {
             this(colName, params, false);
         }
 
-        public InClause(FieldKey fieldKey, Collection params)
+        public InClause(FieldKey fieldKey, Collection<?> params)
         {
             this(fieldKey, params, false, false);
         }
 
         @Deprecated // Use FieldKey version instead.
-        public InClause(String colName, Collection params, boolean urlClause)
+        public InClause(String colName, Collection<?> params, boolean urlClause)
         {
             this(colName, params, urlClause, false);
         }
 
-        public InClause(FieldKey fieldKey, Collection params, boolean urlClause)
+        public InClause(FieldKey fieldKey, Collection<?> params, boolean urlClause)
         {
             this(fieldKey, params, urlClause, false);
         }
 
         @Deprecated // Use FieldKey version instead.
-        public InClause(String colName, Collection params, boolean urlClause, boolean negated)
+        public InClause(String colName, Collection<?> params, boolean urlClause, boolean negated)
         {
             this(FieldKey.fromString(colName), params, urlClause, negated);
         }
 
-        public InClause(FieldKey fieldKey, Collection params, boolean urlClause, boolean negated)
+        public InClause(FieldKey fieldKey, Collection<?> params, boolean urlClause, boolean negated)
         {
             super(fieldKey, params);
 
@@ -538,7 +544,14 @@ public class SimpleFilter implements Filter
 
             if (getParamVals().length == 0 && !isIncludeNull())
             {
-                sb.append(" has any value");
+                if (isNegated())
+                {
+                    sb.append(" has any value");
+                }
+                else
+                {
+                    sb.append(" never matches");
+                }
                 return;
             }
 
@@ -1312,7 +1325,7 @@ public class SimpleFilter implements Filter
     }
 
     // NOTE: We really should take FieldKey instead of String as map key.
-    public boolean meetsCriteria(Map<String, ? extends Object> map)
+    public boolean meetsCriteria(Map<String, ?> map)
     {
         if (_clauses == null || _clauses.isEmpty())
             return true;
@@ -1443,21 +1456,51 @@ public class SimpleFilter implements Filter
             FieldKey fieldKey = FieldKey.fromParts("Foo");
 
             // Empty parameter list
-            test("Foo IN (NULL)", new InClause(fieldKey, Collections.emptySet()), mockDialect);
-            test("1=1", new InClause(fieldKey, Collections.emptySet(), true, true), mockDialect);
+            test("Foo IN (NULL)", "Foo never matches", new InClause(fieldKey, Collections.emptySet()), mockDialect);
+            test("1=1", "Foo has any value", new InClause(fieldKey, Collections.emptySet(), true, true), mockDialect);
 
             // Non-null parameters only
-            test("((Foo IN (1, 2, 3)))", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3)), mockDialect);
-            test("((NOT Foo IN (1, 2, 3)) OR Foo IS NULL)", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3), true, true), mockDialect);
+            test("((Foo IN (1, 2, 3)))", "Foo IS ONE OF (1, 2, 3)", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3)), mockDialect);
+            test("((NOT Foo IN (1, 2, 3)) OR Foo IS NULL)", "Foo IS NOT ANY OF (1, 2, 3)", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3), true, true), mockDialect);
 
             // Include null parameter
-            test("((Foo IN ('Blip', 'Bar')) OR Foo IS NULL)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), mockDialect);
-            test("((NOT Foo IN ('Blip', 'Bar')) AND Foo IS NOT NULL)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
+            test("((Foo IN ('Blip', 'Bar')) OR Foo IS NULL)", "Foo IS ONE OF (Blip, Bar, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), mockDialect);
+            test("((NOT Foo IN ('Blip', 'Bar')) AND Foo IS NOT NULL)", "Foo IS NOT ANY OF (Blip, Bar, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
         }
 
-        private void test(String expected, InClause inClause, SqlDialect dialect)
+        @Test
+        public void testInClauseParsing() throws Exception
         {
-            assertEquals(expected, inClause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), dialect).toString());
+//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=", false, true);
+//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=1", false, false, "1");
+//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=1;2;3", false, false, "1", "2", "3");
+//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=1;", false, true, "1");
+//            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~in=1;;2", false, true, "1", "2");
+
+            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~notin=", true, true);
+            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~notin=1", true, false, "1");
+            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~notin=1;2;3", true, false, "1", "2", "3");
+            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~notin=1;", true, true, "1");
+            validateInClause("http://localhost/labkey/query/executeQuery.view?query.Foo~notin=1;;2", true, true, "1", "2");
+        }
+
+        private void validateInClause(String url, boolean negated, boolean includeNull, Object... expectedValues) throws URISyntaxException
+        {
+            SimpleFilter f = new SimpleFilter();
+            f.addUrlFilters(new URLHelper(url), "query");
+            InClause clause = (InClause)f.getClauses().get(0);
+            assertEquals("negated didn't match for IN clause", negated, clause._negated);
+            assertEquals("includeNull didn't match for IN clause", includeNull, clause._includeNull);
+            // Convert to sets because we don't care about order for IN clauses
+            assertEquals("Parameter values didn't match for IN clause", new HashSet<Object>(Arrays.asList(expectedValues)), new HashSet<Object>(Arrays.asList(clause._paramVals)));
+        }
+
+        private void test(String expectedSQL, String description, InClause inClause, SqlDialect dialect)
+        {
+            assertEquals("Generated SQL did not match", expectedSQL, inClause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), dialect).toString());
+            StringBuilder sb = new StringBuilder();
+            inClause.appendFilterText(sb, new ColumnNameFormatter());
+            assertEquals("Description did not match", description, sb.toString());
         }
     }
 }

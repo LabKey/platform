@@ -92,6 +92,11 @@ public class ResultsQueryView extends AssayBaseQueryView
 
         TableInfo table = view.getTable();
         SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
+        if (filter == null)
+        {
+            filter = new SimpleFilter();
+            view.getRenderContext().setBaseFilter(filter);
+        }
         _replacedRunFilter.addFilterCondition(filter, getReplacedFieldKey());
 
         return view;

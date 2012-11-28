@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -392,14 +393,21 @@ public enum CompareType
                 {
                     if (value instanceof Collection)
                     {
-                        return new SimpleFilter.InClause(fieldKey, (Collection)value, false);
+                        return new SimpleFilter.InClause(fieldKey, (Collection<?>)value, false);
                     }
                     else
                     {
                         List<String> values = new ArrayList<String>();
-                        if (value != null && !value.toString().trim().equals(""))
+                        if (value != null)
                         {
-                            values.addAll(parseParams(value, this));
+                            if (value.toString().trim().equals(""))
+                            {
+                                values.add(null);
+                            }
+                            else
+                            {
+                                values.addAll(parseParams(value));
+                            }
                         }
                         return new SimpleFilter.InClause(fieldKey, values, true);
                     }
@@ -428,9 +436,16 @@ public enum CompareType
                     else
                     {
                         List<String> values = new ArrayList<String>();
-                        if (value != null && !value.toString().trim().equals(""))
+                        if (value != null)
                         {
-                            values.addAll(parseParams(value, this));
+                            if (value.toString().trim().equals(""))
+                            {
+                                values.add(null);
+                            }
+                            else
+                            {
+                                values.addAll(parseParams(value));
+                            }
                         }
                         return new SimpleFilter.InClause(fieldKey, values, true, true);
                     }
@@ -462,7 +477,7 @@ public enum CompareType
                         List<String> values = new ArrayList<String>();
                         if (value != null && !value.toString().trim().equals(""))
                         {
-                            values.addAll(parseParams(value, this));
+                            values.addAll(parseParams(value));
                         }
                         return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
                     }
@@ -490,7 +505,7 @@ public enum CompareType
                     }
                     else
                     {
-                        Set<String> values = parseParams(value, this);
+                        Set<String> values = parseParams(value);
 
                         return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
                     }
@@ -616,16 +631,13 @@ public enum CompareType
         return types;
     }
 
-    private static Set<String> parseParams(Object value, CompareType clause)
+    private static Set<String> parseParams(Object value)
     {
         Set<String> values = new HashSet<String>();
         if (value != null && !value.toString().trim().equals(""))
         {
             String[] st = value.toString().split(";", -1);
-            for(String token : st)
-            {
-                values.add(token);
-            }
+            Collections.addAll(values, st);
         }
         return values;
     }
@@ -846,7 +858,7 @@ public enum CompareType
                 stringValue = StringUtils.trimToNull(stringValue);
                 if (stringValue == null)
                 {
-                    return null;
+                    return new Parameter.TypedValue(null, JdbcType.INTEGER);
                 }
                 try
                 {
@@ -880,7 +892,7 @@ public enum CompareType
                     stringValue = StringUtils.trimToNull(stringValue);
                     if (stringValue == null)
                     {
-                        return null;
+                        return new Parameter.TypedValue(null, JdbcType.BOOLEAN);
                     }
                     return ConvertUtils.convert(stringValue, Boolean.class);
                 }
@@ -918,7 +930,7 @@ public enum CompareType
                     stringValue = StringUtils.trimToNull(stringValue);
                     if (stringValue == null)
                     {
-                        return null;
+                        return new Parameter.TypedValue(null, JdbcType.DOUBLE);
                     }
                     return new Double(stringValue);
                 }
@@ -1313,7 +1325,8 @@ public enum CompareType
         {
             ColumnInfo colInfo = columnMap.get(_fieldKey);
             assert getParamVals().length == 1;
-            if (isUrlClause() && convertParamValue(colInfo, getParamVals()[0]) == null)
+            Object convertedValue = convertParamValue(colInfo, getParamVals()[0]);
+            if (isUrlClause() && convertedValue == null || (convertedValue instanceof Parameter.TypedValue && ((Parameter.TypedValue)convertedValue)._value == null))
             {
                 // Flip to treat this as an IS NOT NULL comparison request
                 return NONBLANK.createFilterClause(_fieldKey, null).toSQLFragment(columnMap, dialect);
