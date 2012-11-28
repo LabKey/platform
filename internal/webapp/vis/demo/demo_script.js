@@ -271,6 +271,8 @@ var coffeePlot = new LABKEY.vis.Plot({
 });
 
 var boxPlotData = [];
+var medianLineData = [];
+var groupedBoxData = null;
 
 for(var i = 0; i < 6; i++){
     var group = "Really Long Group Name "+(i+1);
@@ -297,6 +299,13 @@ for(var i = 0; i < 6; i++){
     }
 }
 
+groupedBoxData = LABKEY.vis.groupData(boxPlotData, function(row){return row.group});
+
+for(var groupName in groupedBoxData){
+    var stats = LABKEY.vis.Stat.summary(groupedBoxData[groupName], function(row){return row.age});
+    medianLineData.push({x: groupName, y:stats.Q2, color: 'median'});
+}
+
 var boxLayer = new LABKEY.vis.Layer({
     geom: new LABKEY.vis.Geom.Boxplot({
         position: 'jitter',
@@ -315,7 +324,7 @@ var boxLayer = new LABKEY.vis.Layer({
                     '\nQ3: ' + stats.Q3;
         },
         outlierHoverText: function(row){return "Group: " + row.group + ", Age: " + row.age;},
-        outlierColor: function(row){return row.gender;},
+        outlierColor: function(row){return "outlier";},
         outlierShape: function(row){return row.gender;}
     }
 });
@@ -332,6 +341,12 @@ var boxPointLayer = new LABKEY.vis.Layer({
     }
 });
 
+var medianLineLayer = new LABKEY.vis.Layer({
+    geom: new LABKEY.vis.Geom.Path({size: 2}),
+    aes: {x: 'x', y: 'y', color: 'color', group: 'color'},
+    data: medianLineData
+});
+
 var boxPlot = new LABKEY.vis.Plot({
     renderTo: 'box',
     width: 900,
@@ -343,7 +358,7 @@ var boxPlot = new LABKEY.vis.Plot({
     },
 //    data: labResultsRows,
     data: boxPlotData,
-    layers: [boxLayer/*, boxPointLayer*/],
+    layers: [boxLayer, medianLineLayer/*, boxPointLayer*/],
     aes: {
         yLeft: 'age',
         x: 'group'
