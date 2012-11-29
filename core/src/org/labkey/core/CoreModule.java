@@ -517,10 +517,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContextListener.addShutdownListener(new ShutdownListener() {
             public void shutdownPre(ServletContextEvent servletContextEvent)
             {
-            }
-
-            public void shutdownStarted(ServletContextEvent servletContextEvent)
-            {
                 Logger logger = Logger.getLogger(ActionsTsvWriter.class);
 
                 if (null != logger)
@@ -546,6 +542,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
                     logger.info(buf.toString());
                 }
+            }
+
+            @Override
+            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            {
             }
         });
 

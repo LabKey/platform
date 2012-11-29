@@ -72,12 +72,24 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
         int version = versionNumber.getVersionInt();
 
+        // Get the appropriate dialect and stash version information
+        SqlDialect dialect = getDialect(version, databaseProductVersion, logWarnings);
+        dialect.setDatabaseVersion(version);
+        String className = dialect.getClass().getSimpleName();
+        dialect.setProductVersion(className.substring(18, className.indexOf("Dialect")));
+
+        return dialect;
+    }
+
+    private SqlDialect getDialect(int version, String databaseProductVersion, boolean logWarnings)
+    {
         // Good resource for past & current SQL Server version numbers: http://www.sqlteam.com/article/sql-server-versions
 
         if (version >= 90)
         {
+            // Strong wanring for SQL Server 2005 or 2008 (non-R2)... but still allow it (for now)
             if (version < 105 && logWarnings)
-                _log.warn("LabKey Server is not fully compatible with " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
+                _log.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
 
             if (version >= 110)
                 return new MicrosoftSqlServer2012Dialect();

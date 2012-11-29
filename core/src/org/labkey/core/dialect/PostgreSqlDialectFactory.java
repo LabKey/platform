@@ -68,6 +68,18 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             return null;
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
+
+        // Get the appropriate dialect and stash version information
+        SqlDialect dialect = getDialect(versionNumber, databaseProductVersion, logWarnings);
+        int versionInt = versionNumber.getVersionInt();
+        dialect.setDatabaseVersion(versionInt);
+        dialect.setProductVersion(String.valueOf(versionInt/(double)10));
+
+        return dialect;
+    }
+
+    private SqlDialect getDialect(VersionNumber versionNumber, String databaseProductVersion, boolean logWarnings)
+    {
         int version = versionNumber.getVersionInt();
 
         // Version 8.3 or greater is allowed...

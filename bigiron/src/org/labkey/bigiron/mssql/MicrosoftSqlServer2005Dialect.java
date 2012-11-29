@@ -158,7 +158,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     @Override
     public String getProductName()
     {
-        return "Sql Server";
+        return "Microsoft SQL Server";
     }
 
     @Override
