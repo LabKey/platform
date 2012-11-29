@@ -1166,48 +1166,26 @@ groupByLoop:
             column.releaseRef(referant);
     }
 
+    @Override
+    public SQLFragment getFromSql()
+    {
+        return _getSql(true);
+    }
+
 
     public SQLFragment getSql()
+    {
+        return _getSql(false);
+    }
+
+
+    private SQLFragment _getSql(boolean asFromSql)
     {
         resolveFields();
         if (getParseErrors().size() != 0)
             return null;
 
-        SQLFragment sql = _getSql();
-        if (getParseErrors().size() != 0)
-            return null;
-
-        if (!AppProps.getInstance().isDevMode() || _inFromClause || null == sql)
-            return sql;
-
-        SqlBuilder ret = new SqlBuilder(_schema.getDbSchema());
-        String comment = "<QuerySelect";
-        if (!StringUtils.isEmpty(_savedName))
-            comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
-        comment += ">";
-        ret.appendComment(comment);
-        if (null != _queryText)
-        {
-            // Handle any combination of line endings - \n (Unix), \r (Mac), \r\n (Windows), \n\r (nobody)
-            for (String s : _queryText.split("(\n\r?)|(\r\n?)"))
-                if (null != StringUtils.trimToNull(s))
-                {
-                    // balance quotes because postgres can't parse
-                    ret.appendComment("|         " + s + (StringUtils.countMatches(s, "'")%2==0?"":"'"));
-                }
-        }
-        ret.append(sql);
-        ret.appendComment("</" + comment.substring(1));
-        return ret;
-    }
-
-
-    private SQLFragment _getSql()
-    {
         optimize();
-
-        SqlDialect dialect = getSqlDialect();
-        SqlBuilder sql = new SqlBuilder(getDbSchema());
 
         if (!_generateSelectSQL)
         {
@@ -1221,10 +1199,14 @@ groupByLoop:
             assert _orderBy == null;
             assert _limit == null;
             QueryRelation in = _tables.values().iterator().next();
-            SQLFragment fromSql = in.getFromSql();
-            fromSql.appendComment("no SELECT generated for this QuerySelect: " + getAlias(), dialect);
-            return fromSql;
+            return asFromSql ? in.getFromSql() : in.getSql();
         }
+
+        SqlDialect dialect = getSqlDialect();
+        SqlBuilder sql = new SqlBuilder(getDbSchema());
+
+        if (asFromSql)
+            sql.append("(");
 
         if (null != _distinct)
             markAllSelected(_distinct);
@@ -1356,7 +1338,35 @@ groupByLoop:
         if (!getParseErrors().isEmpty())
             return null;
 
-        return sql;
+        if (getParseErrors().size() != 0)
+            return null;
+
+        if (asFromSql)
+            sql.append(") ").append(getAlias());
+
+        if (!AppProps.getInstance().isDevMode() || _inFromClause || null == sql)
+            return sql;
+
+        // debug comments
+        SqlBuilder ret = new SqlBuilder(_schema.getDbSchema());
+        String comment = "<QuerySelect";
+        if (!StringUtils.isEmpty(_savedName))
+            comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
+        comment += ">";
+        ret.appendComment(comment);
+        if (null != _queryText)
+        {
+            // Handle any combination of line endings - \n (Unix), \r (Mac), \r\n (Windows), \n\r (nobody)
+            for (String s : _queryText.split("(\n\r?)|(\r\n?)"))
+                if (null != StringUtils.trimToNull(s))
+                {
+                    // balance quotes because postgres can't parse
+                    ret.appendComment("|         " + s + (StringUtils.countMatches(s, "'")%2==0?"":"'"));
+                }
+        }
+        ret.append(sql);
+        ret.appendComment("</" + comment.substring(1));
+        return ret;
     }
 
 
@@ -2030,8 +2040,7 @@ groupByLoop:
             _distinct = null;
         } */
 
-        // run timecharttest to validate
-        //_generateSelectSQL = false;
+        _generateSelectSQL = false;
 
         return true;
     }

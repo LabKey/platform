@@ -207,8 +207,6 @@ public class QueryTable extends QueryRelation
         if (_generateSelectSQL)
             ret.append(") ").append(getAlias());
 
-        if (!_generateSelectSQL)
-            ret.appendComment("no SELECT generated for this QueryTable: " + this.getAlias(), this._tableInfo.getSqlDialect());
         assert ret.appendComment("</QueryTable>", _schema.getDbSchema().getSqlDialect());
         return ret;
     }
@@ -293,7 +291,6 @@ public class QueryTable extends QueryRelation
 
         if (null == _parent || _parent instanceof QuerySelect && ((QuerySelect)_parent).isAggregate())
             _generateSelectSQL = true;
-        _generateSelectSQL=true;
 
         if (!_generateSelectSQL)
             return tableFromSql;
@@ -315,7 +312,7 @@ public class QueryTable extends QueryRelation
         TableColumn _parent;
         ForeignKey _foreignKey;
         String _alias;
-        boolean _setHidden = false;
+        boolean _suggestedColumn = false;
 
         TableColumn(FieldKey key, ColumnInfo col, TableColumn parent, ForeignKey foreignKey)
         {
@@ -382,8 +379,11 @@ public class QueryTable extends QueryRelation
             // always copy format, we don't care about preserving set/unset-ness
             to.setFormat(_col.getFormat());
             to.copyURLFrom(_col, null, null);
-            if (this._setHidden)
+            if (this._suggestedColumn)
+            {
                 to.setHidden(true);
+//                to.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
+            }
 
             if (null == _mapOutputColToTableColumn)
             {
@@ -425,7 +425,7 @@ public class QueryTable extends QueryRelation
             return;
 
         if (!existed && tc instanceof TableColumn)
-            ((TableColumn)tc)._setHidden = true;
+            ((TableColumn)tc)._suggestedColumn = true;
 
         suggested.add(tc);
     }
