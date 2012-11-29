@@ -2561,35 +2561,60 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
 // NOTE: a lot of this was copied direct from LABKEY._FilterUI.  I did some reworking to make it more ext-like,
 // but there probably could be more done.
 
-//ALSO: this is currently written by extending Ext.Window.  If we shift to left-hand filtering next to dataregions (like kayak), this could be
-//refacted to a LABKEY.FilterPanel class, which does most of the work, and a FilterDialog class, which is a simple Ext.Window contianing a FilterPanel
-//this would allow us to either render a dialog like now, or render a bunch of panels (one per field)
+/**
+ * If we shift to left-hand filtering next to dataregions (like kayak), this could be refacted to a LABKEY.FilterPanel
+ * class, which does most of the work, and a FilterDialog class, which is a simple Ext.Window containing a
+ * FilterPanel. This would allow us to either render a dialog like now, or a bunch of panerls (one per field)
+ */
 LABKEY.FilterDialog = Ext.extend(Ext.Window, {
-    forceAdvancedFilters: false,  //provides a mechanism to hide the faceting UI
-    initComponent: function(){
+
+    forceAdvancedFilters : false,  //provides a mechanism to hide the faceting UI
+
+    itemDefaults: {
+        border: false,
+        msgTarget: 'under'
+    },
+
+    MAX_FILTER_CHOICES : 250, // 15565, Switch faceted limit to 250
+
+    savedSearchString : null,
+
+    validatorFn: Ext.emptyFn,
+
+    initComponent : function()
+    {
         Ext.QuickTips.init();
 
-        this._fieldCaption = this.boundColumn.caption;
-        this._fieldKey = this.boundColumn.fieldKey;
-        this._tableName = this.dataRegionName;
-        this._jsonType = this.boundColumn.displayFieldJsonType ? this.boundColumn.displayFieldJsonType : this.boundColumn.jsonType;
-        if (!this._jsonType)
-            this._jsonType = 'string';
+        var bound = this.boundColumn,
+            dataRegion = this.getDataRegion();
 
-        //Issue #15565, Switch faceted filtering limit to 250
-        this.MAX_FILTER_CHOICES = 250;
-
-        //determine the type of filter UI to show
-        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
-
-        if (this.boundColumn.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName){
-            if (this.boundColumn.displayField){
-                //TODO: perhaps we could be smarter about resolving alternate fieldnames, like the value field, into the displayField?
-                this._fieldKey = this.boundColumn.displayField;
-            }
+        if (!bound) {
+            console.error('A boundColumn ir required for LABKEY.FilterDialog');
+            return;
         }
 
-        this.filterType = this.getInitialFilterType();
+        if (!dataRegion) {
+            console.error('Unable to find associated Data Region for LABKEY.FilterDialog');
+            return;
+        }
+
+        Ext.apply(this, {
+
+            // Either invoked from GWT, which will handle the commit itself.
+            // Or invoked as part of a regular filter dialog on a grid
+            changeFilterCallback : this.confirmCallback ? this.confirmCallback : this.changeFilter,
+
+            filterType    : this.getInitialFilterType(),
+            _fieldCaption : bound.caption,
+            _fieldKey     : bound.fieldKey,
+            _jsonType     : (bound.displayFieldJsonType ? bound.displayFieldJsonType : bound.jsonType) || 'string'
+        });
+
+        if (bound.lookup && bound.displayField) {
+            // TODO: perhaps we could be smarter about resolving alternate fieldnames,
+            // like the value field, into the displayField?
+            this._fieldKey = this.boundColumn.displayField;
+        }
 
         Ext.apply(this, {
             width: 410,
@@ -2612,21 +2637,19 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                      this.close();
                  }
             }],
-            items: [{
-                html: 'Loading...',
-                style: 'padding: 5px;',
-                border: false
-            }],
             listeners: {
-                scope: this,
                 destroy: function(){
-                    if(this.focusTask){
+                    if (this.focusTask) {
                         Ext.TaskMgr.stop(this.focusTask);
                     }
                 },
-                resize: function(panel){
+                resize : function(panel) {
                     panel.syncShadow();
-                }
+                },
+                scope : this
+            },
+            bbarCfg : {
+                bodyStyle : 'border-top: 1px solid black;'
             },
             buttons: [
                 {text: 'OK', handler: this.okHandler, scope: this},
@@ -2635,6 +2658,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 {text: 'CLEAR ALL FILTERS', handler: this.clearAllFilters, scope: this}
             ]
         });
+
+        this.items = [this.getTabPanel()];
 
         LABKEY.FilterDialog.superclass.initComponent.call(this);
 
@@ -2645,147 +2670,248 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         });
         this.windowGroup.register(this);
 
-        this.mask();
-
-        //NOTE: we should just change the name of one of these
-        if (!this.confirmCallback)
-        {
-            // Invoked as part of a regular filter dialog on a grid
-            this.changeFilterCallback = this.changeFilter;
-        }
-        else
-        {
-            // Invoked from GWT, which will handle the commit itself
-            this.changeFilterCallback = this.confirmCallback;
-        }
+        this.facetingAvailable = undefined;
 
         this.prepareToShowPanel();
+        this.preparePanelTask = new Ext.util.DelayedTask(this.prepareToShowPanel, this);
     },
 
-    itemDefaults: {
-        border: false,
-        msgTarget: 'under'
-    },
-
-    prepareToShowPanel: function(){
-        if(!this.isFacetingCandidate()){
-            this.facetingAvailable = false;
-            this.configurePanel();
-        }
-        else {
-            //we need to load the store to determine if faceting is possible
-            var store = this.getLookupStore();
-
-            if (!store.fields){
-                //a proxy for whether the store has loaded.  the store's load event will call this again
-                return;
-            }
-
-            if ((store.getCount() >= this.MAX_FILTER_CHOICES) ||
-                (store.fields && store.getCount() === 0) || //Issue 13946: faceted filtering: loading mask doesn't go away if the lookup returns zero rows
-                this.forceAdvancedFilters
-               )
-            {
-                this.facetingAvailable = false;
-            }
-            else {
-                this.facetingAvailable = true;
-            }
-            this.configurePanel();
-        }
-    },
-
-    configurePanel: function(){
-        this.unmask();
-        this.removeAll();
-        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
-        if (!this.queryString){
-            this.queryString = dataRegion ? dataRegion.requestURL : null;
+    getTabPanel : function()
+    {
+        if (this.tabPanel) {
+            return this.tabPanel;
         }
 
-        if (!this.facetingAvailable){
-            var cfg = this.getDefaultFilterPanelCfg();
-            cfg.title = null;
-            Ext.apply(cfg, {
-                bodyStyle: 'padding: 5px;',
-                defaults: this.itemDefaults,
-                itemId: 'filterArea'
-            });
-            this.add(cfg);
-            //Issue 15658: if the field is not a facet candidate, be sure to populate filters on load
-            var filterArray = this.getParamsForField(this._fieldKey);
-            this.setValuesFromParams(null, filterArray);
-        }
-        else {
-            this.add({
-                xtype: 'tabpanel',
-                bodyStyle: 'padding: 5px;',
-                width: this.width - 5,
+        if (this.isFacetingCandidate()) {
+
+            this.tabPanel = new Ext.TabPanel({
                 autoHeight: true,
-                activeTab: this.canShowFacetedUI() ? 1 : 0,
-                defaults: this.itemDefaults,
-                itemId: 'filterArea',
-                border: true,
-                monitorValid: true,
-                listeners: {
-                    scope: this,
-                    beforetabchange: this.beforeTabChange,
-                    tabchange: function(){
+                width     : this.width - 5,
+                bodyStyle : 'padding: 5px;',
+                activeTab : this.canShowFacetedUI() ? 1 : 0,
+                border    : true,
+                monitorValid : true,
+                deferredRender : false,
+                defaults : {
+                    border : false,
+                    msgTarget : 'under'
+                },
+                items : [this.getDefaultFilterPanel(), this.getFacetedFilterPanel()],
+                listeners : {
+                    beforetabchange : this.beforeTabChange,
+                    tabchange : function() {
                         this.syncShadow();
+                        this.tabPanel.getActiveTab().doLayout(); // required when facets return while on another tab
+                    },
+                    scope : this
+                }
+            });
+        }
+        else {
+            var me = this;
+            this.tabPanel = new Ext.Panel({
+                autoHeight: true,
+                width     : this.width - 5,
+                bodyStyle : 'padding: 5px;',
+                activeTab : 0,
+                border    : true,
+                monitorValid : true,
+                deferredRender : false,
+                defaults : {
+                    border : false,
+                    msgTarget : 'under'
+                },
+                items : [this.getDefaultFilterPanel(true)],
+                getActiveTab : function() {
+                    return me.getDefaultFilterPanel();
+                },
+                listeners : {
+                    tabchange : function() {
+                        this.syncShadow();
+                        this.tabPanel.getActiveTab().doLayout(); // required when facets return while on another tab
+                    },
+                    scope : this
+                }
+            });
+        }
+
+        return this.tabPanel;
+    },
+
+    beforeTabChange : function(tp, newTab, oldTab) {
+        if (newTab.filterType == 'default') {
+            if (oldTab && oldTab.filterType == 'include') {
+                var filter = [],
+                    operator = 'in',
+                    grid = Ext.getCmp(this.gridID);
+
+                if (this.facetDirty) {
+                    this.facetDirty = false;
+                    var values = grid.getValues();
+                    if (values.length > 0) {
+                        if (values.length == 1)
+                            operator = 'eq';
+                        else if (values.length == values.max) {
+                            values.values = '';
+                            operator = 'startswith';
+                        }
+                        else if (values.length > Math.floor(values.max/2)) {
+                            filter = LABKEY.Filter.getFilterTypeForURLSuffix(operator);
+                            filter = filter.getOpposite();
+                            values.values = this.getInverse(grid.getStore(), values.values);
+                            operator = filter.getURLSuffix();
+
+                            // check for single
+                            if (values.values.split(';').length == 1) {
+                                operator = 'neqornull';
+                            }
+                        }
+                        filter = [{operator: operator, value : values.values}];
+                    }
+                    this.setValuesFromParams(newTab, filter);
+                }
+            }
+        }
+    },
+
+    getDefaultFilterPanel : function(hideTitle)
+    {
+        if (this.defaultPanel)
+            return this.defaultPanel;
+
+        this.defaultPanel = new Ext.form.FormPanel({
+            autoHeight : true,
+            title : hideTitle ? false : 'Choose Filters',
+            bodyStyle : 'padding: 5px;',
+            filterType : 'default',
+            bubbleEvents: ['add', 'remove', 'clientvalidation'],
+            defaults : { border: false },
+            items : this.getFilterInputPairConfig(2),
+            listeners : {
+                afterrender : function(p)
+                {
+                    var inputs = this.getInputFields(p);
+                    if (inputs && inputs.length > 0) {
+
+                        // create a task to set the input focus that will get started after layout is complete,
+                        // the task will run for a max of 2000ms but will get stopped when the component receives focus
+                        this.focusTask = this.focusTask || {interval:150, run: function(){
+                            inputs[0].focus(null, 50);
+
+                            Ext.TaskMgr.stop(this.focusTask);
+                        }, scope: this, duration: 2000};
                     }
                 },
-                items: [
-                    this.getDefaultFilterPanelCfg(),
-                    this.getFacetedFilterPanelCfg()
-                ]
-            });
-            this.configureLookupPanel();
-        }
-        this.doLayout();
+                scope : this
+            }
+        });
+
+        this.defaultPanel.on('afterlayout', function(p) {
+            if (this.focusTask) {
+                Ext.TaskMgr.start(this.focusTask);
+            }
+            this.setValuesFromParams(p, this.getFiltersFromParams(p.filterType));
+        }, this, {single: true});
+
+        return this.defaultPanel;
     },
 
-    beforeTabChange: function(panel, newTab, oldTab){
-        var filterArray = this.getParamsForField(this._fieldKey);
+    getFacetedFilterPanel : function()
+    {
+        if (this.facetPanel)
+            return this.facetPanel;
 
-        //optimize filters
-        var newFilters = [];
-        var optimized;
-        var filterDef;
+        this.facetPanel = new Ext.form.FormPanel({
+            title  : 'Choose Values',
+            itemId : 'facetedPanel',
+            filterType : 'include',
+            border : false,
+            height : 200,
+            autoScroll: true,
+            bubbleEvents: ['add', 'remove', 'clientvalidation'],
+            defaults : {
+                border : false
+            },
+            markDisabled : true,
+            items: [{
+                layout: 'hbox',
+                style: 'padding-bottom: 5px;',
+                width: 100,
+                defaults: {
+                    border: false
+                },
+                items: []
+            }]
+        });
 
-        if(!this.allowFilterDiscard && oldTab && oldTab.filterType == 'default' && newTab.filterType != 'default' && !this.canShowFacetedUI(newTab.filterType)){
-            var msgBox = Ext.Msg.confirm('Confirm change', 'If you switch tabs you will lose one or more filters.  Do you want to continue?', function(input){
-                if(input == 'yes'){
-                    this.allowFilterDiscard = true;
-                    this.find('tabpanel')[0].setActiveTab(newTab);
-                }
-            }, this);
-            msgBox.getDialog().toFront(true);
-            return false;
+        return this.facetPanel;
+    },
+
+    getDataRegion : function()
+    {
+        var dr = LABKEY.DataRegions[this.dataRegionName];
+        if (dr && dr.queryName && dr.schemaName) {
+            return dr;
         }
-        this.allowFilterDiscard = null;
+        return false;
+    },
 
-        if(this.getInitialFilterType() != 'default' && !this.forceAdvancedFilters){
-            Ext.each(filterArray, function(filter){
-                var allowable = [];
-                this.getLookupStore().each(function(rec){
-                    allowable.push(rec.get('value'))
-                });
-                filterDef = LABKEY.Filter.getFilterTypeForURLSuffix(filter.operator);
-                optimized = this.optimizeFilter(filterDef, filter.value, allowable);
-                if(optimized){
-                    newFilters.push({operator: optimized[0], value: optimized[1]});
+    isFacetingValid : function(store) {
+        if (!store)
+            return false;
+
+        return !(store.getCount() > this.MAX_FILTER_CHOICES || (store.fields && store.getCount() === 0) || this.forceAdvancedFilters);
+    },
+
+    prepareToShowPanel : function()
+    {
+        if (this.facetingAvailable !== true && this.facetingAvailable !== false) {
+            if(!this.isFacetingCandidate()){
+                this.facetingAvailable = false;
+                this.prepareToShowPanel();
+            }
+            else {
+                //we need to load the store to determine if faceting is possible
+                var _store = this.getLookupStore();
+
+                this.facetingAvailable = this.isFacetingValid(_store);
+
+                if (this.isStoreLoaded(_store)) {
+                    this.prepareToShowPanel();
                 }
-
-            }, this);
+                else {
+                    this.on('afterrender', function(w) {
+                        if (!this.isStoreLoaded(_store) || _store.isLoading) {
+                            var fp = this.getFacetedFilterPanel();
+                            if (fp && fp.getEl()) {
+                                fp.getEl().mask('Loading...');
+                            }
+                        }
+                    }, this, {single: true});
+                }
+            }
         }
         else {
-            newFilters = filterArray;
+            if (this.facetingAvailable) {
+                var fp = this.getFacetedFilterPanel();
+                if (fp && fp.getEl()) {
+                    this.configureLookupPanel(fp);
+                }
+                else if (fp) {
+                    fp.on('show', function(p) {
+                        this.configureLookupPanel(p);
+                    }, this, {single: true});
+                }
+            }
         }
-
-        this.setValuesFromParams(newTab, newFilters);
     },
 
-    isFacetingCandidate: function(){
+    isFacetingCandidate : function()
+    {
+        if (!this.getDataRegion()) {
+            return false;
+        }
+
         var isFacetingCandidate = false;
 
         switch (this.boundColumn.facetingBehaviorType) {
@@ -2796,49 +2922,40 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             case 'ALWAYS_OFF':
                 break;
             case 'AUTOMATIC':
-                // auto rules are if the column is a lookup or dimension OR if it is of type : (boolean, int, date, text), multiline excluded
+                // auto rules are if the column is a lookup or dimension
+                // OR if it is of type : (boolean, int, date, text), multiline excluded
 
                 if (this.boundColumn.lookup || this.boundColumn.dimension)
                     isFacetingCandidate = true;
-                //ISSUE 15156: disabled faceted filtering on date columns until we address issues described in this bug
+                // 15156: disabled faceted filtering on date columns until we address issues described in this bug
                 else if (this._jsonType == 'boolean' || this._jsonType == 'int' ||
                         (this._jsonType == 'string' && this.boundColumn.inputType != 'textarea'))
                     isFacetingCandidate = true;
-
                 break;
         }
-
-        //NOTE: if the dataRegion does not provide a schema/query, we cannot render faceting
-        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
-        if (!dataRegion || !dataRegion.schemaName || !dataRegion.queryName)
-            return false;
 
         return isFacetingCandidate;
     },
 
-    getInitialFilterType: function(){
-        var filterType = 'default';
-        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
-        var isFacetingCandidate = this.isFacetingCandidate();
-
-        if (isFacetingCandidate && dataRegion && dataRegion.schemaName && dataRegion.queryName )
-            filterType = 'include';
-
-        return filterType;
+    getInitialFilterType : function()
+    {
+        if (this.getDataRegion() && this.isFacetingCandidate()) {
+            return 'include';
+        }
+        return 'default';
     },
 
-    canShowFacetedUI: function(filterType){
+    canShowFacetedUI : function(filterType)
+    {
         filterType = filterType || this.filterType;
 
         var paramValPairs = this.getParamsForField(this._fieldKey);
-        if (this.getInitialFilterType() == 'default')
+        if (this.getInitialFilterType() == 'default' || paramValPairs.length > 1) {
             return false;
-
-        if(paramValPairs.length > 1)
-            return false;
+        }
 
         var shouldShow = true;
-        Ext.each(paramValPairs, function(pair, idx){
+        Ext.each(paramValPairs, function(pair){
             var filter = LABKEY.Filter.getFilterTypeForURLSuffix(pair.operator);
 
             if(!filter.isMultiValued() && !filter.getMultiValueFilter()){
@@ -2855,12 +2972,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if(shouldShow && !this.forceAdvancedFilters){
             var store = this.getLookupStore();
             if(
-                (!store || store.getCount() >= this.MAX_FILTER_CHOICES) ||
+                (!store || store.getCount() > this.MAX_FILTER_CHOICES) ||
                 (store && store.fields && store.getCount() === 0) || //Issue 13946: faceted filtering: loading mask doesn't go away if the lookup returns zero rows
                 this.forceAdvancedFilters
             ){
                 shouldShow = false;
-                //console.log('either too many for zero filter options, switching to default UI');
             }
             else if (store.getCount()) {
                 Ext.each(paramValPairs, function(pair, idx){
@@ -2883,78 +2999,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return shouldShow;
     },
 
-    getDefaultFilterPanelCfg: function(){
-        // create a task to set the input focus that will get started after layout is complete, the task will
-        // run for a max of 2000ms but will get stopped when the component receives focus
-        this.focusTask = this.focusTask || {interval:150, run: function(){
-            var field = this.find('itemId', 'inputField0')[0];
-            if (field)
-                field.focus(null,50);
-
-            Ext.TaskMgr.stop(this.focusTask);
-        }, scope: this, duration: 2000};
-
-        var form = {
-            //autoWidth: true,
-            autoHeight: true,
-            //deferredRender: false,
-            xtype: 'form',
-            title: 'Choose Filters',
-            bodyStyle: 'padding: 5px;',
-            filterType: 'default',
-            bubbleEvents: ['add', 'remove', 'clientvalidation'],
-            defaults: {
-                border: false
-            },
-            items: []
-        };
-
-        //NOTE: currently we always render 2 inputs, but in theory we could allow any number
-        //it would be easy to give an 'Add Filter' button, which adds a new input pair
-        form.items = this.getFilterInputPairConfig(2);
-
-        return form;
-    },
-
-    getFacetedFilterPanelCfg: function(){
-        return {
-            border: false,
-            xtype: 'form',
-            //autoHeight: true,
-            title: 'Choose Values',
-            itemId: 'facetedPanel',
-            filterType: 'include',
-            height: 200,
-            autoScroll: true,
-            //deferredRender: false,
-            bubbleEvents: ['add', 'remove', 'clientvalidation'],
-
-            defaults: {
-                border: false
-            },
-            //disabled: true,
-            maskDisabled: true,
-            //items: [],
-            items: [{
-                layout: 'hbox',
-                style: 'padding-bottom: 5px;',
-                width: 100,
-                defaults: {
-                    border: false
-                },
-                items: []
-            }]
-        };
-    },
-
-    configureLookupPanel: function(){
-        if(!this.rendered){
-            this.on('render', this.configureLookupPanel, this, {single: true});
-            return;
-        }
-
+    configureLookupPanel : function(p)
+    {
         var panel = this.find('itemId', 'facetedPanel')[0];
-        if(!panel){
+        if(!this.rendered || !panel){
             this.on('render', this.configureLookupPanel, this, {single: true});
             return;
         }
@@ -2964,77 +3012,95 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         filterConfig.value = 'in';
         filterConfig.initialValue = 'in';
 
-        var toAdd = [];
-        toAdd.push(filterConfig);
-        toAdd.push({
+        var toAdd = [filterConfig, {
             xtype: 'panel',
             width: this.width - 40, //prevent horizontal scroll
             bodyStyle: 'padding-left: 5px;',
-            items: [
-                this.getCheckboxGroupConfig(0)
-            ]
-        });
+            items: [ this.getCheckboxGroupConfig(0) ]
+        }];
         panel.removeAll();
         panel.add(toAdd);
+
+        if (p) {
+            p.getEl().unmask();
+            var f = this.getFiltersFromParams(p.filterType);
+            if (p.filterType != 'include' || f.length <= 1)
+                this.setValuesFromParams(p, f);
+        }
         this.doLayout();
     },
 
-    mask: function(){
-        if(this.rendered)
-            this.getEl().mask('Loading...');
-        else
-            this.on('render', this.mask, this, {single: true});
+    getFilterCombos : function(panel)
+    {
+        return this._getFields(panel, /^filterComboBox/);
     },
 
-    unmask: function(){
-        if(this.rendered){
-            this.getEl().unmask();
+    getInputFields : function(panel)
+    {
+        return this._getFields(panel, /^inputField/);
+    },
+
+    _getFields : function(panel, regex)
+    {
+        if (!this.rendered) {
+            return [];
+        }
+
+        panel = panel || this.getTabPanel().getActiveTab();
+        if (!panel) {
+            return [];
+        }
+
+        return panel.findBy(function(item) {
+            return item.itemId && regex.test(item.itemId);
+        });
+    },
+
+    getFiltersFromParams : function(filterType)
+    {
+        var filterArray = this.getParamsForField(this._fieldKey),
+            filters = [];
+
+        if (filterType != 'default' && !this.forceAdvancedFilters) {
+
+            var optimized, filterDef;
+            Ext.each(filterArray, function(filter){
+                var allowable = [];
+                this.getLookupStore().each(function(rec){
+                    allowable.push(rec.get('value'))
+                });
+                filterDef = LABKEY.Filter.getFilterTypeForURLSuffix(filter.operator);
+                optimized = this.optimizeFilter(filterDef, filter.value, allowable);
+                if(optimized){
+                    filters.push({operator: optimized[0], value: optimized[1]});
+                }
+
+            }, this);
         }
         else {
-            this.un('render', this.mask, this);
-        }
-    },
-
-    getFilterCombos: function(panel){
-        panel = panel || this.getActiveTab();
-        if(!panel){
-            return [];
-        }
-        var re = /^filterComboBox/;
-        return panel.findBy(function(item){
-            return item.itemId && re.test(item.itemId);
-        });
-    },
-
-    getInputFields: function(panel){
-        panel = panel || this.getActiveTab();
-        if(!panel){
-            return [];
+            filters = filterArray;
         }
 
-        var re = /^inputField/;
-        return panel.findBy(function(item){
-            return item.itemId && re.test(item.itemId);
-        });
+        return filters;
     },
 
-    setValuesFromParams: function(target, values){
-        if(!this.rendered || !this.getActiveTab()){
-            this.setValuesFromParams.defer(100, this, [target, values]);
+    setValuesFromParams : function(target, values)
+    {
+        var tab = this.getTabPanel().getActiveTab();
+        if(!this.rendered || !tab) {
             return;
         }
 
-        target = target || this.getActiveTab();
-        var combos = this.getFilterCombos(target);
+        target = target || tab;
+        var combos      = this.getFilterCombos(target);
         var inputFields = this.getInputFields(target);
 
-        if(!combos || !combos.length){
-            this.setValuesFromParams.defer(100, this, [target, values]);
+        if (!combos || !combos.length) {
             return;
         }
 
         this.filterType = target.filterType;
-        var paramValPairs = values || this.getParamsForField(this._fieldKey);
+        var paramValPairs = values;
         this.hasLoaded = true;
 
         var filterIndex = 0;
@@ -3061,45 +3127,47 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
             var input = inputFields[filterIndex];
 
-            if(pair.operator){
+            if (pair.operator) {
                 var filter = LABKEY.Filter.getFilterTypeForURLSuffix(pair.operator);
 
                 //attempt to convert single-value filters into multi-value for faceting
-                if(this.filterType != 'default' && !filter.isMultiValued() && filter.getMultiValueFilter()){
+                if (this.filterType != 'default' && !filter.isMultiValued() && filter.getMultiValueFilter()) {
                     filter = filter.getMultiValueFilter();
                 }
 
-                if(this.filterType == 'include'){
+                if (this.filterType == 'include') {
                     if ('notin' == pair.operator || 'neqornull' == pair.operator || 'neq' == pair.operator) {
                         filter = filter.getOpposite();
                         pair.value = this.getInverse(this.getLookupStore(), pair.value);
                     }
                 }
 
-                if(this.filterType != 'default' && !filter.isMultiValued()){
+                if (this.filterType != 'default' && !filter.isMultiValued()) {
                     console.log('skipping filter: ' + pair.operator);
                     return;
                 }
                 combo.setValue(filter.getURLSuffix());
 
-                if(filter.isDataValueRequired())
+                if (filter.isDataValueRequired())
                     input.enable();
 
-                if(Ext.isDefined(pair.value)){
-                    if(this.filterType == 'default'){
+                if (Ext.isDefined(pair.value)) {
+                    if (this.filterType == 'default') {
                         input.setValue(pair.value);
                     }
                     else {
-                        if(filter.getURLSuffix() == 'in' && pair.value === ''){
+                        if(filter.getURLSuffix() == 'in' && pair.value === '') {
                             input.defaultValue = true;
-                            if(input.selectAll){
-                                input.selectAll();  //select all by default for grids
-                            }
+                            input.on('viewready', function(g) {
+                                g.selectAll();
+                            }, this, {single: true});
                         }
                         else {
-                            var values = pair.value.split(';');
                             input.defaultValue = false;
-                            input.setValue(values.join(';'));
+                            input.setValue(pair.value);
+                            input.on('viewready', function(g) {
+                                g.selectRequested();
+                            }, this, {single: true});
                         }
                     }
                     effectiveFilters++;
@@ -3113,12 +3181,21 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }, this);
 
         if(this.filterType == 'include' && !effectiveFilters){
-            inputFields[0].selectAll();
-            return;
+            if (inputFields[0].requestedRecords) {
+                input.on('viewready', function(g) {
+                    g.selectRequested();
+                }, this, {single: true});
+            }
+            else {
+                inputFields[0].on('viewready', function(g) {
+                    g.selectAll();
+                }, this, {single: true});
+            }
         }
     },
 
-    getInverse: function(store, values){
+    getInverse : function(store, values)
+    {
         var newValues = [];
         if(!Ext.isArray(values))
             values = values.split(';');
@@ -3131,21 +3208,15 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
         }, this);
 
-        if(values.indexOf('') == -1 && newValues.indexOf('') == -1)
+        if(values.indexOf('') == -1 && newValues.indexOf('') == -1 && newValues.length > 1)
             newValues.push('');
 
         return newValues.join(';');
     },
 
-    savedSearchString : null,
-
-    changeFilterCallback : null,
-
-    validatorFn: Ext.emptyFn,
-
     getSkipPrefixes: function()
     {
-        return this._tableName + ".offset";
+        return this.dataRegionName + ".offset";
     },
 
     getXtype: function()
@@ -3197,8 +3268,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
         });
 
-        var grid = {
+        this.gridID = Ext.id();
+        return {
             xtype: 'grid',
+            id : this.gridID,
             border : true,
             bodyBorder: true,
             frame : false,
@@ -3227,27 +3300,25 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     resizable: false,
                     width: 340,
                     tpl: new Ext.XTemplate('<tpl for=".">' +
-                        '<span class="labkey-link" ext:qtip="Click the label to select only this row.  Click the checkbox to toggle this row and preserve other selections.">{[!Ext.isEmpty(values["displayValue"]) ? values["displayValue"] : "[Blank]"]}' +
+                        '<span class="labkey-link" ext:qtip="Click the label to select only this row.  ' +
+                        'Click the checkbox to toggle this row and preserve other selections.">' +
+                        '{[!Ext.isEmpty(values["displayValue"]) ? values["displayValue"] : "[Blank]"]}' +
                         '</span></tpl>')
                 }
             )],
             listeners: {
-                scope: this,
-//                beforerender: function(grid){
-//                    grid.getSelectionModel().grid = grid;
-//                },
-                afterrender: function(grid){
+                afterrender : function(grid) {
                     var headerCell = Ext.fly(grid.getView().getHeaderCell(1)).first('div');
                     headerCell.on('click', grid.onHeaderCellClick, grid);
+
+                    grid.getSelectionModel().on('selectionchange', function() {
+                        this.facetDirty = true;
+                    }, this);
                 },
-                viewready: function(grid){
-                    var rows = grid.getSelectionModel().getSelections();
-                    if (rows && rows.length > 0)
-                        grid.getSelectionModel().selectRecords(rows);
-                }
+                scope : this
             },
             //this is a hack to extend toggle behavior to the header cell, not just the checkbox next to it
-            onHeaderCellClick: function(element){
+            onHeaderCellClick : function() {
                 var sm = this.getSelectionModel();
                 var selected = sm.getSelections();
                 if(selected.length == this.store.getCount()){
@@ -3257,62 +3328,93 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     sm.selectAll();
                 }
             },
-            getValue: function(){
-                var values = [];
-                Ext.each(this.getSelectionModel().getSelections(), function(rec){
+            getValue : function() {
+                return this.getValues().values;
+            },
+            getValues : function() {
+                var values = [],
+                    sels   = this.getSelectionModel().getSelections();
+
+                Ext.each(sels, function(rec){
                     values.push(rec.get('value'));
                 }, this);
 
                 if(values.indexOf('') != -1 && values.length == 1)
                     values.push(''); //account for null-only filtering
 
-                return values.join(';');
+                return {
+                    values : values.join(';'),
+                    length : values.length,
+                    max    : this.getStore().getCount()
+                };
             },
-            setValue: function(values){
-                if(!this.rendered){
-                    this.on('render', function(){
+            setValue : function(values) {
+                if (!this.rendered) {
+                    this.on('render', function() {
                         this.setValue(values);
                     }, this, {single: true});
-                    return;
                 }
 
-                if(!Ext.isArray(values))
+                if (!Ext.isArray(values)) {
                     values = values.split(';');
+                }
 
-                var records = [];
-                var recIdx;
-                var error;
-                Ext.each(values, function(val){
+                if (this.store.isLoading) {
+                    // need to wait for the store to load to ensure records
+                    this.store.on('load', function() {
+                        this._checkAndLoadValues(values);
+                    }, this, {single: true});
+                }
+                else {
+                    this._checkAndLoadValues(values);
+                }
+            },
+            _checkAndLoadValues : function(values) {
+                var records = [],
+                    recIdx,
+                    recordNotFound;
+
+                // Iterate each value and record the index to be stored
+                Ext.each(values, function(val) {
                     recIdx = this.store.findBy(function(rec){
-                        return rec.get('value') === val
+                        return rec.get('value') === val;
                     });
-                    if(recIdx != -1)
+                    if (recIdx != -1) {
                         records.push(recIdx);
+                    }
                     else {
-                        // Issue 14710: if the record isnt found, we wont be able to select it, so should reject. if it's null/empty, ignore silently
-                        if(!Ext.isEmpty(val)){
-                            error = true;
+                        // Issue 14710: if the record isnt found, we wont be able to select it, so should reject.
+                        // If it's null/empty, ignore silently
+                        if (!Ext.isEmpty(val)) {
+                            recordNotFound = true;
                             return false;
                         }
                     }
                 }, this);
 
-                if(error){
+                if (recordNotFound) {
                     // NOTE: this is sort of a hack.  we allow users to pick values from the faceted UI, but also let them manually enter
                     // filters.  i think that's the right thing to do, but this means they can choose to filter on an invalid value.
                     // if we hit this situation, rather then just ignore it, we switch to advanced UI
-                    var tabpanel = this.findParentByType('tabpanel');
-                    var window = tabpanel.ownerCt;
-                    var tab = tabpanel.setActiveTab(0);
-                    tabpanel.hasLoaded = false;  //force reload from URL
+                    var tabpanel = this.findParentByType('tabpanel'),
+                        window   = tabpanel.ownerCt;
+
+                    tabpanel.setActiveTab(0);
+                    tabpanel.hasLoaded = false; // force reload from URL
                     window.setValuesFromParams(null, [{operator: 'in', value: values.join(';')}]);
                     return;
                 }
 
-                this.getSelectionModel().selectRows(records);
+                this.requestedRecords = records;
             },
-            selectAll: function(){
-                if(this.rendered){
+            selectRequested : function() {
+                if (this.requestedRecords) {
+                    this.getSelectionModel().selectRows(this.requestedRecords);
+                    this.requestedRecords = undefined;
+                }
+            },
+            selectAll : function() {
+                if(this.rendered) {
                     var sm = this.getSelectionModel();
                     sm.selectAll.defer(10, sm);
                 }
@@ -3320,17 +3422,15 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     this.on('render', this.selectAll, this, {single: true});
                 }
             },
-            selectNone: function(){
+            selectNone : function() {
                 if(this.rendered)
                     this.getSelectionModel().selectRows([]);
                 else {
                     this.on('render', this.selectNone, this, {single: true});
                 }
-            }
+            },
+            scope : this
         };
-
-        return grid;
-
     },
 
     getActiveTab: function()
@@ -3371,8 +3471,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             value: idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this.boundColumn.jsonType).getURLSuffix() : '',
             originalValue: idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this.boundColumn.jsonType).getURLSuffix() : '',
             listeners:{
-                scope: this,
-                select: function(combo){
+                select : function(combo) {
                     var idx = combo.filterIndex;
                     var inputField = this.find('itemId', 'inputField'+idx)[0];
 
@@ -3440,7 +3539,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
                     if(filter && filter.isDataValueRequired())
                         input.enable();
-                }
+                },
+                scope: this
             },
             scope: this
         }
@@ -3452,25 +3552,25 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var config = {
             xtype         : this.getFieldXtype(),
             itemId        : 'inputField' + idx,
-            //msgTarget     : 'under',
             filterIndex   : idx,
             id            : 'value_'+(idx + 1),   //for compatibility with tests...
-            //allowBlank    : false,
             width         : 250,
             blankText     : 'You must enter a value.',
             validateOnBlur: true,
             disabled      : idx !== 0,
             value         : null,
             listeners     : {
-                scope     : this,
                 disable   : function(field){
                     //Call validate after disable so any pre-existing validation errors go away.
                     if(field.rendered)
                         field.validate();
                 },
-                focus: function(){
-                    Ext.TaskMgr.stop(this.focusTask);
-                }
+                focus : function(f) {
+                    if (this.focusTask) {
+                        Ext.TaskMgr.stop(this.focusTask);
+                    }
+                },
+                scope : this
             },
             validator: function(value){
                 var idx = this.filterIndex;
@@ -3492,14 +3592,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if(this._jsonType == "date")
             config.altFormats = LABKEY.Utils.getDateAltFormats();
 
-        if(idx === 0){
-            this.on('afterlayout', function(){
-                if(this.focusTask)
-                    Ext.TaskMgr.start(this.focusTask);
-            }, this);
-        }
         return config;
-
     },
 
     getNextFilterIdx: function()
@@ -3509,22 +3602,17 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     getFilterInputPairConfig: function(quantity)
     {
-        var idx = this.getNextFilterIdx();
-        var items = [];
+        var idx = this.getNextFilterIdx(),
+            items = [], i;
 
-        for(var i=0;i<quantity;i++){
-            var combo = this.getComboConfig(idx);
-            var input = this.getInputFieldConfig(idx);
+        for(i=0; i < quantity; i++){
             items.push({
                 xtype: 'panel',
                 layout: 'form',
                 itemId: 'filterPair' + idx,
                 border: false,
-                defaults: {
-                    border: false,
-                    msgTarget: 'under'
-                },
-                items: [combo, input]
+                defaults: this.itemDefaults,
+                items: [this.getComboConfig(idx), this.getInputFieldConfig(idx)]
             });
             idx++;
         }
@@ -3533,11 +3621,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     okHandler: function(btn)
     {
-        var panel = this.find('itemId', 'filterArea')[0];
-        var tab = this.getActiveTab();
+        var tab = this.getTabPanel().getActiveTab();
 
-        if(!tab.getForm().isValid())
+        if(!tab.getForm().isValid()) {
             return;
+        }
 
         var inputFields = this.getInputFields();
         var combos = this.getFilterCombos();
@@ -3633,8 +3721,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     getComboStore : function(mvEnabled, jsonType, storeNum)
     {
-        var fields      = ['text', 'value', {name: 'isMulti', type: Ext.data.Types.BOOL}, {name: 'isOperatorOnly', type: Ext.data.Types.BOOL}];
-        var store       = new Ext.data.ArrayStore({
+        var fields = ['text', 'value',
+            {name: 'isMulti', type: Ext.data.Types.BOOL},
+            {name: 'isOperatorOnly', type: Ext.data.Types.BOOL}
+        ];
+        var store = new Ext.data.ArrayStore({
             fields: fields,
             idIndex: 1
         });
@@ -3644,7 +3735,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         for (var i=0;i<filters.length;i++)
         {
             var filter = filters[i];
-            store.add(new comboRecord({text: filter.getLongDisplayText(), value: filter.getURLSuffix(), isMulti: filter.isMultiValued(), isOperatorOnly: filter.isDataValueRequired()}))
+            store.add(new comboRecord({
+                text: filter.getLongDisplayText(),
+                value: filter.getURLSuffix(),
+                isMulti: filter.isMultiValued(),
+                isOperatorOnly: filter.isDataValueRequired()
+            }));
         }
 
         if(storeNum > 0){
@@ -3664,7 +3760,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     clearFilter : function()
     {
-        var dr = LABKEY.DataRegions[this._tableName];
+        var dr = this.getDataRegion();
         if (!dr)
             return;
         dr.clearFilter(this._fieldKey);
@@ -3673,7 +3769,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     clearAllFilters : function()
     {
-        var dr = LABKEY.DataRegions[this._tableName];
+        var dr = this.getDataRegion();
         if (!dr)
             return;
         dr.clearAllFilters();
@@ -3682,7 +3778,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     changeFilter : function(newParamValPairs, newQueryString)
     {
-        var dr = LABKEY.DataRegions[this._tableName];
+        var dr = this.getDataRegion();
         if (!dr)
             return;
         dr.changeFilter(newParamValPairs, newQueryString);
@@ -3695,8 +3791,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         //input1 and input2 have already been validated, no need to do that here.
         //We do however need to modify the date if it's not in the proper format, and parse ints/floats.
 
-        var queryString = LABKEY.DataRegions[this._tableName] ? LABKEY.DataRegions[this._tableName].requestURL : null;
-        var newParamValPairs = this.getParamValPairs(queryString, [this._tableName + "." + this._fieldKey + "~", this.getSkipPrefixes()]);
+        var queryString = this.getDataRegion().requestURL;
+        var newParamValPairs = this.getParamValPairs(queryString, [this.dataRegionName + "." + this._fieldKey + "~", this.getSkipPrefixes()]);
         var comparisons = new Array(0);
 
         Ext.each(filters, function(filter){
@@ -3718,9 +3814,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var pair;
         if (comparison == "isblank" || comparison == "isnonblank" || comparison == "nomvvalue" || comparison == "hasmvvalue")
         {
-            pair = [this._tableName + "." + this._fieldKey + "~" + comparison];
+            pair = [this.dataRegionName + "." + this._fieldKey + "~" + comparison];
         } else{
-            pair = [this._tableName + "." + this._fieldKey + "~" + comparison, input];
+            pair = [this.dataRegionName + "." + this._fieldKey + "~" + comparison, input];
         }
         return pair;
     },
@@ -3736,28 +3832,24 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         dr.clearSort(fieldKey);
     },
 
-    hideFilterPanel : function ()
+    isStoreLoaded : function(store)
     {
-        this.close();
+        return (!(store && (!store.fields || !store.fields.length) && !this.forceAdvancedFilters && !store.isLoading));
     },
 
     getLookupStore : function()
     {
-        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+        var dataRegion = this.getDataRegion();
         var storeId = [dataRegion.schemaName, dataRegion.queryName, this._fieldKey].join('||');
-        var column = this.boundColumn;
 
-        if(Ext.StoreMgr.get(storeId)){
-            var store = Ext.StoreMgr.get(storeId);
-            if(store && (!store.fields || !store.fields.length) && !this.forceAdvancedFilters && !store.isLoading)
-                store.load();
-
+        var store = Ext.StoreMgr.get(storeId);
+        if (store) {
             return store;
         }
 
         return Ext.StoreMgr.add(new LABKEY.ext.Store({
             schemaName: dataRegion.schemaName,
-            sql: this.getLookupValueSql(dataRegion, column),
+            sql: this.getLookupValueSql(dataRegion, this.boundColumn),
             storeId: storeId,
             sort: "value",
             containerPath: dataRegion.container || dataRegion.containerPath || LABKEY.container.path,
@@ -3766,9 +3858,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             containerFilter: dataRegion.containerFilter,
             autoLoad: true,
             listeners: {
-                scope: this,
-                delay: 50,
-                load: function(store){
+                load : function(store) {
                     // Issue 15124: because the SQL will not necessarily match the display value,
                     // we reformat on the client.
                     // the total number of records is expected to be small
@@ -3793,12 +3883,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                             valMap[rec.get('displayValue')] = rec;
                         }
                     }, this);
-                    this.prepareToShowPanel();
+                    store.isLoading = false;
+                    this.preparePanelTask.delay(50);
                 },
                 exception: function(){
                     this.forceAdvancedFilters = true;
-                    this.prepareToShowPanel();
-                }
+                    this.preparePanelTask.delay(50);
+                },
+                scope : this
             }
         }));
 
@@ -3861,53 +3953,29 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     getParamsForField: function(fieldKey)
     {
-        var dataRegion = LABKEY.DataRegions[this._tableName];
-//        if(!dataRegion)
-//            return;
+        var dataRegion = this.getDataRegion();
 
         if (!this.queryString)
         {
             this.queryString = dataRegion ? dataRegion.requestURL : null;
         }
 
-        //NOTE: if the dialog has loaded, we use the values from the inputs.  otherwise we resort to the dataregion
-        var paramValPairs;
-        if(!this.hasLoaded){
-            paramValPairs = LABKEY.DataRegion.getParamValPairsFromString(this.queryString, [this.getSkipPrefixes()]); //this._tableName + "." + this._fieldKey + "~",
-            var results = [];
-            var re = new RegExp('^' + Ext.escapeRe(this._tableName + '.' + fieldKey), 'i');
-            Ext.each(paramValPairs, function(pair){
-                if(pair[0].match(re)){
-                    var operator = pair[0].split('~')[1];
-                    if(LABKEY.Filter.getFilterTypeForURLSuffix(operator))
-                        results.push({
-                            operator: operator,
-                            value: pair[1]
-                        });
-                    else
-                        console.log('Unrecognized filter: ' + operator)
-                }
-            }, this);
-        }
-        else {
-            var inputFields = this.getInputFields();
-            var combos = this.getFilterCombos();
-            var results = [];
-            var input;
-            var value;
-            var filter;
-            Ext.each(combos, function(c, idx){
-                input = inputFields[idx];
-                value = input.getValue();
-                filter = LABKEY.Filter.getFilterTypeForURLSuffix(c.getValue());
-                if(filter && filter.getURLSuffix() && (!filter.isDataValueRequired() || !Ext.isEmpty(value))){
+        //NOTE: if the dialog has loaded, we use the values from the inputs. otherwise we resort to the dataregion
+        var paramValPairs = LABKEY.DataRegion.getParamValPairsFromString(this.queryString, [this.getSkipPrefixes()]);
+        var results = [];
+        var re = new RegExp('^' + Ext.escapeRe(this.dataRegionName + '.' + fieldKey), 'i');
+        Ext.each(paramValPairs, function(pair){
+            if(pair[0].match(re)){
+                var operator = pair[0].split('~')[1];
+                if(LABKEY.Filter.getFilterTypeForURLSuffix(operator))
                     results.push({
-                        operator: c.getValue(),
-                        value: value
+                        operator: operator,
+                        value: pair[1]
                     });
-                }
-            }, this);
-        }
+                else
+                    console.log('Unrecognized filter: ' + operator)
+            }
+        }, this);
 
         return results;
     },
