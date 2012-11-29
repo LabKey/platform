@@ -97,6 +97,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return dataColumn;
         }
     };
+    public static final DisplayColumnFactory NOLOOKUP_FACTORY = new DisplayColumnFactory()
+    {
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
+        {
+            DataColumn dataColumn = new DataColumn(colInfo, false);
+            return dataColumn;
+        }
+    };
 
 
     private static final Logger _log = Logger.getLogger(ColumnInfo.class);
