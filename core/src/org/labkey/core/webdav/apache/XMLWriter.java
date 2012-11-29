@@ -33,6 +33,8 @@
 
 package org.labkey.core.webdav.apache;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.Writer;
 
@@ -136,7 +138,7 @@ public class XMLWriter {
      * @param name Property name
      * @param value Property value
      */
-    public void writeProperty(String namespace, String name, String value) {
+    public void writeProperty(@Nullable String namespace, String name, String value) {
         writeElement(namespace, name, OPENING);
         buffer.append(value);
         writeElement(namespace, name, CLOSING);
@@ -161,7 +163,7 @@ public class XMLWriter {
      * @param namespace Namespace abbreviation
      * @param type Element type
      */
-    public void writeElement(String namespace, String name, int type) {
+    public void writeElement(@Nullable String namespace, String name, int type) {
         writeElement(namespace, null, name, type);
     }
 
@@ -174,7 +176,7 @@ public class XMLWriter {
      * @param name Element name
      * @param type Element type
      */
-    public void writeElement(String namespace, String namespaceInfo,
+    public void writeElement(@Nullable String namespace, @Nullable String namespaceInfo,
                              String name, int type) {
         if ((namespace != null) && (namespace.length() > 0)) {
             switch (type) {
