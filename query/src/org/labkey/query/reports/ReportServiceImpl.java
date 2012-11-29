@@ -541,6 +541,44 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return _saveReport(context, key, report).getRowId();
     }
 
+    public void validateReportPermissions(ContainerUser context, Report report)
+    {
+        List<ValidationError> errors = new ArrayList<ValidationError>();
+
+        tryValidateReportPermissions(context, report, errors);
+
+        if (!errors.isEmpty())
+        {
+            StringBuilder sb = new StringBuilder();
+            for (ValidationError error : errors)
+                sb.append(error.getMessage()).append("\n");
+
+            throw new RuntimeException(sb.toString());
+        }
+    }
+
+    public Boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors)
+    {
+
+        final ReportDescriptor descriptor = report.getDescriptor();
+
+        if (descriptor.isNew())
+        {
+            if (descriptor.getOwner() == null)
+                report.canShare(context.getUser(), context.getContainer(), errors);
+        }
+        else
+        {
+            if (report.canEdit(context.getUser(), context.getContainer(), errors))
+            {
+                if (descriptor.getOwner() == null)
+                    report.canShare(context.getUser(), context.getContainer(), errors);
+            }
+        }
+
+        return errors.isEmpty();
+    }
+
     private ReportDB _saveReport(ContainerUser context, String key, Report report) throws SQLException
     {
         DbScope scope = getTable().getSchema().getScope();
@@ -554,29 +592,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
             // last chance to validate permissions, this should be done in the controller actions, so
             // just throw an exception if validation fails
-            List<ValidationError> errors = new ArrayList<ValidationError>();
-            if (descriptor.isNew())
-            {
-                if (descriptor.getOwner() == null)
-                    report.canShare(context.getUser(), context.getContainer(), errors);
-            }
-            else
-            {
-                if (report.canEdit(context.getUser(), context.getContainer(), errors))
-                {
-                    if (descriptor.getOwner() == null)
-                        report.canShare(context.getUser(), context.getContainer(), errors);
-                }
-            }
-
-            if (!errors.isEmpty())
-            {
-                StringBuilder sb = new StringBuilder();
-                for (ValidationError error : errors)
-                    sb.append(error.getMessage()).append("\n");
-
-                throw new RuntimeException(sb.toString());
-            }
+            validateReportPermissions(context, report);
 
             final ReportDB r = _saveReport(context.getUser(), context.getContainer(), key, descriptor);
             scope.commitTransaction();

@@ -75,6 +75,12 @@
         }
     }
 
+    function getReturnUrl()
+    {
+        var returnUrl = LABKEY.ActionURL.getParameter('returnUrl');
+        return (undefined == returnUrl ? "" : returnUrl);
+    }
+
     Ext4.onReady(function(){
 
         var fileUploadButton = Ext4.create('Ext.form.field.File', {
@@ -188,11 +194,11 @@
             xtype: "hidden",
             name: "reportId",
             value: <%=q(form.getReportId().toString())%>
-        });
+         });
     <% } %>
 
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
-            url : LABKEY.ActionURL.buildURL('reports',  <%=q(action)%>, null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
+            url : LABKEY.ActionURL.buildURL('reports',  <%=q(action)%>, null, {returnUrl: getReturnUrl()}),
             standardSubmit  : true,
             bodyStyle       :'background-color: transparent;',
             bodyPadding     : 10,
@@ -212,6 +218,7 @@
                 description : true,
                 shared      : true
             },
+            disableShared   : <%=(form.getCanChangeSharing()==false)%>,
         <% if (form.isUpdate()) { %>
             record : {
                 data : {

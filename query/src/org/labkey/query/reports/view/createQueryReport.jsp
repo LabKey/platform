@@ -47,6 +47,12 @@
 
 <script type="text/javascript">
 
+    function getReturnUrl()
+    {
+        var returnUrl = LABKEY.ActionURL.getParameter('returnUrl');
+        return (undefined == returnUrl ? "" : returnUrl);
+    }
+
     var initializeSchemaStore = function(){
         Ext4.define('LABKEY.data.Schema', {
             extend : 'Ext.data.Model',
@@ -271,7 +277,7 @@
 
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             renderTo    : 'queryReportForm',
-            url : LABKEY.ActionURL.buildURL('reports', 'createQueryReport', null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
+            url : LABKEY.ActionURL.buildURL('reports', 'createQueryReport', null, {returnUrl: getReturnUrl()}),
             standardSubmit  : true,
             bodyStyle       :'background-color: transparent;',
             bodyPadding     : 10,

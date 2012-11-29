@@ -1297,6 +1297,10 @@ public class ReportsController extends SpringActionController
         {
             setHelpTopic(new HelpTopic("staticReports"));
 
+            // we can share if we own the report.  if we don't
+            // own the report then we'll disable the checkbox
+            form.setCanChangeSharing(true);
+
             if (form.getReportId() != null)
             {
                 R report = (R)form.getReportId().getReport(getViewContext());
@@ -1325,6 +1329,20 @@ public class ReportsController extends SpringActionController
             String status = report.getDescriptor().getStatus();
             form.setStatus(null != status ? ViewInfo.Status.valueOf(status) : ViewInfo.Status.None);
             form.setRefreshDate(report.getDescriptor().getRefreshDate());
+
+            ReportService.get().validateReportPermissions(getViewContext(), report);
+
+            //
+            // see if this user can make a public report private
+            // if not, then don't enable the sharing checkbox
+            //
+            if (null == report.getDescriptor().getOwner())
+            {
+                List<ValidationError> errors = new ArrayList<ValidationError>();
+                report.getDescriptor().setOwner(getViewContext().getUser().getUserId());
+                form.setCanChangeSharing(ReportService.get().tryValidateReportPermissions(getViewContext(), report, errors));
+                report.getDescriptor().setOwner(null);
+            }
         }
 
 

@@ -40,6 +40,12 @@
 
 <script type="text/javascript">
 
+    function getReturnUrl()
+    {
+        var returnUrl = LABKEY.ActionURL.getParameter('returnUrl');
+        return (undefined == returnUrl ? "" : returnUrl);
+    }
+
     Ext4.onReady(function(){
 
         var targetNewWindowField = {
@@ -94,7 +100,7 @@
         %>
 
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
-            url : LABKEY.ActionURL.buildURL('reports', <%=q(action)%>, null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
+            url : LABKEY.ActionURL.buildURL('reports', <%=q(action)%>, null, {returnUrl: getReturnUrl()}),
             standardSubmit  : true,
             bodyStyle       :'background-color: transparent;',
             bodyPadding     : 10,
@@ -106,6 +112,7 @@
                 labelWidth : 125,
                 msgTarget : 'side'
             },
+            disableShared   : <%=(form.getCanChangeSharing()==false)%>,
             visibleFields   : {
                 author  : true,
                 status  : true,

@@ -32,6 +32,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         this.data = this.record.data || {};
         this.visibleFields = config.visibleFields || {};
         this.extraItems = config.extraItems || [];
+        this.disableShared = config.disableShared;
 
         // define data models
         Ext4.define('Dataset.Browser.Category', {
@@ -190,22 +191,35 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         }
 
         if (this.visibleFields['shared']) {
+            var sharedName = "shared";
+
+            if (this.disableShared) {
+                // be sure to roundtrip the original shared value
+                // since we are disabling the checkbox
+                formItems.push({
+                    xtype : 'hidden',
+                    name  : "shared",
+                    value : this.data.shared
+                });
+
+                // rename the disabled checkbox
+                sharedName = "hiddenShared"
+            }
 
             formItems.push({
                 xtype   : 'checkbox',
                 inputValue  : this.data.shared,
                 checked     : this.data.shared,
                 boxLabel    : 'Share this report with all users?',
-                name        : "shared",
+                name        : sharedName,
                 fieldLabel  : "Shared",
+                disabled    : this.disableShared,
+                uncheckedValue : false,
                 listeners: {
                     change: function(cmp, newVal, oldVal){
                         cmp.inputValue = newVal;
                     }
                 }
-            },{
-                xtype: 'hidden',
-                name: "@shared"
             });
         }
 
