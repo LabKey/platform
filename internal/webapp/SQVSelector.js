@@ -79,9 +79,6 @@ Ext4.define('LABKEY.SQVModel', {
                 var schemaData = schemasInfo,
                     arrayedData = [];
                 for(var i = 0; i < schemaData.schemas.length; i++){
-                    schemaData.schema[i].name = Ext4.htmlEncode(schemaData.schema[i].name);
-                }
-                for(var i = 0; i < schemaData.schemas.length; i++){
                     arrayedData.push([schemaData.schemas[i]]);
                 }
                 schemaData = arrayedData;
@@ -104,12 +101,16 @@ Ext4.define('LABKEY.SQVModel', {
                 valueField : 'schema',
                 displayField : 'schema',
                 editable : false,
+                listConfig : {
+                    getInnerTpl : function(dfield) {
+                        return '{' + dfield + ':htmlEncode}' ; // 15202
+                    }
+                },
                 listeners : {
                     afterrender : function(cb) {
                         this.schemaCombo = cb;
                     },
                     select :  function(cb){
-                        cb.setValue(Ext4.htmlDecode(cb.getRawValue()));
                         if(this.queryCombo){
                             this.changeQueryStore(cb.getRawValue());
                         }
@@ -133,6 +134,11 @@ Ext4.define('LABKEY.SQVModel', {
                  store : this.queryStore,
                  editable : false,
                  disabled : true,
+                 listConfig : {
+                     getInnerTpl : function(dfield) {
+                         return '{' + dfield + ':htmlEncode}' ; // 15202
+                     }
+                 },
                  listeners : {
                      scope : this,
                      afterrender : function(cb) {
@@ -144,7 +150,6 @@ Ext4.define('LABKEY.SQVModel', {
                      },
                      select :  function(cb){
                          var schema = "";
-                         cb.setValue(Ext4.htmlDecode(cb.getRawValue()));
 
                          if(cb.defaultSchema){
                             schema = cb.defaultSchema;
@@ -184,12 +189,17 @@ Ext4.define('LABKEY.SQVModel', {
                 disabled : true,
                 editable : false,
                 store : this.viewStore,
+                listConfig : {
+                    getInnerTpl : function(dfield) {
+                        return '{' + dfield + ':htmlEncode}' ; // 15202
+                    }
+                },
                 listeners : {
                     afterrender : function(cb) {
                         this.viewCombo = cb;
                     },
                     select : function(cb){
-                        cb.setValue(Ext4.htmlDecode(cb.getRawValue()));
+                        cb.setValue(cb.getRawValue());
                     },
                     dataloaded : function(cb){
                         xx = cb;
@@ -219,9 +229,6 @@ Ext4.define('LABKEY.SQVModel', {
             LABKEY.Query.getQueries({
                 schemaName : selectedSchema,
                 success : function(details) {
-                    for(var i = 0; i < details.queries.length; i++){
-                        details.queries[i].name = Ext4.htmlEncode(details.queries[i].name);
-                    }
                     var newQueries = details.queries;
                     for (var q=0; q < newQueries.length; q++) {
                         var params = LABKEY.ActionURL.getParameters(newQueries[q].viewDataUrl);
@@ -230,7 +237,6 @@ Ext4.define('LABKEY.SQVModel', {
                         }
                     }
                     this.queryStore.loadData(newQueries);
-                    console.log("Fire.");
                     this.queryCombo.fireEvent('dataloaded', this.queryCombo);
                 },
                 scope : this
@@ -245,9 +251,6 @@ Ext4.define('LABKEY.SQVModel', {
                 schemaName : selectedSchema,
                 queryName : selectedQuery,
                 successCallback : function(details){
-                    for(var i = 0; i < details.views.length; i++){
-                        details.views[i].name = Ext4.htmlEncode(details.views[i].name);
-                    }
                     for(var i = 0; i < details.views.length; i++){
                         if(details.views[i].name == ""){
                             details.views[i].name = "[default view]";
