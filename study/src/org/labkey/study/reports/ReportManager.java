@@ -157,11 +157,11 @@ public class ReportManager implements StudyManager.DataSetListener
         QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), def.getContainer(), "study", def.getLabel());
         if (null == qd)
             qd = schema.getQueryDefForTable(def.getLabel());
-        Map<String, CustomView> views = qd.getCustomViews(context.getUser(), context.getRequest());
+        Map<String, CustomView> views = qd.getCustomViews(context.getUser(), context.getRequest(), false);
         if (views != null)
         {
             for (CustomView view: views.values())
-                if (null != view.getName() && !view.isHidden())
+                if (null != view.getName())
                     labels.add(new Pair<String, String>(view.getName(), view.getName()));
         }
 

@@ -65,10 +65,7 @@ a display value, select the display value from the linked table.
             QueryDefinition queryDef = schema.getQueryDefForTable(tableName);
             if (queryDef != null)
             {
-                for (String viewName : queryDef.getCustomViews(ctx.getUser(), ctx.getRequest()).keySet())
-                {
-                    viewNames.add(viewName);
-                }
+                viewNames.addAll(queryDef.getCustomViews(ctx.getUser(), ctx.getRequest(), false).keySet());
             }
 
             tableNames.put(tableName, viewNames);
@@ -79,13 +76,13 @@ a display value, select the display value from the linked table.
 %>
 <script type="text/javascript">
 var settings = {
-    schemaName:<%=nq(settings.getSchemaName())%>,
-    queryName:  <%=nq(settings.getQueryName())%>,
-    viewName:  <%=nq(settings.getViewName())%>,
-    startField: <%=nq(settings.getStartField())%>,
-    endField: <%=nq(settings.getEndField())%>,
-    titleField: <%=nq(settings.getTitleField())%>,
-    descriptionField: <%=nq(settings.getDescriptionField())%>
+    schemaName:<%=q(settings.getSchemaName())%>,
+    queryName:  <%=q(settings.getQueryName())%>,
+    viewName:  <%=q(settings.getViewName())%>,
+    startField: <%=q(settings.getStartField())%>,
+    endField: <%=q(settings.getEndField())%>,
+    titleField: <%=q(settings.getTitleField())%>,
+    descriptionField: <%=q(settings.getDescriptionField())%>
 };
 
 var schemaInfos = <%= new JSONObject(schemaTableNames).toString() %>;
@@ -263,8 +260,3 @@ Ext.onReady(function()
         </tr>
     </table>
 </form>
-<%!
-    String nq(String str)
-    {
-        return str == null ? "null" : q(str);
-    } %>

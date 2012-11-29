@@ -140,7 +140,7 @@ public class IssuesQueryView extends QueryView
         }
 
         // sort the grid view alphabetically, with private views over public ones
-        List<CustomView> views = new ArrayList<CustomView>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest()).values());
+        List<CustomView> views = new ArrayList<CustomView>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false).values());
         Collections.sort(views, new Comparator<CustomView>() {
             public int compare(CustomView o1, CustomView o2)
             {
@@ -162,8 +162,6 @@ public class IssuesQueryView extends QueryView
 
         for (CustomView view : views)
         {
-            if (view.isHidden())
-                continue;
             String label = view.getName();
             if (label == null)
                 continue;

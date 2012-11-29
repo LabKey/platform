@@ -58,11 +58,11 @@
 
             if (queryDef != null)
             {
-                for (Map.Entry<String, CustomView> entry : queryDef.getCustomViews(getUser(), getViewContext().getRequest()).entrySet())
+                for (Map.Entry<String, CustomView> entry : queryDef.getCustomViews(getUser(), getViewContext().getRequest(), false).entrySet())
                 {
                     String viewName = entry.getKey();
                     // Filter out hidden views
-                    if (viewName != null && !entry.getValue().isHidden())
+                    if (viewName != null)
                         viewNames.add(viewName);
                 }
             }

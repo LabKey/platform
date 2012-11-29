@@ -4476,7 +4476,7 @@ public class QueryController extends SpringActionController
                         + form.getSchemaName() + "' schema in the container '"
                         + getViewContext().getContainer().getPath() + "'!");
 
-            Map<String, CustomView> views = querydef.getCustomViews(getViewContext().getUser(), getViewContext().getRequest());
+            Map<String, CustomView> views = querydef.getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), true);
             if (null == views)
                 views = Collections.emptyMap();
 

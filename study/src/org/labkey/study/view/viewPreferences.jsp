@@ -46,7 +46,7 @@
         for (Pair<String, String> view : bean.getViews())
         {
 %>
-            <tr><td><%=h(getLabel(view, defaultView))%></td>
+            <tr><td><%=text(getLabel(view, defaultView))%></td>
                 <td>&nbsp;</td>
                 <td><%=textLink("select", url.relativeUrl("viewPreferences", Collections.singletonMap("defaultView", view.getValue()), "Study", false))%></td>
             </tr>
@@ -81,9 +81,9 @@
     String getLabel(Pair<String, String> view, String defaultView)
     {
         if (StringUtils.equals(view.getValue(), defaultView))
-            return "<b>" + view.getKey() + "</b>";
+            return "<b>" + h(view.getKey()) + "</b>";
 
-        return view.getKey();
+        return h(view.getKey());
     }
 %>
 
