@@ -84,7 +84,7 @@ public class WebdavServlet extends HttpServlet
         DavController dav = new DavController();
         dav.setResolver(_resolver);
         dav.setViewContext(context);
-        dav.setResourcePath(fullPath);
+        dav.setUrlResourcePath(fullPath);
         int stackSize = HttpView.getStackSize();
         try
         {

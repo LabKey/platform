@@ -304,7 +304,7 @@ public class DavController extends SpringActionController
 
         WebdavStatus sendError(WebdavStatus status, Path path)
         {
-            return sendError(status, path.toString());
+            return sendError(status, String.valueOf(path));
         }
 
         WebdavStatus sendError(WebdavStatus status, String message)
@@ -982,7 +982,7 @@ public class DavController extends SpringActionController
 
         public WebdavStatus doMethod() throws DavException, IOException
         {
-            _log.debug("PROPFIND " + getResourcePathStr());
+            _log.debug("PROPFIND " + String.valueOf(getResourcePath()));
             checkRequireLogin(null);
 
             WebdavResource root = getResource();
@@ -2051,7 +2051,7 @@ public class DavController extends SpringActionController
             Path path = getResourcePath();
             WebdavResource resource = resolvePath();
             if (null == resource || path.size()==0)
-                throw new DavException(WebdavStatus.SC_FORBIDDEN, path.toString());
+                throw new DavException(WebdavStatus.SC_FORBIDDEN, String.valueOf(path));
 
             boolean exists = resource.exists();
 
@@ -3005,15 +3005,9 @@ public class DavController extends SpringActionController
         String contentDisposition = getRequest().getParameter("contentDisposition");
         if (!StringUtils.equals("attachment",contentDisposition) && !StringUtils.equals("inline",contentDisposition))
             contentDisposition = null;
-        String filename = getRequest().getParameter("filename");
-        if (StringUtils.contains(filename,"\n\r\t\\/") || !ViewServlet.validChars(filename))
-            filename = null;
-        if (!StringUtils.isEmpty(contentDisposition) || !StringUtils.isEmpty(filename))
-        {
-            contentDisposition = StringUtils.defaultString(contentDisposition, "attachment");
-            filename = StringUtils.defaultString(filename, resource.getName());
-            getResponse().setContentDisposition(contentDisposition + "; filename=" + filename);
-        }
+
+        if (!StringUtils.isEmpty(contentDisposition))
+            getResponse().setContentDisposition(contentDisposition);
 
         // Find content type
         String contentType = resource.getContentType();
@@ -3333,18 +3327,20 @@ public class DavController extends SpringActionController
     }
 
 
-    private String _resourcePathStr = null;
+
+    private String _urlResourcePathStr = null;
+    private Path _resourcePath = null;
 
 
-    public void setResourcePath(String path)
+    public void setUrlResourcePath(String path)
     {
-        _resourcePathStr = path;
+        _urlResourcePathStr = path;
     }
 
 
-    String getResourcePathStr()
+    String getUrlResourcePathStr()
     {
-        if (_resourcePathStr == null)
+        if (_urlResourcePathStr == null)
         {
             ActionURL url = getViewContext().getActionURL();
             String path = StringUtils.trimToEmpty(url.getParameter("path"));
@@ -3352,19 +3348,29 @@ public class DavController extends SpringActionController
                 path = "/";
             if (path.equals(""))
                 path = "/";
-            _resourcePathStr = path;
+            _urlResourcePathStr = path;
         }
-        if (!_resourcePathStr.startsWith("/"))
+        if (!_urlResourcePathStr.startsWith("/"))
             return null;
-        return _resourcePathStr;
+        return _urlResourcePathStr;
     }
 
 
     Path getResourcePath()
     {
-        String p = getResourcePathStr();
-        if (null == p) return null;
-        return Path.parse(p).normalize();
+        if (null == _resourcePath)
+        {
+            String str = getUrlResourcePathStr();
+            if (null == str)
+                return null;
+            Path p = Path.parse(str).normalize();
+            Path urlDirectory = p.isDirectory() ? p : p.getParent();
+            String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
+            if (null != filename)
+                p = urlDirectory.append(filename);
+            _resourcePath = p;
+        }
+        return _resourcePath;
     }
 
     
@@ -3447,7 +3453,7 @@ public class DavController extends SpringActionController
 */
 
         Path path = Path.parse(destinationPath).normalize();
-        log("Dest path: " + path.toString());
+        log("Dest path: " + String.valueOf(path));
 
         // some user agents incorrectly double encode!  check here
         if (destinationPath.contains("%") && StringUtils.contains(request.getHeader("User-Agent"),"cadaver"))
@@ -4643,7 +4649,7 @@ public class DavController extends SpringActionController
 
         public String getResourcePath()
         {
-            return null != resource ? resource.getPath().toString() : getResourcePathStr();
+            return null != resource ? resource.getPath().toString() : getResourcePath().toString();
         }
     }
 
@@ -4697,13 +4703,13 @@ public class DavController extends SpringActionController
             InputStream result = r.getInputStream(user);
             if (result == null)
             {
-                throw new DavException(WebdavStatus.SC_NOT_FOUND, r.getPath().toString());
+                throw new DavException(WebdavStatus.SC_NOT_FOUND, String.valueOf(r.getPath()));
             }
             return result;
         }
         catch (FileNotFoundException fnfe)
         {
-            throw new DavException(WebdavStatus.SC_NOT_FOUND, r.getPath().toString(), fnfe);
+            throw new DavException(WebdavStatus.SC_NOT_FOUND, String.valueOf(r.getPath()), fnfe);
         }
     }
 
