@@ -58,7 +58,13 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
 
         public void putName(String key)
         {
-            if (key != null && !_nameToNormalName.containsKey(key))
+            putName(key, -1);
+        }
+
+        public void putName(String key, int rowId)
+        {
+            // If rowId >= 0, use it to distinguish otherwise identical keys (for site name)
+            if (key != null && (!_nameToNormalName.containsKey(key) || rowId >= 0))
             {
                 String legalName = ColumnInfo.legalNameFromName(key);
                 String normalName = BaseSpecimenPivotTable.getNormalName(legalName);
@@ -68,10 +74,13 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
                 }
                 _nameToNormalName.put(key, normalName);
 
-                if (!_typeNameIdMapWrapper.containsKey(key))
+                // Note: all sites will have a non-negative rowId; it's possible a site name + rowId could be the same
+                //       as a type name, but that's fine. A type name having the same id as a site name will cause no conflict.
+
+                if (!_typeNameIdMapWrapper.containsKey(key, rowId))
                 {
                     int id = _typeNameIdMapWrapper.size() + 1;
-                    _typeNameIdMapWrapper.put(key, String.valueOf(id));
+                    _typeNameIdMapWrapper.put(key, rowId, String.valueOf(id));
                 }
             }
         }
@@ -115,23 +124,26 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
             _container = container;
             _typeNameIdMap = PropertyManager.getProperties(container, CATEGORY_NAME);
         }
-        public boolean containsKey(String key)
+        public boolean containsKey(String key, int rowId)
         {
+            String keyWithId = getKeyWithId(key, rowId);
             if (null != _typeNameIdMapWritable)
-                return _typeNameIdMapWritable.containsKey(key);
-            return _typeNameIdMap.containsKey(key);
+                return _typeNameIdMapWritable.containsKey(keyWithId);
+            return _typeNameIdMap.containsKey(keyWithId);
         }
-        public String get(String key)
+        public String get(String key, int rowId)
         {
+            String keyWithId = getKeyWithId(key, rowId);
             if (null != _typeNameIdMapWritable)
-                return _typeNameIdMapWritable.get(key);
-             return _typeNameIdMap.get(key);
+                return _typeNameIdMapWritable.get(keyWithId);
+             return _typeNameIdMap.get(keyWithId);
         }
-        public void put(String key, String value)
+        public void put(String key, int rowId, String value)
         {
+            String keyWithId = getKeyWithId(key, rowId);
             if (null == _typeNameIdMapWritable)
                 _typeNameIdMapWritable = PropertyManager.getWritableProperties(_container, CATEGORY_NAME, true);
-            _typeNameIdMapWritable.put(key, value);
+            _typeNameIdMapWritable.put(keyWithId, value);
 
         }
         public void save()
@@ -144,6 +156,10 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
             if (null != _typeNameIdMapWritable)
                 return _typeNameIdMapWritable.size();
             return _typeNameIdMap.size();
+        }
+        private String getKeyWithId(String key, int rowId)
+        {
+            return (rowId >= 0) ? key + rowId : key;
         }
     }
 
@@ -223,7 +239,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
         {
             if (type.getId() != null)
                 typeMap.put(type.getId(), new NameLabelPair(
-                        getLabel(type.getLabel(), type.getId(), legalMap), type.getLabel()));
+                        getLabel(type.getLabel(), -1, legalMap), type.getLabel()));
         }
         return typeMap;
     }
@@ -245,7 +261,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
         for (PrimaryType type : primaryTypes)
         {
             typeMap.put((int)type.getRowId(), new NameLabelPair(
-                    getLabel(type.getPrimaryType(), (int)type.getRowId(), legalMap), type.getPrimaryType()));
+                    getLabel(type.getPrimaryType(), -1, legalMap), type.getPrimaryType()));
         }
         return typeMap;
     }
@@ -270,7 +286,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
         {
             if (type.getId() != null  && type.getLabel() != null)
                 typeMap.put(type.getId(), new NameLabelPair(
-                        getLabel(type.getLabel(), type.getId(), legalMap), type.getLabel()));
+                        getLabel(type.getLabel(), -1, legalMap), type.getLabel()));
         }
         return typeMap;
     }
@@ -286,7 +302,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
 
         for (SiteImpl site : sites)
         {
-            legalMap.putName(site.getLabel());
+            legalMap.putName(site.getLabel(), site.getRowId());
         }
 
         for (SiteImpl site : sites)
@@ -304,7 +320,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     {
         if (label != null && legalMap.isDuplicated(label))
         {
-            String idString = _typeNameIdMapWrapper.get(label);
+            String idString = _typeNameIdMapWrapper.get(label, id);
             int mappedId = (idString != null) ? Integer.valueOf(idString) : id;
             return String.format("%s(%s)", legalMap.getNormalName(label), mappedId);
         }
