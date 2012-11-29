@@ -38,6 +38,7 @@ public class DataViewEditForm extends ReturnUrlForm
     Date _refreshDate;
     Date _modifiedDate;
     private Boolean _shared;
+    private Boolean _canChangeSharing;
 
     public String getViewName()
     {
@@ -162,5 +163,15 @@ public class DataViewEditForm extends ReturnUrlForm
     public boolean isUpdate()
     {
         return null != _reportId;
+    }
+
+    public Boolean getCanChangeSharing()
+    {
+        return _canChangeSharing;
+    }
+
+    public void setCanChangeSharing(Boolean canChangeSharing)
+    {
+        _canChangeSharing = canChangeSharing;
     }
 }

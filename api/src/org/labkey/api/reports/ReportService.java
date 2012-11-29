@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ScriptReportBean;
@@ -121,6 +122,14 @@ public class ReportService
          * Runs maintenance on the report service.
          */
         public void maintenance();
+
+        /**
+         * Validates whether a user has the appropriate permissions to save the report with the changed
+         * settings.  Use tryValidateReportPermissions if you don't want to throw a runtime exception
+         * on permissions failure
+         */
+        public void validateReportPermissions(ContainerUser context, Report report);
+        public Boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
     }
 
     public interface ViewFactory
