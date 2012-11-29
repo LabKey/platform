@@ -79,6 +79,8 @@ import java.util.TreeSet;
 public abstract class SqlDialect
 {
     private static final Logger LOG = Logger.getLogger(SqlDialect.class);
+    private int _databaseVersion = 0;
+    private String _productVersion = "0";
     private DialectStringHandler _stringHandler = null;
 
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
@@ -333,6 +335,28 @@ public abstract class SqlDialect
         keywordSet.addAll(new CsvSet(keywords));
 
         return keywordSet;
+    }
+
+    // Internal version number
+    public int getDatabaseVersion()
+    {
+        return _databaseVersion;
+    }
+
+    public void setDatabaseVersion(int databaseVersion)
+    {
+        _databaseVersion = databaseVersion;
+    }
+
+    // Human readable product version number
+    public String getProductVersion()
+    {
+        return _productVersion;
+    }
+
+    public void setProductVersion(String productVersion)
+    {
+        _productVersion = productVersion;
     }
 
     public abstract String getProductName();

@@ -53,9 +53,9 @@ public class ContextListener implements ServletContextListener
             {
                 listener.shutdownPre(servletContextEvent);
             }
-            catch (Exception e)
+            catch (Throwable t)
             {
-                _log.error("Exception during shutdownPre(): ", e);
+                _log.error("Exception during shutdownPre(): ", t);
             }
         }
         for (ShutdownListener listener : shutdownListeners)
@@ -64,9 +64,9 @@ public class ContextListener implements ServletContextListener
             {
                 listener.shutdownStarted(servletContextEvent);
             }
-            catch (Exception e)
+            catch (Throwable t)
             {
-                _log.error("Exception during shutdownStarted(): ", e);
+                _log.error("Exception during shutdownStarted(): ", t);
             }
         }
         getSpringContextListener().contextDestroyed(servletContextEvent);
