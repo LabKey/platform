@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2011 LabKey Corporation
+ * Copyright (c) 2008-2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,7 @@
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.labkey.api.query.UserSchema"%>
-<%@ page import="static org.labkey.api.query.QueryService.*" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -33,6 +31,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();
@@ -55,7 +55,7 @@ a display value, select the display value from the linked table.
     for (String name : defSchema.getUserSchemaNames())
     {
         schemaOptions.put(name, name);
-        UserSchema schema = get().getUserSchema(ctx.getUser(), ctx.getContainer(), name);
+        UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), name);
         Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<List<String>>();
         for (String tableName : new TreeSet<String>(schema.getTableAndQueryNames(true)))
         {
