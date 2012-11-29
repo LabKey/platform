@@ -49,7 +49,7 @@ public interface QueryDefinition
     boolean isTemporary();
 
     CustomView getCustomView(@Nullable User owner, @Nullable HttpServletRequest request, String name);
-    Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request);
+    Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden);
     CustomView createCustomView(@Nullable User owner, String name);
     List<ColumnInfo> getColumns(CustomView view, TableInfo table);
     List<DisplayColumn> getDisplayColumns(CustomView view, TableInfo table);
