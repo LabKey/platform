@@ -408,6 +408,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             {
                 xtype: 'textfield',
                 fieldLabel: 'Name',
+                autoCreate: {tag: 'input', type: 'text', size: '20', autocomplete: 'off', maxlength: '255'},
                 allowBlank: false,
                 name: 'studyName',
                 value: this.info.name,
