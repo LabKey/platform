@@ -344,6 +344,7 @@ function validateKey()
     <% } %>
 
     var text = document.getElementById("textbox");
+    updateIds(text);
     if (text.value.match("/^\\s*\$/"))
     {
         alert("Please paste data in text field.");
