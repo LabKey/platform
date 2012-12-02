@@ -31,7 +31,7 @@ public interface PipelineStatusFile
 {
     public interface StatusReader
     {
-        PipelineStatusFile getStatusFile(String path) throws SQLException;
+        PipelineStatusFile getStatusFile(String path);
 
         PipelineStatusFile[] getQueuedStatusFiles() throws SQLException;
 

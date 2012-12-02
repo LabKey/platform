@@ -29,14 +29,14 @@ import java.sql.SQLException;
  */
 public class WriteableAppProps extends AppPropsImpl
 {
-    public WriteableAppProps(Container c) throws SQLException
+    public WriteableAppProps(Container c)
     {
         super();
         makeWriteable(c);
     }
 
     // Make public
-    public void save() throws SQLException
+    public void save()
     {
         super.save();
     }
@@ -177,7 +177,7 @@ public class WriteableAppProps extends AppPropsImpl
         storeIntValue(LOOK_AND_FEEL_REVISION, getLookAndFeelRevision() + 1);
     }
 
-    public static void incrementLookAndFeelRevisionAndSave() throws SQLException
+    public static void incrementLookAndFeelRevisionAndSave()
     {
         WriteableAppProps app = AppProps.getWriteableInstance();
         app.incrementLookAndFeelRevision();

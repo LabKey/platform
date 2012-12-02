@@ -210,7 +210,7 @@ public class EmailTemplateService
         }
     }
 
-    public void saveEmailTemplate(EmailTemplate template, Container c) throws SQLException
+    public void saveEmailTemplate(EmailTemplate template, Container c)
     {
         if (!template.getEditableScopes().isEditableIn(c))
         {
@@ -226,7 +226,7 @@ public class EmailTemplateService
         PropertyManager.saveProperties(map);
     }
 
-    public void deleteEmailTemplate(EmailTemplate template, Container c) throws SQLException
+    public void deleteEmailTemplate(EmailTemplate template, Container c)
     {
         Map<String, String> map = getProperties(c, true);
 

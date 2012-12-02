@@ -27,7 +27,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.TestContext;

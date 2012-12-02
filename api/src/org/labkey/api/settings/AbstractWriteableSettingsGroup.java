@@ -15,25 +15,24 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.User;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.apache.log4j.Logger;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.sql.SQLException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: adam
@@ -50,15 +49,15 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
     protected abstract String getType();
 
-    protected void makeWriteable(Container c) throws SQLException
+    protected void makeWriteable(Container c)
     {
         _properties = getWriteableProperties(c);
         _oldProps = getWriteableProperties(c);
     }
 
-    protected PropertyManager.PropertyMap getWriteableProperties(Container c) throws SQLException
+    protected PropertyManager.PropertyMap getWriteableProperties(Container c)
     {
-        return PropertyManager.getWritableProperties(SITE_CONFIG_USER_ID, c, getGroupName(), true);
+        return PropertyManager.getWritableProperties(SITE_CONFIG_USER, c, getGroupName(), true);
     }
 
     protected Map<String, String> getProperties()
@@ -71,7 +70,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         return _oldProps;
     }
 
-    protected void save() throws SQLException
+    protected void save()
     {
         PropertyManager.saveProperties(_properties);
     }

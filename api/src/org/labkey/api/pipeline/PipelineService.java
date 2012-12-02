@@ -86,9 +86,9 @@ abstract public class PipelineService
 
     abstract public void queueJob(PipelineJob job) throws PipelineValidationException;
 
-    abstract public void setPipelineProperty(Container container, String name, String value) throws SQLException;
+    abstract public void setPipelineProperty(Container container, String name, String value);
 
-    abstract public String getPipelineProperty(Container container, String name) throws SQLException;
+    abstract public String getPipelineProperty(Container container, String name);
 
     /** Configurations for the pipeline job webpart ButtonBar */
     public enum PipelineButtonOption { Minimal, Assay, Standard }

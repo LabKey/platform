@@ -17,7 +17,6 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -53,7 +52,6 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

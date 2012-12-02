@@ -27,7 +27,6 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;

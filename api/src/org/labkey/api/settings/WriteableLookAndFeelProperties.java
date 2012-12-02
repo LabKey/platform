@@ -29,14 +29,14 @@ import java.sql.SQLException;
  */
 public class WriteableLookAndFeelProperties extends LookAndFeelProperties
 {
-    WriteableLookAndFeelProperties(Container c) throws SQLException
+    WriteableLookAndFeelProperties(Container c)
     {
         super(c);
         makeWriteable(c);
     }
 
     // Make public
-    public void save() throws SQLException
+    public void save()
     {
         super.save();
     }

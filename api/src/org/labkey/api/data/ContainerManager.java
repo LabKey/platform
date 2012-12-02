@@ -411,19 +411,12 @@ public class ContainerManager
         if (!c.isProject())
             return false;
 
-        try
-        {
             WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
 
             props.setMenuUIEnabled(enabled);
             props.writeAuditLogEvent(u, props.getOldProperties());
             props.save();
             return true;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
     }
 
     private static final Set<Container> containersWithBadFolderTypes = new ConcurrentHashSet<Container>();
@@ -431,7 +424,7 @@ public class ContainerManager
     @NotNull
     public static FolderType getFolderType(Container c)
     {
-        Map props = PropertyManager.getProperties(0, c, ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
+        Map props = PropertyManager.getProperties(c, ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
         String name = (String) props.get(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
         FolderType folderType;
 

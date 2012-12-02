@@ -53,69 +53,62 @@ public class WebThemeManager
 
     static
     {
-        try
+        PropertyManager.PropertyMap properties = AppProps.getWebThemeConfigProperties();
+        String themeNames = properties.get(THEME_NAMES_KEY);
+        String[] themeNamesArray = (null == themeNames ? "" : themeNames).split(";");
+
+        addToMap(BLUE);
+        addToMap(BROWN);
+        addToMap(HARVEST);
+        addToMap(SAGE);
+        addToMap(MADISON);
+        addToMap(WebTheme.DEFAULT);
+
+        if (null != themeNamesArray)
         {
-            PropertyManager.PropertyMap properties = AppProps.getWebThemeConfigProperties();
-            String themeNames = properties.get(THEME_NAMES_KEY);
-            String[] themeNamesArray = (null == themeNames ? "" : themeNames).split(";");
-
-            addToMap(BLUE);
-            addToMap(BROWN);
-            addToMap(HARVEST);
-            addToMap(SAGE);
-            addToMap(MADISON);
-            addToMap(WebTheme.DEFAULT);
-
-            if (null != themeNamesArray)
+            // load the color settings from database
+            for (String themeName : themeNamesArray)
             {
-                // load the color settings from database
-                for (String themeName : themeNamesArray)
+                if (null == themeName || 0 == themeName.length())
+                    continue;
+
+                // we read the colors separated by ';' in order
+                StringBuffer key = new StringBuffer();
+                key.append(THEME_COLORS_KEY);
+                key.append(themeName);
+                String themeColors = properties.get(key.toString());
+                String[] themeColorsArray = (null == themeColors ? "" : themeColors).split(";");
+                if (themeColorsArray.length > 0)
                 {
-                    if (null == themeName || 0 == themeName.length())
-                        continue;
-
-                    // we read the colors separated by ';' in order
-                    StringBuffer key = new StringBuffer();
-                    key.append(THEME_COLORS_KEY);
-                    key.append(themeName);
-                    String themeColors = properties.get(key.toString());
-                    String[] themeColorsArray = (null == themeColors ? "" : themeColors).split(";");
-                    if (themeColorsArray.length > 0)
+                    // Load default themes
+                    if (_webThemeMap.containsKey(themeName))
                     {
-                        // Load default themes
-                        if (_webThemeMap.containsKey(themeName))
-                        {
-                            updateWebTheme(getTheme(themeName));
-                        }
+                        updateWebTheme(getTheme(themeName));
+                    }
 
-                        // Load user defined themes
-                        else if (7 == themeColorsArray.length)
-                        {
-                            // Assumes correct order
-                            String textColor = themeColorsArray[0];
-                            String linkColor = themeColorsArray[1];
-                            String gridColor = themeColorsArray[2];
-                            String primaryBackgroundColor = themeColorsArray[3];
-                            String secondaryBackgroundColor = themeColorsArray[4];
-                            String borderTitleColor = themeColorsArray[5];
-                            String webPartColor = themeColorsArray[6];
+                    // Load user defined themes
+                    else if (7 == themeColorsArray.length)
+                    {
+                        // Assumes correct order
+                        String textColor = themeColorsArray[0];
+                        String linkColor = themeColorsArray[1];
+                        String gridColor = themeColorsArray[2];
+                        String primaryBackgroundColor = themeColorsArray[3];
+                        String secondaryBackgroundColor = themeColorsArray[4];
+                        String borderTitleColor = themeColorsArray[5];
+                        String webPartColor = themeColorsArray[6];
 
-                            WebTheme webTheme = new WebTheme(
-                                    themeName,
-                                    textColor, linkColor,
-                                    gridColor, primaryBackgroundColor,
-                                    secondaryBackgroundColor, borderTitleColor, webPartColor, true);
-                            updateWebTheme(webTheme);
-                        }
+                        WebTheme webTheme = new WebTheme(
+                                themeName,
+                                textColor, linkColor,
+                                gridColor, primaryBackgroundColor,
+                                secondaryBackgroundColor, borderTitleColor, webPartColor, true);
+                        updateWebTheme(webTheme);
                     }
                 }
             }
         }
-        catch (SQLException e)
-        {
-            // just continue
-        }
-    }
+   }
 
     public static WebTheme getTheme(Container c)
     {
@@ -171,7 +164,7 @@ public class WebThemeManager
         return null;
     }
 
-    public static void updateWebTheme(WebTheme theme) throws SQLException
+    public static void updateWebTheme(WebTheme theme)
     {
         synchronized(_webThemeMap)
         {
@@ -182,7 +175,6 @@ public class WebThemeManager
     }
     
     public static void updateWebTheme(String friendlyName, String textColor, String linkColor, String gridColor, String primaryBackgroundColor, String secondaryBackgroundColor, String borderTitleColor, String webPartColor)
-        throws SQLException
     {
         updateWebTheme(new WebTheme(friendlyName, textColor, linkColor, gridColor, primaryBackgroundColor, secondaryBackgroundColor, borderTitleColor, webPartColor));
     }
@@ -211,7 +203,7 @@ public class WebThemeManager
         _webThemeMap.remove(friendlyName);
     }
 
-    private static void saveWebThemes() throws SQLException
+    private static void saveWebThemes()
     {
         synchronized(_webThemeMap)
         {

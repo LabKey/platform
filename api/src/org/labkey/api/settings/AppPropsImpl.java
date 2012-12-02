@@ -17,7 +17,6 @@ package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -344,16 +343,9 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         String serverGUID = lookupStringValue(SERVER_GUID, SERVER_SESSION_GUID);
         if (serverGUID.equals(SERVER_SESSION_GUID))
         {
-            try
-            {
-                WriteableAppProps writeable = AppProps.getWriteableInstance();
-                writeable.storeStringValue(SERVER_GUID, serverGUID);
-                writeable.save();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            WriteableAppProps writeable = AppProps.getWriteableInstance();
+            writeable.storeStringValue(SERVER_GUID, serverGUID);
+            writeable.save();
         }
         return serverGUID;
     }
@@ -472,11 +464,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         {
             return UsageReportingLevel.LOW;
         }
-    }
-
-    public static WriteableAppProps getWriteableInstance() throws SQLException
-    {
-        return new WriteableAppProps(ContainerManager.getRoot());
     }
 
     // Get the name of the webapp configuration file, e.g., labkey.xml, cpas.xml, or root.xml.  Used in some error messages

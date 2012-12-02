@@ -26,7 +26,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.Date;
 
 /**
  * User: arauch
@@ -42,7 +41,7 @@ public class AppProps
         return _instance;
     }
 
-    public static WriteableAppProps getWriteableInstance() throws SQLException
+    public static WriteableAppProps getWriteableInstance()
     {
         return new WriteableAppProps(ContainerManager.getRoot());
     }
@@ -106,8 +105,8 @@ public class AppProps
     protected static final String WEB_THEME_CONFIG_NAME = "WebThemeConfig";
 
     // For Customisable web colour theme
-    public static PropertyManager.PropertyMap getWebThemeConfigProperties() throws SQLException
+    public static PropertyManager.PropertyMap getWebThemeConfigProperties()
     {
-        return PropertyManager.getWritableProperties(AppPropsImpl.SITE_CONFIG_USER_ID, ContainerManager.getRoot(), WEB_THEME_CONFIG_NAME, true);
+        return PropertyManager.getWritableProperties(AppPropsImpl.SITE_CONFIG_USER, ContainerManager.getRoot(), WEB_THEME_CONFIG_NAME, true);
     }
 }

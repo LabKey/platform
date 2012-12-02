@@ -64,7 +64,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
         return new LookAndFeelProperties(c);
     }
 
-    public static WriteableLookAndFeelProperties getWriteableInstance(Container c) throws SQLException
+    public static WriteableLookAndFeelProperties getWriteableInstance(Container c)
     {
         assert c.isProject() || c.isRoot();
         return new WriteableLookAndFeelProperties(c);
@@ -178,17 +178,10 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
         if ("/dev/issues".equals(path))
         {
-            try
-            {
-                path = "${contextPath}/issues/dev/issues/insert.view";
-                WriteableLookAndFeelProperties writeable = getWriteableInstance(_c);
-                writeable.setReportAProblemPath(path);
-                writeable.save();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            path = "${contextPath}/issues/dev/issues/insert.view";
+            WriteableLookAndFeelProperties writeable = getWriteableInstance(_c);
+            writeable.setReportAProblemPath(path);
+            writeable.save();
         }
 
         return path.replace("${contextPath}", AppProps.getInstance().getContextPath());

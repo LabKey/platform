@@ -379,14 +379,14 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
     }
 
     @Override
-    public Map<Object, Object> fillValueMap(final Map<Object, Object> map)
+    public <K, V> Map<K, V> fillValueMap(final Map<K, V> map)
     {
         forEach(new ForEachBlock<ResultSet>()
         {
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
-                map.put(rs.getObject(1), rs.getObject(2));
+                map.put((K)rs.getObject(1), (V)rs.getObject(2));
             }
         });
 
@@ -394,9 +394,9 @@ public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends 
     }
 
     @Override
-    public Map<Object, Object> getValueMap()
+    public <K, V> Map<K, V> getValueMap()
     {
-        return fillValueMap(new HashMap<Object, Object>());
+        return fillValueMap(new HashMap<K, V>());
     }
 
     public interface ResultSetHandler<K>

@@ -19,16 +19,27 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -83,10 +94,11 @@ public class PropertyManager
         }
     }
 
-    private static Logger _log = Logger.getLogger(PropertyManager.class);
-    private static PropertySchema prop = PropertySchema.getInstance();
+    private static final Logger _log = Logger.getLogger(PropertyManager.class);
+    private static final PropertySchema prop = PropertySchema.getInstance();
 
-    private static final String _cachePrefix = PropertyManager.class.getName() + "/";
+    private static final String CACHE_PREFIX = PropertyManager.class.getName() + "/";
+    public static final User SHARED_USER = User.guest;  // Shared properties are saved with user id 0
 
 
     private PropertyManager()
@@ -95,26 +107,28 @@ public class PropertyManager
 
     private static String _cacheKey(Object[] parameters)
     {
-        return _cachePrefix + String.valueOf(parameters[0]) + "/" + _toEmptyString(parameters[1]) + "/" + _toEmptyString(parameters[2]);
+        return CACHE_PREFIX + String.valueOf(parameters[0]) + "/" + _toEmptyString(parameters[1]) + "/" + _toEmptyString(parameters[2]);
     }
 
-    // For global system properties that get attached to the root container
+    // For global system properties that are attached to the root container
     // Returns an empty map if property set hasn't been created
     public static @NotNull Map<String, String> getProperties(String category)
     {
-        return getProperties(0, ContainerManager.getRoot(), category);
+        return getProperties(SHARED_USER, ContainerManager.getRoot(), category);
     }
 
 
+    // For shared properties that are attached to a specific container
+    // Returns an empty map if property set hasn't been created
     public static @NotNull Map<String, String> getProperties(Container container, String category)
     {
-        return getProperties(0, container, category);
+        return getProperties(SHARED_USER, container, category);
     }
 
 
-    public static @NotNull Map<String, String> getProperties(int userId, Container container, String category)
+    public static @NotNull Map<String, String> getProperties(User user, Container container, String category)
     {
-        Object[] parameters = new Object[]{userId, container.getId(), category};
+        Object[] parameters = new Object[]{user.getUserId(), container.getId(), category};
         TableInfo tinfo;
         String cacheKey;
 
@@ -126,8 +140,8 @@ public class PropertyManager
         if (o instanceof PropertyMap)
             return (PropertyMap) o;
 
-        // Not found in the cache,
-        PropertyMap m = getWritableProperties(userId, container, category, false);
+        // Not found in the cache
+        PropertyMap m = getWritableProperties(user, container, category, false);
 
         if (null == m)
             m = NULL_MAP;
@@ -145,54 +159,57 @@ public class PropertyManager
      * NOTE: this does not test permissions.  Callers should ensure the requested user has the appropriate
      * permissions to read these properties
      */
-    public static String getCoalecedProperty(int userId, Container c, String category, String name, boolean includeNullUser)
+    public static String getCoalecedProperty(User user, Container c, String category, String name, boolean includeNullUser)
     {
-        String value = getCoalecedPropertyForContainer(userId, c, category, name);
+        String value = getCoalecedPropertyForContainer(user, c, category, name);
 
-        if(includeNullUser && value == null && userId != 0)
-            value = getCoalecedPropertyForContainer(0, c, category, name);
+        if(includeNullUser && value == null && user != SHARED_USER)
+            value = getCoalecedPropertyForContainer(SHARED_USER, c, category, name);
 
         return value;
     }
 
-    public static String getCoalecedProperty(int userId, Container c, String category, String name)
+    public static String getCoalecedProperty(User user, Container c, String category, String name)
     {
-        return getCoalecedProperty(userId, c, category, name, true);
+        return getCoalecedProperty(user, c, category, name, true);
     }
 
-    private static String getCoalecedPropertyForContainer(int userId, Container c, String category, String name)
+    private static String getCoalecedPropertyForContainer(User user, Container c, String category, String name)
     {
         Container curContainer = c;
+
         while (curContainer.isWorkbook())
             curContainer = curContainer.getParent();
 
         String value;
+
         while (curContainer != null)
         {
-            value = getProperty(userId, curContainer, category, name);
-            if(value != null)
+            value = getProperty(user, curContainer, category, name);
+            if (value != null)
                 return value;
 
             curContainer = curContainer.getParent();
         }
+
         return null;
     }
 
     /**
      * NOTE: does not test permissions
      */
-    public static Map<Container, Map<Integer, String>> getPropertyValueAndAncestors(int userId, Container c, String category, String name, boolean includeNullContainers)
+    public static Map<Container, Map<Integer, String>> getPropertyValueAndAncestors(User user, Container c, String category, String name, boolean includeNullContainers)
     {
         Map<Container, Map<Integer, String>> map = new HashMap<Container, Map<Integer, String>>();
-
         Container curContainer = c;
+
         while (curContainer != null)
         {
-            String value = getProperty(userId, curContainer, category, name);
+            String value = getProperty(user, curContainer, category, name);
             Map<Integer, String> containerMap = new HashMap<Integer, String>();
 
             if(value != null)
-                containerMap.put(userId, value);
+                containerMap.put(user.getUserId(), value);
             else if (includeNullContainers)
                 containerMap.put(0, value);
 
@@ -205,62 +222,69 @@ public class PropertyManager
         return map;
     }
 
-    private static String getProperty(int userId, Container container, String category, String name)
+    private static String getProperty(User user, Container container, String category, String name)
     {
-        Map<String, String> props = PropertyManager.getProperties(userId, container, category);
+        Map<String, String> props = PropertyManager.getProperties(user, container, category);
         return props.get(name);
     }
 
     // For global system properties that get attached to the root container
     public static PropertyMap getWritableProperties(String category, boolean create)
     {
-        return getWritableProperties(0, ContainerManager.getRoot(), category, create);
+        return getWritableProperties(SHARED_USER, ContainerManager.getRoot(), category, create);
     }
 
 
     public static PropertyMap getWritableProperties(Container container, String category, boolean create)
     {
-        return getWritableProperties(0, container, category, create);
+        return getWritableProperties(SHARED_USER, container, category, create);
     }
 
 
-    public static PropertyMap getWritableProperties(int userId, Container container, String category, boolean create)
+    public static PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
-        String objectId = container.getId().intern();
+        String containerId = container.getId().intern();
         try
         {
             prop.getSchema().getScope().ensureTransaction();
 
-            synchronized (objectId)
+            synchronized (containerId)
             {
-                String setSelectName = prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
+                ColumnInfo setColumn = prop.getTableInfoProperties().getColumn("Set");
+                String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
 
-                Object[] parameters = new Object[]{userId, objectId, category};
+                List<Object> paramList = Arrays.<Object>asList(user, container, category);
 
-                Integer set = Table.executeSingleton(prop.getSchema(),
-                        "SELECT " + setSelectName + " FROM " + prop.getTableInfoPropertySets() + " WHERE UserId=? AND ObjectId=? AND Category=?",
-                        parameters, Integer.class);
+                SQLFragment sql = new SQLFragment("SELECT " + setSelectName + " FROM " + prop.getTableInfoPropertySets() +
+                    " WHERE UserId = ? AND ObjectId = ? AND Category = ?");
+                sql.addAll(paramList);
 
-                if (null == set)
+                Integer set = new SqlSelector(prop.getSchema(), sql).getObject(Integer.class);
+                boolean newSet = (null == set);
+
+                if (newSet)
                 {
                     if (!create)
                     {
                         prop.getSchema().getScope().commitTransaction();
                         return null;
                     }
-                    Table.execute(prop.getSchema(),
-                            "INSERT INTO " + prop.getTableInfoPropertySets() + " (UserId, ObjectId, Category) VALUES (?,?,?)",
-                            parameters);
-                    set = Table.executeSingleton(prop.getSchema(),
-                            "SELECT " + setSelectName + " FROM " + prop.getTableInfoPropertySets() + " WHERE UserId=? AND ObjectId=? AND Category=?",
-                            parameters, Integer.class);
+                    Map<String, Object> map = new HashMap<String, Object>();
+                    map.put("UserId", user);
+                    map.put("ObjectId", container);
+                    map.put("Category", category);
+                    Map<String, Object> mapOut = Table.insert(user, prop.getTableInfoPropertySets(), map);
+                    set = (Integer)mapOut.get("Set");
                 }
 
-                PropertyMap m = new PropertyMap(set.intValue(), userId, objectId, category);
-                Table.executeValueMap(prop.getSchema(),
-                        "SELECT Name, Value FROM " + prop.getTableInfoProperties() + " WHERE " + setSelectName + "=?",
-                        new Object[]{set},
-                        (Map)m);
+                PropertyMap m = new PropertyMap(set, user.getUserId(), containerId, category);
+
+                // Small optimization... skip map-filling query on new property set
+                if (!newSet)
+                {
+                    Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
+                    new TableSelector(prop.getTableInfoProperties(), PageFlowUtil.set("Name", "Value"), filter, null).fillValueMap(m);
+                }
 
                 prop.getSchema().getScope().commitTransaction();
                 return m;
@@ -358,7 +382,7 @@ public class PropertyManager
     }
 
 
-    public static void saveProperties(Map<String,String> map)
+    public static void saveProperties(Map<String, String> map)
     {
         if (!(map instanceof PropertyMap))
             throw new IllegalArgumentException("map must be created by getProperties()");
@@ -392,40 +416,6 @@ public class PropertyManager
             }
 
             DbCache.remove(prop.getTableInfoProperties(), _cacheKey(props.getCacheParams()));
-        }
-    }
-
-    /**
-     * Return full property entries. Use this function to return property entries that are part
-     * of multiple property sets.
-     *
-     * @param userId   UserId of the property. If null properties for all users (NOT JUST THE NULL USER) will be found.
-     * @param objectId objectId (usually containerId) to search for. If null  properties of all containers will be found
-     * @param category category to search for. If null  properties of all categories will be found
-     * @param key      key to search for. If null all keys will be returned
-     * @return array containing found properties
-     */
-    public static PropertyEntry[] findPropertyEntries(Integer userId, String objectId, String category, String key)
-    {
-        SimpleFilter filter = new SimpleFilter();
-        if (null != userId)
-            filter.addCondition("UserId", userId);
-        if (null != objectId)
-            filter.addCondition("ObjectId", objectId);
-        if (null != category)
-            filter.addCondition("Category", category);
-        if (null != key)
-            filter.addCondition("Name", key);
-
-        Sort sort = new Sort("UserId,ObjectId,Category,Name");
-        try
-        {
-            return Table.select(prop.getTableInfoPropertyEntries(), Table.ALL_COLUMNS, filter, sort, PropertyEntry.class);
-        }
-        catch (Exception x)
-        {
-            _log.error("selecting properties", x);
-            return null;
         }
     }
 
@@ -470,7 +460,7 @@ public class PropertyManager
 
 
         @Override
-        public String put(String key, String value)
+        public String put(String key, @Nullable String value)
         {
             if (null != removedKeys)
                 removedKeys.remove(key);
@@ -524,67 +514,6 @@ public class PropertyManager
     }
 
 
-    public static class PropertyEntry
-    {
-        private int _userId;
-        private String _objectId;
-        private String _category;
-        private String _key;
-        private String _value;
-
-        public int getUserId()
-        {
-            return _userId;
-        }
-
-        public void setUserId(int userId)
-        {
-            this._userId = userId;
-        }
-
-        public String getObjectId()
-        {
-            return _objectId;
-        }
-
-        public void setObjectId(String _objectId)
-        {
-            this._objectId = _objectId;
-        }
-
-        public String getCategory()
-        {
-            return _category;
-        }
-
-        public void setCategory(String _category)
-        {
-            this._category = _category;
-        }
-
-        public String getKey()
-        {
-            return _key;
-        }
-
-        public void setKey(String key)
-        {
-            this._key = key;
-        }
-
-        public String getValue()
-        {
-            return _value;
-        }
-
-        public void setValue(String value)
-        {
-            this._value = value;
-        }
-
-
-    }
-
     public static class TestCase extends Assert
     {
         @Test
@@ -611,27 +540,27 @@ public class PropertyManager
                     assertTrue(ContainerManager.delete(child, TestContext.get().getUser()));
                 }
             }
-            Map m = PropertyManager.getProperties(user.getUserId(), child, "junit");
+            Map m = PropertyManager.getProperties(user, child, "junit");
             assertTrue(m == NULL_MAP);
-            m = PropertyManager.getProperties(user.getUserId(), child, "junit2");
+            m = PropertyManager.getProperties(user, child, "junit2");
             assertTrue(m == NULL_MAP);
         }
 
 
-        private void testProperties(User user, Container test, String category) throws SQLException
+        private void testProperties(User user, Container test, String category)
         {
-            PropertyMap m = PropertyManager.getWritableProperties(user.getUserId(), test, category, true);
+            PropertyMap m = PropertyManager.getWritableProperties(user, test, category, true);
             assertNotNull(m);
             m.clear();
             PropertyManager.saveProperties(m);
 
-            m = PropertyManager.getWritableProperties(user.getUserId(), test, category, false);
+            m = PropertyManager.getWritableProperties(user, test, category, false);
             m.put("foo", "bar");
             m.put("this", "that");
             m.put("zoo", null);
             PropertyManager.saveProperties(m);
 
-            m = PropertyManager.getWritableProperties(user.getUserId(), test, category, false);
+            m = PropertyManager.getWritableProperties(user, test, category, false);
             assertEquals(m.get("foo"), "bar");
             assertEquals(m.get("this"), "that");
             assertFalse(m.containsKey("zoo"));
@@ -639,7 +568,7 @@ public class PropertyManager
             m.remove("this");
             PropertyManager.saveProperties(m);
 
-            m = PropertyManager.getWritableProperties(user.getUserId(), test, category, false);
+            m = PropertyManager.getWritableProperties(user, test, category, false);
             assertEquals(m.get("foo"), "bar");
             assertFalse(m.containsKey("this"));
             assertFalse(m.containsKey("zoo"));
@@ -649,33 +578,24 @@ public class PropertyManager
         @Test
         public void testOrphanedPropertySets()
         {
-            try
-            {
-                String sql = "SELECT COUNT(*) FROM " +  prop.getTableInfoPropertySets() + " WHERE ObjectId NOT IN (SELECT EntityId FROM " + CoreSchema.getInstance().getTableInfoContainers() + ")";
+            SimpleFilter filter = new SimpleFilter(new SQLClause("ObjectId NOT IN (SELECT EntityId FROM " + CoreSchema.getInstance().getTableInfoContainers() + ")", null, FieldKey.fromParts("ObjectId")));
+            Selector selector = new TableSelector(prop.getTableInfoPropertySets(), filter, null);
+            Long count = selector.getRowCount();
 
-                Long count = Table.executeSingleton(getSchema(), sql, new Object[]{}, Long.class);
-
-                // We found orphaned property sets... log them
-                if (count != 0)
-                {
-                    sql = "SELECT * FROM " +  prop.getTableInfoPropertySets() + " WHERE ObjectId NOT IN (SELECT EntityId FROM " + CoreSchema.getInstance().getTableInfoContainers() + ")";
-                    Selector selector = new SqlSelector(prop.getSchema(), sql);
-                    String topMessage = count + " orphaned property sets detected";
-                    final StringBuilder sb = new StringBuilder(topMessage + ":\ncategory\tset\tobjectid\n");
-                    selector.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
-                        @Override
-                        public void exec(Map map) throws SQLException
-                        {
-                            sb.append(map.get("category") + "\t" + map.get("set") + "\t" + map.get("objectid") + "\n");
-                        }
-                    });
-                    _log.error(topMessage + ":\n" + sb);
-                    fail(topMessage + "; see log for more details");
-                }
-            }
-            catch (SQLException x)
+            // We found orphaned property sets... log them
+            if (count != 0)
             {
-                assertTrue(x.getMessage(), false);
+                String topMessage = count + " orphaned property sets detected";
+                final StringBuilder sb = new StringBuilder(topMessage + ":\ncategory\tset\tobjectid\n");
+                selector.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
+                    @Override
+                    public void exec(Map map) throws SQLException
+                    {
+                        sb.append(map.get("category") + "\t" + map.get("set") + "\t" + map.get("objectid") + "\n");
+                    }
+                });
+                _log.error(topMessage + ":\n" + sb);
+                fail(topMessage + "; see log for more details");
             }
         }
     }

@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.security.User;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -32,7 +33,7 @@ public abstract class AbstractSettingsGroup
 {
     private static Logger _log = Logger.getLogger(AbstractSettingsGroup.class);
 
-    protected static final int SITE_CONFIG_USER_ID = -1;
+    public static final User SITE_CONFIG_USER = new User("site settings", -1); // Historically, site settings have userd user id -1
 
     protected abstract String getGroupName();
 
@@ -94,6 +95,6 @@ public abstract class AbstractSettingsGroup
 
     public Map<String, String> getProperties(Container c) throws SQLException
     {
-        return PropertyManager.getProperties(AppPropsImpl.SITE_CONFIG_USER_ID, c, getGroupName());
+        return PropertyManager.getProperties(SITE_CONFIG_USER, c, getGroupName());
     }
 }

@@ -152,6 +152,20 @@ public class Table
         return selector.getArray(clss);
     }
 
+    /**
+     * This is a shortcut method that can be used for two-column ResultSets
+     * The first column is key, the second column is the value
+     */
+    @Deprecated // Use SqlSelector
+    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, @Nullable Map<Object, Object> m)
+            throws SQLException
+    {
+        if (null == m)
+            return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
+        else
+            return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
+    }
+
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
     // ===== TableSelector methods below =====
@@ -333,21 +347,6 @@ public class Table
     public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
-    }
-
-    // 3 usages
-    /**
-     * This is a shortcut method that can be used for two-column ResultSets
-     * The first column is key, the second column is the value
-     */
-    @Deprecated // Use SqlSelector
-    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, @Nullable Map<Object, Object> m)
-            throws SQLException
-    {
-        if (null == m)
-            return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
-        else
-            return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
     }
 
     // 62 usages

@@ -16,6 +16,7 @@
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -160,7 +161,7 @@ public class ModuleProperty
         return ret;
     }
 
-    public void saveValue(User u, Container c, int userIdToSave, String value)
+    public void saveValue(User u, Container c, User userToSave, @Nullable String value)
     {
         if (!isCanSetPerContainer() && !c.isRoot())
             throw new IllegalArgumentException("This property can not be set for this container.  It can only be set site-wide, which means it must be set on the root container.");
@@ -178,11 +179,13 @@ public class ModuleProperty
                 throw new UnauthorizedException("The user does not have " + p.getName() + " permission on this container");
         }
 
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(userIdToSave, c, getCategory(), true);
-        if(!StringUtils.isEmpty(value))
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(userToSave, c, getCategory(), true);
+
+        if (!StringUtils.isEmpty(value))
             props.put(getName(), value);
         else
             props.remove(getName());
+
         PropertyManager.saveProperties(props);
     }
 
@@ -191,7 +194,7 @@ public class ModuleProperty
      */
     public String getEffectiveValue(User user, Container c)
     {
-        int userId = 0;
+        User properyUser = PropertyManager.SHARED_USER;  // Only shared properties are supported?
 
 //        if(user == null || !isCanSetPerUser())
 //            userId = 0;
@@ -200,9 +203,9 @@ public class ModuleProperty
 
         String value;
         if(isCanSetPerContainer())
-            value = PropertyManager.getCoalecedProperty(userId, c, getCategory(), getName());
+            value = PropertyManager.getCoalecedProperty(properyUser, c, getCategory(), getName());
         else
-            value = PropertyManager.getCoalecedProperty(userId, ContainerManager.getRoot(), getCategory(), getName());
+            value = PropertyManager.getCoalecedProperty(properyUser, ContainerManager.getRoot(), getCategory(), getName());
 
         if(value == null)
             value = getDefaultValue();

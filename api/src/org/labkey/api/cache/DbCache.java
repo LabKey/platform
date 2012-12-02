@@ -40,12 +40,6 @@ public class DbCache
     public static int DEFAULT_CACHE_SIZE = 1000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
 
 
-    public static DatabaseCache<Object> getCache(TableInfo tinfo)
-    {
-        return getCache(tinfo, true);
-    }
-
-
     public static <K> DatabaseCache<K> getCacheGeneric(TableInfo tinfo)
     {
         return (DatabaseCache<K>)getCache(tinfo, true);

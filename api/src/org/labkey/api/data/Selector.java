@@ -66,13 +66,11 @@ public interface Selector
 
     <K> void forEach(ForEachBlock<K> block, Class<K> clazz);
 
-    // Used to populate a map with a two-column query; the first column is the key, the second column is the value.
-    // This variant returns a new map.
-    Map<Object, Object> getValueMap();
+    // Return a new map from a two-column query; the first column is the key, the second column is the value.
+    <K, V> Map<K, V> getValueMap();
 
-    // Used to populate a map with a two-column query; the first column is the key, the second column is the value.
-    // This variant populates and returns the map that is passed in.
-    Map<Object, Object> fillValueMap(Map<Object, Object> map);
+    // Populate an existing map from a two-column query; the first column is the key, the second column is the value.
+    <K, V> Map<K, V> fillValueMap(Map<K, V> map);
 
     interface ForEachBlock<K>
     {

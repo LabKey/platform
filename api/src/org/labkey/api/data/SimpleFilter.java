@@ -223,7 +223,7 @@ public class SimpleFilter implements Filter
         String _fragment;
         private List<FieldKey> _fieldKeys = new ArrayList<FieldKey>();
 
-        public SQLClause(String fragment, Object[] paramVals, FieldKey... fieldKeys)
+        public SQLClause(String fragment, @Nullable Object[] paramVals, FieldKey... fieldKeys)
         {
             _urlClause = false;
             _fragment = fragment;
