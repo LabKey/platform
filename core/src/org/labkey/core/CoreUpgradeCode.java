@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.AbstractSettingsGroup;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance;
@@ -169,7 +170,7 @@ public class CoreUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        Map<String, String> props = PropertyManager.getProperties(-1, ContainerManager.getRoot(), "SiteConfig");
+        Map<String, String> props = PropertyManager.getProperties(AbstractSettingsGroup.SITE_CONFIG_USER, ContainerManager.getRoot(), "SiteConfig");
 
         String interval = props.get("systemMaintenanceInterval");
         Set<String> enabled = new HashSet<String>();

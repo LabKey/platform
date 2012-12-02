@@ -936,7 +936,7 @@ public class AdminController extends SpringActionController
                 throw new UnauthorizedException();
         }
 
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(getContainer());
             props.clear();
@@ -975,7 +975,7 @@ public class AdminController extends SpringActionController
                 throw new UnauthorizedException();
         }
 
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o) throws SQLException
         {
             deleteExistingFavicon(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
@@ -1004,7 +1004,7 @@ public class AdminController extends SpringActionController
                 throw new UnauthorizedException();
         }
 
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o) throws SQLException
         {
             deleteExistingCustomStylesheet(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
@@ -2876,7 +2876,7 @@ public class AdminController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class SaveWebThemeAction extends AbstractWebThemeAction
     {
-        protected void handleTheme(WebThemeForm form, ActionURL successURL) throws SQLException
+        protected void handleTheme(WebThemeForm form, ActionURL successURL)
         {
             String themeName = form.getThemeName();
 

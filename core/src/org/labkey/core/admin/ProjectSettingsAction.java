@@ -108,7 +108,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             return handlePropertiesPost(c, form, errors);
     }
 
-    private boolean handlePropertiesPost(Container c, AdminController.ProjectSettingsForm form, BindException errors) throws Exception
+    private boolean handlePropertiesPost(Container c, AdminController.ProjectSettingsForm form, BindException errors)
     {
         WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
 
@@ -198,7 +198,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         return true;
     }
 
-    private boolean handleResourcesPost(Container c, BindException errors) throws Exception
+    private boolean handleResourcesPost(Container c, BindException errors)
     {
         Map<String, MultipartFile> fileMap = getFileMap();
 
@@ -253,7 +253,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         return true;
     }
 
-    private boolean handleMenuPost(Container c, AdminController.ProjectSettingsForm form, BindException errors) throws SQLException
+    private boolean handleMenuPost(Container c, AdminController.ProjectSettingsForm form, BindException errors)
     {
         ContainerManager.setMenuEnabled(c, getViewContext().getUser(), form.isEnableMenuBar());
         return true;

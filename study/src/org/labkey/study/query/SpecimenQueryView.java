@@ -737,39 +737,32 @@ public class SpecimenQueryView extends BaseStudyQueryView
             }
         }
 
-        try
+        boolean oneVialIndicator = false;
+        boolean zeroVialIndicator = false;
+        if (!_disableLowVialIndicators)
         {
-            boolean oneVialIndicator = false;
-            boolean zeroVialIndicator = false;
-            if (!_disableLowVialIndicators)
-            {
-                DisplaySettings settings =  SampleManager.getInstance().getDisplaySettings(getContainer());
-                oneVialIndicator = settings.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
-                    (settings.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
-                        getUser().isAdministrator());
-                zeroVialIndicator = settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
-                        (settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
-                                getUser().isAdministrator());
-            }
-            RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
-            if (!settings.isSimple() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
-            {
-                // Only add this column if we're using advanced specimen management
-                cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
-                    SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
-            }
-
-            // this column is normally hidden but we need it on the select for any specimen filters
-            if (_requireSequenceNum)
-            {
-                ColumnInfo seqNumCol = getTable().getColumn("SequenceNum");
-                if (seqNumCol != null)
-                    cols.add(seqNumCol.getRenderer());
-            }
+            DisplaySettings settings =  SampleManager.getInstance().getDisplaySettings(getContainer());
+            oneVialIndicator = settings.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
+                (settings.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
+                    getUser().isAdministrator());
+            zeroVialIndicator = settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
+                    (settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
+                            getUser().isAdministrator());
         }
-        catch (SQLException e)
+        RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
+        if (!settings.isSimple() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
         {
-            throw new RuntimeSQLException(e);
+            // Only add this column if we're using advanced specimen management
+            cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
+                SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
+        }
+
+        // this column is normally hidden but we need it on the select for any specimen filters
+        if (_requireSequenceNum)
+        {
+            ColumnInfo seqNumCol = getTable().getColumn("SequenceNum");
+            if (seqNumCol != null)
+                cols.add(seqNumCol.getRenderer());
         }
 
         return cols;

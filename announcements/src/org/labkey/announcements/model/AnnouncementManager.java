@@ -634,7 +634,7 @@ public class AnnouncementManager
 
     private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
 
-    public static void saveMessageBoardSettings(Container c, DiscussionService.Settings settings) throws SQLException, IllegalAccessException, InvocationTargetException
+    public static void saveMessageBoardSettings(Container c, DiscussionService.Settings settings) throws IllegalAccessException, InvocationTargetException
     {
         Map<String, String> props = PropertyManager.getWritableProperties(c, MESSAGE_BOARD_SETTINGS, true);
         props.clear();  // Get rid of old props (e.g., userList, see #13882)
@@ -655,7 +655,7 @@ public class AnnouncementManager
 
     public static DiscussionService.Settings getMessageBoardSettings(Container c) throws SQLException, IllegalAccessException, InvocationTargetException
     {
-        Map<String, String> props = PropertyManager.getProperties(0, c, MESSAGE_BOARD_SETTINGS);
+        Map<String, String> props = PropertyManager.getProperties(c, MESSAGE_BOARD_SETTINGS);
         DiscussionService.Settings settings = new DiscussionService.Settings();
         settings.setDefaults();
         BeanUtils.populate(settings, props);

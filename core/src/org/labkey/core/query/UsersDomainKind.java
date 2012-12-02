@@ -39,8 +39,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.HashMap;
@@ -182,7 +180,8 @@ public class UsersDomainKind extends SimpleTableDomainKind
     public static void ensureDomainProperties(Domain domain, User user, boolean isNewInstallation)
     {
         DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-        try {
+        try
+        {
             scope.ensureTransaction();
             Map<String, DomainProperty> existingProps = new HashMap<String, DomainProperty>();
             Map<String, Boolean> requiredMap = new HashMap<String, Boolean>();

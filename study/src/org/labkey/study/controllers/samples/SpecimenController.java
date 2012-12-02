@@ -1903,7 +1903,7 @@ public class SpecimenController extends BaseStudyController
         private SpecimenRequestQueryView _requestsGrid;
         private Site[] _providingLocations;
 
-        public AddToExistingRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens) throws SQLException, ServletException
+        public AddToExistingRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens) throws ServletException
         {
             super(context, requestedSpecimens.getSpecimens(), false, false, false, true);
 
@@ -2143,19 +2143,12 @@ public class SpecimenController extends BaseStudyController
         
         public boolean isDefaultNotification(ActorNotificationRecipientSet notification)
         {
-            try
-            {
-                RequestNotificationSettings settings = SampleManager.getInstance().getRequestNotificationSettings(getContainer());
-                if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.All)
-                    return true;        // All should be checked
-                else if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.None)
-                    return false;       // None should be checked
-                // Otherwise use Actor Notification
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            RequestNotificationSettings settings = SampleManager.getInstance().getRequestNotificationSettings(getContainer());
+            if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.All)
+                return true;        // All should be checked
+            else if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.None)
+                return false;       // None should be checked
+            // Otherwise use Actor Notification
 
             Integer requirementActorId = _requirement.getActorId();
             Integer notificationActorId = notification.getActor() != null ? notification.getActor().getRowId() : null;
@@ -4599,7 +4592,7 @@ public class SpecimenController extends BaseStudyController
             }
         }
 
-        public ModelAndView getView(RequestNotificationSettings form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(RequestNotificationSettings form, boolean reshow, BindException errors)
         {
             // try to get the settings from the form, just in case this is a reshow:
             RequestNotificationSettings settings = form;
@@ -4660,7 +4653,7 @@ public class SpecimenController extends BaseStudyController
         {
         }
 
-        public ModelAndView getView(DisplaySettingsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DisplaySettingsForm form, boolean reshow, BindException errors)
         {
             // try to get the settings from the form, just in case this is a reshow:
             DisplaySettings settings = form.getBean();
@@ -5246,10 +5239,6 @@ public class SpecimenController extends BaseStudyController
                     // No permission
                     errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to modify this request.");
                 }
-            }
-            catch (SQLException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "Unexpected Exception checking permissions.");
             }
             catch (ServletException e)
             {

@@ -165,13 +165,13 @@ public class SpecimenUtils
         return url.getLocalURIString();
     }
 
-    public static boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode) throws SQLException
+    public static boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode)
     {
         return (selectedMode == SpecimenQueryView.Mode.COMMENTS) ||
                 (selectedMode == SpecimenQueryView.Mode.DEFAULT && SampleManager.getInstance().getDisplaySettings(container).isDefaultToCommentsMode());
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter) throws ServletException, SQLException
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter) throws ServletException
     {
         boolean commentsMode = isCommentsMode(getContainer(), viewMode);
 

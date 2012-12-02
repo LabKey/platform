@@ -20,17 +20,26 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.ContextListener;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineJob;
 
 import javax.servlet.ServletContextEvent;
-import java.sql.SQLException;
-import java.util.*;
 import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * User: Karl Lum
@@ -63,7 +72,7 @@ public class PipelineEmailPreferences
 
     public void startNotificationTasks()
     {
-        Map<String, String> taskMap = PropertyManager.getProperties(0, ContainerManager.getRoot(), PIPELINE_NOTIFICATION_TASKS);
+        Map<String, String> taskMap = PropertyManager.getProperties(PIPELINE_NOTIFICATION_TASKS);
 
         for (Map.Entry<String, String> entry : taskMap.entrySet())
         {
@@ -229,66 +238,46 @@ public class PipelineEmailPreferences
 
     private String _getProperty(Container c, String name)
     {
-        try
+        // allow properties to be set site-wide or per pipeline root level
+        do
         {
-            // allow properties to be set site-wide or per pipeline root level
-            do
+            String prop = PipelineService.get().getPipelineProperty(c, name);
+            if (prop != null)
             {
-                String prop = PipelineService.get().getPipelineProperty(c, name);
-                if (prop != null)
-                {
-                    return prop;
-                }
-                c = c.getParent();
+                return prop;
             }
-            while (null != c && !c.isRoot());
+            c = c.getParent();
+        }
+        while (null != c && !c.isRoot());
 
-            return PipelineService.get().getPipelineProperty(ContainerManager.getRoot(), name);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return PipelineService.get().getPipelineProperty(ContainerManager.getRoot(), name);
     }
 
     private Container _findContainerFor(Container c, String name)
     {
-        try
+        // allow properties to be set site-wide or per pipeline root level
+        do
         {
-            // allow properties to be set site-wide or per pipeline root level
-            do
-            {
-                String prop = PipelineService.get().getPipelineProperty(c, name);
-                if (prop != null)
-                {
-                    return c;
-                }
-                c = c.getParent();
-            }
-            while (!c.isRoot());
-
-            String prop = PipelineService.get().getPipelineProperty(ContainerManager.getRoot(), name);
+            String prop = PipelineService.get().getPipelineProperty(c, name);
             if (prop != null)
-                return ContainerManager.getRoot();
-            return null;
+            {
+                return c;
+            }
+            c = c.getParent();
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        while (!c.isRoot());
+
+        String prop = PipelineService.get().getPipelineProperty(ContainerManager.getRoot(), name);
+        if (prop != null)
+            return ContainerManager.getRoot();
+        return null;
     }
 
     private void _setProperty(Container c, String name, String value)
     {
-        try {
-            if (c.isRoot() && "".equals(value))
-                return;
-            PipelineService.get().setPipelineProperty(c, name, value);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Failed to set pipeline property", e);
-        }
+        if (c.isRoot() && "".equals(value))
+            return;
+        PipelineService.get().setPipelineProperty(c, name, value);
     }
 
     private void setNotificationTask(String interval, String startTime, Container c, boolean isSuccessNotification)

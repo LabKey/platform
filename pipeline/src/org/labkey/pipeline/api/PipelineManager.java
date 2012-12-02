@@ -18,7 +18,12 @@ package org.labkey.pipeline.api;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;
@@ -26,7 +31,12 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -36,12 +46,15 @@ import org.labkey.pipeline.status.StatusController;
 
 import javax.mail.Address;
 import javax.mail.Message;
-import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.net.URI;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -207,7 +220,7 @@ public class PipelineManager
         }
     }
 
-    static void setPipelineProperty(Container container, String name, String value) throws SQLException
+    static void setPipelineProperty(Container container, String name, String value)
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, "pipelineRoots", true);
         if (value == null)
@@ -217,7 +230,7 @@ public class PipelineManager
         PropertyManager.saveProperties(props);
     }
 
-    static String getPipelineProperty(Container container, String name) throws SQLException
+    static String getPipelineProperty(Container container, String name)
     {
         Map<String, String> props = PropertyManager.getProperties(container, "pipelineRoots");
         return props.get(name);

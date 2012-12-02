@@ -16,16 +16,19 @@
 
 package org.labkey.mothership;
 
-import org.labkey.api.data.*;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewServlet;
 
-import java.io.Writer;
-import java.io.IOException;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.StringReader;
-import java.sql.SQLException;
+import java.io.Writer;
 
 /**
  * User: jeckels
@@ -90,15 +93,7 @@ public class CreateIssueDisplayColumn extends DataColumn
             title.append("()");
         }
 
-        String createIssueURL;
-        try
-        {
-            createIssueURL = MothershipManager.get().getCreateIssueURL(ctx.getContainer());
-        }
-        catch (SQLException e)
-        {
-            throw (IOException)new IOException().initCause(e);
-        }
+        String createIssueURL = MothershipManager.get().getCreateIssueURL(ctx.getContainer());
         ActionURL callbackURL = ctx.getViewContext().getActionURL().clone();
         callbackURL.setAction("createIssueFinished.view");
 

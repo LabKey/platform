@@ -65,7 +65,6 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1081,12 +1080,14 @@ class PostgreSql83Dialect extends SqlDialect
                 rs.close(); rs = null;
 
                 //rs = conn.getMetaData().getFunctions(dbName, tempSchemaName, "%");
-                Map types = null;
+                Map<String, String> types = null;
                 rs = Table.executeQuery(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", new Object[]{tempSchemaName});
+
                 while (rs.next())
                 {
                     if (null == types)
-                        types = Table.executeValueMap(coreSchema, "SELECT CAST(oid AS VARCHAR), typname FROM pg_type", null, new HashMap());
+                        types = new SqlSelector(coreSchema, "SELECT CAST(oid AS VARCHAR), typname FROM pg_type").getValueMap();
+
                     String name = rs.getString(1);
                     String[] oids = StringUtils.split(rs.getString(2), ' ');
                     SQLFragment drop = new SQLFragment("DROP FUNCTION temp.").append(name);

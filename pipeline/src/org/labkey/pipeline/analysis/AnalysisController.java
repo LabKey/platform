@@ -15,26 +15,45 @@
  */
 package org.labkey.pipeline.analysis;
 
-import org.labkey.api.action.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.FileType;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
-import org.json.JSONObject;
-import org.json.JSONArray;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -375,18 +394,12 @@ public class AnalysisController extends SpringActionController
             if (fileStatus != null)
             {
                 String path = PipelineJobService.statusPathOf(fileStatus.getAbsolutePath());
-                try
-                {
-                    PipelineStatusFile sf = PipelineService.get().getStatusFile(path);
-                    if (sf == null)
-                        return null;
+                PipelineStatusFile sf = PipelineService.get().getStatusFile(path);
+                if (sf == null)
+                    return null;
 
-                    activeJobs = activeJobs || sf.isActive();
-                    return sf.getStatus();
-                }
-                catch (SQLException e)
-                {
-                }
+                activeJobs = activeJobs || sf.isActive();
+                return sf.getStatus();
             }
 
             // Failed to get status.  Assume job is active, and return unknown status.

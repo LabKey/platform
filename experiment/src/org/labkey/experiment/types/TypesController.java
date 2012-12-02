@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
@@ -551,9 +552,9 @@ public class TypesController extends SpringActionController
         {
             expSchema.getScope().ensureTransaction();
 
-            Map propertyMap = Table.executeValueMap(ExperimentService.get().getSchema(),
-                    "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " " + expSchema.getSqlDialect().concatenate("?", "'#%'"),
-                    new Object[]{prefix}, null);
+            Map<String, Integer> propertyMap = new SqlSelector(ExperimentService.get().getSchema(),
+                    "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " "
+                    + expSchema.getSqlDialect().concatenate("?", "'#%'"), prefix).getValueMap();
 
             List<PropertyDescriptor> inserts = new ArrayList<PropertyDescriptor>();
             List<PropertyDescriptor> updates = new ArrayList<PropertyDescriptor>();
@@ -564,7 +565,7 @@ public class TypesController extends SpringActionController
                 conceptCount++;
                 Concept concept =  concepts.next();
                 PropertyDescriptor pd = concept.toPropertyDescriptor(prefix);
-                Integer propertyId = (Integer) propertyMap.get(pd.getPropertyURI());
+                Integer propertyId = propertyMap.get(pd.getPropertyURI());
                 if (null == propertyId)
                 {
                     inserts.add(pd);

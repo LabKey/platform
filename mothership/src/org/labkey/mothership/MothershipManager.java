@@ -398,29 +398,29 @@ public class MothershipManager
         return getStringProperty(c, UPGRADE_MESSAGE_PROP);
     }
 
-    private void saveProperty(Container c, String name, String value) throws SQLException
+    private void saveProperty(Container c, String name, String value)
     {
         PropertyManager.PropertyMap props = getWritableProperties(c);
         props.put(name, value);
         PropertyManager.saveProperties(props);
     }
 
-    public void setCurrentRevision(Container c, int revision) throws SQLException
+    public void setCurrentRevision(Container c, int revision)
     {
         saveProperty(c, CURRENT_REVISION_PROP, String.valueOf(revision));
     }
 
-    public void setUpgradeMessage(Container c, String message) throws SQLException
+    public void setUpgradeMessage(Container c, String message)
     {
         saveProperty(c, UPGRADE_MESSAGE_PROP, message);
     }
 
-    public String getCreateIssueURL(Container c) throws SQLException
+    public String getCreateIssueURL(Container c)
     {
         return getStringProperty(c, CREATE_ISSUE_URL_PROP);
     }
 
-    public void setCreateIssueURL(Container c, String url) throws SQLException
+    public void setCreateIssueURL(Container c, String url)
     {
         saveProperty(c, CREATE_ISSUE_URL_PROP, url);
     }
@@ -435,7 +435,7 @@ public class MothershipManager
         return getStringProperty(c, ISSUES_CONTAINER_PROP);
     }
 
-    public void setIssuesContainer(Container c, String container) throws SQLException
+    public void setIssuesContainer(Container c, String container)
     {
         saveProperty(c, ISSUES_CONTAINER_PROP, container);
     }

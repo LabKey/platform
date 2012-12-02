@@ -17,7 +17,13 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -35,7 +41,6 @@ import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.Set;
 
 /**
@@ -75,14 +80,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
             setTextAlign("right");
             setNoWrap(true);
             setWidth("175em");
-            try
-            {
-                _cartEnabled = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            _cartEnabled = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
         }
 
         @Override

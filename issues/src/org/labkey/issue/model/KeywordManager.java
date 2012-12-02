@@ -180,14 +180,7 @@ public class KeywordManager
                     }
                 }
 
-                try
-                {
-                    IssueManager.setRequiredIssueFields(c, requiredFields.toString());
-                }
-                catch (SQLException x)
-                {
-                    LOG.error("deleteKeyword", x);
-                }
+                IssueManager.setRequiredIssueFields(c, requiredFields.toString());
             }
         }
     }

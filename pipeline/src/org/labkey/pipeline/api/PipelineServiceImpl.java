@@ -296,12 +296,12 @@ public class PipelineServiceImpl extends PipelineService
         getPipelineQueue().addJob(job);
     }
 
-    public void setPipelineProperty(Container container, String name, String value) throws SQLException
+    public void setPipelineProperty(Container container, String name, String value)
     {
         PipelineManager.setPipelineProperty(container, name, value);
     }
 
-    public String getPipelineProperty(Container container, String name) throws SQLException
+    public String getPipelineProperty(Container container, String name)
     {
         return PipelineManager.getPipelineProperty(container, name);
     }
@@ -334,7 +334,7 @@ public class PipelineServiceImpl extends PipelineService
     {
         try
         {
-            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container, PipelineServiceImpl.KEY_PREFERENCES);
+            Map<String, String> props = PropertyManager.getProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES);
             String lastProtocolkey = props.get(getLastProtocolKey(factory));
             if (lastProtocolkey != null)
                 return lastProtocolkey;
@@ -352,7 +352,7 @@ public class PipelineServiceImpl extends PipelineService
     {
         if (user.isGuest())
             return;
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container, PipelineServiceImpl.KEY_PREFERENCES, true);
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES, true);
         map.put(getLastProtocolKey(factory), protocolName);
         PropertyManager.saveProperties(map);
     }
@@ -362,7 +362,7 @@ public class PipelineServiceImpl extends PipelineService
     {
         try
         {
-            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container, PipelineServiceImpl.KEY_PREFERENCES);
+            Map<String, String> props = PropertyManager.getProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES);
             String lastSequenceDbSetting = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName());
             if (lastSequenceDbSetting != null)
                 return props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName());
@@ -382,7 +382,7 @@ public class PipelineServiceImpl extends PipelineService
         if (sequenceDbPath == null || sequenceDbPath.equals("/")) 
             sequenceDbPath = "";
         String fullPath = sequenceDbPath + sequenceDb;
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container,
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, container,
                 PipelineServiceImpl.KEY_PREFERENCES, true);
         map.put(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName(), fullPath);
         PropertyManager.saveProperties(map);
@@ -392,7 +392,7 @@ public class PipelineServiceImpl extends PipelineService
     {
         try
         {
-            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container, PipelineServiceImpl.KEY_PREFERENCES);
+            Map<String, String> props = PropertyManager.getProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES);
             String dbPaths = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
 
             if (null != dbPaths)
@@ -411,7 +411,7 @@ public class PipelineServiceImpl extends PipelineService
         if (user.isGuest())
             return;
         String sequenceDbPathsString = list2String(sequenceDbPathsList);
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container,
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, container,
                 PipelineServiceImpl.KEY_PREFERENCES, true);
         if(sequenceDbPathsString == null || sequenceDbPathsString.length() == 0 || sequenceDbPathsString.length() >= 2000)
         {
@@ -425,8 +425,7 @@ public class PipelineServiceImpl extends PipelineService
     }
 
 
-
-    public PipelineStatusFile getStatusFile(String path) throws SQLException
+    public PipelineStatusFile getStatusFile(String path)
     {
         return PipelineStatusManager.getStatusFile(path);
     }

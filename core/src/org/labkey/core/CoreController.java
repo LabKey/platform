@@ -60,7 +60,6 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
-import org.labkey.api.module.SimpleAction;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
@@ -71,6 +70,7 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -144,12 +144,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class CoreController extends SpringActionController
 {
-    private static final long SECS_IN_DAY = 60 * 60 * 24;
-    private static final long MILLIS_IN_DAY = 1000 * SECS_IN_DAY;
-
-    private static Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
-    private static Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
-    private static Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<Container, Content>();
+    private static final Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
+    private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
+    private static final Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static final Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<Content,Content>();
     
 
@@ -1670,14 +1667,15 @@ public class CoreController extends SpringActionController
                     JSONObject record = new JSONObject();
 
                     Container c = mp.isCanSetPerContainer() ? getContainer() :  ContainerManager.getRoot();
-                    int propUser = 0;  //currently user-specific props not supported
+                    User propUser = PropertyManager.SHARED_USER;   //currently user-specific props not supported
+                    int propUserId = propUser.getUserId();
 
                     Map<Container, Map<Integer, String>> propValues = PropertyManager.getPropertyValueAndAncestors(propUser, c, mp.getCategory(), mp.getName(), true);
                     List<JSONObject> containers = new ArrayList<JSONObject>();
                     for (Container ct : propValues.keySet())
                     {
                         JSONObject o = new JSONObject();
-                        o.put("value", propValues.get(ct) != null && propValues.get(ct).get(propUser) != null ? propValues.get(ct).get(propUser) : "");
+                        o.put("value", propValues.get(ct) != null && propValues.get(ct).get(propUserId) != null ? propValues.get(ct).get(propUserId) : "");
                         o.put("container", ct.toJSON(getUser()));
                         boolean canEdit = true;
                         for (Class<? extends Permission> p : mp.getEditPermissions())
@@ -1773,7 +1771,7 @@ public class CoreController extends SpringActionController
         {
             ViewContext ctx = getViewContext();
             JSONObject formData = form.getJsonObject();
-            JSONArray a = ((JSONObject) formData).getJSONArray("properties");
+            JSONArray a = formData.getJSONArray("properties");
             try
             {
                 ExperimentService.get().ensureTransaction();
@@ -1799,7 +1797,11 @@ public class CoreController extends SpringActionController
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
 
-                    mp.saveValue(ctx.getUser(), ct, row.getInt("userId"), row.getString("value"));
+                    User saveUser = UserManager.getUser(row.getInt("userId"));
+                    if (saveUser == null)
+                        throw new IllegalArgumentException("Invalid user: " + row.getInt("userId"));
+
+                    mp.saveValue(ctx.getUser(), ct, saveUser, row.getString("value"));
                 }
                 ExperimentService.get().commitTransaction();
             }

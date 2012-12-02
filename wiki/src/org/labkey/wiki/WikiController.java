@@ -2071,7 +2071,7 @@ public class WikiController extends SpringActionController
             }
 
             //get the user's editor preference
-            Map<String, String> properties = PropertyManager.getProperties(getUser().getUserId(),
+            Map<String, String> properties = PropertyManager.getProperties(getUser(),
                     getContainer(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
             boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
             String defFormat = properties.get(SaveWikiAction.PROP_DEFAULT_FORMAT);
@@ -2366,7 +2366,7 @@ public class WikiController extends SpringActionController
             //save the user's new page format so we can use it
             //as the default for the next new page
             PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
-                    getViewContext().getUser().getUserId(), getViewContext().getContainer(),
+                    getViewContext().getUser(), getViewContext().getContainer(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_DEFAULT_FORMAT, wikiversion.getRendererTypeEnum().name());
             PropertyManager.saveProperties(properties);
@@ -2668,7 +2668,7 @@ public class WikiController extends SpringActionController
 
             //include the user's TOC displayed preference
             Map<String, String> properties = PropertyManager.getProperties(
-                    getViewContext().getUser().getUserId(), getViewContext().getContainer(),
+                    getViewContext().getUser(), getViewContext().getContainer(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
 
             response.put("displayToc", "true".equals(properties.get(SetTocPreferenceAction.PROP_TOC_DISPLAYED)));
@@ -2775,7 +2775,7 @@ public class WikiController extends SpringActionController
         {
             //save user's editor preference
             PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
-                    getViewContext().getUser().getUserId(), getViewContext().getContainer(),
+                    getViewContext().getUser(), getViewContext().getContainer(),
                     CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_USE_VISUAL_EDITOR, String.valueOf(form.isUseVisual()));
             PropertyManager.saveProperties(properties);
@@ -2805,11 +2805,11 @@ public class WikiController extends SpringActionController
     {
         public static final String PROP_TOC_DISPLAYED = "displayToc";
 
-        public ApiResponse execute(SetTocPreferenceForm form, BindException errors) throws Exception
+        public ApiResponse execute(SetTocPreferenceForm form, BindException errors)
         {
             //use the same category as editor preference to save on storage
             PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
-                    getViewContext().getUser().getUserId(), getViewContext().getContainer(),
+                    getViewContext().getUser(), getViewContext().getContainer(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_TOC_DISPLAYED, String.valueOf(form.isDisplayed()));
             PropertyManager.saveProperties(properties);

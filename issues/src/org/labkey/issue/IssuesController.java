@@ -1670,7 +1670,7 @@ public class IssuesController extends SpringActionController
             form.setRequiredFields(newRequiredFields.toArray(new HString[newRequiredFields.size()]));
         }
 
-        public boolean handlePost(ConfigureIssuesForm form, BindException errors) throws Exception
+        public boolean handlePost(ConfigureIssuesForm form, BindException errors)
         {
             IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
 

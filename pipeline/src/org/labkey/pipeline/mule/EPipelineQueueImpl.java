@@ -243,25 +243,19 @@ public class EPipelineQueueImpl implements PipelineQueue
 
         // Duplicate code from PipelineQueueImpl, should be refactored into a superclass
         File logFile = job.getLogFile();
-        try
-        {
-            if (logFile != null)
-            {
-                // Check if we have an existing entry in the database
-                PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile.getAbsolutePath());
-                if (pipelineStatusFile == null)
-                {
-                    // Insert it if we don't
-                    PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
-                }
 
-                // Reset the ID in case this was a resubmit
-                PipelineStatusManager.resetJobId(job.getLogFile().getAbsolutePath(), job.getJobGUID());
-            }
-        }
-        catch (SQLException e)
+        if (logFile != null)
         {
-            throw new RuntimeSQLException(e);
+            // Check if we have an existing entry in the database
+            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile.getAbsolutePath());
+            if (pipelineStatusFile == null)
+            {
+                // Insert it if we don't
+                PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
+            }
+
+            // Reset the ID in case this was a resubmit
+            PipelineStatusManager.resetJobId(job.getLogFile().getAbsolutePath(), job.getJobGUID());
         }
 
         if (job.setQueue(this, PipelineJob.WAITING_STATUS))

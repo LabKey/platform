@@ -291,22 +291,16 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (root == null || !root.exists())
             throw new IllegalArgumentException("Invalid site root: does not exist");
         
-        try {
-            File prevRoot = getSiteDefaultRoot();
-            WriteableAppProps props = AppProps.getWriteableInstance();
+        File prevRoot = getSiteDefaultRoot();
+        WriteableAppProps props = AppProps.getWriteableInstance();
 
-            props.setFileSystemRoot(root.getAbsolutePath());
-            props.save();
+        props.setFileSystemRoot(root.getAbsolutePath());
+        props.save();
 
-            FileRootManager.get().clearCache();
-            ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
-                    ContainerManager.getRoot(), ContainerManager.Property.SiteRoot, prevRoot, root);
-            ContainerManager.firePropertyChangeEvent(evt);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        FileRootManager.get().clearCache();
+        ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                ContainerManager.getRoot(), ContainerManager.Property.SiteRoot, prevRoot, root);
+        ContainerManager.firePropertyChangeEvent(evt);
     }
 
     public FileSystemAttachmentParent registerDirectory(Container c, String name, String path, boolean relative)

@@ -238,7 +238,7 @@ public class IssueManager
     }
 
 
-    public static void saveCustomColumnConfiguration(Container c, CustomColumnConfiguration ccc) throws SQLException
+    public static void saveCustomColumnConfiguration(Container c, CustomColumnConfiguration ccc)
     {
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(c, CUSTOM_COLUMN_CONFIGURATION, true);
 
@@ -628,7 +628,7 @@ public class IssueManager
     }
 
 
-    public static void setRequiredIssueFields(Container container, String requiredFields) throws SQLException
+    public static void setRequiredIssueFields(Container container, String requiredFields)
     {
         Map<String, String> map = PropertyManager.getWritableProperties(container, ISSUES_PREF_MAP, true);
 
@@ -638,7 +638,7 @@ public class IssueManager
         PropertyManager.saveProperties(map);
     }
 
-    public static void setRequiredIssueFields(Container container, HString[] requiredFields) throws SQLException
+    public static void setRequiredIssueFields(Container container, HString[] requiredFields)
     {
         final StringBuilder sb = new StringBuilder();
         if (requiredFields.length > 0)

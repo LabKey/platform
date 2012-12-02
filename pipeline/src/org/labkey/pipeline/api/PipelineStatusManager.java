@@ -68,7 +68,7 @@ public class PipelineStatusManager
      * @return the corresponding <code>PipelineStatusFileImpl</code>
      * @throws SQLException database error
      */
-    public static PipelineStatusFileImpl getStatusFile(String path) throws SQLException
+    public static PipelineStatusFileImpl getStatusFile(String path)
     {
         return (path == null ? null :
                 getStatusFile(new SimpleFilter(FieldKey.fromParts("FilePath"), PipelineJobService.statusPathOf(path))));

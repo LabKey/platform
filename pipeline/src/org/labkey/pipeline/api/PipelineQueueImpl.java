@@ -69,28 +69,21 @@ public class PipelineQueueImpl implements PipelineQueue
 
         // Make sure status file path and Job ID are in synch.
         File logFile = job.getLogFile();
-        try
+        if (logFile != null)
         {
-            if (logFile != null)
+            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile.getAbsolutePath());
+            if (pipelineStatusFile == null)
             {
-                PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile.getAbsolutePath());
-                if (pipelineStatusFile == null)
-                {
-                    PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
-                }
-
-                PipelineStatusManager.resetJobId(job.getLogFile().getAbsolutePath(), job.getJobGUID());
+                PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
             }
 
-            if (job.setQueue(this, PipelineJob.WAITING_STATUS))
-            {
-                _pending.add(job);
-                submitJobs();
-            }
+            PipelineStatusManager.resetJobId(job.getLogFile().getAbsolutePath(), job.getJobGUID());
         }
-        catch (SQLException e)
+
+        if (job.setQueue(this, PipelineJob.WAITING_STATUS))
         {
-            throw new RuntimeSQLException(e);
+            _pending.add(job);
+            submitJobs();
         }
     }
 

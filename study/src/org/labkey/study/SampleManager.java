@@ -690,7 +690,7 @@ public class SampleManager
         return statuses[0];
     }
 
-    public SampleRequestStatus getInitialRequestStatus(Container c, User user, boolean nonCart) throws SQLException
+    public SampleRequestStatus getInitialRequestStatus(Container c, User user, boolean nonCart)
     {
         SampleRequestStatus[] statuses = getRequestStatuses(c, user);
         if (!nonCart && isSpecimenShoppingCartEnabled(c))
@@ -699,7 +699,7 @@ public class SampleManager
             return statuses[1];
     }
 
-    public boolean hasEditRequestPermissions(User user, SampleRequest request) throws SQLException, ServletException
+    public boolean hasEditRequestPermissions(User user, SampleRequest request) throws ServletException
     {
         if (request == null)
             return false;
@@ -850,7 +850,7 @@ public class SampleManager
 
     public RepositorySettings getRepositorySettings(Container container)
     {
-        Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
+        Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(),
                 container, "SpecimenRepositorySettings");
         if (settingsMap.isEmpty())
         {
@@ -864,16 +864,16 @@ public class SampleManager
 
     public void saveRepositorySettings(Container container, RepositorySettings settings)
     {
-        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser().getUserId(),
+        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRepositorySettings", true);
         settings.populateMap(settingsMap);
         PropertyManager.saveProperties(settingsMap);
     }
 
 
-    public RequestNotificationSettings getRequestNotificationSettings(Container container) throws SQLException
+    public RequestNotificationSettings getRequestNotificationSettings(Container container)
     {
-        Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
+        Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestNotifications");
         if (settingsMap.get("ReplyTo") == null)
         {
@@ -885,18 +885,18 @@ public class SampleManager
             return new RequestNotificationSettings(settingsMap);
     }
 
-    public void saveRequestNotificationSettings(Container container, RequestNotificationSettings settings) throws SQLException
+    public void saveRequestNotificationSettings(Container container, RequestNotificationSettings settings)
     {
-        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser().getUserId(),
+        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestNotifications", true);
         settings.populateMap(settingsMap);
         PropertyManager.saveProperties(settingsMap);
     }
 
 
-    public DisplaySettings getDisplaySettings(Container container) throws SQLException
+    public DisplaySettings getDisplaySettings(Container container)
     {
-        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
+        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestDisplay");
         if (settingsMap.get("OneAvailableVial") == null)
         {
@@ -908,17 +908,17 @@ public class SampleManager
             return new DisplaySettings(settingsMap);
     }
 
-    public void saveDisplaySettings(Container container, DisplaySettings settings) throws SQLException
+    public void saveDisplaySettings(Container container, DisplaySettings settings)
     {
-        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser().getUserId(),
+        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestDisplay", true);
         settings.populateMap(settingsMap);
         PropertyManager.saveProperties(settingsMap);
     }
 
-    public StatusSettings getStatusSettings(Container container) throws SQLException
+    public StatusSettings getStatusSettings(Container container)
     {
-        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
+        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestStatus");
         if (settingsMap.get(StatusSettings.KEY_USE_SHOPPING_CART) == null)
         {
@@ -930,15 +930,15 @@ public class SampleManager
             return new StatusSettings(settingsMap);
     }
 
-    public void saveStatusSettings(Container container, StatusSettings settings) throws SQLException
+    public void saveStatusSettings(Container container, StatusSettings settings)
     {
-        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser().getUserId(),
+        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestStatus", true);
         settings.populateMap(settingsMap);
         PropertyManager.saveProperties(settingsMap);
     }
 
-    public boolean isSpecimenShoppingCartEnabled(Container container) throws SQLException
+    public boolean isSpecimenShoppingCartEnabled(Container container)
     {
         return getStatusSettings(container).isUseShoppingCart();
     }
