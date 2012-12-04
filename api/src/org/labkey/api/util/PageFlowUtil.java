@@ -2497,8 +2497,12 @@ public class PageFlowUtil
 
     public static void getJavaScriptFiles(Container c, User u, LinkedHashSet<ClientDependency> dependencies, LinkedHashSet<String> includes, LinkedHashSet<String> implicitIncludes)
     {
-        for (ClientDependency r : dependencies) {
-            if(AppProps.getInstance().isDevMode())
+        for (ClientDependency r : dependencies)
+        {
+            HttpServletRequest request = HttpView.currentRequest();
+            Boolean debugScriptMode = null != request && Boolean.parseBoolean(request.getParameter("debugScripts"));
+
+            if(AppProps.getInstance().isDevMode() || debugScriptMode)
             {
                 includes.addAll(r.getJsPaths(c, u, true));
                 implicitIncludes.addAll(r.getJsPaths(c, u, true));
