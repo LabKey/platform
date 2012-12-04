@@ -80,7 +80,7 @@
 </script>
 <table width="100%">
     <tr>
-        <td valign="top">
+        <td class= "study-properties" valign="top">
             <div>
                 <span style="float: left">
                     <%
