@@ -3405,6 +3405,10 @@ public class AdminController extends SpringActionController
                         contentBuilder.append("<div class=\"warning\">"+error+"</div>");
                     }
                 }
+                for (String error : pr.getGlobalErrors())
+                {
+                    contentBuilder.append("<div class=\"warning\">"+error+"</div>");
+                }
 
                 contentBuilder.append("\n<br/><br/>Database Consistency checker complete");
             }

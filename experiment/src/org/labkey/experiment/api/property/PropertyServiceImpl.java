@@ -108,6 +108,13 @@ public class PropertyServiceImpl implements PropertyService.Interface
         _domainTypes.add(type);
     }
 
+
+    public List<DomainKind> getDomainKinds()
+    {
+        ArrayList<DomainKind> l = new ArrayList<DomainKind>(_domainTypes);
+        return Collections.unmodifiableList(l);
+    }
+
     public Domain[] getDomains(Container container)
     {
         List<DomainDescriptor> dds = new ArrayList<DomainDescriptor>(OntologyManager.getDomainDescriptors(container));

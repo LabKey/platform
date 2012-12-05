@@ -79,6 +79,11 @@ public class ValidateDomainsPipelineJob extends PipelineJob
                     getLogger().error(error);
                 }
             }
+            for (String error : pr.getGlobalErrors())
+            {
+                errorCount++;
+                getLogger().error(error);
+            }
             getLogger().info("Check complete, " + errorCount + " errors found");
             setStatus(PipelineJob.COMPLETE_STATUS, "Job finished at: " + DateUtil.nowISO());
         }
