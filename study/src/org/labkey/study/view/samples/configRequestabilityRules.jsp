@@ -123,8 +123,11 @@
         for (var i = 0; i < queryViews.views.length; i++)
         {
             var viewInfo = queryViews.views[i];
-            var name =  viewInfo.name != null ? viewInfo.name : defaultViewLabel;
-            records[records.length] = [name, viewInfo.viewDataUrl];
+            if (!viewInfo.hidden)
+            {
+                var name =  viewInfo.name != null ? viewInfo.name : defaultViewLabel;
+                records[records.length] = [name, viewInfo.viewDataUrl];
+            }
         }
 
         viewCombo.store.removeAll();
