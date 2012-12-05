@@ -124,7 +124,7 @@ Ext4.onReady(function(){
         containerPath: config.containerPath,
         schemaName: 'core',
         queryName: 'Containers',
-        sort: 'Name',
+        sort: 'SortOrder, Name',
         containerFilter: config.containerFilter,
         columns: 'Name,EntityId,Path,ContainerType',
         autoLoad: false,

@@ -143,7 +143,7 @@ else
         %><col><%
     }
     %></colgroup>
-    <tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><th>&nbsp;</th><%
+    <tr class="<%=text(row++%2==0?"labkey-alternate-row":"labkey-row")%>"><th>&nbsp;</th><%
     for (Group g : restrictedGroups)
     {
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
@@ -165,10 +165,10 @@ else
     }
 
     %></tr>
-    <tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><th>&nbsp;</th><%
+    <tr class="<%=text(row++%2==0?"labkey-alternate-row":"labkey-row")%>"><th>&nbsp;</th><%
     for (Group g : restrictedGroups)
     {
-        %><td style="padding: 0 5px 0 5px;"><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
+        %><td style="padding: 0 5px 0 5px; text-align: left"><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
             <option value="" selected>&lt;set all to...&gt;</option>
             <option value="None">None</option>
             <option value="Read">Read</option><%
@@ -179,9 +179,13 @@ else
             <%
             }
             for (Role role : possibleRoles)
-            { %>
-                <option value="<%= h(role.getName()) %>"><%= h(role.getName()) %></option>
-            <% } %>
+            {
+                // Filter out roles that can't be assigned to this user/group
+                if (!role.getExcludedPrincipals().contains(g))
+                {%>
+                    <option value="<%= h(role.getName()) %>"><%= h(role.getName()) %></option>
+                <% }
+            }%>
         </select></td><%
     }
     %></tr><%
@@ -190,7 +194,7 @@ else
         SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 
         String inputName = "dataset." + ds.getDataSetId();
-        %><tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><td><%=h(ds.getLabel())%></td><%
+        %><tr class="<%=text(row++%2==0?"labkey-alternate-row":"labkey-row")%>"><td><%=h(ds.getLabel())%></td><%
 
         for (Group g : restrictedGroups)
         {
@@ -205,19 +209,22 @@ else
 
             boolean noPerm = !writePerm && !readPerm && assignedRole == null;
             int id = g.getUserId();
-            %><td align=center>
-                <select name="<%=inputName%>">
-                    <option value="<%=id%>_NONE" <%=noPerm ? "selected" : ""%>>None</option>
-                    <option value="<%=id%>_<%= ReaderRole.class.getName() %>" <%=readPerm ? "selected" : ""%>>Read</option><%
+            %><td style="text-align: left;">
+                <select name="<%=h(inputName)%>">
+                    <option value="<%=id%>_NONE" <%=text(noPerm ? "selected" : "")%>>None</option>
+                    <option value="<%=id%>_<%= h(ReaderRole.class.getName()) %>" <%=text(readPerm ? "selected" : "")%>>Read</option><%
                     if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
                     {
-                    %>
-                    <option value="<%=id%>_<%= EditorRole.class.getName() %>" <%=writePerm ? "selected" : ""%>>Edit</option>
-                    <% for (Role possibleRole : possibleRoles)
-                    { %>
-                        <option value="<%=id%>_<%= h(possibleRole.getClass().getName()) %>" <%=possibleRole == assignedRole ? "selected" : ""%>><%= h(possibleRole.getName()) %></option><%
-                    } %>
-                    <%
+                        %>
+                        <option value="<%=id%>_<%= h(EditorRole.class.getName()) %>" <%=text(writePerm ? "selected" : "")%>>Edit</option>
+                        <% for (Role possibleRole : possibleRoles)
+                        {
+                            // Filter out roles that can't be assigned to this user/group
+                            if (!possibleRole.getExcludedPrincipals().contains(g))
+                            { %>
+                                <option value="<%=id%>_<%= h(possibleRole.getClass().getName()) %>" <%=text(possibleRole == assignedRole ? "selected" : "")%>><%= h(possibleRole.getName()) %></option><%
+                            }
+                        }
                     }
                     %>
                 </select>

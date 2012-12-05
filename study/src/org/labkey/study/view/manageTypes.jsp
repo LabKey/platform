@@ -29,6 +29,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -96,7 +97,7 @@
 %>
 <table>
     <tr>
-        <td>View study schedule.</td>
+        <td>The study schedule defines the data expected for each timepoint.</td>
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
 <%
@@ -139,6 +140,10 @@
     <tr>
         <td>Datasets may be deleted by an administrator.</td>
         <td><%= textLink("Delete Multiple Datasets", DatasetController.BulkDatasetDeleteAction.class)%></td>
+    </tr>
+    <tr>
+        <td>Security can be configured on a per-dataset level.</td>
+        <td><%= textLink("Manage Dataset Security", SecurityController.BeginAction.class)%></td>
     </tr>
 
     <tr>
