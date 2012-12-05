@@ -45,15 +45,20 @@ public class SqlExecutor extends JdbcCommand
     }
 
     // Execute SQL against a scope
-    public SqlExecutor(@NotNull DbScope scope, String sql)
+    public SqlExecutor(@NotNull DbScope scope, String sql, Object... params)
     {
-        this(scope, new SQLFragment(sql));
+        this(scope, new SQLFragment(sql, params));
     }
 
     // Execute SQL against a schema
     public SqlExecutor(@NotNull DbSchema schema, SQLFragment sql)
     {
         this(schema.getScope(), sql);
+    }
+
+    public SqlExecutor(@NotNull DbSchema schema, String sql, Object... params)
+    {
+        this(schema.getScope(), new SQLFragment(sql, params));
     }
 
     public SQLFragment getSql()
