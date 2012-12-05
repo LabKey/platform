@@ -191,7 +191,7 @@ function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCom
     for (var i = 0; i < queryViews.views.length; i++)
     {
         var viewInfo = queryViews.views[i];
-        if (viewInfo.name != null && viewInfo.name != "")
+        if (!viewInfo.hidden && viewInfo.name != null && viewInfo.name != "")
             records[records.length] = [viewInfo.name, viewInfo.viewDataUrl];
     }
 

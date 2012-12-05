@@ -251,15 +251,20 @@ Ext4.define('LABKEY.SQVModel', {
                 schemaName : selectedSchema,
                 queryName : selectedQuery,
                 successCallback : function(details){
+                    var filteredViews = [];
                     for(var i = 0; i < details.views.length; i++){
-                        if(details.views[i].name == ""){
-                            details.views[i].name = "[default view]";
-                        }
-                        if(details.views[i].default == true && details.views[i].name != "[default view]"){
-                            details.views[i].name += " [default]";
+                        if (!details.views[i].hidden)
+                        {
+                            if(details.views[i].name == ""){
+                                details.views[i].name = "[default view]";
+                            }
+                            if(details.views[i].default == true && details.views[i].name != "[default view]"){
+                                details.views[i].name += " [default]";
+                            }
+                            filteredViews.push(details.views[i]);
                         }
                     }
-                    this.viewStore.loadData(details.views);
+                    this.viewStore.loadData(filteredViews);
                     this.viewCombo.fireEvent('dataloaded', this.viewCombo);
                 }
             });
