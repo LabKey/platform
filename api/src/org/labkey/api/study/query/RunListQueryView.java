@@ -30,7 +30,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.ReimportRedirectAction;
 import org.labkey.api.study.assay.AssayProtocolSchema;
-import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ReplacedRunFilter;
@@ -47,14 +46,13 @@ public class RunListQueryView extends ExperimentRunListView
 {
     public static final FieldKey REPLACED_FIELD_KEY = FieldKey.fromParts(ExpRunTable.Column.Replaced);
 
-
-    protected final ExpProtocol _protocol;
+    protected final AssayProtocolSchema _schema;
     private final ReplacedRunFilter _replacedRunFilter;
 
-    public RunListQueryView(ExpProtocol protocol, AssayProtocolSchema schema, QuerySettings settings, AssayRunType assayRunFilter)
+    public RunListQueryView(AssayProtocolSchema schema, QuerySettings settings, AssayRunType assayRunFilter)
     {
         super(schema, settings, assayRunFilter);
-        _protocol = protocol;
+        _schema = schema;
         setShowDeleteButton(true);
         setShowExportButtons(true);
         setShowAddToRunGroupButton(false);
@@ -64,14 +62,14 @@ public class RunListQueryView extends ExperimentRunListView
 
     // Here so that we can use the same schema object for both the QueryView and QuerySettings. This is important
     // so that TableQueryDefinition.getTable() doesn't think that it's being asked for a table from a different schema
-    private RunListQueryView(ExpProtocol protocol, AssayProtocolSchema schema, ViewContext context)
+    private RunListQueryView(AssayProtocolSchema schema, ViewContext context)
     {
-        this(protocol, schema, getDefaultQuerySettings(schema, context), getDefaultAssayRunFilter(protocol, context));
+        this(schema, getDefaultQuerySettings(schema, context), getDefaultAssayRunFilter(schema.getProtocol(), context));
     }
 
     public RunListQueryView(ExpProtocol protocol, ViewContext context)
     {
-        this(protocol, AssayService.get().getProvider(protocol).createProtocolSchema(context.getUser(), context.getContainer(), protocol, null), context);
+        this(AssayService.get().getProvider(protocol).createProtocolSchema(context.getUser(), context.getContainer(), protocol, null), context);
     }
 
     public static AssayRunType getDefaultAssayRunFilter(ExpProtocol protocol, ViewContext context)
@@ -88,6 +86,10 @@ public class RunListQueryView extends ExperimentRunListView
     public DataView createDataView()
     {
         DataView result = super.createDataView();
+        if (_schema.getProvider().getImportURL(getContainer(), _schema.getProtocol()) != null && getContainer().hasPermission(getUser(), InsertPermission.class))
+        {
+            result.getDataRegion().setNoRowsMessage("No runs to show. To add new runs, use the Import Data button above.");
+        }
         SimpleFilter filter = (SimpleFilter) result.getRenderContext().getBaseFilter();
         _replacedRunFilter.addFilterCondition(filter, REPLACED_FIELD_KEY);
         return result;
@@ -97,13 +99,12 @@ public class RunListQueryView extends ExperimentRunListView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
-        AssayProvider provider = AssayService.get().getProvider(_protocol);
-        if (provider != null && provider.supportsReRun())
+        if (_schema.getProvider().supportsReRun())
         {
             if (getViewContext().hasPermission(InsertPermission.class) && getViewContext().hasPermission(DeletePermission.class))
             {
                 ActionURL reRunURL = new ActionURL(ReimportRedirectAction.class, getContainer());
-                reRunURL.addParameter("rowId", _protocol.getRowId());
+                reRunURL.addParameter("rowId", _schema.getProtocol().getRowId());
                 ActionButton button = new ActionButton("Re-import run", reRunURL);
                 button.setActionType(ActionButton.Action.POST);
                 button.setRequiresSelection(true, 1, 1);

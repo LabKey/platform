@@ -448,7 +448,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     protected RunListQueryView createRunsQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        RunListQueryView queryView = new RunListQueryView(getProtocol(), this, settings, new AssayRunType(getProtocol(), getContainer()));
+        RunListQueryView queryView = new RunListQueryView(this, settings, new AssayRunType(getProtocol(), getContainer()));
 
         if (getProvider().hasCustomView(ExpProtocol.AssayDomainTypes.Run, true))
         {
