@@ -15,7 +15,7 @@ var dataUrlFieldName = 'viewDataUrl';
                                     // schema, query, view, column, folder, rootFolder, folderTypes
 var initialValues = new Array();        // TODO: Select these values in combos
 
-function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo)
+function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo, customizePanel)
 {
     var schemas;
 
@@ -33,37 +33,65 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
         schemas = schemasInfo.schemas;
     }
 
+    var savedValue = schemaCombo.getValue();
+    schemaCombo.clearValue();
+
     schemaCombo.store.removeAll();
     schemaCombo.store.loadData(getArrayArray(schemas));
     schemaCombo.on("select", function(combo, record, index)
     {
-        queryCombo.clearValue();
-        viewCombo.clearValue();
-        if (columnCombo)
-            columnCombo.clearValue();
+        if (customizePanel)
+            customizePanel.getEl().mask('Loading Queries...', 'loading-indicator indicator-helper');
+
         LABKEY.Query.getQueries({
             schemaName: record.data[record.fields.first().name],
             containerPath: folderCombo ? folderCombo.getValue() : LABKEY.Security.currentContainer.path,
-            successCallback: function(details) { populateQueries(schemaCombo, queryCombo, viewCombo, details, columnCombo, folderCombo); }
+            successCallback: function(details)
+            {
+                if (customizePanel)
+                    customizePanel.getEl().unmask();
+                populateQueries(schemaCombo, queryCombo, viewCombo, details, columnCombo, folderCombo, customizePanel);
+            },
+            failureCallback: function()
+            {
+                if (customizePanel)
+                    customizePanel.getEl().unmask();
+                queryCombo.clearValue();
+                viewCombo.clearValue();
+                if (columnCombo)
+                    columnCombo.clearValue();
+            }
         });
     });
 
     if (initialValues[0])
     {
-        var index = schemaCombo.getStore().findExact('name', initialValues[0]);
+        savedValue = initialValues[0];
+        initialValues[0] = null;
+    }
+
+    if (savedValue)
+    {
+        var index = schemaCombo.getStore().findExact('name', savedValue);
 
         if (-1 != index)
         {
             var record = schemaCombo.getStore().getAt(index);
-            schemaCombo.setValue(initialValues[0]);
+            schemaCombo.setValue(savedValue);
             schemaCombo.fireEvent('select', schemaCombo, record, index);
         }
-
-        initialValues[0] = null;
+        else
+        {
+            // If we're not going to fire event, clear subordinate combos
+            queryCombo.clearValue();
+            viewCombo.clearValue();
+            if (columnCombo)
+                columnCombo.clearValue();
+        }
     }
 }
 
-function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, columnCombo, folderCombo)
+function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, columnCombo, folderCombo, customizePanel)
 {
     var records = [];
     for (var i = 0; i < queriesInfo.queries.length; i++)
@@ -72,13 +100,16 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
         records[i] = [queryInfo.name, queryInfo.viewDataUrl];
     }
 
+    var savedValue = queryCombo.getValue();
+    queryCombo.clearValue();
+
     queryCombo.store.removeAll();
     queryCombo.store.loadData(records);
     queryCombo.on("select", function(combo, record, index)
     {
-        viewCombo.clearValue();
-        if (columnCombo)
-            columnCombo.clearValue();
+        if (customizePanel)
+            customizePanel.getEl().mask('Loading Views...', 'loading-indicator indicator-helper');
+
         var queryName = record.data[record.fields.first().name];
         var schemaName = schemaCombo.getValue();
         LABKEY.Query.getQueryViews({
@@ -87,39 +118,73 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
             queryName: queryName,
             successCallback: function(details)
             {
-                populateViews(schemaCombo, queryCombo, viewCombo, details, columnCombo, folderCombo);
+                if (customizePanel)
+                    customizePanel.getEl().unmask();
+                populateViews(schemaCombo, queryCombo, viewCombo, details, columnCombo, folderCombo, customizePanel);
                 if (columnCombo)
                 {
+                    if (customizePanel)
+                        customizePanel.getEl().mask('Loading Columns...', 'loading-indicator indicator-helper');
                     LABKEY.Query.getQueryDetails({
                         containerPath: folderCombo ? folderCombo.getValue() : LABKEY.Security.currentContainer.path,
                         schemaName: schemaName,
                         queryName: queryName,
                         initializeMissingView: true,
-                        successCallback: function(details) { populateColumns(columnCombo, details); }
+                        successCallback: function(details)
+                        {
+                            if (customizePanel)
+                                customizePanel.getEl().unmask();
+                            populateColumns(columnCombo, details);
+                        },
+                        failureCallback: function ()
+                        {
+                            if (customizePanel)
+                                customizePanel.getEl().unmask();
+                            columnCombo.clearValue();
+                        }
                     });
                 }
+            },
+            failureCallback: function ()
+            {
+                if (customizePanel)
+                    customizePanel.getEl().unmask();
+                viewCombo.clearValue();
+                if (columnCombo)
+                    columnCombo.clearValue();
             }
         })
     });
 
     if (initialValues[1])
     {
-        var queryComboIndex = queryCombo.getStore().findExact('name', initialValues[1]);
+        savedValue = initialValues[1];
+        initialValues[1] = null;
+    }
+
+    if (savedValue)
+    {
+        var queryComboIndex = queryCombo.getStore().findExact('name', savedValue);
 
         if (-1 != queryComboIndex)
         {
             var record = queryCombo.getStore().getAt(queryComboIndex);
-            queryCombo.setValue(initialValues[1]);
+            queryCombo.setValue(savedValue);
             queryCombo.fireEvent('select', queryCombo, record, queryComboIndex);
         }
-
-        initialValues[1] = null;
+        else
+        {
+            // If we're not going to fire event, clear subordinate combos
+            viewCombo.clearValue();
+            if (columnCombo)
+                columnCombo.clearValue();
+        }
     }
 }
 
 var defaultViewLabel = "[default view]";
 
-function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCombo, folderCombo)
+function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCombo, folderCombo, customizePanel)
 {
     var records = [[defaultViewLabel]];
 
@@ -130,6 +195,9 @@ function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCom
             records[records.length] = [viewInfo.name, viewInfo.viewDataUrl];
     }
 
+    var savedValue = viewCombo.getValue();
+    viewCombo.clearValue();
+
     viewCombo.store.removeAll();
     viewCombo.store.loadData(records);
 
@@ -137,37 +205,48 @@ function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCom
     {
         viewCombo.on("select", function(combo, record, index)
         {
-            columnCombo.clearValue();
+            if (customizePanel)
+                customizePanel.getEl().mask('Loading Columns...', 'loading-indicator indicator-helper');
+
             LABKEY.Query.getQueryDetails({
                 containerPath: folderCombo ? folderCombo.getValue() : LABKEY.Security.currentContainer.path,
                 schemaName: schemaCombo.getValue(),
                 queryName: queryCombo.getValue(),
                 initializeMissingView: true,
-                successCallback: function(details) { populateColumns(columnCombo, details); }
+                successCallback: function(details)
+                {
+                    if (customizePanel)
+                        customizePanel.getEl().unmask();
+                    populateColumns(columnCombo, details);
+                },
+                failureCallback: function ()
+                {
+                    if (customizePanel)
+                        customizePanel.getEl().unmask();
+                    columnCombo.clearValue();
+                }
             });
         });
     }
 
     var initialView = defaultViewLabel;
-    var viewComboIndex = viewCombo.getStore().findExact('name', initialView);
     if (initialValues[2])
     {
-        viewComboIndex = viewCombo.getStore().findExact('name', initialValues[2]);
-
-        if (-1 != viewComboIndex)
-        {
-            initialView = initialValues[2];
-        }
-
+        savedValue = initialValues[2];
         initialValues[2] = null;
     }
 
+    if (savedValue)
+    {
+        var viewComboIndex = viewCombo.getStore().findExact('name', savedValue);
+
+        if (-1 != viewComboIndex)
+        {
+            initialView = savedValue;
+        }
+    }
+
     viewCombo.setValue(initialView);
-//    if (columnCombo)
-//    {
-//        var record = viewCombo.getStore().getAt(viewComboIndex);
-//        viewCombo.fireEvent('select', viewCombo, record, viewComboIndex);
-//    }
 }
 
 function populateColumns(columnCombo, details)
@@ -181,25 +260,32 @@ function populateColumns(columnCombo, details)
         records[records.length] = [name, columns[i].fieldKey];
     }
 
+    var savedValue = columnCombo.getValue();
+    columnCombo.clearValue();
+
     columnCombo.store.removeAll();
     columnCombo.store.loadData(records);
 
     if (initialValues[3])
     {
-        var queryColumnIndex = columnCombo.getStore().findExact('name', initialValues[3]);
+        savedValue = initialValues[3];
+        initialValues[3] = null;
+    }
+
+    if (savedValue)
+    {
+        var queryColumnIndex = columnCombo.getStore().findExact('name', savedValue);
 
         if (-1 != queryColumnIndex)
         {
             var record = columnCombo.getStore().getAt(queryColumnIndex);
-            columnCombo.setValue(initialValues[3]);
+            columnCombo.setValue(savedValue);
             columnCombo.fireEvent('select', columnCombo, record, queryColumnIndex);
         }
-
-        initialValues[3] = null;
     }
 }
 
-function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema)
+function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema, customizePanel)
 {
     var records = [["[current project]", ""]];
 
@@ -211,16 +297,25 @@ function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folder
     folderCombo.store.loadData(records);
     folderCombo.on("select", function(combo, record, index)
     {
-        schemaCombo.clearValue();
-        queryCombo.clearValue();
-        viewCombo.clearValue();
-        if (columnCombo)
-            columnCombo.clearValue();
+        if (customizePanel)
+            customizePanel.getEl().mask('Loading Schemas...', 'loading-indicator indicator-helper');
         LABKEY.Query.getSchemas({
             containerPath: folderCombo.getValue(),
             successCallback: function(schemasInfo)
             {
-                populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo);
+                if (customizePanel)
+                    customizePanel.getEl().unmask();
+                populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo, customizePanel);
+            },
+            failureCallback: function()
+            {
+                if (customizePanel)
+                    customizePanel.getEl().unmask();
+                schemaCombo.clearValue();
+                queryCombo.clearValue();
+                viewCombo.clearValue();
+                if (columnCombo)
+                    columnCombo.clearValue();
             }
         });
     });
@@ -290,7 +385,8 @@ function populateRootFolder(folderCombo, details)
     folderCombo.fireEvent('select', folderCombo, record, folderComboIndex);
 }
 
-function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, includeSchema)
+function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaCombo, queryCombo, viewCombo, columnCombo,
+                             folderCombo, includeSchema, customizePanel)
 {
     var records = [["[all]",""]];
 
@@ -299,6 +395,25 @@ function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaC
 
     folderTypesCombo.store.removeAll();
     folderTypesCombo.store.loadData(records);
+
+    if (customizePanel)
+        customizePanel.getEl().mask('Loading Folders...', 'loading-indicator indicator-helper');
+    LABKEY.Security.getContainers({
+        container:["/"],
+        includeSubfolders:true,
+        successCallback:function (details)
+        {
+            if (customizePanel)
+                customizePanel.getEl().unmask();
+            populateRootFolder(rootFolderCombo, details);
+            populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema, customizePanel);
+        },
+        failureCallback:function ()
+        {
+            if (customizePanel)
+                customizePanel.getEl().unmask();
+        }
+    });
 
     var initialFolder = records[0].name;
     var folderTypesComboIndex = 0;
@@ -315,18 +430,6 @@ function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaC
     }
 
     folderTypesCombo.setValue(initialFolder);
-    var record = folderTypesCombo.getStore().getAt(folderTypesComboIndex);
-    folderTypesCombo.fireEvent('select', folderTypesCombo, record, folderTypesComboIndex);
-
-    LABKEY.Security.getContainers({
-        container: ["/"],
-        includeSubfolders: true,
-        successCallback: function(details)
-        {
-            populateRootFolder(rootFolderCombo, details);
-            populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema);
-        }
-    });
 }
 
 function getArrayArray(simpleArray)
@@ -452,10 +555,6 @@ function chooseView(title, helpText, sep, submitFunction, currentValue, includeS
     var queryCombo = createQueryCombo();
     var viewCombo = createViewCombo();
 
-    LABKEY.Query.getSchemas({
-        successCallback: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema); }
-    });
-
     var labelStyle = 'border-bottom:1px solid #AAAAAA;margin:3px';
 
     var queryLabel = new Ext.form.Label({
@@ -505,7 +604,21 @@ function chooseView(title, helpText, sep, submitFunction, currentValue, includeS
         }],
         bbar: [{ xtype: 'tbtext', text: '', id:'statusTxt'}]
     });
+
     win.show();
+    win.getEl().mask('Loading Schemas...', 'loading-indicator indicator-helper');
+    LABKEY.Query.getSchemas({
+        successCallback: function(schemasInfo)
+        {
+            win.getEl().unmask();
+            populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, null, null, win);
+        },
+        failureCallback: function ()
+        {
+            win.getEl().unmask();
+        }
+    });
+
 }
 
 function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue, includeSchema)
@@ -535,30 +648,28 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
     if (currentValue)
     {
         title = currentValue.title;
-        schemaName = currentValue.schemaName;
-        queryName = currentValue.queryName;
-        viewName = currentValue.viewName;
-        columnName = currentValue.columnName;
-        folderName = currentValue.folderName;
-        url = currentValue.url;
         isChoiceListQuery = currentValue.choiceListQuery;
+        url = currentValue.url;
         includeAllDescendants = currentValue.includeAllDescendants;
-        rootFolder = currentValue.rootFolder;
-        folderType = currentValue.folderTypes;
+        if (isChoiceListQuery)
+        {   // Grab saved schema/query/etc if Query radio button will be set
+            schemaName = currentValue.schemaName;
+            queryName = currentValue.queryName;
+            viewName = currentValue.viewName;
+            columnName = currentValue.columnName;
+            folderName = currentValue.folderName;
+        }
+        else
+        {   // Otherwise grab root, folder type
+            rootFolder = currentValue.rootFolder;
+            folderType = currentValue.folderTypes;
+        }
         initialValues = [schemaName, queryName, viewName, columnName, folderName, rootFolder, folderType];
 
         pageId = currentValue.pageId;
         webPartIndex = currentValue.webPartIndex;
 //        includeRootFolder = currentValue.includeRootFolder;
     }
-
-    LABKEY.Security.getFolderTypes({
-        successCallback: function(details)
-        {
-            populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaCombo, queryCombo, viewCombo,
-                    columnCombo, folderCombo, includeSchema);
-        }
-    });
 
     var formSQV = new Ext.form.FormPanel({
         border: false,
@@ -660,6 +771,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         width: 380,
         vertical: false,
         columns: [.75, .25],
+        labelSeparator: '',
         items: [queryRadio, folderRadio]
     });
 
@@ -676,7 +788,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         items: [titleField, formMenuSelectPanel, formSQV, formFolders, urlField]
     });
 
-    var win = new Ext.Panel({
+    var customizePanel = new Ext.Panel({
         renderTo: renderToDiv,
         border: false,
         items: formWinPanel,
@@ -726,5 +838,13 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         }]
     });
 
-    return win;
+    LABKEY.Security.getFolderTypes({
+        successCallback: function(details)
+        {
+            populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaCombo, queryCombo, viewCombo,
+                    columnCombo, folderCombo, includeSchema, customizePanel);
+        }
+    });
+
+    return customizePanel;
 }
