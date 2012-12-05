@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * This might be useful for handling webapp context path, or windows drive letter, etc.
  */
 
-public class Path implements Serializable, Iterable<String>
+public class Path implements Serializable, Comparable, Iterable<String>
 {
     final private int _hash;
     final private String[] _path;
@@ -127,9 +127,14 @@ public class Path implements Serializable, Iterable<String>
         return _isDirectory;
     }
 
-
-    public int compareTo(Path other)
+    @Override
+    public int compareTo(Object o)
     {
+        if (this == o)
+            return 0;
+        if (!(o instanceof Path))
+            return -1;
+        Path other = (Path)o;
         int shorter = Math.min(this._length, other._length);
         for (int i=0 ; i<shorter ; i++)
         {

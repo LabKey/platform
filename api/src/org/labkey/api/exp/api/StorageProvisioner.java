@@ -50,6 +50,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
@@ -66,6 +67,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: newton
@@ -649,6 +651,26 @@ public class StorageProvisioner
         }
         ResultSet rs = null;
 
+        TreeSet<Path> schemaNames = new TreeSet<Path>();;
+        TreeSet<Path> provisionedTables = new TreeSet<Path>();
+        if (null == domainuri)
+        {
+            for (DomainKind dk : PropertyService.get().getDomainKinds())
+            {
+                String schemaName = dk.getStorageSchemaName();
+                if (null != schemaName)
+                    schemaNames.add(new Path(schemaName));
+            }
+            for (Path schemaName : schemaNames)
+            {
+                DbSchema schema = DbSchema.get(schemaName.getName());
+                if (null == schema)
+                    continue;
+                for (String name : schema.getTableNames())
+                    provisionedTables.add(schemaName.append(name));
+            }
+        }
+
         try
         {
             rs = Table.executeQuery(OntologyManager.getExpSchema(), sql);
@@ -666,8 +688,9 @@ public class StorageProvisioner
                     domain.setSchemaName(rs.getString("storageschemaname"));
                     domain.setTableName(rs.getString("storagetablename"));
                     report.addProvisioned(domain);
+                    // table is accounted for
+                    provisionedTables.remove(new Path(domain.getSchemaName(),domain.getTableName()));
                 }
-
             }
         }
         finally
@@ -811,6 +834,13 @@ public class StorageProvisioner
             }
         }
 
+        for (Path orphan : provisionedTables)
+        {
+            String schema = orphan.get(0);
+            String table = orphan.get(1);
+            report.addGlobalError("Table " + schema + "." + table + " does not have an associated domain.");
+        }
+
         return report;
     }
 
@@ -819,6 +849,7 @@ public class StorageProvisioner
     {
         private Set<DomainReport> unprovisionedDomains = new HashSet<DomainReport>();
         private Set<DomainReport> provisionedDomains = new HashSet<DomainReport>();
+        private List<String> globalErrors = new ArrayList<String>();
 
         public void addUnprovisioned(DomainReport domain)
         {
@@ -840,9 +871,19 @@ public class StorageProvisioner
             return provisionedDomains;
         }
 
+        public void addGlobalError(String s)
+        {
+            globalErrors.add(s);
+        }
+
+        public List<String> getGlobalErrors()
+        {
+            return globalErrors;
+        }
+
         public int getErrorCount()
         {
-            int errors = 0;
+            int errors = globalErrors.size();
             for (DomainReport d : getProvisionedDomains())
             {
                 errors += d.getErrors().size();
@@ -1093,6 +1134,8 @@ renaming a property AND toggling mvindicator on in the same change.
                     sb.append(dr.getErrors().toString());
                 }
             }
+            if (!report.getGlobalErrors().isEmpty())
+                sb.append(report.getGlobalErrors().toString());
             Assert.assertTrue(sb.toString(), success);
         }
 
