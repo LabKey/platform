@@ -427,11 +427,10 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             listeners: {
                 scope: this,
                 'load': function(store, records, options) {
-                    // if there are no zero date option for this study, warn the user
+                    // if there are no zero date option for this study, return (an error message will be shown by the timeChartPanel
                     if (store.getTotalCount() == 0 && this.timepointType == "date")
                     {
-                        Ext4.Msg.alert("Error", "There are no demographic date options available in this study. "
-                            + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.", function(){this.fireEvent('noDemographicData');}, this);
+                        this.fireEvent('noDemographicData');
                         return;
                     }
 
