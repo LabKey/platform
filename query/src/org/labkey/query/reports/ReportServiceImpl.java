@@ -67,6 +67,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
@@ -551,9 +552,14 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         {
             StringBuilder sb = new StringBuilder();
             for (ValidationError error : errors)
-                sb.append(error.getMessage()).append("\n");
+            {
+                if (sb.length() > 0)
+                    sb.append("\n");
 
-            throw new RuntimeException(sb.toString());
+                sb.append(error.getMessage());
+            }
+
+            throw new UnauthorizedException(sb.toString());
         }
     }
 

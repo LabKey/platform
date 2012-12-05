@@ -292,7 +292,10 @@ public class CohortController extends BaseStudyController
                 }
             }
 
-            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext(), errors);
+            // If we are reshowing because we have existing errors, don't let the QueryUpdateForm
+            // duplicate them.  Instead just return the BindException we have.
+            boolean suppressErrors = (reshow && (errors != null && errors.hasErrors()));
+            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext(), suppressErrors ? null : errors);
 
             DataView view;
             if (isInsert())
