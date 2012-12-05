@@ -30,19 +30,22 @@
 <form action="<%=h(buildURL(SpecimenController.EmailLabSpecimenListsAction.class))%>" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId() %>">
 <input type="hidden" name="listType" value="<%= h(bean.getType().toString()) %>">
-<%
-    if (!bean.isRequirementsComplete())
-    {
-%>
-    <span class="labkey-error">
-        WARNING: The requirements for this request are incomplete.<br>
-        Sending specimen lists before completion of all requirements is not recommended.
-    </span>
-<%
-    }
-%>
 
 <table>
+        <%
+            if (!bean.isRequirementsComplete())
+            {
+        %>
+    <tr>
+        <td colspan="4" style="height:40px;">
+            <span class="labkey-error">
+                WARNING: The requirements for this request are incomplete.
+            </span>
+        </td>
+    </tr>
+        <%
+            }
+        %>
     <tr>
         <th align="left"><%= text(originating ? "Originating" : "Providing") %> Location</th>
         <th align="left">Download options</th>
