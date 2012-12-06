@@ -510,15 +510,25 @@ public class QueryProfiler
 
         private static final Pattern TEMP_TABLE_PATTERN = Pattern.compile("([ix_|temp\\.][\\w]+)\\$?\\p{XDigit}{32}");
         private static final Pattern SPECIMEN_TEMP_TABLE_PATTERN = Pattern.compile("(SpecimenUpload)\\d{9}");
+        private static final int MAX_SQL_LENGTH = 1000000;  // Arbitrary limit to avoid saving insane SQL, #16646
 
-        // Transform the SQL to help with coalescing
+        // Transform the SQL to improve coalescing, etc.
         private String transform(String in)
         {
-            // Remove the randomly-generated parts of temp table names
-            String out = TEMP_TABLE_PATTERN.matcher(in).replaceAll("$1");
-            out = SPECIMEN_TEMP_TABLE_PATTERN.matcher(out).replaceAll("$1");
+            String out;
 
-            _validSql = out.equals(in);   // We changed the SQL, which means it's no longer legal
+            if (in.length() > MAX_SQL_LENGTH)
+            {
+                out = in.substring(0, MAX_SQL_LENGTH);
+            }
+            else
+            {
+                // Remove the randomly-generated parts of temp table names
+                out = TEMP_TABLE_PATTERN.matcher(in).replaceAll("$1");
+                out = SPECIMEN_TEMP_TABLE_PATTERN.matcher(out).replaceAll("$1");
+            }
+
+            _validSql = out.equals(in);   // We changed the SQL, which means it's no longer valid
 
             return out;
         }

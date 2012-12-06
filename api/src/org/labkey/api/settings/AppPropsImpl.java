@@ -496,7 +496,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         for (Pair<Integer, String> entry : members)
         {
             validOptions.add(entry.getValue());
-            if (entry.getValue() != null)
+            if (defaultValue == null && entry.getValue() != null)
             {
                 defaultValue = entry.getValue();
             }

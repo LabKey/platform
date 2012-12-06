@@ -1567,7 +1567,7 @@ LABKEY.Query = new function()
 */
 
 /**#@+
-* @memberOf LABKEY.Query.FieldMetaData#
+* @memberOf LABKEY.Query.FieldMetaDataLookup#
 * @field
 * @name queryName
 * @description The name of the query that this lookup targets

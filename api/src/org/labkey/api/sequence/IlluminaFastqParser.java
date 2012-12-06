@@ -18,6 +18,7 @@ package org.labkey.api.sequence;
 
 import net.sf.picard.fastq.FastqReader;
 import net.sf.picard.fastq.FastqRecord;
+import net.sf.picard.fastq.FastqWriter;
 import net.sf.picard.fastq.FastqWriterFactory;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +53,7 @@ public class IlluminaFastqParser
     private Map<Integer, Object> _sampleMap;
     private File _destinationDir;
     private File[] _files;
-    private Map<Pair<Object, Integer>, Pair<File, net.sf.picard.fastq.FastqWriter>> _fileMap;
+    private Map<Pair<Object, Integer>, Pair<File, FastqWriter>> _fileMap;
     private Map<Pair<Object, Integer>, Integer> _sequenceTotals;
     private Set<Integer> _skippedSampleIdx = new HashSet<Integer>();
     private FastqWriterFactory _writerFactory = new FastqWriterFactory();
@@ -105,10 +106,10 @@ public class IlluminaFastqParser
     // the key of the map is a pair where the first item is the sampleId and the second item indicated whether this file is the forward (1) or reverse (2) reads
     public Map<Pair<Object, Integer>, File> parseFastqFiles () throws PipelineJobException
     {
-        _fileMap = new HashMap<Pair<Object, Integer>, Pair<File, net.sf.picard.fastq.FastqWriter>>();
+        _fileMap = new HashMap<Pair<Object, Integer>, Pair<File, FastqWriter>>();
         _sequenceTotals = new HashMap<Pair<Object, Integer>, Integer>();
 
-        FastqReader reader;
+        FastqReader reader = null;
         int _parsedReads;
 
         for (File f : _files)
@@ -121,7 +122,7 @@ public class IlluminaFastqParser
                 _parsedReads = 0;
 
                 reader = new FastqReader(f);
-                net.sf.picard.fastq.FastqWriter writer;
+                FastqWriter writer;
                 while(reader.hasNext())
                 {
                     FastqRecord fq = reader.next();
@@ -148,6 +149,7 @@ public class IlluminaFastqParser
 
                 _logger.info("Finished parsing file: " + f.getName());
                 reader.close();
+                reader = null;
             }
             catch (Exception e)
             {
@@ -157,6 +159,17 @@ public class IlluminaFastqParser
                 }
 
                 throw new PipelineJobException(e);
+            }
+            finally
+            {
+                if (reader != null)
+                    reader.close();
+
+                for (Pair<File, FastqWriter> pair : _fileMap.values())
+                {
+                    if (pair.second != null)
+                        pair.second.close();
+                }
             }
         }
 
@@ -192,7 +205,7 @@ public class IlluminaFastqParser
         }
     }
 
-    private net.sf.picard.fastq.FastqWriter getWriter (int sampleIdx, File targetDir, int pairNumber) throws IOException, PipelineJobException
+    private FastqWriter getWriter (int sampleIdx, File targetDir, int pairNumber) throws IOException, PipelineJobException
     {
         if(!_sampleMap.containsKey(sampleIdx))
         {
@@ -217,7 +230,7 @@ public class IlluminaFastqParser
             String name = (_outputPrefix == null ? "Reads" : _outputPrefix) + "-R" + pairNumber + "-" + (sampleIdx == 0 ? "Control" : sampleId) + ".fastq";
             File newFile = new File(targetDir, name);
             newFile.createNewFile();
-            net.sf.picard.fastq.FastqWriter writer = _writerFactory.newWriter(newFile);
+            FastqWriter writer = _writerFactory.newWriter(newFile);
 
             _fileMap.put(Pair.of(sampleId, pairNumber), Pair.of(newFile, writer));
             return writer;

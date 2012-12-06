@@ -15,10 +15,12 @@
  */
 package org.labkey.api.ehr;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,7 +47,7 @@ abstract public class EHRService
 
     abstract public Set<Module> getRegisteredModules();
 
-    abstract public void registerTriggerScript(Resource script);
+    abstract public void registerTriggerScript(Module owner, Resource script);
 
-    abstract public List<Resource> getExtraTriggerScripts();
+    abstract public List<Resource> getExtraTriggerScripts(Container c);
 }

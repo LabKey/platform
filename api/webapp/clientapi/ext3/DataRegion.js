@@ -2125,7 +2125,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
             data: containerData
         });
 
-        var disableSharedAndInherit = LABKEY.user.isGuest || hidden /*|| session*/ || (containerPath && containerPath != LABKEY.ActionURL.getContainer());
+        var disableSharedAndInherit = LABKEY.user.isGuest || hidden;
         var newViewName = viewName || "New View";
         if (!canEdit && viewName)
             newViewName = viewName + " Copy";
@@ -2585,16 +2585,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     {
         Ext.QuickTips.init();
 
-        var bound = this.boundColumn,
-            dataRegion = this.getDataRegion();
+        var bound = this.boundColumn;
 
         if (!bound) {
-            console.error('A boundColumn ir required for LABKEY.FilterDialog');
-            return;
-        }
-
-        if (!dataRegion) {
-            console.error('Unable to find associated Data Region for LABKEY.FilterDialog');
+            console.error('A boundColumn is required for LABKEY.FilterDialog');
             return;
         }
 
@@ -2849,11 +2843,15 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     getDataRegion : function()
     {
-        var dr = LABKEY.DataRegions[this.dataRegionName];
-        if (dr && dr.queryName && dr.schemaName) {
-            return dr;
-        }
-        return false;
+        return LABKEY.DataRegions[this.dataRegionName];
+    },
+
+    /**
+     * Some DataRegions can exist without a query/schema name (e.g. announcements). This function determines
+     * whether the DataRegion is query-based.
+     */
+    isQueryDataRegion : function(dr) {
+        return dr && dr.schemaName && dr.queryName;
     },
 
     isFacetingValid : function(store) {
@@ -2908,7 +2906,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     isFacetingCandidate : function()
     {
-        if (!this.getDataRegion()) {
+        var dr = this.getDataRegion();
+        if (!this.isQueryDataRegion(dr)) {
             return false;
         }
 
@@ -2947,6 +2946,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     canShowFacetedUI : function(filterType)
     {
+        var dr = this.getDataRegion();
+        if (!this.isQueryDataRegion(dr)) {
+            return false;
+        }
+
         filterType = filterType || this.filterType;
 
         var paramValPairs = this.getParamsForField(this._fieldKey);
@@ -3790,8 +3794,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         //This is a replacement for doFilter. Will probably be renamed to doFilter.
         //input1 and input2 have already been validated, no need to do that here.
         //We do however need to modify the date if it's not in the proper format, and parse ints/floats.
+        var dr = this.getDataRegion(),
+            queryString = null;
 
-        var queryString = this.getDataRegion().requestURL;
+        // 16684
+        if (dr)
+            queryString = dr.requestURL;
         var newParamValPairs = this.getParamValPairs(queryString, [this.dataRegionName + "." + this._fieldKey + "~", this.getSkipPrefixes()]);
         var comparisons = new Array(0);
 

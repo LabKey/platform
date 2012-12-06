@@ -446,9 +446,15 @@ public class StatementUtils
                 stmtSep = ";\n";
                 sqlfObjectProperty.append("IF (");
                 appendPropertyValue(sqlfObjectProperty, d, dp, useVariables, v, parameterToVariable);
-                sqlfObjectProperty.append(" IS NOT NULL OR ");
-                appendParameterOrVariable(sqlfObjectProperty, d, useVariables, mv, parameterToVariable);
-                sqlfObjectProperty.append(" IS NOT NULL)").append(ifTHEN);
+                sqlfObjectProperty.append(" IS NOT NULL");
+                if (dp.isMvEnabled())
+                {
+                    sqlfObjectProperty.append(" OR ");
+                    appendParameterOrVariable(sqlfObjectProperty, d, useVariables, mv, parameterToVariable);
+                    sqlfObjectProperty.append(" IS NOT NULL");
+                }
+                sqlfObjectProperty.append(")");
+                sqlfObjectProperty.append(ifTHEN);
                 sqlfObjectProperty.append("INSERT INTO exp.ObjectProperty (objectid, propertyid, typetag, mvindicator, ");
                 switch (propertyType.getStorageType())
                 {
@@ -469,7 +475,10 @@ public class StatementUtils
                 sqlfObjectProperty.append(",").append(dp.getPropertyId());
                 sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
                 sqlfObjectProperty.append(",");
-                appendParameterOrVariable(sqlfObjectProperty, d, useVariables, mv, parameterToVariable);
+                if (dp.isMvEnabled())
+                    appendParameterOrVariable(sqlfObjectProperty, d, useVariables, mv, parameterToVariable);
+                else
+                    sqlfObjectProperty.append("NULL");
                 sqlfObjectProperty.append(",");
                 appendPropertyValue(sqlfObjectProperty, d, dp, useVariables, v, parameterToVariable);
                 sqlfObjectProperty.append(")");
