@@ -1289,7 +1289,7 @@ public class QueryServiceImpl extends QueryService
 
                     if (metadataDef.getName().equalsIgnoreCase(tableName))
                     {
-                        QueryDef result = metadataDef.toQueryDef(container);
+                        QueryDef result = metadataDef.toQueryDef(schema.getContainer());
                         result.setSchema(schemaName);
                         queryDefs.put(tableName, result);
                         return result;

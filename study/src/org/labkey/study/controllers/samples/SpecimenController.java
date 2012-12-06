@@ -2732,12 +2732,13 @@ public class SpecimenController extends BaseStudyController
                 for (final SiteImpl originatingOrProvidingSite : notifications.keySet())
                 {
                     List<AttachmentFile> formFiles = getAttachmentFileList();
-                    TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingSite, receivingSite, type);
-                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
-                    StringBuilder tsvBuilder = new StringBuilder();
-                    tsvWriter.write(tsvBuilder);
                     if (form.isSendTsv())
+                    {
+                        TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingSite, receivingSite, type);
+                        StringBuilder tsvBuilder = new StringBuilder();
+                        tsvWriter.write(tsvBuilder);
                         formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(), "text/tsv"));
+                    }
 
                     if (form.isSendXls())
                     {
@@ -2816,6 +2817,7 @@ public class SpecimenController extends BaseStudyController
         private String _listType;
         private int _sourceSiteId;
         private int _destSiteId;
+        private boolean _exportAsWebPage;       // test helper
 
 
         public String getExport()
@@ -2867,6 +2869,16 @@ public class SpecimenController extends BaseStudyController
         {
             _listType = listType;
         }
+
+        public boolean isExportAsWebPage()
+        {
+            return _exportAsWebPage;
+        }
+
+        public void setExportAsWebPage(boolean exportAsWebPage)
+        {
+            _exportAsWebPage = exportAsWebPage;
+        }
     }
 
     @RequiresPermissionClass(ManageRequestsPermission.class)
@@ -2886,6 +2898,7 @@ public class SpecimenController extends BaseStudyController
                 if (EXPORT_TSV.equals(form.getExport()))
                 {
                     TSVGridWriter writer = getUtils().getSpecimenListTsvWriter(sampleRequest, sourceSite, destSite, type);
+                    writer.setExportAsWebPage(form.isExportAsWebPage());
                     writer.write(getViewContext().getResponse());
                 }
                 else if (EXPORT_XLS.equals(form.getExport()))
@@ -2928,8 +2941,10 @@ public class SpecimenController extends BaseStudyController
                 // catch malformed/old URL case, where the posted value of 'type' isn't a valid Type:
                 throw new NotFoundException("Unrecognized list type.");
             }
-            return new JspView<LabSpecimenListsBean>("/org/labkey/study/view/samples/labSpecimenLists.jsp",
-                    new LabSpecimenListsBean(getUtils(), request, _type));
+            LabSpecimenListsBean bean = new LabSpecimenListsBean(getUtils(), request, _type);
+            bean.setExportAsWebPage(form.isExportAsWebPage());
+
+            return new JspView<LabSpecimenListsBean>("/org/labkey/study/view/samples/labSpecimenLists.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2941,6 +2956,7 @@ public class SpecimenController extends BaseStudyController
     public static class LabSpecimenListsForm extends IdForm
     {
         private String _listType;
+        private boolean _exportAsWebPage;
 
         public String getListType()
         {
@@ -2950,6 +2966,16 @@ public class SpecimenController extends BaseStudyController
         public void setListType(String listType)
         {
             _listType = listType;
+        }
+
+        public boolean isExportAsWebPage()
+        {
+            return _exportAsWebPage;
+        }
+
+        public void setExportAsWebPage(boolean exportAsWebPage)
+        {
+            _exportAsWebPage = exportAsWebPage;
         }
     }
 
@@ -2978,6 +3004,7 @@ public class SpecimenController extends BaseStudyController
         private Type _type;
         private boolean _requirementsComplete;
         private SpecimenUtils _utils;
+        private boolean _exportAsWebPage;
 
         public LabSpecimenListsBean(SpecimenUtils utils, SampleRequest sampleRequest, LabSpecimenListsBean.Type type)
         {
@@ -3055,6 +3082,16 @@ public class SpecimenController extends BaseStudyController
         public boolean isRequirementsComplete()
         {
             return _requirementsComplete;
+        }
+
+        public boolean isExportAsWebPage()
+        {
+            return _exportAsWebPage;
+        }
+
+        public void setExportAsWebPage(boolean exportAsWebPage)
+        {
+            _exportAsWebPage = exportAsWebPage;
         }
     }
 

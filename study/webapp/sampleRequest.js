@@ -25,7 +25,9 @@ function showRequestWindow(specOrVialIdArray, vialIdType)
         _addToRequestButton = new Ext.Button({
             text: "Add Vial to Request",
             handler: addToCurrentRequest,
-            id: 'add-to-request-button'});
+            id: 'add-to-request-button'
+        });
+
         _requestWin = new Ext.Window({
             contentEl: "specimen-request-div",
             title: "Request Vial",
@@ -39,26 +41,24 @@ function showRequestWindow(specOrVialIdArray, vialIdType)
             },
             buttons: [
                 _addToRequestButton,
-                new Ext.Button({text: "Remove Checked Vials", handler: removeSelectedVial}),
-                new Ext.Button({text: "Manage Request", menu : {
+                {text: "Remove Checked Vials", handler: removeSelectedVial},
+                {text: "Manage Request", menu : {
                     cls: 'extContainer',
                     items: [
                             {text: "Request Details", handler: showRequestDetails},
                             {text: "Submit Request", handler: submitRequest},
                             {text: "Cancel Request", handler: cancelRequest}
                     ]
-                }}),
-                new Ext.Button({text: "Close", handler: cancelAddSpecimen})
+                }},
+                {text: "Close", handler: cancelAddSpecimen}
             ]
         });
 
         _requestWin.on("show", function() {
-            // ensure that our title bar is always visible:
-            var position = _requestWin.getPosition();
-            if (position[0] < 0 || position[1] < 0)
-                _requestWin.setPosition(Math.max(0, position[0]), Math.max(0, position[1]));
+            _requestWin.center();
         });
     }
+
     if (specOrVialIdArray && specOrVialIdArray.length > 0)
     {
         if (vialIdType == "GlobalUniqueId")
@@ -73,8 +73,7 @@ function showRequestWindow(specOrVialIdArray, vialIdType)
 
     _requestWin.specOrVialIdArray = specOrVialIdArray;
     _requestWin.vialIdType = vialIdType;
-    _requestWin.setPosition(undefined, undefined);
-    _requestWin.show(specOrVialIdArray ? specOrVialIdArray[0] : undefined);
+    _requestWin.show();
 }
 
 function getSelectedRequestId()

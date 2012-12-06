@@ -222,14 +222,14 @@ public class SpecimenUtils
                             Collections.<Enum, String>singletonMap(SpecimenController.CreateSampleRequestForm.PARAMS.returnUrl,
                                     getViewContext().getActionURL().getLocalURIString()));
 
-                    requestMenuButton.addMenuItem("Create New Request", "#",
+                    requestMenuButton.addMenuItem("Create New Request", null,
                             "if (verifySelected(document.forms['" + dataRegionName + "'], '" + createRequestURL +
                             "', 'post', 'rows')) document.forms['" + dataRegionName + "'].submit();");
 
                     if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class) ||
                             SampleManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext().getContainer()))
                     {
-                        requestMenuButton.addMenuItem("Add To Existing Request", "#",
+                        requestMenuButton.addMenuItem("Add To Existing Request", null,
                                 "if (verifySelected(document.forms['" + dataRegionName + "'], '#', " +
                                 "'get', 'rows')) showRequestWindow(LABKEY.DataRegions['" +
                                 dataRegionName + "'].getChecked(), '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId

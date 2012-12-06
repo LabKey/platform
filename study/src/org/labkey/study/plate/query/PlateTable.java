@@ -45,6 +45,7 @@ public class PlateTable extends BasePlateTable
     public PlateTable(PlateSchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoPlate());
+        setPublicSchemaName(PlateSchema.SCHEMA_NAME);
         FieldKey keyProp = new FieldKey(null, "Property");
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         addWrapColumn(_rootTable.getColumn("RowId"));

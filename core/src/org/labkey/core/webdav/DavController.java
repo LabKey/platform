@@ -3265,9 +3265,23 @@ public class DavController extends SpringActionController
                 return null;
             Path p = Path.parse(str).normalize();
             Path urlDirectory = p.isDirectory() ? p : p.getParent();
-            String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
-            if (null != filename)
-                p = urlDirectory.append(filename);
+            if (StringUtils.equalsIgnoreCase("GET",getViewContext().getActionURL().getAction()))
+            {
+                String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
+                if (null != filename)
+                {
+                    if (!p.isDirectory())
+                    {
+                        String oldname = p.getName();
+                        String oldExt = oldname.substring(oldname.lastIndexOf('.')+1);
+                        String newExt = filename.substring(filename.lastIndexOf('.')+1);
+                        if (!StringUtils.equalsIgnoreCase(oldExt,newExt))
+                            filename = null;
+                    }
+                    if (null != filename)
+                        p = urlDirectory.append(filename);
+                }
+            }
             _resourcePath = p;
         }
         return _resourcePath;

@@ -33,6 +33,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -82,7 +83,7 @@ public class ParticipantGroupController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class CreateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
     {
         @Override
@@ -164,7 +165,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class UpdateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
     {
         @Override
@@ -232,7 +233,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class AddParticipantsToCategory extends ModifyCategoryParticipants
     {
         @Override
@@ -242,7 +243,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class RemoveParticipantsFromCategory extends ModifyCategoryParticipants
     {
         @Override
@@ -317,7 +318,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class DeleteParticipantCategory extends MutatingApiAction<ParticipantCategoryImpl>
     {
         @Override
@@ -827,7 +828,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class SaveParticipantGroup extends MutatingApiAction<ParticipantGroupSpecification>
     {
         ParticipantGroup _prevGroup;
@@ -971,7 +972,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class DeleteParticipantGroup extends MutatingApiAction<ParticipantGroup>
     {
         @Override

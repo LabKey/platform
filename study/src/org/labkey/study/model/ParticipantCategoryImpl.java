@@ -312,8 +312,13 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
                     container.hasPermission(user, AdminPermission.class);
         else
         {
-            User owner = UserManager.getUser(getCreatedBy());
-            return (owner != null && !owner.isGuest()) ? owner.equals(user) : true;
+            if (isNew())
+                return true;
+            else
+            {
+                User owner = UserManager.getUser(getCreatedBy());
+                return (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
+            }
         }
     }
 
@@ -326,11 +331,17 @@ public class ParticipantCategoryImpl extends Entity implements ParticipantCatego
     {
         if (!isShared())
         {
-            User owner = UserManager.getUser(getCreatedBy());
-            return (owner != null && !owner.isGuest()) ? owner.equals(user) : true;
+            if (isNew())
+                return true;
+            else
+            {
+                // issue 16645 : don't show participant groups that may have been created by guests, which was possible
+                // before this bug was fixed. When admins have the ability to update and delete private groups we can
+                // make guest created groups visible again.
+                User owner = UserManager.getUser(getCreatedBy());
+                return (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
+            }
         }
         return true;
     }
-
-
 }

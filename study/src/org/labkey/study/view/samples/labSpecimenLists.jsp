@@ -59,7 +59,12 @@
             String downloadURLPrefix =  buildURL(SpecimenController.DownloadSpecimenListAction.class) + "id=" + bean.getSampleRequest().getRowId() +
                     "&destSiteId=" + bean.getSampleRequest().getDestinationSiteId() +
                     "&listType=" + bean.getType().toString() +
-                    "&sourceSiteId=" + site.getRowId() + "&export=";
+                    "&sourceSiteId=" + site.getRowId();
+
+            if (bean.isExportAsWebPage())
+                downloadURLPrefix += "&exportAsWebPage=true&export=";
+            else
+                downloadURLPrefix += "&export=";
     %>
     <tr class="<%= text(rowCount++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row") %>" valign="top">
         <td><%= h(site.getDisplayName()) %></td>

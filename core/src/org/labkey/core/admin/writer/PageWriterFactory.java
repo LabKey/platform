@@ -103,14 +103,17 @@ public class PageWriterFactory implements FolderWriterFactory
                 if (webPart.getPropertyMap().size() > 0)
                 {
                     WebPartFactory factory = Portal.getPortalPart(webPart.getName());
-                    Map<String, String> props = factory.serializePropertyMap(ctx, webPart.getPropertyMap());
-
-                    PagesDocument.Pages.Page.Webpart.Properties propertiesXml = webpartXml.addNewProperties();
-                    for (Map.Entry<String, String> prop : props.entrySet())
+                    if (null != factory)        // old old webpart could have been left behind and have no factory
                     {
-                        PagesDocument.Pages.Page.Webpart.Properties.Property propertyXml = propertiesXml.addNewProperty();
-                        propertyXml.setKey(prop.getKey());
-                        propertyXml.setValue(prop.getValue());
+                        Map<String, String> props = factory.serializePropertyMap(ctx, webPart.getPropertyMap());
+
+                        PagesDocument.Pages.Page.Webpart.Properties propertiesXml = webpartXml.addNewProperties();
+                        for (Map.Entry<String, String> prop : props.entrySet())
+                        {
+                            PagesDocument.Pages.Page.Webpart.Properties.Property propertyXml = propertiesXml.addNewProperty();
+                            propertyXml.setKey(prop.getKey());
+                            propertyXml.setValue(prop.getValue());
+                        }
                     }
                 }
             }

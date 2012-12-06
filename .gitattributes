@@ -3665,9 +3665,6 @@ visualization/Visualization.iml -text
 visualization/build.xml -text
 visualization/module.properties -text
 visualization/resources/config/module.xml -text
-visualization/resources/readme.txt -text
-visualization/resources/web/protovis/protovis-d3.2.js -text
-visualization/resources/web/protovis/protovis-r3.2.js -text
 visualization/resources/web/vis/SVGConverter.js -text
 visualization/resources/web/vis/developerOptionsPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartAxisPanel.js -text

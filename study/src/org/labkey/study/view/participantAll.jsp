@@ -186,9 +186,10 @@
 %>
 <script>
     var tableReady = false;
-    window.onload= function(){
+    LABKEY.Utils.onReady(function(){
         tableReady = true;
-    };
+    });
+
     var toggleIfReady = function(link, notify){
         if(tableReady)
             toggleLink(link, notify);

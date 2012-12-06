@@ -74,6 +74,10 @@
     div.rolehover {
         background-color: #F4F4F4;
     }
+
+    span.closeicon {
+        background-image: url(<%=request.getContextPath()%>/ext-4.1.0/resources/themes/images/default/tools/tool-sprites.gif);
+    }
 </style>
 <%--
     TABS

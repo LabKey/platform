@@ -13,29 +13,23 @@ Ext4.define('Study.window.ParticipantGroup', {
         this.panelConfig = config;
         this.addEvents('aftersave', 'closewindow');
 
-        //var h = config.hideDataRegion ? 500 : Ext4.getBody().getViewSize().height * 75;
-        var h = 500;
+        Ext4.applyIf(config, {
+            hideDataRegion : false,
+            isAdmin : false,
+            hasButtons : true,
+            canShare : true,
+            dataRegionName : 'demoDataRegion',
+            width : 950,
+            height : config.hideDataRegion ? 305 : 500
+        });
 
         Ext4.apply(config, {
             title : 'Define ' + Ext4.util.Format.htmlEncode(config.subject.nounSingular) + ' Group',
             layout : 'fit',
             autoScroll : true,
             modal : true,
-            resizable : false,
-            height : h,
-            width : 950
+            resizable : false
         });
-
-        this.hideDataRegion = config.hideDataRegion || false;
-        this.groupLabel = config.groupLabel;
-        this.categoryParticipantIds = config.categoryParticipantIds;
-        this.isAdmin = config.isAdmin || false;
-        this.grid = config.grid;
-        this.category = config.category;
-        this.subject = config.subject;
-        this.hasButtons = config.hasButtons || true;
-        this.canShare = config.canShare || true;
-        this.dataRegionName = config.dataRegionName || 'demoDataRegion';
         this.callParent([config]);
     },
 
@@ -70,7 +64,8 @@ Ext4.define('Study.window.ParticipantGroup', {
             fieldLabel: 'Select ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' from',
             labelStyle: 'width: 150px;',
             labelSeparator : '',
-            disabled : !this.canEdit,
+            disabled : !this.canEdit || this.hideDataRegion,
+            hidden : this.hideDataRegion,
             listeners: {
                 select: this.onDemographicSelect,
                 scope: this
@@ -157,6 +152,13 @@ Ext4.define('Study.window.ParticipantGroup', {
             }
         });
 
+        this.webPartPanel = Ext4.create('Ext.panel.Panel', {
+            xtype: 'panel',
+            width :  defaultWidth,
+            grow : true,
+            border : false
+        });
+
         categoryStore.load();
 
         var simplePanel = Ext4.create('Ext.form.FormPanel', {
@@ -189,10 +191,11 @@ Ext4.define('Study.window.ParticipantGroup', {
                     name : 'sharedBox',
                     id : 'sharedBox',
                     boxLabel : 'Share Category?',
+                    disabled : !this.canEdit,
                     listeners : {
                         scope : this,
                         afterrender : function(checkboxField){
-                            var shareTip = Ext4.create('Ext.tip.ToolTip', {
+                            Ext4.create('Ext.tip.ToolTip', {
                                 trackMouse : true,
                                 target : checkboxField.getEl(),
                                 html : 'Share this ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) +' category with all users'
@@ -213,15 +216,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                     margin: 3,
                     handler : function(){this.fireEvent('closewindow');},
                     scope : this
-                }, infoCombo,
-                {
-                    xtype: 'panel',
-                    id : 'webPartPanel',
-                    height : 400,
-                    width :  defaultWidth,
-                    grow : true,
-                    border : false
-                }
+                }, infoCombo, this.webPartPanel
             ]
         });
 
@@ -346,7 +341,7 @@ Ext4.define('Study.window.ParticipantGroup', {
         var initialLoad = true;
         if(!this.hideDataRegion){
             var webPart = new LABKEY.QueryWebPart({
-                renderTo: 'webPartPanel',
+                renderTo: this.webPartPanel.id,
                 autoScroll : true,
                 dataRegionName : this.dataRegionName,
                 scope : this,
@@ -380,6 +375,8 @@ Ext4.define('Study.window.ParticipantGroup', {
                         //QueryWebPart is an Ext 3 based component, so we need to include Ext 3 here.
                         if(Ext){
                             Ext.onReady(function(){
+                                me.webPartPanel.height = Ext.ComponentMgr.get(this.dataRegionName).table.dom.scrollHeight + 15;
+                                me.doLayout();
                                 Ext.ComponentMgr.get(this.dataRegionName).clearSelected();
                                 initialLoad = false;
                             }, this);

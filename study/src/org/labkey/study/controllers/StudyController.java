@@ -6636,7 +6636,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class ManageParticipantCategoriesAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception

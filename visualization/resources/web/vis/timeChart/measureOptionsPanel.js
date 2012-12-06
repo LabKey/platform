@@ -728,11 +728,15 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 scope: this,
                 'load': function(store, records, options) {
                     // loop through the records to remove Subject as a dimension option
-                    for(var i = 0; i < records.length; i++) {
-                        if (records[i].data.name == this.viewInfo.subjectColumn)
+                    if (records != null)
+                    {
+                        for (var i = 0; i < records.length; i++)
                         {
-                            store.remove(records[i]);
-                            break;
+                            if (records[i].data.name == this.viewInfo.subjectColumn || records[i].data.name == this.viewInfo.subjectColumn + "/" + this.viewInfo.subjectColumn)
+                            {
+                                store.remove(records[i]);
+                                break;
+                            }
                         }
                     }
 
@@ -782,7 +786,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         }
 
         // set the dimension radio as enabled/disabled
-        if (this.measureDimensionComboBox.getStore().getTotalCount() == 0)
+        if (this.measureDimensionComboBox.getStore().getCount() == 0)
             this.seriesPerDimensionRadio.disable();
         else
             this.seriesPerDimensionRadio.enable();

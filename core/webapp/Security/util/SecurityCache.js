@@ -129,29 +129,38 @@ Ext4.define('Security.util.SecurityCache', {
         return this.membershipStore;
     },
 
+    getPrincipalKey : function(record) {
+        return record.data['UserId'];
+    },
+
     getPrincipalsStore : function() {
 
         if (this.principalsStore)
             return this.principalsStore;
 
         this.principalsStore = Ext4.create('Security.store.SecurityCache', {
-//            id         : 'UserId',
             schemaName : 'core',
             queryName  : 'Principals',
             columns    : '*',
             listeners  : {
                 loadexception : this._onLoadException,
                 metachange    : function(store, meta) {
-                    //TODO
                     meta.fields.push({name:'sortOrder',type:'string',mvEnabled:false});
-//                    var rtype = Ext.data.Record.create(meta.fields,'UserId');
-//                    store.fields = rtype.prototype.fields;
-//                    store.recordType = store.reader.recordType = rtype;
                 },
                 scope : this
             },
+            getById : function(id) {
+                // 16380
+                // The default Ext 4.1.0 version iterates across entire data array so to improve performance
+                // we override to use Ext4.util.AbstractMixedCollection.getByKey and provide our own
+                // getKey method.
+                return this.data.getByKey(id);
+            },
             scope: this
         });
+
+        // 16380
+        this.principalsStore.data.getKey = this.getPrincipalKey;
 
         this.principalsStore.onReady(this.Principals_onReady, this);
 

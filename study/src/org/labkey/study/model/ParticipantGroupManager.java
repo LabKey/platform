@@ -30,11 +30,13 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.gwt.client.ui.LabKeyLinkHTML;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -295,19 +297,22 @@ public class ParticipantGroupManager
             {
                 button.addMenuItem("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, container));
             }
-            button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, container));
 
-            if (hasCreateGroupFromSelection)
+            if (container.hasPermission(user, ReadPermission.class) && !user.isGuest())
             {
-                button.addSeparator();
-                NavTree item = new NavTree("Create " + study.getSubjectNounSingular() + " Group");
-                button.addMenuItem(item);
+                button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, container));
+                if (hasCreateGroupFromSelection)
+                {
+                    button.addSeparator();
+                    NavTree item = new NavTree("Create " + study.getSubjectNounSingular() + " Group");
+                    button.addMenuItem(item);
 
-                NavTree fromSeletion = item.addChild("From Selected " + study.getSubjectNounPlural());
-                fromSeletion.setScript(createNewParticipantGroupScript(context, dataRegionName, true));
+                    NavTree fromSeletion = item.addChild("From Selected " + study.getSubjectNounPlural());
+                    fromSeletion.setScript(createNewParticipantGroupScript(context, dataRegionName, true));
 
-                NavTree fromGrid = item.addChild("From All " + study.getSubjectNounPlural());
-                fromGrid.setScript(createNewParticipantGroupScript(context, dataRegionName, false));
+                    NavTree fromGrid = item.addChild("From All " + study.getSubjectNounPlural());
+                    fromGrid.setScript(createNewParticipantGroupScript(context, dataRegionName, false));
+                }
             }
             return button;
         }
@@ -382,7 +387,8 @@ public class ParticipantGroupManager
         sb.append("                                 nounPlural:").append(PageFlowUtil.jsString(study.getSubjectNounPlural()));
         sb.append("                             },");
         sb.append("                             categoryParticipantIds: stringPtids,");
-        sb.append("                             canEdit:true, hideDataRegion:true,");
+        sb.append("                             canEdit: LABKEY.Security.currentUser.canUpdate,");
+        sb.append("                             hideDataRegion:true,");
         sb.append("                             isAdmin:").append(isAdmin);
         sb.append("                     });");
         sb.append("                     dlg.on('aftersave', function(c){dataRegion.clearSelected(); dataRegion.refresh();}, this);");

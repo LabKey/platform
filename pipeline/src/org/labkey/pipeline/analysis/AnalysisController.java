@@ -240,7 +240,10 @@ public class AnalysisController extends SpringActionController
 
                 PipelineService.get().queueJob(job);
 
-                return new ApiSimpleResponse("status", "success");
+                ApiSimpleResponse resp = new ApiSimpleResponse("status", "success");
+                resp.getProperties().put("jobGUID", job.getJobGUID());
+
+                return resp;
             }
             catch (IOException e)
             {
@@ -354,12 +357,12 @@ public class AnalysisController extends SpringActionController
         private boolean activeJobs = false;
 
         private static final String UNKNOWN_STATUS = "UNKNOWN";
-        
+
         public void initStatus(AbstractFileAnalysisProtocol protocol, File dirData, File dirAnalysis)
         {
             if (fileInputStatus != null)
                 return;
-            
+
             activeJobs = false;
 
             int len = getFile().length;

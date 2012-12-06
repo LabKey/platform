@@ -5,7 +5,6 @@ li.pGroup, div.pGroup {font-weight:bold;}
 .pUser button, div.pUser {}
 
 span.closeicon {
-    background-image: url(http://localhost:8080/labkey/ext-4.1.0/resources/themes/images/default/tools/tool-sprites.gif);
     background-position: 0 0 !important;
     height: 15px !important; width: 15px !important;
 }

@@ -1761,7 +1761,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if(this.xAxisMeasure){
                 measures.x.acc = this.getDiscreteXAcc(measures);
             } else {
-                measures.x.acc = function(row){return measures.x.name};
+                measures.x.acc = this.getContinuousXAcc(measures);
             }
 
             scales.x = {scaleType: 'discrete'};
@@ -1780,7 +1780,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             } else {
                 yMin = yMin - yPadding;
             }
-            
+
             scales.y = {min: yMin, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
             geom = new LABKEY.vis.Geom.Boxplot({
                 lineWidth: chartOptions.lineWidth,
@@ -1792,7 +1792,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             });
         } else if(this.isScatterPlot(this.renderType, this.xAxisMeasure.normalizedType)){
             if(this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double'){
-                measures.x.acc = function(row){return row[measures.x.name].value;};
+                measures.x.acc = this.getContinuousXAcc(measures);
                 scales.x = {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType};
 
                 if(scales.x.trans === 'log'){
@@ -1952,6 +1952,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         };
     },
 
+    getContinuousXAcc: function(measures){
+        return function(row){
+            var value = row[measures.x.name].value;
+
+            if(Math.abs(value) === Infinity){
+                return null;
+            }
+
+            return value;
+        }
+    },
+
     clearChartPanel: function(){
         this.clearWarningText();
         this.viewPanel.removeAll();
@@ -2041,6 +2053,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                 if(row[yMeasure.name]){
                     value = row[yMeasure.name].value;
+
+                    if(Math.abs(value) === Infinity){
+                        value = null;
+                    }
+
                     if(value === false || value === true){
                         value = value.toString();
                     }
