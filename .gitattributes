@@ -4864,8 +4864,6 @@ internal/src/org/labkey/api/data/DropDownList.java -text
 internal/src/org/labkey/api/data/MultiResultSetMetaData.java -text
 internal/src/org/labkey/api/data/ResourceInputStream.java -text
 internal/src/org/labkey/api/data/ResultSetCollapser.java -text
-internal/src/org/labkey/api/data/XMLWriter.java -text
-internal/src/org/labkey/api/data/XMLWriterTest.java -text
 internal/src/org/labkey/api/exp/AbstractFileXarSource.java -text
 internal/src/org/labkey/api/exp/CompressedXarSource.java -text
 internal/src/org/labkey/api/exp/FileXarSource.java -text
