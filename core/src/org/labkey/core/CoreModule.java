@@ -687,7 +687,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 DatabaseCache.TestCase.class,
                 PasswordExpiration.TestCase.class,
                 BooleanFormat.TestCase.class,
-                XMLWriterTest.TestCase.class,
                 FileUtil.TestCase.class,
                 FileType.TestCase.class,
                 MemTracker.TestCase.class,

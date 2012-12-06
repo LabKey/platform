@@ -302,7 +302,7 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromString("LastPing"));
         defaultCols.add(FieldKey.fromString("ExceptionCount"));
         defaultCols.add(FieldKey.fromString("VersionCount"));
-        defaultCols.add(FieldKey.fromString("MostRecentSession/SVNRevision"));
+        defaultCols.add(FieldKey.fromString("MostRecentSession/SoftwareReleaseId"));
         result.setDefaultVisibleColumns(defaultCols);
 
         return result;

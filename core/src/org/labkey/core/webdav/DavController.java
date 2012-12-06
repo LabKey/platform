@@ -1637,24 +1637,6 @@ public class DavController extends SpringActionController
                         {
                             xml.writeProperty(null, "source", "");
                         }
-//						  else if (property.equals("supportedlock"))
-//						  {
-//								supportedLocks = "<lockentry>"
-//										  + "<lockscope><exclusive/></lockscope>"
-//										  + "<locktype><write/></locktype>"
-//										  + "</lockentry>" + "<lockentry>"
-//										  + "<lockscope><shared/></lockscope>"
-//										  + "<locktype><write/>meth</locktype>"
-//										  + "</lockentry>";
-//								generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-//								generatedXML.writeText(supportedLocks);
-//								generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
-//						  }
-//						  else if (property.equals("lockdiscovery"))
-//						  {
-//								if (!generateLockDiscovery(resource.getPath(), generatedXML))
-//									 propertiesNotFound.add(property);
-//						  }
                         else if (property.equals("md5sum"))
                         {
                             String md5sum = null;
@@ -1794,19 +1776,6 @@ public class DavController extends SpringActionController
 
                     xml.writeProperty(null, "source", "");
 
-//                String supportedLocks = "<lockentry>"
-//                        + "<lockscope><exclusive/></lockscope>"
-//                        + "<locktype><write/></locktype>"
-//                        + "</lockentry>" + "<lockentry>"
-//                        + "<lockscope><shared/></lockscope>"
-//                        + "<locktype><write/></locktype>"
-//                        + "</lockentry>";
-//                generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-//                generatedXML.writeText(supportedLocks);
-//                generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
-
-//                generateLockDiscovery(path, generatedXML);
-
                     xml.writeElement(null, "prop", XMLWriter.CLOSING);
                     xml.writeElement(null, "status", XMLWriter.OPENING);
                     xml.writeText(status);
@@ -1829,7 +1798,6 @@ public class DavController extends SpringActionController
                     xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "source", XMLWriter.NO_CONTENT);
-//                generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
 
                     xml.writeElement(null, "prop", XMLWriter.CLOSING);
                     xml.writeElement(null, "status", XMLWriter.OPENING);
@@ -1890,24 +1858,6 @@ public class DavController extends SpringActionController
                         {
                             xml.writeProperty(null, "source", "");
                         }
-//                    else if (property.equals("supportedlock"))
-//                    {
-//                        supportedLocks = "<lockentry>"
-//                                + "<lockscope><exclusive/></lockscope>"
-//                                + "<locktype><write/></locktype>"
-//                                + "</lockentry>" + "<lockentry>"
-//                                + "<lockscope><shared/></lockscope>"
-//                                + "<locktype><write/></locktype>"
-//                                + "</lockentry>";
-//                        generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-//                        generatedXML.writeText(supportedLocks);
-//                        generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
-//                    }
-//                    else if (property.equals("lockdiscovery"))
-//                    {
-//                        if (!generateLockDiscovery(path, generatedXML))
-//                            propertiesNotFound.add(property);
-//                    }
                         else
                         {
                             propertiesNotFound.add(property);
@@ -3278,56 +3228,6 @@ public class DavController extends SpringActionController
         return methodsAllowed;
     }
 
-
-    private boolean generateLockDiscovery(Path path, XMLWriter generatedXML)
-    {
-        boolean wroteStart = false;
-
-        LockInfo resourceLock = (LockInfo) resourceLocks.get(path);
-        if (resourceLock != null)
-        {
-            wroteStart = true;
-            generatedXML.writeElement(null, "lockdiscovery", XMLWriter.OPENING);
-            resourceLock.toXML(generatedXML);
-        }
-
-        for (LockInfo currentLock : collectionLocks)
-        {
-            if (path.startsWith(currentLock.path))
-            {
-                if (!wroteStart)
-                {
-                    wroteStart = true;
-                    generatedXML.writeElement(null, "lockdiscovery", XMLWriter.OPENING);
-                }
-                currentLock.toXML(generatedXML);
-            }
-        }
-
-        if (wroteStart)
-        {
-            generatedXML.writeElement(null, "lockdiscovery", XMLWriter.CLOSING);
-        }
-        else
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-
-    boolean pathStartsWith(String dir, String filePath)
-    {
-        // check filePath == dir || filepath.startsWith(dir + "/")
-        // special case dir == "/"
-        if (!filePath.toLowerCase().startsWith(dir.toLowerCase()))
-            return false;
-        return dir.equals("/") || filePath.length() == dir.length() || filePath.charAt(dir.length()) == '/';
-    }
-
-
-
     private String _urlResourcePathStr = null;
     private Path _resourcePath = null;
 
@@ -4305,79 +4205,7 @@ public class DavController extends SpringActionController
         {
             return (HeartBeat.currentTimeMillis() > expiresAt);
         }
-
-
-        /**
-         * Return true if the lock is exclusive.
-         */
-        boolean isExclusive()
-        {
-
-            return (scope.equals("exclusive"));
-
-        }
-
-
-        /**
-         * Get an XML representation of this lock token. This method will
-         * append an XML fragment to the given XML writer.
-         */
-         void toXML(XMLWriter generatedXML)
-        {
-
-            generatedXML.writeElement(null, "activelock", XMLWriter.OPENING);
-
-            generatedXML.writeElement(null, "locktype", XMLWriter.OPENING);
-            generatedXML.writeElement(null, type, XMLWriter.NO_CONTENT);
-            generatedXML.writeElement(null, "locktype", XMLWriter.CLOSING);
-
-            generatedXML.writeElement(null, "lockscope", XMLWriter.OPENING);
-            generatedXML.writeElement(null, scope, XMLWriter.NO_CONTENT);
-            generatedXML.writeElement(null, "lockscope", XMLWriter.CLOSING);
-
-            generatedXML.writeElement(null, "depth", XMLWriter.OPENING);
-            if (depth == INFINITY)
-            {
-                generatedXML.writeText("Infinity");
-            }
-            else
-            {
-                generatedXML.writeText("0");
-            }
-            generatedXML.writeElement(null, "depth", XMLWriter.CLOSING);
-
-            generatedXML.writeElement(null, "owner", XMLWriter.OPENING);
-            generatedXML.writeText(h(owner));
-            generatedXML.writeElement(null, "owner", XMLWriter.CLOSING);
-
-            generatedXML.writeElement(null, "timeout", XMLWriter.OPENING);
-            long timeout = (expiresAt - HeartBeat.currentTimeMillis()) / 1000;
-            generatedXML.writeText("Second-" + timeout);
-            generatedXML.writeElement(null, "timeout", XMLWriter.CLOSING);
-
-            generatedXML.writeElement(null, "locktoken", XMLWriter.OPENING);
-
-            for (Object token : tokens)
-            {
-                generatedXML.writeElement(null, "href", XMLWriter.OPENING);
-                generatedXML.writeText("opaquelocktoken:" + token);
-                generatedXML.writeElement(null, "href", XMLWriter.CLOSING);
-            }
-            generatedXML.writeElement(null, "locktoken", XMLWriter.CLOSING);
-
-            generatedXML.writeElement(null, "activelock", XMLWriter.CLOSING);
-        }
     }
-
-
-//    private class Property
-//    {
-//        String name;
-//        String value;
-//        String namespace;
-//        String namespaceAbbrev;
-//        int status = WebdavStatus.SC_OK.code;
-//    }
 
 
     private class Range
