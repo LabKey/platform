@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
@@ -32,12 +31,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -97,17 +94,11 @@ public class PropertyManager
     private static final Logger _log = Logger.getLogger(PropertyManager.class);
     private static final PropertySchema prop = PropertySchema.getInstance();
 
-    private static final String CACHE_PREFIX = PropertyManager.class.getName() + "/";
     public static final User SHARED_USER = User.guest;  // Shared properties are saved with user id 0
 
 
     private PropertyManager()
     {
-    }
-
-    private static String _cacheKey(Object[] parameters)
-    {
-        return CACHE_PREFIX + String.valueOf(parameters[0]) + "/" + _toEmptyString(parameters[1]) + "/" + _toEmptyString(parameters[2]);
     }
 
     // For global system properties that are attached to the root container
@@ -128,27 +119,9 @@ public class PropertyManager
 
     public static @NotNull Map<String, String> getProperties(User user, Container container, String category)
     {
-        Object[] parameters = new Object[]{user.getUserId(), container.getId(), category};
-        TableInfo tinfo;
-        String cacheKey;
+        Map<String, String> map = PropertyCache.getProperties(user, container, category);
 
-        // Pull property set from the cache
-        tinfo = prop.getTableInfoProperties();
-        cacheKey = _cacheKey(parameters);
-        Object o = DbCache.get(tinfo, cacheKey);
-
-        if (o instanceof PropertyMap)
-            return (PropertyMap) o;
-
-        // Not found in the cache
-        PropertyMap m = getWritableProperties(user, container, category, false);
-
-        if (null == m)
-            m = NULL_MAP;
-
-        DbCache.put(tinfo, cacheKey, m);
-
-        return NULL_MAP == m ? m : Collections.unmodifiableMap(m);
+        return null != map ? map : PropertyManager.NULL_MAP;
     }
 
     /**
@@ -253,11 +226,11 @@ public class PropertyManager
                 ColumnInfo setColumn = prop.getTableInfoProperties().getColumn("Set");
                 String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
 
-                List<Object> paramList = Arrays.<Object>asList(user, container, category);
+                Object[] params = new Object[]{user, container, category};
 
                 SQLFragment sql = new SQLFragment("SELECT " + setSelectName + " FROM " + prop.getTableInfoPropertySets() +
                     " WHERE UserId = ? AND ObjectId = ? AND Category = ?");
-                sql.addAll(paramList);
+                sql.addAll(params);
 
                 Integer set = new SqlSelector(prop.getSchema(), sql).getObject(Integer.class);
                 boolean newSet = (null == set);
@@ -279,9 +252,15 @@ public class PropertyManager
 
                 PropertyMap m = new PropertyMap(set, user.getUserId(), containerId, category);
 
-                // Small optimization... skip map-filling query on new property set
-                if (!newSet)
+                if (newSet)
                 {
+                    // A brand new set, but we might have previously cached a NULL marker and/or another thread might
+                    // try to create this same set before we save.
+                    PropertyCache.remove(m);
+                }
+                else
+                {
+                    // Map-filling query needed only for existing property set
                     Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
                     new TableSelector(prop.getTableInfoProperties(), PageFlowUtil.set("Name", "Value"), filter, null).fillValueMap(m);
                 }
@@ -353,12 +332,6 @@ public class PropertyManager
     }
 
 
-    private static String _toEmptyString(Object o)
-    {
-        return null == o ? "" : String.valueOf(o);
-    }
-
-
     private static String _toNullString(Object o)
     {
         return null == o ? null : String.valueOf(o);
@@ -415,7 +388,7 @@ public class PropertyManager
                 _saveValue(props.getSet(), name, value);
             }
 
-            DbCache.remove(prop.getTableInfoProperties(), _cacheKey(props.getCacheParams()));
+            PropertyCache.remove(props);
         }
     }
 
@@ -575,7 +548,7 @@ public class PropertyManager
         }
 
 
-        @Test
+        @Test  // Note: Fairly worthless test... there's now an FK constraint in place
         public void testOrphanedPropertySets()
         {
             SimpleFilter filter = new SimpleFilter(new SQLClause("ObjectId NOT IN (SELECT EntityId FROM " + CoreSchema.getInstance().getTableInfoContainers() + ")", null, FieldKey.fromParts("ObjectId")));
