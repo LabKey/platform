@@ -18,7 +18,7 @@ LABKEY.vis.SVGConverter = {
      * @param svg SVG as String or Dom Node.
      * @param format Either LABKEY.vis.SVGConverter.FORMAT_PDF ("pdf") or LABKEY.vis.SVGConverter.FORMAT_PNG ("png")
      */
-    convert: function(svg, format) {
+    convert: function(svg, format, title) {
         if (null != svg && typeof svg != "string")
             svg = this.svgToStr(svg);
 
@@ -45,6 +45,7 @@ LABKEY.vis.SVGConverter = {
             standardSubmit: true,
             items: [
                 {xtype : 'hidden', name : 'svg', value: svg},
+                {xtype : 'hidden', name : 'title', value: Ext4.util.Format.trim(title)},
                 {xtype : 'fileuploadfield', name : 'file', hidden : true}
             ]
         });

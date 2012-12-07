@@ -545,13 +545,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             border: true,
             autoScroll: true,
             frame: false,
+            minWidth: 650,
             tbar: toolbarButtons,
-            items: [],
-            listeners: {
-                scope: this,
-                buffer: 500,
-                'resize': this.resizeCharts
-            }
+            items: []
         });
         items.push(this.chart);
 
@@ -1351,8 +1347,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // remove any existing charts, purge listeners from exportPdfSingleBtn, and remove items from the exportPdfMenu button
         this.chart.removeAll();
-        this.firstChartComponent = null;
-        this.exportPdfSingleBtn.removeListener('click', this.exportFirstChartToPdf);
+        this.chart.removeListener('resize', this.resizeCharts);
+        this.plotConfigInfoArr = [];
+        this.exportPdfSingleBtn.removeListener('click', this.exportChartToPdf);
         this.exportPdfMenu.removeAll();
 
         var charts = [];
@@ -1378,12 +1375,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             return dataByGroup;
         };
 
-        var createExportMenuHandler = function(id){
-            return function(){
-                LABKEY.vis.SVGConverter.convert(Ext4.get(id).child('svg').dom, 'pdf');
-            }
-        };
-
         // warn if user doesn't have an subjects, groups, series, etc. selected
         if (!this.warnSelectionsMissing())
         {
@@ -1397,39 +1388,20 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 {
                     this.addWarningText("Only showing the first " + this.maxCharts + " charts.");
                 }
+
                 var accessor = this.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectColumn);
                 var dataPerParticipant = LABKEY.vis.groupData(this.individualData.rows, function(row){return row[accessor].value});
-                for(var participant in dataPerParticipant){
-                    var newChart = this.generatePlot(
-                            this.chart,
-                            this.editorXAxisPanel.getTime(),
-                            this.viewInfo,
-                            this.chartInfo,
-                            this.concatChartTitle(this.chartInfo.title, participant),
-                            seriesList,
-                            dataPerParticipant[participant],
-                            this.individualData.columnAliases,
-                            this.individualData.visitMap,
-                            null,
-                            null,
-                            null,
-                            this.chartInfo.subject.values.length > 1 ? 380 : 600,  // chart height
-                            this.chartInfo.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null // chart style
-                        );
-                    charts.push(newChart);
-
-                    if(!this.firstChartComponent){
-                        this.firstChartComponent = newChart.renderTo;
-                    }
-
-                    this.exportPdfMenu.add({
-                        text: this.concatChartTitle(this.chartInfo.title, participant),
-                        handler: createExportMenuHandler(newChart.renderTo),
-                        scope: this
+                for (var participant in dataPerParticipant)
+                {
+                    this.plotConfigInfoArr.push({
+                        title: this.concatChartTitle(this.chartInfo.title, participant),
+                        series: seriesList,
+                        individualData: dataPerParticipant[participant],
+                        height: this.chartInfo.subject.values.length > 1 ? 380 : 600,
+                        style: this.chartInfo.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null
                     });
-                    this.toggleExportPdfBtns(false);
 
-                    if(charts.length > this.maxCharts){
+                    if(this.plotConfigInfoArr.length > this.maxCharts){
                         break;
                     }
                 }
@@ -1459,36 +1431,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     if (!((groupedIndividualData != null && groupedIndividualData[group.label]) || (groupedAggregateData != null && groupedAggregateData[group.label])))
                         continue;
 
-                    var newChart = this.generatePlot(
-                            this.chart,
-                            this.editorXAxisPanel.getTime(),
-                            this.viewInfo,
-                            this.chartInfo,
-                            this.concatChartTitle(this.chartInfo.title, group.label),
-                            seriesList,
-                            groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
-                            this.individualData ? this.individualData.columnAliases : null,
-                            this.individualData ? this.individualData.visitMap : null,
-                            groupedAggregateData && groupedAggregateData[group.label] ? groupedAggregateData[group.label] : null,
-                            this.aggregateData ? this.aggregateData.columnAliases : null,
-                            this.aggregateData ? this.aggregateData.visitMap : null,
-                            this.chartInfo.subject.groups.length > 1 ? 380 : 600, // chart height
-                            this.chartInfo.subject.groups.length > 1 ? 'border-bottom: solid black 1px;' : null // chart style
-                        );
-                    charts.push(newChart);
-
-                    if(!this.firstChartComponent){
-                        this.firstChartComponent = newChart.renderTo;
-                    }
-
-                    this.exportPdfMenu.add({
-                        text: this.concatChartTitle(this.chartInfo.title, group.label),
-                        handler: createExportMenuHandler(newChart.renderTo),
-                        scope: this
+                    this.plotConfigInfoArr.push({
+                        title: this.concatChartTitle(this.chartInfo.title, group.label),
+                        series: seriesList,
+                        individualData: groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
+                        aggregateData: groupedAggregateData && groupedAggregateData[group.label] ? groupedAggregateData[group.label] : null,
+                        height: this.chartInfo.subject.groups.length > 1 ? 380 : 600,
+                        style: this.chartInfo.subject.groups.length > 1 ? 'border-bottom: solid black 1px;' : null
                     });
-                    this.toggleExportPdfBtns(false);
 
-                    if(charts.length > this.maxCharts){
+                    if(this.plotConfigInfoArr.length > this.maxCharts){
                         break;
                     }
                 }
@@ -1502,36 +1454,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
                 for (var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++)
                 {
-                    var newChart = this.generatePlot(
-                            this.chart,
-                            this.editorXAxisPanel.getTime(),
-                            this.viewInfo,
-                            this.chartInfo,
-                            this.concatChartTitle(this.chartInfo.title, seriesList[i].label),
-                            [seriesList[i]],
-                            this.individualData ? this.individualData.rows : null,
-                            this.individualData ? this.individualData.columnAliases : null,
-                            this.individualData ? this.individualData.visitMap : null,
-                            this.aggregateData ? this.aggregateData.rows : null,
-                            this.aggregateData ? this.aggregateData.columnAliases : null,
-                            this.aggregateData ? this.aggregateData.visitMap : null,
-                            seriesList.length > 1 ? 380 : 600,  // chart height
-                            seriesList.length > 1 ? 'border-bottom: solid black 1px;' : null // chart style
-                        );
-                    charts.push(newChart);
-
-                    if(!this.firstChartComponent){
-                        this.firstChartComponent = newChart.renderTo;
-                    }
-
-                    this.exportPdfMenu.add({
-                        text: this.concatChartTitle(this.chartInfo.title, seriesList[i].label),
-                        handler: createExportMenuHandler(newChart.renderTo),
-                        scope: this
+                    this.plotConfigInfoArr.push({
+                        title: this.concatChartTitle(this.chartInfo.title, seriesList[i].label),
+                        series: [seriesList[i]],
+                        height: seriesList.length > 1 ? 380 : 600,
+                        style: seriesList.length > 1 ? 'border-bottom: solid black 1px;' : null
                     });
-                    this.toggleExportPdfBtns(false);
 
-                    if(charts.length > this.maxCharts){
+                    if(this.plotConfigInfoArr.length > this.maxCharts){
                         break;
                     }
                 }
@@ -1539,29 +1469,40 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             else if (this.chartInfo.chartLayout == "single")
             {
                 //Single Line Chart, with all participants or groups.
+                this.plotConfigInfoArr.push({
+                    title: this.chartInfo.title,
+                    series: seriesList,
+                    height: 610,
+                    style: null
+                });
+            }
+
+            for (var configIndex = 0; configIndex < this.plotConfigInfoArr.length; configIndex++)
+            {
                 var newChart = this.generatePlot(
-                        this.chart,
-                        this.editorXAxisPanel.getTime(),
-                        this.viewInfo,
-                        this.chartInfo,
-                        this.chartInfo.title,
-                        seriesList,
-                        this.individualData ? this.individualData.rows : null,
-                        this.individualData ? this.individualData.columnAliases : null,
-                        this.individualData ? this.individualData.visitMap : null,
-                        this.aggregateData ? this.aggregateData.rows : null,
-                        this.aggregateData ? this.aggregateData.columnAliases : null,
-                        this.aggregateData ? this.aggregateData.visitMap : null,
-                        610,    // chart height
-                        null    // chart style
-                );
+                        configIndex,
+                        this.plotConfigInfoArr[configIndex].height,
+                        this.plotConfigInfoArr[configIndex].style,
+                        false // forExport param
+                    );
                 charts.push(newChart);
 
-                this.firstChartComponent = newChart.renderTo;
-
-                this.exportPdfSingleBtn.addListener('click', this.exportFirstChartToPdf, this);
-
-                this.toggleExportPdfBtns(true);
+                if (this.plotConfigInfoArr.length > 1)
+                {
+                    this.exportPdfMenu.add({
+                        text: this.plotConfigInfoArr[configIndex].title,
+                        configIndex: configIndex,
+                        handler: this.exportChartToPdf,
+                        scope: this
+                    });
+                    this.toggleExportPdfBtns(false);
+                }
+                else
+                {
+                    this.exportPdfSingleBtn.configIndex = configIndex;
+                    this.exportPdfSingleBtn.addListener('click', this.exportChartToPdf, this);
+                    this.toggleExportPdfBtns(true);
+                }
             }
         }
 
@@ -1575,27 +1516,66 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }));
         }
 
-        if (this.firstChartComponent && Raphael.svg)
+        // if in edit mode, pass the svg for the first chart component to the save options panel for use in the thumbnail preview
+        this.chartThumbnailSvgStr = null;
+        if (this.editMode && Raphael.svg && this.plotConfigInfoArr.length > 0)
         {
-            // pass the svg for the first chart component to the save options panel for use in the thumbnail preview
-            this.editorSavePanel.updateCurrentChartThumbnail(LABKEY.vis.SVGConverter.svgToStr(Ext4.get(this.firstChartComponent).child('svg').dom), Ext4.get(this.firstChartComponent).getSize());
+            // create a temp chart that does not have the clickable looking elements
+            var tempChart = this.generatePlot(0, 610, null, true);
+            if (tempChart)
+            {
+                // set the svg string for the save dialog thumbnail
+                this.chartThumbnailSvgStr = LABKEY.vis.SVGConverter.svgToStr(Ext4.get(tempChart.renderTo).child('svg').dom);
+                this.editorSavePanel.updateCurrentChartThumbnail(this.chartThumbnailSvgStr, Ext4.get(tempChart.renderTo).getSize());
+                // destroy the temp chart element
+                Ext4.getCmp(tempChart.renderTo).destroy();
+            }
         }
 
         this.unmaskPanel();
+
+        this.chart.addListener('resize', this.resizeCharts, this, {buffer: 500});
     },
 
     concatChartTitle: function(mainTitle, subTitle) {
         return mainTitle + (mainTitle ? ': ' : '') + subTitle;
     },
 
-    exportFirstChartToPdf : function() {
-        if (this.firstChartComponent)
-            LABKEY.vis.SVGConverter.convert(Ext4.get(this.firstChartComponent).child('svg').dom, 'pdf');
+    exportChartToPdf : function(item) {
+        if (item.configIndex == undefined)
+        {
+            console.error("The item to be exported does not reference a plot config index.");
+            return;
+        }
+
+        // create a temp chart which does not have the clickable looking elements
+        var tempChart = this.generatePlot(item.configIndex, 610, null, true);
+        if (tempChart)
+        {
+            // export the temp chart as a pdf with the chart title as the file name
+            LABKEY.vis.SVGConverter.convert(Ext4.get(tempChart.renderTo).child('svg').dom, 'pdf', this.plotConfigInfoArr[item.configIndex].title);
+            Ext4.getCmp(tempChart.renderTo).destroy();
+        }
     },
 
-    generatePlot: function(chart, studyType, viewInfo, chartInfo, mainTitle, seriesList, individualData, individualColumnAliases, individualVisitMap, aggregateData, aggregateColumnAliases, aggregateVisitMap, chartHeight, chartStyle){
+    generatePlot: function(configIndex, chartHeight, chartStyle, forExport){
+
         // This function generates a plot config and renders a plot for given data.
         // Should be used in per_subject, single, per_measure, and per_group
+
+        var chart = this.chart;
+        var studyType = this.editorXAxisPanel.getTime();
+        var viewInfo = this.viewInfo;
+        var chartInfo = this.chartInfo;
+        var mainTitle = this.plotConfigInfoArr[configIndex].title;
+        var seriesList = this.plotConfigInfoArr[configIndex].series;
+        var individualData = this.plotConfigInfoArr[configIndex].individualData ? this.plotConfigInfoArr[configIndex].individualData : (this.individualData ? this.individualData.rows : null);
+        var individualColumnAliases = this.individualData ? this.individualData.columnAliases : null;
+        var individualVisitMap = this.individualData ? this.individualData.visitMap : null;
+        var aggregateData = this.plotConfigInfoArr[configIndex].aggregateData ? this.plotConfigInfoArr[configIndex].aggregateData : (this.aggregateData ? this.aggregateData.rows : null);
+        var aggregateColumnAliases = this.aggregateData ? this.aggregateData.columnAliases : null;
+        var aggregateVisitMap = this.aggregateData ? this.aggregateData.visitMap : null;
+
         var generateLayerAes = function(name, yAxisSide, columnName){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
@@ -1874,7 +1854,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         };
 
         // issue 16602: allow blank titles, but default to "Edit XXXX" for edit mode
-        if (this.editMode)
+        if (this.editMode && !forExport)
         {
             mainTitle = mainTitle == null || Ext4.util.Format.trim(mainTitle) == "" ? "Edit Title" : mainTitle;
             xTitle = xTitle == null || Ext4.util.Format.trim(xTitle) == "" ? "Edit Axis Label" : xTitle;
@@ -1888,28 +1868,28 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             labels: {
                 main: {
                     value: mainTitle,
-                    lookClickable: this.editMode,
+                    lookClickable: this.editMode && !forExport,
                     listeners: {
                         click: this.editMode ? mainTitleClickFn(this) : null
                     }
                 },
                 x: {
                     value: xTitle,
-                    lookClickable: this.editMode,
+                    lookClickable: this.editMode && !forExport,
                     listeners: {
                         click: this.editMode ? xAxisLabelClickFn(this) : null
                     }
                 },
                 yLeft: {
                     value: yLeftTitle,
-                    lookClickable: this.editMode,
+                    lookClickable: this.editMode && !forExport,
                     listeners: {
                         click: this.editMode ? yAxisLeftLabelClickFn(this) : null
                     }
                 },
                 yRight: {
                     value: yRightTitle,
-                    lookClickable: this.editMode,
+                    lookClickable: this.editMode && !forExport,
                     listeners: {
                         click: this.editMode ? yAxisRightLabelClickFn(this) : null
                     }
@@ -2249,15 +2229,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var schema = this.saveReportInfo ? this.saveReportInfo.schemaName : (LABKEY.ActionURL.getParameter("schemaName") || null);
         var query = this.saveReportInfo ? this.saveReportInfo.queryName : (LABKEY.ActionURL.getParameter("queryName") || null);
 
-        var reportSvg = (this.firstChartComponent && Raphael.svg ? LABKEY.vis.SVGConverter.svgToStr(Ext4.get(this.firstChartComponent).child('svg').dom) : null);
-
         var config = {
             replace: saveChartInfo.replace,
             reportName: saveChartInfo.reportName,
             reportDescription: saveChartInfo.reportDescription,
             reportShared: saveChartInfo.shared,
             reportThumbnailType: saveChartInfo.thumbnailType,
-            reportSvg: saveChartInfo.thumbnailType == 'AUTO' ? reportSvg : null,
+            reportSvg: saveChartInfo.thumbnailType == 'AUTO' ? this.chartThumbnailSvgStr : null,
             createdBy: saveChartInfo.createdBy,
             query: query,
             schema: schema

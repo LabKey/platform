@@ -167,11 +167,15 @@ div.thumbnail svg
 .x4-reset .report-filter-panel .x4-grid-header-ct {
     background-color: transparent;
     background-image: none;
-    border: none;
+    border: none !important;
 }
 
 .x4-reset .report-filter-panel .x4-grid-header-row th
 {
     border-color: transparent;
     padding: 0;
+}
+
+.x4-reset .report-filter-panel .x4-column-header-inner {
+    padding-top: 3px !important;
 }

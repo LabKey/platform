@@ -1987,7 +1987,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var tempDivId = this.renderPlot(true);
         if (tempDivId)
         {
-            LABKEY.vis.SVGConverter.convert(Ext4.get(tempDivId).child('svg').dom, 'pdf');
+            // export the temp chart as a pdf with the chart title as the file name
+            LABKEY.vis.SVGConverter.convert(Ext4.get(tempDivId).child('svg').dom, 'pdf', this.getChartOptions().mainTitle);
             Ext4.getCmp(tempDivId).destroy();
         }
     },
