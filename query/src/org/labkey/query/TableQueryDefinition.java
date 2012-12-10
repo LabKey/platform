@@ -35,7 +35,6 @@ import java.util.Map;
 
 public class TableQueryDefinition extends QueryDefinitionImpl
 {
-    TableInfo _table;
     private String _sql;
 
 
@@ -156,20 +155,11 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
 
-    public TableInfo getTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
+    @Override
+    protected TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
-        if (schema == getSchema())
-        {
-            if (_table == null)
-                _table = schema.getTable(getName(), includeMetadata);
-            if (_table != null)
-            {
-                return _table;
-            }
-        }
         return schema.getTable(getName(), includeMetadata);
     }
-
 
     @Override
     public boolean canEdit(User user)

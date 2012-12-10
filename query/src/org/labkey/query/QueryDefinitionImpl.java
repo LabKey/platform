@@ -46,6 +46,7 @@ import org.labkey.api.query.ViewOptions;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.XmlBeansUtil;
@@ -87,6 +88,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     private boolean _dirty;
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;
+
+    // Cached the parsed TableInfos (with and without metadata)
+    private boolean _useCache = true;
+    private Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<Pair<String, Boolean>, TableInfo>();
 
     public QueryDefinitionImpl(User user, QueryDef queryDef)
     {
@@ -293,6 +298,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         String sql = getSql();
         if (sql != null)
         {
+            log.debug("Parsing query " + schema.getSchemaName() + "." + getName());
             query.parse(sql);
         }
         TablesDocument doc = getTablesDocument(errors);
@@ -350,6 +356,38 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
     public TableInfo getTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
+    {
+        // CONSIDER: define UserSchema.equals() ?
+        if (_useCache &&
+                schema.getSchemaPath().equals(getSchema().getSchemaPath()) &&
+                schema.getContainer().equals(getSchema().getContainer()) &&
+                schema.getUser().equals(getSchema().getUser()))
+        {
+            Pair<String,Boolean> key = new Pair<String, Boolean>(getName().toLowerCase(), includeMetadata);
+            TableInfo table = _cache.get(key);
+            if (table == null)
+            {
+                table = createTable(schema, errors, includeMetadata);
+                if (table != null)
+                {
+                    log.debug("Caching table");
+                    _cache.put(key, table);
+                }
+            }
+
+            if (table != null)
+            {
+                log.debug("Returning cached table '" + getName() + "', " + (includeMetadata ? "with" : "without") + " metadata");
+                return table;
+            }
+        }
+
+        if (_useCache)
+            log.info("!! Not using cached table: schemas not equal");
+        return createTable(schema, errors, includeMetadata);
+    }
+
+    protected TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
         if (errors == null)
         {
