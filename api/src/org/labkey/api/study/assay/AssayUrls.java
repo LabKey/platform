@@ -36,7 +36,7 @@ public interface AssayUrls extends UrlProvider
     ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
     ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
     @Nullable
-    ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL);
+    ActionURL getDesignerURL(Container container, String providerName, @Nullable ActionURL returnURL);
 
     /**
      * Returns the URL for the assay designer

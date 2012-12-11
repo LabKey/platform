@@ -37,6 +37,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.assay.pipeline.AssayUploadPipelineJob;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
@@ -100,6 +101,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     {
         _protocol = form.getProtocol();
         String currentStep = form.getUploadStep();
+        setHelpTopic(new HelpTopic("uploadAssayRuns"));
 
         if (currentStep == null)
         {
@@ -262,6 +264,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
 
         insertView.setTitle("Batch Properties");
+        insertView.setTitlePopupHelp("Batch Properties", "A batch is a set of assay runs, which are usually imported at the same time. The batch may have a set of properties, configured by an administrator. The values of the properties are the same for all runs within the batch, and are set at import time.");
 
         _stepDescription = "Batch Properties";
 
@@ -367,6 +370,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
         insertView.setTitle("Run Properties");
+        insertView.setTitlePopupHelp("Run Properties", "Each run within an assay may have a set of properties, configured by an administrator. The values are set at import time.");
 
         _stepDescription = "Run Properties and Data File";
 

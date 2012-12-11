@@ -31,7 +31,7 @@
 <table>
     <tr>
         <td><input type="radio" name="<%= ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME %>" <%= textType ? "checked='true'" : "" %> value="<%= ThawListResolverType.TEXT_NAMESPACE_SUFFIX %>" onClick="document.getElementById('ThawListDiv-List').style.display='none'; document.getElementById('ThawListDiv-TextArea').style.display='block';"></td>
-        <td>Paste a lookup list as a TSV (tab-separated values)<%= helpPopup("Sample Lookup", "A lookup lets you assign a mapping from your own specimen numbers to participants and visits. The format is a tab-separated values (TSV), requiring the column 'Index' and using the values of the columns 'SpecimenID', 'ParticipantID', and 'VisitID'.<p>To use the template, fill in the values, select the entire spreadsheet (Ctrl-A), copy it to the clipboard, and paste it into the text area below.", true) %> <%=textLink("download template", request.getContextPath()+"/study/assay/SampleLookupTemplate.xls")%></td>
+        <td>Paste a sample list as a TSV (tab-separated values)<%= helpPopup("Sample Lookup", "A lookup lets you assign a mapping from your own specimen numbers to participants and visits. The format is a tab-separated values (TSV), requiring the column 'Index' and using the values of the columns 'SpecimenID', 'ParticipantID', and 'VisitID'.<p>To use the template, fill in the values, select the entire spreadsheet (Ctrl-A), copy it to the clipboard, and paste it into the text area below.", true) %> <%=textLink("download template", request.getContextPath()+"/study/assay/SampleLookupTemplate.xls")%></td>
     </tr>
     <tr>
         <td></td>

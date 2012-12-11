@@ -1171,9 +1171,9 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderNoRowsMessage(RenderContext ctx, Writer out, int colCount) throws IOException
     {
-        out.write("<tr><td colspan=\"" + colCount + "\" nowrap=\"true\"><i>");
+        out.write("<tr><td colspan=\"" + colCount + "\" nowrap=\"true\"><em>");
         out.write(getNoRowsMessage());
-        out.write("</i></td></tr>\n");
+        out.write("</em></td></tr>\n");
     }
 
     protected String getNoRowsMessage()

@@ -176,13 +176,13 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
     public String getDescription()
     {
-        return "Sample indices, which map to a lookup.";
+        return "Sample indices, which map to values in a different data source.";
     }
 
     public void render(RenderContext ctx) throws Exception
     {
         Map<String, String> gwtProps = new HashMap<String, String>();
-        gwtProps.put("dialogTitle", "Select a Thaw List");
+        gwtProps.put("dialogTitle", "Select a Sample List");
         ModelAndView listChooser = AssayService.get().createListChooserView(gwtProps);
         JspView<ThawListBean> view = new JspView<ThawListBean>("/org/labkey/api/study/assay/thawListSelector.jsp", new ThawListBean(ctx, listChooser));
         view.render(ctx.getRequest(), ctx.getViewContext().getResponse());

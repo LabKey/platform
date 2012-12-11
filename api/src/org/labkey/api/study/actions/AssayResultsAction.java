@@ -21,6 +21,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayResultsView;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -43,6 +44,7 @@ public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
         _protocol = form.getProtocol();
 
         ModelAndView resultsView = form.getProvider().createResultsView(context, _protocol, errors);
+        setHelpTopic(new HelpTopic("workWithAssayData"));
         if (resultsView != null)
             return resultsView;
         return new AssayResultsView(_protocol, false, errors);

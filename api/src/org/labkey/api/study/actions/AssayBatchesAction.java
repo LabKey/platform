@@ -20,6 +20,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.*;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.DataRegionSelection;
@@ -45,6 +46,7 @@ public class AssayBatchesAction extends BaseAssayAction<AssayRunsAction.AssayRun
         _protocol = summaryForm.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         ModelAndView resultsView = provider.createBatchesView(context, _protocol);
+        setHelpTopic(new HelpTopic("workWithAssayData"));
         if (resultsView != null)
             return resultsView;
         return new AssayBatchesView(_protocol, false);

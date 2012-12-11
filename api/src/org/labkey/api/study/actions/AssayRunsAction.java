@@ -23,6 +23,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunsView;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -76,6 +77,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         AssayProvider provider = summaryForm.getProvider();
 
         ModelAndView resultsView = provider.createRunsView(context, _protocol);
+        setHelpTopic(new HelpTopic("workWithAssayData"));
         if (resultsView != null)
             return resultsView;
         return new AssayRunsView(_protocol, false, errors);

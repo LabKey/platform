@@ -24,6 +24,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -98,6 +99,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         {
             result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.CURRENT));
         }
+        setHelpTopic(new HelpTopic("defineAssaySchema"));
         result.addView(createGWTView(properties));
         return result;
     }

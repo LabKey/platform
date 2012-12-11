@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.study.assay.AssayRunUploadContext" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
+<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
@@ -49,10 +50,12 @@
         <td class="labkey-form-label" nowrap="true">Name</td>
         <td width="100%"><%= h(bean.getProtocol().getName()) %></td>
     </tr>
-    <tr>
-        <td class="labkey-form-label" nowrap="true">Description</td>
-        <td><%= h(bean.getProtocol().getProtocolDescription()) %></td>
-    </tr>
+    <% if (!StringUtils.isEmpty(bean.getProtocol().getDescription())) { %>
+        <tr>
+            <td class="labkey-form-label" nowrap="true">Description</td>
+            <td><%= h(bean.getProtocol().getProtocolDescription()) %></td>
+        </tr>
+    <% } %>
     <% if (!bean.getBatchProperties().isEmpty())
     { %>
         <tr><td>&nbsp;</td></tr>

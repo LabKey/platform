@@ -58,7 +58,7 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
 
     public String getDescription()
     {
-        return "Sample information, which may be blank.";
+        return "Sample information in the data file (may be blank).";
     }
 
     public void render(RenderContext ctx) throws Exception
