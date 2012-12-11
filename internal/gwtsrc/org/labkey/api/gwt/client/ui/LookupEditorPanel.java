@@ -389,6 +389,7 @@ public class LookupEditorPanel extends LayoutContainer
     private class _ComboBox extends ComboBox<ComboModelData>
     {
         boolean autoSizeList = false;
+        String _previousSelection = null;
         
         _ComboBox()
         {
@@ -417,7 +418,9 @@ public class LookupEditorPanel extends LayoutContainer
                 }
             });
 //            setTemplate("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{" + getDisplayField() + "}\">{" + getDisplayField() + "}</div></tpl>");
-            setTemplate(XTemplate.create("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{[fm.htmlEncode(values." + getDisplayField() + ")]}\">{[fm.htmlEncode(values." + getDisplayField() + ")]}</div></tpl>"));         }
+            setTemplate(XTemplate.create("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{[fm.htmlEncode(values." + getDisplayField() + ")]}\">{[fm.htmlEncode(values." + getDisplayField() + ")]}</div></tpl>"));
+            addStyleName("test-marker-" + getStringValue());
+        }
 
         void setAutoSizeList(boolean b)
         {
@@ -458,8 +461,11 @@ public class LookupEditorPanel extends LayoutContainer
         void _widgetChange()
         {
             _log("widgetChange(" + getName() + ") = " + getStringValue());
+            removeStyleName("test-marker-" + _previousSelection);
             updateUI();
             LookupEditorPanel.this.fireChange();
+            addStyleName("test-marker-" + getStringValue());
+            _previousSelection = getStringValue();
         }
 
 
