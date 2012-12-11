@@ -71,13 +71,13 @@
         // if the URL is requesting a report by Id, but it does not exist, display an error message
         if (<%= id != null && report == null %>)
         {
-            Ext4.get('<%=elementId%>').update("<span class='labkey-error'>Visualization does not exist for <%=id%>.</span>");
+            Ext4.get('<%=h(elementId)%>').update("<span class='labkey-error'>Visualization does not exist for <%=id%>.</span>");
         }
         else
         {
             showTimeChartWizard({
-                reportId: '<%=id != null ? id.toString() : ""%>',
-                elementId: '<%=elementId%>',
+                reportId: <%=q(id != null ? id.toString() : "")%>,
+                elementId: '<%=h(elementId)%>',
                 success: viewSavedChart,
                 failure: savedChartFailure
             });
@@ -130,13 +130,13 @@
             initializeTimeChartPanel(response.initialConfig, result.visualizationConfig, saveReportInfo);
         }
         else {
-            Ext4.get('<%=elementId%>').update("<span class='labkey-error'>The saved chart is not of type TimeChart</span>");
+            Ext4.get('<%=h(elementId)%>').update("<span class='labkey-error'>The saved chart is not of type TimeChart</span>");
         }
     }
 
     function savedChartFailure(result)
     {
-        Ext4.get('<%=elementId%>').update("<span class='labkey-error'>" + result.exception + "</span>");
+        Ext4.get('<%=h(elementId)%>').update("<span class='labkey-error'>" + result.exception + "</span>");
     }
 
     function initializeTimeChartPanel(config, chartInfo, saveReportInfo) {
@@ -167,4 +167,4 @@
     }
 </script>
 
-<div id="<%=elementId%>" class="extContainer"></div>
+<div id="<%=h(elementId)%>" class="extContainer"></div>
