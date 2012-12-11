@@ -15,6 +15,7 @@
  */
 package org.labkey.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -84,10 +85,18 @@ public class MultipleCohortFilter extends BaseCohortFilter
         filter.addClause(inClause);
     }
 
-    public ActionURL addURLParameters(ActionURL url)
+    public ActionURL addURLParameters(ActionURL url, @Nullable String dataregion)
     {
-        url.replaceParameter(CohortFilterFactory.Params.cohortFilterType, getType().name());
-        url.replaceParameter(CohortFilterFactory.Params.cohortEnrolled, "1");
+//        if (StringUtils.isEmpty(dataregion))
+        {
+            url.replaceParameter(CohortFilterFactory.Params.cohortFilterType, getType().name());
+            url.replaceParameter(CohortFilterFactory.Params.cohortEnrolled, "1");
+        }
+//        else
+//        {
+//            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortFilterType, getType().name());
+//            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortEnrolled, "1");
+//        }
         return url;
     }
 

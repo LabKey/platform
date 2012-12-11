@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -33,7 +34,8 @@ import org.labkey.study.model.CohortImpl;
 public interface CohortFilter
 {
     Type getType();
-    ActionURL addURLParameters(ActionURL url);
+    ActionURL addURLParameters(ActionURL url, @Nullable String dataregion);
+//    ActionURL addURLParameters(ActionURL url);
     String getDescription(Container container, User user);
     void addFilterCondition(TableInfo table, Container container, SimpleFilter filter);
     String getCacheKey();
@@ -68,7 +70,16 @@ public interface CohortFilter
             {
                 return FieldKey.fromParts(StudyService.get().getSubjectVisitColumnName(container), "Cohort", "rowid");
             }
+        },
+
+        ALL("All participants")
+        {
+            public FieldKey getFilterColumn(Container container)
+            {
+                return FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), "Cohort", "rowid");
+            }
         };
+
 
         private String _title;
 

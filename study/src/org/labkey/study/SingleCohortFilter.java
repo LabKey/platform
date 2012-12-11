@@ -98,10 +98,18 @@ public class SingleCohortFilter extends BaseCohortFilter
         filter.addCondition(getCohortColumn(table, container).getFieldKey(), getCohortId());
     }
 
-    public ActionURL addURLParameters(ActionURL url)
+    public ActionURL addURLParameters(ActionURL url, String dataregion)
     {
-        url.replaceParameter(CohortFilterFactory.Params.cohortFilterType, getType().name());
-        url.replaceParameter(CohortFilterFactory.Params.cohortId, "" + getCohortId());
+//        if (StringUtils.isEmpty(dataregion))
+        {
+            url.replaceParameter(CohortFilterFactory.Params.cohortFilterType, getType().name());
+            url.replaceParameter(CohortFilterFactory.Params.cohortId, "" + getCohortId());
+        }
+//        else
+//        {
+//            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortFilterType, getType().name());
+//            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortId, "" + getCohortId());
+//        }
         return url;
     }
 

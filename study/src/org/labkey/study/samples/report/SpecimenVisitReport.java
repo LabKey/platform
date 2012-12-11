@@ -173,7 +173,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     protected void addCohortURLFilter(ActionURL url)
     {
         if (_parameters.getCohortFilter() != null)
-            _parameters.getCohortFilter().addURLParameters(url);
+            _parameters.getCohortFilter().addURLParameters(url, null);
     }
 
     protected String getFilterQueryString(VisitImpl visit, CELLDATA summary)

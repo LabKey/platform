@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
@@ -28,13 +29,13 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.TitleForeignKey;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.ParticipantCategoryImpl;
@@ -52,6 +53,8 @@ public class ParticipantTable extends FilteredTable
         super(StudySchema.getInstance().getTableInfoParticipant(), schema.getContainer());
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
         _schema = schema;
+
+        Study study = StudyManager.getInstance().getStudy(schema.getContainer());
         ColumnInfo rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
         rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, "participantId", getContainerContext()));
         addColumn(rowIdColumn);
@@ -87,34 +90,40 @@ public class ParticipantTable extends FilteredTable
         containerCol.setHidden(true);
         addColumn(containerCol);
 
-        if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
+
+        ColumnInfo currentCohortColumn;
+        boolean showCohorts = StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser());
+        if (!showCohorts)
         {
-            ColumnInfo currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CurrentCohortId"));
-            currentCohortColumn.setFk(new LookupForeignKey("RowId")
-            {
-                public TableInfo getLookupTableInfo()
-                {
-                    return new CohortTable(_schema);
-                }
-            });
-            addColumn(currentCohortColumn);
-
-            Study study = StudyManager.getInstance().getStudy(schema.getContainer());
-
-            if (study.isAdvancedCohorts())
-            {
-                ColumnInfo initialCohortColumn = new AliasedColumn(this, "InitialCohort", _rootTable.getColumn("InitialCohortId"));
-                initialCohortColumn.setFk(new LookupForeignKey("RowId")
-                {
-                    public TableInfo getLookupTableInfo()
-                    {
-                        return new CohortTable(_schema);
-                    }
-                });
-                addColumn(initialCohortColumn);
-            }
+            currentCohortColumn = new NullColumnInfo(this, "Cohort", JdbcType.INTEGER);
+            currentCohortColumn.setHidden(true);
         }
-        
+        else
+        {
+            currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CurrentCohortId"));
+        }
+        currentCohortColumn.setFk(new CohortForeignKey(_schema, showCohorts));
+        addColumn(currentCohortColumn);
+
+
+        ColumnInfo initialCohortColumn;
+        if (!showCohorts)
+        {
+            initialCohortColumn = new NullColumnInfo(this, "InitialCohort", JdbcType.INTEGER);
+            initialCohortColumn.setHidden(true);
+        }
+        else if (null != study && study.isAdvancedCohorts())
+        {
+            initialCohortColumn = new AliasedColumn(this, "InitialCohort", _rootTable.getColumn("InitialCohortId"));
+        }
+        else
+        {
+            initialCohortColumn = new AliasedColumn(this, "InitialCohort", _rootTable.getColumn("CurrentCohortId"));
+            initialCohortColumn.setHidden(true);
+        }
+        initialCohortColumn.setFk(new CohortForeignKey(_schema, showCohorts));
+        addColumn(initialCohortColumn);
+
         ForeignKey fkSite = SiteTable.fkFor(_schema);
         addWrapColumn(_rootTable.getColumn("EnrollmentSiteId")).setFk(fkSite);
         addWrapColumn(_rootTable.getColumn("CurrentSiteId")).setFk(fkSite);

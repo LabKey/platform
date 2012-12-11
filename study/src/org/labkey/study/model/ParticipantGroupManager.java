@@ -30,7 +30,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.gwt.client.ui.LabKeyLinkHTML;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
@@ -52,6 +51,7 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.query.DataSetQueryView;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -204,7 +204,7 @@ public class ParticipantGroupManager
 
             // TODO: Move all cohort menu generation into CohortFilterFactory
             // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
-            ActionURL baseURL = CohortFilterFactory.clearURLParameters(context.cloneActionURL());
+            ActionURL baseURL = CohortFilterFactory.clearURLParameters(context.cloneActionURL(), dataRegionName);
 
             for (ParticipantCategoryImpl cls : classes)
             {
@@ -234,7 +234,7 @@ public class ParticipantGroupManager
                         if (null == filter)
                             break;
 
-                        ActionURL url = filter.addURLParameters(baseURL.clone());
+                        ActionURL url = filter.addURLParameters(baseURL.clone(), DataSetQueryView.DATAREGION);
 
                         NavTree typeItem = new NavTree(type.getTitle(), url);
                         typeItem.setId("Enrolled:" + typeItem.getText());
@@ -253,14 +253,14 @@ public class ParticipantGroupManager
 
                     if (null != filter)
                     {
-                        ActionURL enrolledURL = filter.addURLParameters(baseURL.clone());
+                        ActionURL enrolledURL = filter.addURLParameters(baseURL.clone(), DataSetQueryView.DATAREGION);
                         button.addMenuItem("Enrolled", enrolledURL.toString(), null, (selected.isEmpty() && filter.equals(cohortFilter)));
                     }
                 }
 
                 //button.addMenuItem(((MenuButton)cohortButton).getPopupMenu().getNavTree());
                 NavTree cohort = new NavTree("Cohorts");
-                CohortManager.getInstance().addCohortNavTree(context.getContainer(), context.getUser(), baseURL, cohortFilter, cohort);
+                CohortManager.getInstance().addCohortNavTree(context.getContainer(), context.getUser(), baseURL, cohortFilter, dataRegionName, cohort);
                 button.addMenuItem(cohort);
             }
 

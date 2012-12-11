@@ -540,7 +540,7 @@ public class StudyController extends BaseStudyController
             if (!bean.showCohorts)
                 bean.cohortFilter = null;
             else
-                bean.cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
+                bean.cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DataSetQueryView.DATAREGION);
 
             VisitManager visitManager = StudyManager.getInstance().getVisitManager(bean.study);
             bean.visitMapSummary = visitManager.getVisitSummary(bean.cohortFilter, bean.qcStates, bean.stats, bean.showAll);
@@ -792,7 +792,6 @@ public class StudyController extends BaseStudyController
             // each dataset is determined by a visitid/datasetid
 
             Study study = getStudy();
-            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
             _encodedQcState = form.getQCState();
             QCStateSet qcStateSet = null;
             if (StudyManager.getInstance().showQCStates(getContainer()))
@@ -829,6 +828,8 @@ public class StudyController extends BaseStudyController
             settings.setShowSourceLinks(true);
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
+            if (queryView instanceof StudyQueryView)
+                _cohortFilter = ((StudyQueryView)queryView).getCohortFilter();
 
             final ActionURL url = context.getActionURL();
 
@@ -1071,7 +1072,7 @@ public class StudyController extends BaseStudyController
 
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
 
-            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
+            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DataSetQueryView.DATAREGION);
             // display the next and previous buttons only if we have a cached participant index
             if (_cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                 throw new UnauthorizedException("User does not have permission to view cohort information");
@@ -2640,13 +2641,15 @@ public class StudyController extends BaseStudyController
         {
             if ((param.getKey().contains(".sort")) ||
                 (param.getKey().contains("~")) ||
-                (CohortFilterFactory.isCohortFilterParameterName(param.getKey())) ||
+//                (CohortFilterFactory.isCohortFilterParameterName(param.getKey(), queryView.getDataRegionName())) ||
                 (SharedFormParameters.QCState.name().equals(param.getKey())) ||
                 (DATASET_VIEW_NAME_PARAMETER_NAME.equals(param.getKey())))
             {
                 base.addParameter(param.getKey(), param.getValue());
             }
         }
+        if (queryView instanceof StudyQueryView && null != ((StudyQueryView)queryView).getCohortFilter())
+            ((StudyQueryView)queryView).getCohortFilter().addURLParameters(base, null);
 
         for (DisplayColumn col : columns)
         {

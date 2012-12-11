@@ -43,6 +43,6 @@ public class TypeCohortReport extends SpecimenTypeVisitReport
     protected void addCohortURLFilter(ActionURL url)
     {
         if (_cohortFilter != null)
-            _cohortFilter.addURLParameters(url);
+            _cohortFilter.addURLParameters(url, null);
     }
 }

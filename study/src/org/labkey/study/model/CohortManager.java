@@ -16,12 +16,11 @@
 package org.labkey.study.model;
 
 import org.apache.commons.lang3.ObjectUtils;
-import org.labkey.api.data.ActionButton;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -32,19 +31,15 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SingleCohortFilter;
 import org.labkey.study.StudySchema;
-import org.labkey.study.controllers.CohortController;
 
 import javax.servlet.ServletException;
 import java.sql.ResultSet;
@@ -205,36 +200,36 @@ public class CohortManager
             return createCohort(study, user, newLabel, enrolled);
     }
 
-    public ActionButton createCohortButton(ViewContext context, CohortFilter currentCohortFilter) throws ServletException
-    {
-        Container container = context.getContainer();
-        User user = context.getUser();
-        if (StudyManager.getInstance().showCohorts(container, user))
-        {
-            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, user);
-            if (cohorts.length > 0)
-            {
-                MenuButton button = new MenuButton("Cohorts");
-                ActionURL allCohortsURL = CohortFilterFactory.clearURLParameters(context.cloneActionURL());
-                NavTree item = new NavTree("All", allCohortsURL.toString());
-                item.setId(button.getCaption() + ":" + item.getText());
-                if (currentCohortFilter == null)
-                    item.setSelected(true);
-                button.addMenuItem(item);
-
-                NavTree btnNavTree = button.getPopupMenu().getNavTree();
-                addCohortNavTree(container, user, context.getActionURL(), currentCohortFilter, btnNavTree);
-
-                if (container.hasPermission(user, AdminPermission.class))
-                {
-                    button.addSeparator();
-                    button.addMenuItem("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, container));
-                }
-                return button;
-            }
-        }
-        return null;
-    }
+//    public ActionButton createCohortButton(ViewContext context, CohortFilter currentCohortFilter) throws ServletException
+//    {
+//        Container container = context.getContainer();
+//        User user = context.getUser();
+//        if (StudyManager.getInstance().showCohorts(container, user))
+//        {
+//            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, user);
+//            if (cohorts.length > 0)
+//            {
+//                MenuButton button = new MenuButton("Cohorts");
+//                ActionURL allCohortsURL = CohortFilterFactory.clearURLParameters(context.cloneActionURL(), null);
+//                NavTree item = new NavTree("All", allCohortsURL.toString());
+//                item.setId(button.getCaption() + ":" + item.getText());
+//                if (currentCohortFilter == null)
+//                    item.setSelected(true);
+//                button.addMenuItem(item);
+//
+//                NavTree btnNavTree = button.getPopupMenu().getNavTree();
+//                addCohortNavTree(container, user, context.getActionURL(), currentCohortFilter, btnNavTree);
+//
+//                if (container.hasPermission(user, AdminPermission.class))
+//                {
+//                    button.addSeparator();
+//                    button.addMenuItem("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, container));
+//                }
+//                return button;
+//            }
+//        }
+//        return null;
+//    }
 
     public boolean hasCohortMenu(Container container, User user)
     {
@@ -246,7 +241,8 @@ public class CohortManager
         return false;
     }
 
-    public void addCohortNavTree(Container container, User user, ActionURL baseURL, CohortFilter currentCohortFilter, NavTree tree)
+
+    public void addCohortNavTree(Container container, User user, ActionURL baseURL, CohortFilter currentCohortFilter, @Nullable String dataregion, NavTree tree)
     {
         CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, user);
         if (cohorts.length > 0)
@@ -264,7 +260,7 @@ public class CohortManager
                     for (CohortFilter.Type type : CohortFilter.Type.values())
                     {
                         CohortFilter filter = new SingleCohortFilter(type, cohort.getRowId());
-                        ActionURL url = filter.addURLParameters(baseURL.clone());
+                        ActionURL url = filter.addURLParameters(baseURL.clone(), dataregion);
 
                         NavTree typeItem = new NavTree(type.getTitle(), url.toString());
                         typeItem.setId(cohort.getLabel() + ":" + typeItem.getText());
@@ -281,7 +277,7 @@ public class CohortManager
                 for (CohortImpl cohort : cohorts)
                 {
                     CohortFilter filter = new SingleCohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
-                    ActionURL url = filter.addURLParameters(baseURL.clone());
+                    ActionURL url = filter.addURLParameters(baseURL.clone(), dataregion);
                     NavTree item = new NavTree(cohort.getLabel(), url.toString());
                     item.setId(caption + ":" + item.getText());
                     if (filter.equals(currentCohortFilter))
@@ -291,6 +287,7 @@ public class CohortManager
             }
         }
     }
+
 
     public void clearParticipantCohorts(Study study) throws SQLException
     {

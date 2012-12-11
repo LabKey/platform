@@ -21,13 +21,11 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.ParticipantGroup;
@@ -55,13 +53,7 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
         if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
         {
             ColumnInfo currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));
-            currentCohortColumn.setFk(new LookupForeignKey("RowId")
-            {
-                public TableInfo getLookupTableInfo()
-                {
-                    return new CohortTable(_schema);
-                }
-            });
+            currentCohortColumn.setFk(new CohortForeignKey(_schema));
             addColumn(currentCohortColumn);
         }
 

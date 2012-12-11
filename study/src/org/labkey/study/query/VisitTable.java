@@ -18,9 +18,12 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
@@ -38,19 +41,19 @@ public class VisitTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "ShowByDefault", _rootTable.getColumn("ShowByDefault")));
         addWrapColumn(_rootTable.getColumn("DisplayOrder"));
         addWrapColumn(_rootTable.getColumn("ChronologicalOrder"));
-        if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
-        {
-            ColumnInfo cohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));
-            cohortColumn.setFk(new LookupForeignKey("RowId")
-            {
-                public TableInfo getLookupTableInfo()
-                {
-                    return new CohortTable(_schema);
-                }
-            });
-            addColumn(cohortColumn);
-        }
 
+        boolean showCohorts = StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser());
+        ColumnInfo cohortColumn;
+        if (showCohorts)
+        {
+            cohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));
+        }
+        else
+        {
+            cohortColumn = new NullColumnInfo(this, "Cohort", JdbcType.INTEGER);
+        }
+        cohortColumn.setFk(new CohortForeignKey(schema, showCohorts));
+        addColumn(cohortColumn);
         setTitleColumn("Label");
     }
 }

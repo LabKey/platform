@@ -18,6 +18,7 @@ package org.labkey.study;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.CohortFilter.Type;
@@ -32,6 +33,10 @@ import java.util.List;
  * User: adam
  * Date: 8/28/12
  * Time: 3:54 PM
+ *
+ * NOTE (MAB): with 13.1 we use regular URL filters for dataregions and NOT use CohortFilter to append additional filters to the query.
+ * CohortFilter can still be used for non-data region usages, such as overview or reporting, but these should probably migrate to using
+ * ParticipantGroup filtering UI
  */
 public class CohortFilterFactory
 {
@@ -44,34 +49,55 @@ public class CohortFilterFactory
 
     public static final SingleCohortFilter UNASSIGNED = new SingleCohortFilter.UnassignedCohort();
 
-    public static ActionURL clearURLParameters(ActionURL url)
+    public static ActionURL clearURLParameters(ActionURL url, String dataregion)
     {
-        url.deleteParameter(Params.cohortFilterType);
-        url.deleteParameter(Params.cohortId);
-        url.deleteParameter(Params.cohortEnrolled);
+//        if (!StringUtils.isEmpty(dataregion))
+//        {
+//            url.replaceParameter(dataregion + "." + Params.cohortFilterType, Type.ALL.name());
+//            url.deleteParameter(dataregion + "." + Params.cohortId);
+//            url.deleteParameter(dataregion + "." + Params.cohortEnrolled);
+//        }
+//        else
+        {
+            url.deleteParameter(Params.cohortFilterType);
+            url.deleteParameter(Params.cohortId);
+            url.deleteParameter(Params.cohortEnrolled);
+        }
         return url;
     }
 
-    private static Type getTypeFromURL(ActionURL url)
+    private static String getParameter(ActionURL url, @Nullable String dataregion, Params param)
     {
-        String cohortFilterType = url.getParameter(Params.cohortFilterType);
+        String s = null;
+        if (null != dataregion)
+            s = url.getParameter(dataregion + "." + param);
+        if (null == s)
+            s = url.getParameter(param);
+        return s;
+    }
+
+    private static Type getTypeFromURL(ActionURL url, @Nullable String dataregion)
+    {
+        String cohortFilterType = getParameter(url, dataregion, Params.cohortFilterType);
+        Type type = null;
         if (cohortFilterType != null)
         {
             try
             {
-                return Type.valueOf(cohortFilterType);
+                type = Type.valueOf(cohortFilterType);
             }
             catch (IllegalArgumentException e)
             {
                 // fall through to return a null filter if the type parameter isn't recognized
             }
         }
-        return null;
+        return type;
     }
 
-    private static Integer getCohortIdFromURL(ActionURL url)
+
+    private static Integer getCohortIdFromURL(ActionURL url, @Nullable String dataregion)
     {
-        String cohortIdStr = url.getParameter(Params.cohortId);
+        String cohortIdStr = getParameter(url, dataregion, Params.cohortId);
         try
         {
             if (null != cohortIdStr)
@@ -84,9 +110,10 @@ public class CohortFilterFactory
         return null;
     }
 
-    private static Boolean getCohortEnrolledFromURL(ActionURL url)
+
+    private static Boolean getCohortEnrolledFromURL(ActionURL url, String dataregion)
     {
-        String cohortEnrolledStr = url.getParameter(Params.cohortEnrolled);
+        String cohortEnrolledStr = getParameter(url, dataregion, Params.cohortEnrolled);
         try
         {
             if (null != cohortEnrolledStr)
@@ -100,26 +127,37 @@ public class CohortFilterFactory
         return null;
     }
 
-    public static boolean isCohortFilterParameterName(String name)
+
+    public static boolean isCohortFilterParameterName(String name, String dataregion)
     {
         for (Params param : Params.values())
         {
             if (name.equals(param.name()))
                 return true;
+            if (null != dataregion && name.equals(dataregion + "." + param.name()))
+                return true;
         }
         return false;
     }
 
+
+    @Deprecated
     public static @Nullable CohortFilter getFromURL(Container c, User user, ActionURL url)
+    {
+        return getFromURL(c, user, url, null);
+    }
+
+
+    public static @Nullable CohortFilter getFromURL(Container c, User user, ActionURL url, @Nullable String dataregion)
     {
         // If you're not allowed to see cohorts then we shouldn't filter by anything
         if (StudyManager.getInstance().showCohorts(c, user))
         {
-            Type type = getTypeFromURL(url);
-            Integer cohortId = getCohortIdFromURL(url);
-            Boolean enrolled = getCohortEnrolledFromURL(url);
+            Type type = getTypeFromURL(url, dataregion);
+            Integer cohortId = getCohortIdFromURL(url, dataregion);
+            Boolean enrolled = getCohortEnrolledFromURL(url, dataregion);
 
-            if (null != type)
+            if (null != type && Type.ALL != type)
             {
                 if (null != cohortId)
                 {

@@ -20,6 +20,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
@@ -30,6 +32,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.study.StudyService;
+import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
@@ -77,18 +80,19 @@ public class ParticipantVisitTable extends FilteredTable
             }
             else if ("CohortID".equalsIgnoreCase(col.getName()))
             {
-                if (StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
+                ColumnInfo cohortColumn;
+                boolean showCohorts = StudyManager.getInstance().showCohorts(getContainer(), schema.getUser());
+                if (!showCohorts)
                 {
-                    ColumnInfo cohortColumn = new AliasedColumn(this, "Cohort", col);
-                    cohortColumn.setFk(new LookupForeignKey("RowId")
-                    {
-                        public TableInfo getLookupTableInfo()
-                        {
-                            return new CohortTable(_schema);
-                        }
-                    });
-                    addColumn(cohortColumn);
+                    cohortColumn = new NullColumnInfo(this, "Cohort", JdbcType.INTEGER);
+                    cohortColumn.setHidden(true);
                 }
+                else
+                {
+                    cohortColumn = new AliasedColumn(this, "Cohort", col);
+                    cohortColumn.setFk(new CohortForeignKey(_schema, showCohorts));
+                }
+                addColumn(cohortColumn);
             }
             else if ("ParticipantSequenceNum".equalsIgnoreCase(col.getName()))
             {

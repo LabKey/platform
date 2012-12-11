@@ -19,6 +19,7 @@
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.study.StudyService;
+import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
@@ -107,8 +108,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addColumn(new QualityControlFlagColumn(this));
         addColumn(new QualityControlCommentsColumn(this));
 
-        if (StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
-            addColumn(new CollectionCohortColumn(_schema, this));
+        addColumn(createCollectionCohortColumn(_schema, this));
 
         addWrapColumn(_rootTable.getColumn("VialCount"));
         addWrapColumn(_rootTable.getColumn("LockedInRequestCount"));
@@ -181,6 +181,18 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         }
     }
 
+
+    ColumnInfo createCollectionCohortColumn(StudyQuerySchema schema, TableInfo parent)
+    {
+        if (StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
+            return new CollectionCohortColumn(_schema, this);
+
+        ColumnInfo c = new NullColumnInfo(parent, "CollectionCohort", JdbcType.INTEGER);
+        c.setFk(new CohortForeignKey(schema, false));
+        return c;
+    }
+
+
     public static class CollectionCohortColumn extends ExprColumn
     {
         protected static final String COLLECTION_COHORT_JOIN = "CollectionCohortJoin$";
@@ -191,13 +203,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                     new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + COLLECTION_COHORT_JOIN + ".CohortId"),
                     JdbcType.INTEGER);
 
-            setFk(new LookupForeignKey("RowId")
-            {
-                public TableInfo getLookupTableInfo()
-                {
-                    return new CohortTable(schema);
-                }
-            });
+            setFk(new CohortForeignKey(schema, true));
             setDescription("The cohort of the " + StudyService.get().getSubjectNounSingular(schema.getContainer()) + " at the time of specimen collection.");
         }
 

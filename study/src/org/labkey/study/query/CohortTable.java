@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
@@ -24,7 +25,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
@@ -43,8 +43,6 @@ public class CohortTable extends BaseStudyTable
     public CohortTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoCohort());
-
-        StudyManager.getInstance().assertCohortsViewable(schema.getContainer(), schema.getUser());
 
         ColumnInfo labelColumn = addWrapColumn(_rootTable.getColumn("Label"));
         labelColumn.setNullable(false);
@@ -81,6 +79,9 @@ public class CohortTable extends BaseStudyTable
         }
         
         setDefaultVisibleColumns(visibleColumns);
+
+        if (!StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
+            addCondition(new SQLFragment("0=1"));
     }
 
     @Override

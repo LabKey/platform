@@ -38,7 +38,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -49,8 +48,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -93,7 +90,7 @@ import java.util.Set;
  * Date: Aug 25, 2006
  * Time: 4:03:59 PM
  */
-public class DataSetQueryView extends QueryView
+public class DataSetQueryView extends StudyQueryView
 {
     private DataSetDefinition _dataset;
     private VisitImpl _visit;
@@ -103,8 +100,6 @@ public class DataSetQueryView extends QueryView
     private QCStateSet _qcStateSet;
     private ExpProtocol _protocol;
     private AssayProvider _provider;
-    private Study _study;
-
 
     public DataSetQueryView(UserSchema schema, DataSetQuerySettings settings, BindException errors)
     {
@@ -112,7 +107,6 @@ public class DataSetQueryView extends QueryView
 
         ViewContext context = getViewContext();
         DatasetFilterForm form = getForm(context);
-        _study = StudyService.get().getStudy(getContainer());
 
         _dataset = StudyManager.getInstance().getDataSetDefinition(_study, settings.getQueryName());
         if (_dataset == null)
@@ -137,7 +131,7 @@ public class DataSetQueryView extends QueryView
                 throw new NotFoundException();
         }
         if (context.getActionURL() != null)
-            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
+            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DATAREGION);
 
         _protocol = _dataset.getAssayProtocol();
         if (_protocol != null)
@@ -145,6 +139,12 @@ public class DataSetQueryView extends QueryView
 
         setViewItemFilter(StudyReportUIProvider.getItemFilter());
         disableContainerFilterSelection();
+    }
+
+    @Override
+    public CohortFilter getCohortFilter()
+    {
+        return _cohortFilter;
     }
 
     private DatasetFilterForm getForm(ViewContext context)
@@ -286,7 +286,7 @@ public class DataSetQueryView extends QueryView
         if (url != null)
         {
             if (_cohortFilter != null)
-                _cohortFilter.addURLParameters(url);
+                _cohortFilter.addURLParameters(url, DATAREGION);
 
             if (_qcStateSet != null)
                 url.replaceParameter(BaseStudyController.SharedFormParameters.QCState, _qcStateSet.getFormValue());

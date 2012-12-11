@@ -427,7 +427,7 @@ public class SpecimenController extends BaseStudyController
         protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             _vialView = form.isShowVials();
-            CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
+            CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), _vialView ? "SpecimenDetail" : "SpecimenSummary");
             SpecimenQueryView view = getUtils().getSpecimenQueryView(_vialView, forExport, form.getViewModeEnum(), cohortFilter);
             if (SpecimenUtils.isCommentsMode(getContainer(), form.getViewModeEnum()))
                 view.setRestrictRecordSelectors(false);
