@@ -1,13 +1,19 @@
 package org.labkey.survey.query;
 
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -21,6 +27,21 @@ public class SurveysTable extends FilteredTable
         super(table, container);
 
         wrapAllColumns(true);
+
+        List<FieldKey> defaultColumns = new ArrayList<FieldKey>(Arrays.asList(
+                FieldKey.fromParts("Label"),
+                FieldKey.fromParts("CreatedBy"),
+                FieldKey.fromParts("Created"),
+                FieldKey.fromParts("SubmittedBy"),
+                FieldKey.fromParts("Submitted"),
+                FieldKey.fromParts("ModifiedBy"),
+                FieldKey.fromParts("Modified"),
+                FieldKey.fromParts("Status")
+        ));
+        setDefaultVisibleColumns(defaultColumns);
+
+        // disable the import data option for this table
+        this.setImportURL(AbstractTableInfo.LINK_DISABLER);
     }
 
     @Override

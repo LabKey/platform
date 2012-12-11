@@ -3431,6 +3431,7 @@ survey/src/org/labkey/survey/SurveySchema.java -text
 survey/src/org/labkey/survey/query/SurveyDesignTable.java -text
 survey/src/org/labkey/survey/query/SurveyQuerySchema.java -text
 survey/src/org/labkey/survey/query/SurveysTable.java -text
+survey/src/org/labkey/survey/view/customizeSurveysWebPart.jsp -text
 timeline/Timeline.iml -text
 timeline/build.xml -text
 timeline/minifyTimeline -text

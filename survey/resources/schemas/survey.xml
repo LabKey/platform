@@ -45,6 +45,7 @@
       </ns:columns>
     </ns:table>
     <ns:table tableName="Surveys" tableDbType="TABLE">
+      <ns:description>Contains a row for each new survey instance create by a user.</ns:description>
       <ns:columns>
         <ns:column columnName="RowId"/>
         <ns:column columnName="Container"/>

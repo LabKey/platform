@@ -17,6 +17,7 @@
 package org.labkey.survey;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 
 public class SurveySchema
@@ -43,5 +44,15 @@ public class SurveySchema
     public SqlDialect getSqlDialect()
     {
         return getSchema().getSqlDialect();
+    }
+
+    public TableInfo getSurveyDesignsTable()
+    {
+        return getSchema().getTable("SurveyDesigns");
+    }
+
+    public TableInfo getSurveysTable()
+    {
+        return getSchema().getTable("Surveys");
     }
 }
