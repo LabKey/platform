@@ -178,6 +178,7 @@ public class AssayController extends SpringActionController
     {
         public ModelAndView getView(ProtocolIdForm o, BindException errors) throws Exception
         {
+            setHelpTopic(new HelpTopic("assayUserGuide"));
             return AssayService.get().createAssayListView(getViewContext(), false, errors);
         }
 
@@ -425,6 +426,7 @@ public class AssayController extends SpringActionController
             HtmlView bbar = new HtmlView(
                     PageFlowUtil.generateButton("Cancel", new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
                     (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.generateButton("Copy to Current Folder", copyHereURL) : ""));
+            setHelpTopic(new HelpTopic("manageAssayDesign"));
             return new VBox(bbar, fileTree, bbar);
         }
 
@@ -548,7 +550,7 @@ public class AssayController extends SpringActionController
 
         public boolean handlePost(CreateAssayForm form, BindException errors) throws Exception
         {
-            if (PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
+            if (form.getProviderName() == null || PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
             {
                 errors.addError(new LabkeyError("Please select an assay type."));
                 return false;
@@ -603,6 +605,7 @@ public class AssayController extends SpringActionController
             VBox view = new VBox();
             view.addView(new AssayHeaderView(_protocol, form.getProvider(), false, true, containerFilter));
             view.addView(AssayAuditViewFactory.getInstance().createPublishHistoryView(getViewContext(), _protocol.getRowId(), containerFilter));
+            setHelpTopic(new HelpTopic("publishHistory"));
             return view;
         }
 
@@ -823,14 +826,15 @@ public class AssayController extends SpringActionController
         public @Nullable ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL)
         {
             AssayProvider provider = AssayService.get().getProvider(providerName);
+            if (provider == null)
+            {
+                return null;
+            }
             return getDesignerURL(container, provider, null, false, returnURL);
         }
 
         private ActionURL getDesignerURL(Container container, @NotNull AssayProvider provider, @Nullable ExpProtocol protocol, boolean copy, ActionURL returnURL)
         {
-            if (provider == null)
-                return null;
-
             Class<? extends Controller> designerAction = provider.getDesignerAction();
             if (designerAction == null)
                 return null;

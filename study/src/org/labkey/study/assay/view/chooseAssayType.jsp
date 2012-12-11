@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -45,13 +46,13 @@
     }
 %>
 <p>
-    Each assay is a customized version of a particular assay type. 
-    The assay type defines things like how the data is parsed and what kinds of analysis are provided.
+    Each assay design is a customized version of a particular assay type.
+    The assay type defines things like how the data is parsed and what kinds of analysis tools are provided.
 </p>
-<p>If you have an existing assay design in the XAR file format (a .xar or .xar.xml file), you can
-    <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer()) %>">upload the XAR file directly</a>
-    or place the file in this folder's pipeline directory and import using the
-    <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString()) %>">Data Pipeline</a>.
+<p>If you want to import an existing assay design in the <a href="<%= h(new HelpTopic("XarTutorial").getHelpTopicHref()) %>">XAR file format</a> (a .xar or .xar.xml file), you can
+    <%= textLink("upload", urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer())) %>it directly
+    or upload the file into this folder's pipeline directory and import using the
+    <%= textLink("Data Pipeline", urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString())) %>
 </p>
 <p>
     To create a new assay design, please choose which assay type you would like to customize with your own settings and input options.
