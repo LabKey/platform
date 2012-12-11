@@ -16,6 +16,7 @@
 
 package org.labkey.core.webdav;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
@@ -29,6 +30,7 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
@@ -45,6 +47,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
@@ -249,15 +252,20 @@ public class DavController extends SpringActionController
             }
             action.handleRequest(request, response);
         }
-        catch (RedirectException x)
+        catch (RedirectException ex)
         {
-            ExceptionUtil.doErrorRedirect(response, x.getURL());
+            ExceptionUtil.doErrorRedirect(response, ex.getURL());
         }
-        catch (Exception e)
+        catch (ConfigurationException ex)
         {
-            _log.error("unexpected exception", e);
-            ExceptionUtil.logExceptionToMothership(request, e);
-            _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, e);
+            _log.error("Unexpected exception, might be related to server configuration problems", ex);
+            _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
+        }
+        catch (Exception ex)
+        {
+            _log.error("unexpected exception", ex);
+            ExceptionUtil.logExceptionToMothership(request, ex);
+            _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
         }
         for (Map.Entry<Closeable, Throwable> e : closables.entrySet())
         {
@@ -854,7 +862,7 @@ public class DavController extends SpringActionController
 
             if (isCollection)
             {
-                String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
+                String filename = getFilenameParameter();
                 FileStream stream;
                 
                 if (getRequest() instanceof MultipartHttpServletRequest)
@@ -925,6 +933,33 @@ public class DavController extends SpringActionController
     }
 
 
+    class ResourceFilter
+    {
+        boolean accept(WebdavResource r)
+        {
+            return true;
+        }
+    }
+
+    Boolean getBooleanParameter(String name)
+    {
+        String v = getRequest().getParameter("isCollection");
+        if (StringUtils.isEmpty(v))
+            return null;
+        try
+        {
+            // handle webdav style
+            if (StringUtils.equals("T",v))
+                return Boolean.TRUE;
+            if (StringUtils.equals("F",v))
+                return Boolean.FALSE;
+            return ConvertHelper.convert(v, Boolean.class);
+        }
+        catch (Exception x) {}
+        return null;
+    }
+
+
     @RequiresNoPermission
     public class PropfindAction extends DavAction
     {
@@ -979,6 +1014,39 @@ public class DavController extends SpringActionController
             }
             return new Pair<Integer,Boolean>(depth, depth>0 && noroot);
         }
+
+
+        protected ResourceFilter getResourceFilter()
+        {
+            Boolean isCollection = getBooleanParameter("isCollection");
+            // Other possible filters???
+
+            if (null == isCollection)
+                return new ResourceFilter();
+            if (isCollection)
+            {
+                return new ResourceFilter()
+                    {
+                        @Override
+                        boolean accept(WebdavResource r)
+                        {
+                            return null != r && r.isCollection();
+                        }
+                    };
+            }
+            else
+            {
+                return new ResourceFilter()
+                    {
+                        @Override
+                        boolean accept(WebdavResource r)
+                        {
+                            return null != r && r.isFile();
+                        }
+                    };
+            }
+        }
+
 
         public WebdavStatus doMethod() throws DavException, IOException
         {
@@ -1116,6 +1184,9 @@ public class DavController extends SpringActionController
                 }
             }
 
+
+            ResourceFilter f = getResourceFilter();
+
             // Create multistatus object
             Writer writer = getResponse().getWriter();
             assert track(writer);
@@ -1127,6 +1198,7 @@ public class DavController extends SpringActionController
 
                 if (depth == 0)
                 {
+                    // probably not useful to apply filter here
                     resourceWriter.writeProperties(root, type, properties);
                 }
                 else
@@ -1153,7 +1225,7 @@ public class DavController extends SpringActionController
 
                         if (skipFirst)
                             skipFirst = false;
-                        else
+                        else if (f.accept(resource))
                             resourceWriter.writeProperties(resource, type, properties);
 
                         if (resource.isCollection() && depth > 0)
@@ -2334,7 +2406,13 @@ public class DavController extends SpringActionController
         if (!resource.isCollection())
         {
             if (!resource.delete(getUser()))
-                throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Unable to delete resource");
+            {
+                if (null != resource.getFile())
+                    throw new ConfigurationException("Unable to delete resource: " + resource.getPath().toString());
+                else
+                    throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Unable to delete resource: " + resource.getPath().toString());
+            }
+
             boolean temp = rmTempFile(resource);
             if (!temp)
             {
@@ -2645,27 +2723,33 @@ public class DavController extends SpringActionController
             }
 
             // File based
-            if (src.getFile() != null && dest.getFile() != null)
+            File srcFile = src.getFile();
+            File destFile = dest.getFile();
+            if (srcFile != null && destFile != null)
             {
                 File tmp = null;
                 try
                 {
-                    if (dest.getFile().exists())
+                    if (destFile.exists())
                     {
                         WebdavResource parent = (WebdavResource)dest.parent();
                         tmp = new File(parent.getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
                         markTempFile(tmp);
-                        if (!dest.getFile().renameTo(tmp))
+                        if (!destFile.renameTo(tmp))
                             throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not remove destination: " + dest.getPath());
                     }
                     // NOTE: destFile get's marked temp even if renameTo fails, this is OK for our uses or Temporary=T (always uniquified names)
                     if (getTemporary())
                         markTempFile(dest);
-                    if (!src.getFile().renameTo(dest.getFile()))
+                    try
+                    {
+                        FileUtils.moveFile(srcFile, destFile);
+                    }
+                    catch (IOException ex)
                     {
                         if (null != tmp)
-                            tmp.renameTo(dest.getFile());
-                        throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not move source:" + src.getPath());
+                            tmp.renameTo(destFile);
+                        throw new ConfigurationException("Could not move source:" + src.getPath());
                     }
                 }
                 finally
@@ -3287,7 +3371,16 @@ public class DavController extends SpringActionController
         return _resourcePath;
     }
 
-    
+    @Nullable String getFilenameParameter()
+    {
+        String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
+        if (null == filename)
+            return null;
+        int slash = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
+        filename = filename.substring(slash+1);
+        return filename;
+    }
+
     Path getDestinationPath()
     {
         HttpServletRequest request = getRequest();
