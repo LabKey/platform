@@ -1,0 +1,13 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="codemirror/lib/codemirror.js"/>
+        <script path="codemirror/mode/javascript/javascript.js"/>
+        <script path="codemirror/mode/htmlembedded/htmlembedded.js"/>
+        <script path="codemirror/mode/htmlmixed/htmlmixed.js"/>
+        <script path="codemirror/mode/perl/perl.js"/>
+        <script path="codemirror/mode/python/python.js"/>
+        <script path="codemirror/mode/r/r.js"/>
+        <script path="codemirror/mode/xml/xml.js"/>
+        <script path="codemirror/lib/codemirror.css"/>
+    </library>
+</libraries>

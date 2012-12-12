@@ -92,12 +92,12 @@ Ext4.define('LABKEY.SQVModel', {
         //Makes the configuration for a schemaCombo.  NOTE:  Does not set its own value of SchemaCombo to this one,
         //so you still need to add it after at present.
         makeSchemaComboConfig : function(config) {
-            return {
+            Ext4.applyIf(config, {
                 xtype : 'combo',
-                name : config.name || 'schemaCombo',
+                name : 'schemaCombo',
                 queryMode : 'local',
                 store : this.getSchemaStore(),
-                fieldLabel : config.fieldLabel || 'Schema',
+                fieldLabel : 'Schema',
                 valueField : 'schema',
                 displayField : 'schema',
                 editable : false,
@@ -106,84 +106,86 @@ Ext4.define('LABKEY.SQVModel', {
                         return '{' + dfield + ':htmlEncode}' ; // 15202
                     }
                 },
-                listeners : {
-                    afterrender : function(cb) {
-                        this.schemaCombo = cb;
-                    },
-                    select :  function(cb){
-                        if(this.queryCombo){
-                            this.changeQueryStore(cb.getRawValue());
-                        }
-                    },
-                    scope : this
+                scope : this
+            });
+
+            config.listeners = {
+                afterrender : function(cb) {
+                    this.schemaCombo = cb;
+                },
+                select :  function(cb){
+                    if(this.queryCombo){
+                        this.changeQueryStore(cb.getRawValue());
+                    }
                 },
                 scope : this
-            }
+            };
+
+            return config;
         },
 
         makeQueryComboConfig : function(config){
-             return {
-                 xtype : 'combo',
-                 name : config.name || 'queryCombo',
-                 defaultSchema : config.defaultSchema,
-                 queryMode : 'local',
-                 fieldLabel : config.fieldLabel || config.defaultSchema || 'Query',
-                 valueField : config.valueField || 'name',
-                 displayField : 'name',
-                 initialValue : config.initialValue,
-                 store : this.queryStore,
-                 editable : false,
-                 disabled : true,
-                 listConfig : {
-                     getInnerTpl : function(dfield) {
-                         return '{' + dfield + ':htmlEncode}' ; // 15202
-                     }
-                 },
-                 listeners : {
-                     scope : this,
-                     afterrender : function(cb) {
-                         this.queryCombo = cb;
-                         if(cb.defaultSchema){
-                             this.changeQueryStore(cb.defaultSchema);
-                             cb.fieldLabel = cb.defaultSchema;
-                         }
-                     },
-                     select :  function(cb){
-                         var schema = "";
+            Ext4.applyIf(config, {
+                xtype:'combo',
+                name: 'queryCombo',
+                queryMode:'local',
+                fieldLabel: config.defaultSchema || 'Query',
+                displayField:'name',
+                store:this.queryStore,
+                editable:false,
+                disabled:true,
+                listConfig:{
+                    getInnerTpl:function (dfield)
+                    {
+                        return '{' + dfield + ':htmlEncode}'; // 15202
+                    }
+                },
+                scope:this
+            });
 
-                         if(cb.defaultSchema){
-                            schema = cb.defaultSchema;
-                         }
-                         else if(this.schemaCombo){
-                             schema = this.schemaCombo.getRawValue();
-                         }
+            config.listeners = {
+                scope : this,
+                afterrender : function(cb) {
+                    this.queryCombo = cb;
+                    if(cb.defaultSchema){
+                        this.changeQueryStore(cb.defaultSchema);
+                        cb.fieldLabel = cb.defaultSchema;
+                    }
+                },
+                select :  function(cb){
+                    var schema = "";
 
-                         if(schema != "" && cb.getRawValue() != "") {
-                            this.changeViewStore(schema, cb.getRawValue());
-                         }
-                     },
-                     dataloaded : function(cb){
-                         if(!this.initallyLoaded){
-                           this.initiallyLoaded = true;
-                           if(cb.initialValue){
-                               cb.select(cb.findRecord(cb.valueField, cb.initialValue).data.name);
-                               cb.setValue(cb.initialValue);
-                               cb.fireEvent('select', cb);
-                           }
-                         }
-                     }
-                 },
-                 scope : this
-             }
+                    if(cb.defaultSchema){
+                       schema = cb.defaultSchema;
+                    }
+                    else if(this.schemaCombo){
+                        schema = this.schemaCombo.getRawValue();
+                    }
+
+                    if(schema != "" && cb.getRawValue() != "") {
+                       this.changeViewStore(schema, cb.getRawValue());
+                    }
+                },
+                dataloaded : function(cb){
+                    if(!this.initallyLoaded){
+                      this.initiallyLoaded = true;
+                      if(cb.initialValue){
+                          cb.select(cb.findRecord(cb.valueField, cb.initialValue).data.name);
+                          cb.setValue(cb.initialValue);
+                          cb.fireEvent('select', cb);
+                      }
+                    }
+                }
+            };
+            return config;
         },
 
         makeViewComboConfig : function(config){
-            return {
+            Ext4.applyIf(config,{
                 xtype : 'combo',
-                name : config.name || 'viewCombo',
-                initialValue : config.initialValue,
+                name : 'viewCombo',
                 queryMode : 'local',
-                fieldLabel : config.fieldLabel || 'View',
+                fieldLabel : 'View',
                 valueField : 'name',
                 displayField : 'name',
                 disabled : true,
@@ -194,80 +196,90 @@ Ext4.define('LABKEY.SQVModel', {
                         return '{' + dfield + ':htmlEncode}' ; // 15202
                     }
                 },
-                listeners : {
-                    afterrender : function(cb) {
-                        this.viewCombo = cb;
-                    },
-                    select : function(cb){
-                        cb.setValue(cb.getRawValue());
-                    },
-                    dataloaded : function(cb){
-                        xx = cb;
-                        if(!cb.initiallyLoaded){
-                            cb.initiallyLoaded = true;
-                            if(cb.initialValue && cb.initialValue != ''){
-                                cb.select(cb.findRecord(cb.displayField, cb.initialValue));
-                            }
-                        }
+                scope : this
+            });
 
-                    },
-                    scope : this
+            config.listeners = {
+                afterrender : function(cb) {
+                    this.viewCombo = cb;
+                },
+                select : function(cb){
+                    cb.setValue(cb.getRawValue());
+                },
+                dataloaded : function(cb){
+                    xx = cb;
+                    if(!cb.initiallyLoaded){
+                        cb.initiallyLoaded = true;
+                        if(cb.initialValue && cb.initialValue != ''){
+                            cb.select(cb.findRecord(cb.displayField, cb.initialValue));
+                        }
+                    }
+
                 },
                 scope : this
-            }
+            };
+            return config;
         },
 
         changeQueryStore : function(selectedSchema){
-            this.queryCombo.setDisabled(false);
-            this.queryCombo.clearValue();
-            if(this.viewCombo){
-                this.viewCombo.setDisabled(true);
-                this.viewCombo.clearValue();
-            }
 
-            var me = this;
-            LABKEY.Query.getQueries({
-                schemaName : selectedSchema,
-                success : function(details) {
-                    var newQueries = details.queries;
-                    for (var q=0; q < newQueries.length; q++) {
-                        var params = LABKEY.ActionURL.getParameters(newQueries[q].viewDataUrl);
-                        if (params[me.queryCombo.valueField]) {
-                            newQueries[q][me.queryCombo.valueField] = params.listId;
+            if (this.queryCombo)
+            {
+                this.queryCombo.setDisabled(false);
+                this.queryCombo.clearValue();
+                if(this.viewCombo){
+                    this.viewCombo.setDisabled(true);
+                    this.viewCombo.clearValue();
+                }
+
+                var me = this;
+                LABKEY.Query.getQueries({
+                    schemaName : selectedSchema,
+                    success : function(details) {
+                        var newQueries = details.queries;
+                        for (var q=0; q < newQueries.length; q++) {
+                            var params = LABKEY.ActionURL.getParameters(newQueries[q].viewDataUrl);
+                            if (params[me.queryCombo.valueField]) {
+                                newQueries[q][me.queryCombo.valueField] = params.listId;
+                            }
                         }
-                    }
-                    this.queryStore.loadData(newQueries);
-                    this.queryCombo.fireEvent('dataloaded', this.queryCombo);
-                },
-                scope : this
-            });
+                        this.queryStore.loadData(newQueries);
+                        this.queryCombo.fireEvent('dataloaded', this.queryCombo);
+                    },
+                    scope : this
+                });
+            }
         },
 
         changeViewStore : function(selectedSchema, selectedQuery){
-            this.viewCombo.setDisabled(false);
-            this.viewCombo.clearValue();
-            LABKEY.Query.getQueryViews({
-                scope : this,
-                schemaName : selectedSchema,
-                queryName : selectedQuery,
-                successCallback : function(details){
-                    var filteredViews = [];
-                    for(var i = 0; i < details.views.length; i++){
-                        if (!details.views[i].hidden)
-                        {
-                            if(details.views[i].name == ""){
-                                details.views[i].name = "[default view]";
+
+            if (this.viewCombo)
+            {
+                this.viewCombo.setDisabled(false);
+                this.viewCombo.clearValue();
+                LABKEY.Query.getQueryViews({
+                    scope : this,
+                    schemaName : selectedSchema,
+                    queryName : selectedQuery,
+                    successCallback : function(details){
+                        var filteredViews = [];
+                        for(var i = 0; i < details.views.length; i++){
+                            if (!details.views[i].hidden)
+                            {
+                                if(details.views[i].name == ""){
+                                    details.views[i].name = "[default view]";
+                                }
+                                if(details.views[i].default == true && details.views[i].name != "[default view]"){
+                                    details.views[i].name += " [default]";
+                                }
+                                filteredViews.push(details.views[i]);
                             }
-                            if(details.views[i].default == true && details.views[i].name != "[default view]"){
-                                details.views[i].name += " [default]";
-                            }
-                            filteredViews.push(details.views[i]);
                         }
+                        this.viewStore.loadData(filteredViews);
+                        this.viewCombo.fireEvent('dataloaded', this.viewCombo);
                     }
-                    this.viewStore.loadData(filteredViews);
-                    this.viewCombo.fireEvent('dataloaded', this.viewCombo);
-                }
-            });
+                });
+            }
         }
 
 });
