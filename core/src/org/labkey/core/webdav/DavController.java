@@ -25,6 +25,7 @@ import org.apache.log4j.Priority;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.json.JSONWriter;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -73,6 +74,7 @@ import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.webdav.apache.XMLWriter;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -943,7 +945,7 @@ public class DavController extends SpringActionController
 
     Boolean getBooleanParameter(String name)
     {
-        String v = getRequest().getParameter("isCollection");
+        String v = getRequest().getParameter(name);
         if (StringUtils.isEmpty(v))
             return null;
         try
@@ -1295,16 +1297,125 @@ public class DavController extends SpringActionController
         }
     }
 
+    public static class JsonForm
+    {
+        private int _limit = -1;
+        private int _start = -1;
+
+        public void setLimit(int limit)
+        {
+            _limit = limit;
+        }
+
+        public int getLimit()
+        {
+            return _limit;
+        }
+
+        public void setStart(int start)
+        {
+            _start = start;
+        }
+
+        public int getStart()
+        {
+            return _start;
+        }
+    }
 
     @RequiresNoPermission
     public class JsonAction extends PropfindAction
     {
+        JsonForm form;
+
         // depth > 1 NYI
         public JsonAction()
         {
             super("JSON");
             defaultListRoot = false;
             defaultDepth = 1;
+
+            // Map Bind Parameters
+            form = new JsonForm();
+            MutablePropertyValues props = new MutablePropertyValues(getRequest().getParameterMap());
+            BaseViewAction.springBindParameters(form, "form", props);
+        }
+
+        @Override
+        public WebdavStatus doMethod() throws DavException, IOException
+        {
+            checkRequireLogin(null);
+
+            WebdavResource root = getResource();
+            if (root == null || !root.exists())
+                return notFound();
+
+            if (!root.canList(getUser(), true))
+                return unauthorized(root);
+
+            Writer writer = getResponse().getWriter();
+            assert track(writer);
+            ResourceWriter resourceWriter = null;
+
+            try
+            {
+                resourceWriter = getResourceWriter(writer);
+                resourceWriter.beginResponse(getResponse());
+
+                WebdavResource resource = root;
+                if (resource.isCollection())
+                {
+                    ArrayList<String> listPaths = (ArrayList<String>) resource.listNames();
+                    resourceWriter.writeProperty("fileCount", listPaths.size());
+
+                    // Support for Limits
+                    int limitCount = 0;
+                    int limitMax = form.getLimit()-1;
+
+                    // Support for Indexing
+                    for (int i=form.getStart(); i < listPaths.size(); i++)
+                    {
+                        if (limitCount > limitMax)
+                            break;
+
+                        resource = resolvePath(root.getPath().append(listPaths.get(i)));
+                        if (null != resource)
+                        {
+                            resourceWriter.writeProperties(resource, Find.FIND_ALL_PROP, new ArrayList<String>());
+                            if (limitMax > 0)
+                                limitCount++;
+                        }
+                    }
+                }
+
+                resourceWriter.sendData();
+            }
+            catch (IOException x)
+            {
+                throw x;
+            }
+            catch (DavException x)
+            {
+                throw x;
+            }
+            catch (Exception x)
+            {
+                throw new DavException(x);
+            }
+            finally
+            {
+                if (resourceWriter != null)
+                {
+                    try {
+                        resourceWriter.endResponse();
+                        resourceWriter.sendData();
+                    }
+                    catch (Exception e) { }
+                }
+            }
+
+            close(writer, "response writer");
+            return WebdavStatus.SC_MULTI_STATUS;
         }
 
         @Override
@@ -1328,7 +1439,9 @@ public class DavController extends SpringActionController
     {
         void beginResponse(WebdavResponse response) throws Exception;
         void endResponse() throws Exception;
- 
+
+        public void writeProperty(String propertyName, Object propertyValue);
+
         /**
          * @param type             Propfind type
          * @param propertiesVector If the propfind type is find properties by
@@ -1388,6 +1501,10 @@ public class DavController extends SpringActionController
             xml.writeElement(null, "multistatus", XMLWriter.CLOSING);
         }
 
+        public void writeProperty(String propertyName, Object propertyValue)
+        {
+            /* NYI */
+        }
 
         public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector)
         {
@@ -1975,6 +2092,7 @@ public class DavController extends SpringActionController
     {
         BufferedWriter out;
         JSONWriter json;
+        Map<String, Object> extraProps;
 
         JSONResourceWriter(Writer writer)
         {
@@ -1982,17 +2100,32 @@ public class DavController extends SpringActionController
                 out = (BufferedWriter)writer;
             out = new BufferedWriter(writer);
             json = new JSONWriter(writer);
+            extraProps = new HashMap<String, Object>();
         }
 
         public void beginResponse(WebdavResponse response) throws Exception
         {
-            response.setContentType("text/plain; charset=UTF-8");
+            response.setContentType("application/json; charset=UTF-8");
+            json.object();
+            json.key("files");
             json.array();
         }
 
         public void endResponse() throws Exception
         {
             json.endArray();
+
+            for (Map.Entry<String, Object> entry : extraProps.entrySet())
+            {
+                json.key(entry.getKey()).value(entry.getValue());
+            }
+
+            json.endObject();
+        }
+
+        public void writeProperty(String propertyName, Object propertyValue)
+        {
+            extraProps.put(propertyName, propertyValue);
         }
 
         public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector) throws Exception
@@ -2002,10 +2135,14 @@ public class DavController extends SpringActionController
             String displayName = resource.getPath().equals("/") ? "/" : resource.getName();
             json.key("href").value(resource.getHref(getViewContext()));
             json.key("text").value(displayName);
+            json.key("iconHref").value(resource.getIconHref());
 
             long created = resource.getCreated();
             if (Long.MIN_VALUE != created)
                 json.key("creationdate").value(new Date(created));
+            User createdby = resource.getCreatedBy();
+            if (null != createdby)
+                json.key("createdby").value(h(UserManager.getDisplayName(createdby.getUserId(), getUser())));
             if (resource.isFile())
             {
                 json.key("lastmodified").value(new Date(resource.getLastModified()));

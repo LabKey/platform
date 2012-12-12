@@ -59,7 +59,7 @@
 
         var _resize = function(w,h) {
             LABKEY.Utils.resizeToViewport(dataViewsPanel, w, -1, null, null, 15); // don't fit to height
-        }
+        };
 
         Ext4.EventManager.onWindowResize(_resize);
     }

@@ -1287,6 +1287,11 @@ filecontent/src/org/labkey/filecontent/view/fileNotifySettings.jsp -text
 filecontent/src/org/labkey/filecontent/view/files.jsp -text
 filecontent/src/org/labkey/filecontent/view/iframe.jsp -text
 filecontent/webapp/ActionsAdmin.js -text
+filecontent/webapp/File.lib.xml -text
+filecontent/webapp/File/data/webdav/Proxy.js -text
+filecontent/webapp/File/data/webdav/Response.js -text
+filecontent/webapp/File/data/webdav/URI.js -text
+filecontent/webapp/File/panel/Browser.js -text
 filecontent/webapp/FileContent.js -text
 filecontent/webapp/FileContentEx.js -text
 filecontent/webapp/FileProperties.js -text

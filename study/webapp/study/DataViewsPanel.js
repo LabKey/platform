@@ -538,9 +538,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         _columns.push({
             id       : 'edit-column-' + this.webpartId,
-            text     : '',
+            text     : '&nbsp;',
             width    : 40,
             sortable : false,
+            menuDisabled : true,
             renderer : function(view, meta, rec, idx, colIdx, store) {
                 if (!this._inCustomMode())
                     meta.style = 'display: none;';  // what a nightmare

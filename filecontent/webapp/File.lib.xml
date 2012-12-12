@@ -1,0 +1,13 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="File/data/webdav/Proxy.js"/>
+        <script path="File/data/webdav/URI.js"/>
+        <script path="File/data/webdav/Response.js"/>
+        <script path="File/panel/Browser.js"/>
+        <!--<script path="File/panel/Upload.js"/>-->
+        <script path="_images/icons.css"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4"/>
+    </dependencies>
+</libraries>

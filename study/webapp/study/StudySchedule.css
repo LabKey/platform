@@ -42,17 +42,3 @@
 .checked {
     background: url("../_images/milestone_yes.png") center no-repeat;
 }
-
-.edit-views-link
-{
-    background: url("../_images/pencil2.png") left top no-repeat;
-    position: absolute;
-    height: 18px;
-    width: 23px;
-}
-
-.edit-views-link:hover
-{
-    background: url("../_images/pencil2.png") center top no-repeat !important;
-    cursor: pointer;
-}
