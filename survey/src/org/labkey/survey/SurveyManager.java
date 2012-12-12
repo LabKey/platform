@@ -19,15 +19,24 @@ package org.labkey.survey;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
+import org.labkey.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -81,5 +90,36 @@ public class SurveyManager
             }
         }
         return new JSONObject(survey);
+    }
+
+    public SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign survey)
+    {
+        DbScope scope = SurveySchema.getInstance().getSchema().getScope();
+
+        try {
+            scope.ensureTransaction();
+
+            SurveyDesign ret;
+            if (survey.isNew())
+                ret = Table.insert(user, SurveySchema.getInstance().getSurveyDesignsTable(), survey);
+            else
+                ret = Table.update(user, SurveySchema.getInstance().getSurveyDesignsTable(), survey, survey.getRowId());
+
+            scope.commitTransaction();
+            return ret;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+    }
+
+    public SurveyDesign getSurvey(Container container, User user, int surveyId)
+    {
+        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter("rowId", surveyId), null).getObject(SurveyDesign.class);
     }
 }

@@ -3,10 +3,14 @@ package org.labkey.survey.query;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ViewContext;
 import org.labkey.survey.SurveySchema;
+import org.springframework.validation.BindException;
 
 import java.util.Set;
 
@@ -42,5 +46,14 @@ public class SurveyQuerySchema extends UserSchema
             return new SurveysTable(SurveySchema.getInstance().getSchema().getTable(SURVEYS_TABLE_NAME), getContainer());
 
         return null;
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    {
+        if (SURVEY_DESIGN_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
+            return new SurveyDesignQueryView(this, settings, errors);
+
+        return super.createView(context, settings, errors);
     }
 }

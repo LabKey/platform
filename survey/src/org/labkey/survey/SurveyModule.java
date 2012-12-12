@@ -147,16 +147,9 @@ public class SurveyModule extends DefaultModule
             BindException errors = new NullSafeBindException(this, "form");
             UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SurveyQuerySchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, SurveyQuerySchema.SURVEY_DESIGN_TABLE_NAME);
-            settings.setAllowChooseQuery(false);
+            settings.setReturnUrl(context.getActionURL().clone());
 
             QueryView queryView = schema.createView(context, settings, errors);
-            queryView.setShowDeleteButton(true);
-            queryView.setShowInsertNewButton(true);
-            queryView.setShowUpdateColumn(true);
-            queryView.setShowExportButtons(false);
-            queryView.setShowReports(false);
-            queryView.setShowRecordSelectors(true);
-
             view.addView(queryView);
 
             return view;
