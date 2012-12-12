@@ -591,7 +591,15 @@ public class JSONObject extends HashMap<String, Object>
         if (n == null) {
             throw new JSONException("Null pointer");
         }
-        testValidity(n);
+
+        try
+        {
+            testValidity(n);
+        }
+        catch (JSONNaNException e)
+        {
+            n = null;
+        }
 
         //check for infinity and return our special constant that parses as infinity
         //in all our various client languages
@@ -919,7 +927,12 @@ public class JSONObject extends HashMap<String, Object>
             throw new JSONException("Null key.");
         }
         if (value != null) {
-            testValidity(value);
+            try{
+                testValidity(value);
+            } catch (JSONNaNException e){
+                // If the value is NaN we want to convert it to null.
+                value = null;
+            }
         }
         super.put(key, value);
 
@@ -1010,21 +1023,19 @@ public class JSONObject extends HashMap<String, Object>
     }
 
     /**
-     * Throw an exception if the object is an NaN or infinite number.
+     * Throw an exception if the object is an NaN.
      * @param o The object to test.
-     * @throws JSONException If o is a non-finite number.
+     * @throws JSONNaNException If o is NaN.
      */
-    static void testValidity(Object o) throws JSONException {
+    static void testValidity(Object o) throws JSONNaNException {
         if (o != null) {
             if (o instanceof Double) {
                 if (((Double)o).isNaN()) {
-                    throw new JSONException(
-                        "JSON does not allow NaN values.");
+                    throw new JSONNaNException();
                 }
             } else if (o instanceof Float) {
                 if (((Float)o).isNaN()) {
-                    throw new JSONException(
-                        "JSON does not allow NaN values.");
+                    throw new JSONNaNException();
                 }
             }
         }

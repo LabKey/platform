@@ -52,7 +52,7 @@
                         if (null != navTree.getText() && navTree.getText().length() > 0)
                         {
                 %>
-                        <li class="<%=text(navTree.isSelected() ? "labkey-app-bar-tab-active" : "labkey-app-bar-tab-inactive")%>">
+                        <li class="<%=text(navTree.isSelected() ? "labkey-app-bar-tab-active" : "labkey-app-bar-tab-inactive") + (navTree.getChildCount() > 0 ? "" : " labkey-no-tab-menu")%>">
                             <a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a>
                             <%
                                 if(navTree.getChildCount() > 0)
@@ -76,7 +76,7 @@
                 <%
                         }
                     }
-                    if(context.getUser().isAdministrator())
+                    if(context.getUser().isAdministrator() && context.getContainer().getFolderType() != org.labkey.api.module.FolderType.NONE)
                     {
                 %>
                     <li class="labkey-app-bar-add-tab" id="addTab">

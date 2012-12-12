@@ -11,6 +11,10 @@ if(!LABKEY){
 }
 
 if(!LABKEY.vis){
+    /**
+     * @namespace The namespace for the internal LabKey visualization library. Contains classes within
+     * {@link LABKEY.vis.Plot}, {@link LABKEY.vis.Layer}, and {@link LABKEY.vis.Geom}.
+     */
 	LABKEY.vis = {};
 }
 

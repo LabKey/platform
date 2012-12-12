@@ -34,8 +34,8 @@
     <td align="left">
 		<form action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
 		<table><tr><td>
-		<input type="hidden" name="pageId" value="<%=bean.pageId%>"/>
-		<input type="hidden" name="location" value="<%=bean.location%>"/>
+		<input type="hidden" name="pageId" value="<%=h(bean.pageId)%>"/>
+		<input type="hidden" name="location" value="<%=h(bean.location)%>"/>
         <%=generateReturnUrlFormField(currentURL)%>
         <select name="name">
             <option value="">&lt;Select Web Part&gt;</option>
@@ -54,7 +54,7 @@
     <td align="right">
         <form action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
         <table><tr><td>
-        <input type="hidden" name="pageId" value="<%=bean.pageId%>"/>
+        <input type="hidden" name="pageId" value="<%=h(bean.pageId)%>"/>
         <input type="hidden" name="location" value="right"/>
         <%=generateReturnUrlFormField(currentURL)%>
         <select name="name">

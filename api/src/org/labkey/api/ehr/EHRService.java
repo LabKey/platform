@@ -16,6 +16,7 @@
 package org.labkey.api.ehr;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
 
@@ -50,4 +51,12 @@ abstract public class EHRService
     abstract public void registerTriggerScript(Module owner, Resource script);
 
     abstract public List<Resource> getExtraTriggerScripts(Container c);
+
+    abstract public void registerTableCustomizer(TableCustomizer customizer);
+
+    abstract public void registerTableCustomizer(TableCustomizer customizer, String schema);
+
+    abstract public void registerTableCustomizer(TableCustomizer customizer, String schema, String query);
+
+    abstract public List<TableCustomizer> getCustomizers(String schema, String query);
 }

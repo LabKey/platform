@@ -4,12 +4,18 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/********** Geoms **********/
-
 if(!LABKEY.vis.Geom){
+    /**
+     * @namespace The Geom namespace. Used for all geoms, such as {@link LABKEY.vis.Geom.Point},
+     * {@link LABKEY.vis.Geom.Path}, etc.
+     */
 	LABKEY.vis.Geom = {};
 }
 
+/**
+ * @class The base XY geom. Extended by all geoms that will be plotted on a grid using a Cartesian [X,Y] coordinate system.
+ *      This is a base class meant to be used internally only.
+ */
 LABKEY.vis.Geom.XY = function(){
     this.type = "XY";
     return this;
@@ -47,7 +53,7 @@ LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentA
 
 LABKEY.vis.Geom.XY.prototype.getVal = function(scale, map, row){
     // Takes a row, returns the scaled y value.
-    var value= map.getValue(row);
+    var value = map.getValue(row);
 
     if(!LABKEY.vis.isValid(value)){
         if(this.plotNullPoints){
@@ -70,6 +76,23 @@ LABKEY.vis.Geom.XY.prototype.getY = function(scale, row){
     return this.getVal(scale, this.yMap, row);
 };
 
+/**
+ * @class The Point geom, used to generate points of data on a plot such as points on a line or points in a scatter plot.
+ *      This geom supports the use of size, color, shape, hoverText, and pointClickFn aesthetics from the
+ *      {@link LABKEY.vis.Layer} and/or {@link LABKEY.vis.Plot} objects.
+ * @param {Object} config An object with the following properties:
+ * @param {String} [config.color] Optional. String used to determine the color of all points. Defaults to black (#000000).
+ * @param {Number} [config.size] Optional. Number used to determine the size of all points.  Defaults to 5.
+ * @param {Number} [config.opacity] Optional. Number between 0 and 1, used to determine the opacity of all points. Useful if
+ *      there are overlapping points in the data. Defaults to 1.
+ * @param {Boolean} [config.plotNullPoints] Optional. Used to toggle whether or not a row of data with the value of null will be
+ *      plotted. If true null or undefined values will be plotted just outside the axis with data. For example if a
+ *      row of data looks like {x: 50, y: null} the point would appear at 50 on the x-axis, and just below the x axis.
+ *      If both x and y values are null the point will be drawn to the bottom left of the origin. Defaults to false.
+ * @param {String} [config.position] Optional. String with possible value "jitter". If config.position is "jitter" and the
+ *      x or y scale is discrete it will be moved just before or after the position on the grid by a random amount.
+ *      Useful if there is overlapping data. Defaults to undefined.
+ */
 LABKEY.vis.Geom.Point = function(config){
     this.type = "Point";
 
@@ -156,6 +179,18 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
     return true;
 };
 
+/**
+ * @class The path geom, used to draw paths in a plot. In order to get multiple lines for a set of data the user must define an
+ * accessor with the name "group" in the config.aes object of the {LABKEY.vis.Plot} or {LABKEY.vis.Layer} object. For
+ * example if the data looked like {x: 12, y: 35, name: "Alan"} the config.aes.group accessor could be "Alan", or a
+ * function: function(row){return row.name}. Each unique name would get a separate line. The geom also supports color
+ * and size aesthetics from the {LABKEY.vis.Plot} and/or {LABKEY.vis.Layer} objects.
+ * @param {Object} config An object with the following properties:
+ * @param {String} [config.color] Optional. String used to determine the color of all paths. Defaults to black (#000000).
+ * @param {Number} [config.size] Optional. Number used to determine the size of all paths.  Defaults to 3.
+ * @param {Number} [config.opacity]. Optional. Number between 0 and 1, used to determine the opacity of all paths. Useful
+ *      if there are many overlapping paths. Defaults to 1.
+ */
 LABKEY.vis.Geom.Path = function(config){
     this.type = "Path";
     
@@ -216,6 +251,15 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
     return true;
 };
 
+/**
+ * @class Error bar geom. Generally used in conjunction with a {@link LABKEY.vis.Geom.Point} and/or {@link LABKEY.vis.Geom.Path}
+ * geom to show the known amount of error for a given point. In order to work the user must specify an error accessor
+ * in the config.aes object of the {LABKEY.vis.Plot} or {LABKEY.vis.Layer} object. This Geom also supports the color
+ * aesthetic from the {LABKEY.vis.Plot} and/or {LABKEY.vis.Layer} objects.
+ * @param config An object with the following properties:
+ * @param {String} [config.color] Optional. String used to determine the color of all paths. Defaults to black (#000000).
+ * @param {Number} [config.size] Optional. Number used to determine the size of all paths.  Defaults to 2.
+ */
 LABKEY.vis.Geom.ErrorBar = function(config){
     this.type = "ErrorBar";
 
@@ -261,6 +305,43 @@ LABKEY.vis.Geom.ErrorBar.prototype.render = function(paper, grid, scales, data, 
     return true;
 };
 
+
+/**
+ * @class The Boxplot Geom, used to generate box plots for a given set of data. In order to get multiple box plots for a set of
+ * data with a continuous x-axis scale, the user must define an accessor with the name "group" in the config.aes object
+ * of the {LABKEY.vis.Plot} or {LABKEY.vis.Layer} object. For example if the data looked like {x: 12, y: 35, name: "Alan"}
+ * the config.aes.group accessor could be "Alan", or a function: function(row){return row.name}. Each unique name would
+ * get a separate box plot. If aes.group is not present one boxplot will be generated for all of the data. This geom
+ * also supports the outlierColor, outlierShape, hoverText, outlierHoverText, and pointClickFn aesthetics from the
+ * {LABKEY.vis.Plot} and/or {LABKEY.vis.Layer} objects.
+ *
+ * Boxplots are drawn as follows:
+ * <ul>
+ *      <li>The top line of the box is the first quartile (Q1)</li>
+ *      <li>The middle like is the second quartile (Q2, aka median)</li>
+ *      <li>The bottom line is the third quartile (Q3)</li>
+ *      <li>The whiskers extend to 3/2 times the inner quartile range (Q3 - Q1, aka IQR)</li>
+ *      <li>All data points that are greater than 3/2 times the IQR are drawn as outliers</li>
+ * </ul>
+ *
+ * @param {Object} config An object with the following properties:
+ * @param {String} [config.color] Optional. A string value used for the line colors in the box plot. Defaults to black
+ *      (#000000)
+ * @param {String} [config.fill] Optional. A string value used for the fill color in the box plot. Defaults to white
+ *      (#ffffff)
+ * @param {Number} [config.lineWidth] Optional. A used to set the width of the lines used in the box plot. Defaults to 1.
+ * @param {Number} [config.opacity] Optional. A number between 0 and 1 used to set the opacity of the box plot. Defaults
+ *      to 1.
+ * @param {String} [config.position] Optional. A string used to determine how to position the outliers. Currently the
+ *      only possible value is "jitter", which will move the points to the left or right of the center of the box plot by
+ *      a random amount. Defaults to undefined.
+ * @param {Boolean} [config.showOutliers] Optional. Used to toggle whether or not outliers are rendered. Defaults to true.
+ * @param {String} [config.outlierFill] Optional. A string value used to set the fill color of the outliers. Defaults
+ *      to black (#000000).
+ * @param {Number} [config.outlierOpacity] Optional. A number between 0 and 1 used to set the opacity of the outliers.
+ *      Defaults to 1.
+ * @param {Number} [config.outlierSize] Optional. A used to set the size of outliers. Defaults to 3.
+ */
 LABKEY.vis.Geom.Boxplot = function(config){
     this.type = "Boxplot";
 

@@ -43,12 +43,6 @@ public interface AssayImportMethod
     abstract public String getLabel();
 
     /**
-     * An array of new fields to add to the form.  Each item must be an object with the properties, 'name', 'label' and 'domain'.
-     * @return
-     */
-    abstract public List<String> getAdditionalFields();
-
-    /**
      * If true, no link to download an excel template will appear on the result upload page.  Defaults to false
      * @return
      */
@@ -108,5 +102,9 @@ public interface AssayImportMethod
      */
     abstract public boolean supportsRunTemplates();
 
+    abstract public String getProviderName();
+
     abstract public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response, boolean exportAsWebpage) throws BatchValidationException;
+
+    abstract public List<String> getImportColumns(ViewContext ctx, ExpProtocol protocol);
 }

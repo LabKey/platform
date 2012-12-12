@@ -547,7 +547,6 @@ LABKEY.requiresVisualization = function ()
         LABKEY.requiresScript('vis/src/utils.js');
         LABKEY.requiresScript('vis/src/geom.js');
         LABKEY.requiresScript('vis/src/stat.js');
-        LABKEY.requiresScript('vis/src/position.js');
         LABKEY.requiresScript('vis/src/scale.js');
         LABKEY.requiresScript('vis/src/layer.js');
         LABKEY.requiresScript('vis/src/plot.js');

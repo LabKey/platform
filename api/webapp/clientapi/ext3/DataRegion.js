@@ -2647,11 +2647,15 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             },
             buttons: [
                 {text: 'OK', handler: this.okHandler, scope: this},
-                {text: 'CANCEL', handler: this.cancelHandler, scope: this},
-                {text: 'CLEAR FILTER', handler: this.clearFilter, scope: this},
-                {text: 'CLEAR ALL FILTERS', handler: this.clearAllFilters, scope: this}
+                {text: 'CANCEL', handler: this.cancelHandler, scope: this}
             ]
         });
+
+        // 16684: Without a dataregion clearing filters doesn't make sense
+        if (this.getDataRegion()) {
+            this.buttons.push({text: 'CLEAR FILTER', handler: this.clearFilter, scope: this});
+            this.buttons.push({text: 'CLEAR ALL FILTERS', handler: this.clearAllFilters, scope: this});
+        }
 
         this.items = [this.getTabPanel()];
 
@@ -3071,7 +3075,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             Ext.each(filterArray, function(filter){
                 var allowable = [];
                 this.getLookupStore().each(function(rec){
-                    allowable.push(rec.get('value'))
+                    allowable.push(rec.get('value'));
                 });
                 filterDef = LABKEY.Filter.getFilterTypeForURLSuffix(filter.operator);
                 optimized = this.optimizeFilter(filterDef, filter.value, allowable);

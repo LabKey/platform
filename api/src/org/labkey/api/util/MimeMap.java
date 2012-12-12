@@ -171,11 +171,13 @@ public class MimeMap implements FileNameMap
         }
     }
 
+
     public boolean isInlineImage(String extn)
     {
         MimeType type = getMimeType(extn);
         return type != null && type.isInlineImage();
     }
+
 
     public boolean isInlineImageFor(String fileName)
     {
@@ -183,6 +185,33 @@ public class MimeMap implements FileNameMap
         if (extn != null)
         {
             return isInlineImage(extn);
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+
+    public boolean isOfficeDocument(String extn)
+    {
+        MimeType mimeType = getMimeType(extn);
+        if (null == mimeType)
+            return false;
+        String contentType = mimeType.getContentType();
+        if (!contentType.startsWith("application/"))
+            return false;
+        String subType = contentType.substring("application/".length());
+        return (subType.startsWith("vnd.openxmlformats-officedocument") || subType.startsWith("vnd.ms") || subType.startsWith("ms") || subType.equals("x-excel"));
+    }
+
+
+    public boolean isOfficeDocumentFor(String fileName)
+    {
+        String extn = getExtension(fileName);
+        if (extn != null)
+        {
+            return isOfficeDocument(extn);
         }
         else
         {

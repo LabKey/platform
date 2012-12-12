@@ -1,9 +1,240 @@
-/*
- * Copyright (c) 2012 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+/**
+ * @fileOverview
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
+ * @license Copyright (c) 2010-2012 LabKey Corporation
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * <p/>
  */
 
+
+/**
+ * @name LABKEY.vis.Plot
+ * @class Plot which allows a user to programmatically create a plot/visualization.
+ * @description
+ * @param {Object} config An object that contains the following properties.
+ * @param {String} config.renderTo The id of the div/span to insert the svg element into.
+ * @param {Number} config.width The plot width in pixels. This is the width of the entire plot, including margins, the
+ *      legend, and labels.
+ * @param {Number} config.height The plot height in pixels. This is the height of the entire plot, including margins and
+ *      labels.
+ * @param {Array} [config.data] Optional. The array of data used while rendering the plot. This array will be used in
+ *      layers that do not have any data specified. <em>Note:</em> While config.data is optional, if it is not present
+ *      in the Plot object it must be defined within each {@link LABKEY.vis.Layer}. Data must be array based, with each
+ *      row of data being an item in the array. The format of each row does not matter, you define how the data is
+ *      accessed within the <strong>config.aes</strong> object.
+ * @param {Object} [config.aes] Optional. An object containing all of the requested aesthetic mappings. Like
+ *      <em>config.data</em>, config.aes is optional at the plot level because it can be defined at the layer level as
+ *      well, however, if config.aes is not present at the plot level it must be defined within each
+ *      {@link LABKEY.vis.Layer}}. The aesthetic mappings required depend entirely on the {@link LABKEY.vis.Geom}s being
+ *      used in the plot. The only maps required are <strong><em>config.aes.x</em></strong> and
+ *      <em><strong>config.aes.y</strong> (or alternatively yLeft or yRight)</em>. To find out the available aesthetic
+ *      mappings for your plot, please see the documentation for each Geom you are using.
+ * @param {Array} config.layers An array of {@link LABKEY.vis.Layer} objects.
+ * @param {Object} [config.scales] Optional. An object that describes the scales needed for each axis or dimension. If
+ *      not defined by the user we do our best to create a default scale determined by the data given, however in some
+ *      cases we will not be able to construct a scale, and we will display or throw an error. The possible scales are
+ *      <strong>x</strong>, <strong>y (or yLeft)</strong>, <strong>yRight</strong>, <strong>color</strong>,
+ *      <strong>shape</strong>, and <strong>size</strong>. Each scale object will have the following properties:
+ *      <ul>
+ *          <li><strong>scaleType:</strong> possible values "continuous" or "discrete".</li>
+ *          <li><strong>trans:</strong> with values "linear" or "log". Controls the transformation of the data on
+ *          the grid.</li>
+ *          <li><strong>min:</strong> the minimum expected input value. Used to control what is visible on the grid.</li>
+ *          <li><strong>max:</strong>the maximum expected input value. Used to control what is visible on the grid.</li>
+ *      </ul>
+ * @param {Object} [config.labels] Optional. An object with the following properties: main, x, y (or yLeft), yRight.
+ *      Each property can have a {String} value, {Boolean} lookClickable, and {Object} listeners. The value is the text
+ *      that will appear on the label. lookClickable toggles if the label will appear clickable. The listeners property
+ *      allows the user to specify listeners on the labels such as click, hover, etc, as well as the functions to
+ *      execute when the events occur. Each label will be an object that has the following properties:
+ *      <ul>
+ *          <li>
+ *              <strong>value:</strong> The string value of the label (i.e. "Weight Over Time").
+ *          </li>
+ *          <li>
+ *              <strong>lookClickable:</strong> If true it styles the label so that it appears to be clickable. Defaults
+ *              to false.
+ *          </li>
+ *          <li>
+ *              <strong>listeners:</strong> An object with properties for each listener the user wants attached
+ *              to the label. The value of each property is the function to be called when the event occurs. The
+ *              available listeners are: click, dblclick, hover, mousedown, mouseup, mousemove, mouseout, mouseover,
+ *              touchcancel, touchend, touchmove, and touchstart.
+ *          </li>
+ *      </ul>
+ * @param {Object} [config.margins] Optional. Margin sizes in pixels. It can be useful to set the margins if the tick
+ *      marks on an axis are overlapping with your axis labels. Defaults to top: 75px, right: 75px, bottom: 50px, and
+ *      left: 75px. The right side my have a margin of 150px if a legend is needed.
+ *      The object may contain any of the following properties:
+ *      <ul>
+ *          <li><strong>top:</strong> Size of top margin in pixels.</li>
+ *          <li><strong>bottom:</strong> Size of bottom margin in pixels.</li>
+ *          <li><strong>left:</strong> Size of left margin in pixels.</li>
+ *          <li><strong>right:</strong> Size of right margin in pixels.</li>
+ *      </ul>
+ * @param {String} [config.legendPos] Optional. Used to specify where the legend will render. Currently only supports
+ *      "none" to disable the rendering of the legend. There are future plans to support "left" and "right" as well.
+ *      Defaults to "right".
+ * @param {String} [config.bgColor] Optional. The string representation of the background color. Defaults to white.
+ * @param {String} [config.gridColor] Optional. The string representation of the grid color. Defaults to white.
+ * @param {String} [config.gridLineColor] Optional. The string representation of the line colors used as part of the grid.
+ *      Defaults to grey (#dddddd).
+ * @param {Boolean} [config.clipRect] Optional. Used to toggle the use of a clipRect, which prevents values that appear
+ *      outside of the specified grid area from being visible. Use of clipRect can negatively affect performance, do not
+ *      use if there is a large amount of elements on the grid. Defaults to false.
+ * @param {Boolean} [config.throwErrors] Optional. Used to toggle between the plot throwing errors or displaying errors.
+ *      If true the plot will throw an error instead of displaying an error when necessary and possible. Defaults to
+ *      false.
+ *
+ *
+  @example
+ In this example we will create a simple scatter plot.
+ 
+ &lt;div id='plot'&gt;
+ &lt;/div id='plot'&gt;
+ &lt;script type="text/javascript"&gt;
+var scatterData = [];
+
+// Here we're creating some fake data to create a plot with.
+for(var i = 0; i < 1000; i++){
+    var point = {
+        x: {value: parseInt((Math.random()*(150)))},
+        y: Math.random() * 1500
+    };
+    scatterData.push(point);
+}
+
+// Create a new layer object.
+var pointLayer = new LABKEY.vis.Layer({
+	geom: new LABKEY.vis.Geom.Point()
+});
+
+
+// Create a new plot object.
+var scatterPlot = new LABKEY.vis.Plot({
+	renderTo: 'plot',
+	width: 900,
+	height: 700,
+	data: scatterData,
+	layers: [pointLayer],
+	aes: {
+		// Aesthetic mappings can be functions or strings.
+		x: function(row){return row.x.value},
+		y: 'y'
+	}
+});
+
+scatterPlot.render();
+ &lt;/script&gt;
+ 
+ @example
+ In this example we create a simple box plot.
+
+ &lt;div id='plot'&gt;
+ &lt;/div id='plot'&gt;
+ &lt;script type="text/javascript"&gt;
+    // First let's create some data.
+
+var boxPlotData = [];
+
+for(var i = 0; i < 6; i++){
+    var group = "Group "+(i+1);
+    for(var j = 0; j < 25; j++){
+        boxPlotData.push({
+            group: group,
+            //Compute a random age between 25 and 55
+            age: parseInt(25+(Math.random()*(55-25))),
+            gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
+        });
+    }
+    for(j = 0; j < 3; j++){
+        boxPlotData.push({
+            group: group,
+            //Compute a random age between 75 and 95
+            age: parseInt(75+(Math.random()*(95-75))),
+            gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
+        });
+    }
+    for(j = 0; j < 3; j++){
+        boxPlotData.push({
+            group: group,
+            //Compute a random age between 1 and 16
+            age: parseInt(1+(Math.random()*(16-1))),
+            gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
+        });
+    }
+}
+
+
+// Now we create the Layer.
+var boxLayer = new LABKEY.vis.Layer({
+    geom: new LABKEY.vis.Geom.Boxplot({
+    	// Customize the Boxplot Geom to fit our needs.
+		position: 'jitter',
+		outlierOpacity: '1',
+		outlierFill: 'red',
+		showOutliers: true,
+		opacity: '.5',
+		outlierColor: 'red'
+    }),
+    aes: {
+        hoverText: function(x, stats){
+            return x + ':\nMin: ' + stats.min + '\nMax: ' + stats.max + '\nQ1: ' +
+                stats.Q1 + '\nQ2: ' + stats.Q2 + '\nQ3: ' + stats.Q3;
+        },
+        outlierHoverText: function(row){
+            return "Group: " + row.group + ", Age: " + row.age;
+        },
+        outlierShape: function(row){return row.gender;}
+    }
+});
+
+
+// Create a new Plot object.
+var boxPlot = new LABKEY.vis.Plot({
+    renderTo: 'plot',
+    width: 900,
+    height: 300,
+    labels: {
+        main: {value: 'Example Box Plot'},
+        yLeft: {value: 'Age'},
+        x: {value: 'Groups of People'}
+    },
+    data: boxPlotData,
+    layers: [boxLayer],
+    aes: {
+        yLeft: 'age',
+        x: 'group'
+    },
+    scales: {
+        x: {
+            scaleType: 'discrete'
+        },
+        yLeft: {
+            scaleType: 'continuous',
+            trans: 'linear'
+        }
+    },
+    margins: {
+        bottom: 75
+    }
+});
+
+boxPlot.render();
+ &lt;/script&gt;
+
+ */
 LABKEY.vis.Plot = function(config){
 
     var error = function(msg){
@@ -80,16 +311,16 @@ LABKEY.vis.Plot = function(config){
     };
 
     var labelElements = {}; // These are all of the Raphael elements for the labels.
-    var gridSet = null;
+    var gridSet = null; // The Raphael set used internally.
 	this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
 	this.grid = {
 		width: config.width ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
 		height: config.height ? config.height: null // widht of the grid.
 	};
-	this.originalScales = config.scales ? config.scales : {};
-    this.scales = copyUserScales(this.originalScales);
-	this.originalAes = config.aes ? config.aes : null;
-    this.aes = LABKEY.vis.convertAes(this.originalAes);
+	this.originalScales = config.scales ? config.scales : {}; // The scales specified by the user.
+    this.scales = copyUserScales(this.originalScales); // The scales used internally.
+	this.originalAes = config.aes ? config.aes : null; // The original aesthetic specified by the user.
+    this.aes = LABKEY.vis.convertAes(this.originalAes); // The aesthetic object used internally.
     this.labels = config.labels ? config.labels : {};
 	this.data = config.data ? config.data : null; // An array of rows, required. Each row could have several pieces of data. (e.g. {subjectId: '249534596', hemoglobin: '350', CD4:'1400', day:'120'})
 	this.layers = config.layers ? config.layers : []; // An array of layers, required. (e.g. a layer for a CD4 line chart over time, and a layer for a Hemoglobin line chart over time).
@@ -571,6 +802,9 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
+    /**
+     * Renders the plot.
+     */
 	this.render = function(){
 
         if(!this.paper){
@@ -728,6 +962,11 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
+    /**
+     * Sets the value of the main label and optionally makes it look clickable.
+     * @param {String} value The string value to set the label to.
+     * @param {Boolean} lookClickable If true it styles the label to look clickable.
+     */
     this.setMainLabel = function(value, lookClickable){
         if(this.paper){
             setLabel.call(this, 'main', this.grid.width / 2, 30, value, lookClickable, true);
@@ -736,6 +975,11 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
+    /**
+     * Sets the value of the x-axis label and optionally makes it look clickable.
+     * @param {String} value The string value to set the label to.
+     * @param {Boolean} lookClickable If true it styles the label to look clickable.
+     */
     this.setXLabel = function(value, lookClickable){
         if(this.paper){
            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, lookClickable, true);
@@ -744,6 +988,11 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
+    /**
+     * Sets the value of the right y-axis label and optionally makes it look clickable.
+     * @param {String} value The string value to set the label to.
+     * @param {Boolean} lookClickable If true it styles the label to look clickable.
+     */
     this.setYRightLabel = function(value, lookClickable){
         if(this.paper){
             setLabel.call(this, 'yRight', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, true);
@@ -751,7 +1000,12 @@ LABKEY.vis.Plot = function(config){
             setLabel.call(this, 'yRight', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, false);
         }
     };
-    
+
+    /**
+     * Sets the value of the left y-axis label and optionally makes it look clickable.
+     * @param {String} value The string value to set the label to.
+     * @param {Boolean} lookClickable If true it styles the label to look clickable.
+     */
     this.setYLeftLabel = this.setYLabel = function(value, lookClickable){
         if(this.paper){
             setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, lookClickable, true);
@@ -760,6 +1014,12 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
+    /**
+     * Adds a listener to a label.
+     * @param {String} label string value of label to add a listener to. Valid values are y, yLeft, yRight, x, and main.
+     * @param {String} listener the name of the listener to listen on.
+     * @param {Function} fn The callback to b called when the event is fired.
+     */
     this.addLabelListener = function(label, listener, fn){
         var availableListeners = {
             click: 'click', dblclick:'dblclick', drag: 'drag', hover: 'hover', mousedown: 'mousedown',
@@ -807,6 +1067,11 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
+    /**
+     * Sets the width of the plot and re-renders if requested.
+     * @param {Number} h The height in pixels.
+     * @param {Boolean} render Toggles if plot will be re-rendered or not.
+     */
     this.setHeight = function(h, render){
         if(render == null || render == undefined){
             render = true;
@@ -819,6 +1084,11 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
+    /**
+     * Sets the width of the plot and re-renders if requested.
+     * @param {Number} w The width in pixels.
+     * @param {Boolean} render Toggles if plot will be re-rendered or not.
+     */
     this.setWidth = function(w, render){
         if(render == null || render == undefined){
             render = true;
@@ -831,22 +1101,45 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
+    /**
+     * Changes the size of the plot and renders if requested.
+     * @param {Number} w width in pixels.
+     * @param {Number} h height in pixels.
+     * @param {Boolean} render Toggles if the chart will be re-rendered or not. Defaults to false.
+     */
     this.setSize = function(w, h, render){
         this.setWidth(w, false);
         this.setHeight(h, render);
     };
 
+    /**
+     * Adds a new layer to the plot.
+     * @param {@link LABKEY.vis.Layer} layer
+     */
     this.addLayer = function(layer){
 		layer.parent = this; // Set the parent of each layer to the plot so we can grab things like data from it later.
 		this.layers.push(layer);
 	};
 
+    /**
+     * Clears the grid.
+     */
     this.clearGrid = function(){
         if(gridSet){
             gridSet.remove();
         }
     };
 
+    /**
+     * Sets new margins for the plot and re-renders with the margins.
+     * @param {Object} newMargins An object with the following properties:
+     *      <ul>
+     *          <li><strong>top:</strong> Size of top margin in pixels.</li>
+     *          <li><strong>bottom:</strong> Size of bottom margin in pixels.</li>
+     *          <li><strong>left:</strong> Size of left margin in pixels.</li>
+     *          <li><strong>right:</strong> Size of right margin in pixels.</li>
+     *      </ul>
+     */
     this.setMargins = function(newMargins){
         margins = setDefaultMargins(newMargins, this.legendPos, allAes, this.scales);
     };

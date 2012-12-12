@@ -26,6 +26,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -41,6 +43,7 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -80,9 +83,9 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return "Default Excel Import";
     }
 
-    public List<String> getAdditionalFields()
+    public String getProviderName()
     {
-        return Collections.emptyList();
+        return _providerName;
     }
 
     public boolean hideTemplateDownload()
@@ -171,7 +174,6 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         json.put("label", getLabel());
         json.put("supportsTemplates", supportsRunTemplates());
 
-        json.put("additionalFields", getAdditionalFields());
         json.put("hideTemplateDownload", hideTemplateDownload());
         json.put("tooltip", getTooltip());
         json.put("enterResultsInGrid", doEnterResultsInGrid());
@@ -271,5 +273,22 @@ public class DefaultAssayImportMethod implements AssayImportMethod
             Integer[] rowIds = ts.getArray(Integer.class);
             return rowIds[0];
         }
+    }
+
+    public List<String> getImportColumns(ViewContext ctx, ExpProtocol protocol)
+    {
+        List<String> columns = new ArrayList<String>();
+        Domain resultDomain = getAssayProvider().getResultsDomain(protocol);
+        JSONObject json = getMetadata(ctx, protocol).getJSONObject("Results");
+        for (DomainProperty dp : resultDomain.getProperties())
+        {
+            JSONObject meta = json.containsKey(dp.getName()) ? json.getJSONObject(dp.getName()) : null;
+            if (meta != null && meta.containsKey("setGlobally") && meta.getBoolean("setGlobally"))
+                continue;
+            else
+                columns.add(dp.getLabel());
+        }
+
+        return columns;
     }
 }

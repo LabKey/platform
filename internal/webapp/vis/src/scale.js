@@ -7,14 +7,33 @@
 /********** Scales **********/
 
 if(!LABKEY.vis.Scale){
+    /**
+     * @namespace Namespace used for scales in {@link LABKEY.vis.Plot} objects.
+     */
 	LABKEY.vis.Scale = {};
 }
 
+/**
+ * Discrete scale used in plots. Used internally by the {@link LABKEY.vis.Plot} object.
+ * @param {Array} domain Array of discrete/categorical values to be used in the scale.
+ * @param {Array} range an array of length two, with min and m ax values in it. The min and max values are the start and
+ *      end positions, in pixels, of the grid. Ex: [125, 640].
+ */
 LABKEY.vis.Scale.Discrete = function(domain, range){
 	// This is a discrete scale, used for categorical data (e.g. visits).
 	return d3.scale.ordinal().domain(domain).rangeBands(range, 1);
 };
 
+/**
+ * Continuous scale used in plots. Used internally by the {@link LABKEY.vis.Plot} object.
+ * @param {String} trans String with values "linear" or "log".
+ * @param {Array} [data] The array of data used to determine domain if not known.
+ * @param {Function} value The function used to get the value from each object in the array.
+ * @param {Array} [domain] an array of length two, with min and max values in it. The min and max values are from the data
+ *      that is going to be plotted. Ex: [0, 550].
+ * @param {Array} range an array of length two, with min and m ax values in it. The min and max values are the start and
+ *      end positions, in pixels, of the grid. Ex: [125, 640].
+ */
 LABKEY.vis.Scale.Continuous = function(trans, data, value, domain, range){
 	// This is a continuous scale (e.g. dates, numbers).
 	var scale = null;
@@ -73,16 +92,26 @@ LABKEY.vis.Scale.Continuous = function(trans, data, value, domain, range){
 	}
 };
 
+/**
+ * The default color scale used in plots.
+ */
 LABKEY.vis.Scale.ColorDiscrete = function(){
 	// Used for discrete color scales (color assigned to categorical data)
     return d3.scale.ordinal().range([ "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", "#E5C494", "#B3B3B3"]);
 };
 
+/**
+ * An alternate darker color scale. Not currently used.
+ */
 LABKEY.vis.Scale.DarkColorDiscrete = function(){
 	// Used for discrete color scales (color assigned to categorical data)
     return d3.scale.ordinal().range(["#378a70", "#f34704", "#4b67a6", "#d53597", "#72a124", "#c8a300", "#d19641", "#808080"]);
 };
 
+/**
+ * Function that returns a discrete scale used to determine the shape of points in {@link LABKEY.vis.Geom.BoxPlot} and
+ * {@link LABKEY.vis.Geom.Point} geoms.
+ */
 LABKEY.vis.Scale.Shape = function(){
     // Used in pointType geom.
     var circle = function(paper, x, y, r){ return paper.circle(x, y, r)};

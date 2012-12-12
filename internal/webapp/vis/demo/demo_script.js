@@ -279,21 +279,21 @@ for(var i = 0; i < 6; i++){
     for(var j = 0; j < 25; j++){
         boxPlotData.push({
             group: group,
-            age: parseInt(25+(Math.random()*(55-25))), //Compute a random age between 18 and 65
+            age: parseInt(25+(Math.random()*(55-25))), //Compute a random age between 25 and 55
             gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
         });
     }
     for(j = 0; j < 3; j++){
         boxPlotData.push({
             group: group,
-            age: parseInt(75+(Math.random()*(95-75))), //Compute a random age between 18 and 65
+            age: parseInt(75+(Math.random()*(95-75))), //Compute a random age between 75 and 95
             gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
         });
     }
     for(j = 0; j < 3; j++){
         boxPlotData.push({
             group: group,
-            age: parseInt(1+(Math.random()*(16-1))), //Compute a random age between 18 and 65
+            age: parseInt(1+(Math.random()*(16-1))), //Compute a random age between 1 and 16
             gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
         });
     }

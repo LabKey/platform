@@ -194,6 +194,7 @@ public class DefaultAssayParser implements AssayParser
         if (errors.hasErrors())
             throw errors;
     }
+
     protected void appendPromotedResultFields(Map<String, Object> row)
     {
         if (_jsonData != null && _jsonData.has("Results"))
@@ -201,7 +202,8 @@ public class DefaultAssayParser implements AssayParser
             JSONObject resultData = _jsonData.getJSONObject("Results");
             for (String prop : resultData.keySet())
             {
-                row.put(prop, resultData.get(prop));
+                if (row.get(prop) == null)
+                    row.put(prop, resultData.get(prop));
             }
         }
     }
@@ -213,17 +215,16 @@ public class DefaultAssayParser implements AssayParser
      */
     protected String readRawFile(File inputFile) throws BatchValidationException
     {
-        Reader fileReader = null;
+        BufferedReader fileReader = null;
         try
         {
-            fileReader = new FileReader(inputFile);
             StringBuffer sb = new StringBuffer((int)(inputFile.length()));
 
             // replace "n/a" with "0"
-            BufferedReader br = new BufferedReader(fileReader);
+            fileReader = new BufferedReader(new FileReader(inputFile));
             String line;
             Pattern p = Pattern.compile("\\bn/a\\b");
-            while (null != (line = br.readLine()))
+            while (null != (line = fileReader.readLine()))
             {
                 line = p.matcher(line).replaceAll("0");
                 if (!StringUtils.isEmpty(line))
@@ -463,41 +464,40 @@ public class DefaultAssayParser implements AssayParser
         _protocol = protocol;
     }
 
-    protected List<Map<String, Object>> pivotRow(Map<String, Object> map, Set<String> staticFields, Set<String> allowable, String resultFieldName, String pivotFieldName)
-    {
-        Map<String, Object> staticValues = new HashMap<String, Object>();
-        for (String field : staticFields)
-        {
-            staticValues.put(field, map.get(field));
-        }
-
-        Map<String, Object> results = new HashMap<String, Object>();
-        for (String field : allowable)
-        {
-            if (map.get(field) != null)
-            {
-                results.put(field, map.get(field));
-            }
-        }
-
-        List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
-        for (String field : results.keySet())
-        {
-            Map<String, Object> row = new HashMap<String, Object>();
-            row.putAll(staticValues);
-            row.put(pivotFieldName, field);
-            row.put(resultFieldName, results.get(field));
-            newRows.add(row);
-        }
-
-        return newRows;
-    }
+//    protected List<Map<String, Object>> pivotRow(Map<String, Object> map, Set<String> staticFields, Set<String> allowable, String resultFieldName, String pivotFieldName)
+//    {
+//        Map<String, Object> staticValues = new HashMap<String, Object>();
+//        for (String field : staticFields)
+//        {
+//            staticValues.put(field, map.get(field));
+//        }
+//
+//        Map<String, Object> results = new HashMap<String, Object>();
+//        for (String field : allowable)
+//        {
+//            if (map.get(field) != null)
+//            {
+//                results.put(field, map.get(field));
+//            }
+//        }
+//
+//        List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
+//        for (String field : results.keySet())
+//        {
+//            Map<String, Object> row = new HashMap<String, Object>();
+//            row.putAll(staticValues);
+//            row.put(pivotFieldName, field);
+//            row.put(resultFieldName, results.get(field));
+//            newRows.add(row);
+//        }
+//
+//        return newRows;
+//    }
 
     protected Map<String, Map<String, Object>> getTemplateRowMap(JSONObject json, String keyProperty){
         Integer templateId = json.getInt("TemplateId");
         Map<String, Map<String, Object>> ret = new HashMap<String, Map<String, Object>>();
 
-        //TODO: use constants
         TableInfo ti = DbSchema.get("laboratory").getTable("assay_run_templates");
 
         TableSelector ts = new TableSelector(ti, new SimpleFilter(FieldKey.fromString("rowid"), templateId), null);

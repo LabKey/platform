@@ -4,7 +4,6 @@
         <script path="/vis/src/utils.js"/>
         <script path="/vis/src/geom.js"/>
         <script path="/vis/src/stat.js"/>
-        <script path="/vis/src/position.js"/>
         <script path="/vis/src/scale.js"/>
         <script path="/vis/src/layer.js"/>
         <script path="/vis/src/plot.js"/>

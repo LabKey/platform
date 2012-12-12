@@ -6,6 +6,7 @@ api/src/org/json/HTTP.java -text
 api/src/org/json/HTTPTokener.java -text
 api/src/org/json/JSONArray.java -text
 api/src/org/json/JSONException.java -text
+api/src/org/json/JSONNaNException.java -text
 api/src/org/json/JSONObject.java -text
 api/src/org/json/JSONString.java -text
 api/src/org/json/JSONStringer.java -text
@@ -562,6 +563,8 @@ api/src/org/labkey/api/laboratory/assay/AssayNavItem.java -text
 api/src/org/labkey/api/laboratory/assay/AssayParser.java -text
 api/src/org/labkey/api/laboratory/assay/DefaultAssayImportMethod.java -text
 api/src/org/labkey/api/laboratory/assay/DefaultAssayParser.java -text
+api/src/org/labkey/api/laboratory/assay/PivotingAssayParser.java -text
+api/src/org/labkey/api/laboratory/assay/PivotingImportMethod.java -text
 api/src/org/labkey/api/laboratory/assay/SimpleAssayDataProvider.java -text
 api/src/org/labkey/api/ldk/LDKService.java -text
 api/src/org/labkey/api/lists/permissions/DesignListPermission.java -text
@@ -6002,7 +6005,6 @@ internal/webapp/vis/lib/raphael-min-2.1.0.js -text
 internal/webapp/vis/src/geom.js -text
 internal/webapp/vis/src/layer.js -text
 internal/webapp/vis/src/plot.js -text
-internal/webapp/vis/src/position.js -text
 internal/webapp/vis/src/scale.js -text
 internal/webapp/vis/src/stat.js -text
 internal/webapp/vis/src/utils.js -text
