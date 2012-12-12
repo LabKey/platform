@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.RawValueColumn;
@@ -65,7 +66,10 @@ import org.springframework.validation.Errors;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
@@ -1985,6 +1989,37 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+    public ByteArrayAttachmentFile exportToExcelFile() throws Exception
+    {
+        _exportView = true;
+        TableInfo table = getTable();
+        if (table != null)
+        {
+            OutputStream stream = null;
+            try
+            {
+                ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+                stream = new BufferedOutputStream(byteStream);
+                ExcelWriter ew = getExcelWriter(ExcelWriter.ExcelDocumentType.xls);
+                ew.setCaptionType(ExcelWriter.CaptionType.Label);
+                ew.setShowInsertableColumnsOnly(false);
+                ew.write(stream);
+                stream.flush();
+                ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(ew.getFilenamePrefix() + ".xls", byteStream.toByteArray(), "application/vnd.ms-excel");
+
+                logAuditEvent("Exported to Excel file");
+                return byteArrayAttachmentFile;
+            }
+            finally
+            {
+                if (stream != null)
+                    stream.close();
+            }
+        }
+        else
+            return null;
+    }
+
     public void exportToTsv(HttpServletResponse response) throws Exception
     {
         exportToTsv(response, false, TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE);
@@ -2022,6 +2057,25 @@ public class QueryView extends WebPartView<Object>
         tsv.write(response);
     }
 
+    public ByteArrayAttachmentFile exportToTsvFile() throws Exception
+    {
+        _exportView = true;
+        TableInfo table = getTable();
+        if (table != null)
+        {
+            StringBuilder tsvBuilder = new StringBuilder();
+            TSVGridWriter tsvWriter = getTsvWriter();
+            tsvWriter.setDelimiterCharacter(TSVWriter.DELIM.TAB);
+            tsvWriter.setQuoteCharacter(TSVWriter.QUOTE.DOUBLE);
+            tsvWriter.write(tsvBuilder);
+            ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(), "text/tsv");
+
+            logAuditEvent("Exported to TSV file");
+            return byteArrayAttachmentFile;
+        }
+        else
+            return null;
+    }
 
     public void exportToApiResponse(ApiQueryResponse response) throws Exception
     {
