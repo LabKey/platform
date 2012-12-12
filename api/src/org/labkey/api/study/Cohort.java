@@ -22,6 +22,7 @@ package org.labkey.api.study;
  */
 public interface Cohort extends StudyEntity
 {
+    int getRowId();
     boolean isInUse();
     boolean isEnrolled();
     void    setEnrolled(boolean enrolled);

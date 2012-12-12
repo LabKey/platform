@@ -30,28 +30,28 @@ public class NullColumnInfo extends ColumnInfo
     {
         super(name, parent);
         setSqlTypeName(sqlType);
-//        setReadOnly(true);
+        setReadOnly(true);
     }
 
     public NullColumnInfo(TableInfo parent, FieldKey name, JdbcType jdbcType)
     {
         super(name, parent);
         setJdbcType(jdbcType);
-//        setReadOnly(true);
+        setReadOnly(true);
     }
 
     public NullColumnInfo(TableInfo parent, String name, String sqlType)
     {
         super(name, parent);
         setSqlTypeName(sqlType);
-//        setReadOnly(true);
+        setReadOnly(true);
     }
 
     public NullColumnInfo(TableInfo parent, String name, JdbcType jdbcType)
     {
         super(name, parent);
         setJdbcType(jdbcType);
-//        setReadOnly(true);
+        setReadOnly(true);
     }
 
     @Override
