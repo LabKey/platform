@@ -5,7 +5,7 @@
         <script path="File/data/webdav/Response.js"/>
         <script path="File/panel/Browser.js"/>
         <!--<script path="File/panel/Upload.js"/>-->
-        <script path="_images/icons.css"/>
+        <!--<script path="_images/icons.css"/>-->
     </library>
     <dependencies>
         <dependency path="Ext4"/>

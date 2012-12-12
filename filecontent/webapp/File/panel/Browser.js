@@ -1,3 +1,5 @@
+LABKEY.requiresCss("_images/icons.css");
+
 Ext4.define('File.panel.Browser', {
 
     extend : 'Ext.panel.Panel',
