@@ -51,7 +51,6 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.query.DataSetQueryView;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -204,8 +203,7 @@ public class ParticipantGroupManager
 
             // TODO: Move all cohort menu generation into CohortFilterFactory
             // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
-            ActionURL baseURL = CohortFilterFactory.clearURLParameters(context.cloneActionURL(), dataRegionName);
-
+            ActionURL baseURL = CohortFilterFactory.clearURLParameters(study, context.cloneActionURL(), dataRegionName);
             for (ParticipantCategoryImpl cls : classes)
             {
                 ParticipantGroup[] groups = cls.getGroups();
@@ -215,6 +213,7 @@ public class ParticipantGroupManager
                         group.removeURLFilter(baseURL, container, dataRegionName);
                 }
             }
+            baseURL.setReadOnly();
 
             button.addMenuItem("All", baseURL.toString(), null, (selected.isEmpty() && cohortFilter == null));
 
@@ -234,7 +233,7 @@ public class ParticipantGroupManager
                         if (null == filter)
                             break;
 
-                        ActionURL url = filter.addURLParameters(baseURL.clone(), DataSetQueryView.DATAREGION);
+                        ActionURL url = filter.addURLParameters(study, baseURL.clone(), dataRegionName);
 
                         NavTree typeItem = new NavTree(type.getTitle(), url);
                         typeItem.setId("Enrolled:" + typeItem.getText());
@@ -253,7 +252,7 @@ public class ParticipantGroupManager
 
                     if (null != filter)
                     {
-                        ActionURL enrolledURL = filter.addURLParameters(baseURL.clone(), DataSetQueryView.DATAREGION);
+                        ActionURL enrolledURL = filter.addURLParameters(study, baseURL.clone(), dataRegionName);
                         button.addMenuItem("Enrolled", enrolledURL.toString(), null, (selected.isEmpty() && filter.equals(cohortFilter)));
                     }
                 }

@@ -319,7 +319,7 @@ public abstract class BaseStudyController extends SpringActionController
                 ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasetId);
                 if (cohortFilter != null)
-                    cohortFilter.addURLParameters(datasetUrl, "Dataset");
+                    cohortFilter.addURLParameters(study, datasetUrl, "Dataset");
                 if (qcStateSetFormValue != null)
                     datasetUrl.addParameter(SharedFormParameters.QCState, qcStateSetFormValue);
                 root.addChild(label.toString(), datasetUrl.getLocalURIString());

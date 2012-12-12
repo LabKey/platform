@@ -22,6 +22,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -87,6 +88,8 @@ public class DataHeader extends HttpView
     @Override
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
+        Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
+
         if (null != StringUtils.trimToNull(_datasetDef.getDescription()))
         {
             out.print("<div style=\"width:640px\">");
@@ -104,7 +107,7 @@ public class DataHeader extends HttpView
         {
             if (!StudyController.DATASET_VIEW_NAME_PARAMETER_NAME.equalsIgnoreCase(parameter.getKey()) &&
                 !"prevView".equalsIgnoreCase(parameter.getKey()) &&
-                !CohortFilterFactory.isCohortFilterParameterName(parameter.getKey(), DataSetQueryView.DATAREGION) &&
+                !CohortFilterFactory.isCohortFilterParameterName(study, parameter.getKey(), DataSetQueryView.DATAREGION) &&
                 !"participantId".equalsIgnoreCase(parameter.getKey()) &&
                 !"tabId".equalsIgnoreCase(parameter.getKey()) &&
                 !"reportId".equalsIgnoreCase(parameter.getKey()) &&

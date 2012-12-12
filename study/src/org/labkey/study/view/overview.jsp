@@ -260,7 +260,7 @@
             ActionURL defaultReportURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, container);
             defaultReportURL.addParameter(DataSetDefinition.DATASETKEY, dataSet.getDataSetId());
             if (selectedCohort != null && bean.cohortFilter != null)
-                bean.cohortFilter.addURLParameters(defaultReportURL, "Dataset");
+                bean.cohortFilter.addURLParameters(study, defaultReportURL, "Dataset");
             if (bean.qcStates != null)
                 defaultReportURL.addParameter("QCState", bean.qcStates.getFormValue());
 
@@ -302,7 +302,7 @@
                 datasetLink.addParameter(VisitImpl.VISITKEY, visit.getRowId());
                 datasetLink.addParameter(DataSetDefinition.DATASETKEY, dataSet.getDataSetId());
                 if (selectedCohort != null)
-                    bean.cohortFilter.addURLParameters(datasetLink, null);
+                    bean.cohortFilter.addURLParameters(study, datasetLink, null);
                 if (bean.qcStates != null)
                     datasetLink.addParameter(BaseStudyController.SharedFormParameters.QCState, bean.qcStates.getFormValue());
 

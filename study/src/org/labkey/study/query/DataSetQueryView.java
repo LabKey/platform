@@ -286,7 +286,7 @@ public class DataSetQueryView extends StudyQueryView
         if (url != null)
         {
             if (_cohortFilter != null)
-                _cohortFilter.addURLParameters(url, DATAREGION);
+                _cohortFilter.addURLParameters(_study, url, DATAREGION);
 
             if (_qcStateSet != null)
                 url.replaceParameter(BaseStudyController.SharedFormParameters.QCState, _qcStateSet.getFormValue());

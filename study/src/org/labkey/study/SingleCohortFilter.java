@@ -15,11 +15,15 @@
  */
 package org.labkey.study;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Cohort;
+import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
@@ -32,16 +36,15 @@ import org.labkey.study.model.StudyManager;
 public class SingleCohortFilter extends BaseCohortFilter
 {
     private final int _cohortId;
+    private final String _label;
+
 
     @Deprecated  // Should use CohortFilterFactory instead
-    public SingleCohortFilter(Type type, int cohortId)
+    public SingleCohortFilter(Type type, Cohort cohort)
     {
         super(type);
-
-        if (cohortId < 0)
-            throw new IllegalArgumentException("Invalid cohort ID: " + cohortId);
-
-        _cohortId = cohortId;
+        _cohortId = -1;
+        _label = cohort.getLabel();
     }
 
     // Special constructor for the 'unassigned' singleton cohort filter
@@ -49,11 +52,24 @@ public class SingleCohortFilter extends BaseCohortFilter
     {
         super(type);
         _cohortId = -1;
+        _label = null;
+    }
+
+    protected SingleCohortFilter(CohortFilterFactory.Config config)
+    {
+        super(config.type);
+        _cohortId = null == config.cohortId ? -1 : config.cohortId;
+        _label = config.label;
     }
 
     public int getCohortId()
     {
         return _cohortId;
+    }
+
+    public String getLabel()
+    {
+        return _label;
     }
 
     @Override
@@ -66,8 +82,7 @@ public class SingleCohortFilter extends BaseCohortFilter
 
         if (_cohortId != that._cohortId) return false;
         if (_type != that._type) return false;
-
-        return true;
+        return StringUtils.equals(_label, that._label);
     }
 
     @Override
@@ -75,6 +90,8 @@ public class SingleCohortFilter extends BaseCohortFilter
     {
         int result = _type.hashCode();
         result = 31 * result + _cohortId;
+        if (null != _label)
+            result = 31 * result + _label.hashCode();
         return result;
     }
 
@@ -82,7 +99,10 @@ public class SingleCohortFilter extends BaseCohortFilter
     {
         if (!StudyManager.getInstance().showCohorts(container, user))
             return null;
-        return StudyManager.getInstance().getCohortForRowId(container, user, getCohortId());
+        if (null != _label)
+            return StudyManager.getInstance().getCohortByLabel(container, user, _label);
+        else
+            return StudyManager.getInstance().getCohortForRowId(container, user, getCohortId());
     }
 
     public String getDescription(Container container, User user)
@@ -95,21 +115,46 @@ public class SingleCohortFilter extends BaseCohortFilter
 
     public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
     {
-        filter.addCondition(getCohortColumn(table, container).getFieldKey(), getCohortId());
+        FieldKey fk = getCohortColumn(table, container).getFieldKey();
+        if (null != _label)
+        {
+            filter.addCondition(new FieldKey(fk.getParent(),"Label"), _label);
+        }
+        else
+        {
+            filter.addCondition(fk, getCohortId());
+        }
     }
 
-    public ActionURL addURLParameters(ActionURL url, String dataregion)
+    @Override
+    public ActionURL addURLParameters(Study study, ActionURL url, String dataregion)
     {
-//        if (StringUtils.isEmpty(dataregion))
+        FieldKey cohortFK = _type.getFilterColumn(study.getContainer());
+
+        if (!StringUtils.isEmpty(dataregion))
         {
-            url.replaceParameter(CohortFilterFactory.Params.cohortFilterType, getType().name());
-            url.replaceParameter(CohortFilterFactory.Params.cohortId, "" + getCohortId());
+            if (null != _label)
+            {
+                url.replaceParameter
+                (
+                    dataregion + "." + (new FieldKey(cohortFK.getParent(),"Label")).toString() + "~eq",
+                    _label
+                );
+            }
+            else
+            {
+                url.replaceParameter
+                (
+                    dataregion + "." + cohortFK.toString() + "~eq",
+                    String.valueOf(_cohortId)
+                );
+            }
         }
-//        else
-//        {
-//            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortFilterType, getType().name());
-//            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortId, "" + getCohortId());
-//        }
+        else
+        {
+            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortFilterType, getType().name());
+            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortId, "" + getCohortId());
+        }
         return url;
     }
 

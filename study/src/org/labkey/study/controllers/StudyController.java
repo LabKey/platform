@@ -431,8 +431,6 @@ public class StudyController extends BaseStudyController
 
     public static class DatasetFilterForm extends QueryViewAction.QueryExportForm implements HasViewContext
     {
-//        private String _cohortFilterType;
-//        private Integer _cohortId;
         private String _qcState;
         private ViewContext _viewContext;
 
@@ -446,37 +444,6 @@ public class StudyController extends BaseStudyController
             _qcState = qcState;
         }
 
-//        TODO: Delete... this all appears to be unused
-//        public Integer getCohortId()
-//        {
-//            return _cohortId;
-//        }
-//
-//        @SuppressWarnings({"UnusedDeclaration"})
-//        public void setCohortId(Integer cohortId)
-//        {
-//            if (StudyManager.getInstance().showCohorts(HttpView.currentContext().getContainer(), HttpView.currentContext().getUser()))
-//                _cohortId = cohortId;
-//        }
-//
-//        public String getCohortFilterType()
-//        {
-//            return _cohortFilterType;
-//        }
-//
-//        public void setCohortFilterType(String cohortFilterType)
-//        {
-//            _cohortFilterType = cohortFilterType;
-//        }
-//
-//        public CohortFilter getCohortFilter()
-//        {
-//            if (_cohortId == null)
-//                return null;
-//            CohortFilter.Type type = _cohortFilterType != null ? CohortFilter.Type.valueOf(_cohortFilterType) : null;
-//            return new CohortFilter(type, getCohortId());
-//        }
-//
         public void setViewContext(ViewContext context)
         {
             _viewContext = context;
@@ -2622,7 +2589,7 @@ public class StudyController extends BaseStudyController
      * the cached list of participants.
      */
     private void setColumnURL(final ActionURL url, final QueryView queryView,
-                              final UserSchema querySchema, final DataSet def)
+                              final UserSchema querySchema, final DataSet def) throws ServletException
     {
         List<DisplayColumn> columns;
         try
@@ -2649,7 +2616,7 @@ public class StudyController extends BaseStudyController
             }
         }
         if (queryView instanceof StudyQueryView && null != ((StudyQueryView)queryView).getCohortFilter())
-            ((StudyQueryView)queryView).getCohortFilter().addURLParameters(base, null);
+            ((StudyQueryView)queryView).getCohortFilter().addURLParameters(getStudy(), base, null);
 
         for (DisplayColumn col : columns)
         {

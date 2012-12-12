@@ -22,6 +22,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.CohortImpl;
@@ -34,7 +35,7 @@ import org.labkey.study.model.CohortImpl;
 public interface CohortFilter
 {
     Type getType();
-    ActionURL addURLParameters(ActionURL url, @Nullable String dataregion);
+    ActionURL addURLParameters(Study study, ActionURL url, @Nullable String dataregion);
 //    ActionURL addURLParameters(ActionURL url);
     String getDescription(Container container, User user);
     void addFilterCondition(TableInfo table, Container container, SimpleFilter filter);
@@ -70,15 +71,15 @@ public interface CohortFilter
             {
                 return FieldKey.fromParts(StudyService.get().getSubjectVisitColumnName(container), "Cohort", "rowid");
             }
-        },
-
-        ALL("All participants")
-        {
-            public FieldKey getFilterColumn(Container container)
-            {
-                return FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), "Cohort", "rowid");
-            }
         };
+
+//        ALL("All participants")
+//        {
+//            public FieldKey getFilterColumn(Container container)
+//            {
+//                return FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), "Cohort", "rowid");
+//            }
+//        };
 
 
         private String _title;

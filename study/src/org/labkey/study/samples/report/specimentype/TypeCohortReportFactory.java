@@ -77,7 +77,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
         List<CohortFilter> reportCohorts = new ArrayList<CohortFilter>();
         CohortFilter.Type type = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
-            reportCohorts.add(new SingleCohortFilter(type, cohort.getRowId()));
+            reportCohorts.add(new SingleCohortFilter(type, cohort));
         reportCohorts.add(CohortFilterFactory.UNASSIGNED);
 
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();

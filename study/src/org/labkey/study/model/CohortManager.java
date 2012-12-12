@@ -259,8 +259,8 @@ public class CohortManager
 
                     for (CohortFilter.Type type : CohortFilter.Type.values())
                     {
-                        CohortFilter filter = new SingleCohortFilter(type, cohort.getRowId());
-                        ActionURL url = filter.addURLParameters(baseURL.clone(), dataregion);
+                        CohortFilter filter = new SingleCohortFilter(type, cohort);
+                        ActionURL url = filter.addURLParameters(study, baseURL.clone(), dataregion);
 
                         NavTree typeItem = new NavTree(type.getTitle(), url.toString());
                         typeItem.setId(cohort.getLabel() + ":" + typeItem.getText());
@@ -276,8 +276,8 @@ public class CohortManager
             {
                 for (CohortImpl cohort : cohorts)
                 {
-                    CohortFilter filter = new SingleCohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
-                    ActionURL url = filter.addURLParameters(baseURL.clone(), dataregion);
+                    CohortFilter filter = new SingleCohortFilter(CohortFilter.Type.PTID_CURRENT, cohort);
+                    ActionURL url = filter.addURLParameters(study, baseURL.clone(), dataregion);
                     NavTree item = new NavTree(cohort.getLabel(), url.toString());
                     item.setId(caption + ":" + item.getText());
                     if (filter.equals(currentCohortFilter))

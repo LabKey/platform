@@ -18,6 +18,7 @@ package org.labkey.study.samples.report;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DemoMode;
@@ -298,21 +299,24 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         }
         else if (cohortFilter != null)
         {
+            Cohort cohort = cohortFilter.getCohort(getContainer(),getUser());
+            int cohortId = null==cohort ? -1 : cohort.getRowId();
+
             switch (cohortFilter.getType())
             {
                 case DATA_COLLECTION:
                     filter.addWhereClause("CollectionCohort = ? AND Container = ?",
-                            new Object[] { cohortFilter.getCohortId(), getContainer().getId()});
+                            new Object[] { cohortId, getContainer().getId()} );
                     break;
                 case PTID_CURRENT:
                     filter.addWhereClause(StudyService.get().getSubjectColumnName(getContainer()) + " IN\n" +
                             "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId = ? AND Container = ?)",
-                            new Object[] { cohortFilter.getCohortId(), getContainer().getId()});
+                            new Object[] { cohortId, getContainer().getId()});
                     break;
                 case PTID_INITIAL:
                     filter.addWhereClause(StudyService.get().getSubjectColumnName(getContainer()) + " IN\n" +
                             "(SELECT ParticipantId FROM study.participant WHERE InitialCohortId = ? AND Container = ?)",
-                            new Object[] { cohortFilter.getCohortId(), getContainer().getId()});
+                            new Object[] { cohortId, getContainer().getId()});
                     break;
             }
         }

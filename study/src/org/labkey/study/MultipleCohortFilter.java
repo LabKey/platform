@@ -15,15 +15,17 @@
  */
 package org.labkey.study;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.CohortImpl;
-
-import java.util.Collection;
 
 /**
  * User: adam
@@ -32,19 +34,13 @@ import java.util.Collection;
  */
 public class MultipleCohortFilter extends BaseCohortFilter
 {
-    private final Collection<Integer> _cohortIds;
     private final boolean _includeUnassigned;
     private final String _description;
 
-    public MultipleCohortFilter(CohortFilter.Type type, Collection<Integer> cohortIds, boolean includeUnassigned, String description)
+    public MultipleCohortFilter(CohortFilterFactory.Config config, boolean includeUnassigned, String description)
     {
-        super(type);
+        super(config.type);
 
-        for (Integer cohortId : cohortIds)
-            if (cohortId < 0)
-                throw new IllegalArgumentException("Invalid cohort ID: " + cohortId);
-
-        _cohortIds = cohortIds;
         _includeUnassigned = includeUnassigned;
         _description = description;
     }
@@ -58,7 +54,7 @@ public class MultipleCohortFilter extends BaseCohortFilter
         MultipleCohortFilter that = (MultipleCohortFilter) o;
 
         if (_includeUnassigned != that._includeUnassigned) return false;
-        if (_cohortIds != null ? !_cohortIds.equals(that._cohortIds) : that._cohortIds != null) return false;
+//        if (_cohortIds != null ? !_cohortIds.equals(that._cohortIds) : that._cohortIds != null) return false;
         if (_type != null ? !_type.equals(that._type) : that._type != null) return false;
 
         return true;
@@ -67,8 +63,8 @@ public class MultipleCohortFilter extends BaseCohortFilter
     @Override
     public int hashCode()
     {
-        int result = _cohortIds != null ? _cohortIds.hashCode() : 0;
-        result = 31 * result + (_includeUnassigned ? 1 : 0);
+//        int result = _cohortIds != null ? _cohortIds.hashCode() : 0;
+        int result = (_includeUnassigned ? 1 : 0);
         result = 31 * result + (_type != null ? _type.hashCode() : 0);
         return result;
     }
@@ -78,32 +74,44 @@ public class MultipleCohortFilter extends BaseCohortFilter
         return getType().getTitle() + " is " + _description;
     }
 
+
     public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
     {
-        SimpleFilter.InClause inClause = new SimpleFilter.InClause(getCohortColumn(table, container).getFieldKey(), _cohortIds);
-        inClause.setIncludeNull(_includeUnassigned);
-        filter.addClause(inClause);
+        FieldKey fk = getCohortColumn(table, container).getFieldKey();
+        FieldKey fkEnrolled = new FieldKey(fk.getParent(), "Enrolled");
+
+        if (_includeUnassigned)
+            filter.addCondition(fkEnrolled, Boolean.FALSE, CompareType.NEQ_OR_NULL);
+        else
+            filter.addCondition(fkEnrolled, Boolean.TRUE, CompareType.EQUAL);
     }
 
-    public ActionURL addURLParameters(ActionURL url, @Nullable String dataregion)
+
+    @Override
+    public ActionURL addURLParameters(Study study, ActionURL url, @Nullable String dataregion)
     {
-//        if (StringUtils.isEmpty(dataregion))
+        if (!StringUtils.isEmpty(dataregion))
         {
-            url.replaceParameter(CohortFilterFactory.Params.cohortFilterType, getType().name());
-            url.replaceParameter(CohortFilterFactory.Params.cohortEnrolled, "1");
+//UNDONE  If I have a table, I can just use addFilterCondition
+            FieldKey fk = _type.getFilterColumn(study.getContainer());
+            fk = new FieldKey(fk.getParent(), "Enrolled");
+            if (_includeUnassigned)
+                url.addParameter(dataregion + "." + fk.toString() + "~neqornull", Boolean.FALSE);
+            else
+                url.addParameter(dataregion + "." + fk.toString() + "~eq", Boolean.TRUE);
         }
-//        else
-//        {
-//            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortFilterType, getType().name());
-//            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortEnrolled, "1");
-//        }
+        else
+        {
+            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortFilterType, getType().name());
+            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortEnrolled, "1");
+        }
         return url;
     }
 
     @Override
     public String getCacheKey()
     {
-        return getType().name() + _cohortIds.toString();
+        return getType().name() + ":" + (_includeUnassigned?"true":"false");
     }
 
     public int getCohortId()

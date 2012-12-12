@@ -184,12 +184,14 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
     ColumnInfo createCollectionCohortColumn(StudyQuerySchema schema, TableInfo parent)
     {
-        if (StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
-            return new CollectionCohortColumn(_schema, this);
+        if (!StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
+        {
+            ColumnInfo c = new NullColumnInfo(parent, "CollectionCohort", JdbcType.INTEGER);
+            c.setFk(new CohortForeignKey(schema, false));
+            return c;
+        }
 
-        ColumnInfo c = new NullColumnInfo(parent, "CollectionCohort", JdbcType.INTEGER);
-        c.setFk(new CohortForeignKey(schema, false));
-        return c;
+        return new CollectionCohortColumn(_schema, this);
     }
 
 

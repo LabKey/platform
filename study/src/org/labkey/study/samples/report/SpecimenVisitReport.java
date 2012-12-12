@@ -15,6 +15,7 @@
  */
 package org.labkey.study.samples.report;
 
+import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.model.ParticipantGroup;
@@ -170,10 +171,10 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return fullFilter;
     }
 
-    protected void addCohortURLFilter(ActionURL url)
+    protected void addCohortURLFilter(Study study, ActionURL url)
     {
         if (_parameters.getCohortFilter() != null)
-            _parameters.getCohortFilter().addURLParameters(url, null);
+            _parameters.getCohortFilter().addURLParameters(study, url, null);
     }
 
     protected String getFilterQueryString(VisitImpl visit, CELLDATA summary)
@@ -187,7 +188,10 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         else
             url.addParameter("SpecimenDetail.ignoreFilter", "1");
 
-        addCohortURLFilter(url);
+
+        Study study = StudyManager.getInstance().getStudy(visit.getContainer());
+        if (null != study)
+            addCohortURLFilter(study, url);
 
         if (_parameters.getParticipantGroupFilter() >= 0)
         {

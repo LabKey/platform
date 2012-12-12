@@ -16,6 +16,7 @@
 package org.labkey.study.samples.report.specimentype;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.model.VisitImpl;
@@ -40,9 +41,9 @@ public class TypeCohortReport extends SpecimenTypeVisitReport
     // parameters object (the base parameter filter just contains the type, since this report can render multiple
     // reports, one for each cohort):
     @Override
-    protected void addCohortURLFilter(ActionURL url)
+    protected void addCohortURLFilter(Study study, ActionURL url)
     {
         if (_cohortFilter != null)
-            _cohortFilter.addURLParameters(url, null);
+            _cohortFilter.addURLParameters(study, url, null);
     }
 }
