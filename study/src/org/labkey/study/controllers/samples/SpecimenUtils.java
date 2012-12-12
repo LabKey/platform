@@ -80,7 +80,6 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.samples.notifications.DefaultRequestNotification;
 import org.labkey.study.samples.notifications.NotificationRecipientSet;
-import org.labkey.study.samples.notifications.RequestNotification;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
@@ -464,7 +463,14 @@ public class SpecimenUtils
                 SampleManager.getInstance().getRequestNotificationSettings(request.getContainer());
         Address[] notify = settings.getNewRequestNotifyAddresses();
         if (notify != null && notify.length > 0)
-            sendNotification(new DefaultRequestNotification(request, Collections.singletonList(new NotificationRecipientSet(notify)), "New Request Created"));
+        {
+            SampleRequestEvent event = new SampleRequestEvent();
+            event.setContainer(getContainer());
+            event.setEntityId(request.getEntityId());
+            DefaultRequestNotification notification = new DefaultRequestNotification(request, Collections.singletonList(new NotificationRecipientSet(notify)),
+                    "New Request Created", event, null, null, getViewContext());
+            sendNotification(notification);
+        }
     }
 
     public List<? extends NotificationRecipientSet> getNotifications(SampleRequest sampleRequest, String[] notificationIdPairs)
@@ -477,13 +483,18 @@ public class SpecimenUtils
         return siteActors;
     }
 
-    public void sendNotification(RequestNotification notification) throws Exception
+    public void sendNotification(DefaultRequestNotification notification) throws Exception
     {
-        SampleRequest sampleRequest = notification.getSampleRequest();
-        String specimenList = notification.getSpecimenListHTML(getViewContext());
-
         RequestNotificationSettings settings =
                 SampleManager.getInstance().getRequestNotificationSettings(getContainer());
+
+        SampleRequest sampleRequest = notification.getSampleRequest();
+        String specimenList = null;
+        if (RequestNotificationSettings.SpecimensAttachmentEnum.InEmailBody == settings.getSpecimensAttachmentEnum())
+        {
+            specimenList = notification.getSpecimenListHTML(getViewContext());
+        }
+
         MailHelper.ViewMessage message = MailHelper.createMessage(settings.getReplyToEmailAddress(getUser()), null);
         String subject = settings.getSubjectSuffix().replaceAll("%requestId%", "" + sampleRequest.getRowId());
         message.setSubject(getStudy().getLabel() + ": " + subject);
@@ -525,14 +536,19 @@ public class SpecimenUtils
         private String _specimenList;
         private String _studyName;
         private String _requestURI;
-        private RequestNotification _notification;
+        private DefaultRequestNotification _notification;
+        private boolean _includeSpecimensInBody;
 
-        public NotificationBean(ViewContext context, RequestNotification notification, String specimenList, String studyName)
+        public NotificationBean(ViewContext context, DefaultRequestNotification notification, String specimenList, String studyName)
         {
             _notification = notification;
             _user = context.getUser();
             _baseServerURI = context.getActionURL().getBaseServerURI();
-            _specimenList = specimenList;
+            if (null != specimenList)
+            {
+                _specimenList = specimenList;
+                _includeSpecimensInBody = true;
+            }
             _studyName = studyName;
             _requestURI = new ActionURL(SpecimenController.ManageRequestAction.class, context.getContainer()).getURIString();
         }
@@ -607,6 +623,16 @@ public class SpecimenUtils
         public String getRequestURI()
         {
             return _requestURI;
+        }
+
+        public boolean getIncludeSpecimensInBody()
+        {
+            return _includeSpecimensInBody;
+        }
+
+        public void setIncludeSpecimensInBody(boolean includeSpecimensInBody)
+        {
+            _includeSpecimensInBody = includeSpecimensInBody;
         }
     }
 

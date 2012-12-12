@@ -3191,7 +3191,6 @@ study/src/org/labkey/study/samples/SpecimenCommentAuditViewFactory.java -text
 study/src/org/labkey/study/samples/notifications/ActorNotificationRecipientSet.java -text
 study/src/org/labkey/study/samples/notifications/DefaultRequestNotification.java -text
 study/src/org/labkey/study/samples/notifications/NotificationRecipientSet.java -text
-study/src/org/labkey/study/samples/notifications/RequestNotification.java -text
 study/src/org/labkey/study/samples/report/SpecimenCountSummary.java -text
 study/src/org/labkey/study/samples/report/SpecimenReportCellData.java -text
 study/src/org/labkey/study/samples/report/SpecimenReportExcelWriter.java -text

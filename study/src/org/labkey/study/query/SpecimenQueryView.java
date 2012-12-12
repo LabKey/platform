@@ -257,6 +257,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
             public boolean isVialView()
             {
                 return false;
+            }
+            public boolean isForExport()
+            {
+                return false;
             }},
         VIALS()
         {
@@ -273,6 +277,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
             public boolean isVialView()
             {
                 return true;
+            }
+            public boolean isForExport()
+            {
+                return false;
             }},
         VIALS_EMAIL()
         {
@@ -289,11 +297,16 @@ public class SpecimenQueryView extends BaseStudyQueryView
             public boolean isVialView()
             {
                 return true;
+            }
+            public boolean isForExport()
+            {
+                return true;
             }};
 
-        public abstract String getQueryName();
+    public abstract String getQueryName();
         public abstract String getViewName();
         public abstract boolean isVialView();
+        public abstract boolean isForExport();
     }
 
     protected SpecimenQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort, ViewType viewType,
@@ -727,6 +740,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
     {
         List<DisplayColumn> cols = super.getDisplayColumns();
 
+        if (_viewType.isForExport())
+        {
+            DisplayColumn column0 = cols.get(0);
+            if (column0.getColumnInfo().getColumnName().equalsIgnoreCase("rowid"))
+                cols.remove(0);
+        }
+
         if (_viewType.isVialView())
         {
             if (_showHistoryLinks)
@@ -750,9 +770,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
                             getUser().isAdministrator());
         }
         RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
-        if (!settings.isSimple() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
+        if (!settings.isSimple() && !_viewType.isForExport() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
         {
-            // Only add this column if we're using advanced specimen management
+            // Only add this column if we're using advanced specimen management and not exported to email or attachment
             cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
                 SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
         }
@@ -835,7 +855,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
             for (DisplayColumn col : allColumns)
             {
-                if (col.shouldRender(renderContext) && !(col instanceof SpecimenRequestDisplayColumn))
+                if (col.shouldRender(renderContext))
                     columns.add(col);
             }
             StringBuilder builder = new StringBuilder();

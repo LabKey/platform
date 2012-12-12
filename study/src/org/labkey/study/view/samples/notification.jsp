@@ -28,10 +28,11 @@
             (JspView<SpecimenUtils.NotificationBean>) HttpView.currentView();
     SpecimenUtils.NotificationBean bean = me.getModelBean();
     String requestChangeString = bean.getStatus().compareToIgnoreCase("submitted") == 0 ? "submitted" : "updated";
+    boolean includeSpecimensInBody = bean.getIncludeSpecimensInBody();
 %>
 <div>
     <br>
-    Specimen request #<%= bean.getRequestId() %> was <%= requestChangeString %> in <%= bean.getStudyName() %>.
+    Specimen request #<%= bean.getRequestId() %> was <%= h(requestChangeString) %> in <%= h(bean.getStudyName()) %>.
     <br>
     <br>
 </div>
@@ -60,7 +61,7 @@
     </tr>
     <tr>
         <td valign="top"><b>Action</b></td>
-        <td align="left"><%= bean.getEventDescription() != null ? h(bean.getEventDescription()).replaceAll("\\n", "<br>\n") : "" %></td>
+        <td align="left"><%= text(bean.getEventDescription() != null ? h(bean.getEventDescription()).replaceAll("\\n", "<br>\n") : "") %></td>
     </tr>
     <%
         List<Attachment> attachments = bean.getAttachments();
@@ -73,7 +74,7 @@
             <%
                 for (Attachment att : attachments) {
             %>
-            <a href="<%= bean.getBaseServerURI() %><%= h(att.getDownloadUrl(SpecimenController.DownloadAction.class)) %>">
+            <a href="<%= h(bean.getBaseServerURI()) %><%= h(att.getDownloadUrl(SpecimenController.DownloadAction.class)) %>">
                 <%= h(att.getName()) %>
             </a><br>
             <%
@@ -97,16 +98,22 @@
         }
     %>
 <p>
-    <%= bean.getRequestDescription() != null ? h(bean.getRequestDescription(), true) : "" %>
+    <%= text(bean.getRequestDescription() != null ? h(bean.getRequestDescription(), true) : "") %>
 </p>
     <%
         if (bean.getSpecimenList() != null)
         {
     %>
 <p>
-    <b>Specimen&nbsp;List</b> (<a href="<%= bean.getRequestURI() %>id=<%=bean.getRequestId()%>">Request Link</a>)<br><br>
-    <%= bean.getSpecimenList() %>
-</p>
+    <b>Specimen&nbsp;List</b> (<a href="<%= h(bean.getRequestURI()) %>id=<%=bean.getRequestId()%>">Request Link</a>)<br><br>
+    <%
+        if (includeSpecimensInBody)
+        {
+    %>
+            <%= text(bean.getSpecimenList()) %>
+    <%
+        }
+    %></p>
     <%
         }
     %>

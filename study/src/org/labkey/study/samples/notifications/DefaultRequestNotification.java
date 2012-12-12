@@ -18,14 +18,21 @@ package org.labkey.study.samples.notifications;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.SampleManager;
 import org.labkey.study.model.SampleRequest;
+import org.labkey.study.model.SampleRequestEvent;
 import org.labkey.study.model.SampleRequestRequirement;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.study.samples.settings.RequestNotificationSettings;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,17 +41,26 @@ import java.util.List;
  * Date: May 4, 2007
  * Time: 3:41:44 PM
  */
-public class DefaultRequestNotification implements RequestNotification
+public class DefaultRequestNotification
 {
     protected List<? extends NotificationRecipientSet> _recipients;
     protected SampleRequest _request;
     protected String _eventSummary;
+    protected SampleRequestRequirement _sampleRequestRequirement;
+    protected String _comments;
+    protected SampleRequestEvent _event;
 
-    public DefaultRequestNotification(SampleRequest request, List<? extends NotificationRecipientSet> recipients, String eventSummary)
+    public DefaultRequestNotification(SampleRequest request, List<? extends NotificationRecipientSet> recipients, String eventSummary,
+                                      SampleRequestEvent event, String comments, SampleRequestRequirement sampleRequestRequirement,
+                                      ViewContext context) throws Exception
     {
         _request = request;
         _recipients = recipients;
         _eventSummary = eventSummary;
+        _comments = comments;
+        _sampleRequestRequirement = sampleRequestRequirement;
+        _event = event;
+        addSpecimenListFileIfNeeded(context);
     }
 
     public final String getSpecimenListHTML(ViewContext context) throws SQLException, IOException
@@ -59,6 +75,32 @@ public class DefaultRequestNotification implements RequestNotification
         return null;
     }
 
+    private void addSpecimenListFileIfNeeded(ViewContext context) throws Exception
+    {
+        RequestNotificationSettings settings = SampleManager.getInstance().getRequestNotificationSettings(_request.getContainer());
+        if (RequestNotificationSettings.SpecimensAttachmentEnum.ExcelAttachment == settings.getSpecimensAttachmentEnum() ||
+            RequestNotificationSettings.SpecimensAttachmentEnum.TextAttachment == settings.getSpecimensAttachmentEnum())
+        {
+            ByteArrayAttachmentFile specimenListFile = null;
+            Specimen[] specimens = getSpecimenList();
+            if (specimens != null && specimens.length > 0)
+            {
+                SpecimenQueryView view = SpecimenQueryView.createView(context, specimens, SpecimenQueryView.ViewType.VIALS_EMAIL);
+                view.setDisableLowVialIndicators(true);
+                if (RequestNotificationSettings.SpecimensAttachmentEnum.ExcelAttachment == settings.getSpecimensAttachmentEnum())
+                    specimenListFile = view.exportToExcelFile();
+                else
+                    specimenListFile = view.exportToTsvFile();
+                if (null != specimenListFile)
+                {
+                    List<AttachmentFile> attachments = new ArrayList<AttachmentFile>();
+                    attachments.add(specimenListFile);
+                    AttachmentService.get().addAttachments(_event, attachments, context.getUser());
+                }
+            }
+        }
+    }
+
     protected Specimen[] getSpecimenList() throws SQLException
     {
         return _request.getSpecimens();
@@ -66,17 +108,21 @@ public class DefaultRequestNotification implements RequestNotification
 
     public @NotNull List<Attachment> getAttachments()
     {
-        return Collections.emptyList();
+        final List<Attachment> attachments = AttachmentService.get().getAttachments(_event);
+        if (null != attachments)
+            return attachments;
+        else
+            return Collections.emptyList();
     }
 
     public String getComments()
     {
-        return null;
+        return _comments;
     }
 
     public SampleRequestRequirement getRequirement()
     {
-        return null;
+        return _sampleRequestRequirement;
     }
 
     final public List<? extends NotificationRecipientSet> getRecipients()

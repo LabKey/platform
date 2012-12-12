@@ -40,6 +40,7 @@ public class RequestNotificationSettings
     private static final String KEY_SUBJECTSUFFIX = "SubjectSuffix";
     private static final String KEY_NEWREQUESTNOTIFY = "NewRequestNotify";
     private static final String KEY_DEFAULTEMAILNOTIFY = "DefaultEmailNotify";
+    private static final String KEY_SPECIMENSATTACHMENT = "SpecimensAttachment";
     private String _replyTo;
     private String _cc;
     private String _subjectSuffix;
@@ -47,8 +48,10 @@ public class RequestNotificationSettings
     private boolean _ccCheckbox;
     private boolean _newRequestNotifyCheckbox;
     private DefaultEmailNotifyEnum _defaultEmailNotify = DefaultEmailNotifyEnum.ActorsInvolved;
+    private SpecimensAttachmentEnum _specimensAttachment = SpecimensAttachmentEnum.InEmailBody;
 
     public enum DefaultEmailNotifyEnum {All, None, ActorsInvolved}
+    public enum SpecimensAttachmentEnum {InEmailBody, ExcelAttachment, TextAttachment, Never}
 
     public RequestNotificationSettings()
     {
@@ -62,6 +65,7 @@ public class RequestNotificationSettings
         _subjectSuffix = map.get(KEY_SUBJECTSUFFIX);
         _newRequestNotify = map.get(KEY_NEWREQUESTNOTIFY);
         setDefaultEmailNotify(map.get(KEY_DEFAULTEMAILNOTIFY));
+        setSpecimensAttachment(map.get(KEY_SPECIMENSATTACHMENT));
     }
 
     public String getReplyToEmailAddress(User currentAdmin)
@@ -139,6 +143,7 @@ public class RequestNotificationSettings
         map.put(KEY_SUBJECTSUFFIX, _subjectSuffix);
         map.put(KEY_NEWREQUESTNOTIFY, _newRequestNotify);
         map.put(KEY_DEFAULTEMAILNOTIFY, getDefaultEmailNotify());
+        map.put(KEY_SPECIMENSATTACHMENT, getSpecimensAttachment());
     }
 
     public static RequestNotificationSettings getDefaultSettings(Container c)
@@ -202,5 +207,23 @@ public class RequestNotificationSettings
             _defaultEmailNotify = DefaultEmailNotifyEnum.ActorsInvolved;
         else
             _defaultEmailNotify = DefaultEmailNotifyEnum.valueOf(defaultEmailNotify);
+    }
+
+    public String getSpecimensAttachment()
+    {
+        return _specimensAttachment.name();
+    }
+
+    public SpecimensAttachmentEnum getSpecimensAttachmentEnum()
+    {
+        return _specimensAttachment;
+    }
+
+    public void setSpecimensAttachment(String specimensAttachment)
+    {
+        if (null == specimensAttachment)
+            _specimensAttachment = SpecimensAttachmentEnum.InEmailBody;
+        else
+            _specimensAttachment = SpecimensAttachmentEnum.valueOf(specimensAttachment);
     }
 }
