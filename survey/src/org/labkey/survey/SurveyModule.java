@@ -18,13 +18,11 @@ package org.labkey.survey;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.DefaultSchema;
@@ -46,6 +44,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.survey.model.SurveyDesign;
 import org.labkey.survey.query.SurveyQuerySchema;
 import org.springframework.validation.BindException;
 
@@ -54,7 +53,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -177,27 +175,29 @@ public class SurveyModule extends DefaultModule
             Map<String, String> props = webPart.getPropertyMap();
 
             String designIdStr = props.get("surveyDesignId");
-            Integer designId;
+            SurveyDesign surveyDesign;
             if (null == designIdStr)
                 return new HtmlView("Surveys", "There is no survey design selected to be displayed in this webpart");
             else
-                designId = Integer.parseInt(designIdStr);
+                surveyDesign = SurveyManager.get().getSurveyDesign(context.getContainer(), context.getUser(), Integer.parseInt(designIdStr));
 
             try
             {
                 VBox view = new VBox();
-                view.setTitle(getSurveysWebPartTitle(designId));
+                view.setTitle("Surveys: " + surveyDesign.getLabel());
                 view.setFrame(WebPartView.FrameType.PORTAL);
 
                 BindException errors = new NullSafeBindException(this, "form");
                 UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SurveyQuerySchema.SCHEMA_NAME);
-                QuerySettings settings = schema.getSettings(context, "surveys" + designId, SurveyQuerySchema.SURVEYS_TABLE_NAME);
-                settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts("SurveyDesignId"), designId));
-                settings.setAllowChooseQuery(false);
+                QuerySettings settings = schema.getSettings(context, "surveys" + surveyDesign.getRowId(), SurveyQuerySchema.SURVEYS_TABLE_NAME);
+                settings.setReturnUrl(context.getActionURL().clone());
+
+                // set base filter to the given survey design id and only show non-submitted surveys
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("SurveyDesignId"), surveyDesign.getRowId());
+                filter.addCondition(FieldKey.fromParts("Submitted"), null, CompareType.ISBLANK);
+                settings.setBaseFilter(filter);
 
                 QueryView queryView = schema.createView(context, settings, errors);
-                queryView.setShowImportDataButton(false);
-                queryView.setShowRecordSelectors(true);
                 view.addView(queryView);
 
                 return view;
@@ -206,24 +206,6 @@ public class SurveyModule extends DefaultModule
             {
                 return new HtmlView("Surveys", "Survey Design id is invalid");
             }
-        }
-
-        private String getSurveysWebPartTitle(Integer designId)
-        {
-            // get the survey design label for the given ID and use if for the webpart label
-            String title = "Surveys";
-            if (designId != null)
-            {
-                TableInfo ti = SurveySchema.getInstance().getSurveyDesignsTable();
-                Collection<ColumnInfo> columns = new HashSet<ColumnInfo>();
-                columns.add(ti.getColumn("Label"));
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), designId);
-                TableSelector selector = new TableSelector(ti, columns, filter, null);
-                String label = selector.getObject(String.class);
-                title += ": " + label;
-            }
-
-            return title;
         }
     }
 }

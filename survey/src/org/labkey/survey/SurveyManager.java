@@ -27,12 +27,14 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
+import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
 
@@ -40,6 +42,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -75,21 +78,41 @@ public class SurveyManager
 
                 Map<String, Object> panel = new HashMap<String, Object>();
 
-                panel.put("collapsible", true);
                 panel.put("title", queryName);
+                panel.put("description", null);
+                panel.put("header", true);
+                panel.put("collapsible", true);
+                panel.put("defaultLabelWidth", 250);
 
                 List<Map<String, Object>> columns = new ArrayList<Map<String, Object>>();
                 for (DisplayColumn dc : view.getDisplayColumns())
                 {
                     if (dc.isQueryColumn())
-                        columns.add(JsonWriter.getMetaData(dc, null, false, true, false));
+                    {
+                        Map<String, Object> metaDataMap = JsonWriter.getMetaData(dc, null, false, true, false);
+                        columns.add(getTrimmedMetaData(metaDataMap));
+                    }
                 }
-                panel.put("items", columns);
+                panel.put("questions", columns);
 
-                survey.put("items", Collections.singletonList(panel));
+                survey.put("sections", Collections.singletonList(panel));
             }
         }
         return new JSONObject(survey);
+    }
+
+    public Map<String, Object> getTrimmedMetaData(Map<String, Object> origMap)
+    {
+        // trim the metadata property map to just those properties needed for rendering the Survey questions
+        String[] props = {"name", "caption", "nullable", "hidden", "jsonType", "inputType",
+                            "rows", "cols", "lookup"};
+        Map<String, Object> trimmedMap = new LinkedHashMap<String, Object>();
+        for (String property : props)
+        {
+            if (origMap.get(property) != null)
+                trimmedMap.put(property, origMap.get(property));
+        }
+        return trimmedMap;
     }
 
     public SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign survey)
@@ -118,8 +141,13 @@ public class SurveyManager
         }
     }
 
-    public SurveyDesign getSurvey(Container container, User user, int surveyId)
+    public SurveyDesign getSurveyDesign(Container container, User user, int surveyId)
     {
         return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter("rowId", surveyId), null).getObject(SurveyDesign.class);
+    }
+
+    public Survey getSurvey(Container container, User user, int rowId)
+    {
+        return new TableSelector(SurveySchema.getInstance().getSurveysTable(), new SimpleFilter(FieldKey.fromParts("rowId"), rowId), null).getObject(Survey.class);
     }
 }

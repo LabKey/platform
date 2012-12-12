@@ -53,6 +53,8 @@ public class SurveyQuerySchema extends UserSchema
     {
         if (SURVEY_DESIGN_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
             return new SurveyDesignQueryView(this, settings, errors);
+        else if (SURVEYS_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
+            return new SurveyQueryView(this, settings, errors);
 
         return super.createView(context, settings, errors);
     }

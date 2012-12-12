@@ -25,9 +25,10 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.util.ReturnURLString;
+import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -82,7 +83,58 @@ public class SurveyController extends SpringActionController
         {
             _queryName = queryName;
         }
-   }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class UpdateSurveyAction extends SimpleViewAction<SurveyForm>
+    {
+        private String _title = "Create Survey";
+
+        @Override
+        public ModelAndView getView(SurveyForm form, BindException errors) throws Exception
+        {
+            if (form.getRowId() == null && form.getSurveyDesignId() == null)
+            {
+                errors.reject(ERROR_MSG, "Error: Please provide a rowId or surveyDesignId for the Survey to be created/updated.");
+            }
+            else if (form.getRowId() != null)
+            {
+                Survey survey = SurveyManager.get().getSurvey(getContainer(), getUser(), form.getRowId());
+
+                // check to make sure the survey was found and has not been submitted
+                if (survey == null)
+                    errors.reject(ERROR_MSG, "Error: No survey record found for rowId " + form.getRowId() + ".");
+                else
+                {
+                    form.setSurveyDesignId(survey.getSurveyDesignId());
+                    form.setLabel(survey.getLabel());
+                    form.setStatus(survey.getStatus());
+                    form.setResponsesPk(survey.getResponsePk());
+
+                    if (survey.getSubmitted() != null)
+                        errors.reject(ERROR_MSG, "Error: You are not allowed to update a survey that has already been submitted. Please contact the site administrator if the survey status for this record needs to be changed.");
+                }
+
+                _title = "Update Survey";
+            }
+            else if (form.getSurveyDesignId() != null)
+            {
+                SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
+                if (surveyDesign == null)
+                    errors.reject(ERROR_MSG, "Error: No SurveyDesign record found for rowId " + form.getSurveyDesignId() + ".");
+                else
+                    form.setRowId(null); // no rowId for newly created surveys
+            }
+
+            return new JspView<SurveyForm>("/org/labkey/survey/view/surveyWizard.jsp", form, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild(_title);
+        }
+    }
 
     @RequiresPermissionClass(InsertPermission.class)
     public class UpdateSurveyDesignAction extends SimpleViewAction<SurveyDesignForm>
@@ -94,7 +146,7 @@ public class SurveyController extends SpringActionController
         {
             if (form.getRowId() != 0)
             {
-                SurveyDesign survey = SurveyManager.get().getSurvey(getContainer(), getUser(), form.getRowId());
+                SurveyDesign survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getRowId());
                 if (survey != null)
                     _title = "Update Survey Design : " + survey.getLabel();
             }
@@ -188,7 +240,7 @@ public class SurveyController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            SurveyDesign survey = getSurvey(form);
+            SurveyDesign survey = getSurveyDesign(form);
             SurveyManager.get().saveSurveyDesign(getContainer(), getUser(), survey);
 
             response.put("success", true);
@@ -197,11 +249,11 @@ public class SurveyController extends SpringActionController
         }
     }
 
-    private SurveyDesign getSurvey(SurveyDesignForm form)
+    private SurveyDesign getSurveyDesign(SurveyDesignForm form)
     {
         SurveyDesign survey = new SurveyDesign();
         if (form.getRowId() != 0)
-            survey = SurveyManager.get().getSurvey(getContainer(), getUser(), form.getRowId());
+            survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getRowId());
 
         if (form.getLabel() != null)
             survey.setLabel(form.getLabel());
@@ -214,8 +266,8 @@ public class SurveyController extends SpringActionController
             survey.setMetadata(form.getMetadata());
 
         return survey;
+    }
 
-}
     @RequiresPermissionClass(ReadPermission.class)
     public class GetSurveyTemplateAction extends ApiAction<SurveyDesignForm>
     {
@@ -226,7 +278,7 @@ public class SurveyController extends SpringActionController
 
             if (form.getRowId() != 0)
             {
-                SurveyDesign survey = getSurvey(form);
+                SurveyDesign survey = getSurveyDesign(form);
 
                 response.put("survey", new JSONObject(survey));
                 response.put("success", true);
