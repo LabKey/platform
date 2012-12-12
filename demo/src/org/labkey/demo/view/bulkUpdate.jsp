@@ -64,13 +64,13 @@
                     <tr>
                         <td>
                             <input type="hidden" name="rowId" value="<%= person.getRowId() %>">
-                            <input type="text" size="20" name="firstName" value="<%= firstName %>">
+                            <input type="text" size="20" name="firstName" value="<%= h(firstName) %>">
                         </td>
                         <td>
-                            <input type="text" size="20" name="lastName" value="<%= lastName %>">
+                            <input type="text" size="20" name="lastName" value="<%= h(lastName) %>">
                         </td>
                         <td>
-                            <input type="text" size="5" name="age" value="<%= age %>">
+                            <input type="text" size="5" name="age" value="<%= h(age) %>">
                         </td>
                     </tr>
                     <%

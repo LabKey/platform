@@ -5288,48 +5288,55 @@ public class AdminController extends SpringActionController
     {
         public void validateCommand(AddTabForm form, Errors errors)
         {
-            String name = form.getTabName();
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(getContainer(), false));
-            CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<FolderTab>();
-
-            for (FolderTab tab : getContainer().getFolderType().getDefaultTabs())
+            if(getContainer().getFolderType() == FolderType.NONE)
             {
-                folderTabMap.put(tab.getName(), tab);
-            }
-
-            if (form.getTabType().equalsIgnoreCase("portal"))
-            {
-                if(name == null)
-                {
-                    errors.reject(ERROR_MSG, "A tab name must be specified.");
-                }
-                else if (pages.containsKey(name))
-                {
-                    errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
-                    return;
-                }
+                errors.reject(ERROR_MSG, "Cannot add tabs to custom folder types.");
             }
             else
             {
-                if(name == null)
-                {
-                    // Caption not set by user, use default caption.
-                    FolderTab tab = folderTabMap.get(form.getTabType());
-                    if (tab != null)
-                        name = tab.getCaption(getViewContext());
-                }
-            }
+                String name = form.getTabName();
+                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(getContainer(), false));
+                CaseInsensitiveHashMap<FolderTab> folderTabMap = new CaseInsensitiveHashMap<FolderTab>();
 
-            for (Portal.PortalPage page : pages.values())
-            {
-                if (page.getCaption() != null && page.getCaption().equals(name))
+                for (FolderTab tab : getContainer().getFolderType().getDefaultTabs())
                 {
-                    errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                    folderTabMap.put(tab.getName(), tab);
                 }
-                else if (folderTabMap.containsKey(page.getPageId()))
+
+                if (form.getTabType().equalsIgnoreCase("portal"))
                 {
-                    if (folderTabMap.get(page.getPageId()).getCaption(getViewContext()).equalsIgnoreCase(name))
+                    if(name == null)
+                    {
+                        errors.reject(ERROR_MSG, "A tab name must be specified.");
+                    }
+                    else if (pages.containsKey(name))
+                    {
                         errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                        return;
+                    }
+                }
+                else
+                {
+                    if(name == null)
+                    {
+                        // Caption not set by user, use default caption.
+                        FolderTab tab = folderTabMap.get(form.getTabType());
+                        if (tab != null)
+                            name = tab.getCaption(getViewContext());
+                    }
+                }
+
+                for (Portal.PortalPage page : pages.values())
+                {
+                    if (page.getCaption() != null && page.getCaption().equals(name))
+                    {
+                        errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                    }
+                    else if (folderTabMap.containsKey(page.getPageId()))
+                    {
+                        if (folderTabMap.get(page.getPageId()).getCaption(getViewContext()).equalsIgnoreCase(name))
+                            errors.reject(ERROR_MSG, "A tab of the same name already exists in this folder.");
+                    }
                 }
             }
         }

@@ -16,6 +16,7 @@
 
 package org.labkey.study.visitmanager;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.security.User;
 import org.labkey.study.CohortFilter;
@@ -75,7 +76,7 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
     }
 
     @Override
-    protected void updateParticipantVisitTable(User user)
+    protected void updateParticipantVisitTable(@Nullable User user)
     {
         // no-op
     }

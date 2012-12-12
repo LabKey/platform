@@ -1677,9 +1677,13 @@ public class FileContentController extends SpringActionController
     {
         if (mimeMap.isInlineImageFor(name))
             return RenderStyle.IMAGE;
+        if (mimeMap.isOfficeDocumentFor(name))
+            return RenderStyle.ATTACHMENT;
         if (name.endsWith(".body"))
             return RenderStyle.INCLUDE;
         String mimeType = StringUtils.defaultString(mimeMap.getContentTypeFor(name),"");
+        if (mimeType.equals("application/pdf"))
+            return RenderStyle.PAGE;
         if (mimeType.equals("text/html"))
             return RenderStyle.INCLUDE;
         if (mimeType.startsWith("text/"))

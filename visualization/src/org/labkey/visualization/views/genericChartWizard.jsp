@@ -73,21 +73,21 @@
 
         var panel = Ext4.create('LABKEY.ext4.GenericChartPanel', {
             height          : 600,
-            reportId        : <%=form.getReportId() != null ? q(form.getReportId().toString()) : null %>,
-            schemaName      : <%=form.getSchemaName() != null ? q(form.getSchemaName()) : null %>,
-            queryName       : <%=form.getQueryName() != null ? q(form.getQueryName()) : null %>,
-            viewName        : <%=form.getViewName() != null ? q(form.getViewName()) : null %>,
-            dataRegionName  : '<%=form.getDataRegionName()%>',
-            renderType      : '<%=form.getRenderType()%>',
-            id              : '<%=form.getComponentId() %>',
-            baseUrl         : '<%=ctx.getActionURL()%>',
+            reportId        : <%=q(form.getReportId() != null ? form.getReportId().toString() : null) %>,
+            schemaName      : <%=q(form.getSchemaName() != null ? form.getSchemaName() : null) %>,
+            queryName       : <%=q(form.getQueryName() != null ? form.getQueryName() : null) %>,
+            viewName        : <%=q(form.getViewName() != null ? form.getViewName() : null) %>,
+            dataRegionName  : <%=q(form.getDataRegionName())%>,
+            renderType      : <%=q(form.getRenderType())%>,
+            id              : <%=q(form.getComponentId()) %>,
+            baseUrl         : <%=q(ctx.getActionURL().toString())%>,
             renderTo        : '<%=text(renderId)%>',
             canEdit         : <%=canEdit%>,
             allowShare      : <%=c.hasPermission(ctx.getUser(), ShareReportPermission.class)%>,
             isDeveloper     : <%=ctx.getUser().isDeveloper()%>,
             hideSave        : <%=ctx.getUser().isGuest()%>,
-            autoColumnYName  : <%=form.getAutoColumnYName() != null ? q(form.getAutoColumnYName()) : null%>,
-            autoColumnXName  : <%=form.getAutoColumnXName() != null ? q(form.getAutoColumnXName()) : null%>,
+            autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
+            autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
             allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>,
             firstLoad: true
@@ -112,5 +112,5 @@
 
 </script>
 
-<div id="<%= renderId%>" style="width:100%;"></div>
+<div id="<%=h(renderId)%>" style="width:100%;"></div>
 

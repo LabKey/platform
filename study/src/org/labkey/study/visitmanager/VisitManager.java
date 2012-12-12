@@ -162,7 +162,7 @@ public abstract class VisitManager
         return "Visits";
     }
 
-    protected abstract void updateParticipantVisitTable(User user);
+    protected abstract void updateParticipantVisitTable(@Nullable User user);
     protected abstract void updateVisitTable(User user);
 
     // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;
@@ -654,12 +654,14 @@ public abstract class VisitManager
 
 
     /** @param potentiallyDeletedParticipants null if all participants should be examined,
-     * or the subset of all participants that might have been deleted and should be checked */
-    public static void performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
+     * or the subset of all participants that might have been deleted and should be checked
+     * @return the number of participants that were deleted */
+
+     public static int performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
     {
         if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.isEmpty())
         {
-            return;
+            return 0;
         }
 
         for (int retry = 1 ; retry >= 0 ; retry--)
@@ -699,8 +701,7 @@ public abstract class VisitManager
                     del.append(")");
                 }
 
-                Table.execute(schema, del);
-                break;
+                return Table.execute(schema, del);
             }
             catch (SQLException x)
             {
@@ -712,6 +713,7 @@ public abstract class VisitManager
                 throw new RuntimeSQLException(x);
             }
         }
+        return 0;
     }
 
 
@@ -750,7 +752,11 @@ public abstract class VisitManager
                     StudyImpl study = StudyManager.getInstance().getStudy(container);
                     if (study != null)
                     {
-                        performParticipantPurge(study, potentiallyDeletedParticipants);
+                        int deleted = performParticipantPurge(study, potentiallyDeletedParticipants);
+                        if (deleted > 0)
+                        {
+                            StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null);
+                        }
                     }
                 }
             }

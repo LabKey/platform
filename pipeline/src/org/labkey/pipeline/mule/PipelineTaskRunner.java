@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.mule;
 
+import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 
@@ -41,6 +42,10 @@ public class PipelineTaskRunner
         catch (PipelineJobException e)
         {
             job.error(e.getMessage(), e);
+        }
+        catch (CancelledException ignored)
+        {
+            // Don't need to do anything, job is already marked as being cancelled in the database
         }
     }
 }

@@ -3716,6 +3716,10 @@ input[type="checkbox"], input[type="radio"] {
     box-shadow: 0 -2px 2px #ddd;
 }
 
+.labkey-app-bar ul li.labkey-no-tab-menu {
+    padding:  8px 8px 8px 8px;
+}
+
 .labkey-app-bar ul li.labkey-app-bar-add-tab {
     background-color: #efefef;
     margin: 0;

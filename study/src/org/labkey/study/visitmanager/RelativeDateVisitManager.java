@@ -16,6 +16,7 @@
 
 package org.labkey.study.visitmanager;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -121,7 +122,7 @@ public class RelativeDateVisitManager extends VisitManager
     }
 
 
-    protected void updateParticipantVisitTable(User user)
+    protected void updateParticipantVisitTable(@Nullable User user)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();

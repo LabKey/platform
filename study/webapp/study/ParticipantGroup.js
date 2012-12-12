@@ -20,7 +20,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             canShare : true,
             dataRegionName : 'demoDataRegion',
             width : 950,
-            height : config.hideDataRegion ? 305 : 500
+            height : config.hideDataRegion ? 325 : 500
         });
 
         Ext4.apply(config, {
@@ -233,6 +233,7 @@ Ext4.define('Study.window.ParticipantGroup', {
         this.callParent(arguments);
         //This class exists for testing purposes (e.g. ReportTest)
         this.cls = "doneLoadingTestMarker";
+//        this.height = (simplePanel.el.dom.scrollHeight > 500) ? 500 : simplePanel.el.dom.scrollHeight;
     },
 
     onDemographicSelect : function(combo, records, idx) {

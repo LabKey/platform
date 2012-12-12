@@ -214,11 +214,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             tbarItems.push(this.showOptionsBtn);
             tbarItems.push(this.groupingBtn);
             tbarItems.push(this.developerBtn);
+            tbarItems.push('->');
+
             if(this.canEdit){
-                tbarItems.push('->');
                 tbarItems.push(this.saveBtn);
-                tbarItems.push(this.saveAsBtn);
             }
+            
+            tbarItems.push(this.saveAsBtn);
         }
         else if (this.allowEditMode)
         {
@@ -1691,6 +1693,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // Check if y axis actually has data first, if not show error message and have user select new measure.
         var yDataIsNull = true;
         var invalidYLogValues = false;
+        var yHasZeroes = false;
 
         for(var i = 0; i < this.chartData.rows.length; i++){
             var yValue = measures.y.acc(this.chartData.rows[i]);
@@ -1698,8 +1701,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 yDataIsNull = false;
             }
 
-            if(yValue <= 0 || yValue === null || yValue === undefined){
+            if(yValue < 0 || yValue === null || yValue === undefined){
                 invalidYLogValues = true;
+            }
+
+            if(yValue === 0){
+                yHasZeroes = true;
             }
         }
 
@@ -1709,10 +1716,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return;
         }
 
-        if(invalidYLogValues && chartOptions.yAxis.scaleType === 'log'){
-            this.addWarningText("Unable to use a log scale on the y-axis. All y-axis values must be > 0. Reverting to linear scale on y-axis.");
-            chartOptions.yAxis.scaleType = 'linear';
-            this.yMeasurePanel.setScaleType('linear');
+        if(chartOptions.yAxis.scaleType === 'log'){
+            if(invalidYLogValues){
+                this.addWarningText("Unable to use a log scale on the y-axis. All y-axis values must be >= 0. Reverting to linear scale on y-axis.");
+                chartOptions.yAxis.scaleType = 'linear';
+                this.yMeasurePanel.setScaleType('linear');
+            } else if(yHasZeroes){
+                this.addWarningText("Some y-axis values are 0. Plotting all y-axis values as y+1");
+            }
         }
 
         // create a new function from the pointClickFn string provided by the developer
@@ -1761,7 +1772,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if(this.xAxisMeasure){
                 measures.x.acc = this.getDiscreteXAcc(measures);
             } else {
-                measures.x.acc = this.getContinuousXAcc(measures);
+                measures.x.acc = function(row){return measures.x.name};
             }
 
             scales.x = {scaleType: 'discrete'};
@@ -1794,18 +1805,27 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if(this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double'){
                 measures.x.acc = this.getContinuousXAcc(measures);
                 scales.x = {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType};
+                var hasNegative = false;
+                var hasZero = false;
 
                 if(scales.x.trans === 'log'){
                     // Check for values < 0, show error accordingly.
                     for(var i = 0; i < this.chartData.rows.length; i++){
                         var value = measures.x.acc(this.chartData.rows[i]);
 
-                        if(value <= 0 || value === null || value === undefined){
-                            this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be > 0. Reverting to linear scale on x-axis.");
+                        if(value < 0 || value === null || value === undefined){
+                            hasNegative = true;
+                            this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
                             scales.x.trans = 'linear';
                             this.xMeasurePanel.setScaleType('linear');
                             break;
+                        } else if(value === 0){
+                            hasZero = true;
                         }
+                    }
+
+                    if(hasZero && !hasNegative){
+                        this.addWarningText("Some x-axis values are 0. Plotting all x-axis values as x+1");
                     }
                 }
             } else {
