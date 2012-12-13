@@ -3440,6 +3440,7 @@ survey/src/org/labkey/survey/model/SurveyDesign.java -text
 survey/src/org/labkey/survey/query/SurveyDesignQueryView.java -text
 survey/src/org/labkey/survey/query/SurveyDesignTable.java -text
 survey/src/org/labkey/survey/query/SurveyQuerySchema.java -text
+survey/src/org/labkey/survey/query/SurveyQuerySettings.java -text
 survey/src/org/labkey/survey/query/SurveyQueryView.java -text
 survey/src/org/labkey/survey/query/SurveysTable.java -text
 survey/src/org/labkey/survey/view/customizeSurveysWebPart.jsp -text

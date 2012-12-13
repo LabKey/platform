@@ -9,7 +9,7 @@ LABKEY.requiresScript("/extWidgets/Ext4Helper.js");
 
 Ext4.define('LABKEY.ext4.SurveyPanel', {
 
-    extend : 'Ext.panel.Panel',
+    extend : 'Ext.form.Panel',
 
     constructor : function(config){
 
@@ -21,10 +21,14 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 pack: 'start',
                 align: 'stretchmax'
             },
+            markDirty: true,
             items: []
         });
 
         this.callParent([config]);
+
+        // add the listener for when to enable/disable the submit button
+        this.addListener('validitychange', this.toggleSubmitBtn, this);
     },
 
     initComponent : function() {
@@ -42,6 +46,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                     if (o.success)
                     {
                         var metadata = Ext4.JSON.decode(o.survey.metadata);
+                        this.setLabelCaption(metadata);
                         this.getSurveyLayout(metadata);
                         this.generateSurveySections(metadata);
                     }
@@ -56,6 +61,12 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.callParent();
     },
 
+    setLabelCaption : function(surveyConfig) {
+        this.labelCaption = 'Survey Label';
+        if (surveyConfig.survey && surveyConfig.survey.labelCaption)
+            this.labelCaption = surveyConfig.survey.labelCaption;
+    },
+
     getSurveyLayout : function(surveyConfig) {
         this.surveyLayout = 'auto';
         if (surveyConfig.survey && surveyConfig.survey.layout)
@@ -66,14 +77,15 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         // TODO: what survey config validation is needed here? (verify survey, layout, sections, etc.)
         this.sections = [];
+        this.validStatus = {};
 
-        this.addSurveyStartPanel(surveyConfig.survey.labelCaption);
+        this.addSurveyStartPanel();
 
         // add each of the survey sections as a panel to the sections array
         if (surveyConfig.survey)
         {
             Ext4.each(surveyConfig.survey.sections, function(section){
-                var sectionPanel = Ext4.create('Ext.form.Panel', {
+                var sectionPanel = Ext4.create('Ext.panel.Panel', {
                     border: false,
                     header: this.surveyLayout == 'card' ? false :
                             (section.header != undefined ? section.header : true),
@@ -139,7 +151,12 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
                         // TODO: any question customizations?
 
-                        sectionPanel.add(config);
+                        var cmp = sectionPanel.add(config);
+
+                        // add a validity listener to each question
+                        this.validStatus[cmp.getName()] = cmp.isValid();
+                        cmp.clearInvalid();
+                        cmp.addListener('validitychange', this.fieldValidityChanged, this);
                     }
                 }
 
@@ -152,62 +169,99 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.setSurveyLayout(surveyConfig);
     },
 
-    addSurveyStartPanel : function(labelCaption) {
+    addSurveyStartPanel : function() {
 
         // add an initial panel that has the survey label text field
-        this.sections.push(Ext4.create('Ext.form.Panel', {
+        this.sections.push(Ext4.create('Ext.panel.Panel', {
             title: 'Begin Survey',
             header: false,
             border: false,
             minHeight: 60,
             items: [{
                 xtype: 'textfield',
-                fieldLabel: (labelCaption || 'Survey Label') + '*',
+                name: 'label',
+                fieldLabel: this.labelCaption + '*',
                 labelStyle: 'font-weight: bold;',
                 labelWidth: 250,
                 labelSeparator: '',
                 padding: 10,
                 allowBlank: false,
-                width: 700
+                width: 700,
+                listeners: {
+                    scope: this,
+                    validitychange: function(cmp, isValid) {
+                        // this is the only form field that is required before the survey can be saved
+                        this.toggleSaveBtn(isValid);
+                        this.fieldValidityChanged(cmp, isValid);
+                    }
+                }
             }]
         }));
+
+        this.validStatus['label'] = false; // TODO: base this on the initial value
     },
 
     addSurveyEndPanel : function() {
 
         // add a final panel that has the Save/Submit buttons and required field checks
-        // TODO: the layout of this panel will have to change when we add text about which required fields are missing
+        this.saveBtn = Ext4.create('Ext.button.Button', {
+            text: 'Save',
+            disabled: true,
+            width: 150,
+            height: 30,
+            scope: this,
+            handler: this.saveSurvey
+        });
+
+        this.saveDisabledInfo = Ext4.create('Ext.form.DisplayField', {
+            hideLabel: true,
+            width: 250,
+            style: "text-align: center;",
+            value: "<span style='font-style: italic; font-size: 90%'>Note: The '" + this.labelCaption + "' field at the"
+                + " beginning of the form must be filled in before you can save the form*.</span>"
+        });
+
+        this.submitBtn = Ext4.create('Ext.button.Button', {
+            text: 'Submit completed form',
+            formBind: true,
+            width: 250,
+            height: 30,
+            scope: this,
+            handler: this.submitSurvey
+        });
+
+        this.submitDisabledInfo = Ext4.create('Ext.form.DisplayField', {
+            hideLabel: true,
+            width: 250,
+            style: "text-align: center;"
+        });
+
         this.sections.push(Ext4.create('Ext.panel.Panel', {
             title: 'End Survey',
             layout: {
                 type: 'hbox',
-                align: 'middle',
+                align: 'top',
                 pack: 'center'
             },
             header: false,
             border: false,
-            minHeight: 100,
+            bodyStyle: 'padding-top: 25px;',
+            defaults: {border: false, width: 250},
             items: [{
-                xtype: 'button',
-                text: 'Save',
-                disabled: true,
-                width: 150,
-                height: 30
-            },{
-                xtype: 'label',
-                width: 100,
-                value: null
-            },{
-                xtype: 'button',
-                text: 'Submit completed form',
-                disabled: true,
-                width: 250,
-                height: 30
+                xtype: 'panel',
+                layout: {type: 'vbox', align: 'center'},
+                items: [this.saveBtn, this.saveDisabledInfo]
+            },
+            {xtype: 'label', width: 100, value: null},
+            {
+                xtype: 'panel',
+                layout: {type: 'vbox', align: 'center'},
+                items: [this.submitBtn, this.submitDisabledInfo]
             }]
         }));
     },
 
-    setSurveyLayout: function(surveyConfig) {
+    setSurveyLayout : function(surveyConfig) {
 
         this.currentStep = 0;
 
@@ -273,6 +327,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             bbar: bbar.length > 0 ? bbar : undefined
         });
         this.add(this.centerPanel);
+
+        this.updateSubmitDisabledInfo();
     },
 
     getStepsDataArr : function() {
@@ -290,6 +346,62 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         this.prevBtn.setDisabled(this.currentStep == 0);
         this.nextBtn.setDisabled(this.currentStep == this.sections.length-1);
+    },
+
+    saveSurvey : function() {
+        Ext4.MessageBox.alert("Changed Values", Ext4.JSON.encode(this.getForm().getValues(false, true)));
+    },
+
+    submitSurvey : function() {
+        Ext4.MessageBox.alert("Changed Values", Ext4.JSON.encode(this.getForm().getValues(false, true)));
+    },
+
+    toggleSaveBtn : function(isValid) {
+        if (isValid)
+        {
+            this.saveBtn.enable();
+            this.saveDisabledInfo.hide();
+        }
+        else
+        {
+            this.saveBtn.disable();
+            this.saveDisabledInfo.show();
+        }
+    },
+
+    toggleSubmitBtn : function(form, isValid) {
+        if (isValid)
+        {
+            this.submitBtn.enable();
+            this.submitDisabledInfo.hide();
+        }
+        else
+        {
+            this.submitBtn.disable();
+            this.submitDisabledInfo.show();
+        }
+    },
+
+    fieldValidityChanged : function(cmp, isValid) {
+        this.validStatus[cmp.getName()] = isValid;
+        this.updateSubmitDisabledInfo();
+    },
+
+    updateSubmitDisabledInfo : function() {
+        var msg = "";
+        for (var name in this.validStatus)
+        {
+            if (!this.validStatus[name])
+                msg += "-" + name + "<br/>";
+        }
+
+        if (msg.length > 0)
+        {
+            this.submitDisabledInfo.update("<span style='font-style: italic; font-size: 90%'>"
+                + "Note: The following fields must be valid before you can submit the form*:<br/>"
+                + msg + "</span>");
+            this.submitDisabledInfo.show();
+        }
     },
 
     onFailure : function(resp){

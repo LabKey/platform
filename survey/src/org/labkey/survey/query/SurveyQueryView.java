@@ -18,9 +18,15 @@ import org.springframework.validation.BindException;
  */
 public class SurveyQueryView extends QueryView
 {
+    public static final String DATA_REGION = "Survey";
+    private Integer _surveyDesignId;
+
     public SurveyQueryView(UserSchema schema, QuerySettings settings, BindException errors)
     {
         super(schema, settings, errors);
+
+        if (settings instanceof SurveyQuerySettings)
+            _surveyDesignId = ((SurveyQuerySettings) settings).getSurveyDesignId();
 
         settings.setAllowChooseQuery(false);
 
@@ -38,13 +44,16 @@ public class SurveyQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL insertURL = new ActionURL(SurveyController.UpdateSurveyAction.class, getContainer());
-        insertURL.addParameter(QueryParam.srcURL, getReturnURL().toString());
+        // add the survey design Id for the given view (passed through via the SurveyQuerySettings
+        if (_surveyDesignId != null)
+        {
+            ActionURL insertURL = new ActionURL(SurveyController.UpdateSurveyAction.class, getContainer());
+            insertURL.addParameter("surveyDesignId", _surveyDesignId);
+            insertURL.addParameter(QueryParam.srcURL, getReturnURL().toString());
 
-        // TODO: conditionally add this button only if we have a surveyDesignId to add to the URL
-        ActionButton insert = new ActionButton(insertURL, "Add New Survey");
-        insert.setActionType(ActionButton.Action.LINK);
-
-        bar.add(insert);
+            ActionButton insert = new ActionButton(insertURL, "Create New Survey");
+            insert.setActionType(ActionButton.Action.LINK);
+            bar.add(insert);
+        }
     }
 }

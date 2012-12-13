@@ -46,6 +46,8 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.survey.model.SurveyDesign;
 import org.labkey.survey.query.SurveyQuerySchema;
+import org.labkey.survey.query.SurveyQuerySettings;
+import org.labkey.survey.query.SurveyQueryView;
 import org.springframework.validation.BindException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -189,7 +191,8 @@ public class SurveyModule extends DefaultModule
 
                 BindException errors = new NullSafeBindException(this, "form");
                 UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SurveyQuerySchema.SCHEMA_NAME);
-                QuerySettings settings = schema.getSettings(context, "surveys" + surveyDesign.getRowId(), SurveyQuerySchema.SURVEYS_TABLE_NAME);
+                SurveyQuerySettings settings = (SurveyQuerySettings)schema.getSettings(context, SurveyQueryView.DATA_REGION + surveyDesign.getRowId(), SurveyQuerySchema.SURVEYS_TABLE_NAME);
+                settings.setSurveyDesignId(surveyDesign.getRowId());
                 settings.setReturnUrl(context.getActionURL().clone());
 
                 // set base filter to the given survey design id and only show non-submitted surveys

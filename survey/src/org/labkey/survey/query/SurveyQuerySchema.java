@@ -49,6 +49,15 @@ public class SurveyQuerySchema extends UserSchema
     }
 
     @Override
+    protected QuerySettings createQuerySettings(String dataRegionName, String queryName, String viewName)
+    {
+        if (queryName != null && queryName.equals(SURVEYS_TABLE_NAME))
+            return new SurveyQuerySettings(dataRegionName);
+
+        return super.createQuerySettings(dataRegionName, queryName, viewName);
+    }
+
+    @Override
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
         if (SURVEY_DESIGN_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
