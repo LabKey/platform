@@ -16,6 +16,9 @@
 
 package org.labkey.survey;
 
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -137,7 +140,7 @@ public class SurveyController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class UpdateSurveyDesignAction extends SimpleViewAction<SurveyDesignForm>
+    public class SurveyDesignAction extends SimpleViewAction<SurveyDesignForm>
     {
         private String _title = "Create Survey Design";
 
@@ -239,13 +242,72 @@ public class SurveyController extends SpringActionController
         public ApiResponse execute(SurveyDesignForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-
             SurveyDesign survey = getSurveyDesign(form);
-            SurveyManager.get().saveSurveyDesign(getContainer(), getUser(), survey);
+            JSONObject errorInfo = null;
 
-            response.put("success", true);
+            try {
+                // try to validate the metadata
+                JsonParser parser = new JsonParser();
+                parser.parse(form.getMetadata());
+            }
+            catch (JsonSyntaxException e)
+            {
+                String msg = "The survey questions must be valid JSON. Validation failed with the error : (%s)";
+                String cause;
+                if (e.getCause() != null)
+                    cause = e.getCause().getMessage();
+                else
+                    cause = e.getMessage();
+
+                // try to parse out the error location so we can position the editor selection
+                errorInfo = parseErrorPosition(cause);
+                errorInfo.put("message", String.format(msg, cause));
+            }
+
+            if (errorInfo == null)
+            {
+                SurveyManager.get().saveSurveyDesign(getContainer(), getUser(), survey);
+                response.put("success", true);
+            }
+            else
+            {
+                response.put("errorInfo", errorInfo);
+                response.put("success", false);
+            }
 
             return response;
+        }
+
+        private JSONObject parseErrorPosition(String errorMsg)
+        {
+            JSONObject errors = new JSONObject();
+            boolean capture = false;
+            String key = null;
+
+            for (String part : errorMsg.split(" "))
+            {
+                if ("line".equalsIgnoreCase(part))
+                {
+                    capture = true;
+                    key = "line";
+                }
+                else if ("column".equalsIgnoreCase(part))
+                {
+                    capture = true;
+                    key = "column";
+                }
+                else if (NumberUtils.isNumber(part))
+                {
+                    if (capture && key != null)
+                        errors.put(key, NumberUtils.toInt(part));
+                }
+                else
+                {
+                    capture = false;
+                    key = null;
+                }
+            }
+            return errors;
         }
     }
 

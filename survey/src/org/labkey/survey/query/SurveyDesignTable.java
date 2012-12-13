@@ -40,7 +40,7 @@ public class SurveyDesignTable extends FilteredTable
         ));
         setDefaultVisibleColumns(defaultColumns);
 
-        ActionURL updateUrl = new ActionURL(SurveyController.UpdateSurveyDesignAction.class, container);
+        ActionURL updateUrl = new ActionURL(SurveyController.SurveyDesignAction.class, container);
         setUpdateURL(new DetailsURL(updateUrl, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
     }
 

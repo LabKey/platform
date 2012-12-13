@@ -85,11 +85,29 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                         success : function(resp){
                             var o = Ext4.decode(resp.responseText);
 
-                            if (o.success) {
+                            if (o.success)
+                            {
                                 if (this.returnUrl)
                                     window.location = this.returnUrl;
                                 else
                                     window.history.back();
+                            }
+                            else if (o.errorInfo)
+                            {
+                                Ext.MessageBox.alert('Error', o.errorInfo.message);
+
+                                var pos = {};
+                                if (o.errorInfo.line)
+                                    pos.line = o.errorInfo.line-1;
+                                if (o.errorInfo.column)
+                                    pos.ch = o.errorInfo.column;
+
+                                if (this.codeMirror) {
+
+                                    this.codeMirror.setCursor(pos);
+                                    this.codeMirror.setSelection({ch:0, line:pos.line}, pos);
+                                    this.codeMirror.scrollIntoView(pos);
+                                }
                             }
                         },
                         failure : this.onFailure,
@@ -249,12 +267,13 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
     },
 
     onFailure : function(resp){
-        var error = Ext4.decode(resp.responseText).exception;
-        if(error){
+        var o = Ext4.decode(resp.responseText);
+
+        var error = o.exception;
+        if(error)
             Ext.MessageBox.alert('Error', error);
-        } else {
-            Ext.MessageBox.alert('Error', 'An unknown error has ocurred, unable to save the chart.');
-        }
+        else
+            Ext.MessageBox.alert('Error', 'An unknown error has ocurred, unable to save the survey.');
     },
 
     loadSurvey : function(survey) {
