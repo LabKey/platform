@@ -23,18 +23,36 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableViewForm;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SurveyController extends SpringActionController
 {
@@ -112,7 +130,7 @@ public class SurveyController extends SpringActionController
                     form.setSurveyDesignId(survey.getSurveyDesignId());
                     form.setLabel(survey.getLabel());
                     form.setStatus(survey.getStatus());
-                    form.setResponsesPk(survey.getResponsePk());
+                    form.setResponsesPk(survey.getResponsesPk());
 
                     if (survey.getSubmitted() != null)
                         errors.reject(ERROR_MSG, "Error: You are not allowed to update a survey that has already been submitted. Please contact the site administrator if the survey status for this record needs to be changed.");
@@ -330,6 +348,23 @@ public class SurveyController extends SpringActionController
         return survey;
     }
 
+    private Survey getSurvey(SurveyForm form)
+    {
+        Survey survey = new Survey();
+        if (form.getRowId() != null)
+            survey = SurveyManager.get().getSurvey(getContainer(), getUser(), form.getRowId());
+
+        if (form.getLabel() != null)
+            survey.setLabel(form.getLabel());
+        survey.setContainerId(getContainer().getId());
+        if (form.getStatus() != null)
+            survey.setStatus(form.getStatus());
+        if (form.getSurveyDesignId() != null)
+            survey.setSurveyDesignId(form.getSurveyDesignId());
+
+        return survey;
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class GetSurveyTemplateAction extends ApiAction<SurveyDesignForm>
     {
@@ -351,4 +386,197 @@ public class SurveyController extends SpringActionController
             return response;
         }
    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class UpdateSurveyResponseAction extends ApiAction<SurveyResponseForm>
+    {
+        @Override
+        public ApiResponse execute(SurveyResponseForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
+
+            if (surveyDesign != null)
+            {
+                TableInfo table = getTableInfo(surveyDesign);
+                FieldKey pk = table.getAuditRowPk();
+
+                if (table != null && pk != null)
+                {
+                    DbSchema dbschema = table.getSchema();
+                    try
+                    {
+                        dbschema.getScope().ensureTransaction();
+
+                        TableViewForm tvf = new TableViewForm(table);
+                        Survey survey = getSurvey(form);
+
+                        tvf.setViewContext(getViewContext());
+                        tvf.setTypedValues(form.getProps(), false);
+
+                        if (!survey.isNew())
+                        {
+                            Map<String, Object> keys = new HashMap<String, Object>();
+
+                            keys.put(pk.toString(), survey.getResponsesPk());
+                            tvf.setOldValues(keys);
+                        }
+
+                        Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
+
+                        if (!row.isEmpty())
+                        {
+                            if (survey.isNew())
+                            {
+                                // update the survey instance with the key for the answers so that existing answers can
+                                // be updated.
+                                Object key = row.get(pk.toString());
+                                survey.setResponsesPk(String.valueOf(key));
+                            }
+                            survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
+
+                            response.put("surveyResults", row);
+                            response.put("survey", new JSONObject(survey));
+                        }
+                        response.put("success", !row.isEmpty());
+                        dbschema.getScope().commitTransaction();
+                    }
+                    finally
+                    {
+                        dbschema.getScope().closeConnection();
+                    }
+                }
+            }
+            return response;
+        }
+
+        protected TableInfo getTableInfo(SurveyDesign survey)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), survey.getSchemaName());
+
+            if (schema != null)
+            {
+                return schema.getTable(survey.getQueryName());
+            }
+            return null;
+        }
+
+        protected Map<String, Object> doInsertUpdate(TableViewForm form, BindException errors, boolean insert) throws Exception
+        {
+            TableInfo table = form.getTable();
+            Map<String, Object> values = form.getTypedColumns();
+
+            QueryUpdateService qus = table.getUpdateService();
+            if (qus == null)
+                throw new IllegalArgumentException("The query '" + table.getName() + "' in the schema '" + table.getSchema().getName() + "' is not updatable.");
+
+            try
+            {
+                Map<String, Object> row;
+
+                if (insert)
+                {
+                    BatchValidationException batchErrors = new BatchValidationException();
+                    List<Map<String, Object>> updated = qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null);
+                    if (batchErrors.hasErrors())
+                        throw batchErrors;
+
+                    assert(updated.size() == 1);
+                    row = updated.get(0);
+                }
+                else
+                {
+                    Map<String, Object> oldValues = null;
+                    if (form.getOldValues() instanceof Map)
+                    {
+                        oldValues = (Map<String, Object>)form.getOldValues();
+                        if (!(oldValues instanceof CaseInsensitiveMapWrapper))
+                            oldValues = new CaseInsensitiveMapWrapper<Object>(oldValues);
+                    }
+                    List<Map<String, Object>> updated = qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
+
+                    assert(updated.size() == 1);
+                    row = updated.get(0);
+                }
+                return row;
+            }
+            catch (SQLException x)
+            {
+                if (!SqlDialect.isConstraintException(x))
+                    throw x;
+                errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
+            }
+            catch (BatchValidationException x)
+            {
+                x.addToErrors(errors);
+            }
+            catch (Exception x)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
+                //ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
+            }
+            return Collections.emptyMap();
+        }
+    }
+
+    public static class SurveyResponseForm extends SurveyForm implements CustomApiForm
+    {
+        private Map<String, Object> _props = new HashMap<String, Object>();
+        private BeanObjectFactory<Survey> _factory = new BeanObjectFactory<Survey>(Survey.class);
+        private Survey _bean;
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            _props = props;
+
+            if (props.containsKey("rowId"))
+                _rowId = NumberUtils.createInteger(String.valueOf(props.get("rowId")));
+            if (props.containsKey("label"))
+                _label = String.valueOf(props.get("label"));
+            if (props.containsKey("surveyDesignId"))
+                _surveyDesignId = NumberUtils.createInteger(String.valueOf(props.get("surveyDesignId")));
+            if (props.containsKey("status"))
+                _status = String.valueOf(props.get("status"));
+
+            //_bean = _factory.fromMap(props);
+        }
+
+/*
+        @Override
+        public Integer getRowId()
+        {
+            return _bean.getRowId();
+        }
+
+        @Override
+        public Integer getSurveyDesignId()
+        {
+            return _bean.getSurveyDesignId();
+        }
+
+        @Override
+        public String getLabel()
+        {
+            return _bean.getLabel();
+        }
+
+        @Override
+        public String getStatus()
+        {
+            return _bean.getStatus();
+        }
+
+        @Override
+        public String getResponsesPk()
+        {
+            return _bean.getResponsesPk();
+        }
+*/
+
+        public Map<String, Object> getProps()
+        {
+            return _props;
+        }
+    }
 }

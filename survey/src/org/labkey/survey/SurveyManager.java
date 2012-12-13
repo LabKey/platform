@@ -141,6 +141,32 @@ public class SurveyManager
         }
     }
 
+    public Survey saveSurvey(Container container, User user, Survey survey)
+    {
+        DbScope scope = SurveySchema.getInstance().getSchema().getScope();
+
+        try {
+            scope.ensureTransaction();
+
+            Survey ret;
+            if (survey.isNew())
+                ret = Table.insert(user, SurveySchema.getInstance().getSurveysTable(), survey);
+            else
+                ret = Table.update(user, SurveySchema.getInstance().getSurveysTable(), survey, survey.getRowId());
+
+            scope.commitTransaction();
+            return ret;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+    }
+
     public SurveyDesign getSurveyDesign(Container container, User user, int surveyId)
     {
         return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter("rowId", surveyId), null).getObject(SurveyDesign.class);

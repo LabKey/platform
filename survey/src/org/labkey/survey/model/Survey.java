@@ -17,7 +17,7 @@ public class Survey extends Entity
     private Date _submitted;
     private String _status;
     private int _surveyDesignId;
-    private String _responsePk;
+    private String _responsesPk;
 
     public boolean isNew()
     {
@@ -84,13 +84,13 @@ public class Survey extends Entity
         _surveyDesignId = surveyDesignId;
     }
 
-    public String getResponsePk()
+    public String getResponsesPk()
     {
-        return _responsePk;
+        return _responsesPk;
     }
 
-    public void setResponsePk(String responsePk)
+    public void setResponsesPk(String responsesPk)
     {
-        _responsePk = responsePk;
+        _responsesPk = responsesPk;
     }
 }

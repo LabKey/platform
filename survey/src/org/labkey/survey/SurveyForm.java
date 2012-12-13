@@ -9,11 +9,11 @@ import org.jetbrains.annotations.Nullable;
   */
 public class SurveyForm
 {
-    private Integer _rowId;
-    private Integer _surveyDesignId;
-    private String _label;
-    private String _status;
-    private String _responsesPk;
+    protected Integer _rowId;
+    protected Integer _surveyDesignId;
+    protected String _label;
+    protected String _status;
+    protected String _responsesPk;
 
     public Integer getRowId()
     {
