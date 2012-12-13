@@ -101,7 +101,7 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException
         {
-            if (_stopElements.contains(localName))
+            if (_stopElements.contains(localName) || _stopElements.contains(qName))
             {
                 throw new ParseFinishedException();
             }

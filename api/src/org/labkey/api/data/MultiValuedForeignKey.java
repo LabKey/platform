@@ -145,7 +145,7 @@ public class MultiValuedForeignKey implements ForeignKey
 
     public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
     {
-        return _fk.remapFieldKeys(null, mapping);
+        return new MultiValuedForeignKey(_fk.remapFieldKeys(null, mapping), _junctionLookup);
     }
 
     @Override
