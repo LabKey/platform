@@ -174,14 +174,17 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
     public static StringExpression getDetailsURL(ColumnInfo parent, TableInfo lookupTable, String columnName)
     {
-        FieldKey columnKey = new FieldKey(null,columnName);
-        Set<FieldKey> keys = Collections.singleton(columnKey);
-
         StringExpression expr = lookupTable.getDetailsURL(null, null);
+        if (expr == AbstractTableInfo.LINK_DISABLER)
+            return AbstractTableInfo.LINK_DISABLER;
+
         if (expr instanceof StringExpressionFactory.FieldKeyStringExpression)
         {
             StringExpressionFactory.FieldKeyStringExpression f = (StringExpressionFactory.FieldKeyStringExpression)expr;
             StringExpressionFactory.FieldKeyStringExpression rewrite;
+
+            FieldKey columnKey = new FieldKey(null,columnName);
+            Set<FieldKey> keys = Collections.singleton(columnKey);
 
             // if the URL only substitutes the PK we can rewrite as FK (does the DisplayColumn handle when the join fails?)
             if (f.validateFieldKeys(keys))

@@ -529,6 +529,12 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public StringExpression getDetailsURL(@Nullable Set<FieldKey> columns, Container container)
     {
+        if (_detailsURL == AbstractTableInfo.LINK_DISABLER)
+            return LINK_DISABLER;
+
+        if (_detailsURL == null)
+            return null;
+
         ContainerContext containerContext = getContainerContext();
         if (containerContext == null)
             containerContext = container;
@@ -540,11 +546,6 @@ abstract public class AbstractTableInfo implements TableInfo
             Set<FieldKey> s = new HashSet<FieldKey>(columns);
             s.add(fieldKeyContext.getFieldKey());
             columns = s;
-        }
-
-        if (_detailsURL == AbstractTableInfo.LINK_DISABLER || _detailsURL == null)
-        {
-            return null;
         }
 
         if (columns == null || _detailsURL.validateFieldKeys(columns))

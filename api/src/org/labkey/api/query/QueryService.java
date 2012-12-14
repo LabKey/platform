@@ -131,9 +131,6 @@ abstract public class QueryService
      */
     abstract public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<FieldKey> unresolvedColumns);
 
-    abstract public Map<String, UserSchema> getExternalSchemas(DefaultSchema folderSchema);
-    abstract public UserSchema getExternalSchema(DefaultSchema folderSchema, String name);
-
     abstract public UserSchema createSimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema schema);
 
     abstract public List<ColumnInfo> getDefaultVisibleColumnInfos(List<ColumnInfo> columns);

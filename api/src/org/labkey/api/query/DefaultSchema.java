@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
@@ -26,11 +27,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A schema, scoped to a particular container
@@ -42,11 +45,23 @@ final public class DefaultSchema extends AbstractSchema
         abstract public @Nullable QuerySchema getSchema(DefaultSchema schema);
     }
 
+    static public abstract class DynamicSchemaProvider
+    {
+        abstract public @Nullable QuerySchema getSchema(User user, Container container, String name);
+        abstract public @NotNull Collection<String> getSchemaNames(User user, Container container);
+    }
+
     private static final Map<String, SchemaProvider> _providers = new ConcurrentCaseInsensitiveSortedMap<SchemaProvider>();
+    private static final List<DynamicSchemaProvider> _dynamicProviders = new CopyOnWriteArrayList<DynamicSchemaProvider>();
 
     static public void registerProvider(String name, SchemaProvider provider)
     {
         _providers.put(name, provider);
+    }
+
+    static public void registerProvider(DynamicSchemaProvider provider)
+    {
+        _dynamicProviders.add(provider);
     }
 
     static
@@ -145,8 +160,10 @@ final public class DefaultSchema extends AbstractSchema
     public QuerySchema getSchema(String name)
     {
         SchemaProvider provider = _providers.get(name);
+        if (provider != null)
+            return provider.getSchema(this);
 
-        if (provider == null && name != null && name.startsWith("/"))
+        if (name != null && name.startsWith("/"))
         {
             Container project = ContainerManager.getForPath(name);
             if (project != null && project.hasPermission(getUser(), ReadPermission.class))
@@ -155,18 +172,21 @@ final public class DefaultSchema extends AbstractSchema
             }
         }
 
-        if (provider == null)
+        for (DynamicSchemaProvider dynamicProvider : _dynamicProviders)
         {
-            return QueryService.get().getExternalSchema(this, name);
+            QuerySchema schema = dynamicProvider.getSchema(getUser(), getContainer(), name);
+            if (schema != null)
+                return schema;
         }
 
-        return provider.getSchema(this);
+        return null;
     }
 
     public Set<String> getSchemaNames()
     {
         Set<String> ret = new TreeSet<String>(_providers.keySet());    // TODO: Return a set in case-insensitive order?
-        ret.addAll(QueryService.get().getExternalSchemas(this).keySet());
+        for (DynamicSchemaProvider dynamicProvider : _dynamicProviders)
+            ret.addAll(dynamicProvider.getSchemaNames(getUser(), getContainer()));
         return Collections.unmodifiableSet(ret);
     }
 

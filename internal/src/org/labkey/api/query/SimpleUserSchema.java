@@ -96,17 +96,36 @@ public class SimpleUserSchema extends UserSchema
         if (!_available.contains(name))
             return null;
 
-        SchemaTableInfo schematable = _dbSchema.getTable(name);
-
-        if (schematable == null)
+        TableInfo sourceTable = createSourceTable(name);
+        if (sourceTable == null)
             return null;
 
-        return createTable(name, schematable);
+        return createWrappedTable(name, sourceTable);
     }
 
-    protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)
+    /**
+     * Create the source TableInfo that will be wrapped by this schema.
+     * Typically, the source table is a SchemaTableInfo from the underlying data source.
+     * In a LinkedSchema, however, source table is query-level TableInfo from a UserSchema.
+     *
+     * @param name The table name.
+     * @return The source TableInfo.
+     */
+    protected TableInfo createSourceTable(String name)
     {
-        return new SimpleTable(this, schematable);
+        return _dbSchema.getTable(name);
+    }
+
+    /**
+     * Create the wrapped TableInfo over the source TableInfo.
+     *
+     * @param name The table name
+     * @param sourceTable
+     * @return The wrapped TableInfo.
+     */
+    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
+    {
+        return new SimpleTable(this, sourceTable);
     }
 
     public Set<String> getTableNames()
@@ -151,13 +170,17 @@ public class SimpleUserSchema extends UserSchema
         protected ColumnInfo _objectUriCol;
         protected Domain _domain;
 
-        public SimpleTable(UserSchema schema, SchemaTableInfo table)
+        public SimpleTable(UserSchema schema, TableInfo table)
         {
             super(table, schema.getContainer());
             _userSchema = schema;
 
             addColumns();
+            addTableURLs();
+        }
 
+        protected void addTableURLs()
+        {
             // Generic query details page if none provided in schema xml.
             if (!hasDetailsURL())
             {
@@ -175,6 +198,7 @@ public class SimpleUserSchema extends UserSchema
         {
             wrapAllColumns();
             addDomainColumns();
+            setDefaultVisibleColumns(getRealTable().getDefaultVisibleColumns());
         }
 
         protected boolean acceptColumn(ColumnInfo col)
@@ -184,86 +208,99 @@ public class SimpleUserSchema extends UserSchema
 
         public void wrapAllColumns()
         {
-            for (ColumnInfo col : _rootTable.getColumns())
+            for (ColumnInfo col : getRealTable().getColumns())
             {
                 if (!acceptColumn(col)) continue;
 
-                ColumnInfo wrap = wrapColumn(col);
-                // 10945: Copy label from the underlying column -- wrapColumn() doesn't copy the label.
-                wrap.setLabel(col.getLabel());
-                addColumn(wrap);
+                wrapColumn(col);
+            }
+        }
 
-                // ColumnInfo doesn't copy these attributes by default
-                wrap.setHidden(col.isHidden());
+        public ColumnInfo wrapColumn(ColumnInfo col)
+        {
+            ColumnInfo wrap = super.wrapColumn(col);
 
-                final String colName = col.getName();
+            // 10945: Copy label from the underlying column -- wrapColumn() doesn't copy the label.
+            wrap.setLabel(col.getLabel());
 
-                // Add an FK to the Users table for special fields... but ONLY if for type integer and in the LabKey data source.  #11660
-                if (JdbcType.INTEGER == col.getJdbcType() &&
-                   (colName.equalsIgnoreCase("owner") || colName.equalsIgnoreCase("createdby") || colName.equalsIgnoreCase("modifiedby")) &&
-                   (_userSchema.getDbSchema().getScope().isLabKeyScope()))
+            // ColumnInfo doesn't copy these attributes by default
+            wrap.setHidden(col.isHidden());
+
+            fixupWrappedColumn(wrap, col);
+            addColumn(wrap);
+
+            return wrap;
+        }
+
+        protected void fixupWrappedColumn(ColumnInfo wrap, ColumnInfo col)
+        {
+            final String colName = col.getName();
+
+            // Add an FK to the Users table for special fields... but ONLY if for type integer and in the LabKey data source.  #11660
+            if (JdbcType.INTEGER == col.getJdbcType() &&
+               (colName.equalsIgnoreCase("owner") || colName.equalsIgnoreCase("createdby") || colName.equalsIgnoreCase("modifiedby")) &&
+               (_userSchema.getDbSchema().getScope().isLabKeyScope()))
+            {
+                wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
+                wrap.setUserEditable(false);
+                wrap.setShownInInsertView(false);
+                wrap.setShownInUpdateView(false);
+                wrap.setReadOnly(true);
+
+                if (colName.equalsIgnoreCase("createdby"))
+                    wrap.setLabel("Created By");
+                if (colName.equalsIgnoreCase("modifiedby"))
+                    wrap.setLabel("Modified By");
+            }
+            // also add FK to container field
+            else if ((col.getJdbcType() != null && col.getJdbcType().getJavaClass() == String.class) &&
+               "container".equalsIgnoreCase(colName) &&
+               (_userSchema.getDbSchema().getScope().isLabKeyScope()))
+            {
+                wrap.setLabel("Folder");
+                ContainerForeignKey.initColumn(wrap, _userSchema);
+            }
+            else if (col.getFk() != null)
+            {
+                //FIX: 5661
+                //get the column name in the target FK table that it would have joined against.
+                ForeignKey fk = col.getFk();
+                String pkColName = fk.getLookupColumnName();
+                TableInfo fkTable = col.getFkTableInfo();
+                if (null == pkColName && fkTable != null && fkTable.getPkColumnNames().size() == 1)
+                    pkColName = fkTable.getPkColumnNames().get(0);
+
+                if (null != pkColName)
                 {
-                    wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
-                    wrap.setUserEditable(false);
-                    wrap.setShownInInsertView(false);
-                    wrap.setShownInUpdateView(false);
-                    wrap.setReadOnly(true);
+                    // 9338 and 9051: fixup fks for external schemas that have been renamed
+                    // NOTE: This will only fixup fk schema names if they are within the current schema.
+                    String lookupSchemaName = fk.getLookupSchemaName();
+                    if (lookupSchemaName.equalsIgnoreCase(_userSchema.getDbSchema().getName()))
+                        lookupSchemaName = _userSchema.getName();
 
-                    if(colName.equalsIgnoreCase("createdby"))
-                        wrap.setLabel("Created By");
-                    if(colName.equalsIgnoreCase("modifiedby"))
-                        wrap.setLabel("Modified By");
-                }
-                // also add FK to container field
-                else if ((col.getJdbcType() != null && col.getJdbcType().getJavaClass() == String.class)&&
-                   "container".equalsIgnoreCase(colName) &&
-                   (_userSchema.getDbSchema().getScope().isLabKeyScope()))
-                {
-                    wrap.setLabel("Folder");
-                    ContainerForeignKey.initColumn(wrap, _userSchema);
-                }
-                else if (col.getFk() != null)
-                {
-                    //FIX: 5661
-                    //get the column name in the target FK table that it would have joined against.
-                    ForeignKey fk = col.getFk();
-                    String pkColName = fk.getLookupColumnName();
-                    TableInfo fkTable = col.getFkTableInfo();
-                    if (null == pkColName && fkTable != null && fkTable.getPkColumnNames().size() == 1)
-                        pkColName = fkTable.getPkColumnNames().get(0);
-
-                    if (null != pkColName)
+                    boolean joinWithContainer = false;
+                    String displayColumn = null;
+                    if (fk instanceof ColumnInfo.SchemaForeignKey)
                     {
-                        // 9338 and 9051: fixup fks for external schemas that have been renamed
-                        // NOTE: This will only fixup fk schema names if they are within the current schema.
-                        String lookupSchemaName = fk.getLookupSchemaName();
-                        if (lookupSchemaName.equalsIgnoreCase(_userSchema.getDbSchema().getName()))
-                            lookupSchemaName = _userSchema.getName();
+                        joinWithContainer = ((ColumnInfo.SchemaForeignKey)fk).isJoinWithContainer();
+                        displayColumn = ((ColumnInfo.SchemaForeignKey)fk).getDisplayColumnName();
+                    }
 
-                        boolean joinWithContainer = false;
-                        String displayColumn = null;
-                        if (fk instanceof ColumnInfo.SchemaForeignKey)
-                        {
-                            joinWithContainer = ((ColumnInfo.SchemaForeignKey)fk).isJoinWithContainer();
-                            displayColumn = ((ColumnInfo.SchemaForeignKey)fk).getDisplayColumnName();
-                        }
+                    ForeignKey wrapFk = new SimpleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, joinWithContainer, displayColumn);
+                    if (fk instanceof MultiValuedForeignKey)
+                    {
+                        wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
+                    }
 
-                        ForeignKey wrapFk = new SimpleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, joinWithContainer, displayColumn);
-                        if (fk instanceof MultiValuedForeignKey)
-                        {
-                            wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
-                        }
+                    wrap.setFk(wrapFk);
 
-                        wrap.setFk(wrapFk);
-
-                        if (_objectUriCol == null && isObjectUriLookup(pkColName, fk.getLookupTableName(), fk.getLookupSchemaName()))
-                        {
-                            _objectUriCol = wrap;
-                            wrap.setShownInInsertView(false);
-                            wrap.setShownInUpdateView(false);
-                            wrap.setShownInDetailsView(false);
-                            wrap.setHidden(true);
-                        }
+                    if (_objectUriCol == null && isObjectUriLookup(pkColName, fk.getLookupTableName(), fk.getLookupSchemaName()))
+                    {
+                        _objectUriCol = wrap;
+                        wrap.setShownInInsertView(false);
+                        wrap.setShownInUpdateView(false);
+                        wrap.setShownInDetailsView(false);
+                        wrap.setHidden(true);
                     }
                 }
             }

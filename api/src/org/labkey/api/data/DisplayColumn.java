@@ -104,7 +104,10 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void setURLExpression(StringExpression se)
     {
-        _urlExpression = se;
+        if (se == AbstractTableInfo.LINK_DISABLER)
+            _urlExpression = null;
+        else
+            _urlExpression = se;
         _url = null;
     }
 
