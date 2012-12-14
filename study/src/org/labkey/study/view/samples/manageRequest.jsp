@@ -285,7 +285,7 @@
         {
 %>
                 This request is in a final state; no changes are allowed.<br>
-                To make changes, you must <a href="<%=buildURL(SpecimenController.ManageRequestStatusAction.class,"id=" + bean.getSampleRequest().getRowId())%>">
+                To make changes, you must <a href="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class,"id=" + bean.getSampleRequest().getRowId()))%>">
                 change the request's status</a> to a non-final state.
 <%
         }
@@ -334,8 +334,8 @@
             {
 %>
                 You must add specimens before submitting your request.<br><br>
-                <%= specimenSearchButton %>
-                <%= importVialIdsButton %>
+                <%= text(specimenSearchButton) %>
+                <%= text(importVialIdsButton) %>
 <%
             }
 
@@ -363,7 +363,7 @@
         else
         {
 %>
-                Only the request creator (<%= creatingUser.getDisplayName(context.getUser()) %>) or an administrator may submit or cancel this request.
+                Only the request creator (<%= h(creatingUser.getDisplayName(context.getUser())) %>) or an administrator may submit or cancel this request.
 <%
         }
     }
@@ -376,11 +376,11 @@
                 <table>
                     <tr>
                         <th valign="top" align="right">Requester</th>
-                        <td><%= creatingUser != null ? h(creatingUser.getDisplayName(context.getUser())) : "Unknown" %></td>
+                        <td><%= h(creatingUser != null ? h(creatingUser.getDisplayName(context.getUser())) : "Unknown") %></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Requesting Location</th>
-                        <td><%= destinationSite != null ? h(destinationSite.getDisplayName()) : "Not specified" %></td>
+                        <td><%= h(destinationSite != null ? h(destinationSite.getDisplayName()) : "Not specified") %></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Request Date</th>
@@ -392,23 +392,22 @@
                     </tr>
                     <tr>
                         <th valign="top" align="right">Status</th>
-                        <td><%= bean.getStatus().getLabel() %></td>
-                    </tr>
-                    <tr>
-                        <th valign="top" align="right">&nbsp;</th>
-                        <td>
-                            <%= textLink("View History", buildURL(SpecimenController.RequestHistoryAction.class) + "id=" + bean.getSampleRequest().getRowId()) %>&nbsp;
-                            <%= bean.isRequestManager() ? textLink("Update Request", buildURL(SpecimenController.ManageRequestStatusAction.class) + "id=" + bean.getSampleRequest().getRowId()) : "" %>
-                            <%= bean.isRequestManager() ? textLink("Originating Location Specimen Lists",
-                                    buildURL(SpecimenController.LabSpecimenListsAction.class) + "id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) : "" %>
-                            <%= bean.isRequestManager() ? textLink("Providing Location Specimen Lists",
-                                    buildURL(SpecimenController.LabSpecimenListsAction.class) + "id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString()) : "" %>
-                        </td>
+                        <td><%= h(bean.getStatus().getLabel()) %></td>
                     </tr>
                 </table>
             </td>
         </tr>
-        <form action="<%=h(buildURL(SpecimenController.ManageRequestAction.class))%>" name="addRequirementForm" enctype="multipart/form-data" method="POST">
+<tr>
+    <td>
+        <%= textLink("View History", buildURL(SpecimenController.RequestHistoryAction.class) + "id=" + bean.getSampleRequest().getRowId()) %>&nbsp;
+        <%= bean.isRequestManager() ? textLink("Update Request", buildURL(SpecimenController.ManageRequestStatusAction.class) + "id=" + bean.getSampleRequest().getRowId()) : "" %>
+        <%= bean.isRequestManager() ? textLink("Originating Location Specimen Lists",
+                buildURL(SpecimenController.LabSpecimenListsAction.class) + "id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) : "" %>
+        <%= bean.isRequestManager() ? textLink("Providing Location Specimen Lists",
+                buildURL(SpecimenController.LabSpecimenListsAction.class) + "id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString()) : "" %>
+    </td>
+</tr>
+<form action="<%=h(buildURL(SpecimenController.ManageRequestAction.class))%>" name="addRequirementForm" enctype="multipart/form-data" method="POST">
         <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId()%>">
         <tr class="labkey-wp-header">
             <th align="left">Current Requirements</th>
@@ -430,7 +429,7 @@
                             <th align=left>Actor</th>
                             <th align=left>Location</th>
                             <th align=left>Description</th>
-                            <th align=left><%= requirements.length > 0 ? "Status" : "" %></th>
+                            <th align=left><%= text(requirements.length > 0 ? "Status" : "") %></th>
                             <th align=left>&nbsp;</th>
                         </tr>
                     <%
@@ -448,10 +447,10 @@
                             <tr>
                                 <td><%= h(requirement.getActor().getLabel()) %></td>
                                 <td><%= h(siteLabel) %></td>
-                                <td><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                                <td><%= text(requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;") %></td>
                                 <td>
-                                    <span class="<%= requirement.isComplete() ? "labkey-message" : "labkey-error"%>" style="font-weight:bold;">
-                                        <%= requirement.isComplete() ? "Complete" : "Incomplete" %>
+                                    <span class="<%= text(requirement.isComplete() ? "labkey-message" : "labkey-error")%>" style="font-weight:bold;">
+                                        <%= text(requirement.isComplete() ? "Complete" : "Incomplete") %>
                                     </span>
                                 </td>
                                 <td>
@@ -492,7 +491,7 @@
                                 </select>
                             </td>
                             <td colspan="2"><input type="text" name="newDescription" size="50"></td>
-                            <td><%= buttonImg("Add Requirement", "if (validateNewRequirement()) document.addRequirementForm.submit(); return false;")%></td>
+                            <td><%= text(buttonImg("Add Requirement", "if (validateNewRequirement()) document.addRequirementForm.submit(); return false;"))%></td>
                         </tr>
                         <%
                             }
@@ -504,25 +503,18 @@
             </td>
         </tr>
         </form>
-        <tr class="labkey-wp-header">
-            <th align="left">Associated Specimens</th>
-        </tr>
+<%
+    if (null == bean.getSpecimenQueryView())
+    {
+%>
         <tr>
             <td>
-                <%
-                    if (bean.getSpecimenQueryView() != null)
-                    {
-                        me.include(bean.getSpecimenQueryView(), out);
-                    }
-                    else
-                    {
-                %>
                 No specimens are associated with this request.<br>
-                <%= specimenSearchButton %>
-                <%= importVialIdsButton %>
-                <%
-                    }
-                %>
+                <%= text(specimenSearchButton) %>
+                <%= text(importVialIdsButton) %>
             </td>
         </tr>
+<%
+    }
+%>
     </table>

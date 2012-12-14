@@ -925,6 +925,43 @@ public class SpecimenUtils
         }
     }
 
+    public GridView getRequestEventAttachmentsGridView(HttpServletRequest request, BindException errors, int requestId)
+    {
+        DataRegion rgn = new DataRegion() {
+            private int i = 0;
+            @Override
+            protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+            {
+                // This is so we don't show rows that have no attachments
+                SampleRequestEvent event = ObjectFactory.Registry.getFactory(SampleRequestEvent.class).fromMap(ctx.getRow());
+                List<Attachment> attachments = AttachmentService.get().getAttachments(event);
+                if (!attachments.isEmpty())
+                {
+                    super.renderTableRow(ctx, out, showRecordSelectors, renderers, i++);
+                }
+            }
+        };
+
+        TableInfo tableInfoRequestEvent = StudySchema.getInstance().getTableInfoSampleRequestEvent();
+        rgn.setTable(tableInfoRequestEvent);
+        rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntityId"));
+        rgn.getDisplayColumn("EntityId").setVisible(false);
+        rgn.getDisplayColumn("Created").setVisible(false);
+        rgn.setShowBorders(true);
+        rgn.setShowPagination(false);
+        DisplayColumn attachmentDisplayColumn = new AttachmentDisplayColumn(request);
+        rgn.addDisplayColumn(attachmentDisplayColumn);
+        rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+        GridView grid = new GridView(rgn, errors);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RequestId"), requestId);
+        grid.setFilter(filter);
+        FieldKey fieldKey = FieldKey.fromString("Created");
+        Sort sort = new Sort();
+        sort.insertSortColumn(fieldKey, Sort.SortDirection.DESC);
+        grid.setSort(sort);
+        return grid;
+    }
+
     public SimpleFilter getSpecimenListFilter(SampleRequest sampleRequest, SiteImpl srcSite, SpecimenController.LabSpecimenListsBean.Type type)
     {
         SpecimenController.LabSpecimenListsBean bean = new SpecimenController.LabSpecimenListsBean(this, sampleRequest, type);

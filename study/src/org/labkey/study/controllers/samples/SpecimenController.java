@@ -95,6 +95,7 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
+import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -1110,7 +1111,13 @@ public class SpecimenController extends BaseStudyController
             }
             else
             {
-                return new JspView<ManageRequestBean>("/org/labkey/study/view/samples/manageRequest.jsp", bean);
+                GridView attachmentsGrid = getUtils().getRequestEventAttachmentsGridView(getViewContext().getRequest(), errors, _requestId);
+                SpecimenQueryView queryView = bean.getSpecimenQueryView();
+                if (null != queryView)
+                    queryView.setTitle("Associated Specimens");
+                HBox hbox = new HBox(new JspView<ManageRequestBean>("/org/labkey/study/view/samples/manageRequest.jsp", bean), attachmentsGrid);
+                hbox.setTableWidth("");
+                return new VBox(hbox, queryView);
             }
         }
 
