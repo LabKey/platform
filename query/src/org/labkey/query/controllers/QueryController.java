@@ -935,7 +935,7 @@ public class QueryController extends SpringActionController
                 else
                     columnsRs = dbmd.getColumns(null, _schemaName, _tableName, null);
 
-                metaDataView = new ResultSetView(new CachedResultSet(columnsRs, dialect.shouldCacheMetaData(), Table.ALL_ROWS), "Table Meta Data");
+                metaDataView = new ResultSetView(new CachedResultSet(columnsRs, true, Table.ALL_ROWS), "Table Meta Data");
 
                 ResultSet pksRs;
 
@@ -944,7 +944,7 @@ public class QueryController extends SpringActionController
                 else
                     pksRs = dbmd.getPrimaryKeys(null, _schemaName, _tableName);
 
-                pkView = new ResultSetView(new CachedResultSet(pksRs, dialect.shouldCacheMetaData(), Table.ALL_ROWS), "Primary Key Meta Data");
+                pkView = new ResultSetView(new CachedResultSet(pksRs, true, Table.ALL_ROWS), "Primary Key Meta Data");
             }
             finally
             {
@@ -995,7 +995,7 @@ public class QueryController extends SpringActionController
                 ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
                 url.addParameter("schemaName", _schemaName);
                 String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
-                tableInfo = new ResultSetView(new CachedResultSet(rs, dialect.shouldCacheMetaData(), Table.ALL_ROWS), "Tables", 3, tableLink) {
+                tableInfo = new ResultSetView(new CachedResultSet(rs, true, Table.ALL_ROWS), "Tables", 3, tableLink) {
                     @Override
                     protected boolean shouldLink(ResultSet rs) throws SQLException
                     {

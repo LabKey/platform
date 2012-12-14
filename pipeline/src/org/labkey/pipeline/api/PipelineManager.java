@@ -179,7 +179,7 @@ public class PipelineManager
     {
         try
         {
-            StringBuffer sql = new StringBuffer();
+            StringBuilder sql = new StringBuilder();
             List<Object> params = new ArrayList<Object>();
             sql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun())
                 .append(" SET JobId = NULL ")
@@ -191,6 +191,7 @@ public class PipelineManager
             params.add(container.getId());
 
             ExperimentService.get().ensureTransaction();
+
             try
             {
                 DbCache.clear(ExperimentService.get().getTinfoExperimentRun());

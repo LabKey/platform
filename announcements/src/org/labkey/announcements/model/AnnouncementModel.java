@@ -409,7 +409,10 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         else
         {
             AnnouncementModel parent = AnnouncementManager.getAnnouncement(lookupContainer(), getParent());
-            return parent.getDiscussionSrcIdentifier();
+
+            // Null check to avoid race condition (e.g., post message -> delete folder -> notification email
+            // thread tries to access parent, a sequence that can happen in the tests)
+            return null != parent ? parent.getDiscussionSrcIdentifier() : null;
         }
     }
 }

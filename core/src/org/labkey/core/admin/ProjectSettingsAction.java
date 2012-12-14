@@ -529,7 +529,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         public Attachment customFavIcon;
         public Attachment customStylesheet;
 
-        private LookAndFeelResourcesBean(Container c) throws SQLException
+        private LookAndFeelResourcesBean(Container c)
         {
             customLogo = AttachmentCache.lookupLogoAttachment(c);
             customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerManager.ContainerParent(c));
@@ -548,7 +548,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         public Attachment customStylesheet;
         public WebTheme newTheme = null;
 
-        private LookAndFeelPropertiesBean(Container c, String newThemeName) throws SQLException
+        private LookAndFeelPropertiesBean(Container c, String newThemeName)
         {
             customLogo = AttachmentCache.lookupLogoAttachment(c);
             customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerManager.ContainerParent(c));
