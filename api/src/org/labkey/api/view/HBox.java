@@ -26,10 +26,16 @@ import java.util.Map;
 public class HBox extends VBox
 {
     private Map<ModelAndView, String> _widths = new HashMap<ModelAndView, String>();
+    private String _tableWidth="100%";
 
     public HBox(ModelAndView... views)
     {
         super(views);
+    }
+
+    public void setTableWidth(String width)
+    {
+        _tableWidth = width;
     }
 
     public void addView(ModelAndView v, String width)
@@ -45,7 +51,7 @@ public class HBox extends VBox
 
         if (_views != null && !_views.isEmpty())
         {
-            out.write("<table width=\"100%\"><tr>");
+            out.write("<table width=\"" + _tableWidth + "\"><tr>");
             for (ModelAndView view : _views)
             {
                 if (null == view)
