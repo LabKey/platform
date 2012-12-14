@@ -187,7 +187,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         if (!StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
         {
             ColumnInfo c = new NullColumnInfo(parent, "CollectionCohort", JdbcType.INTEGER);
-            c.setFk(new CohortForeignKey(schema, false));
+            c.setFk(new CohortForeignKey(schema, false, c.getLabel()));
             return c;
         }
 
@@ -205,7 +205,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                     new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + COLLECTION_COHORT_JOIN + ".CohortId"),
                     JdbcType.INTEGER);
 
-            setFk(new CohortForeignKey(schema, true));
+            setFk(new CohortForeignKey(schema, true, this.getLabel()));
             setDescription("The cohort of the " + StudyService.get().getSubjectNounSingular(schema.getContainer()) + " at the time of specimen collection.");
         }
 

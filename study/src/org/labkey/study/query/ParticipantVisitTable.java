@@ -90,8 +90,9 @@ public class ParticipantVisitTable extends FilteredTable
                 else
                 {
                     cohortColumn = new AliasedColumn(this, "Cohort", col);
-                    cohortColumn.setFk(new CohortForeignKey(_schema, showCohorts));
                 }
+                cohortColumn.setLabel(col.getLabel());
+                cohortColumn.setFk(new CohortForeignKey(_schema, showCohorts, cohortColumn.getLabel()));
                 addColumn(cohortColumn);
             }
             else if ("ParticipantSequenceNum".equalsIgnoreCase(col.getName()))

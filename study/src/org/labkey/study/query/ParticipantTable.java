@@ -102,7 +102,7 @@ public class ParticipantTable extends FilteredTable
         {
             currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CurrentCohortId"));
         }
-        currentCohortColumn.setFk(new CohortForeignKey(_schema, showCohorts));
+        currentCohortColumn.setFk(new CohortForeignKey(_schema, showCohorts, currentCohortColumn.getLabel()));
         addColumn(currentCohortColumn);
 
 
@@ -121,7 +121,7 @@ public class ParticipantTable extends FilteredTable
             initialCohortColumn = new AliasedColumn(this, "InitialCohort", _rootTable.getColumn("CurrentCohortId"));
             initialCohortColumn.setHidden(true);
         }
-        initialCohortColumn.setFk(new CohortForeignKey(_schema, showCohorts));
+        initialCohortColumn.setFk(new CohortForeignKey(_schema, showCohorts, initialCohortColumn.getLabel()));
         addColumn(initialCohortColumn);
 
         ForeignKey fkSite = SiteTable.fkFor(_schema);

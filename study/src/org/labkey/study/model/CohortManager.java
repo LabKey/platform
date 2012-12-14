@@ -19,6 +19,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
@@ -291,15 +292,18 @@ public class CohortManager
 
     public void clearParticipantCohorts(Study study) throws SQLException
     {
+        DbSchema ss = StudySchema.getInstance().getSchema();
+
         // null out cohort for all participants in this container:
-        Table.execute(StudySchema.getInstance().getSchema(), "UPDATE " + StudySchema.getInstance().getTableInfoParticipant() +
-                " SET InitialCohortId = NULL, CurrentCohortId = NULL WHERE Container = ?", study.getContainer().getId());
+        Table.execute(ss, "UPDATE " + StudySchema.getInstance().getTableInfoParticipant() +
+                (ss.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "") +
+                "\nSET InitialCohortId = NULL, CurrentCohortId = NULL\nWHERE Container = ?", study.getContainer().getId());
 
         // null out cohort for all participant/visits in this container (required for advanced cohort support, where participants
         // can change cohorts over time):
-        Table.execute(StudySchema.getInstance().getSchema(), "UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
-                " SET CohortId = NULL WHERE Container = ?", study.getContainer().getId());
-
+        Table.execute(ss, "UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
+                (ss.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "") +
+                "\nSET CohortId = NULL\nWHERE Container = ?", study.getContainer().getId());
     }
 
 

@@ -1460,6 +1460,7 @@
       </ns:column>
       <ns:column columnName="CohortID">
         <ns:description>The ID of the subject's cohort during each visit.  Useful only when advanced cohort assignment is enabled.</ns:description>
+        <ns:columnTitle>Visit Cohort</ns:columnTitle>
       </ns:column>
     </ns:columns>
   </ns:table>

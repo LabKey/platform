@@ -29,6 +29,8 @@ import org.labkey.study.CohortFilter.Type;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -45,7 +47,8 @@ public class CohortFilterFactory
 {
     public static enum Params
     {
-        cohortFilterType{
+        cohortFilterType
+        {
             @Override
             void apply(Config c, Pair<String, String> entry)
             {
@@ -53,7 +56,8 @@ public class CohortFilterFactory
                 c.setType(entry.getValue());
             }
         },
-        cohortId{
+        cohortId
+        {
             @Override
             void apply(Config c, Pair<String, String> entry)
             {
@@ -61,7 +65,8 @@ public class CohortFilterFactory
                 c.setCohortId(entry.getValue());
             }
         },
-        cohortEnrolled{
+        cohortEnrolled
+        {
             @Override
             void apply(Config c, Pair<String, String> entry)
             {
@@ -72,24 +77,6 @@ public class CohortFilterFactory
 
         abstract void apply(Config c, Pair<String,String> value);
     }
-
-    public static final SingleCohortFilter UNASSIGNED = new SingleCohortFilter.UnassignedCohort();
-
-    public static ActionURL clearURLParameters(Study study, ActionURL url, String dataregion)
-    {
-        if (!StringUtils.isEmpty(dataregion))
-        {
-            Set<String> names = url.getParameterMap().keySet();
-            for (String name : names)
-                if (isCohortFilterParameterName(study, name, dataregion))
-                    url.deleteParameter(name);
-        }
-        url.deleteParameter(Params.cohortFilterType);
-        url.deleteParameter(Params.cohortId);
-        url.deleteParameter(Params.cohortEnrolled);
-        return url;
-    }
-
 
     public static class Config
     {
@@ -288,16 +275,6 @@ public class CohortFilterFactory
             fk = FieldKey.decode(s);
         }
 
-        boolean matches(FieldKey fk, String op)
-        {
-            if  (null != op)
-            {
-                if (!"~eq".equals(op) && !(fk.getName().equals("Enrolled") && "~neqornull".equals(op)))
-                    return false;
-            }
-           return this.fk.equals(fk) || this.fk.getName().equals("RowId") && this.fk.getParent().equals(fk);
-        }
-
         private static void applyEnrolled(Config c, Pair<String,String> entry)
         {
             Boolean b = null;
@@ -311,31 +288,91 @@ public class CohortFilterFactory
             }
         }
 
-        abstract void apply(Config c, Pair<String,String> value);
+        void applyIfMatches(Config c, Pair<String,String> entry)
+        {
+            String name = entry.getKey();
+            int tilde = name.indexOf("~");
+            String op = -1==tilde ? null : name.substring(tilde);
+            if  (null != op)
+            {
+                if (!"~eq".equals(op) && !(fk.getName().equals("Enrolled") && "~neqornull".equals(op)))
+                {
+                    c.ambiguous = true;
+                    return;
+                }
+            }
+            apply(c, entry);
+        }
+
+        abstract void apply(Config c, Pair<String,String> entry);
+    }
+
+
+    public static final SingleCohortFilter UNASSIGNED = new SingleCohortFilter.UnassignedCohort();
+
+
+    // this is to speed up url parameter inspection
+    private static final HashMap<FieldKey,Object> cohortParameters= new HashMap<FieldKey,Object>();
+    static
+    {
+        for (Params p : Params.values())
+            cohortParameters.put(new FieldKey(null, p.name()), p);
+        for (CohortFilterField f : CohortFilterField.values())
+        {
+            cohortParameters.put(f.fk, f);
+            if (f.fk.getName().equals("RowId"))
+                cohortParameters.put(f.fk.getParent(), f);
+        }
     }
 
 
 
+    public static ActionURL clearURLParameters(Study study, ActionURL url, String dataregion)
+    {
+        if (!StringUtils.isEmpty(dataregion))
+        {
+            Set<String> names = url.getParameterMap().keySet();
+            for (String name : names)
+                if (isCohortFilterParameterName(study, name, dataregion))
+                    url.deleteParameter(name);
+        }
+        url.deleteParameter(Params.cohortFilterType);
+        url.deleteParameter(Params.cohortId);
+        url.deleteParameter(Params.cohortEnrolled);
+        return url;
+    }
+
+
+    // return non-null if this is part of a cohort filter specification (or user filter on the same fields)
+    // does not check matches(), because isCohortFilterParameterName() wants to know about any filters it may want to clear
+    private static FieldKey _matchCohortFilterParameter(Study study, String name, String dataregion)
+    {
+        int start = 0;
+        if (name.contains("."))
+        {
+            if (!StringUtils.startsWithIgnoreCase(name, dataregion + "."))
+                return null;
+            start = dataregion.length()+1;
+        }
+        int tilde = name.indexOf('~');
+        String op = null;
+        if (tilde == -1)
+            tilde = name.length();
+        else
+            op = name.substring(tilde);
+        String field = name.substring(start, tilde);
+        FieldKey fk = _normalizeParticipantFieldKey(study, field);
+
+        Object o = cohortParameters.get(fk);
+        if (null == o)
+            return null;
+        return (o instanceof CohortFilterField || null==op) ? fk : null;
+    }
+
+
     public static boolean isCohortFilterParameterName(Study study, String name, String dataregion)
     {
-        for (Params param : Params.values())
-        {
-            if (name.equals(param.name()))
-                return true;
-        }
-        if (StringUtils.isEmpty(dataregion) || !StringUtils.startsWithIgnoreCase(name, dataregion + "."))
-            return false;
-        int tilde = name.indexOf('~');
-        if (-1 == tilde || -1 == name.indexOf('/'))
-            return false;
-        String field = name.substring(dataregion.length()+1, tilde);
-        FieldKey fk = _normalizeParticipantFieldKey(study, field);
-        for (CohortFilterField ff : CohortFilterField.values())
-        {
-            if (ff.matches(fk, null))
-                return true;
-        }
-        return false;
+        return null != _matchCohortFilterParameter(study, name, dataregion);
     }
 
 
@@ -343,7 +380,19 @@ public class CohortFilterFactory
     {
         for (Pair<String,String> entry : url.getParameters())
         {
-            String name = entry.getKey();
+            FieldKey fieldKey = _matchCohortFilterParameter(study, entry.getKey(), dataregion);
+            if (null == fieldKey)
+                continue;
+            Object o = cohortParameters.get(fieldKey);
+            if (o instanceof Params)
+            {
+                ((Params)o).apply(config, entry);
+            }
+            else if (o instanceof CohortFilterField)
+            {
+                ((CohortFilterField)o).applyIfMatches(config, entry);
+            }
+            /*
             if (Params.cohortId.name().equals(name))
             {
                 Params.cohortId.apply(config, entry);
@@ -364,7 +413,7 @@ public class CohortFilterFactory
                 continue;
             int tilde = name.indexOf('~');
             if (-1 == tilde || -1 == name.indexOf('/'))
-                return false;
+                continue;
 
             String op = name.substring(tilde);
             String field = name.substring(dataregion.length() + 1, tilde);
@@ -373,9 +422,15 @@ public class CohortFilterFactory
             for (CohortFilterField ff : CohortFilterField.values())
             {
                 if (ff.matches(fk, op))
+                {
                     ff.apply(config, entry);
+                    break;
+                }
             }
+            */
         }
+        if ((config.label != null || config.cohortId != null) && config.enrolled == Boolean.TRUE)
+            config.ambiguous = true;
         return config.type != null && (config.cohortId != null || config.enrolled == Boolean.TRUE || config.label != null);
     }
 
@@ -392,13 +447,15 @@ public class CohortFilterFactory
             String first = parts.get(0);
             if (StringUtils.equalsIgnoreCase(first, subject))
             {
-                parts.set(0, "ParticipantId");
-                fk = FieldKey.fromParts(parts);
+                ArrayList<String> t = new ArrayList<String>(parts);
+                t.set(0, "ParticipantId");
+                fk = FieldKey.fromParts(t);
             }
             else if (StringUtils.equalsIgnoreCase(first, subjectVisit))
             {
-                parts.set(0, "ParticipantVisit");
-                fk = FieldKey.fromParts(parts);
+                ArrayList<String> t = new ArrayList<String>(parts);
+                t.set(0, "ParticipantVisit");
+                fk = FieldKey.fromParts(t);
             }
         }
         return fk;
@@ -429,7 +486,7 @@ public class CohortFilterFactory
         if (!parseCohortUrlParameter(url, study, dataregion, config))
             return null;
 
-        if (null != config.type)
+        if (null != config.type && !config.ambiguous)
         {
             if (null != config.cohortId || null != config.label)
             {
