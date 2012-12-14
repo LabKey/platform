@@ -54,7 +54,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
@@ -78,7 +77,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
 
 /**
  * Table manipulation methods
@@ -371,14 +369,14 @@ public class Table
     }
 
     // 2 usages
-    @Deprecated // Use SqlSelector    // TODO: Note, this is misleading... query still returns Table.ALL_ROWS
+    @Deprecated // Use SqlSelector    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
     }
 
     // 1 usage
-    @Deprecated // Use SqlSelector    // TODO: Note, this is misleading... query still returns Table.ALL_ROWS
+    @Deprecated // Use SqlSelector    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
             throws SQLException
     {
@@ -405,6 +403,7 @@ public class Table
     }
 
 
+    // TODO: Move into ExecutingResultSetFactory
     static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows)
             throws SQLException
     {
@@ -1299,9 +1298,9 @@ public class Table
     }
 
 
-    static TableResultSet cacheResultSet(SqlDialect dialect, ResultSet rs, int maxRows, @Nullable StackTraceElement[] creationStackTrace) throws SQLException
+    static TableResultSet cacheResultSet(ResultSet rs, boolean cacheMetaData, int maxRows, @Nullable StackTraceElement[] creationStackTrace) throws SQLException
     {
-        CachedResultSet crs = new CachedResultSet(rs, dialect.shouldCacheMetaData(), maxRows);
+        CachedResultSet crs = new CachedResultSet(rs, cacheMetaData, maxRows);
 
         if (null != creationStackTrace && AppProps.getInstance().isDevMode())
             crs.setStackTrace(creationStackTrace);

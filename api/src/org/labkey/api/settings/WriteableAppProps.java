@@ -21,7 +21,6 @@ import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.UsageReportingLevel;
 
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 
 /**
  * User: jeckels

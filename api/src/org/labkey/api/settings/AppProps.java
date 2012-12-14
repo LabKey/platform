@@ -25,7 +25,6 @@ import org.labkey.api.view.ActionURL;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 
 /**
  * User: arauch

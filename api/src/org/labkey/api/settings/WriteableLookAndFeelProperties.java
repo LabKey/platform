@@ -20,8 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.FolderDisplayMode;
 
-import java.sql.SQLException;
-
 /**
  * User: adam
  * Date: Aug 1, 2008

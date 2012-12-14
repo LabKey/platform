@@ -241,6 +241,7 @@ public abstract class SqlDialect
 
     // Should we cache ResultSetMetaData for this dialect's ResultSets?  In other words, does the database server
     // prevent access to ResultSetMetaData after the underlying ResultSet has been closed?
+    // TODO: Delete... not used, we always cache resultset meta data, unless we're consuming results immediately
     public boolean shouldCacheMetaData()
     {
         // Most database servers allow access to result set meta data

@@ -17,9 +17,9 @@ package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -35,7 +35,6 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.Comparator;
@@ -483,7 +482,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     {
         String defaultValue = null;
         // Default to the oldest site administrator's email address
-        List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds("Administrators");
+        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds("Administrators");
         // Sort to find the minimum user id
         Collections.sort(members, new Comparator<Pair<Integer, String>>()
         {

@@ -22,7 +22,6 @@ import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NotFoundException;
 
@@ -30,7 +29,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -53,7 +51,7 @@ public enum TemplateResourceHandler
             return "/_images/defaultlogo.png";
         }
 
-        protected CacheableWriter getWriterForContainer(Container c) throws SQLException, IOException, ServletException
+        protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
         {
             // container will be null if the database isn't bootstrapped yet
             CacheableWriter writer = (null == c ? null : AttachmentCache.getCachedLogo(c));
@@ -91,7 +89,7 @@ public enum TemplateResourceHandler
             return "/_images/favicon.ico";
         }
 
-        protected CacheableWriter getWriterForContainer(Container c) throws SQLException, IOException, ServletException
+        protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
         {
             // rootContainer will be null if the database isn't bootstrapped yet
             CacheableWriter writer = (null == c ? null : AttachmentCache.getCachedFavIcon(c));
@@ -118,7 +116,7 @@ public enum TemplateResourceHandler
 
     abstract protected String getResourceName();
     abstract protected String getDefaultLink();
-    abstract protected CacheableWriter getWriterForContainer(Container c) throws SQLException, IOException, ServletException;
+    abstract protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException;
 
     private Calendar getExpiration()
     {
@@ -140,10 +138,6 @@ public enum TemplateResourceHandler
 
             return new ResourceURL(getResourceName(), settingsContainer);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         catch (IOException e)
         {
             throw new RuntimeException(e);
@@ -155,7 +149,7 @@ public enum TemplateResourceHandler
     }
 
 
-    public void sendResource(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException, ServletException
+    public void sendResource(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
         ResourceURL url = new ResourceURL(request);
         Path containerPath = url.getParsedPath().getParent();
@@ -180,7 +174,7 @@ public enum TemplateResourceHandler
     }
 
 
-    private CacheableWriter getWriter(Container c) throws SQLException, IOException, ServletException
+    private CacheableWriter getWriter(Container c) throws IOException, ServletException
     {
         CacheableWriter writer = getWriterForContainer(c);
 

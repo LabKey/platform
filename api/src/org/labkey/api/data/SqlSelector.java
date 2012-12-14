@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-public class SqlSelector extends BaseSelector<SqlSelector.SimpleSqlFactory, SqlSelector>
+public class SqlSelector extends ExecutingSelector<SqlSelector.SimpleSqlFactory, SqlSelector>
 {
     private final SQLFragment _sql;
 
@@ -58,17 +58,11 @@ public class SqlSelector extends BaseSelector<SqlSelector.SimpleSqlFactory, SqlS
     }
 
     @Override
-    protected SimpleSqlFactory getSqlFactory()
+    protected SimpleSqlFactory getSqlFactory(boolean isResultSet)
     {
+        // No special handling for ResultSet... until SqlSelector supports limit/offset
         return new SimpleSqlFactory();
     }
-
-    @Override
-    protected SimpleSqlFactory getResultSetSqlFactory()
-    {
-        return getSqlFactory();  // Same thing for now... until SqlSelector supports limit/offset
-    }
-
 
     public class SimpleSqlFactory extends BaseSqlFactory
     {

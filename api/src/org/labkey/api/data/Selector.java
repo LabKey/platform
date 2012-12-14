@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
@@ -38,16 +39,6 @@ public interface Selector
      */
     Table.TableResultSet getResultSet() throws SQLException;
 
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    Table.TableResultSet getResultSet(boolean scrollable, boolean cache) throws SQLException;
-
     long getRowCount();
 
     boolean exists();
@@ -56,13 +47,13 @@ public interface Selector
 
     <K> Collection<K> getCollection(Class<K> clazz);
 
+    <K> ArrayList<K> getArrayList(Class<K> clazz);
+
     <K> K getObject(Class<K> clazz);
 
     void forEach(ForEachBlock<ResultSet> block);
 
     void forEachMap(ForEachBlock<Map<String, Object>> block);
-
-    // TODO: forEachFieldKeyMap()
 
     <K> void forEach(ForEachBlock<K> block, Class<K> clazz);
 

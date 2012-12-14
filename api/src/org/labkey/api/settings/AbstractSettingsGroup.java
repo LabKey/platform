@@ -16,12 +16,12 @@
 package org.labkey.api.settings;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.util.Map;
 
 /**
@@ -59,41 +59,14 @@ public abstract class AbstractSettingsGroup
         return lookupStringValue(ContainerManager.getRoot(), name, defaultValue);
     }
 
-    protected String lookupStringValue(Container c, String name, String defaultValue)
+    protected String lookupStringValue(Container c, String name, @Nullable String defaultValue)
     {
-        try
-        {
-            Map props = getProperties(c);
-            String value = (String) props.get(name);
-            if (value != null)
-            {
-                return value;
-            }
-
-            value = defaultValue;
-
-
-/*          Don't save default values one-by-one -- this should help with auditing of settings
-
-            if (value != null)
-            {
-                PropertyManager.PropertyMap p = getWritableSiteConfigProperties(c);
-                p.put(name, value);
-                PropertyManager.saveProperties(p);
-            }
-*/
-            return value;
-        }
-        catch (SQLException e)
-        {
-            // Real database problem... log it and return default
-            _log.error("Problem getting property value", e);
-        }
-
-        return defaultValue;
+        Map props = getProperties(c);
+        String value = (String) props.get(name);
+        return value != null ? value : defaultValue;
     }
 
-    public Map<String, String> getProperties(Container c) throws SQLException
+    public Map<String, String> getProperties(Container c)
     {
         return PropertyManager.getProperties(SITE_CONFIG_USER, c, getGroupName());
     }

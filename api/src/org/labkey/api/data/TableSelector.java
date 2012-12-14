@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, TableSelector>
+public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFactory, TableSelector>
 {
     private final TableInfo _table;
     private final Collection<ColumnInfo> _columns;
@@ -114,9 +114,12 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
      */
     public Results getResults(boolean scrollable, boolean cache) throws SQLException
     {
-        TableSqlFactory factory = getResultSetSqlFactory();
-        ResultSet rs = getResultSet(factory, scrollable, cache);
-        return new ResultsImpl(rs, factory.getColumns());
+        boolean closeResultSet = cache;
+        TableSqlFactory tableSqlFactory = getSqlFactory(true);
+        ExecutingResultSetFactory factory = new ExecutingResultSetFactory(tableSqlFactory, closeResultSet, scrollable, true);
+        ResultSet rs = getResultSet(factory, cache);
+
+        return new ResultsImpl(rs, tableSqlFactory.getColumns());
     }
 
     public Results getResultsAsync(final boolean scrollable, final boolean cache, HttpServletResponse response) throws IOException, SQLException
@@ -176,7 +179,7 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
         // Ignore the sort -- we're just getting one object
         TableSqlFactory tableSqlGetter = new PreventSortTableSqlFactory(filter, _columns);
 
-        return getObject(clazz, tableSqlGetter);
+        return getObject(clazz, new ExecutingResultSetFactory(tableSqlGetter));
     }
 
     @Override
@@ -200,14 +203,17 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
             return super.exists(sqlFactory);  // Normal case... wrap an EXISTS query around the "SELECT 1 FROM..." sub-select
     }
 
+    // TODO: forEachFieldKeyMap()
+
     public Map<String, List<Aggregate.Result>> getAggregates(final List<Aggregate> aggregates)
     {
         AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, _columns);
+        ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
-        return handleResultSet(sqlFactory, new ResultSetHandler<Map<String, List<Aggregate.Result>>>()
+        return handleResultSet(resultSetFactory, new ResultSetHandler<Map<String, List<Aggregate.Result>>>()
         {
             @Override
-            public Map<String, List<Aggregate.Result>> handle(@Nullable ResultSet rs, Connection conn, DbScope scope) throws SQLException
+            public Map<String, List<Aggregate.Result>> handle(@Nullable ResultSet rs, Connection conn) throws SQLException
             {
                 Map<String, List<Aggregate.Result>> results = new HashMap<String, List<Aggregate.Result>>();
 
@@ -255,20 +261,13 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, T
     }
 
     @Override
-    protected TableSqlFactory getSqlFactory()
+    // Return the standard SQL factory (a TableSqlFactory); non-standard methods can create custom factories (or wrap
+    // this one) to optimize specific queries (see getRowCount() and getObject()).
+    protected TableSqlFactory getSqlFactory(boolean isResultSet)
     {
-        // Return the standard SQL factory (a TableSqlFactory); non-standard methods can create custom factories (or wrap
-        // this one) to optimize specific queries (see getRowCount() and getObject()).
-        return new TableSqlFactory(_filter, _sort, _columns, 0, true);
+        // If returning a ResultSet, select one extra row to support isComplete()
+        return new TableSqlFactory(_filter, _sort, _columns, isResultSet ? 1 : 0, true);
     }
-
-    @Override
-    protected TableSqlFactory getResultSetSqlFactory()
-    {
-        // Same as above, but select one extra row to support isComplete()
-        return new TableSqlFactory(_filter, _sort, _columns, 1, true);
-    }
-
 
     protected class TableSqlFactory extends BaseSqlFactory
     {

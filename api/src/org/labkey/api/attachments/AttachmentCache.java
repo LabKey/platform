@@ -20,7 +20,6 @@ import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,12 +68,12 @@ public class AttachmentCache
         _favIconCache.put(c, favIcon);
     }
 
-    public static Attachment lookupFavIconAttachment(AttachmentParent parent) throws SQLException
+    public static Attachment lookupFavIconAttachment(AttachmentParent parent)
     {
         return lookupAttachment(parent, FAVICON_FILE_NAME);
     }
 
-    public static Attachment lookupLogoAttachment(Container c) throws SQLException
+    public static Attachment lookupLogoAttachment(Container c)
     {
         AttachmentParent parent = new ContainerParent(c);
         Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);

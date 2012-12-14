@@ -16,12 +16,9 @@
 package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.view.ThemeFont;
 import org.labkey.api.view.WebTheme;
-
-import java.sql.SQLException;
 
 /**
  * User: adam
@@ -77,14 +74,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
     public boolean hasProperties()
     {
-        try
-        {
-            return !getProperties(_c).isEmpty();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);            
-        }
+        return !getProperties(_c).isEmpty();
     }
 
     protected String lookupStringValue(String name, String defaultValue)
