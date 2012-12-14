@@ -49,6 +49,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -398,7 +399,7 @@ public class SurveyController extends SpringActionController
 
             if (surveyDesign != null)
             {
-                TableInfo table = getTableInfo(surveyDesign);
+                TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
                 FieldKey pk = table.getAuditRowPk();
 
                 if (table != null && pk != null)
@@ -448,17 +449,6 @@ public class SurveyController extends SpringActionController
                 }
             }
             return response;
-        }
-
-        protected TableInfo getTableInfo(SurveyDesign survey)
-        {
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), survey.getSchemaName());
-
-            if (schema != null)
-            {
-                return schema.getTable(survey.getQueryName());
-            }
-            return null;
         }
 
         protected Map<String, Object> doInsertUpdate(TableViewForm form, BindException errors, boolean insert) throws Exception
@@ -577,6 +567,65 @@ public class SurveyController extends SpringActionController
         public Map<String, Object> getProps()
         {
             return _props;
+        }
+    }
+
+    protected TableInfo getSurveyAnswersTableInfo(SurveyDesign survey)
+    {
+        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), survey.getSchemaName());
+
+        if (schema != null)
+        {
+            return schema.getTable(survey.getQueryName());
+        }
+        return null;
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetSurveyResponseAction extends ApiAction<SurveyForm>
+    {
+        @Override
+        public ApiResponse execute(SurveyForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Survey survey = getSurvey(form);
+
+            if (!survey.isNew())
+            {
+                SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), survey.getSurveyDesignId());
+
+                if (surveyDesign != null)
+                {
+                    TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
+                    FieldKey pk = table.getAuditRowPk();
+
+                    if (table != null && pk != null)
+                    {
+                        QueryUpdateService qus = table.getUpdateService();
+                        if (qus != null)
+                        {
+                            List<Map<String, Object>> keys = new ArrayList<Map<String, Object>>();
+                            keys.add(Collections.singletonMap(pk.toString(), (Object)survey.getResponsesPk()));
+
+                            List<Map<String, Object>> rows = qus.getRows(getUser(), getContainer(), keys);
+
+                            assert rows.size() <= 1;
+
+                            if (rows.size() == 1)
+                            {
+                                response.put("surveyResults", rows.get(0));
+                                response.put("success", true);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                errors.reject(ERROR_MSG, "The requested survey responses have not been created yet.");
+                response.put("success", false);
+            }
+            return response;
         }
     }
 }
