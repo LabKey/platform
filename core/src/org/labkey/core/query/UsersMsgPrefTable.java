@@ -55,7 +55,7 @@ import java.util.Map;
  */
 public class UsersMsgPrefTable extends UsersTable
 {
-    public UsersMsgPrefTable(UserSchema schema, SchemaTableInfo tInfo)
+    public UsersMsgPrefTable(UserSchema schema, TableInfo tInfo)
     {
         super(schema, tInfo);
 

@@ -109,6 +109,9 @@ public class QueryModule extends DefaultModule
         QueryService.set(i);
         ServiceRegistry.get().registerService(QueryService.class, i);
 
+        ExternalSchema.register();
+        //LinkedSchema.register();
+
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER);
 
         ReportService.registerProvider(new ReportServiceImpl());

@@ -40,7 +40,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements
     private Container _container;
     private static final Logger _logger = Logger.getLogger(ExternalSchemaTable.class);
 
-    public ExternalSchemaTable(ExternalSchema schema, SchemaTableInfo table, TableType metadata)
+    public ExternalSchemaTable(ExternalSchema schema, TableInfo table, TableType metadata)
     {
         super(schema, table);
 

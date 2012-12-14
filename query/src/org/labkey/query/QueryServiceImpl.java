@@ -1035,17 +1035,16 @@ public class QueryServiceImpl extends QueryService
         return null == ret ? columns : ret;
     }
 
-
-    public Map<String, UserSchema> getExternalSchemas(DefaultSchema folderSchema)
+    public Map<String, UserSchema> getExternalSchemas(User user, Container c)
     {
         Map<String, UserSchema> ret = new HashMap<String, UserSchema>();
-        ExternalSchemaDef[] defs = QueryManager.get().getExternalSchemaDefs(folderSchema.getContainer());
+        ExternalSchemaDef[] defs = QueryManager.get().getExternalSchemaDefs(c);
 
         for (ExternalSchemaDef def : defs)
         {
             try
             {
-                UserSchema schema = ExternalSchema.get(folderSchema.getUser(), folderSchema.getContainer(), def);
+                UserSchema schema = ExternalSchema.get(user, c, def);
                 ret.put(def.getUserSchemaName(), schema);
             }
             catch (Exception e)
@@ -1057,16 +1056,15 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    @Override
-    public UserSchema getExternalSchema(DefaultSchema folderSchema, String name)
+    public UserSchema getExternalSchema(User user, Container c, String name)
     {
-        ExternalSchemaDef def = QueryManager.get().getExternalSchemaDef(folderSchema.getContainer(), name);
+        ExternalSchemaDef def = QueryManager.get().getExternalSchemaDef(c, name);
 
         if (null != def)
         {
             try
             {
-                return ExternalSchema.get(folderSchema.getUser(), folderSchema.getContainer(), def);
+                return ExternalSchema.get(user, c, def);
             }
             catch (Exception e)
             {

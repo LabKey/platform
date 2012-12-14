@@ -61,7 +61,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable
     Set<String> _illegalColumns;
     boolean _mustCheckPermissions = true;
 
-    public UsersTable(UserSchema schema, SchemaTableInfo table)
+    public UsersTable(UserSchema schema, TableInfo table)
     {
         super(schema, table);
 

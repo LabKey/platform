@@ -24,8 +24,10 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.data.xml.TableType;
@@ -43,6 +45,26 @@ import java.util.Set;
 
 public class ExternalSchema extends SimpleUserSchema
 {
+    public static void register()
+    {
+        DefaultSchema.registerProvider(new DefaultSchema.DynamicSchemaProvider() {
+            @Override
+            public QuerySchema getSchema(User user, Container container, String name)
+            {
+                QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
+                return svc.getExternalSchema(user, container, name);
+            }
+
+            @NotNull
+            @Override
+            public Collection<String> getSchemaNames(User user, Container container)
+            {
+                QueryServiceImpl svc = (QueryServiceImpl) QueryService.get();
+                return svc.getExternalSchemas(user, container).keySet();
+            }
+        });
+    }
+
     private final ExternalSchemaDef _def;
     private final Map<String, TableType> _metaDataMap;
 
@@ -61,7 +83,7 @@ public class ExternalSchema extends SimpleUserSchema
         return new ExternalSchema(user, container, def, schema, metaDataMap, availableTables, hiddenTables);
     }
 
-    private ExternalSchema(User user, Container container, ExternalSchemaDef def, DbSchema schema,
+    protected ExternalSchema(User user, Container container, ExternalSchemaDef def, DbSchema schema,
         Map<String, TableType> metaDataMap, Collection<String> availableTables, Collection<String> hiddenTables)
     {
         super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.",
@@ -172,9 +194,9 @@ public class ExternalSchema extends SimpleUserSchema
         }
     }
 
-    protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)
+    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
     {
-        ExternalSchemaTable ret = new ExternalSchemaTable(this, schematable, getXbTable(name));
+        ExternalSchemaTable ret = new ExternalSchemaTable(this, sourceTable, getXbTable(name));
         ret.setContainer(_def.getContainerId());
         return ret;
     }

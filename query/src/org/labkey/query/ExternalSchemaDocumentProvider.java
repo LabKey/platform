@@ -71,8 +71,8 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
             public void run()
             {
                 User user = User.getSearchUser();
-                DefaultSchema defaultSchema = DefaultSchema.get(user, c);
-                Map<String, UserSchema> externalSchemas = QueryService.get().getExternalSchemas(defaultSchema);
+                QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
+                Map<String, UserSchema> externalSchemas = svc.getExternalSchemas(user, c);
 
                 // First, delete all external schema docs in this container.  This addresses schemas/tables that have
                 // disappeared from the data source plus existing schemas that get changed to not index.
