@@ -110,7 +110,7 @@ public class SurveyController extends SpringActionController
     @RequiresPermissionClass(InsertPermission.class)
     public class UpdateSurveyAction extends SimpleViewAction<SurveyForm>
     {
-        private String _title = "Create Survey";
+        private String _title = null;
 
         @Override
         public ModelAndView getView(SurveyForm form, BindException errors) throws Exception
@@ -135,17 +135,24 @@ public class SurveyController extends SpringActionController
 
                     if (survey.getSubmitted() != null)
                         errors.reject(ERROR_MSG, "Error: You are not allowed to update a survey that has already been submitted. Please contact the site administrator if the survey status for this record needs to be changed.");
-                }
 
-                _title = "Update Survey";
+                    SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
+                    if (surveyDesign != null)
+                        _title = "Update " + surveyDesign.getLabel();
+                }
             }
             else if (form.getSurveyDesignId() != null)
             {
                 SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
                 if (surveyDesign == null)
+                {
                     errors.reject(ERROR_MSG, "Error: No SurveyDesign record found for rowId " + form.getSurveyDesignId() + ".");
+                }
                 else
+                {
                     form.setRowId(null); // no rowId for newly created surveys
+                    _title = "Create " + surveyDesign.getLabel();
+                }
             }
 
             return new JspView<SurveyForm>("/org/labkey/survey/view/surveyWizard.jsp", form, errors);
@@ -395,7 +402,9 @@ public class SurveyController extends SpringActionController
         public ApiResponse execute(SurveyResponseForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
+            SurveyDesign surveyDesign = null;
+            if (form.getSurveyDesignId() != null)
+                surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
 
             if (surveyDesign != null)
             {
@@ -413,7 +422,7 @@ public class SurveyController extends SpringActionController
                         Survey survey = getSurvey(form);
 
                         tvf.setViewContext(getViewContext());
-                        tvf.setTypedValues(form.getProps(), false);
+                        tvf.setTypedValues(form.getResponses(), false);
 
                         if (!survey.isNew())
                         {
@@ -448,6 +457,12 @@ public class SurveyController extends SpringActionController
                     }
                 }
             }
+            else
+            {
+                response.put("errorInfo", "No survey design found for the following rowId: " + form.getSurveyDesignId());
+                response.put("success", false);
+            }
+
             return response;
         }
 
@@ -511,15 +526,13 @@ public class SurveyController extends SpringActionController
 
     public static class SurveyResponseForm extends SurveyForm implements CustomApiForm
     {
-        private Map<String, Object> _props = new HashMap<String, Object>();
+        private Map<String, Object> _responses = new HashMap<String, Object>();
         private BeanObjectFactory<Survey> _factory = new BeanObjectFactory<Survey>(Survey.class);
         private Survey _bean;
 
         @Override
         public void bindProperties(Map<String, Object> props)
         {
-            _props = props;
-
             if (props.containsKey("rowId"))
                 _rowId = NumberUtils.createInteger(String.valueOf(props.get("rowId")));
             if (props.containsKey("label"))
@@ -528,45 +541,15 @@ public class SurveyController extends SpringActionController
                 _surveyDesignId = NumberUtils.createInteger(String.valueOf(props.get("surveyDesignId")));
             if (props.containsKey("status"))
                 _status = String.valueOf(props.get("status"));
+            if (props.containsKey("responses"))
+                _responses = (JSONObject)props.get("responses");
 
             //_bean = _factory.fromMap(props);
         }
 
-/*
-        @Override
-        public Integer getRowId()
+        public Map<String, Object> getResponses()
         {
-            return _bean.getRowId();
-        }
-
-        @Override
-        public Integer getSurveyDesignId()
-        {
-            return _bean.getSurveyDesignId();
-        }
-
-        @Override
-        public String getLabel()
-        {
-            return _bean.getLabel();
-        }
-
-        @Override
-        public String getStatus()
-        {
-            return _bean.getStatus();
-        }
-
-        @Override
-        public String getResponsesPk()
-        {
-            return _bean.getResponsesPk();
-        }
-*/
-
-        public Map<String, Object> getProps()
-        {
-            return _props;
+            return _responses;
         }
     }
 

@@ -104,8 +104,7 @@ public class SurveyManager
     public Map<String, Object> getTrimmedMetaData(Map<String, Object> origMap)
     {
         // trim the metadata property map to just those properties needed for rendering the Survey questions
-        String[] props = {"name", "caption", "nullable", "hidden", "jsonType", "inputType",
-                            "rows", "cols", "lookup"};
+        String[] props = {"name", "caption", "hidden", "jsonType", "inputType", "rows", "cols", "lookup"};
         Map<String, Object> trimmedMap = new LinkedHashMap<String, Object>();
         for (String property : props)
         {

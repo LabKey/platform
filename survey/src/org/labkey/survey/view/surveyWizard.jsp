@@ -38,7 +38,19 @@
     JspView<SurveyForm> me = (JspView<SurveyForm>) HttpView.currentView();
     SurveyForm bean = me.getModelBean();
     ViewContext ctx = me.getViewContext();
-    Integer surveyDesignId = bean != null ? bean.getSurveyDesignId() : null;
+
+    Integer rowId = null;
+    Integer surveyDesignId = null;
+    String responsesPk = null;
+    String surveyLabel = null;
+    if (bean != null)
+    {
+        rowId = bean.getRowId();
+        surveyDesignId = bean.getSurveyDesignId();
+        responsesPk = bean.getResponsesPk();
+        surveyLabel = bean.getLabel();
+    }
+
     String renderId = "survey-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 
@@ -56,7 +68,11 @@
     Ext4.onReady(function(){
 
         var panel = Ext4.create('LABKEY.ext4.SurveyPanel', {
+            rowId           : <%=rowId%>,
             surveyDesignId  : <%=surveyDesignId%>,
+            responsesPk     : <%=q(responsesPk)%>,
+            surveyLabel     : <%=q(surveyLabel)%>,
+            autosaveInterval: 60000,
             renderTo        : <%=q(renderId)%>
         });
 
