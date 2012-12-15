@@ -419,6 +419,7 @@ public class LookupEditorPanel extends LayoutContainer
             });
 //            setTemplate("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{" + getDisplayField() + "}\">{" + getDisplayField() + "}</div></tpl>");
             setTemplate(XTemplate.create("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{[fm.htmlEncode(values." + getDisplayField() + ")]}\">{[fm.htmlEncode(values." + getDisplayField() + ")]}</div></tpl>"));
+            _previousSelection = getStringValue();
             addStyleName("test-marker-" + getStringValue());
         }
 
