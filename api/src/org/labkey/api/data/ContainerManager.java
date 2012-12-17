@@ -522,7 +522,7 @@ public class ContainerManager
         StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.append(" SET Description=? WHERE RowID=?");
-        new SqlExecutor(CORE.getSchema(), new SQLFragment(sql.toString(), description, container.getRowId())).execute();
+        new SqlExecutor(CORE.getSchema()).execute(sql, description, container.getRowId());
         
         String oldValue = container.getDescription();
         _removeFromCache(container);
@@ -538,7 +538,7 @@ public class ContainerManager
         StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.append(" SET Searchable=? WHERE RowID=?");
-        new SqlExecutor(CORE.getSchema(), new SQLFragment(sql.toString(), searchable, container.getRowId())).execute();
+        new SqlExecutor(CORE.getSchema()).execute(sql, searchable, container.getRowId());
 
         _removeFromCache(container);
     }
@@ -550,7 +550,7 @@ public class ContainerManager
         StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.append(" SET Type=? WHERE RowID=?");
-        new SqlExecutor(CORE.getSchema(), new SQLFragment(sql.toString(), newType, container.getRowId())).execute();
+        new SqlExecutor(CORE.getSchema()).execute(sql, newType, container.getRowId());
 
         _removeFromCache(container);
     }
@@ -562,7 +562,7 @@ public class ContainerManager
         StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.append(" SET Title=? WHERE RowID=?");
-        new SqlExecutor(CORE.getSchema(), new SQLFragment(sql.toString(), title, container.getRowId())).execute();
+        new SqlExecutor(CORE.getSchema()).execute(sql, title, container.getRowId());
 
         _removeFromCache(container);
         String oldValue = container.getTitle();

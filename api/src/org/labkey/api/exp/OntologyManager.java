@@ -635,10 +635,12 @@ public class OntologyManager
             DbSchema schema = getExpSchema();
             String sql = getSqlDialect().execute(getExpSchema(), "deleteObject", "?, ?");
             Object[] params = new Object[] {c.getId(), null};
+            SqlExecutor executor = new SqlExecutor(schema);
+
             for (String uri : uris)
             {
                 params[1] = uri;
-                new SqlExecutor(schema, new SQLFragment(sql, params)).execute();
+                executor.execute(new SQLFragment(sql, params));
             }
         }
         finally
@@ -672,14 +674,14 @@ public class OntologyManager
             sqlDeleteProperties.add(c.getId());
             sqlDeleteProperties.append(sub);
             sqlDeleteProperties.append("))");
-            new SqlExecutor(getExpSchema(), sqlDeleteProperties).execute();
+            new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
             SQLFragment sqlDeleteObjects = new SQLFragment();
             sqlDeleteObjects.append("DELETE FROM " + getTinfoObject() + " WHERE Container = ? AND ObjectURI IN (");
             sqlDeleteObjects.add(c.getId());
             sqlDeleteObjects.append(sub);
             sqlDeleteObjects.append(")");
-            new SqlExecutor(getExpSchema(), sqlDeleteObjects).execute();
+            new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
         }
 
         // fall back implementation
@@ -737,13 +739,13 @@ public class OntologyManager
                 sqlDeleteOwnedProperties.append("DELETE FROM ").append(getTinfoObjectProperty()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
                 sqlDeleteOwnedProperties.append(in);
                 sqlDeleteOwnedProperties.append("))");
-                new SqlExecutor(getExpSchema().getScope(), sqlDeleteOwnedProperties.toString()).execute();
+                new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedProperties);
 
                 StringBuilder sqlDeleteOwnedObjects = new StringBuilder();
                 sqlDeleteOwnedObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
                 sqlDeleteOwnedObjects.append(in);
                 sqlDeleteOwnedObjects.append(")");
-                new SqlExecutor(getExpSchema().getScope(), sqlDeleteOwnedObjects.toString()).execute();
+                new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedObjects);
             }
 
             if (deleteObjects)
@@ -754,7 +756,7 @@ public class OntologyManager
                 sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
                 sqlDeleteObjects.append(in);
                 sqlDeleteObjects.append(")");
-                new SqlExecutor(getExpSchema().getScope(), sqlDeleteObjects.toString()).execute();
+                new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
             }
         }
         finally
@@ -1717,7 +1719,7 @@ public class OntologyManager
         sqlDeleteProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(objContainer.getId()).append("' AND ObjectId IN (");
         sqlDeleteProperties.append(in);
         sqlDeleteProperties.append("))");
-        new SqlExecutor(getExpSchema().getScope(), sqlDeleteProperties.toString()).execute();
+        new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
         for (String uri : objectURIs)
         {
@@ -1735,13 +1737,14 @@ public class OntologyManager
         SQLFragment deletePropSql = new SQLFragment("DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyId = ?", propId);
 
         DbScope dbScope = getExpSchema().getScope();
+        SqlExecutor executor = new SqlExecutor(getExpSchema());
         try
         {
             dbScope.ensureTransaction();
 
-            new SqlExecutor(dbScope, deleteObjPropSql).execute();
-            new SqlExecutor(dbScope, deletePropDomSql).execute();
-            new SqlExecutor(dbScope, deletePropSql).execute();
+            executor.execute(deleteObjPropSql);
+            executor.execute(deletePropDomSql);
+            executor.execute(deletePropSql);
             propDescCache.remove(key);
             domainPropertiesCache.clear();
             dbScope.commitTransaction();

@@ -24,7 +24,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 
 import java.io.IOException;

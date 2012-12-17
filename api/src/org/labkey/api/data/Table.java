@@ -32,7 +32,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Join;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.etl.AbstractDataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -266,7 +265,7 @@ public class Table
     }
 
     // 6 usages
-    @Deprecated // Use TableSelector instead
+    @Deprecated // Use TableSelector
     public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
             throws SQLException
     {
@@ -278,7 +277,7 @@ public class Table
 
 
     // 6 usages
-    @Deprecated // Use TableSelector instead
+    @Deprecated // Use TableSelector
     public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
             throws SQLException
     {
@@ -294,14 +293,14 @@ public class Table
     @Deprecated // Use SqlExecutor
     public static int execute(DbSchema schema, SQLFragment f) throws SQLException
     {
-        return new LegacySqlExecutor(schema, f).execute();
+        return new LegacySqlExecutor(schema).execute(f);
     }
 
     // 333 usages
     @Deprecated // Use SqlExecutor
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
-        return new LegacySqlExecutor(schema, new SQLFragment(sql, parameters)).execute();
+        return new LegacySqlExecutor(schema).execute(sql, parameters);
     }
 
 
@@ -403,68 +402,7 @@ public class Table
     }
 
 
-    // TODO: Move into ExecutingResultSetFactory
-    static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows)
-            throws SQLException
-    {
-        ResultSet rs;
-
-        if (null == parameters || 0 == parameters.length)
-        {
-            Statement statement = conn.createStatement(scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-            initializeStatement(statement, asyncRequest, statementMaxRows);
-            rs = statement.executeQuery(sql);
-        }
-        else
-        {
-            PreparedStatement stmt = conn.prepareStatement(sql, scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-            initializeStatement(stmt, asyncRequest, statementMaxRows);
-
-            try
-            {
-                setParameters(stmt, parameters);
-                rs = stmt.executeQuery();
-            }
-            finally
-            {
-                closeParameters(parameters);
-            }
-        }
-
-        if (asyncRequest != null)
-        {
-            asyncRequest.setStatement(null);
-        }
-
-        assert MemTracker.put(rs);
-        return rs;
-    }
-
-
-    private static void initializeStatement(Statement statement, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
-    {
-        // Don't set max rows if null or special ALL_ROWS value (we're assuming statement.getMaxRows() defaults to 0, though this isn't actually documented...)
-        if (null != statementMaxRows && ALL_ROWS != statementMaxRows)
-        {
-            statement.setMaxRows(statementMaxRows == NO_ROWS ? 1 : statementMaxRows);
-        }
-
-        if (asyncRequest != null)
-        {
-            asyncRequest.setStatement(statement);
-
-            // If this is a background request then push the original stack trace into the statement wrapper so it gets
-            // logged and stored in the query profiler.
-            if (statement instanceof StatementWrapper)
-            {
-                StatementWrapper sw = (StatementWrapper)statement;
-                sw.setStackTrace(asyncRequest.getCreationStackTrace());
-                sw.setRequestThread(true);      // AsyncRequests aren't really background threads; treat them as request threads.
-            }
-        }
-    }
-
-
+    @Deprecated // Use SqlExecutor
     public static int execute(Connection conn, String sql, @NotNull Object... parameters) throws SQLException
     {
         Statement stmt = null;
@@ -494,11 +432,11 @@ public class Table
             if (null != stmt)
                 stmt.close();
 
-            closeParameters(parameters);
+            closeParameters(Arrays.asList(parameters));
         }
     }
 
-    private static void setParameters(PreparedStatement stmt, Object[] parameters) throws SQLException
+    public static void setParameters(PreparedStatement stmt, Object[] parameters) throws SQLException
     {
         setParameters(stmt, Arrays.asList(parameters));
     }
@@ -541,7 +479,7 @@ public class Table
         }
     }
 
-    public static void closeParameters(Object[] parameters)
+    public static void closeParameters(Collection<Object> parameters)
     {
         for (Object value : parameters)
         {
@@ -612,7 +550,7 @@ public class Table
                     e = e.getNextException();
             }
 
-            logException(sql, null, conn, e);
+            logException(fragment(sql, null), conn, e, Level.WARN);
             throw(e);
         }
         finally
@@ -655,25 +593,18 @@ public class Table
 
 
     // Standard SQLException catch block: log exception, query SQL, and params
-    static void logException(String sql, @Nullable Object[] parameters, Connection conn, SQLException e)
-    {
-        logException(sql, parameters, conn, e, Level.WARN);    // Log all warnings and errors by default
-    }
-
-
-    // Standard SQLException catch block: log exception, query SQL, and params
-    static void logException(String sql, @Nullable Object[] parameters, Connection conn, SQLException e, Level logLevel)
+    static void logException(SQLFragment sql, Connection conn, SQLException e, Level logLevel)
     {
         if (SqlDialect.isCancelException(e))
         {
             return;
         }
-        else if (sql.startsWith("INSERT") && SqlDialect.isConstraintException(e))
+        else if (sql.getSQL().startsWith("INSERT") && SqlDialect.isConstraintException(e))
         {
             if (Level.WARN.isGreaterOrEqual(logLevel))
             {
                 _log.warn("SQL Exception", e);
-                _logQuery(Level.WARN, sql, parameters, conn);
+                _logQuery(Level.WARN, sql, conn);
             }
         }
         else
@@ -681,7 +612,7 @@ public class Table
             if (Level.ERROR.isGreaterOrEqual(logLevel))
             {
                 _log.error("SQL Exception", e);
-                _logQuery(Level.ERROR, sql, parameters, conn);
+                _logQuery(Level.ERROR, sql, conn);
             }
         }
     }
@@ -1007,13 +938,13 @@ public class Table
         }
         catch(SQLException e)
         {
-            logException(insertSQL.toString(), parameters.toArray(), conn, e);
+            logException(new SQLFragment(insertSQL, parameters), conn, e, Level.WARN);
             throw(e);
         }
         finally
         {
             doFinally(rs, stmt, conn, schema.getScope());
-            closeParameters(parameters.toArray());
+            closeParameters(parameters);
         }
 
         return returnObject;
@@ -1149,7 +1080,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            logException(updateSQL.getSQL(), updateSQL.getParamsArray(), conn, e);
+            logException(updateSQL, conn, e, Level.WARN);
             throw(e);
         }
 
@@ -1362,10 +1293,13 @@ public class Table
     }
 
 
-    private static void _logQuery(Level level, String sql, @Nullable Object[] parameters, Connection conn)
+    private static void _logQuery(Level level, SQLFragment sqlFragment, Connection conn)
     {
         if (!_log.isEnabledFor(level))
             return;
+
+        String sql = sqlFragment.getSQL();
+        Object[] parameters = sqlFragment.getParamsArray();
 
         StringBuilder logEntry = new StringBuilder(sql.length() * 2);
         logEntry.append("SQL ");

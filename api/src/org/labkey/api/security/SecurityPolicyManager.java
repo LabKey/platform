@@ -232,7 +232,7 @@ public class SecurityPolicyManager
         sql.append(principalsList);
         sql.append(")");
 
-        new SqlExecutor(core.getSchema(), sql).execute();
+        new SqlExecutor(core.getSchema()).execute(sql);
 
         removeAll();
 

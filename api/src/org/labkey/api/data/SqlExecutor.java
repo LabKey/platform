@@ -19,7 +19,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
 
 /**
  * User: adam
@@ -28,61 +31,80 @@ import java.sql.SQLException;
  */
 public class SqlExecutor extends JdbcCommand
 {
-    private final SQLFragment _sql;
-
-    // Execute SQL. When conn is null (vast majority of cases), a pooled connection will be obtained from the scope and
-    // closed after execution. If conn is provided then that connection will be used and will NOT be closed afterwards.
-    public SqlExecutor(@NotNull DbScope scope, @NotNull SQLFragment sql, @Nullable Connection conn)
+    // When conn is null (vast majority of cases), a pooled connection will be obtained from the scope and closed after
+    // execution. If conn is provided then that connection will be used and will NOT be closed afterwards.
+    public SqlExecutor(@NotNull DbScope scope, @Nullable Connection conn)
     {
         super(scope, conn);
-        _sql = sql;
     }
 
-    // Execute SQLFragment against a scope.
-    public SqlExecutor(@NotNull DbScope scope, SQLFragment sql)
+    public SqlExecutor(@NotNull DbScope scope)
     {
-        this(scope, sql, null);
+        super(scope, null);
     }
 
-    // Execute SQL against a scope
-    public SqlExecutor(@NotNull DbScope scope, String sql, Object... params)
+    public SqlExecutor(@NotNull DbSchema schema)
     {
-        this(scope, new SQLFragment(sql, params));
+        this(schema.getScope());
     }
 
-    // Execute SQL against a schema
-    public SqlExecutor(@NotNull DbSchema schema, SQLFragment sql)
+    public int execute(CharSequence sql, Object... params)
     {
-        this(schema.getScope(), sql);
+        return execute(new SQLFragment(sql, params));
     }
 
-    public SqlExecutor(@NotNull DbSchema schema, String sql, Object... params)
-    {
-        this(schema.getScope(), new SQLFragment(sql, params));
-    }
-
-    public SQLFragment getSql()
-    {
-        return _sql;
-    }
-
-    public int execute()
+    public int execute(SQLFragment sql)
     {
         Connection conn = null;
 
         try
         {
             conn = getConnection();
-            return Table.execute(conn, _sql.getSQL(), _sql.getParamsArray());
+            return execute(conn, sql);
         }
         catch(SQLException e)
         {
-            Table.logException(_sql.getSQL(), _sql.getParamsArray(), conn, e, getLogLevel());
-            throw getExceptionFramework().translate(getScope(), "Message", _sql.getSQL(), e);  // TODO: Change message
+            Table.logException(sql, conn, e, getLogLevel());
+            throw getExceptionFramework().translate(getScope(), "Message", sql.getSQL(), e);  // TODO: Change message
         }
         finally
         {
             close(null, conn);
+        }
+    }
+
+    private int execute(Connection conn, SQLFragment sqlFragment) throws SQLException
+    {
+        List<Object> parameters = sqlFragment.getParams();
+        String sql = sqlFragment.getSQL();
+        Statement stmt = null;
+
+        try
+        {
+            if (parameters.isEmpty())
+            {
+                stmt = conn.createStatement();
+                if (stmt.execute(sql))
+                    return -1;
+                else
+                    return stmt.getUpdateCount();
+            }
+            else
+            {
+                stmt = conn.prepareStatement(sql);
+                Table.setParameters((PreparedStatement) stmt, parameters);
+                if (((PreparedStatement)stmt).execute())
+                    return -1;
+                else
+                    return stmt.getUpdateCount();
+            }
+        }
+        finally
+        {
+            if (null != stmt)
+                stmt.close();
+
+            Table.closeParameters(parameters);
         }
     }
 }

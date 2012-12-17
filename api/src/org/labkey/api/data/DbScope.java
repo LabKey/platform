@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1056,8 +1057,10 @@ public class DbScope
                 try
                 {
                     conn = scope.getConnection();
-                    dialect.testDialectKeywords(conn);
-                    dialect.testKeywordCandidates(conn);
+                    SqlExecutor executor = new SqlExecutor(scope, conn);
+                    executor.setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
+                    dialect.testDialectKeywords(executor);
+                    dialect.testKeywordCandidates(executor);
                 }
                 finally
                 {

@@ -142,7 +142,7 @@ public class TableUpdaterFileMoveListener implements FileMoveListener
         singleEntrySQL.add(destPath);
         singleEntrySQL.add(srcPath);
 
-        int rows = new SqlExecutor(schema, singleEntrySQL).execute();
+        int rows = new SqlExecutor(schema).execute(singleEntrySQL);
         LOG.info("Updated " + rows + " row in " + _table + " for move from " + srcFile + " to " + destFile);
 
         // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
@@ -165,7 +165,7 @@ public class TableUpdaterFileMoveListener implements FileMoveListener
             childPathsSQL.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment(_table.getSqlDialect().makeLegalIdentifier(_pathColumn))));
             childPathsSQL.append(" = 1");
 
-            int childRows = new SqlExecutor(schema, childPathsSQL).execute();
+            int childRows = new SqlExecutor(schema).execute(childPathsSQL);
             LOG.info("Updated " + childRows + " child paths in " + _table + " rows for move from " + srcFile + " to " + destFile);
         }
     }

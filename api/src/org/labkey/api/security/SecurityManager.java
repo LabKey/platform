@@ -1235,7 +1235,7 @@ public class SecurityManager
             }
             sql.append(")");
 
-            new SqlExecutor(core.getSchema(), sql).execute();
+            new SqlExecutor(core.getSchema()).execute(sql);
 
             for (UserPrincipal member : membersToDelete)
                 fireDeletePrincipalFromGroup(groupId, member);
@@ -1246,9 +1246,8 @@ public class SecurityManager
     public static void deleteMember(Group group, UserPrincipal principal)
     {
         int groupId = group.getUserId();
-        SqlExecutor executor = new SqlExecutor(core.getSchema(), new SQLFragment("DELETE FROM " + core.getTableInfoMembers() + "\n" +
-            "WHERE GroupId = ? AND UserId = ?", groupId, principal.getUserId()));
-        executor.execute();
+        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
+            "WHERE GroupId = ? AND UserId = ?", groupId, principal.getUserId());
         fireDeletePrincipalFromGroup(groupId, principal);
     }
 
@@ -1307,14 +1306,12 @@ public class SecurityManager
     // Internal only; used by junit test
     static void addMemberWithoutValidation(Group group, UserPrincipal principal)
     {
-        SqlExecutor executor = new SqlExecutor(core.getSchema(), new SQLFragment("INSERT INTO " + core.getTableInfoMembers() +
-            " (UserId, GroupId) VALUES (?, ?)", principal.getUserId(), group.getUserId()));
-
+        SqlExecutor executor = new SqlExecutor(core.getSchema());
         executor.setLogLevel(Level.ERROR);   // Don't log warnings (e.g., constraint violations)
 
         try
         {
-            executor.execute();
+            executor.execute("INSERT INTO " + core.getTableInfoMembers() + " (UserId, GroupId) VALUES (?, ?)", principal.getUserId(), group.getUserId());
         }
         catch (DataIntegrityViolationException e)
         {

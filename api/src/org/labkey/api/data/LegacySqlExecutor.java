@@ -24,19 +24,31 @@ import java.sql.SQLException;
  */
 public class LegacySqlExecutor
 {
-    protected final SqlExecutor _executor;
+    private final SqlExecutor _executor;
 
-    public LegacySqlExecutor(DbSchema schema, SQLFragment sql)
+    public LegacySqlExecutor(DbSchema schema)
     {
-        _executor = new SqlExecutor(schema, sql);
+        _executor = new SqlExecutor(schema);
         _executor.setExceptionFramework(ExceptionFramework.JDBC);
     }
 
-    public int execute() throws SQLException
+    public int execute(SQLFragment sql) throws SQLException
     {
         try
         {
-            return _executor.execute();
+            return _executor.execute(sql);
+        }
+        catch (RuntimeSQLException e)
+        {
+            throw e.getSQLException();
+        }
+    }
+
+    public int execute(String sql, Object... params) throws SQLException
+    {
+        try
+        {
+            return _executor.execute(sql, params);
         }
         catch (RuntimeSQLException e)
         {

@@ -166,14 +166,7 @@ public class SqlScriptExecutor
             // Null schema allowed for testing
             if (_sql.length() > 0 && null != _schema)
             {
-                if (null == _conn)
-                {
-                    new SqlExecutor(_schema.getScope(), _sql).execute();
-                }
-                else
-                {
-                    new SqlExecutor(_schema.getScope(), new SQLFragment(_sql), _conn).execute();
-                }
+                new SqlExecutor(_schema.getScope(), _conn).execute(_sql);
             }
         }
     }

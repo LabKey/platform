@@ -34,6 +34,7 @@ import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
@@ -328,11 +329,11 @@ public abstract class SqlDialect
     }
 
     // Set of keywords returned by DatabaseMetaData.getMetaData() plus the SQL 2003 keywords
-    protected Set<String> getJdbcKeywords(Connection conn) throws SQLException, IOException
+    protected Set<String> getJdbcKeywords(SqlExecutor executor) throws SQLException, IOException
     {
         Set<String> keywordSet = new CaseInsensitiveHashSet();
         keywordSet.addAll(KeywordCandidates.get().getSql2003Keywords());
-        String keywords = conn.getMetaData().getSQLKeywords();
+        String keywords = executor.getConnection().getMetaData().getSQLKeywords();
         keywordSet.addAll(new CsvSet(keywords));
 
         return keywordSet;
@@ -587,7 +588,7 @@ public abstract class SqlDialect
     }
 
 
-    public void testDialectKeywords(Connection conn)
+    public void testDialectKeywords(SqlExecutor executor)
     {
         Set<String> candidates = KeywordCandidates.get().getCandidates();
         Set<String> shouldAdd = new TreeSet<String>();
@@ -595,12 +596,12 @@ public abstract class SqlDialect
 
         // First, test the test: execute the test SQL with an identifier that definitely isn't a keyword.  If this
         // fails, there's a syntax issue with the test SQL.
-        if (isKeyword(conn, "abcdefghi"))
+        if (isKeyword(executor, "abcdefghi"))
             throw new IllegalStateException("Legitimate keyword generated an error on " + getProductName());
 
         for (String candidate : candidates)
         {
-            boolean reserved = isKeyword(conn, candidate);
+            boolean reserved = isKeyword(executor, candidate);
 
             if (isReserved(candidate) != reserved)
             {
@@ -632,25 +633,25 @@ public abstract class SqlDialect
     }
 
 
-    protected boolean isKeyword(Connection conn, String candidate)
+    protected boolean isKeyword(SqlExecutor executor, String candidate)
     {
         String sql = getIdentifierTestSql(candidate);
 
         try
         {
-            Table.execute(conn, sql);
+            executor.execute(sql);
             return false;
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             return true;
         }
     }
 
 
-    public void testKeywordCandidates(Connection conn) throws IOException, SQLException
+    public void testKeywordCandidates(SqlExecutor executor) throws IOException, SQLException
     {
-        Set<String> jdbcKeywords = getJdbcKeywords(conn);
+        Set<String> jdbcKeywords = getJdbcKeywords(executor);
 
         if (!KeywordCandidates.get().containsAll(jdbcKeywords, getProductName()))
             throw new IllegalStateException("JDBC keywords from " + getProductName() + " are not all in the keyword candidate list (sqlKeywords.txt)");

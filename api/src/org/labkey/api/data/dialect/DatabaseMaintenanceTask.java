@@ -18,12 +18,8 @@ package org.labkey.api.data.dialect;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.util.SystemMaintenance;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
 {
@@ -49,16 +45,11 @@ class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
     public void run()
     {
         DbScope scope = DbScope.getLabkeyScope();
-
-        Connection conn = null;
-        String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
-        DataSource ds = scope.getDataSource();
-
         String url = null;
 
         try
         {
-            SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(scope.getDataSourceName(), ds);
+            SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(scope.getDataSourceName(), scope.getDataSource());
             url = props.getUrl();
             _log.info("Database maintenance on " + url + " started");
         }
@@ -68,22 +59,8 @@ class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
             _log.error("Exception retrieving url", e);
         }
 
-        try
-        {
-            if (null != sql)
-            {
-                conn = scope.getConnection();
-                Table.execute(conn, sql);
-            }
-        }
-        catch(SQLException e)
-        {
-            // Nothing to do here... table layer will log any errors
-        }
-        finally
-        {
-            if (null != conn) scope.releaseConnection(conn);
-        }
+        String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
+        new SqlExecutor(scope).execute(sql);
 
         if (null != url)
             _log.info("Database maintenance on " + url + " complete");

@@ -135,7 +135,7 @@ public class Portal
         update.append(Portal.getTableInfoPortalWebParts().getSelectName());
         update.append(" SET Properties = NULL ");
         update.append(where);
-        new SqlExecutor(Portal.getSchema(), update).execute();
+        new SqlExecutor(Portal.getSchema()).execute(update);
 
         // Now clear the webpart cache for all affected containers, #13937
         for (String cid : containersToClear)
@@ -368,7 +368,7 @@ public class Portal
 
     public static Map<String,PortalPage> getPages(Container c, boolean showHidden)
     {
-        Map<String,PortalPage> pages = WebPartCache.getPages(c, showHidden);
+        Map<String, PortalPage> pages = WebPartCache.getPages(c, showHidden);
         return Collections.unmodifiableMap(pages);
     }
 
@@ -1174,7 +1174,7 @@ public class Portal
 
     public static void hidePage(Container c, int index)
     {
-        CaseInsensitiveHashMap<PortalPage> pages = WebPartCache.getPages(c,true);
+        Map<String, PortalPage> pages = WebPartCache.getPages(c,true);
         for (PortalPage page : pages.values())
         {
             if (page.getIndex() == index)

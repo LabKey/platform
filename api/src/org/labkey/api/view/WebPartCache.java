@@ -34,7 +34,7 @@ import org.labkey.api.view.Portal.WebPart;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * User: adam
@@ -43,20 +43,20 @@ import java.util.LinkedHashMap;
  */
 public class WebPartCache
 {
-    private static final BlockingStringKeyCache<CaseInsensitiveHashMap<Portal.PortalPage>> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Webparts", null);
+    private static final BlockingStringKeyCache<Map<String, Portal.PortalPage>> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Webparts", null);
 
     static public Portal.PortalPage getPortalPage(@NotNull Container c, @NotNull String pageId)
     {
-        CaseInsensitiveHashMap<Portal.PortalPage> pages = get(c);
+        Map<String, Portal.PortalPage> pages = get(c);
         return null == pages ? null : pages.get(pageId);
     }
 
 
-    static CaseInsensitiveHashMap<Portal.PortalPage> getPages(Container c, boolean showHidden)
+    static Map<String, Portal.PortalPage> getPages(Container c, boolean showHidden)
     {
-        CaseInsensitiveHashMap<Portal.PortalPage> pages = get(c);
+        Map<String, Portal.PortalPage> pages = get(c);
         if (null == pages)
-            new CaseInsensitiveHashMap<Portal.PortalPage>();
+            pages = new CaseInsensitiveHashMap<Portal.PortalPage>();
         if (showHidden)
             return pages;
         CaseInsensitiveHashMap<Portal.PortalPage> ret = new CaseInsensitiveHashMap<Portal.PortalPage>();
@@ -84,10 +84,10 @@ public class WebPartCache
     }
 
 
-    static CacheLoader _webpartLoader = new CacheLoader<String, CaseInsensitiveHashMap<Portal.PortalPage>>()
+    static CacheLoader<String, Map<String, Portal.PortalPage>> _webpartLoader = new CacheLoader<String, Map<String, Portal.PortalPage>>()
     {
         @Override
-        public CaseInsensitiveHashMap<Portal.PortalPage> load(String containerId, Object o)
+        public Map<String, Portal.PortalPage> load(String containerId, Object o)
         {
             DbSchema schema = CoreSchema.getInstance().getSchema();
             CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>();
@@ -101,7 +101,7 @@ public class WebPartCache
                     GUID g = new GUID();
                     SQLFragment updateEntityId = new SQLFragment("UPDATE " + Portal.getTableInfoPortalPages().getSelectName() + " SET EntityId = ? WHERE Container = ? AND PageId = ? AND EntityId IS NULL",
                             g, containerId, p.getPageId());
-                    new SqlExecutor(schema,updateEntityId).execute();
+                    new SqlExecutor(schema).execute(updateEntityId);
                     p.setEntityId(g);
                 }
                 pages.put(p.getPageId(), p);
@@ -122,12 +122,13 @@ public class WebPartCache
     };
 
 
-    private static CaseInsensitiveHashMap<Portal.PortalPage> get(@NotNull final Container c)
+    private static Map<String, Portal.PortalPage> get(@NotNull final Container c)
     {
         return CACHE.get(c.getId(), c, _webpartLoader);
     }
 
 
+    // TODO: Why are we passing in pageId?  Should just remove the param...
     static void remove(Container c, String pageId)
     {
         CACHE.remove(c.getId());

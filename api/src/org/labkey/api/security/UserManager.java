@@ -423,7 +423,7 @@ public class UserManager
     public static void updateLogin(User user)
     {
         SQLFragment sql = new SQLFragment("UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin = ? WHERE UserId = ?", new Date(), user.getUserId());
-        new SqlExecutor(CORE.getSchema(), sql).execute();
+        new SqlExecutor(CORE.getSchema()).execute(sql);
     }
 
 
