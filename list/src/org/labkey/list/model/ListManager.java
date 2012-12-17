@@ -620,8 +620,8 @@ public class ListManager implements SearchService.DocumentProvider
 
     public void setLastIndexed(ListDefinition list, long ms)
     {
-        new SqlExecutor(getSchema(), new SQLFragment("UPDATE " + getTinfoList().getSelectName() +
-                " SET LastIndexed = ? WHERE RowId = ?", new Timestamp(ms), list.getListId())).execute();
+        new SqlExecutor(getSchema()).execute(new SQLFragment("UPDATE " + getTinfoList().getSelectName() +
+                " SET LastIndexed = ? WHERE RowId = ?", new Timestamp(ms), list.getListId()));
     }
 
 
@@ -629,8 +629,8 @@ public class ListManager implements SearchService.DocumentProvider
     {
         TableInfo ti = ((ListDefinitionImpl) list).getIndexTable();
         String keySelectName = ti.getColumn("Key").getSelectName();   // Reserved word on sql server
-        new SqlExecutor(getSchema(), new SQLFragment("UPDATE " + ti.getSelectName() + " SET LastIndexed = ? WHERE ListId = ? AND " +
-                keySelectName + " = ?", new Timestamp(ms), list.getListId(), pk)).execute();
+        new SqlExecutor(getSchema()).execute(new SQLFragment("UPDATE " + ti.getSelectName() + " SET LastIndexed = ? WHERE ListId = ? AND " +
+                keySelectName + " = ?", new Timestamp(ms), list.getListId(), pk));
     }
 
 
@@ -642,7 +642,7 @@ public class ListManager implements SearchService.DocumentProvider
                 ListTable.getIndexTable(ListDefinition.KeyType.Varchar)
             })
         {
-            new SqlExecutor(getSchema(), new SQLFragment("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL")).execute();
+            new SqlExecutor(getSchema()).execute(new SQLFragment("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL"));
         }
     }
 }

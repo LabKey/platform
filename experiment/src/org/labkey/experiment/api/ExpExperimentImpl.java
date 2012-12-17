@@ -123,7 +123,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         {
             ExperimentServiceImpl.get().ensureTransaction();
 
-            new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), sql).execute();
+            new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(sql);
 
             ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, this, "The run '" + run.getName() + "' was removed from the run group '" + getName() + "'");
 
@@ -162,7 +162,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                 if (!existingRunIds.contains(run.getRowId()))
                 {
                     SQLFragment fragment = new SQLFragment(sql, getRowId(), run.getRowId(), new Date(), user == null ? null : user.getUserId());
-                    new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), fragment).execute();
+                    new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(fragment);
 
                     ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, this, "The run '" + run.getName() + "' was added to the run group '" + getName() + "'");
                 }
@@ -207,19 +207,21 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                     }
                 }
 
+                SqlExecutor executor = new SqlExecutor(ExperimentServiceImpl.get().getExpSchema());
+
                 SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList()
                         + " WHERE ExperimentId IN ("
                         + " SELECT E.RowId FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
                         + " WHERE E.RowId = " + getRowId()
                         + " AND E.Container = ? )", getContainer());
-                new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), sql).execute();
+                executor.execute(sql);
 
                 OntologyManager.deleteOntologyObjects(getContainer(), getLSID());
 
                 sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
                         + " WHERE RowId = " + getRowId()
                         + " AND Container = ?", getContainer());
-                new SqlExecutor(ExperimentServiceImpl.get().getExpSchema(), sql).execute();
+                executor.execute(sql);
 
                 ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
             }

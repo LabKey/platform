@@ -181,7 +181,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public void indexDeleted() throws SQLException
     {
-        new SqlExecutor(IssuesSchema.getInstance().getSchema(), new SQLFragment(
-            "UPDATE issues.issues SET lastIndexed=NULL")).execute();
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(new SQLFragment(
+                "UPDATE issues.issues SET lastIndexed=NULL"));
     }
 }

@@ -91,12 +91,12 @@ public class KeywordManager
     {
         synchronized (KEYWORD_LOCK)
         {
+            SqlExecutor executor = new SqlExecutor(IssuesSchema.getInstance().getSchema());
+
             for (HString keyword : keywords)
             {
-                SqlExecutor executor = new SqlExecutor(IssuesSchema.getInstance().getSchema(), new SQLFragment(
-                        "INSERT INTO " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
-                        c.getId(), type.getOrdinal(), keyword));
-                executor.execute();
+                executor.execute("INSERT INTO " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
+                        c.getId(), type.getOrdinal(), keyword);
             }
 
             KEYWORD_CACHE.remove(getCacheKey(c, type));
@@ -111,10 +111,9 @@ public class KeywordManager
 
         String selectName = IssuesSchema.getInstance().getTableInfoIssueKeywords().getColumn("Default").getSelectName();
 
-        new SqlExecutor(IssuesSchema.getInstance().getSchema(), new SQLFragment(
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(new SQLFragment(
                 "UPDATE " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container = ? AND Type = ? AND Keyword = ?",
-                Boolean.TRUE, c.getId(), type.getOrdinal(), keyword)
-            ).execute();
+                Boolean.TRUE, c.getId(), type.getOrdinal(), keyword));
 
         KEYWORD_CACHE.remove(getCacheKey(c, type));
     }
@@ -125,10 +124,9 @@ public class KeywordManager
     {
         String selectName = IssuesSchema.getInstance().getTableInfoIssueKeywords().getColumn("Default").getSelectName();
 
-        new SqlExecutor(IssuesSchema.getInstance().getSchema(), new SQLFragment(
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(new SQLFragment(
                 "UPDATE " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " SET " + selectName + " = ? WHERE Container = ? AND Type = ?",
-                Boolean.FALSE, c.getId(), type.getOrdinal())
-            ).execute();
+                Boolean.FALSE, c.getId(), type.getOrdinal()));
 
         KEYWORD_CACHE.remove(getCacheKey(c, type));
     }

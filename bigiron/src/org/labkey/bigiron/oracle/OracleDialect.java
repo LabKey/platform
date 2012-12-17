@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
@@ -31,7 +32,6 @@ import org.labkey.api.data.dialect.StatementWrapper;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -79,17 +79,17 @@ public abstract class OracleDialect extends SimpleSqlDialect
     }
 
     @Override
-    public void testDialectKeywords(Connection conn)
+    public void testDialectKeywords(SqlExecutor executor)
     {
         // TODO: Create queries to test keywords on Oracle
         // Don't test keywords on Oracle
     }
 
     @Override
-    protected Set<String> getJdbcKeywords(Connection conn) throws SQLException, IOException
+    protected Set<String> getJdbcKeywords(SqlExecutor executor) throws SQLException, IOException
     {
         // Remove goofy "keyword" that Orcale includes in JDBC call
-        Set<String> keywords = super.getJdbcKeywords(conn);
+        Set<String> keywords = super.getJdbcKeywords(executor);
         keywords.remove("all_PL_SQL_reserved_ words");
         return keywords;
     }

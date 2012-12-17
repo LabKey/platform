@@ -21,15 +21,15 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
-import org.labkey.api.data.dialect.SimpleSqlDialect;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
@@ -73,19 +73,19 @@ public class MySqlDialect extends SimpleSqlDialect
 
     @Override
     // MySQL doesn't like executing multiple statements at once, so break it into separate calls.
-    protected boolean isKeyword(Connection conn, String candidate)
+    protected boolean isKeyword(SqlExecutor executor, String candidate)
     {
         String tableName = getTempTablePrefix() + candidate;
 
         try
         {
-            Table.execute(conn, "SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";");
-            Table.execute(conn, "CREATE TEMPORARY TABLE mysql." + tableName + " (" + candidate + " VARCHAR(50));");
-            Table.execute(conn, "DROP TEMPORARY TABLE mysql." + tableName + ";");
+            executor.execute("SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";");
+            executor.execute("CREATE TEMPORARY TABLE mysql." + tableName + " (" + candidate + " VARCHAR(50));");
+            executor.execute("DROP TEMPORARY TABLE mysql." + tableName + ";");
 
             return false;
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             return true;
         }

@@ -23,7 +23,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
@@ -40,7 +39,6 @@ import org.labkey.api.settings.AbstractSettingsGroup;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.Portal;
 import org.labkey.core.query.CoreQuerySchema;
@@ -109,9 +107,9 @@ public class CoreUpgradeCode implements UpgradeCode
                 try
                 {
                     // Attempt to use the core.GROUP_CONCAT() aggregate function. If this succeeds, we'll skip the install step.
-                    SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G"));
+                    SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema());
                     executor.setLogLevel(Level.OFF);  // We expect this to fail in most cases... shut off data layer logging
-                    executor.execute();
+                    executor.execute("SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G");
                     return;
                 }
                 catch (Exception e)
@@ -195,22 +193,17 @@ public class CoreUpgradeCode implements UpgradeCode
         if (moduleContext.isNewInstall())
             return;
 
-        try
-        {
-            DbSchema schema = CoreSchema.getInstance().getSchema();
-            Collection<Portal.PortalPage> pages = new SqlSelector(schema, "SELECT * FROM core.PortalPages").getCollection(Portal.PortalPage.class);
-            String updateSql = "UPDATE core.PortalPages SET EntityId=? WHERE Container=? AND PageId=?";
+        DbSchema schema = CoreSchema.getInstance().getSchema();
+        Collection<Portal.PortalPage> pages = new SqlSelector(schema, "SELECT * FROM core.PortalPages").getCollection(Portal.PortalPage.class);
+        String updateSql = "UPDATE core.PortalPages SET EntityId=? WHERE Container=? AND PageId=?";
 
-            for (Portal.PortalPage p : pages)
-            {
-                if (null != p.getEntityId())
-                    continue;
-                Table.execute(schema, updateSql,  GUID.makeGUID(), p.getContainer().toString(), p.getPageId());
-            }
-        }
-        catch (SQLException se)
+        SqlExecutor executor = new SqlExecutor(schema);
+
+        for (Portal.PortalPage p : pages)
         {
-            throw UnexpectedException.wrap(se);
+            if (null != p.getEntityId())
+                continue;
+            executor.execute(updateSql, GUID.makeGUID(), p.getContainer().toString(), p.getPageId());
         }
     }
 }

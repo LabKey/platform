@@ -16,13 +16,16 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -34,7 +37,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.HashMap;
@@ -146,9 +148,8 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
             @Override
             public void setLastIndexed(long ms, long modified)
             {
-                new SqlExecutor(ExperimentService.get().getSchema(),
-                        new SQLFragment("UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?",
-                        new Timestamp(ms), getRowId())).execute();
+                new SqlExecutor(ExperimentService.get().getSchema()).execute(new SQLFragment("UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?",
+                        new Timestamp(ms), getRowId()));
             }
         };
         task.addResource(r, SearchService.PRIORITY.item);

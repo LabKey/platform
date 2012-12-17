@@ -2848,10 +2848,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private void dropOldMaterializedTable()
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        Connection conn=null;
+        Connection conn = null;
         try
         {
-            // avoid logging sql exception
+            // avoid logging sql exception     TODO: Can now use a SqlExecutor and set the logging level
             //Table.execute(schema, "DROP TABLE studydataset." + schema.getScope().getSqlDialect().makeLegalIdentifier(getCacheString()), new Object[0]);
             conn = schema.getScope().getConnection();
             conn.prepareStatement("DROP TABLE studydataset." + schema.getScope().getSqlDialect().makeLegalIdentifier(getCacheString())).execute();

@@ -79,7 +79,7 @@ public class FileLinkFileMoveListener implements FileMoveListener
         singleEntrySQL.append(" AND StringValue = ?");
         singleEntrySQL.add(srcPath);
 
-        int rows = new SqlExecutor(OntologyManager.getExpSchema(), singleEntrySQL).execute();
+        int rows = new SqlExecutor(OntologyManager.getExpSchema()).execute(singleEntrySQL);
         LOG.info("Updated " + rows + " row in exp.ObjectProperty for move from " + srcFile + " to " + destFile);
 
         // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
@@ -103,7 +103,7 @@ public class FileLinkFileMoveListener implements FileMoveListener
             childPathsSQL.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment("StringValue")));
             childPathsSQL.append(" = 1");
 
-            int childRows = new SqlExecutor(OntologyManager.getExpSchema(), childPathsSQL).execute();
+            int childRows = new SqlExecutor(OntologyManager.getExpSchema()).execute(childPathsSQL);
             LOG.info("Updated " + childRows + " child paths in exp.ObjectProperty rows for move from " + srcFile + " to " + destFile);
         }
     }

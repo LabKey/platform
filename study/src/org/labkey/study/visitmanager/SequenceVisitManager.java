@@ -149,13 +149,14 @@ public class SequenceVisitManager extends VisitManager
         sqlInsertParticipantVisit.append("WHERE Container = ? AND SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum)\n");
         sqlInsertParticipantVisit.add(getStudy().getContainer());
         sqlInsertParticipantVisit.append("GROUP BY ParticipantId, SequenceNum");
-        new SqlExecutor(schema, sqlInsertParticipantVisit).execute();
+        SqlExecutor executor = new SqlExecutor(schema);
+        executor.execute(sqlInsertParticipantVisit);
 
         //
         // Delete ParticipantVisit where the participant does not exist anymore
         //
         String sqlDeleteParticiapantVisit = "DELETE FROM " + tableParticipantVisit + " WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM " + tableParticipant + " WHERE Container= ?)";
-        new SqlExecutor(schema, new SQLFragment(sqlDeleteParticiapantVisit, getStudy().getContainer(), getStudy().getContainer())).execute();
+        executor.execute(new SQLFragment(sqlDeleteParticiapantVisit, getStudy().getContainer(), getStudy().getContainer()));
 
         // after assigning visit dates to all study data-generated visits, we insert any extra ptid/sequencenum/date combinations
         // that are found in the specimen archives.  We simply trust the specimen draw date in this case, rather than relying on the
@@ -172,7 +173,7 @@ public class SequenceVisitManager extends VisitManager
         sqlInsertParticipantVisit.append("WHERE Container = ? AND Specimen.Ptid = PV.ParticipantId AND Specimen.VisitValue = PV.SequenceNum)\n");
         sqlInsertParticipantVisit.add(getStudy().getContainer());
         sqlInsertParticipantVisit.append("GROUP BY Container, Ptid, VisitValue");
-        new SqlExecutor(schema, sqlInsertParticipantVisit).execute();
+        executor.execute(sqlInsertParticipantVisit);
 
         //
         // fill in VisitRowId (need this to do the VisitDate computation)
@@ -200,7 +201,7 @@ public class SequenceVisitManager extends VisitManager
         sqlUpdateVisitDates.add(getStudy().getContainer());
         sqlUpdateVisitDates.add(getStudy().getContainer());
 
-        new SqlExecutor(schema, sqlUpdateVisitDates).execute();
+        executor.execute(sqlUpdateVisitDates);
 
         /* infer ParticipantVisit.VisitDate if it seems unambiguous
         String sqlCopyVisitDates = "UPDATE " + tableParticipantVisit + "\n" +
@@ -239,7 +240,7 @@ public class SequenceVisitManager extends VisitManager
         if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
             sqlUpdateVisitRowId += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
         sqlUpdateVisitRowId += "WHERE Container=?";
-        new SqlExecutor(schema, new SQLFragment(sqlUpdateVisitRowId, getStudy().getContainer(), getStudy().getContainer())).execute();
+        new SqlExecutor(schema).execute(new SQLFragment(sqlUpdateVisitRowId, getStudy().getContainer(), getStudy().getContainer()));
     }
 
 

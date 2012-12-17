@@ -2017,13 +2017,13 @@ public class StudyManager
         {
             throw new RuntimeException(e);
         }
-        new SqlExecutor(StudySchema.getInstance().getSchema(), new SQLFragment("DELETE FROM " + _tableInfoVisitMap + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId())).execute();
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(new SQLFragment("DELETE FROM " + _tableInfoVisitMap + "\n" +
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId()));
 
         // UNDONE: This is broken
         // this._dataSetHelper.delete(ds);
-        new SqlExecutor(StudySchema.getInstance().getSchema(), new SQLFragment("DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId())).execute();
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(new SQLFragment("DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId()));
         _dataSetHelper.clearCache(study.getContainer());
 
         SecurityPolicyManager.deletePolicy(ds);
@@ -2213,8 +2213,9 @@ public class StudyManager
 
             // Clear this container ID from any source and destination columns of study snapshots. Then delete any
             // study snapshots that are orphaned (both source and destination are gone).
-            new SqlExecutor(StudySchema.getInstance().getSchema(), getStudySnapshotUpdateSql(c, "Source")).execute();
-            new SqlExecutor(StudySchema.getInstance().getSchema(), getStudySnapshotUpdateSql(c, "Destination")).execute();
+            SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema());
+            executor.execute(getStudySnapshotUpdateSql(c, "Source"));
+            executor.execute(getStudySnapshotUpdateSql(c, "Destination"));
 
             Filter orphanedFilter = new SimpleFilter
             (

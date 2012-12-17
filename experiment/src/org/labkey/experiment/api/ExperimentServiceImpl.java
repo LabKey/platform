@@ -769,7 +769,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 // No current value, so need to insert a new row
                 String sql = "INSERT INTO " + getTinfoActiveMaterialSource() + " (Container, MaterialSourceLSID) " +
                     "VALUES (?, ?)";
-                new SqlExecutor(getExpSchema(), new SQLFragment(sql, container.getId(), materialSourceLSID)).execute();
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment(sql, container.getId(), materialSourceLSID));
             }
         }
         else
@@ -778,13 +778,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 // Current value exists, needs to be deleted
                 String sql = "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE Container = ?";
-                new SqlExecutor(getExpSchema(), new SQLFragment(sql, container.getId())).execute();
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment(sql, container.getId()));
             }
             else
             {
                 // Current value exists, needs to be changed
                 String sql = "UPDATE " + getTinfoActiveMaterialSource() + " SET MaterialSourceLSID = ? WHERE Container = ?";
-                new SqlExecutor(getExpSchema(), new SQLFragment(sql, materialSourceLSID, container.getId())).execute();
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment(sql, materialSourceLSID, container.getId()));
             }
         }
     }
@@ -974,7 +974,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append("DELETE FROM exp.ExperimentRun WHERE RowId = ?;\n");
         sql.add(run.getRowId());
 
-        new SqlExecutor(getExpSchema(), sql).execute();
+        new SqlExecutor(getExpSchema()).execute(sql);
 
         auditRunEvent(user, run.getProtocol(), run, null, "Run deleted");
     }
@@ -1513,6 +1513,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
             }
 
+            SqlExecutor executor = new SqlExecutor(getExpSchema());
+
             if (actionIds.length > 0)
             {
                 for (Protocol protocol : protocols)
@@ -1526,12 +1528,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
 
                 String actionIdsJoined = "(" + StringUtils.join(actionIds, ", ") + ")";
-                new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";")).execute();
-
-                new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined)).execute();
+                executor.execute(new SQLFragment("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";"));
+                executor.execute(new SQLFragment("DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined));
             }
 
-            new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ")")).execute();
+            executor.execute(new SQLFragment("DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ")"));
 
             for (Protocol protocol : protocols)
             {
@@ -1543,7 +1544,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
             }
 
-            new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ")")).execute();
+            executor.execute(new SQLFragment("DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ")"));
 
             sql = new SQLFragment("SELECT RowId FROM exp.Protocol Where RowId NOT IN (SELECT ParentProtocolId from exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
             sql.add(c.getId());

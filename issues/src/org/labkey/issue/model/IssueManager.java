@@ -1118,12 +1118,13 @@ public class IssueManager
         public void tearDown()
         {
             Container c = JunitUtil.getTestContainer();
+            SqlExecutor executor = new SqlExecutor(_issuesSchema.getSchema());
 
             SQLFragment deleteComments = new SQLFragment("DELETE FROM " + _issuesSchema.getTableInfoComments() +
                 " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)", c.getId());
-            new SqlExecutor(_issuesSchema.getSchema(), deleteComments);
+            executor.execute(deleteComments);
             SQLFragment deleteIssues = new SQLFragment("DELETE FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?", c.getId());
-            new SqlExecutor(_issuesSchema.getSchema(), deleteIssues);
+            executor.execute(deleteIssues);
         }
     }
 }

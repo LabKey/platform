@@ -955,7 +955,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     {
         try
         {
-            new SqlExecutor(scope, "SET SHOWPLAN_ALL ON").execute();
+            new SqlExecutor(scope).execute("SET SHOWPLAN_ALL ON");
 
             // I don't want to inline all the parameters... but SQL Server / jTDS blow up with some (not all)
             // prepared statements with parameters.
@@ -963,7 +963,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         }
         finally
         {
-            new SqlExecutor(scope, "SET SHOWPLAN_ALL OFF").execute();
+            new SqlExecutor(scope).execute("SET SHOWPLAN_ALL OFF");
         }
     }
 }
