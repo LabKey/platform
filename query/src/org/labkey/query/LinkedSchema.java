@@ -6,6 +6,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -31,6 +32,10 @@ public class LinkedSchema extends ExternalSchema
             @Override
             public QuerySchema getSchema(User user, Container container, String name)
             {
+                //QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
+                //return svc.getLinkedSchema(user, container, name);
+
+                // TEMPORARY HACK
                 if (name.equals("LinkedLists"))
                     return LinkedSchema.get(user, container);
 
@@ -41,6 +46,10 @@ public class LinkedSchema extends ExternalSchema
             @Override
             public Collection<String> getSchemaNames(User user, Container container)
             {
+                //QueryServiceImpl svc = (QueryServiceImpl) QueryService.get();
+                //return svc.getLinkedSchemas(user, container).keySet();
+
+                // TEMPORARY HACK
                 return Collections.singleton("LinkedLists");
             }
         });
@@ -57,13 +66,14 @@ public class LinkedSchema extends ExternalSchema
         ExternalSchemaDef def = new ExternalSchemaDef();
         def.setDbSchemaName("lists");
         def.setUserSchemaName("LinkedLists");
+        //def.setSourceSchemaContainer(parentContainer);
 
-        return get(user, parentContainer, def);
+        return get(user, container, parentContainer, def);
     }
 
-    public static LinkedSchema get(User user, Container container, ExternalSchemaDef def)
+    public static LinkedSchema get(User user, Container container, Container sourceContainer, ExternalSchemaDef def)
     {
-        UserSchema sourceSchema = getSourceSchema(def, user, container);
+        UserSchema sourceSchema = getSourceSchema(def, user, sourceContainer);
         if (sourceSchema == null)
             return null;
 
@@ -90,6 +100,25 @@ public class LinkedSchema extends ExternalSchema
         super(user, container, def, sourceSchema.getDbSchema(), metaDataMap, availableTables, hiddenTables);
 
         _sourceSchema = sourceSchema;
+    }
+
+    @Override
+    public Map<String, QueryDefinition> getQueryDefs()
+    {
+        Map<String, QueryDefinition> queries = QueryService.get().getQueryDefs(getUser(), _sourceSchema.getContainer(), _sourceSchema.getSchemaName());
+        Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<QueryDefinition>(queries.size());
+
+        for (String key : queries.keySet())
+        {
+            QueryDefinition queryDef = queries.get(key);
+            LinkedSchemaQueryDefinition wrappedQueryDef = new LinkedSchemaQueryDefinition(this, queryDef);
+            ret.put(key, wrappedQueryDef);
+        }
+
+        // Get all the custom queries from the standard locations
+        ret.putAll(super.getQueryDefs());
+
+        return ret;
     }
 
     @Override

@@ -2140,6 +2140,7 @@ query/src/org/labkey/query/ExternalSchemaDefWriterFactory.java -text
 query/src/org/labkey/query/ExternalSchemaDocumentProvider.java -text
 query/src/org/labkey/query/LinkedSchema.java -text
 query/src/org/labkey/query/LinkedSchemaDef.java -text
+query/src/org/labkey/query/LinkedSchemaQueryDefinition.java -text
 query/src/org/labkey/query/LinkedTableInfo.java -text
 query/src/org/labkey/query/ModuleCustomQueryDefinition.java -text
 query/src/org/labkey/query/ModuleCustomView.java -text

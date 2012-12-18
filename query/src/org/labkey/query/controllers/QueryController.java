@@ -875,7 +875,12 @@ public class QueryController extends SpringActionController
             {
                 /* */
             }
-            root.addChild(ti == null ? _form.getQueryName() : ti.getTitle(), _form.urlFor(QueryAction.executeQuery));
+            String display = ti == null ? _form.getQueryName() : ti.getTitle();
+            ActionURL gridUrl = _form.urlFor(QueryAction.executeQuery);
+            if (gridUrl == null)
+                root.addChild(display);
+            else
+                root.addChild(display, gridUrl);
             return root;
         }
     }

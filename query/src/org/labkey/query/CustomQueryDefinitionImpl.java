@@ -54,7 +54,7 @@ public class CustomQueryDefinitionImpl extends QueryDefinitionImpl
 
     public String getSql()
     {
-        return _queryDef.getSql();
+        return getQueryDef().getSql();
     }
 
 

@@ -84,9 +84,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         }
 
         if (url == AbstractTableInfo.LINK_DISABLER_ACTION_URL)
-        {
             return null;
-        }
 
         return url != null ? url : super.urlFor(action, container);
     }
