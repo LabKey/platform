@@ -43,12 +43,14 @@
     Integer surveyDesignId = null;
     String responsesPk = null;
     String surveyLabel = null;
+    String returnURL = null;
     if (bean != null)
     {
         rowId = bean.getRowId();
         surveyDesignId = bean.getSurveyDesignId();
         responsesPk = bean.getResponsesPk();
         surveyLabel = bean.getLabel();
+        returnURL = bean.getSrcURL().toString();
     }
 
     String renderId = "survey-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
@@ -73,7 +75,8 @@
             responsesPk     : <%=q(responsesPk)%>,
             surveyLabel     : <%=q(surveyLabel)%>,
             autosaveInterval: 60000,
-            renderTo        : <%=q(renderId)%>
+            renderTo        : <%=q(renderId)%>,
+            returnURL       : <%=q(returnURL)%>
         });
 
     });

@@ -82,7 +82,7 @@ public class SurveyManager
                 panel.put("description", null);
                 panel.put("header", true);
                 panel.put("collapsible", true);
-                panel.put("defaultLabelWidth", 250);
+                panel.put("defaultLabelWidth", 350);
 
                 List<Map<String, Object>> columns = new ArrayList<Map<String, Object>>();
                 for (DisplayColumn dc : view.getDisplayColumns())

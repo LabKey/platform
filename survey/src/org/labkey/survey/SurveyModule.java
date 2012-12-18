@@ -25,6 +25,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -96,7 +97,9 @@ public class SurveyModule extends DefaultModule
         {
             public QuerySchema getSchema(DefaultSchema schema)
             {
-                return new SurveyQuerySchema(schema.getUser(), schema.getContainer());
+                if (schema.getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("survey")))
+                    return new SurveyQuerySchema(schema.getUser(), schema.getContainer());
+                return null;
             }
         });
     }

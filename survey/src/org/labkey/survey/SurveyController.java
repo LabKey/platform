@@ -53,6 +53,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -434,6 +435,12 @@ public class SurveyController extends SpringActionController
                             tvf.setOldValues(keys);
                         }
 
+                        if (form.isSubmitted())
+                        {
+                            survey.setSubmittedBy(getUser().getUserId());
+                            survey.setSubmitted(new Date());
+                        }
+
                         Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
 
                         if (!row.isEmpty())
@@ -545,6 +552,8 @@ public class SurveyController extends SpringActionController
                 _status = String.valueOf(props.get("status"));
             if (props.containsKey("responses"))
                 _responses = (JSONObject)props.get("responses");
+            if (props.containsKey("submit"))
+                _isSubmitted = Boolean.parseBoolean(String.valueOf(props.get("submit")));
 
             //_bean = _factory.fromMap(props);
         }
@@ -604,6 +613,12 @@ public class SurveyController extends SpringActionController
                             {
                                 response.put("surveyResults", rows.get(0));
                                 response.put("success", true);
+                            }
+                            else if (rows.size() == 0)
+                            {
+                                errors.reject(ERROR_MSG, "The requested survey responses primary key does not exist in the "
+                                        + surveyDesign.getSchemaName() + "." + surveyDesign.getQueryName() + " table.");
+                                response.put("success", false);
                             }
                         }
                     }
