@@ -1660,7 +1660,7 @@ public class Table
     }
 
 
-    static public Map<FieldKey, ColumnInfo> createColumnMap(TableInfo table, @Nullable Collection<ColumnInfo> columns)
+    static public Map<FieldKey, ColumnInfo> createColumnMap(@Nullable TableInfo table, @Nullable Collection<ColumnInfo> columns)
     {
         Map<FieldKey, ColumnInfo> ret = new HashMap<FieldKey, ColumnInfo>();
         if (columns != null)

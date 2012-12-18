@@ -17,6 +17,7 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -27,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.io.File;
 import java.util.List;
@@ -82,7 +84,11 @@ abstract public class LaboratoryService
 
     abstract public List<NavItem> getDataItems(Container c, User u);
 
-    abstract public void ensureAssayColumns(User u, String providerName);
+    abstract public void ensureAssayColumns(User u, String providerName) throws ChangePropertyDescriptorException;
 
     abstract public void sortNavItems(List<NavItem> navItems);
+
+    abstract public void registerClientDependency(ClientDependency cd, Module owner);
+
+    abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c, User u);
 }

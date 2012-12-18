@@ -109,7 +109,9 @@ public class CrosstabDataRegion extends DataRegion
             }
             else
             {
-                out.write("<tr><td></td>");
+                out.write("<tr>");
+                if (_numRowAxisCols > 0) // 16478 - ensure group header is placed over the correct set of columns
+                    out.write("<td colspan=\"" + _numRowAxisCols + "\"></td>");
                 renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (showRecordSelectors ? 1 : 0),
                         _settings.getColumnAxis().getCaption(), out);
                 out.write("</tr>");

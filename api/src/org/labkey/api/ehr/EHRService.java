@@ -19,6 +19,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.User;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.util.List;
 import java.util.Map;
@@ -59,4 +61,14 @@ abstract public class EHRService
     abstract public void registerTableCustomizer(TableCustomizer customizer, String schema, String query);
 
     abstract public List<TableCustomizer> getCustomizers(String schema, String query);
+
+    /**
+     * Allow modules to provide JS and other dependencies that will be loaded whenever
+     * ehr.context is requested, assuming that module is enabled in the current container
+     * @param cd
+     * @param owner
+     */
+    abstract public void registerClientDependency(ClientDependency cd, Module owner);
+
+    abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c, User u);
 }

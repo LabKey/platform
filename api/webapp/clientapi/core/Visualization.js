@@ -524,8 +524,6 @@ Ext4.define('LABKEY.Visualization.Measure', {
  */
 Ext4.define('LABKEY.Visualization.Dimension', {
 
-    /** @scope LABKEY.Visualization.Dimension */
-
     constructor : function(config)
     {
         Ext4.apply(this, config);

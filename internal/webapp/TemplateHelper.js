@@ -89,7 +89,8 @@
         withUrls = withUrls !== false;
         if (value.html)
             return html;
-        var html = $h(this.getFormattedDisplayValue(value));
+        var displayValue = this.getFormattedDisplayValue(value)
+        var html = X.isEmpty(displayValue) ? '&nbsp;' : $h(displayValue);
         if (value.url && withUrls)
             html = "<a href=\"" + $h(value.url) + "\">" + html + "</a>";
         return html;

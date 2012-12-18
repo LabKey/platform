@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -119,7 +120,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         ExecutingResultSetFactory factory = new ExecutingResultSetFactory(tableSqlFactory, closeResultSet, scrollable, true);
         ResultSet rs = getResultSet(factory, cache);
 
-        return new ResultsImpl(rs, tableSqlFactory.getColumns());
+        return new ResultsImpl(rs, tableSqlFactory.getSeletedColumns());
     }
 
     public Results getResultsAsync(final boolean scrollable, final boolean cache, HttpServletResponse response) throws IOException, SQLException
@@ -357,7 +358,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
                 _scrollOffset--;
         }
 
-        public Collection<ColumnInfo> getColumns()
+        public Collection<ColumnInfo> getSeletedColumns()
         {
             return _columns;
         }
@@ -392,13 +393,25 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     }
 
 
+    // Make sure the aggregates are selected in the inner query... use QueryService.getColumns() so it works with lookups, etc.
+    private static Collection<ColumnInfo> ensureAggregates(TableInfo table, Collection<ColumnInfo> columns, List<Aggregate> aggregates)
+    {
+        List<FieldKey> aggFieldKeys = new LinkedList<FieldKey>();
+
+        for (Aggregate aggregate : aggregates)
+            aggFieldKeys.add(aggregate.getFieldKey());
+
+        return QueryService.get().getColumns(table, aggFieldKeys, columns).values();
+    }
+
+
     protected class AggregateSqlFactory extends PreventSortTableSqlFactory
     {
         private final List<Aggregate> _aggregates;
 
         public AggregateSqlFactory(Filter filter, List<Aggregate> aggregates, Collection<ColumnInfo> columns)
         {
-            super(filter, columns);
+            super(filter, ensureAggregates(_table, columns, aggregates));
             _aggregates = aggregates;
         }
 
@@ -411,7 +424,8 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
             aggregateSql.append("SELECT ");
             boolean first = true;
 
-            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(_table, _columns);
+            // We want a column map that only includes the inner selected columns, so pass null for table
+            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(null, getSeletedColumns());
 
             for (Aggregate agg : _aggregates)
             {

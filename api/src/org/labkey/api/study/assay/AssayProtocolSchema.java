@@ -173,6 +173,17 @@ public abstract class AssayProtocolSchema extends AssaySchema
     public TableInfo createTable(String name)
     {
         TableInfo table = createProviderTable(name);
+        if (table == null)
+        {
+            // Issue 16787: SQL parse error when resolving legacy assay table names in new assay provider schema.
+            String protocolPrefix = _protocol.getName().toLowerCase() + " ";
+            if (name.toLowerCase().startsWith(protocolPrefix))
+            {
+                name = name.substring(protocolPrefix.length());
+                table = createProviderTable(name);
+            }
+        }
+
         if (table != null)
             overlayMetadata(table, name);
 
