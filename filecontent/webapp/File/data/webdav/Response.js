@@ -104,7 +104,7 @@ Ext4.define('File.data.webdav.JSONReponse', {
         {name : 'lastmodified', type : 'date'},
         {name : 'leaf', type : 'boolean'},
         {name : 'size', type : 'int'},
-        {name : 'name', mapping : 'text', convert : function(val) { return Ext4.String.htmlEncode(val); }},
+        {name : 'name', mapping : 'text'},
         {name : 'icon', mapping : 'iconHref'},
         {name : 'options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }}
     ]
