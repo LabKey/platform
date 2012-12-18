@@ -120,7 +120,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         ExecutingResultSetFactory factory = new ExecutingResultSetFactory(tableSqlFactory, closeResultSet, scrollable, true);
         ResultSet rs = getResultSet(factory, cache);
 
-        return new ResultsImpl(rs, tableSqlFactory.getSeletedColumns());
+        return new ResultsImpl(rs, tableSqlFactory.getSelectedColumns());
     }
 
     public Results getResultsAsync(final boolean scrollable, final boolean cache, HttpServletResponse response) throws IOException, SQLException
@@ -358,7 +358,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
                 _scrollOffset--;
         }
 
-        public Collection<ColumnInfo> getSeletedColumns()
+        public Collection<ColumnInfo> getSelectedColumns()
         {
             return _columns;
         }
@@ -425,7 +425,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
             boolean first = true;
 
             // We want a column map that only includes the inner selected columns, so pass null for table
-            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(null, getSeletedColumns());
+            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(null, getSelectedColumns());
 
             for (Aggregate agg : _aggregates)
             {

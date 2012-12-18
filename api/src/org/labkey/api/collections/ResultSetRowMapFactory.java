@@ -17,6 +17,7 @@ package org.labkey.api.collections;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.CachedResultSet;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.beans.Introspector;
@@ -114,26 +115,14 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
         for (int i = 1; i <= len; i++)
         {
             Object o = rs.getObject(i);
-            // Note: When using getObject() on a SQL column of type Text, the Microsoft SQL Server jdbc driver returns
-            // a String, while the jTDS driver returns a Clob.  For consistency we map here.
-            // Could map at lower level, but don't want to preclude ever using Clob as Clob
+
             if (o instanceof Clob)
             {
-                Clob clob = (Clob) o;
-
-                try
-                {
-                    o = clob.getSubString(1, (int) clob.length());
-                }
-                catch (SQLException e)
-                {
-                    _log.error(e);
-                }
+                o = ConvertHelper.convertClobToString((Clob)o);
             }
-
             // BigDecimal objects are rare, and almost always are converted immediately
             // to doubles for ease of use in Java code; we can take care of this centrally here.
-            if (o instanceof BigDecimal && _convertBigDecimalToDouble)
+            else if (o instanceof BigDecimal && _convertBigDecimalToDouble)
             {
                 BigDecimal dec = (BigDecimal) o;
                 o = dec.doubleValue();
@@ -143,6 +132,7 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
                 double value = ((Number) o).doubleValue();
                 o = ResultSetUtil.mapDatabaseDoubleToJavaDouble(value);
             }
+
             if (i == _list.size())
                 _list.add(o);
             else

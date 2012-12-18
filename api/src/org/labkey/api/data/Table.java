@@ -276,7 +276,7 @@ public class Table
     }
 
 
-    // 6 usages
+    // 7 usages
     @Deprecated // Use TableSelector
     public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
             throws SQLException
@@ -401,40 +401,6 @@ public class Table
         return stmt;
     }
 
-
-    @Deprecated // Use SqlExecutor
-    public static int execute(Connection conn, String sql, @NotNull Object... parameters) throws SQLException
-    {
-        Statement stmt = null;
-
-        try
-        {
-            if (0 == parameters.length)
-            {
-                stmt = conn.createStatement();
-                if (stmt.execute(sql))
-                    return -1;
-                else
-                    return stmt.getUpdateCount();
-            }
-            else
-            {
-                stmt = conn.prepareStatement(sql);
-                setParameters((PreparedStatement)stmt, parameters);
-                if (((PreparedStatement)stmt).execute())
-                    return -1;
-                else
-                    return stmt.getUpdateCount();
-            }
-        }
-        finally
-        {
-            if (null != stmt)
-                stmt.close();
-
-            closeParameters(Arrays.asList(parameters));
-        }
-    }
 
     public static void setParameters(PreparedStatement stmt, Object[] parameters) throws SQLException
     {

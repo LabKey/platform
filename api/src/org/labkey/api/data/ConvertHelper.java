@@ -285,25 +285,29 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return DateUtil.toISO(((Date)o).getTime(), false);
             }
 
-            // Note: When using getObject() on a SQL column of type Text or nText, the Microsoft SQL Server jdbc driver returns
-            // a String, while the jTDS driver returns a Clob.  So, we need to handle Clob to test jTDS and potentially
-            // other drivers that return Clobs.
             if (o instanceof Clob)
             {
-                Clob clob = (Clob) o;
-
                 try
                 {
-                    return clob.getSubString(1, (int) clob.length());
+                    return convertClobToString((Clob)o);
                 }
                 catch (SQLException e)
                 {
-                    _log.error(e);
+                    throw new ConversionException("Could not convert Clob to String", e);
                 }
             }
 
             return _stringConverter.convert(String.class, o);
         }
+    }
+
+
+    // Note: When using getObject() on a SQL column of type Text or NText, the Microsoft SQL Server jdbc driver returns
+    // a String, while the jTDS driver returns a Clob.  For consistency we map here.  Could map at lower level, but
+    // don't want to preclude ever using Clob as Clob.
+    public static String convertClobToString(Clob clob) throws SQLException
+    {
+        return clob.getSubString(1, (int) clob.length());
     }
 
 

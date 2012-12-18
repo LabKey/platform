@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ArrayListMap;
 
 import java.lang.reflect.Array;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -253,7 +254,13 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
             public void exec(ResultSet rs) throws SQLException
             {
                 //noinspection unchecked
-                map.put((K)rs.getObject(1), (V)rs.getObject(2));
+                map.put((K)convert(rs.getObject(1)), (V)convert(rs.getObject(2)));
+            }
+
+            // Special handling for Clob on SQL Server
+            private Object convert(Object o) throws SQLException
+            {
+                return o instanceof Clob ? ConvertHelper.convertClobToString((Clob)o) : o;
             }
         });
 
