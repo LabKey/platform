@@ -52,6 +52,11 @@ Ext4.define('File.panel.Browser', {
     expandFolderTree : true,
 
     /**
+     * @cfg {Boolean} expandUpload
+     */
+    expandUpload : false,
+
+    /**
      * @cfg {Boolean} rootName
      */
     rootName : LABKEY.serverName || "LabKey Server",
@@ -103,6 +108,11 @@ Ext4.define('File.panel.Browser', {
 
         // Configure Toolbar
         this.tbar = this.getToolbarItems();
+
+        if (this.tbar) {
+            // Attach listeners
+            this.on('folderchange', this.onFolderChange, this);
+        }
 
         this.callParent();
     },
@@ -253,10 +263,10 @@ Ext4.define('File.panel.Browser', {
             listeners : {
                 beforerender : function(t) {
                     this.tree = t;
-                    if (this.rootOffset) {
-                        var path = this.fileSystem.concatPaths(this.getFolderURL(), this.rootOffset);
-                        this.targetPath = 'http://localhost:8080' + path;
-                    }
+//                    if (this.rootOffset) {
+//                        var path = this.fileSystem.concatPaths(this.getFolderURL(), this.rootOffset);
+//                        this.targetPath = 'http://localhost:8080' + path;
+//                    }
                 },
                 afterrender : function(t) {
                 },
@@ -342,15 +352,52 @@ Ext4.define('File.panel.Browser', {
     },
 
     getToolbarItems : function() {
-        var baseItems = [
-            {iconCls : 'iconFolderTree', handler : function() { this.tree.toggleCollapse(); }, scope: this},
+        var baseItems = [];
+        if (this.showFolderTree) {
+            baseItems.push({
+                iconCls : 'iconFolderTree',
+                handler : function() { this.tree.toggleCollapse(); },
+                scope: this
+            });
+        }
+        baseItems.push(
 //            {iconCls : 'iconUp', handler : this.onTreeUp, tooltip : 'Navigate to the parent folder', scope: this},
-            {iconCls : 'iconReload', handler : this.onRefresh, tooltip : 'Refresh the contents of the current folder', scope: this},
-            {iconCls : 'iconFolderNew', handler : this.onCreateDirectory, tooltip : 'Create a new folder on the server', scope : this},
-            {iconCls : 'iconDownload', handler: this.onDownload, tooltip : 'Download the selected files or folders', scope: this},
-            {iconCls : 'iconDelete',   handler: this.onDelete,   tooltip : 'Delete the selected files or folders',   scope: this },
-            {iconCls : 'iconUpload', text : 'Upload Files', handler : this.onUpload, tooltip : 'Upload files or folders from your local machine to the server', scope: this}
-        ];
+            {
+                iconCls : 'iconReload',
+                handler : this.onRefresh,
+                tooltip : 'Refresh the contents of the current folder',
+                scope: this
+            },{
+                iconCls : 'iconFolderNew',
+                itemId : 'mkdir',
+                handler : this.onCreateDirectory,
+                tooltip : 'Create a new folder on the server',
+                disabled : true,
+                scope : this
+            },{
+                iconCls : 'iconDownload',
+                itemId : 'download',
+                handler: this.onDownload,
+                tooltip : 'Download the selected files or folders',
+                disabled : true,
+                scope: this
+            },{
+                iconCls : 'iconDelete',
+                itemId : 'delete',
+                handler: this.onDelete,
+                disabled : true,
+                tooltip : 'Delete the selected files or folders',
+                scope: this
+            },{
+                iconCls : 'iconUpload',
+                text    : 'Upload Files',
+                itemId : 'upload',
+                handler : this.onUpload,
+                tooltip : 'Upload files or folders from your local machine to the server',
+                disabled : true,
+                scope   : this
+            }
+        );
 
         if (Ext4.isArray(this.tbarItems)) {
             for (var i=0; i < this.tbarItems.length; i++) {
@@ -359,6 +406,19 @@ Ext4.define('File.panel.Browser', {
         }
 
         return baseItems;
+    },
+
+    onFolderChange : function(path, model) {
+        var d = model.data;
+        if (d) {
+            var tb = this.getDockedComponent(0);
+            if (tb) {
+                tb.getComponent('delete').setDisabled(!d.options['DELETE']);
+                tb.getComponent('download').setDisabled(!d.options['GET']);
+                tb.getComponent('mkdir').setDisabled(!d.options['MKCOL']);
+                tb.getComponent('upload').setDisabled(!d.options['PUT']);
+            }
+        }
     },
 
     getUploadPanel : function() {
@@ -371,6 +431,7 @@ Ext4.define('File.panel.Browser', {
             header : false,
             border : true,
             collapseMode : 'mini',
+            collapsed : !this.expandUpload,
             listeners : {
                 transfercomplete : function() {
                     this.getFileStore().load();

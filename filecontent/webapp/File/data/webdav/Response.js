@@ -5,6 +5,15 @@ Ext4.define('File.data.webdav.XMLResponse', {
 //    requires : [ 'File.data.webdav.URI' ],
 
     statics : {
+        readOptions : function(val) {
+            var h = val.replace(/\s/g, '');
+            h = h.split(',');
+            var ops = {};
+            for (var i=0; i < h.length; i++) {
+                ops[h[i]] = true;
+            }
+            return ops;
+        },
         getURI : function(v, rec) {
             var uri = rec.uriOBJECT || Ext4.create('File.data.webdav.URI', v);
             if (!Ext4.isIE && !rec.uriOBJECT)
@@ -75,7 +84,7 @@ Ext4.define('File.data.webdav.XMLResponse', {
         {name: 'size',        mapping: 'propstat/prop/getcontentlength', type: 'int'},
         {name: 'iconHref'},
         {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
-        {name: 'options'}
+        {name: 'options',     mapping: 'propstat/prop/options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }}
     ]
 });
 
@@ -95,6 +104,7 @@ Ext4.define('File.data.webdav.JSONReponse', {
         {name : 'leaf', type : 'boolean'},
         {name : 'size', type : 'int'},
         {name : 'name', mapping : 'text'},
-        {name : 'icon', mapping : 'iconHref'}
+        {name : 'icon', mapping : 'iconHref'},
+        {name : 'options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }}
     ]
 });
