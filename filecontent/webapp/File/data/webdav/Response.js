@@ -75,10 +75,10 @@ Ext4.define('File.data.webdav.XMLResponse', {
                 }
         },
         {name: 'href', convert : function() {return '';}},
-        {name: 'text',        mapping: 'propstat/prop/displayname'},
+        {name: 'text',        mapping: 'propstat/prop/displayname', convert : function(val) { return Ext4.String.htmlEncode(val); }},
         {name: 'icon',        mapping: 'propstat/prop/iconHref'},
         {name: 'created',     mapping: 'propstat/prop/creationdate',     type: 'date', dateFormat : "c"},
-        {name: 'createdBy',   mapping: 'propstat/prop/createdby'},
+        {name: 'createdBy',   mapping: 'propstat/prop/createdby', convert : function(val) { return Ext4.String.htmlEncode(val); }},
         {name: 'modified',    mapping: 'propstat/prop/getlastmodified',  type: 'date'},
         {name: 'modifiedBy',  mapping: 'propstat/prop/modifiedby'},
         {name: 'size',        mapping: 'propstat/prop/getcontentlength', type: 'int'},
@@ -96,6 +96,7 @@ Ext4.define('File.data.webdav.JSONReponse', {
         {name : 'creationdate', type : 'date'},
         {name : 'contentlength', type : 'int'},
         {name : 'collection', type : 'boolean'},
+        {name : 'createdby', convert : function(val) { return Ext4.String.htmlEncode(val); }},
         {name : 'contenttype'},
         {name : 'etag'},
         {name : 'href'},
@@ -103,7 +104,7 @@ Ext4.define('File.data.webdav.JSONReponse', {
         {name : 'lastmodified', type : 'date'},
         {name : 'leaf', type : 'boolean'},
         {name : 'size', type : 'int'},
-        {name : 'name', mapping : 'text'},
+        {name : 'name', mapping : 'text', convert : function(val) { return Ext4.String.htmlEncode(val); }},
         {name : 'icon', mapping : 'iconHref'},
         {name : 'options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }}
     ]
