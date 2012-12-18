@@ -87,7 +87,14 @@ abstract public class AbstractTableInfo implements TableInfo
     private static final Logger LOG = Logger.getLogger(AbstractTableInfo.class);
 
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
-    public static final ActionURL LINK_DISABLER_ACTION_URL = new ActionURL();
+    public static final ActionURL LINK_DISABLER_ACTION_URL;
+    static
+    {
+        boolean assertsEnabled = false;
+        assert assertsEnabled = true;
+        LINK_DISABLER_ACTION_URL = assertsEnabled ? new ActionURL("~~disabled~link~should~not~render~~", "~~error~~", null) : new ActionURL();
+    }
+
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
     public static final DetailsURL LINK_DISABLER = new DetailsURL(LINK_DISABLER_ACTION_URL);
     protected Iterable<FieldKey> _defaultVisibleColumns;
@@ -147,10 +154,10 @@ abstract public class AbstractTableInfo implements TableInfo
             for (ColumnInfo c : getColumns())
             {
                 StringExpression url = c.getURL();
-                if (url instanceof DetailsURL)
+                if (url instanceof DetailsURL && url != LINK_DISABLER)
                     ((DetailsURL)url).setContainerContext(cc, false);
             }
-            if (_detailsURL != null)
+            if (_detailsURL != null && _detailsURL != LINK_DISABLER)
             {
                 _detailsURL.setContainerContext(cc);
             }
@@ -467,6 +474,10 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public ActionURL getGridURL(Container container)
     {
+        if (_gridURL == LINK_DISABLER)
+        {
+            return LINK_DISABLER_ACTION_URL;
+        }
         if (_gridURL != null)
         {
             return _gridURL.copy(container).getActionURL();

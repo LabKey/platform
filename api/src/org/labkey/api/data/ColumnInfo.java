@@ -381,10 +381,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         StringExpression url = col.getURL();
         if (null != url)
         {
-            if ((null != parent || null != remap) && url instanceof FieldKeyStringExpression)
-                url = ((FieldKeyStringExpression)url).remapFieldKeys(parent, remap);
-            else
-                url = url.copy();
+            if (url != AbstractTableInfo.LINK_DISABLER)
+            {
+                if ((null != parent || null != remap) && url instanceof FieldKeyStringExpression)
+                    url = ((FieldKeyStringExpression)url).remapFieldKeys(parent, remap);
+                else
+                    url = url.copy();
+            }
             setURL(url);
         }
         setURLTargetWindow(col.getURLTargetWindow());
@@ -1721,7 +1724,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     protected void remapUrlFieldKeys(@Nullable FieldKey parent,  @Nullable Map<FieldKey, FieldKey> remap)
     {
         StringExpression se = getURL();
-        if (se instanceof FieldKeyStringExpression)
+        if (se instanceof FieldKeyStringExpression && se != AbstractTableInfo.LINK_DISABLER)
         {
             FieldKeyStringExpression remapped = ((FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
             setURL(remapped);

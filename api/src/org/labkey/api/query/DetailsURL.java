@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
@@ -250,12 +251,14 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
     public DetailsURL copy(ContainerContext cc)
     {
+        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't copy a disabled link";
         return copy(cc, false);
     }
 
 
     public DetailsURL copy(ContainerContext cc, boolean overwrite)
     {
+        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't copy a disabled link";
         DetailsURL ret = (DetailsURL)copy();
         ret.setContainerContext(cc, overwrite);
         return ret;
@@ -265,6 +268,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     @Override
     public DetailsURL clone()
     {
+        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't clone a disabled link";
         DetailsURL clone = (DetailsURL)super.clone();
         if (null != clone._url)
             clone._url = clone._url.clone();
@@ -277,6 +281,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
     public void setViewContext(ViewContext context)
     {
+        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't set ViewContext on disabled link";
         _context = context;
     }
 
@@ -310,6 +315,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
     public void setContainerContext(ContainerContext cc, boolean overwrite)
     {
+        assert this != AbstractTableInfo.LINK_DISABLER : "Shouldn't set ContainerFilter on disabled link";
         if (null == _containerContext || overwrite)
             _containerContext = cc;
     }
