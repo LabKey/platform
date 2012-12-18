@@ -65,7 +65,7 @@ public class SimpleUserSchema extends UserSchema
 {
     // CaseInsensitiveTreeSet preserves case of the table names (from XML), unlike CaseInsensitiveHashSet
     private final Set<String> _available = new CaseInsensitiveTreeSet();
-    private Set<String> _visible;
+    protected Set<String> _visible;
 
     public SimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbschema)
     {
@@ -82,13 +82,14 @@ public class SimpleUserSchema extends UserSchema
     }
 
     // Hidden tables are hidden from the UI but will still be addressible by Query (for fk lookups, etc.)
-    public SimpleUserSchema(String name, String description, User user, Container container, DbSchema dbschema, Collection<String> availableTables, Collection<String> hiddenTables)
+    public SimpleUserSchema(String name, String description, User user, Container container, DbSchema dbschema, Collection<String> availableTables, @Nullable Collection<String> hiddenTables)
     {
         super(name, description, user, container, dbschema);
         _available.addAll(availableTables);
         _visible = new CaseInsensitiveTreeSet();
         _visible.addAll(availableTables);
-        _visible.removeAll(hiddenTables);
+        if (null != hiddenTables)
+            _visible.removeAll(hiddenTables);
     }
 
     protected TableInfo createTable(String name)
