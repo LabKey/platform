@@ -48,38 +48,6 @@
         {
             Ext4.QuickTips.init();
 
-            var checkBoxRepository = Ext4.create('Ext.form.field.Checkbox', {
-                fieldLabel: 'Repository',
-                labelSeparator: '',
-                value: true,
-                width : 220,
-                labelWidth: 130
-            });
-            var checkBoxClinic = Ext4.create('Ext.form.field.Checkbox', {
-                fieldLabel: 'Clinic',
-                labelSeparator: '',
-                value: true,
-                width : 220,
-                labelWidth: 130
-            });
-            var checkBoxSal = Ext4.create('Ext.form.field.Checkbox', {
-                fieldLabel: 'Site Affiliated Lab',
-                labelSeparator: '',
-                value: true,
-                width : 220,
-                labelWidth: 130
-            });
-            var checkBoxEndPoint = Ext4.create('Ext.form.field.Checkbox', {
-                fieldLabel: 'Endpoint Lab',
-                labelSeparator: '',
-                value: true,
-                width : 220,
-                labelWidth: 130
-            });
-
-            var controls = [checkBoxRepository, checkBoxClinic, checkBoxSal, checkBoxEndPoint];
-            // TODO: above controls are not currently used; could use as alternative to checkBoxGroup below
-
             var checkBoxGroup = Ext4.create('Ext.form.CheckboxGroup', {
                 columns: 1,
                 vertical: true,
@@ -110,7 +78,7 @@
                     dock: 'bottom',
                     ui : 'footer',
                     style : 'background: none',
-                    height : 30,
+                    height : 40,
                     items: [{
                         xtype: 'button',
                         text: 'Save',
@@ -124,15 +92,6 @@
                     }]
                 }]
             });
-
-            var displayDoneChangingMessage = function() {
-                Ext4.MessageBox.show({
-                    title: "Change All Alternate IDs",
-                    msg: "Changing Alternate IDs is complete.",
-                    buttons: Ext4.MessageBox.OK,
-                    icon: Ext4.MessageBox.INFO
-                });
-            };
 
             var saveLocationTypeInfo = function(checkBoxItems) {
                 var data = {repository : checkBoxItems.items[0].getValue(),
