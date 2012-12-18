@@ -152,13 +152,7 @@ public class AssaySchemaImpl extends AssaySchema
         if (_restricted)
             return Collections.emptySet();
 
-        Set<String> names = new TreeSet<String>(new Comparator<String>()
-        {
-            public int compare(String o1, String o2)
-            {
-                return o1.compareToIgnoreCase(o2);
-            }
-        });
+        Set<String> names = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         names.addAll(super.getSchemaNames());
         for (AssayProvider provider : getProtocols().values())
             names.add(provider.getResourceName());
