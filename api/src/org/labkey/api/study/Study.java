@@ -104,4 +104,8 @@ public interface Study extends StudyEntity
 
     int getAlternateIdDigits();
 
+    boolean isAllowReqLocRepository();
+    boolean isAllowReqLocClinic();
+    boolean isAllowReqLocSal();
+    boolean isAllowReqLocEndpoint();
 }
