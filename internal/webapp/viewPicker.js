@@ -690,6 +690,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         name: 'url',
         fieldLabel: 'URL',
         value: url,
+        tooltip: 'URL of the form \'controller/action.view?parameter={column}\' or regular URL',
         width : 380
     });
 
