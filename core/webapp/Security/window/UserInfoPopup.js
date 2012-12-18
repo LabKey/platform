@@ -43,7 +43,8 @@ Ext4.define('Security.window.UserInfoPopup', {
     {
         var toAdd = [],
             isGroup = this.user.Type == 'g' || this.user.Type == 'r',
-            hdrHtml = "<span style='font-size: 14px; font-weight: bold; padding-left: 5px;'>" + (isGroup?'Group ':'User ') + this.user.Name + "</span>";
+            hdrHtml = "<span style='font-size: 14px; font-weight: bold; padding-left: 5px;'>" + (isGroup?'Group ':'User ') + this.user.Name + "</span>",
+            container = (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId);
 
         // links
         if (isGroup)
@@ -63,7 +64,7 @@ Ext4.define('Security.window.UserInfoPopup', {
             {
                 hdrHtml += LABKEY.Utils.textLink({
                     text : 'permissions',
-                    href : LABKEY.ActionURL.buildURL('security', 'groupPermission', this.cache.projectId, {id:this.user.UserId}),
+                    href : LABKEY.ActionURL.buildURL('security', 'groupPermission', container, {id:this.user.UserId}),
                     style: 'float: right',
                     target : '_blank'
                 });
@@ -73,7 +74,7 @@ Ext4.define('Security.window.UserInfoPopup', {
         {
             hdrHtml += LABKEY.Utils.textLink({
                 text : 'permissions',
-                href : LABKEY.ActionURL.buildURL('security', 'userAccess', this.cache.projectId, {userId:this.user.UserId}),
+                href : LABKEY.ActionURL.buildURL('user', 'userAccess', container, {userId:this.user.UserId}),
                 style: 'float: right',
                 target : '_blank'
             });

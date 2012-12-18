@@ -128,6 +128,9 @@ Ext4.onReady(function(){
     var securityCache = Ext4.create('Security.util.SecurityCache', {
         root    : <%=PageFlowUtil.jsString(root.getId())%>,
         project : <%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
+
+        // 16762 - Provide a projectPath, should be considered for folder
+        projectPath : <%=project==null?"null":PageFlowUtil.jsString(project.getPath())%>,
         folder  : <%=PageFlowUtil.jsString(c.getId())%>,
         global  : true
     });

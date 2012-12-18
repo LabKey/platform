@@ -2421,6 +2421,19 @@ public class QueryController extends SpringActionController
         {
             _saveInSession = saveInSession;
         }
+
+        @Override
+        public String getQueryName()
+        {
+            // ExecuteSqlAction doesn't allow setting query name parameter.
+            return null;
+        }
+
+        @Override
+        public void setQueryName(String name)
+        {
+            // ExecuteSqlAction doesn't allow setting query name parameter.
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)

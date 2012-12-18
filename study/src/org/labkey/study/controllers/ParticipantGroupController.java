@@ -726,8 +726,13 @@ public class ParticipantGroupController extends BaseStudyController
 
                     GroupType type = GroupType.valueOf(group.getString("type"));
 
-                    int categoryId = group.getInt("categoryId");
                     int id = group.getInt("id");
+                    int categoryId = id;
+
+                    // prior to 12.3 the api didn't return a categoryId for cohorts, now the categoryId is the
+                    // same as the cohort id but because of saved reports we can't assume we will always get one.
+                    if (group.has("categoryId"))
+                        categoryId = group.getInt("categoryId");
 
                     _groups.add(new Group(type, id, categoryId));
                 }
