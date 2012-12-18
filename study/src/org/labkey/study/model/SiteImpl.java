@@ -34,7 +34,7 @@ public class SiteImpl extends AbstractStudyEntity<SiteImpl> implements Site
     private Boolean _sal = Boolean.FALSE; // Bit,
     private Boolean _clinic = Boolean.FALSE; // Bit,
     private Boolean _repository = Boolean.FALSE; // Bit,
-    private Boolean endpoint = Boolean.FALSE; // Bit,
+    private Boolean _endpoint = Boolean.FALSE; // Bit,
     private String _label;
 
     public SiteImpl()
@@ -75,13 +75,13 @@ public class SiteImpl extends AbstractStudyEntity<SiteImpl> implements Site
 
     public Boolean isEndpoint()
     {
-        return endpoint;
+        return _endpoint;
     }
 
     public void setEndpoint(Boolean endpoint)
     {
         verifyMutability();
-        this.endpoint = endpoint != null ? endpoint : Boolean.FALSE;
+        this._endpoint = endpoint != null ? endpoint : Boolean.FALSE;
     }
 
     public Boolean isRepository()

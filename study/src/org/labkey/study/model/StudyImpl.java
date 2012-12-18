@@ -126,6 +126,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private int _alternateIdDigits;
     private Integer _studySnapshot = null;  // RowId of the study snapshot configuration that created this study (or null)
     private Date _lastSpecimenLoad = null;
+    private boolean _allowReqLocRepository = true;
+    private boolean _allowReqLocClinic = true;
+    private boolean _allowReqLocSal = true;
+    private boolean _allowReqLocEndpoint = true;
 
     public StudyImpl()
     {
@@ -725,6 +729,50 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         verifyMutability();
         _alternateIdDigits = alternateIdDigits;
+    }
+
+    public boolean isAllowReqLocRepository()
+    {
+        return _allowReqLocRepository;
+    }
+
+    public void setAllowReqLocRepository(boolean allowReqLocRepository)
+    {
+        verifyMutability();
+        _allowReqLocRepository = allowReqLocRepository;
+    }
+
+    public boolean isAllowReqLocClinic()
+    {
+        return _allowReqLocClinic;
+    }
+
+    public void setAllowReqLocClinic(boolean allowReqLocClinic)
+    {
+        verifyMutability();
+        _allowReqLocClinic = allowReqLocClinic;
+    }
+
+    public boolean isAllowReqLocSal()
+    {
+        return _allowReqLocSal;
+    }
+
+    public void setAllowReqLocSal(boolean allowReqLocSal)
+    {
+        verifyMutability();
+        _allowReqLocSal = allowReqLocSal;
+    }
+
+    public boolean isAllowReqLocEndpoint()
+    {
+        return _allowReqLocEndpoint;
+    }
+
+    public void setAllowReqLocEndpoint(boolean allowReqLocEndpoint)
+    {
+        verifyMutability();
+        _allowReqLocEndpoint = allowReqLocEndpoint;
     }
 
     public static class ProtocolDocumentAttachmentParent extends AttachmentParentEntity

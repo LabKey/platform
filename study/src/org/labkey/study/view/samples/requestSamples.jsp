@@ -33,7 +33,7 @@
     JspView<SpecimenController.NewRequestBean> me = (JspView<SpecimenController.NewRequestBean>) HttpView.currentView();
     SpecimenController.NewRequestBean bean = me.getModelBean();
     ViewContext context = me.getViewContext();
-    SiteImpl[] sites = StudyManager.getInstance().getSites(context.getContainer());
+    List<SiteImpl> sites = StudyManager.getInstance().getValidRequestingLocations(context.getContainer());
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
     Specimen[] specimens = bean.getSamples();
     SampleManager.SpecimenRequestInput[] inputs = bean.getInputs();
@@ -125,7 +125,7 @@ function setDefaults()
                         for (SiteImpl site : sites)
                         {
                     %>
-                    <option value="<%= site.getRowId() %>" <%= bean.getSelectedSite() == site.getRowId() ? "SELECTED" : ""%>>
+                    <option value="<%= site.getRowId() %>" <%= text(bean.getSelectedSite() == site.getRowId() ? "SELECTED" : "")%>>
                         <%= h(site.getDisplayName()) %>
                     </option>
                     <%
@@ -143,7 +143,7 @@ function setDefaults()
         <tr>
             <th align="left">
                 <input type="hidden" name="required" value="<%= input.isRequired() %>">
-                <br><%= h(input.getTitle()) %> <%= input.isRequired() ? "(Required)" : "(Optional)" %>:
+                <br><%= h(input.getTitle()) %> <%= text(input.isRequired() ? "(Required)" : "(Optional)") %>:
             </th>
         </tr>
         <tr>
@@ -172,7 +172,7 @@ function setDefaults()
         %>
         <tr>
             <td>
-                <input type="hidden" name="<%= SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() %>" value="false">
+                <input type="hidden" name="<%= h(SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name()) %>" value="false">
                 <%
                     boolean hasReturnURL = bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty();
                     if (hasReturnURL)
@@ -182,9 +182,9 @@ function setDefaults()
                 <%
                     }
                 %>
-                <%= buttonImg((shoppingCart ? "Create" : "Submit") + " and View Details", 
-                        "document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;")%>
-                <%= hasReturnURL ? generateButton("Cancel", bean.getReturnUrl()) : generateButton("Cancel", SpecimenController.ViewRequestsAction.class)%>
+                <%= text(buttonImg((shoppingCart ? "Create" : "Submit") + " and View Details",
+                        "document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;"))%>
+                <%= text(hasReturnURL ? generateButton("Cancel", bean.getReturnUrl()) : generateButton("Cancel", SpecimenController.ViewRequestsAction.class))%>
             </td>
         </tr>
 

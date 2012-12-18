@@ -25,11 +25,16 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.writer.AbstractContext;
+import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * User: adam
@@ -135,4 +140,39 @@ public class StudyImportContext extends AbstractContext
 
         return studyDoc;
     }
+
+    public File getSpecimenArchive(VirtualFile root) throws ImportException, SQLException
+    {
+        StudyDocument.Study.Specimens specimens = getXml().getSpecimens();
+
+        if (null != specimens)
+        {
+            Container c = getContainer();
+
+            RepositoryType.Enum repositoryType = specimens.getRepositoryType();
+            StudyController.updateRepositorySettings(c, RepositoryType.STANDARD == repositoryType);
+
+            StudyImpl study = StudyManager.getInstance().getStudy(c).createMutable();
+            if (specimens.isSetAllowReqLocRepository())
+                study.setAllowReqLocRepository(specimens.getAllowReqLocRepository());
+            if (specimens.isSetAllowReqLocClinic())
+                study.setAllowReqLocClinic(specimens.getAllowReqLocClinic());
+            if (specimens.isSetAllowReqLocSal())
+                study.setAllowReqLocSal(specimens.getAllowReqLocSal());
+            if (specimens.isSetAllowReqLocEndpoint())
+                study.setAllowReqLocEndpoint(specimens.getAllowReqLocEndpoint());
+            StudyManager.getInstance().updateStudy(getUser(), study);
+
+            if (null != specimens.getDir())
+            {
+                VirtualFile specimenDir = root.getDir(specimens.getDir());
+
+                if (null != specimenDir && null != specimens.getFile())
+                    return getStudyFile(root, specimenDir, specimens.getFile());
+            }
+        }
+
+        return null;
+    }
+
 }

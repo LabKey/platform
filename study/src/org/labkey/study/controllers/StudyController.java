@@ -1265,6 +1265,10 @@ public class StudyController extends BaseStudyController
             study.setInvestigator(form.getInvestigator());
             study.setAlternateIdPrefix(form.getAlternateIdPrefix());
             study.setAlternateIdDigits(form.getAlternateIdDigits());
+            study.setAllowReqLocRepository(form.isAllowReqLocRepository());
+            study.setAllowReqLocClinic(form.isAllowReqLocClinic());
+            study.setAllowReqLocSal(form.isAllowReqLocSal());
+            study.setAllowReqLocEndpoint(form.isAllowReqLocEndpoint());
             study = StudyManager.getInstance().createStudy(user, study);
         }
         return study;
@@ -5553,6 +5557,10 @@ public class StudyController extends BaseStudyController
         private int _defaultTimepointDuration = 0;
         private String _alternateIdPrefix;
         private int _alternateIdDigits;
+        private boolean _allowReqLocRepository = true;
+        private boolean _allowReqLocClinic = true;
+        private boolean _allowReqLocSal = true;
+        private boolean _allowReqLocEndpoint = true;
 
         public String getLabel()
         {
@@ -5722,6 +5730,46 @@ public class StudyController extends BaseStudyController
         public void setAlternateIdDigits(int alternateIdDigits)
         {
             _alternateIdDigits = alternateIdDigits;
+        }
+
+        public boolean isAllowReqLocRepository()
+        {
+            return _allowReqLocRepository;
+        }
+
+        public void setAllowReqLocRepository(boolean allowReqLocRepository)
+        {
+            _allowReqLocRepository = allowReqLocRepository;
+        }
+
+        public boolean isAllowReqLocClinic()
+        {
+            return _allowReqLocClinic;
+        }
+
+        public void setAllowReqLocClinic(boolean allowReqLocClinic)
+        {
+            _allowReqLocClinic = allowReqLocClinic;
+        }
+
+        public boolean isAllowReqLocSal()
+        {
+            return _allowReqLocSal;
+        }
+
+        public void setAllowReqLocSal(boolean allowReqLocSal)
+        {
+            _allowReqLocSal = allowReqLocSal;
+        }
+
+        public boolean isAllowReqLocEndpoint()
+        {
+            return _allowReqLocEndpoint;
+        }
+
+        public void setAllowReqLocEndpoint(boolean allowReqLocEndpoint)
+        {
+            _allowReqLocEndpoint = allowReqLocEndpoint;
         }
     }
 
@@ -7626,10 +7674,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private static final String ALTERNATEID_PROPERTIES = "Study.alternateIdProperties";
-    private static final String ALTERNATEID_PREFIX_PROPERTY = "alternateIdPrefixProperty";
-    private static final String ALTERNATEID_NUMDIGITS_PROPERTY = "alternateIdNumDigitsProperty";
-
     public static ChangeAlternateIdsForm getChangeAlternateIdForm(Study study)
     {
         ChangeAlternateIdsForm changeAlternateIdsForm = new ChangeAlternateIdsForm();
@@ -7651,6 +7695,106 @@ public class StudyController extends BaseStudyController
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageLocationTypesAction extends SimpleViewAction<ManageLocationTypesForm>
+    {
+        public ModelAndView getView(ManageLocationTypesForm form, BindException errors) throws Exception
+        {
+            Study study = getStudy();
+            form.setRepository(study.isAllowReqLocRepository());
+            form.setClinic(study.isAllowReqLocClinic());
+            form.setSal(study.isAllowReqLocSal());
+            form.setEndpoint(study.isAllowReqLocEndpoint());
+            return new JspView<ManageLocationTypesForm>("/org/labkey/study/view/manageLocationTypes.jsp", form);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("Manage Location Types");
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SaveLocationsTypeSettingsAction extends ApiAction<ManageLocationTypesForm>
+    {
+        @Override
+        public ApiResponse execute(ManageLocationTypesForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+            if (study != null)
+            {
+                try
+                {
+                    study = study.createMutable();
+                    study.setAllowReqLocRepository(form.isRepository());
+                    study.setAllowReqLocClinic(form.isClinic());
+                    study.setAllowReqLocSal(form.isSal());
+                    study.setAllowReqLocEndpoint(form.isEndpoint());
+                    StudyManager.getInstance().updateStudy(getUser(), study);
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+                response.put("success", true);
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+    }
+
+    public static class ManageLocationTypesForm
+    {
+        private boolean _repository;
+        private boolean _clinic;
+        private boolean _sal;
+        private boolean _endpoint;
+
+        public boolean isRepository()
+        {
+            return _repository;
+        }
+
+        public void setRepository(boolean repository)
+        {
+            _repository = repository;
+        }
+
+        public boolean isClinic()
+        {
+            return _clinic;
+        }
+
+        public void setClinic(boolean clinic)
+        {
+            _clinic = clinic;
+        }
+
+        public boolean isSal()
+        {
+            return _sal;
+        }
+
+        public void setSal(boolean sal)
+        {
+            _sal = sal;
+        }
+
+        public boolean isEndpoint()
+        {
+            return _endpoint;
+        }
+
+        public void setEndpoint(boolean endpoint)
+        {
+            _endpoint = endpoint;
         }
     }
 

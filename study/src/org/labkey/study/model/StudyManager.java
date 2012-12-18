@@ -1077,6 +1077,42 @@ public class StudyManager
         return _siteHelper.get(container, "Label");
     }
 
+    public List<SiteImpl> getValidRequestingLocations(Container container)
+    {
+        Study study = getStudy(container);
+        List<SiteImpl> validSites = new ArrayList<SiteImpl>();
+        SiteImpl[] sites = getSites(container);
+        for (int i = 0; i < sites.length; i += 1)
+        {
+            SiteImpl site = sites[i];
+            if (site.isRepository() && study.isAllowReqLocRepository())
+            {
+                validSites.add(site);
+                continue;
+            }
+            if (site.isClinic() && study.isAllowReqLocClinic())
+            {
+                validSites.add(site);
+                continue;
+            }
+            if (site.isSal() && study.isAllowReqLocSal())
+            {
+                validSites.add(site);
+                continue;
+            }
+            if (site.isEndpoint() && study.isAllowReqLocEndpoint())
+            {
+                validSites.add(site);
+                continue;
+            }
+            if (!site.isRepository() && !site.isClinic() && !site.isSal() && !site.isEndpoint())
+            {   // It has no location type, so allow it
+                validSites.add(site);
+                continue;
+            }
+        }
+        return validSites;
+    }
 
     public SiteImpl getSite(Container container, int id)
     {

@@ -46,6 +46,10 @@ class SpecimenArchiveWriter implements InternalStudyWriter
         StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
         specimens.setRepositoryType(study.getRepositorySettings().isSimple() ? RepositoryType.STANDARD : RepositoryType.ADVANCED);
         specimens.setDir(DEFAULT_DIRECTORY);
+        specimens.setAllowReqLocRepository(study.isAllowReqLocRepository());
+        specimens.setAllowReqLocClinic(study.isAllowReqLocClinic());
+        specimens.setAllowReqLocSal(study.isAllowReqLocSal());
+        specimens.setAllowReqLocEndpoint(study.isAllowReqLocEndpoint());
 
         String archiveName = vf.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
         VirtualFile zip = vf.createZipArchive(archiveName);

@@ -111,7 +111,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, job, studyImportContext, study);
 
                 // specimen import task
-                File specimenFile = getSpecimenArchive(studyImportContext, studyDir);
+                File specimenFile = studyImportContext.getSpecimenArchive(studyDir);
                 StudyImportSpecimenTask.doImport(specimenFile, job, studyImportContext, false);
 
                 // the final study import task handles registered study importers like: cohorts, participant comments, categories, etc.
@@ -124,29 +124,6 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         @Override
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            return null;
-        }
-
-        public File getSpecimenArchive(StudyImportContext ctx, VirtualFile root) throws ImportException, SQLException
-        {
-            StudyDocument.Study.Specimens specimens = ctx.getXml().getSpecimens();
-
-            if (null != specimens)
-            {
-                Container c = ctx.getContainer();
-
-                RepositoryType.Enum repositoryType = specimens.getRepositoryType();
-                StudyController.updateRepositorySettings(c, RepositoryType.STANDARD == repositoryType);
-
-                if (null != specimens.getDir())
-                {
-                    VirtualFile specimenDir = root.getDir(specimens.getDir());
-
-                    if (null != specimenDir && null != specimens.getFile())
-                        return ctx.getStudyFile(root, specimenDir, specimens.getFile());
-                }
-            }
-
             return null;
         }
 

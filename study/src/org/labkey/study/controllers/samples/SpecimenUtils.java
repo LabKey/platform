@@ -431,7 +431,7 @@ public class SpecimenUtils
             out.write("<option value=''>&lt;Show All&gt;</option>");
             String excludeStr = ctx.getRequest().getParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
             int siteId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
-            SiteImpl[] sites = StudyManager.getInstance().getSites(ctx.getContainer());
+            List<SiteImpl> sites = StudyManager.getInstance().getValidRequestingLocations(ctx.getContainer());
             for (SiteImpl site : sites)
             {
                 out.write("<option value=\"");

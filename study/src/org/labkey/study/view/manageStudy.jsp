@@ -172,6 +172,12 @@
         <td><%= textLink("Manage Labs/Sites", ManageSitesAction.class) %></td>
     </tr>
     <tr>
+        <th align="left">Location Types</th>
+        <td>Configure which location types are allowed to be requesting locations</td>
+        <td><%= textLink("Manage Location Types", StudyController.ManageLocationTypesAction.class) %></td>
+    </tr>
+
+    <tr>
         <th align="left">Cohorts</th>
         <td>This study defines <%= getCohorts(getViewContext().getUser()).length %> cohorts</td>
         <td><%= textLink("Manage Cohorts", manageCohortsURL) %></td>

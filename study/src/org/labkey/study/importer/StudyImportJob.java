@@ -39,6 +39,7 @@ import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.io.File;
+import java.sql.SQLException;
 
 /**
  * User: adam
@@ -124,27 +125,9 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
     }
 
     @Override
-    public File getSpecimenArchive() throws ImportException
+    public File getSpecimenArchive() throws ImportException, SQLException
     {
-        StudyDocument.Study.Specimens specimens = _ctx.getXml().getSpecimens();
-
-        if (null != specimens)
-        {
-            Container c = _ctx.getContainer();
-
-            // TODO: support specimen archives that are not zipped
-            RepositoryType.Enum repositoryType = specimens.getRepositoryType();
-            StudyController.updateRepositorySettings(c, RepositoryType.STANDARD == repositoryType);
-
-            if (null != specimens.getDir())
-            {
-                VirtualFile specimenDir = _root.getDir(specimens.getDir());
-
-                if (null != specimenDir && null != specimens.getFile())
-                    return _ctx.getStudyFile(_root, specimenDir, specimens.getFile());
-            }
-        }
-        return null;
+        return _ctx.getSpecimenArchive(_root);
     }
 
     @Override

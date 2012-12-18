@@ -133,6 +133,18 @@
       <ns:column columnName="LastSpecimenLoad">
         <ns:description>Timestamp of the last specimen load.</ns:description>
       </ns:column>
+      <ns:column columnName="AllowReqLocRepository">
+        <ns:description>Whether to allow Repository sites to be Requesting Locations.</ns:description>
+      </ns:column>
+      <ns:column columnName="AllowReqLocClinic">
+        <ns:description>Whether to allow Clinic sites to be Requesting Locations.</ns:description>
+      </ns:column>
+      <ns:column columnName="AllowReqLocSal">
+        <ns:description>Whether to allow Site Affiliated Lab sites to be Requesting Locations.</ns:description>
+      </ns:column>
+      <ns:column columnName="AllowReqLocEndpoint">
+        <ns:description>Whether to allow Endpoint Lab sites to be Requesting Locations.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
