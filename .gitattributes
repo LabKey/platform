@@ -2156,6 +2156,7 @@ query/src/org/labkey/query/QuerySnapshotDefImpl.java -text
 query/src/org/labkey/query/QueryWebdavProvider.java -text
 query/src/org/labkey/query/QueryWriter.java -text
 query/src/org/labkey/query/TableQueryDefinition.java -text
+query/src/org/labkey/query/TableWriter.java -text
 query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/ValidateQueriesVisitor.java -text
 query/src/org/labkey/query/ViewFilterItemImpl.java -text

@@ -86,12 +86,14 @@ import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.TableWriter;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
@@ -4887,5 +4889,32 @@ public class QueryController extends SpringActionController
         public int getAuditRowId() {return auditRowId;}
 
         public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ExportTablesAction extends ApiAction<ExportTablesForm>
+    {
+        public ApiResponse execute(ExportTablesForm form, BindException errors) throws Exception
+        {
+            HttpServletResponse httpResponse = getViewContext().getResponse();
+            Container container = getContainer();
+            TableWriter writer = new TableWriter();
+            ZipFile zip = new ZipFile(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"));
+            writer.write(container, getUser(), zip);
+            zip.close();
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", false);
+            return response;
+        }
+    }
+
+    public class ExportTablesForm implements CustomApiForm
+    {
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+
+        }
     }
 }
