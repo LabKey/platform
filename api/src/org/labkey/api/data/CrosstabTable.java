@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -94,12 +95,9 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         if(null == colMembers)
             addMeasureCols();
         else
-        {
             addMemberMeasureCols();
-            _groupTable = new GroupTableInfo(_settings.getSourceTable(), _settings.getSourceTableFilter(), _settings.getGroupColumns(),
-                                                _settings.getMeasures());
-        }
-
+        _groupTable = new GroupTableInfo(_settings.getSourceTable(), _settings.getSourceTableFilter(), _settings.getGroupColumns(),
+                                            _settings.getMeasures());
     } //c-tor
 
     /**
@@ -184,7 +182,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      * @param measure The measure (aggregate)
      * @return A new column info for display
      */
-    protected ColumnInfo createMemberMeasureCol(CrosstabMember member, CrosstabMeasure measure)
+    protected ColumnInfo createMemberMeasureCol(@Nullable CrosstabMember member, CrosstabMeasure measure)
     {
         return new AggregateColumnInfo(this, member, measure);
     }
@@ -256,6 +254,23 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             } //for each measure
         } //for each member
 
+        if (getColMembers().isEmpty())
+        {
+            instanceCountExpr.append("0");
+            sortPatternExpr.append("0");
+
+            for(CrosstabMeasure measure : getSettings().getMeasures())
+            {
+                //wrap the pivoted aggregate value in a max since we'll be grouping by the row dimensions
+                sql.append(sep);
+                sql.append("MAX(");
+                sql.append(PIVOT_ALIAS);
+                sql.append(".");
+                sql.append(AggregateColumnInfo.getColumnName(null, measure));
+                sql.append(") AS ");
+                sql.append(AggregateColumnInfo.getColumnName(null, measure));
+            } //for each measure
+        }
         //end the instance count/sort pattern expressions
         instanceCountExpr.append(")");
         sortPatternExpr.append(")");
@@ -346,6 +361,15 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             ++memberIndex;
         } //for each member
 
+        if (getColMembers().isEmpty())
+        {
+            for(CrosstabMeasure measure : getSettings().getMeasures())
+            {
+                sql.append(",\n");
+                sql.append(AggregateColumnInfo.getColumnName(null, measure));
+           } //for each measure
+        }
+
         //add the aggregation query
         sql.append("\nFROM (\n");
         Map<FieldKey,ColumnInfo> filterColMap = addAggQuery(sql);
@@ -372,7 +396,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
         Collection<ColumnInfo> reqCols = new ArrayList<ColumnInfo>(groupTable.getColumns());    // Make a copy
         reqCols = QueryService.get().ensureRequiredColumns(groupTable, reqCols, aggFilter, null, null);
-        
+
         sql.append("SELECT * FROM (\n");
         sql.append(Table.getSelectSQL(groupTable, reqCols, null, null));
         sql.append("\n) AS ");

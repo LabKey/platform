@@ -89,7 +89,7 @@ public class AggregateColumnInfo extends ColumnInfo
         return new SQLFragment(tableAliasName + "." + getName());
     }
 
-    public static String getColumnName(CrosstabMember member, CrosstabMeasure measure)
+    public static String getColumnName(@Nullable CrosstabMember member, CrosstabMeasure measure)
     {
         if(null == member)
             return NAME_PREFIX + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
