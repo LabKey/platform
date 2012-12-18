@@ -1,13 +1,17 @@
 package org.labkey.survey.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
@@ -25,9 +29,9 @@ import java.util.List;
  */
 public class SurveyDesignTable extends FilteredTable
 {
-    public SurveyDesignTable(TableInfo table, Container container)
+    public SurveyDesignTable(TableInfo table, Container container, User user)
     {
-        super(table, container);
+        super(table, container, new ContainerFilter.CurrentPlusProjectAndShared(user));
 
         wrapAllColumns(true);
 
@@ -57,5 +61,21 @@ public class SurveyDesignTable extends FilteredTable
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         return getContainer().hasPermission(user, perm);
+    }
+
+    @Override
+    public boolean hasDefaultContainerFilter()
+    {
+        return getContainerFilter() instanceof ContainerFilter.CurrentPlusProjectAndShared;
+    }
+
+    @Override
+    public void setContainerFilter(@NotNull ContainerFilter filter)
+    {
+        if (hasDefaultContainerFilter())
+        {
+            filter = new UnionContainerFilter(filter, getContainerFilter());
+        }
+        super.setContainerFilter(filter);
     }
 }

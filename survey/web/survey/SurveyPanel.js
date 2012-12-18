@@ -129,12 +129,32 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             this.surveyLayout = surveyConfig.survey.layout;
     },
 
+    questionChangeHandler : function(cmp, newValue, oldValue) {
+
+        // if there is a handler mapped to the component
+        var changeHandlers = this.changeHandlers[cmp.getName()];
+        if (Ext4.isArray(changeHandlers))
+        {
+            var values = this.getForm().getValues(false, true);
+
+            for (var i=0; i < changeHandlers.length; i++)
+            {
+                var info = changeHandlers[i];
+                var me = this.down('#item-' + info.name);
+                var changeFn = info.fn;
+
+                changeFn().call(this, me, cmp, newValue, oldValue, values);
+            }
+        }
+    },
+
     generateSurveySections : function(surveyConfig) {
 
         this.sections = [];
         this.validStatus = {};
 
         this.addSurveyStartPanel();
+        this.changeHandlers = {};
 
         // add each of the survey sections as a panel to the sections array
         if (surveyConfig.survey)
@@ -199,6 +219,25 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         // survey specific question configurations (required field display, etc.)
                         config = this.customizeQuestionConfig(question, config);
 
+                        // add a component id for retrieval
+                        config.itemId = 'item-' + config.name;
+
+                        // add a global change listener for all questions so we can map them to any change handlers specified
+                        // in the survey
+                        config.listeners = {
+                            change : {fn : this.questionChangeHandler, scope : this}
+                        };
+
+                        // register any configured listeners
+                        var listeners = question.listeners || {};
+                        if (listeners.change) {
+
+                            var handlers = this.changeHandlers[listeners.change.question] || [];
+                            var changeFn = new Function('', "return " + listeners.change.fn);
+
+                            handlers.push({name : config.name, fn : changeFn});
+                            this.changeHandlers[listeners.change.question] = handlers;
+                        }
                         var cmp = sectionPanel.add(config);
 
                         // add a validity listener to each question

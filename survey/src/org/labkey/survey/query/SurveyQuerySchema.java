@@ -41,7 +41,7 @@ public class SurveyQuerySchema extends UserSchema
     protected TableInfo createTable(String name)
     {
         if (SURVEY_DESIGN_TABLE_NAME.equalsIgnoreCase(name))
-            return new SurveyDesignTable(SurveySchema.getInstance().getSchema().getTable(SURVEY_DESIGN_TABLE_NAME), getContainer());
+            return new SurveyDesignTable(SurveySchema.getInstance().getSchema().getTable(SURVEY_DESIGN_TABLE_NAME), getContainer(), getUser());
         if (SURVEYS_TABLE_NAME.equalsIgnoreCase(name))
             return new SurveysTable(SurveySchema.getInstance().getSchema().getTable(SURVEYS_TABLE_NAME), getContainer());
 

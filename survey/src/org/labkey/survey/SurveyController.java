@@ -28,6 +28,8 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
@@ -555,11 +557,15 @@ public class SurveyController extends SpringActionController
 
     protected TableInfo getSurveyAnswersTableInfo(SurveyDesign survey)
     {
-        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), survey.getSchemaName());
-
-        if (schema != null)
+        Container container = ContainerManager.getForId(survey.getContainerId());
+        if (container != null)
         {
-            return schema.getTable(survey.getQueryName());
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), container, survey.getSchemaName());
+
+            if (schema != null)
+            {
+                return schema.getTable(survey.getQueryName());
+            }
         }
         return null;
     }
