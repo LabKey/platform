@@ -4,8 +4,10 @@ Ext4.define('File.panel.Browser', {
 
     extend : 'Ext.panel.Panel',
 
+    alias: ['widget.filebrowser'],
+
     /**
-     * @cfg {Boolean} border
+     * @cfg {Boolean} adminUser
      */
     adminUser : false,
 
@@ -13,6 +15,11 @@ Ext4.define('File.panel.Browser', {
      * @cfg {Boolean} border
      */
     border : false,
+
+    /**
+     * @cfg {Boolean} bufferFiles
+     */
+    bufferFiles : true,
 
     /**
      * @cfg {Boolean} layout
@@ -30,24 +37,29 @@ Ext4.define('File.panel.Browser', {
     frame : false,
 
     /**
-     * @cfg {Number} height
+     * @cfg {File.system.Abstract} fileSystem
      */
-    height : 400,
-
-    /**
-     * @cfg {Number} minWidth
-     */
-    minWidth : 625,
-
-    /**
-     * @cfg {String} rootOffset
-     */
-    rootOffset : '',
+    fileSystem : undefined,
 
     /**
      * @cfg {Boolean} showFolders
      */
     showFolderTree : true,
+
+    /**
+     * @cfg {Boolean} expandFolderTree
+     */
+    expandFolderTree : true,
+
+    /**
+     * @cfg {Boolean} rootName
+     */
+    rootName : LABKEY.serverName || "LabKey Server",
+
+    /**
+     * @cfg {String} rootOffset
+     */
+    rootOffset : '',
 
     /**
      * @cfg {Boolean} showAddressBar
@@ -67,31 +79,25 @@ Ext4.define('File.panel.Browser', {
     /**
      * @cfg {Boolean} showUpload
      */
-    showUpload : false,
+    showUpload : true,
 
     /**
-     * @cfg {Boolean} bufferFiles
+     * @cfg {Array} bufferFiles
      */
-    bufferFiles : true,
+    tbarItems : [],
 
     constructor : function(config) {
+
+        Ext4.QuickTips.init();
+
         // Clone the config so we don't modify the original config object
         config = Ext4.Object.merge({}, config);
-
-        // TODO: Need to integrate rootOffset
-        if (config.rootURL) {
-            this.setFolderURL(config.rootURL);
-        }
-        else {
-            this.setFolderURL(LABKEY.ActionURL.getBaseURL() + '_webdav' + LABKEY.ActionURL.getContainer() + '/');
-        }
+        this.setFolderURL(config.fileSystem.getBaseURL());
 
         this.callParent([config]);
     },
 
     initComponent : function() {
-
-        this.defineModels();
 
         this.items = this.getItems();
 
@@ -99,29 +105,6 @@ Ext4.define('File.panel.Browser', {
         this.tbar = this.getToolbarItems();
 
         this.callParent();
-
-        b = this;
-    },
-
-    defineModels : function() {
-
-        Ext4.define('FileModel', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'creationdate', type : 'date'},
-                {name : 'contentlength', type : 'int'},
-                {name : 'contenttype'},
-                {name : 'etag'},
-                {name : 'href'},
-                {name : 'id'},
-                {name : 'lastmodified', type : 'date'},
-                {name : 'leaf', type : 'boolean'},
-                {name : 'size', type : 'int'},
-                {name : 'name', mapping : 'text'},
-                {name : 'icon', mapping : 'iconHref'}
-            ]
-        });
-
     },
 
     initGridColumns : function() {
@@ -137,19 +120,6 @@ Ext4.define('File.panel.Browser', {
                     '</div>' +
                 '</div>';
 
-//        if (this.adminUser) {
-//            columns.push({
-//                text : '&nbsp;',
-//                width: 40,
-//                sortable : false,
-//                menuDisabled : true,
-//                renderer : function(view, meta, rec) {
-//                    return '<span height="16px" class="edit-views-link"></span>';
-//                },
-//                scope : this
-//            });
-//        }
-
         columns.push({
             xtype : 'templatecolumn',
             text  : 'Name',
@@ -162,8 +132,6 @@ Ext4.define('File.panel.Browser', {
         });
 
         columns.push(
-//            {header: "",               width: 20,  dataIndex: 'iconHref',     sortable: false, hidden: false},// renderer:iconRenderer},
-//            {header: "Name",           width: 250, dataIndex: 'name',         sortable: true,  hidden: false, renderer:Ext4.util.Format.htmlEncode},
             {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: true,  hidden: false},// renderer:LABKEY.FileSystem.Util.renderDateTime},
             {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false},// align:'right', renderer:LABKEY.FileSystem.Util.renderFileSize},
             {header: "Created By",     flex: 1, dataIndex: 'createdBy',    sortable: true,  hidden: false, renderer:Ext4.util.Format.htmlEncode},
@@ -177,10 +145,10 @@ Ext4.define('File.panel.Browser', {
     },
 
     getItems : function() {
-        var items = [this.getGrid()];
+        var items = [this.getGridCfg()];
 
         if (this.showFolderTree) {
-            items.push(this.getFolderTree());
+            items.push(this.getFolderTreeCfg());
         }
 
         if (this.showUpload) {
@@ -197,9 +165,9 @@ Ext4.define('File.panel.Browser', {
         }
 
         var storeConfig = {
-            model : 'FileModel',
+            model : this.fileSystem.getModel(),
             autoLoad : true,
-            proxy : this.getFileProxyCfg()
+            proxy : this.fileSystem.getProxyCfg(this.getFolderURL())
         };
 
         if (this.bufferFiles) {
@@ -214,81 +182,114 @@ Ext4.define('File.panel.Browser', {
 
         this.fileStore = Ext4.create('Ext.data.Store', storeConfig);
 
+        this.on('gridchange', this.updateGridProxy, this);
+        this.on('treechange', this.updateGridProxy, this);
+
+        // 'load' only works on non-buffered stores
+        this.fileStore.on(this.bufferFiles ? 'prefetch' : 'load', function(){
+            this.gridMask.cancel();
+            this.getGrid().getEl().unmask();
+        }, this);
+
         return this.fileStore;
     },
 
-    /**
-     * This proxy will be used to populate the file store.
-     */
-    getFileProxyCfg : function() {
-        return {
-            type : 'ajax',
-            url  : this.getFolderURL(),
-            extraParams : {
-                method : 'JSON'
-            },
-            reader : {
-                root : 'files',
-                totalProperty : 'fileCount'
-            }
-        };
+    updateGridProxy : function(url) {
+        this.fileStore.getProxy().url = url;
+        this.gridMask.delay(250);
+        this.fileStore.load();
     },
 
     getFolderURL : function() {
         return this.rootURL;
     },
 
-    setFolderURL : function(url) {
+    setFolderURL : function(url, model) {
         this.rootURL = url;
+        this.rootModel = model;
+        this.fireEvent('folderchange', this.rootURL, this.rootModel);
     },
 
-    getFolderTree : function() {
-        if (this.tree) {
-            return this.tree;
-        }
+    getFolderTreeCfg : function() {
 
         var store = Ext4.create('Ext.data.TreeStore', {
-            model : 'File.data.webdav.Response',
-            proxy : {
-                type : 'webdav',
-                url  : this.getFolderURL(),
-                reader : {
-                    type : 'xml',
-                    root : 'multistatus',
-                    record : 'response'
-//                    readRecords : function(d) {
-//                        console.log('BOOM');
-//                        return this.callParent([d]);
-//                    }
-                }
-            },
+            model : this.fileSystem.getModel('xml'),
+            proxy : this.fileSystem.getProxyCfg(this.getFolderURL(), 'xml'),
             root : {
-                text : 'localhost'
+                text : this.fileSystem.rootName,
+                expanded : true,
+                icon : LABKEY.contextPath + '/_images/labkey.png'
             }
         });
 
-        this.tree = Ext4.create('Ext.tree.Panel', {
-            title : 'Folders',
+        if (!this.showHidden) {
+            store.on('beforeappend', function(s, node) {
+                if (node && node.data && Ext4.isString(node.data.name)) {
+                    if (node.data.name.indexOf('.') == 0) {
+                        return false;
+                    }
+                }
+            }, this);
+        }
+
+        store.on('load', function() {
+            if (this.targetPath) {
+                this.expandPath(this.targetPath);
+            }
+        }, this, {single: true});
+
+        this.on('gridchange', this.expandPath, this);
+
+        return {
+            xtype : 'treepanel',
             region : 'west',
             flex : 1,
             store : store,
-            collapsed: true,
+            collapsed: !this.expandFolderTree,
+            collapsible : true,
+            collapseMode : 'mini',
+            split : true,
+            useArrows : true,
             listeners : {
+                beforerender : function(t) {
+                    this.tree = t;
+                    if (this.rootOffset) {
+                        var path = this.fileSystem.concatPaths(this.getFolderURL(), this.rootOffset);
+                        this.targetPath = 'http://localhost:8080' + path;
+                    }
+                },
+                afterrender : function(t) {
+                },
                 select : this.onTreeSelect,
                 scope : this
             }
-        });
-
-        return this.tree;
+        };
     },
 
-    onTreeSelect : function(tree, rec, idx) {
-        // TODO: When user clicks on root, navigate back to normal root
-        if (rec.data.uri && rec.data.uri.length > 0) {
-            this.setFolderURL(rec.data.uri);
-            this.getFileStore().getProxy().url = this.getFolderURL();
-            this.getFileStore().load();
+    expandPath : function(url) {
+        var idx = this.tree.getView().getStore().find('uri', url);
+        if (idx) {
+            var rec = this.tree.getView().getStore().getAt(idx);
+            if (rec) {
+                this.tree.getView().expand(rec);
+                this.tree.getSelectionModel().select(rec);
+                return;
+            }
         }
+        console.warn('Unable to expand path: ' + url);
+    },
+
+    onTreeSelect : function(selModel, rec, idx) {
+        // TODO: When user clicks on root, navigate back to normal root
+        if (rec.isRoot())  {
+            this.setFolderURL(rec.data.uri + LABKEY.contextPath + '/_webdav');
+            this.fireEvent('treechange', this.getFolderURL());
+        }
+        else if (rec.data.uri && rec.data.uri.length > 0) {
+            this.setFolderURL(rec.data.uri, rec);
+            this.fireEvent('treechange', this.getFolderURL());
+        }
+        this.tree.getView().expand(rec);
     },
 
     getGrid : function() {
@@ -297,9 +298,7 @@ Ext4.define('File.panel.Browser', {
             return this.grid;
         }
 
-        this.grid = Ext4.create('Ext.grid.Panel', this.getGridCfg());
-
-        return this.grid;
+        return this.getGridCfg();
     },
 
     getGridCfg : function() {
@@ -307,8 +306,7 @@ Ext4.define('File.panel.Browser', {
 
         // Optional Configurations
         Ext4.applyIf(config, {
-//            border : false,
-            flex : 3,
+            flex : 4,
             region : 'center',
             selType : 'checkboxmodel',
             viewConfig : {
@@ -317,25 +315,50 @@ Ext4.define('File.panel.Browser', {
         });
 
         Ext4.apply(config, {
+            xtype   : 'grid',
             store   : this.getFileStore(),
             columns : {
                 items : this.initGridColumns()
+            },
+            listeners : {
+                beforerender : function(g) {
+                    this.grid = g;
+                },
+                itemdblclick : function(g, rec) {
+                    if (rec.data.collection) {
+                        this.setFolderURL(rec.data.href, rec);
+                        this.fireEvent('gridchange', this.getFolderURL());
+                    }
+                },
+                scope : this
             }
         });
+
+        this.gridMask = new Ext4.util.DelayedTask(function(){
+            this.getGrid().getEl().mask('Loading...');
+        }, this);
 
         return config;
     },
 
     getToolbarItems : function() {
-        return [
-            {iconCls : 'iconFolderTree', handler : function() { this.getFolderTree().toggleCollapse(); }, scope: this},
-            {iconCls : 'iconUp'},
-            {iconCls : 'iconReload'},
-            {iconCls : 'iconFolderNew'},
-            {iconCls : 'iconDownload'},
-            {iconCls : 'iconDelete'},
-            {iconCls : 'iconUpload', text : 'Upload Files'}
+        var baseItems = [
+            {iconCls : 'iconFolderTree', handler : function() { this.tree.toggleCollapse(); }, scope: this},
+//            {iconCls : 'iconUp', handler : this.onTreeUp, tooltip : 'Navigate to the parent folder', scope: this},
+            {iconCls : 'iconReload', handler : this.onRefresh, tooltip : 'Refresh the contents of the current folder', scope: this},
+            {iconCls : 'iconFolderNew', handler : this.onCreateDirectory, tooltip : 'Create a new folder on the server', scope : this},
+            {iconCls : 'iconDownload', handler: this.onDownload, tooltip : 'Download the selected files or folders', scope: this},
+            {iconCls : 'iconDelete',   handler: this.onDelete,   tooltip : 'Delete the selected files or folders',   scope: this },
+            {iconCls : 'iconUpload', text : 'Upload Files', handler : this.onUpload, tooltip : 'Upload files or folders from your local machine to the server', scope: this}
         ];
+
+        if (Ext4.isArray(this.tbarItems)) {
+            for (var i=0; i < this.tbarItems.length; i++) {
+                baseItems.push(this.tbarItems[i]);
+            }
+        }
+
+        return baseItems;
     },
 
     getUploadPanel : function() {
@@ -347,9 +370,144 @@ Ext4.define('File.panel.Browser', {
             region : 'north',
             header : false,
             border : true,
-            flex : 1
+            collapseMode : 'mini',
+            listeners : {
+                transfercomplete : function() {
+                    this.getFileStore().load();
+                },
+                scope : this
+            }
         });
 
+        // link upload panel to know when directory changes
+        this.on('folderchange', this.uploadPanel.changeWorkingDirectory, this.uploadPanel);
+
         return this.uploadPanel;
+    },
+
+    onCreateDirectory : function() {
+
+        var panel = Ext4.create('Ext.form.Panel', {
+            border: false,
+            items : [{
+                xtype : 'textfield',
+                name : 'folderName',
+                allowBlank : false,
+                value : 'New Folder',
+                fieldLabel: 'Folder Name',
+                labelSeparator : '',
+                validateOnBlur : false,
+                validateOnChange : false,
+                validator : function(folder) {
+                    if (folder && folder.length) {
+                        console.log('would validate if folder is already present.');
+                    }
+                    return true;
+                },
+                scope : this
+            }]
+        });
+
+        var win = Ext4.create('Ext.Window', {
+            title : 'Create Folder',
+            width : 300,
+            height: 150,
+            modal : true,
+            autoShow : true,
+            items : [panel],
+            buttons : [
+                {text : 'Submit', handler : function(b) {
+
+                    var path = this.getFolderURL();
+                    if (panel.getForm().isValid()) {
+                        var values = panel.getForm().getValues();
+                        if (values && values.folderName) {
+                            var folder = values.folderName;
+                            this.fileSystem.createDirectory({
+                                path : path + folder,
+                                success : function(path) {
+                                    win.close();
+                                    this.getFileStore().load();
+                                },
+                                failure : function(response) {
+                                    win.close();
+                                    Ext4.Msg.alert('Create Directory', 'Failed to create directory.');
+                                },
+                                scope : this
+                            });
+                        }
+                    }
+
+                }, scope: this},
+                {text : 'Cancel', handler : function() { win.close(); }, scope: this}
+            ]
+        });
+    },
+
+    onDelete : function() {
+
+        var recs = this.getGrid().getSelectionModel().getSelection();
+
+        if (recs && recs.length > 0) {
+
+            Ext4.Msg.show({
+                title : 'Delete Files',
+                msg : 'Are you sure that you want to delete the ' + (recs[0].data.collection ? 'folder' : 'file') +' \'' + recs[0].data.name + '\'?',
+                buttons : Ext4.Msg.YESNO,
+                icon : Ext4.Msg.QUESTION,
+                fn : function(btn) {
+                    if (btn == 'yes') {
+                        this.fileSystem.deletePath({
+                            path : recs[0].data.href,
+                            success : function(path) {
+                                this.getFileStore().load();
+                            },
+                            failure : function(response) {
+                                 Ext4.Msg.alert('Delete', 'Failed to delete.');
+                            },
+                            scope : this
+                        });
+                    }
+                },
+                scope : this
+            });
+
+        }
+    },
+
+    // TODO: Support multiple selection download -- migrate to file system
+    onDownload : function() {
+
+        var recs = this.getGrid().getSelectionModel().getSelection();
+
+        if (recs.length == 1) {
+
+            var url;
+            if (!recs[0].data.collection) {
+                url = recs[0].data.href + "?contentDisposition=attachment";
+            }
+            else {
+                url = recs[0].data.href + "?method=zip&depth=-1";
+                url += "&file=" + encodeURIComponent(recs[0].data.name);
+            }
+
+            window.location = url;
+        }
+        else {
+            Ext4.Msg.show({
+                title : 'File Download',
+                msg : 'Please select a file or folder on the right to download.',
+                buttons : Ext4.Msg.OK
+            });
+        }
+    },
+
+    onRefresh : function() {
+        this.gridMask.delay(0);
+        this.getFileStore().load();
+    },
+
+    onUpload : function() {
+        this.getUploadPanel().toggleCollapse();
     }
 });

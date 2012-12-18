@@ -67,6 +67,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
@@ -120,25 +121,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
@@ -1366,25 +1349,54 @@ public class DavController extends SpringActionController
                 if (resource.isCollection())
                 {
                     ArrayList<String> listPaths = (ArrayList<String>) resource.listNames();
-                    resourceWriter.writeProperty("fileCount", listPaths.size());
+                    ArrayList<WebdavResource> resources = new ArrayList<WebdavResource>();
+
+                    // Build resource set
+                    for (String p : listPaths)
+                    {
+                        resource = resolvePath(root.getPath().append(p));
+                        if (resource != null)
+                            resources.add(resource);
+                    }
+
+                    // Establish size
+                     resourceWriter.writeProperty("fileCount", resources.size());
+
+                    // Sort
+                    Collections.sort(resources, new Comparator<WebdavResource>(){
+
+                        public int compare(WebdavResource o1, WebdavResource o2)
+                        {
+                            if (o1 == null && o2 == null) return 0;
+                            if (o1 == null) return 1;
+                            if (o2 == null) return -1;
+
+                            boolean o1Collection = o1.isCollection();
+                            boolean o2Collection = o2.isCollection();
+
+                            if (o1Collection && o2Collection || (!o1Collection && !o2Collection))
+                                return o1.getName().compareToIgnoreCase(o2.getName());
+                            if (o1Collection)
+                                return -1;
+                            else
+                                return 1;
+                        }
+                    });
 
                     // Support for Limits
                     int limitCount = 0;
                     int limitMax = form.getLimit()-1;
 
                     // Support for Indexing
-                    for (int i=form.getStart(); i < listPaths.size(); i++)
+                    for (int i=form.getStart(); i < resources.size(); i++)
                     {
                         if (limitCount > limitMax)
                             break;
 
-                        resource = resolvePath(root.getPath().append(listPaths.get(i)));
-                        if (null != resource)
-                        {
-                            resourceWriter.writeProperties(resource, Find.FIND_ALL_PROP, new ArrayList<String>());
-                            if (limitMax > 0)
-                                limitCount++;
-                        }
+                        resourceWriter.writeProperties(resources.get(i), Find.FIND_ALL_PROP, new ArrayList<String>());
+
+                        if (limitMax > 0)
+                            limitCount++;
                     }
                 }
 
@@ -2143,6 +2155,7 @@ public class DavController extends SpringActionController
             User createdby = resource.getCreatedBy();
             if (null != createdby)
                 json.key("createdby").value(h(UserManager.getDisplayName(createdby.getUserId(), getUser())));
+            json.key("collection").value(resource.isCollection());
             if (resource.isFile())
             {
                 json.key("lastmodified").value(new Date(resource.getLastModified()));
@@ -4096,12 +4109,22 @@ public class DavController extends SpringActionController
             if (resource.getPath().startsWith(WebdavResolverImpl.get().getRootPath()))
                 page.root = WebdavResolverImpl.get().getRootPath();
 
-            JspView<ListPage> v = new JspView<ListPage>(DavController.class, "list.jsp", page);
-            v.setFrame(WebPartView.FrameType.NONE);
-            PageConfig config = new PageConfig();
-            config.setTitle(resource.getPath() + "-- webdav");
-            PrintTemplate print = new PrintTemplate(v, config);
-            print.render(getViewContext().getRequest(), getViewContext().getResponse());
+            PageConfig config = new PageConfig(resource.getPath() + "-- webdav");
+
+            if ("html".equals(getViewContext().getRequest().getParameter("listing")))
+            {
+                JspView<ListPage> v = new JspView<ListPage>(DavController.class, "list.jsp", page);
+                v.setFrame(WebPartView.FrameType.NONE);
+                PrintTemplate print = new PrintTemplate(v, config);
+                print.render(getViewContext().getRequest(), getViewContext().getResponse());
+            }
+            else
+            {
+                JspView<ListPage> v = new JspView<ListPage>(DavController.class, "davListing.jsp", page);
+                config.addClientDependencies(v.getClientDependencies());
+                BodyTemplate template = new BodyTemplate(v, config);
+                template.render(getViewContext().getRequest(), getViewContext().getResponse());
+            }
             return WebdavStatus.SC_OK;
         }
         catch (Exception x)

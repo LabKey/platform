@@ -18,13 +18,9 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.apache.commons.lang3.time.FastDateFormat" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
-<%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Date" %>
@@ -32,31 +28,27 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-//FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
-FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz");
+    FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz");
 %>
 <%
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();
     WebdavResource resource = listpage.resource;
-    Path path = listpage.getDirectory();
     ViewContext context = HttpView.currentContext();
-    AppProps.Interface app = AppProps.getInstance();
     User user = context.getUser();
     String userAgent = StringUtils.trimToEmpty(request.getHeader("user-agent"));
     boolean supportsDavMount = false;
     boolean supportsDavScheme = false;
     boolean supportsWebdavScheme = userAgent.contains("Konqueror");
-    boolean plainHtml = "html".equals(request.getParameter("listing"));
-
-if (plainHtml)
-{
 %>
-    <style type="text/css">
-    A {text-decoration:none; behavior: url(#default#AnchorClick);}
-    TR {margin-right:3px; margin-left:3px;}
-    BODY, TD, TH { font-family: arial sans-serif; color: black; }
-    </style>
 
+<style type="text/css">
+    a {text-decoration:none; behavior: url(#default#AnchorClick);}
+    tr {margin-right:3px; margin-left:3px;}
+    body, td, th { font-family: arial sans-serif; color: black; }
+</style>
+<style type="text/css" media="print">
+    a.labkey-button { display: none; }
+</style>
 <table width="100%"><tr><td align="left">
 <b><%
 {
@@ -82,7 +74,7 @@ if (plainHtml)
         %></a><%
     }
 }
-%></b></td><td align="right">&nbsp;<%
+%></b></td><td align="right"><%=generateButton("Standard View","?listing=ext")%>&nbsp;<%
     if (context.getUser().isGuest())
     {
         %><a href="<%=h(listpage.loginURL)%>">Sign In</a><%
@@ -162,7 +154,6 @@ if (plainHtml)
 <hr>
 <%
     String href =  resource.getHref(context);
-    String folder = resource.isCollection() ? href : parent.getHref(context);
 %>
 This is a WebDav enabled directory.<br>
 <%
@@ -187,64 +178,5 @@ This is a WebDav enabled directory.<br>
 if (supportsDavMount) {%><%=generateButton("davmount","?davmount")%><br><%}
 if (supportsDavScheme) {%><%=generateButton("dav", href.replace("http:","dav:"))%><br><%}
 if (supportsWebdavScheme) {%><%=generateButton("webdav", href.replace("http:","webdav:"))%><br><%}
-%><%=generateButton("Standard View","?listing=ext")%><br>
+%>
 <!--<%=h(request.getHeader("user-agent"))%>-->
-<%
-} // end plainHtml
-else
-{
-%>
-<script type="text/javascript">
-    LABKEY.requiresScript("applet.js");
-    LABKEY.requiresScript("fileBrowser.js");
-    LABKEY.requiresScript("applet.js",true);
-    LABKEY.requiresScript("FileUploadField.js");
-    LABKEY.requiresScript("StatusBar.js");
-</script>
-<script type="text/javascript">
-var fileSystem;
-var fileBrowser;
-Ext.onReady(function()
-{
-    Ext.QuickTips.init();
-
-    var htmlAction = new Ext.Action({text:'Load basic HTML', iconCls:'iconMessage', handler: function()
-    {
-        var path = '/';
-        if (fileBrowser.currentDirectory && fileBrowser.currentDirectory.data.path)
-            path = fileBrowser.currentDirectory.data.path;
-        window.location = fileSystem.concatPaths(<%=PageFlowUtil.jsString(request.getContextPath()+'/'+WebdavService.getServletPath())%>,path) + '?listing=html';
-    }});
-
-    var loginAction = new Ext.Action({text:'Sign In', handler:function()
-    {
-        window.location = <%=PageFlowUtil.jsString(listpage.loginURL.getLocalURIString())%>;    
-    }});
-
-    fileSystem = new LABKEY.FileSystem.WebdavFileSystem({
-        baseUrl:<%=PageFlowUtil.jsString(Path.parse(request.getContextPath()).append(listpage.root).encode("/",null))%>,
-        rootName:<%=PageFlowUtil.jsString(app.getServerName())%>});
-
-    fileBrowser = new LABKEY.ext.FileBrowser({
-        fileSystem:fileSystem
-        ,helpEl:null
-        ,showAddressBar:true
-        ,showFolderTree:true
-        ,showDetails:true
-        ,allowChangeDirectory:true
-        ,actions:{html:htmlAction, login:loginAction}
-        ,tbarItems:['parentFolder','refresh','createDirectory','download','deletePath','upload','->','html'<%=user.isGuest()?",'login'":""%>]
-    });
-
-    new Ext.Viewport({
-        layout:'fit',
-        cls:'extContainer',
-        items:[fileBrowser]
-    });
-    
-    fileBrowser.start(<%=PageFlowUtil.jsString(path.toString())%>);
-});
-</script>
-<%
-}
-%>

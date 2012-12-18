@@ -22,7 +22,6 @@ Ext4.define('File.data.webdav.Proxy', {
                 request.url = operation.node.data.href;
             }
             else if (operation.node.data.uri) {
-                console.log(operation.node.data.uri);
                 request.url = operation.node.data.uri;
             }
         }
@@ -50,14 +49,14 @@ Ext4.define('File.data.webdav.Proxy', {
 
         if (operation.action == 'read') {
             params += '&method=PROPFIND';
-        }
 
-        for (var p=0; p < this.propNames.length; p++) {
-            params += '&propname=' + this.propNames[p];
-        }
+            for (var p=0; p < this.propNames.length; p++) {
+                params += '&propname=' + this.propNames[p];
+            }
 
-        if (!this.requestFiles) {
-            params += '&isCollection=1';
+            if (!this.requestFiles) {
+                params += '&isCollection=1';
+            }
         }
 
         return params;

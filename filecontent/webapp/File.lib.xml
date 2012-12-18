@@ -3,9 +3,12 @@
         <script path="File/data/webdav/Proxy.js"/>
         <script path="File/data/webdav/URI.js"/>
         <script path="File/data/webdav/Response.js"/>
+        <script path="File/system/Abstract.js"/>
+        <script path="File/system/Webdav.js"/>
         <script path="File/panel/Browser.js"/>
-        <!--<script path="File/panel/Upload.js"/>-->
-        <!--<script path="_images/icons.css"/>-->
+        <script path="File/panel/Applet.js"/>
+        <script path="File/panel/TransferApplet.js"/>
+        <script path="File/panel/Upload.js"/>
     </library>
     <dependencies>
         <dependency path="Ext4"/>
