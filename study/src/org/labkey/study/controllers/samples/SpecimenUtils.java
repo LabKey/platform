@@ -954,6 +954,7 @@ public class SpecimenUtils
         rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         GridView grid = new GridView(rgn, errors);
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RequestId"), requestId);
+        filter.addCondition(FieldKey.fromString("RequirementId"), null, CompareType.ISBLANK);     // if null, then event is NOT a requirement
         grid.setFilter(filter);
         FieldKey fieldKey = FieldKey.fromString("Created");
         Sort sort = new Sort();
