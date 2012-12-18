@@ -5,7 +5,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryDefinitionDecorator;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
