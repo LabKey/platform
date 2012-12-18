@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -148,8 +147,8 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
             @Override
             public void setLastIndexed(long ms, long modified)
             {
-                new SqlExecutor(ExperimentService.get().getSchema()).execute(new SQLFragment("UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?",
-                        new Timestamp(ms), getRowId()));
+                new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?",
+                        new Timestamp(ms), getRowId());
             }
         };
         task.addResource(r, SearchService.PRIORITY.item);

@@ -23,6 +23,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
@@ -230,11 +231,9 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     }
 
 
-    public void indexDeleted() throws SQLException
+    public void indexDeleted()
     {
-        Table.execute(CommSchema.getInstance().getSchema(), new SQLFragment(
-            "UPDATE comm.pages SET lastIndexed=NULL"
-        ));
+        new SqlExecutor(CommSchema.getInstance().getSchema()).execute("UPDATE comm.pages SET lastIndexed=NULL");
     }
 
 

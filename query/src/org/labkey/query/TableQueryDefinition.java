@@ -17,20 +17,31 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
-import org.labkey.query.sql.Query;
-import org.labkey.query.persist.QueryManager;
+import org.labkey.api.view.ActionURL;
 import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
+import org.labkey.query.sql.Query;
 
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class TableQueryDefinition extends QueryDefinitionImpl

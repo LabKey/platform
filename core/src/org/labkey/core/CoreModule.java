@@ -852,8 +852,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public void indexDeleted() throws SQLException
     {
-        Table.execute(CoreSchema.getInstance().getSchema(), new SQLFragment(
-            "UPDATE core.Documents SET lastIndexed=NULL"
-        ));
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute("UPDATE core.Documents SET lastIndexed=NULL");
     }
 }

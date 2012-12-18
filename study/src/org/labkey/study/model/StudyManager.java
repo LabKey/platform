@@ -2053,13 +2053,13 @@ public class StudyManager
         {
             throw new RuntimeException(e);
         }
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(new SQLFragment("DELETE FROM " + _tableInfoVisitMap + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId()));
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + _tableInfoVisitMap + "\n" +
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
 
         // UNDONE: This is broken
         // this._dataSetHelper.delete(ds);
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(new SQLFragment("DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId()));
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
         _dataSetHelper.clearCache(study.getContainer());
 
         SecurityPolicyManager.deletePolicy(ds);

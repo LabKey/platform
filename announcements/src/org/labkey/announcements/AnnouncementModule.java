@@ -35,8 +35,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -270,8 +269,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 
-    public void indexDeleted() throws SQLException
+    public void indexDeleted()
     {
-        Table.execute(CommSchema.getInstance().getSchema(), new SQLFragment("UPDATE comm.announcements SET LastIndexed=NULL"));
+        new SqlExecutor(CommSchema.getInstance().getSchema()).execute("UPDATE comm.announcements SET LastIndexed=NULL");
     }
 }
