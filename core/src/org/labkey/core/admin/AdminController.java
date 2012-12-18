@@ -134,6 +134,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionAppender;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
 import org.labkey.api.util.URLHelper;
@@ -5177,22 +5178,33 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class CustomizeMenuAction extends FormViewAction<CustomizeMenuForm>
+    public class CustomizeMenuAction extends ApiAction<CustomizeMenuForm>
     {
         Portal.WebPart _webPart;
 
         public void validateCommand(CustomizeMenuForm form, Errors errors)
         {
         }
+
         public ModelAndView getView(CustomizeMenuForm form, boolean reshow, BindException errors) throws Exception
         {
             return null;
         }
 
-        public boolean handlePost(CustomizeMenuForm form, BindException errors) throws Exception
+        public ApiResponse execute(CustomizeMenuForm form, BindException errors) throws Exception
         {
+            if (null != form.getUrl())
+            {
+                String errorMessage = StringExpressionFactory.validateURL(form.getUrl());
+                if (null != errorMessage)
+                {
+                    errors.reject(ERROR_MSG, errorMessage);
+                    return new ApiSimpleResponse("success", false);
+                }
+            }
+
             setCustomizeMenuForm(form, getContainer(),  getUser());
-            return true;
+            return new ApiSimpleResponse("success", true);
         }
 
         public ActionURL getSuccessURL(CustomizeMenuForm form)
