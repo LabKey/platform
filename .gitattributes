@@ -1352,6 +1352,7 @@ api/src/org/labkey/api/view/tabbox.jsp -text
 api/src/org/labkey/api/view/tabstrip.jsp -text
 api/src/org/labkey/api/view/template/AppBar.java -text
 api/src/org/labkey/api/view/template/AppBarView.java -text
+api/src/org/labkey/api/view/template/BodyTemplate.java -text
 api/src/org/labkey/api/view/template/ClientDependency.java -text
 api/src/org/labkey/api/view/template/CommonTemplate.jsp -text
 api/src/org/labkey/api/view/template/EmptyView.java -text
@@ -1361,6 +1362,7 @@ api/src/org/labkey/api/view/template/PrintTemplate.java -text
 api/src/org/labkey/api/view/template/TemplateHeaderView.java -text
 api/src/org/labkey/api/view/template/WizardTemplate.java -text
 api/src/org/labkey/api/view/template/appBar.jsp -text
+api/src/org/labkey/api/view/template/bodyTemplate.jsp -text
 api/src/org/labkey/api/view/template/dialogTemplate.jsp -text
 api/src/org/labkey/api/view/template/header.jsp -text
 api/src/org/labkey/api/view/template/menuBar.jsp -text

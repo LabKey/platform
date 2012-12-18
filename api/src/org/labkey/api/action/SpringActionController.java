@@ -47,6 +47,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
@@ -491,6 +492,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
             case Wizard:
             {
                 return new WizardTemplate(mv, page);
+            }
+            case Body:
+            {
+                return new BodyTemplate(mv, page);
             }
             case Home:
             default:
