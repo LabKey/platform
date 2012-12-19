@@ -4899,22 +4899,55 @@ public class QueryController extends SpringActionController
             HttpServletResponse httpResponse = getViewContext().getResponse();
             Container container = getContainer();
             TableWriter writer = new TableWriter();
-            ZipFile zip = new ZipFile(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"));
-            writer.write(container, getUser(), zip);
-            zip.close();
+//            ZipFile zip = new ZipFile(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"));
+//            writer.write(container, getUser(), zip);
+//            zip.close();
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", false);
             return response;
         }
     }
 
-    public class ExportTablesForm implements CustomApiForm
+    public static class ExportTablesForm implements CustomApiForm
     {
+        JSONArray _schemas;
+
+        public JSONArray getSchemas()
+        {
+            return _schemas;
+        }
+
+        public void setSchemas(JSONArray schemas)
+        {
+            _schemas = schemas;
+        }
 
         @Override
         public void bindProperties(Map<String, Object> props)
         {
+            _schemas = (JSONArray) props.get("schemas");
+        }
 
+        public String getSchemaName(JSONObject o) throws NullPointerException
+        {
+            // Get the schemaName for a given object in the _schemas JSONArray.
+            String schemaName = (String) o.get("schemaName");
+
+            if (schemaName == null)
+                throw new NullPointerException("schema name not found.");
+            else
+                return schemaName;
+        }
+
+        public JSONArray getQueryNames(JSONObject o) throws NullPointerException
+        {
+            // Get the query names for a given object in the _schemas JSONArray.
+            JSONArray queryNames = (JSONArray) o.get("queries");
+
+            if(queryNames == null)
+                throw new NullPointerException("query names not found.");
+            else
+                return queryNames;
         }
     }
 }
