@@ -333,7 +333,6 @@ Ext4.define('File.panel.Upload', {
 
     updateAppletState: function(record){
         // TODO: actually finish this. Need to port it from fileBrowser.js line 2011
-        console.log('updateAppletState', record);
 
         if(!this.transferApplet || !record){
             return;
@@ -346,7 +345,7 @@ Ext4.define('File.panel.Upload', {
         // Enable or disable applet buttons depending on permissions (canWrite and canMkDir)
 
         try {
-            this.transferApplet.changeWorkingDirectory(record.data.path);
+            this.transferApplet.changeWorkingDirectory(record.data.uri);
             if(canWrite || canMkdir){
                 this.transferApplet.setEnabled(true);
                 this.transferApplet.setAllowDirectoryUpload(canMkdir);

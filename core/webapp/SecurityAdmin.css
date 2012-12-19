@@ -22,10 +22,10 @@ p.userinfoHdr {
     margin: 6px 0px !important;
 }
 
-.participant-filter-panel span.x4-panel-header-text-default {
+.themed-panel span.x4-panel-header-text-default {
     color: black;
 }
 
-.participant-filter-panel a {
+.themed-panel a {
     color: black;
 }

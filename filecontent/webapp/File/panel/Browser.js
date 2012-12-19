@@ -1,4 +1,5 @@
 LABKEY.requiresCss("_images/icons.css");
+LABKEY.requiresCss("study/DataViewsPanel.css");
 
 Ext4.define('File.panel.Browser', {
 
@@ -87,9 +88,12 @@ Ext4.define('File.panel.Browser', {
     showUpload : true,
 
     /**
-     * @cfg {Array} bufferFiles
+     * @cfg {Array} tbarItems
      */
     tbarItems : [],
+
+    // provides a default color for backgrounds if they are shown
+    bodyStyle : 'background-color: lightgray;',
 
     constructor : function(config) {
 
@@ -142,9 +146,9 @@ Ext4.define('File.panel.Browser', {
         });
 
         columns.push(
-            {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: true,  hidden: false},// renderer:LABKEY.FileSystem.Util.renderDateTime},
-            {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false},// align:'right', renderer:LABKEY.FileSystem.Util.renderFileSize},
-            {header: "Created By",     flex: 1, dataIndex: 'createdBy',    sortable: true,  hidden: false, renderer:Ext4.util.Format.htmlEncode},
+            {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: true,  hidden: false, renderer: Ext4.util.Format.dateRenderer("Y-m-d H:i:s")},
+            {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false, renderer:Ext4.util.Format.fileSize, align : 'right'},
+            {header: "Created By",     flex: 1, dataIndex: 'createdby',    sortable: true,  hidden: false, renderer:Ext4.util.Format.htmlEncode},
             {header: "Description",    flex: 1, dataIndex: 'description',  sortable: true,  hidden: false, renderer:Ext4.util.Format.htmlEncode},
             {header: "Usages",         flex: 1, dataIndex: 'actionHref',   sortable: true,  hidden: false},// renderer:LABKEY.FileSystem.Util.renderUsage},
             {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: true,  hidden: true},
@@ -189,6 +193,10 @@ Ext4.define('File.panel.Browser', {
                 purgePageCount : 0
             });
         }
+
+        Ext4.apply(storeConfig.proxy.extraParams, {
+            paging : this.bufferFiles
+        });
 
         this.fileStore = Ext4.create('Ext.data.Store', storeConfig);
 
@@ -253,6 +261,7 @@ Ext4.define('File.panel.Browser', {
         return {
             xtype : 'treepanel',
             region : 'west',
+            cls : 'themed-panel',
             flex : 1,
             store : store,
             collapsed: !this.expandFolderTree,
@@ -410,14 +419,12 @@ Ext4.define('File.panel.Browser', {
 
     onFolderChange : function(path, model) {
         var d = model.data;
-        if (d) {
-            var tb = this.getDockedComponent(0);
-            if (tb) {
-                tb.getComponent('delete').setDisabled(!d.options['DELETE']);
-                tb.getComponent('download').setDisabled(!d.options['GET']);
-                tb.getComponent('mkdir').setDisabled(!d.options['MKCOL']);
-                tb.getComponent('upload').setDisabled(!d.options['PUT']);
-            }
+        var tb = this.getDockedComponent(0);
+        if (tb) {
+            tb.getComponent('delete').setDisabled(!this.fileSystem.canDelete(model));
+            tb.getComponent('download').setDisabled(!this.fileSystem.canRead(model));
+            tb.getComponent('mkdir').setDisabled(!this.fileSystem.canMkdir(model));
+            tb.getComponent('upload').setDisabled(!this.fileSystem.canWrite(model));
         }
     },
 
@@ -448,15 +455,42 @@ Ext4.define('File.panel.Browser', {
 
     onCreateDirectory : function() {
 
+        var onCreateDir = function() {
+
+            var path = this.getFolderURL();
+            if (panel.getForm().isValid()) {
+                var values = panel.getForm().getValues();
+                if (values && values.folderName) {
+                    var folder = values.folderName;
+                    this.fileSystem.createDirectory({
+                        path : path + folder,
+                        success : function(path) {
+                            win.close();
+                            this.getFileStore().load();
+                        },
+                        failure : function(response) {
+                            win.close();
+                            Ext4.Msg.alert('Create Directory', 'Failed to create directory. This directory might already exist.');
+                            console.log(response);
+                        },
+                        scope : this
+                    });
+                }
+            }
+
+        };
+
         var panel = Ext4.create('Ext.form.Panel', {
-            border: false,
+            border: false, frame : false,
             items : [{
                 xtype : 'textfield',
                 name : 'folderName',
+                itemId : 'foldernamefield',
+                flex : 1,
                 allowBlank : false,
-                value : 'New Folder',
-                fieldLabel: 'Folder Name',
-                labelSeparator : '',
+                emptyText : 'Folder Name',
+                width : 250,
+                margin : '32 10 0 10',
                 validateOnBlur : false,
                 validateOnChange : false,
                 validator : function(folder) {
@@ -464,6 +498,22 @@ Ext4.define('File.panel.Browser', {
                         console.log('would validate if folder is already present.');
                     }
                     return true;
+                },
+                listeners : {
+                    afterrender : function(f) {
+                        var km = new Ext4.util.KeyMap(f.el, [
+                            {
+                                key   : Ext4.EventObject.ENTER,
+                                fn    : onCreateDir,
+                                scope : this
+                            },{
+                                key   : Ext4.EventObject.ESC,
+                                fn    : function() { win.close(); },
+                                scope : this
+                            }
+                        ]);
+                    },
+                    scope : this
                 },
                 scope : this
             }]
@@ -476,30 +526,10 @@ Ext4.define('File.panel.Browser', {
             modal : true,
             autoShow : true,
             items : [panel],
+            cls : 'data-window',
+            defaultFocus : 'foldernamefield',
             buttons : [
-                {text : 'Submit', handler : function(b) {
-
-                    var path = this.getFolderURL();
-                    if (panel.getForm().isValid()) {
-                        var values = panel.getForm().getValues();
-                        if (values && values.folderName) {
-                            var folder = values.folderName;
-                            this.fileSystem.createDirectory({
-                                path : path + folder,
-                                success : function(path) {
-                                    win.close();
-                                    this.getFileStore().load();
-                                },
-                                failure : function(response) {
-                                    win.close();
-                                    Ext4.Msg.alert('Create Directory', 'Failed to create directory.');
-                                },
-                                scope : this
-                            });
-                        }
-                    }
-
-                }, scope: this},
+                {text : 'Submit', handler : onCreateDir, scope: this},
                 {text : 'Cancel', handler : function() { win.close(); }, scope: this}
             ]
         });

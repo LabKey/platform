@@ -45,7 +45,7 @@ Ext4.define('Security.panel.PermissionEditor', {
             items.push({
                 xtype : 'treepanel',
                 title : 'Folders',
-                cls   : 'participant-filter-panel',
+                cls   : 'themed-panel',
                 store : {
                     xtype    : 'tree',
                     autoLoad : true,

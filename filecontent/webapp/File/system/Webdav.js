@@ -104,31 +104,44 @@ Ext4.define('File.system.Webdav', {
      * @param {Function} [config.failure] Error callback function.  It will be called with the following arguments:
      * <li>Response: the response object</li>
      * @param {Object} [config.scope] The scope of the callback function
-     * @methodOf LABKEY.FileSystem.WebdavFileSystem#
      */
     getHistory : function(config)
     {
-        config.scope = config.scope || this;
-        var body =  "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<propfind xmlns=\"DAV:\"><prop><history/></prop></propfind>";
+        console.warn('Get History NYI');
 
-        var proxy = new Ext.data.HttpProxy(
-        {
-            url: this.concatPaths(this.prefixUrl, config.path),
-            xmlData : body,
-            method: "PROPFIND",
-            headers: {"Depth" : "0"}
-        });
-        proxy.api.read.method = 'PROPFIND';
+//        config.scope = config.scope || this;
+//        var body =  "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<propfind xmlns=\"DAV:\"><prop><history/></prop></propfind>";
+//
+//        var proxy = new Ext.data.HttpProxy(
+//        {
+//            url: this.concatPaths(this.prefixUrl, config.path),
+//            xmlData : body,
+//            method: "PROPFIND",
+//            headers: {"Depth" : "0"}
+//        });
+//        proxy.api.read.method = 'PROPFIND';
+//
+//        var cb = function(response, args, success)
+//        {
+//            LABKEY.FileSystem.Util._processAjaxResponse(response);
+//            if (success && typeof config.success == 'function')
+//                config.success.call(config.scope, args.filesystem, args.path, response.records);
+//            else if (!success & typeof config.failure == 'function')
+//                config.failure.call(config.scope, response, options);
+//        };
+//        proxy.request('read', null, {method:"PROPFIND", depth:"0", propname : this.propNames}, this.historyReader, cb, this, {filesystem:this, path:config.path});
+    },
 
-        var cb = function(response, args, success)
+    _check : function(record, option)
+    {
+        if (record.data && record.data.options)
         {
-            LABKEY.FileSystem.Util._processAjaxResponse(response);
-            if (success && typeof config.success == 'function')
-                config.success.call(config.scope, args.filesystem, args.path, response.records);
-            else if (!success & typeof config.failure == 'function')
-                config.failure.call(config.scope, response, options);
-        };
-        proxy.request('read', null, {method:"PROPFIND", depth:"0", propname : this.propNames}, this.historyReader, cb, this, {filesystem:this, path:config.path});
+            if (record.data.options[option])
+            {
+                return true;
+            }
+        }
+        return false;
     },
 
     /**
@@ -139,8 +152,7 @@ Ext4.define('File.system.Webdav', {
      */
     canRead : function(record)
     {
-        var options = record.data.options;
-        return !options || -1 != options.indexOf('GET');
+        return this._check(record, 'GET');
     },
 
     /**
@@ -151,8 +163,7 @@ Ext4.define('File.system.Webdav', {
      */
     canWrite : function(record)
     {
-        var options = record.data.options;
-        return !options || -1 != options.indexOf("PUT");
+        return this._check(record, 'PUT');
     },
 
     /**
@@ -163,8 +174,7 @@ Ext4.define('File.system.Webdav', {
      */
     canMkdir : function(record)
     {
-        var options = record.data.options;
-        return !options || -1 != options.indexOf("MKCOL");
+        return this._check(record, 'MKCOL');
     },
 
     /**
@@ -175,8 +185,7 @@ Ext4.define('File.system.Webdav', {
      */
     canDelete : function(record)
     {
-        var options = record.data.options;
-        return !options || -1 != options.indexOf('DELETE');
+        return this._check(record, 'DELETE');
     },
 
     /**
@@ -187,30 +196,7 @@ Ext4.define('File.system.Webdav', {
      */
     canMove : function(record)
     {
-        var options = record.data.options;
-        return !options || -1 != options.indexOf('MOVE');
-    },
-
-    //private
-    _deleteListing: function(path, isFile)
-    {
-        /* NO-OP */
-    },
-
-    //private
-    _updateRecord : function(update)
-    {
-        var path = update.data.path;
-        if (path == '/')
-        {
-            Ext.apply(this.rootRecord.data, update.data);
-        }
-        else
-        {
-            var record = this.recordFromCache(path);
-            if (record)
-                Ext.apply(record.data, update.data);
-        }
+        return this._check(record, 'MOVE');
     },
 
     /**
@@ -390,104 +376,6 @@ Ext4.define('File.system.Webdav', {
         return true;
     },
 
-    //private
-    processFile : function(result, args, success)
-    {
-        var update = null;
-        if (success && result && !Ext4.isArray(result.records))
-            success = false;
-        if (success && result.records.length == 1)
-        {
-            update = result.records[0];
-            this._updateRecord(update);
-        }
-
-        if (Ext4.isFunction(args.callback)) {
-            args.callback(this, success && null != update, args.path, update);
-        }
-    },
-
-    //private
-    processFiles : function(result, args, success)
-    {
-        delete this.pendingPropfind[args.path];
-
-        var path = args.path;
-
-        var directory = null;
-        var listing = [];
-        if (success && result && !Ext4.isArray(result.records))
-            success = false;
-        if (success)
-        {
-            var records = result.records;
-            for (var r=0 ; r<records.length ; r++)
-            {
-                var record = records[r];
-                if (record.data.path == path)
-                    directory = record;
-                else
-                    listing.push(record);
-            }
-            if (directory)
-                this._updateRecord(directory);
-            this._addFiles(path, listing);
-        }
-
-        var callbacks = args.callbacks;
-        for (var i=0 ; i<callbacks.length ; i++)
-        {
-            var callback = callbacks[i];
-            if (typeof callback == 'function'){
-                callback(this, path, listing);
-            }
-            else if (typeof callback == 'object') {
-                var scope = callback.scope || this;
-                if (success && typeof callback.success == 'function')
-                    callback.success.call(scope, this, path, listing);
-                else if (!success && typeof callback.failure == 'function')
-                    callback.failure.call(scope, args.transId.conn);
-            }
-        }
-    },
-
-    //private
-    // not sure why both this and reloadFiles() exist?  reloadFile() seems to be used internally only
-    reloadFile : function(path, callback)
-    {
-        var url = this.concatPaths(this.prefixUrl, LABKEY.ActionURL.encodePath(path));
-        this.connection.url = url;
-        var args = {url: url, path: path, callback:callback};
-        this.proxy.doRequest("read", null, {method:"PROPFIND",depth:"0", propname : this.propNames}, this.transferReader, this.processFile, this, args);
-        return true;
-    },
-
-    //private
-    reloadFiles : function(config)
-    {
-        config.scope = config.scope || this;
-
-        var cb = {
-            success: config.success,
-            failure: config.failure,
-            scope: config.scope
-        };
-
-        var args = this.pendingPropfind[config.path];
-        if (args)
-        {
-            args.callbacks.push(cb);
-            return;
-        }
-
-        var url = this.concatPaths(this.prefixUrl, LABKEY.ActionURL.encodePath(config.path));
-        this.connection.url = url;
-        this.pendingPropfind[config.path] = args = {url: url, path: config.path, callbacks:[cb]};
-        this.proxy.doRequest("read", null, {method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
-        args.transId = this.connection.transId;
-        return true;
-    },
-
     /**
      * Can be used to rename a file or folder.  This is simply a convenience wrapper for movePath().
      * @param config Configuration properties.
@@ -503,51 +391,6 @@ Ext4.define('File.system.Webdav', {
      * <li>Options: The parameter to the request call.</li>
      * @param {Object} [config.scope] The scope of the callback function
      * @param {Boolean} [config.overwrite] If true, files at the target location
-     * @methodOf LABKEY.FileSystem.WebdavFileSystem#
-* @example &lt;script type="text/javascript"&gt;
-    var fileSystem = new new LABKEY.FileSystem.WebdavFileSystem({
-        containerPath: '/home',
-        filePath: '/@files'  //optional.  this is the same as the default
-    });
-
-    fileSystem.on('ready', function(fileSystem){
-        fileSystem.listFiles({
-            path: '/mySubfolder/',
-            success: function(fileSystem, path, records){
-                alert('It worked!');
-                console.log(records);
-            },
-            scope: this
-        }, this);
-
-        fileSystem.renamePath({
-            source: 'myFile.xls',
-            destination: 'renamedFile.xls',
-            isFile: true,
-            scope: this
-        });
-
-
-        //if you renamed a file in a subfolder, you can optionally supply the fileName only
-        //this file will be renamed to: '/subfolder/renamedFile.xls'
-        fileSystem.renamePath({
-            source: '/subfolder/myFile.xls',
-            destination: 'renamedFile.xls',
-            isFile: true,
-            scope: this
-        });
-
-        //or provide the entire path
-        fileSystem.renamePath({
-            source: '/subfolder/myFile.xls',
-            destination: '/subfolder/renamedFile.xls',
-            isFile: true,
-            scope: this
-        });
-    }, this);
-
-
-&lt;/script&gt;
      */
     renamePath : function(config)
     {
@@ -565,33 +408,5 @@ Ext4.define('File.system.Webdav', {
             scope: config.scope,
             overwrite: config.overwrite
         });
-    },
-
-    //private
-    uncacheListing : function(record)
-    {
-        var path = (typeof record == "string") ? record : record.data.path;
-
-        // want to uncache all subfolders of the parent folder
-        for (var a in this.directoryMap)
-        {
-            if (typeof a == 'string')
-            {
-                var idx = a.indexOf(path);
-                if (idx == 0)
-                {
-                    this.directoryMap[a] = null;
-                }
-            }
-        }
-
-        var args = this.pendingPropfind[path];
-        if (args && args.transId)
-        {
-            this.connection.abort(args.transId);
-            this.connection.url = args.url;
-            this.proxy.doRequest("read", null, {method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
-            args.transId = this.connection.transId;
-        }
     }
 });

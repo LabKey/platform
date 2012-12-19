@@ -1284,6 +1284,7 @@ public class DavController extends SpringActionController
     {
         private int _limit = -1;
         private int _start = -1;
+        private boolean _paging = false;
 
         public void setLimit(int limit)
         {
@@ -1303,6 +1304,16 @@ public class DavController extends SpringActionController
         public int getStart()
         {
             return _start;
+        }
+
+        public boolean getPaging()
+        {
+            return _paging;
+        }
+
+        public void setPaging(boolean paging)
+        {
+            _paging = paging;
         }
     }
 
@@ -1385,7 +1396,7 @@ public class DavController extends SpringActionController
 
                     // Support for Limits
                     int limitCount = 0;
-                    int limitMax = form.getLimit()-1;
+                    int limitMax = form.getPaging() ? form.getLimit()-1 : resources.size();
 
                     // Support for Indexing
                     for (int i=form.getStart(); i < resources.size(); i++)
@@ -2156,6 +2167,9 @@ public class DavController extends SpringActionController
             User createdby = resource.getCreatedBy();
             if (null != createdby)
                 json.key("createdby").value(h(UserManager.getDisplayName(createdby.getUserId(), getUser())));
+            String description = resource.getDescription();
+            if (null != description)
+                json.key("description").value(description);
             json.key("collection").value(resource.isCollection());
             if (resource.isFile())
             {

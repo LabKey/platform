@@ -679,15 +679,19 @@ li.labkey-tab-inactive a
     background-color: #<%=grid%>;
 }
 
-.participant-filter-panel div.x4-panel-header {
+.themed-panel div.x4-panel-header {
     background-color: #<%= webpart %> !important;
     background-image: none;
 }
 
-.participant-filter-panel .x4-panel-header-default-top {
+.themed-panel .x4-panel-header-default-top {
     -webkit-box-shadow: #<%= webpart %> 0 1px 0px 0 inset;
     -moz-box-shadow: #<%= webpart %> 0 1px 0px 0 inset;
     box-shadow: #<%= webpart %> 0 1px 0px 0 inset;
+}
+
+div.x4-splitter-vertical, div.x4-splitter-active, div.x4-resizable-overlay {
+    background-color: #<%= webpart %> !important;
 }
 
 .ext-el-mask-msg,

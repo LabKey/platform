@@ -20,7 +20,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         Ext4.applyIf(config, {
             allowAll  : true,
             normalWrap : false,
-            cls       : 'participant-filter-panel',
+            cls       : 'participant-filter-panel themed-panel',
             border    : false, frame : false,
             bodyStyle : 'padding: 5px;',
             includeParticipantIds : false,
