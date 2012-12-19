@@ -146,6 +146,8 @@ public class SpecimenImporter
                     throw new IllegalStateException("Java types for DateTime/Timestamp columns should be previously initalized.");
                 else if (_dbType.indexOf("FLOAT") >= 0 || _dbType.indexOf(NUMERIC_TYPE) >= 0)
                     _javaType = Double.class;
+                else if (_dbType.indexOf("BIGINT") >= 0)
+                    _javaType = Long.class;
                 else if (_dbType.indexOf("INT") >= 0)
                     _javaType = Integer.class;
                 else if (_dbType.indexOf(BOOLEAN_TYPE) >= 0)
@@ -170,6 +172,8 @@ public class SpecimenImporter
                 return JdbcType.INTEGER;
             else if (getJavaType() == Boolean.class)
                 return JdbcType.BOOLEAN;
+            else if (getJavaType() == Long.class)
+                return JdbcType.BIGINT;
             else
                 throw new UnsupportedOperationException("SQL type has not been defined for DB type " + _dbType + ", java type " + getJavaType());
         }
@@ -460,7 +464,7 @@ public class SpecimenImporter
     private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE;
 
     public static final Collection<SpecimenColumn> SPECIMEN_COLUMNS = Arrays.asList(
-            new SpecimenColumn(EVENT_ID_COL, "ExternalId", "INT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
+            new SpecimenColumn(EVENT_ID_COL, "ExternalId", "BIGINT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(10)", TargetTable.SPECIMEN_EVENTS),
             GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", true, TargetTable.VIALS, true),
             LAB_ID = new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER") {
