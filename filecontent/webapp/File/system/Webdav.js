@@ -19,8 +19,24 @@ Ext4.define('File.system.Webdav', {
         this.init(config);
     },
 
+    getAbsoluteBaseURL : function() {
+        return this.concatPaths(LABKEY.ActionURL.getBaseURL(), this.getBaseURL().replace(LABKEY.contextPath, ''));
+    },
+
+    /**
+     * Returns the base relative URL which includes the context path and the _webdav controller in this case
+     * e.g. "/labkey/_webdav/"
+     */
     getBaseURL : function() {
         return this.baseUrl;
+    },
+
+    getOffsetURL : function() {
+        return this.offsetUrl;
+    },
+
+    getURL : function() {
+        return this.concatPaths(this.baseUrl, this.offsetUrl);
     },
 
     init : function(config) {
@@ -32,9 +48,13 @@ Ext4.define('File.system.Webdav', {
         });
 
         if (!config.baseUrl) {
-            this.baseUrl = this.concatPaths(LABKEY.contextPath + "/_webdav", encodeURI(this.containerPath));
-            this.baseUrl = this.concatPaths(this.baseUrl, encodeURI(this.filePath));
-            this.baseUrl = this.concatPaths(this.baseUrl, encodeURI(this.fileLink));
+            this.baseUrl = this.concatPaths(LABKEY.contextPath + "/_webdav");
+//            this.baseUrl = this.concatPaths(this.baseUrl, encodeURI(this.filePath));
+//            this.baseUrl = this.concatPaths(this.baseUrl, encodeURI(this.fileLink));
+        }
+
+        if (config.offsetUrl) {
+            this.offsetUrl = config.offsetUrl.replace('/_webdav', '');
         }
 
         var prefix = this.concatPaths(this.baseUrl, this.rootPath);

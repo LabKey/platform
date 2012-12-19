@@ -85,7 +85,6 @@ Ext4.define('File.system.Abstract', {
      * @param {String} a The first path
      * @param {String} b The first path
      * @returns {String} The concatenated path
-     * @methodOf LABKEY.FileSystem.AbstractFileSystem#
      */
     concatPaths : function(a,b)
     {

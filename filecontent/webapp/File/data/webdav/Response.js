@@ -43,15 +43,9 @@ Ext4.define('File.data.webdav.XMLResponse', {
             return '';
         }},
         {
-            name : 'path'//, mapping : 'href'
-//            convert : function (v, rec)
-//            {
-//                var uri = File.data.webdav.XMLResponse.getURI(v,rec);
-//                var path = decodeURIComponent(uri.pathname);
-//                if (path.length >= prefixDecode.length && path.substring(0,prefixDecode.length) == prefixDecode)
-//                    path = path.substring(prefixDecode.length);
-//                return path;
-//            }
+            name : 'id', mapping : 'path', convert : function(val) { return val.replace('/_webdav', '')}
+        },{
+            name : 'path'
         },{
             name : 'name', mapping : 'propstat/prop/displayname'
         },{
@@ -101,7 +95,7 @@ Ext4.define('File.data.webdav.JSONReponse', {
         {name : 'description'},
         {name : 'etag'},
         {name : 'href'},
-        {name : 'id'},
+        {name : 'id', convert : function(val) { return val.replace('/_webdav', '')}},
         {name : 'lastmodified', type : 'date'},
         {name : 'leaf', type : 'boolean'},
         {name : 'size', type : 'int'},

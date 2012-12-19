@@ -101,7 +101,7 @@ Ext4.define('File.panel.Browser', {
 
         // Clone the config so we don't modify the original config object
         config = Ext4.Object.merge({}, config);
-        this.setFolderURL(config.fileSystem.getBaseURL());
+        this.setFolderOffset(config.fileSystem.getOffsetURL());
 
         this.callParent([config]);
     },
@@ -181,7 +181,7 @@ Ext4.define('File.panel.Browser', {
         var storeConfig = {
             model : this.fileSystem.getModel(),
             autoLoad : true,
-            proxy : this.fileSystem.getProxyCfg(this.getFolderURL())
+            proxy : this.fileSystem.getProxyCfg(this.getRootURL())
         };
 
         if (this.bufferFiles) {
@@ -218,21 +218,29 @@ Ext4.define('File.panel.Browser', {
         this.fileStore.load();
     },
 
-    getFolderURL : function() {
-        return this.rootURL;
+    getRootURL : function() {
+        return this.fileSystem.concatPaths(LABKEY.ActionURL.getBaseURL(), this.fileSystem.getBaseURL().replace(LABKEY.contextPath, ''));
     },
 
-    setFolderURL : function(url, model) {
-        this.rootURL = url;
-        this.rootModel = model;
-        this.fireEvent('folderchange', this.rootURL, this.rootModel);
+    getFolderURL : function() {
+        return this.fileSystem.concatPaths(this.getRootURL(), this.rootOffset);
+    },
+
+    getFolderOffset : function() {
+        return this.rootOffset;
+    },
+
+    setFolderOffset : function(offsetPath, model) {
+        this.rootOffset = offsetPath;
+        this.currentFolder = model;
+        this.fireEvent('folderchange', offsetPath, model);
     },
 
     getFolderTreeCfg : function() {
 
         var store = Ext4.create('Ext.data.TreeStore', {
             model : this.fileSystem.getModel('xml'),
-            proxy : this.fileSystem.getProxyCfg(this.getFolderURL(), 'xml'),
+            proxy : this.fileSystem.getProxyCfg(this.getRootURL(), 'xml'),
             root : {
                 text : this.fileSystem.rootName,
                 expanded : true,
@@ -285,8 +293,9 @@ Ext4.define('File.panel.Browser', {
         };
     },
 
-    expandPath : function(url) {
-        var idx = this.tree.getView().getStore().find('uri', url);
+    expandPath : function() {
+        var path = this.getFolderOffset();
+        var idx = this.tree.getView().getStore().find('id', path);
         if (idx) {
             var rec = this.tree.getView().getStore().getAt(idx);
             if (rec) {
@@ -295,17 +304,17 @@ Ext4.define('File.panel.Browser', {
                 return;
             }
         }
-        console.warn('Unable to expand path: ' + url);
+        console.warn('Unable to expand path: ' + path);
     },
 
     onTreeSelect : function(selModel, rec, idx) {
         // TODO: When user clicks on root, navigate back to normal root
         if (rec.isRoot())  {
-            this.setFolderURL(rec.data.uri + LABKEY.contextPath + '/_webdav');
+            this.setFolderOffset(rec.data.id, rec);
             this.fireEvent('treechange', this.getFolderURL());
         }
         else if (rec.data.uri && rec.data.uri.length > 0) {
-            this.setFolderURL(rec.data.uri, rec);
+            this.setFolderOffset(rec.data.id, rec);
             this.fireEvent('treechange', this.getFolderURL());
         }
         this.tree.getView().expand(rec);
@@ -345,7 +354,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 itemdblclick : function(g, rec) {
                     if (rec.data.collection) {
-                        this.setFolderURL(rec.data.href, rec);
+                        this.setFolderOffset(rec.data.id, rec);
                         this.fireEvent('gridchange', this.getFolderURL());
                     }
                 },
@@ -439,6 +448,7 @@ Ext4.define('File.panel.Browser', {
             border : true,
             collapseMode : 'mini',
             collapsed : !this.expandUpload,
+            fileSystem : this.fileSystem,
             listeners : {
                 transfercomplete : function() {
                     this.getFileStore().load();

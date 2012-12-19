@@ -106,20 +106,20 @@ Ext4.define('File.panel.TransferApplet', {
         });
     },
 
-    destroy     : function(){
+    destroy : function(){
         // This might not be needed. I'm not sure we're going to have a pollTask.
         Ext4.util.TaskManager.stop(this.pollTask);
         this.callParent(this);
     },
 
-    onRender    : function(ct, position){
+    onRender : function(ct, position){
         this.callParent(this, ct, position);
         this.pollTask = {interval: 100, scope: this, run:this._poll};
         Ext4.util.TaskManager.start(this.pollTask);
     },
 
     /* private */
-    _poll: function(){
+    _poll : function(){
         var a = this.getApplet();
         if (null == a)
             return;
@@ -181,7 +181,7 @@ Ext4.define('File.panel.TransferApplet', {
         return this.transfers;
     },
 
-    getSummary  : function(){
+    getSummary  : function() {
         var success=0, info=0, failed=0, retryable=0;
         var transfers = this.transfers;
         var count = transfers.getCount();
@@ -221,7 +221,7 @@ Ext4.define('File.panel.TransferApplet', {
             if(null == record){
                 adds.push(update);
             } else {
-                Ext.apply(record.data, update);
+                Ext4.apply(record.data, update);
                 this.fireEvent('progressRecordUpdate', store, record);
             }
         }
@@ -229,7 +229,7 @@ Ext4.define('File.panel.TransferApplet', {
         store.add(adds);
     },
 
-    update      : function(){
+    update : function(){
         var applet = this.getApplet();
         var r, result, records;
         var updated = false;

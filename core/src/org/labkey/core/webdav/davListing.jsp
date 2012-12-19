@@ -33,16 +33,9 @@
 
         var fileSystem = Ext4.create('File.system.Webdav', {
             baseUrl  : <%=PageFlowUtil.jsString(Path.parse(request.getContextPath()).append(listpage.root).encode("/",null))%>,
+            offsetUrl: <%=PageFlowUtil.jsString(listpage.resource.getPath().toString())%>,
             rootName : <%=PageFlowUtil.jsString(app.getServerName())%>
         });
-
-        // Establish root folder to start view from
-        var rootOffset = window.location.href;
-        rootOffset = rootOffset.replace(LABKEY.ActionURL.getBaseURL(), '');
-        rootOffset = rootOffset.replace(LABKEY.ActionURL.getController(), '');
-        if (rootOffset.indexOf('?') > -1) {
-            rootOffset = rootOffset.substr(0, rootOffset.indexOf('?'));
-        }
 
         Ext4.create('Ext.container.Viewport', {
             layout : 'fit',
@@ -50,7 +43,6 @@
                 xtype : 'filebrowser',
                 adminUser : true,
                 fileSystem : fileSystem,
-                rootOffset : rootOffset,
                 gridConfig : {
                     selType : 'rowmodel'
                 },

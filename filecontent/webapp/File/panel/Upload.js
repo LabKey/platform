@@ -31,7 +31,7 @@ Ext4.define('File.panel.Upload', {
 
         this.callParent([config]);
 
-        this.addEvents('transferstarted', 'transfercomplete');
+        this.addEvents('cwd', 'transferstarted', 'transfercomplete');
     },
 
     initComponent : function() {
@@ -301,13 +301,11 @@ Ext4.define('File.panel.Upload', {
 //        this.hideProgressBar(); // need to implement.
 //        this.lastSummary= {info:0, success:0, file:'', pct:0}; // need to implement
 //        this.progressRecord = null; // need to implement
-        if(!this.transferApplet){
-            // fileBrowser.js line 2801
-//            console.log(this.getPrefixUrl());
+        if (!this.transferApplet) {
+
             this.transferApplet = Ext4.create('File.panel.TransferApplet',{
                 id: Ext4.id(),
-//                url: this.getPrefixUrl(),
-                url: 'http://localhost:8080/labkey/_webdav/Imported%20Demo/%40files', // need to get uri from whoever newed up the upload panel.
+                url: this.fileSystem.getAbsoluteBaseURL(),
                 directory: '',
                 text: 'initializing...',
                 width: 90,
@@ -324,6 +322,8 @@ Ext4.define('File.panel.Upload', {
             this.transferApplet.onReady(function(){
                 // Update applet state.
                 this.updateAppletState(this.currentDirectory);
+                this.on('cwd', this.updateAppletState);
+
             }, this);
 
             this.appletPanel.removeAll();
@@ -338,14 +338,15 @@ Ext4.define('File.panel.Upload', {
             return;
         }
 
-//        var canWrite = this.fileSystem.ready && this.fileSystem.canWrite(record);
-//        var canMkdir = this.fileSystem.ready && this.fileSystem.canMkdir(record);
-        var canWrite = true;
-        var canMkdir = true;
+        var canWrite = this.fileSystem.canWrite(record);
+        var canMkdir = this.fileSystem.canMkdir(record);
         // Enable or disable applet buttons depending on permissions (canWrite and canMkDir)
 
         try {
-            this.transferApplet.changeWorkingDirectory(record.data.uri);
+//            console.log('setting to: \'' + record.data.path + '\'')
+            console.log('Changing relative URL to: ');
+            console.log(record.data.id);
+            this.transferApplet.changeWorkingDirectory(record.data.id);
             if(canWrite || canMkdir){
                 this.transferApplet.setEnabled(true);
                 this.transferApplet.setAllowDirectoryUpload(canMkdir);
@@ -415,6 +416,7 @@ Ext4.define('File.panel.Upload', {
 
         var summary = this.transferApplet.getSummary();
 
+        console.log(summary.info);
         if (summary.info != this.lastSummary.info)
         {
             if (summary.info == 0)
@@ -465,7 +467,6 @@ Ext4.define('File.panel.Upload', {
                     method:'POST',
                     form : form,
                     url :overwrite ? this.currentDirectory.data.uri + '?overwrite=t' : this.currentDirectory.data.uri, // TODO: This is not correct
-//                    record:this.currentDirectory,
                     name : name,
                     success : function() {
                         this.getEl().unmask();
@@ -502,6 +503,7 @@ Ext4.define('File.panel.Upload', {
 
     changeWorkingDirectory : function(path, dirModel) {
         this.currentDirectory = dirModel;
+        this.fireEvent('cwd', this.currentDirectory);
     }
 });
 

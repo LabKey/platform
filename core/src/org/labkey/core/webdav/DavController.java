@@ -1365,6 +1365,8 @@ public class DavController extends SpringActionController
                     // Build resource set
                     for (String p : listPaths)
                     {
+                        if (p.startsWith("."))
+                            continue;
                         resource = resolvePath(root.getPath().append(p));
                         if (resource != null)
                             resources.add(resource);
