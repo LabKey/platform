@@ -207,6 +207,10 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         // not currently using helpPopups for the survey question field labels
                         question.helpPopup = [];
 
+                        // we don't want to apply the hidden state until after the config is created
+                        var hidden = question.hidden;
+                        question.hidden = false;
+
                         var config;
                         if (question.extConfig)
                         {
@@ -220,27 +224,38 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         }
 
                         // survey specific question configurations (required field display, etc.)
-                        config = this.customizeQuestionConfig(question, config);
+                        config = this.customizeQuestionConfig(question, config, hidden);
 
                         // add a component id for retrieval
                         if (config.name)
                             config.itemId = 'item-' + config.name;
 
-                        // add a global change listener for all questions so we can map them to any change handlers specified
-                        // in the survey
-                        config.listeners = {
-                            change : {fn : this.questionChangeHandler, scope : this}
-                        };
-
                         // register any configured listeners
+                        // Note: we allow for an array of listeners OR an array of question names to apply a single listener to
                         var listeners = question.listeners || {};
-                        if (listeners.change) {
+                        if (listeners.change)
+                        {
+                            if (!(listeners.change instanceof Array))
+                                listeners.change = [listeners.change];
 
-                            var handlers = this.changeHandlers[listeners.change.question] || [];
-                            var changeFn = new Function('', "return " + listeners.change.fn);
+                            for (var listenerIndex = 0; listenerIndex < listeners.change.length; listenerIndex++)
+                            {
+                                var listenerFn = listeners.change[listenerIndex].fn;
+                                var listenerNames;
+                                if (listeners.change[listenerIndex].question instanceof Array)
+                                    listenerNames = listeners.change[listenerIndex].question;
+                                else
+                                    listenerNames = [listeners.change[listenerIndex].question];
 
-                            handlers.push({name : config.name, fn : changeFn});
-                            this.changeHandlers[listeners.change.question] = handlers;
+                                for (var qnameIndex = 0; qnameIndex < listenerNames.length; qnameIndex++)
+                                {
+                                    var handlers = this.changeHandlers[listenerNames[qnameIndex]] || [];
+                                    var changeFn = new Function('', "return " + listenerFn);
+
+                                    handlers.push({name : config.name, fn : changeFn});
+                                    this.changeHandlers[listenerNames[qnameIndex]] = handlers;
+                                }
+                            }
                         }
 
                         sectionPanel.add(config);
@@ -256,11 +271,16 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.setSurveyLayout(surveyConfig);
 
         this.configureFieldListeners();
+
+        // if we have an existing survey record, initialize the fields based on the surveyResults
+        if (this.initialResponses != null)
+            this.getForm().setValues(this.initialResponses);
     },
 
     configureFieldListeners : function() {
 
         Ext4.each(this.getForm().getFields().items, function(field){
+
             // add a validity listener to each question
             if (field.submitValue)
             {
@@ -268,10 +288,14 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 field.clearInvalid();
                 field.addListener('validitychange', this.fieldValidityChanged, this);
             }
+
+            // add a global change listener for all questions so we can map them to any change handlers specified in the survey
+            field.addListener('change', this.questionChangeHandler, this);
+
         }, this);
     },
 
-    customizeQuestionConfig : function(question, config) {
+    customizeQuestionConfig : function(question, config, hidden) {
         // make the field label for required questions bold and end with an *
         if (question.required != undefined && question.required)
         {
@@ -290,6 +314,10 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         // if the question has a description, append it to the field label
         if (question.description)
             config.fieldLabel += "<br/>" + question.description;
+
+        // if hidden, apply that to the config
+        if (hidden != undefined && hidden)
+            config.hidden = true;
 
         return config;
     },
@@ -479,13 +507,6 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.add(this.centerPanel);
 
         this.updateSubmitInfo();
-
-        // if we have an existing survey record, initialize the fields based on the surveyResults
-        if (this.initialResponses != null)
-        {
-            this.getForm().setValues(this.initialResponses);
-
-        }
     },
 
     getStepsDataArr : function() {
