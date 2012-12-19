@@ -16,6 +16,8 @@
 
 package org.labkey.query;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -39,8 +41,10 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.query.controllers.QueryController;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,9 +70,38 @@ public class TableWriter
         return write(c, user, dir, null);
     }
 
-    public boolean write(Container c, User user, VirtualFile dir, ImportContext ctx) throws Exception
+    public boolean write(Container c, User user, VirtualFile dir, QueryController.ExportTablesForm form) throws Exception
     {
-        List<QueryDefinition> queries = QueryService.get().getQueryDefs(user, c);
+        QueryService queryService = QueryService.get();
+        List<QueryDefinition> queries = null;
+        if (null == form || null == form.getSchemas() || form.getSchemas().length() == 0)
+        {
+            // If no form, get all user queries in container
+            queries = queryService.getQueryDefs(user, c);
+        }
+        else
+        {
+            queries = new ArrayList<QueryDefinition>();
+            JSONArray schemaArray = form.getSchemas();
+            for (int i = 0; i < schemaArray.length(); i += 1)
+            {
+                JSONObject jsonObject = schemaArray.getJSONObject(i);
+                String schemaName = form.getSchemaName(jsonObject);
+                UserSchema schema = queryService.getUserSchema(user, c, schemaName);
+                Map<String, QueryDefinition> schemaQueries = schema.getQueryDefs();
+                JSONArray queryArray = form.getQueryNames(jsonObject);
+                for (int k = 0; k < queryArray.length(); k += 1)
+                {
+                    String queryName = queryArray.getString(k);
+                    QueryDefinition queryDef = schemaQueries.get(queryName);    // user defined queries
+                    if (null == queryDef)
+                        queryDef = schema.getQueryDefForTable(queryName);       // builtins
+
+                    if (null != queryDef)
+                        queries.add(queryDef);
+                }
+            }
+        }
 
         if (!queries.isEmpty())
         {

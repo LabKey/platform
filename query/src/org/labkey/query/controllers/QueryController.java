@@ -4899,12 +4899,13 @@ public class QueryController extends SpringActionController
             HttpServletResponse httpResponse = getViewContext().getResponse();
             Container container = getContainer();
             TableWriter writer = new TableWriter();
-//            ZipFile zip = new ZipFile(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"));
-//            writer.write(container, getUser(), zip);
-//            zip.close();
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("success", false);
-            return response;
+            ZipFile zip = new ZipFile(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"));
+            writer.write(container, getUser(), zip, form);
+            zip.close();
+//            ApiSimpleResponse response = new ApiSimpleResponse();
+//            response.put("success", false);
+//            return response;
+            return null;
         }
     }
 
