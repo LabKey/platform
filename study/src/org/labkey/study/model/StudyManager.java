@@ -851,6 +851,17 @@ public class StudyManager
 
         Map<String, Double> map = new CaseInsensitiveHashMap<Double>((customMapping.size() + visits.length) * 3 / 4);
 
+//        // allow prepended "visit"
+//        for (Visit visit : visits)
+//        {
+//            if (null == visit.getLabel())
+//                continue;
+//            String label = "visit " + visit.getLabel();
+//            // Use the **first** instance of each label
+//            if (!map.containsKey(label))
+//                map.put(label, visit.getSequenceNumMin());
+//        }
+
         // Load up standard label -> min sequence number mapping first
         for (Visit visit : visits)
         {

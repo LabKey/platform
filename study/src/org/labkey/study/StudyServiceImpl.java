@@ -27,6 +27,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.*;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
@@ -48,11 +50,11 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.*;
+import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
@@ -792,5 +794,11 @@ public class StudyServiceImpl implements StudyService.Service
         catch (PipelineValidationException e){
             return false;
         }
+    }
+
+
+    public DataIteratorBuilder wrapSampleMindedTransform(DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
+    {
+        return SampleMindedTransformTask.wrapSampleMindedTransform(in,context,study,target);
     }
 }

@@ -17,6 +17,8 @@
 package org.labkey.study.pipeline;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
@@ -24,16 +26,30 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TSVMapWriter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.etl.DataIteratorUtil;
+import org.labkey.api.etl.ListofMapsDataIterator;
+import org.labkey.api.etl.LoggingDataIterator;
+import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.model.SequenceNumImportHelper;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -65,15 +81,7 @@ import java.util.zip.ZipOutputStream;
 public class SampleMindedTransformTask
 {
     public static final FileType SAMPLE_MINDED_FILE_TYPE = new FileType(".xlsx");
-
-    private final PipelineJob _job;
     private static final String INVALID_SUFFIX = "-invalid";
-
-    public SampleMindedTransformTask(PipelineJob job)
-    {
-        _job = job;
-    }
-
     private static final Map<String, Integer> STANDARD_PRIMARY_TYPE_IDS;
     private static final Map<String, Integer> STANDARD_DERIVATIVE_TYPE_IDS;
     private static final Map<String, String> DERIVATIVE_PRIMARY_MAPPINGS;
@@ -124,19 +132,69 @@ public class SampleMindedTransformTask
         STANDARD_DERIVATIVE_TYPE_IDS = Collections.unmodifiableMap(derivativeTypes);
     }
 
-    private PipelineJob getJob()
+
+    private final PipelineJob _job;
+    private final Map<String, Integer> _labIds = new LinkedHashMap<String, Integer>();
+    private final Map<String, Integer> _primaryIds = new LinkedHashMap<String, Integer>(STANDARD_PRIMARY_TYPE_IDS);
+    private final Map<String, Integer> _derivativeIds = new LinkedHashMap<String, Integer>(STANDARD_DERIVATIVE_TYPE_IDS);
+    boolean _validate = true;
+
+
+    public SampleMindedTransformTask(@Nullable PipelineJob job)
     {
-        return _job;
+        _job = job;
     }
+
+
+    public void setValidate(boolean b)
+    {
+        _validate = b;
+    }
+
+    public Map<String,Integer> getLabIds()
+    {
+        return _labIds;
+    }
+
+
+    public Map<String,Integer> getPrimaryIds()
+    {
+        return _primaryIds;
+    }
+
+
+    public Map<String,Integer> getDerivativeIds()
+    {
+        return _derivativeIds;
+    }
+
+
+    private void debug(String msg)
+    {
+        if (null != _job)
+            _job.debug(msg);
+    }
+
+
+    private void info(String msg)
+    {
+        if (null != _job)
+            _job.info(msg);
+    }
+
+
+    private void warn(String msg)
+    {
+        if (null != _job)
+            _job.warn(msg);
+    }
+
+
+
 
     public void transform(File input, File output) throws PipelineJobException
     {
-        Map<String, Integer> labIds = new LinkedHashMap<String, Integer>();
-
-        Map<String, Integer> primaryIds = new LinkedHashMap<String, Integer>(STANDARD_PRIMARY_TYPE_IDS);
-        Map<String, Integer> derivativeIds = new LinkedHashMap<String, Integer>(STANDARD_DERIVATIVE_TYPE_IDS);
-
-        getJob().info("Starting to transform input file " + input + " to output file " + output);
+        info("Starting to transform input file " + input + " to output file " + output);
 
         try
         {
@@ -146,24 +204,24 @@ public class SampleMindedTransformTask
                 FileInputStream fIn = new FileInputStream(labsFile);
                 try
                 {
-                    parseLabs(labIds, new BufferedReader(new InputStreamReader(fIn)));
+                    parseLabs(_labIds, new BufferedReader(new InputStreamReader(fIn)));
                 }
                 finally
                 {
                     try { fIn.close(); } catch (IOException ignored) {}
                 }
-                getJob().info("Parsed " + labIds.size() + " labs from " + labsFile);
+                info("Parsed " + _labIds.size() + " labs from " + labsFile);
             }
             else
             {
-                getJob().debug("No such file " + labsFile + " so not parsing supplemental lab information");
+                debug("No such file " + labsFile + " so not parsing supplemental lab information");
             }
 
             ExcelLoader loader = new ExcelLoader(input, true);
             List<Map<String, Object>> inputRows = loader.load();
-            List<Map<String, Object>> outputRows = transformRows(labIds, primaryIds, derivativeIds, inputRows);
+            List<Map<String, Object>> outputRows = transformRows(inputRows);
 
-            getJob().info("After removing duplicates, there are " + outputRows.size() + " rows of data");
+            info("After removing duplicates, there are " + outputRows.size() + " rows of data");
 
             // Create a ZIP archive with the appropriate TSVs
             ZipOutputStream zOut = null;
@@ -172,9 +230,9 @@ public class SampleMindedTransformTask
                 zOut = new ZipOutputStream(new FileOutputStream(output));
                 writeTSV(zOut, outputRows, "specimens");
 
-                writeLabs(labIds, zOut);
-                writePrimaries(primaryIds, zOut);
-                writeDerivatives(derivativeIds, zOut);
+                writeLabs(_labIds, zOut);
+                writePrimaries(_primaryIds, zOut);
+                writeDerivatives(_derivativeIds, zOut);
                 writeAdditives(zOut);
             }
             finally
@@ -188,7 +246,11 @@ public class SampleMindedTransformTask
         }
     }
 
-    private List<Map<String, Object>> transformRows(Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds, List<Map<String, Object>> inputRows)
+
+    private List<Map<String, Object>> transformRows
+    (
+            List<Map<String, Object>> inputRows
+    )
             throws IOException
     {
         List<Map<String, Object>> outputRows = new ArrayList<Map<String, Object>>(inputRows.size());
@@ -207,7 +269,7 @@ public class SampleMindedTransformTask
             // Check if it's a duplicate row
             if (hashes.add(hashRow(inputRow)))
             {
-                Map<String, Object> outputRow = transformRow(inputRow, rowIndex, labIds, primaryIds, derivativeIds);
+                Map<String, Object> outputRow = transformRow(inputRow, rowIndex, _labIds, _primaryIds, _derivativeIds);
                 if (outputRow != null)
                 {
                     outputRows.add(outputRow);
@@ -258,38 +320,39 @@ public class SampleMindedTransformTask
 
     private Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
     {
-        toDate("CollectionDate", inputRow);
-        toDate("ActivitySaveDateTime", inputRow);
-        toDate("LabRecievedTime", inputRow);
-        toInt("sitecode", inputRow);
+        Map<String, Object> outputRow = new CaseInsensitiveHashMap<Object>(inputRow);
+        inputRow = null;
 
-        String vesselDomainType = (String)inputRow.get("VesselDomainType");
+        toDate("CollectionDate", outputRow);
+        toDate("ActivitySaveDateTime", outputRow);
+        toDate("LabRecievedTime", outputRow);
+        toInt("sitecode", outputRow);
+
+        String vesselDomainType = (String)outputRow.get("VesselDomainType");
         if (null != vesselDomainType && vesselDomainType.length() > 64)
-            inputRow.put("VesselDomainType", vesselDomainType.substring(0,64));
+            outputRow.put("VesselDomainType", vesselDomainType.substring(0,64));
 
         // Get the barcode and strip off the "-INVALID" suffix, if present
-        String barcode = inputRow.get("barcode") == null ? null : inputRow.get("barcode").toString();
-        if (barcode != null && barcode.toLowerCase().endsWith(INVALID_SUFFIX))
+        String barcode = removeNonNullValue(outputRow, "barcode");
+        if (barcode.toLowerCase().endsWith(INVALID_SUFFIX))
         {
             barcode = barcode.substring(0, barcode.length() - INVALID_SUFFIX.length());
         }
-        barcode = barcode == null ? null : barcode.trim();
-        if (barcode == null || barcode.length() == 0)
+        barcode = barcode.trim();
+        if (_validate && StringUtils.isEmpty(barcode))
         {
-            getJob().warn("Skipping data row missing 'barcode' value, row number " + rowIndex);
+            warn("Skipping data row missing 'barcode' value, row number " + rowIndex);
             return null;
         }
 
-        Object collectionDate = getNonNullValue(inputRow, "collectiondate");
-        if (collectionDate == null || "".equals(collectionDate))
+        String collectionDate = removeNonNullValue(outputRow, "collectiondate");
+        if (_validate && StringUtils.isEmpty(collectionDate))
         {
-            getJob().warn("Skipping data row missing 'collectiondate' value, row number " + rowIndex);
+            warn("Skipping data row missing 'collectiondate' value, row number " + rowIndex);
             return null;
         }
 
-        Map<String, Object> outputRow = new HashMap<String, Object>();
-
-        String shortName = inputRow.get("siteshortname") == null ? null : inputRow.get("siteshortname").toString();
+        String shortName = outputRow.get("siteshortname") == null ? null : outputRow.get("siteshortname").toString();
         Integer siteId = labIds.get(shortName);
         if (siteId == null)
         {
@@ -302,7 +365,7 @@ public class SampleMindedTransformTask
             labIds.put(shortName, siteId);
         }
 
-        String derivative = getNonNullValue(inputRow, "specimentype");
+        String derivative = getNonNullValue(outputRow, "specimentype");
         // Check if it has a known primary type
         String primary = DERIVATIVE_PRIMARY_MAPPINGS.get(derivative);
         if (primary == null)
@@ -328,28 +391,25 @@ public class SampleMindedTransformTask
         outputRow.put("record_id", rowIndex);
         outputRow.put("originating_location", siteId);
         outputRow.put("global_unique_specimen_id", barcode);
-        String ptid = getNonNullValue(inputRow, "participantid");
-        String studyNum = getNonNullValue(inputRow, "studynum");
-        outputRow.put("ptid", ptid);
-        outputRow.put("tube_type", inputRow.get("vesseldomaintype"));
+        outputRow.put("tube_type", outputRow.get("vesseldomaintype"));
         // Fix up the visit number
-        String visit = getNonNullValue(inputRow, "visitname");
+        String visit = removeNonNullValue(outputRow, "visitname");
         if (visit.toLowerCase().startsWith("visit"))
         {
             visit = visit.substring("visit".length()).trim();
         }
-        if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit) || "CIB".equalsIgnoreCase(visit) || "PT1".equalsIgnoreCase(visit))
-        {
-            visit = "999";
-        }
+//        if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit) || "CIB".equalsIgnoreCase(visit) || "PT1".equalsIgnoreCase(visit))
+//        {
+//            visit = "999";
+//        }
         outputRow.put("visit_value", visit);
 
         outputRow.put("primary_specimen_type_id", primaryId);
         outputRow.put("derivative_type_id", derivativeId);
         outputRow.put("draw_timestamp", collectionDate);
         // Sort the date into the appropriate column based on the activity description
-        String activity = getNonNullValue(inputRow, "activity");
-        Object activitySaveDateTime = inputRow.get("activitysavedatetime");
+        String activity = getNonNullValue(outputRow, "activity");
+        Object activitySaveDateTime = outputRow.get("activitysavedatetime");
         if (activity.contains("Ship"))
         {
             outputRow.put("ship_date", activitySaveDateTime);
@@ -368,14 +428,13 @@ public class SampleMindedTransformTask
             outputRow.put("lab_receipt_date", null);
             outputRow.put("processing_date", activitySaveDateTime);
         }
-        outputRow.put("processed_by_initials", inputRow.get("activityuser"));
-        outputRow.put("processed_by_initials", inputRow.get("activityuser"));
+        outputRow.put("processed_by_initials", outputRow.get("activityuser"));
         outputRow.put("comments", activity);
 
-        String destinationSite = getNonNullValue(inputRow, "destination_site");
+        String destinationSite = getNonNullValue(outputRow, "destination_site");
         if ("".equals(destinationSite))
         {
-            destinationSite = getNonNullValue(inputRow, "destinationsite");
+            destinationSite = getNonNullValue(outputRow, "destinationsite");
         }
         if (destinationSite.trim().length() == 0 || "N/A".equalsIgnoreCase(destinationSite))
         {
@@ -408,15 +467,139 @@ public class SampleMindedTransformTask
         }
 
         outputRow.put("lab_id", labId);
-        outputRow.put("ship_batch_number", inputRow.get("airbillnumber"));
+        outputRow.put("ship_batch_number", outputRow.get("airbillnumber"));
 
         return outputRow;
     }
 
 
+    /**
+     * This lets us re-use a lot of the column mapping stuff we do for sample minded specimen import.  In particular
+     * the missing visit/specimen has similar column mappings.
+     *
+     * TODO this should probably be turned inside out so that transform() uses the DataIterator.
+     */
+    public static DataIteratorBuilder wrapSampleMindedTransform(DataIteratorBuilder in, DataIteratorContext context,
+            Study study, TableInfo target)
+    {
+        return new _DataIteratorBuilder(in, context, study, target);
+    }
+
+
+    static class _DataIteratorBuilder implements DataIteratorBuilder
+    {
+        DataIteratorBuilder _input;
+        Study _study;
+        TableInfo _target;
+
+        private _DataIteratorBuilder(DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
+        {
+            _input = in;
+            _study = study;
+            _target = target;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            try
+            {
+                DataIterator iterator = _input.getDataIterator(context);
+                iterator = LoggingDataIterator.wrap(iterator);
+
+                boolean barcode=false, siteshortname=false;
+                boolean global_unique_specimen_id=false, lab_id=false;
+                int colCount = iterator.getColumnCount();
+                for (int icol=0 ; icol<colCount ; icol++)
+                {
+                    String name = iterator.getColumnInfo(icol).getName();
+                    barcode |= StringUtils.equalsIgnoreCase("barcode", name);
+                    siteshortname |= StringUtils.equalsIgnoreCase("siteshortname", name);
+                    global_unique_specimen_id |= StringUtils.equalsIgnoreCase("global_unique_specimen_id", name);
+                    lab_id |= StringUtils.equalsIgnoreCase("lab_id", name);
+                }
+                boolean lookslikeSampleMinded = barcode && siteshortname && !global_unique_specimen_id && !lab_id;
+
+                if (lookslikeSampleMinded)
+                    return LoggingDataIterator.wrap(_DataIterator.create(iterator, context, _study, _target));
+                else
+                    return iterator;
+            }
+            catch (BatchValidationException ex)
+            {
+                return null;
+            }
+        }
+    }
+
+
+    static class _DataIterator extends ListofMapsDataIterator
+    {
+        static DataIterator create(DataIterator source, DataIteratorContext context, Study study, TableInfo target) throws BatchValidationException
+        {
+            List<ColumnInfo> cols = target.getColumns();
+            return new _DataIterator(cols, source, context, study);
+        }
+
+        _DataIterator(List<ColumnInfo> cols, DataIterator source, DataIteratorContext context, Study study)
+                throws BatchValidationException
+        {
+            super(cols);
+
+            try
+            {
+                SequenceNumImportHelper snih = new SequenceNumImportHelper(study, null);
+
+                List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
+                MapDataIterator di = DataIteratorUtil.wrapMap(source, false);
+                while (di.next())
+                    inputRows.add(di.getMap());
+
+                SampleMindedTransformTask task = new SampleMindedTransformTask(null);
+                task.setValidate(false);
+                List<Map<String, Object>> outputRows = task.transformRows(inputRows);
+
+                int rownumber = 0;
+                for (Map<String,Object> row : outputRows)
+                {
+                    rownumber++;
+                    Object visit = row.get("visit_value");
+                    Object collection = row.get("draw_timestamp");
+                    Object ptid = StringUtils.defaultString((String)row.get("participantid"),(String)row.remove("ptid"));
+                    Double sn = snih.translateSequenceNum(visit,collection);
+                    row.put("sequencenum", sn);
+                    row.put("participantid", ptid);
+                    if (null == sn)
+                    {
+                        String msg = null == visit ? "visit not specified" : "visit not recognized: " + visit;
+                        ValidationException vex = new ValidationException(msg);
+                        vex.setRowNumber(rownumber);
+                        context.getErrors().addRowError(vex);
+                        context.checkShouldCancel();
+                    }
+                }
+
+                _rows = initRows(outputRows);
+            }
+            catch (IOException x)
+            {
+                context.getErrors().addRowError(new ValidationException(x.getMessage()));
+            }
+        }
+    }
+
+
+
+
     private String getNonNullValue(Map<String, Object> inputRow, String name)
     {
         return inputRow.get(name) == null ? "" : inputRow.get(name).toString();
+    }
+
+    private String removeNonNullValue(Map<String, Object> inputRow, String name)
+    {
+        Object o = inputRow.remove(name);
+        return o == null ? "" : o.toString();
     }
 
 
@@ -447,6 +630,7 @@ public class SampleMindedTransformTask
             }
         }
     }
+
 
     private void writeTSV(ZipOutputStream zOut, List<Map<String, Object>> outputRows, String baseName) throws IOException
     {
@@ -667,7 +851,7 @@ public class SampleMindedTransformTask
             row3.put("participant", "ptid2");
             inputRows.add(row3);
 
-            List<Map<String, Object>> outputRows = _task.transformRows(new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>(), inputRows);
+            List<Map<String, Object>> outputRows = _task.transformRows(inputRows);
             assertEquals(2, outputRows.size());
         }
 
@@ -728,21 +912,21 @@ public class SampleMindedTransformTask
             row.put("activitysavedatetime", date);
             row.put("activity", "Some Lab Receiving");
             Map<String, Object> outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
-            assertEquals("Bad receiving handling", date, outputRow.get("lab_receipt_date"));
+            assertEquals("Bad receiving handling", new Date(date), outputRow.get("lab_receipt_date"));
             assertEquals("Bad receiving handling", null, outputRow.get("ship_date"));
             assertEquals("Bad receiving handling", null, outputRow.get("processing_date"));
 
             row.put("activity", "Ship Specimens from Clinical Site");
             outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
             assertEquals("Bad receiving handling", null, outputRow.get("lab_receipt_date"));
-            assertEquals("Bad receiving handling", date, outputRow.get("ship_date"));
+            assertEquals("Bad receiving handling", new Date(date), outputRow.get("ship_date"));
             assertEquals("Bad receiving handling", null, outputRow.get("processing_date"));
 
             row.put("activity", "Aliquoting");
             outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
             assertEquals("Bad receiving handling", null, outputRow.get("lab_receipt_date"));
             assertEquals("Bad receiving handling", null, outputRow.get("ship_date"));
-            assertEquals("Bad receiving handling", date, outputRow.get("processing_date"));
+            assertEquals("Bad receiving handling", new Date(date), outputRow.get("processing_date"));
         }
 
         @Test
@@ -806,10 +990,12 @@ public class SampleMindedTransformTask
             row7.put("specimentype", "Urine Pellet");
             inputRows.add(row7);
 
-            Map<String, Integer> primaryIds = new LinkedHashMap<String, Integer>(STANDARD_PRIMARY_TYPE_IDS);
-            Map<String, Integer> derivativeIds = new LinkedHashMap<String, Integer>(STANDARD_DERIVATIVE_TYPE_IDS);
+            List<Map<String, Object>> outputRows = _task.transformRows(inputRows);
 
-            List<Map<String, Object>> outputRows = _task.transformRows(new HashMap<String, Integer>(), primaryIds, derivativeIds, inputRows);
+            Map<String, Integer> labIds = _task.getLabIds();
+            Map<String, Integer> primaryIds = _task.getPrimaryIds();
+            Map<String, Integer> derivativeIds = _task.getDerivativeIds();
+
             assertEquals(7, outputRows.size());
             assertEquals(primaryIds.get("Blood"), outputRows.get(0).get("primary_specimen_type_id"));
             assertEquals(derivativeIds.get("PBMC"), outputRows.get(0).get("derivative_type_id"));
