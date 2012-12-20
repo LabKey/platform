@@ -6,6 +6,7 @@
 
 LABKEY.requiresExt4ClientAPI();
 LABKEY.requiresScript("/extWidgets/Ext4Helper.js");
+LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
 
 Ext4.define('LABKEY.ext4.SurveyPanel', {
 
@@ -406,7 +407,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 + " beginning of the form must be filled in before you can save the form*.</span>"
         });
 
-        this.autosaveInfo = Ext4.create('Ext.form.DisplayField', {
+        this.autosaveInfo = Ext4.create('Ext.container.Container', {
             hideLabel: true,
             width: 150,
             style: "text-align: center;"
@@ -421,7 +422,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             handler: this.submitSurvey
         });
 
-        this.submitInfo = Ext4.create('Ext.form.DisplayField', {
+        this.submitInfo = Ext4.create('Ext.container.Container', {
             hideLabel: true,
             width: 250,
             style: "text-align: center;"
