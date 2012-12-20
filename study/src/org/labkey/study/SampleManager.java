@@ -428,7 +428,7 @@ public class SampleManager
         return _requestHelper.get(c, rowId);
     }
 
-    public SampleRequest createRequest(User user, SampleRequest request, boolean createEvent) throws SQLException
+    public SampleRequest createRequest(User user, SampleRequest request, boolean createEvent) throws SQLException, AttachmentService.DuplicateFilenameException
     {
         request = _requestHelper.create(user, request);
         if (createEvent)
@@ -586,24 +586,24 @@ public class SampleManager
         return request.getRequirements();
     }
 
-    public void deleteRequestRequirement(User user, SampleRequestRequirement requirement) throws SQLException
+    public void deleteRequestRequirement(User user, SampleRequestRequirement requirement) throws SQLException, AttachmentService.DuplicateFilenameException
     {
         deleteRequestRequirement(user, requirement, true);
     }
 
-    public void deleteRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent) throws SQLException
+    public void deleteRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent) throws SQLException, AttachmentService.DuplicateFilenameException
     {
         if (createEvent)
             createRequestEvent(user, requirement, RequestEventType.REQUIREMENT_REMOVED, requirement.getRequirementSummary(), null);
         requirement.delete();
     }
 
-    public void createRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent) throws SQLException
+    public void createRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent) throws SQLException, AttachmentService.DuplicateFilenameException
     {
         createRequestRequirement(user, requirement, createEvent, false);
     }
 
-    public void createRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent, boolean force) throws SQLException
+    public void createRequestRequirement(User user, SampleRequestRequirement requirement, boolean createEvent, boolean force) throws SQLException, AttachmentService.DuplicateFilenameException
     {
         SampleRequest request = getRequest(requirement.getContainer(), requirement.getRequestId());
         SampleRequestRequirement newRequirement = _requirementProvider.createRequirement(user, request, requirement, force);
@@ -779,17 +779,17 @@ public class SampleManager
         }
     }
 
-    public SampleRequestEvent createRequestEvent(User user, SampleRequestRequirement requirement, RequestEventType type, String comments, List<AttachmentFile> attachments) throws SQLException
+    public SampleRequestEvent createRequestEvent(User user, SampleRequestRequirement requirement, RequestEventType type, String comments, List<AttachmentFile> attachments) throws SQLException, AttachmentService.DuplicateFilenameException
     {
         return createRequestEvent(user, requirement.getContainer(), requirement.getRequestId(), requirement.getRowId(), type, comments, attachments);
     }
 
-    public SampleRequestEvent createRequestEvent(User user, SampleRequest request, RequestEventType type, String comments, List<AttachmentFile> attachments) throws SQLException
+    public SampleRequestEvent createRequestEvent(User user, SampleRequest request, RequestEventType type, String comments, List<AttachmentFile> attachments) throws SQLException, AttachmentService.DuplicateFilenameException
     {
         return createRequestEvent(user, request.getContainer(), request.getRowId(), -1, type, comments, attachments);
     }
 
-    private SampleRequestEvent createRequestEvent(User user, Container container, int requestId, int requirementId, RequestEventType type, String comments, List<AttachmentFile> attachments) throws SQLException
+    private SampleRequestEvent createRequestEvent(User user, Container container, int requestId, int requirementId, RequestEventType type, String comments, List<AttachmentFile> attachments) throws SQLException, AttachmentService.DuplicateFilenameException
     {
         SampleRequestEvent event = new SampleRequestEvent();
         event.setEntryType(type.getDisplayText());
@@ -807,9 +807,8 @@ public class SampleManager
         }
         catch (AttachmentService.DuplicateFilenameException e)
         {
-            // UI should (minimally) catch and display these errors nicely or (better) validate to prevent them in the first place
-            // But for now, just display the exception
-            throw new RuntimeException(e);
+            // UI should (minimally) catch and display these errors nicely
+            throw e;
         }
         catch (IOException e)
         {
@@ -1203,7 +1202,8 @@ public class SampleManager
     }
 
     private static final Object REQUEST_ADDITION_LOCK = new Object();
-    public void createRequestSampleMapping(User user, SampleRequest request, List<Specimen> specimens, boolean createEvents, boolean createRequirements) throws SQLException, RequestabilityManager.InvalidRuleException
+    public void createRequestSampleMapping(User user, SampleRequest request, List<Specimen> specimens, boolean createEvents, boolean createRequirements)
+            throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
     {
         if (specimens == null || specimens.size() == 0)
             return;
@@ -1283,7 +1283,7 @@ public class SampleManager
         return specimens;
     }
 
-    public void deleteRequest(User user, SampleRequest request) throws SQLException, RequestabilityManager.InvalidRuleException
+    public void deleteRequest(User user, SampleRequest request) throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
     {
         DbScope scope = _requestHelper.getTableInfo().getSchema().getScope();
         try
@@ -1312,7 +1312,8 @@ public class SampleManager
         }
     }
 
-    public void deleteRequestSampleMappings(User user, SampleRequest request, int[] sampleIds, boolean createEvents) throws SQLException, RequestabilityManager.InvalidRuleException
+    public void deleteRequestSampleMappings(User user, SampleRequest request, int[] sampleIds, boolean createEvents)
+            throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
     {
         if (sampleIds == null || sampleIds.length == 0)
             return;

@@ -934,6 +934,11 @@ public class ListDefinitionImpl implements ListDefinition
                 }
                 return ret;
             }
+            catch (AttachmentService.DuplicateFilenameException e)
+            {
+                errors.addRowError(new ValidationException(e.getMessage()));
+                return false;
+            }
             catch (Exception x)
             {
                 throw UnexpectedException.wrap(x);

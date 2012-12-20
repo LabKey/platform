@@ -343,6 +343,14 @@ public class ListItemImpl implements ListItem
 
             ExperimentService.get().commitTransaction();
         }
+        catch (AttachmentService.DuplicateFilenameException e)
+        {
+            throw e;    // rethrow (don't turn into ValidationException)
+        }
+        catch (AttachmentService.FileTooLargeException e)
+        {
+            throw e;    // rethrow (don't turn into ValidationException)
+        }
         catch (IOException e)
         {
             throw new ValidationException(e.getMessage());

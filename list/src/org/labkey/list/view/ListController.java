@@ -516,7 +516,7 @@ public class ListController extends SpringActionController
             }
             catch (IOException e)
             {
-                if (e instanceof AttachmentService.FileTooLargeException)
+                if (e instanceof AttachmentService.FileTooLargeException || e instanceof AttachmentService.DuplicateFilenameException)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
                 }

@@ -1383,16 +1383,21 @@ public class SpecimenController extends BaseStudyController
                     eventSummary = "Comments added.";
                 }
 
-                SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), _sampleRequest, changeType,
-                        comment, files);
-                List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                 try
                 {
+                    SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), _sampleRequest, changeType,
+                            comment, files);
+                    List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                     DefaultRequestNotification notification = new DefaultRequestNotification(_sampleRequest, recipients,
                             eventSummary, event, form.getComments(), null, getViewContext());
                     getUtils().sendNotification(notification);
                 }
                 catch (ConfigurationException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+                catch (IOException e)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
                     return false;
@@ -1688,8 +1693,8 @@ public class SpecimenController extends BaseStudyController
         {
             getUtils().ensureSpecimenRequestsConfigured();
 
-            int[] sampleIds = form.getSampleRowIds();
             String[] inputs = form.getInputs();
+            int[] sampleIds = form.getSampleRowIds();
             StringBuilder comments = new StringBuilder();
             SampleManager.SpecimenRequestInput[] expectedInputs =
                     SampleManager.getInstance().getNewSpecimenRequestInputs(getContainer());
@@ -1725,6 +1730,12 @@ public class SpecimenController extends BaseStudyController
             try
             {
                 scope.ensureTransaction();
+
+                if (!StudyManager.getInstance().isSiteValidRequestingLocation(getContainer(), _sampleRequest.getDestinationSiteId()))
+                {
+                    errors.reject(ERROR_MSG, "The requesting location is not valid.");
+                    return false;
+                }
 
                 _sampleRequest = SampleManager.getInstance().createRequest(getUser(), _sampleRequest, true);
                 List<Specimen> samples;
@@ -1789,6 +1800,11 @@ public class SpecimenController extends BaseStudyController
                     getUtils().sendNewRequestNotifications(_sampleRequest);
                 }
                 catch (ConfigurationException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+                catch (IOException e)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
                     return false;
@@ -2232,18 +2248,23 @@ public class SpecimenController extends BaseStudyController
 
             if (form.getComment() != null && form.getComment().length() > 0)
                 comment.append("\n").append(form.getComment());
-            SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), requirement,
-                    eventType, comment.toString(), files);
-
-            List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
 
             try
             {
+                SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), requirement,
+                        eventType, comment.toString(), files);
+
+                List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                 DefaultRequestNotification notification = new DefaultRequestNotification(_sampleRequest, recipients,
                         eventSummary, event, form.getComment(), requirement, getViewContext());
                 getUtils().sendNotification(notification);
             }
             catch (ConfigurationException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                return false;
+            }
+            catch (IOException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
                 return false;
@@ -2603,6 +2624,11 @@ public class SpecimenController extends BaseStudyController
                                 "Please report this problem to an administrator.  Error details: "  + e.getMessage());
                     return false;
                 }
+                catch (IOException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
                 return true;
             }
             else
@@ -2741,13 +2767,13 @@ public class SpecimenController extends BaseStudyController
                         content.append(form.getComments());
 
                     String header = type.getDisplay() + " location notification of specimen shipment to " + receivingSite.getDisplayName();
-                    SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), request,
-                            SampleManager.RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
-
-                    List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingSite);
                     try
                     {
-                        DefaultRequestNotification notification = new DefaultRequestNotification(request, emailRecipients,
+                        SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), request,
+                            SampleManager.RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
+
+                        List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingSite);
+                            DefaultRequestNotification notification = new DefaultRequestNotification(request, emailRecipients,
                                 header, event, content.toString(), null, getViewContext())
                         {
                             @Override
@@ -2761,6 +2787,11 @@ public class SpecimenController extends BaseStudyController
                         getUtils().sendNotification(notification);
                     }
                     catch (ConfigurationException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                        return false;
+                    }
+                    catch (IOException e)
                     {
                         errors.reject(ERROR_MSG, e.getMessage());
                         return false;

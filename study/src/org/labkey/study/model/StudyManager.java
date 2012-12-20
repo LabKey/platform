@@ -1085,33 +1085,47 @@ public class StudyManager
         for (int i = 0; i < sites.length; i += 1)
         {
             SiteImpl site = sites[i];
-            if (site.isRepository() && study.isAllowReqLocRepository())
+            if (isSiteValidRequestingLocation(study, site))
             {
                 validSites.add(site);
-                continue;
-            }
-            if (site.isClinic() && study.isAllowReqLocClinic())
-            {
-                validSites.add(site);
-                continue;
-            }
-            if (site.isSal() && study.isAllowReqLocSal())
-            {
-                validSites.add(site);
-                continue;
-            }
-            if (site.isEndpoint() && study.isAllowReqLocEndpoint())
-            {
-                validSites.add(site);
-                continue;
-            }
-            if (!site.isRepository() && !site.isClinic() && !site.isSal() && !site.isEndpoint())
-            {   // It has no location type, so allow it
-                validSites.add(site);
-                continue;
             }
         }
         return validSites;
+    }
+
+    public boolean isSiteValidRequestingLocation(Container container, int id)
+    {
+        Study study = getStudy(container);
+        SiteImpl site = getSite(container, id);
+        return isSiteValidRequestingLocation(study, site);
+    }
+
+    private boolean isSiteValidRequestingLocation(Study study, SiteImpl site)
+    {
+        if (null == site)
+            return false;
+
+        if (site.isRepository() && study.isAllowReqLocRepository())
+        {
+            return true;
+        }
+        if (site.isClinic() && study.isAllowReqLocClinic())
+        {
+            return true;
+        }
+        if (site.isSal() && study.isAllowReqLocSal())
+        {
+            return true;
+        }
+        if (site.isEndpoint() && study.isAllowReqLocEndpoint())
+        {
+            return true;
+        }
+        if (!site.isRepository() && !site.isClinic() && !site.isSal() && !site.isEndpoint())
+        {   // It has no location type, so allow it
+            return true;
+        }
+        return false;
     }
 
     public SiteImpl getSite(Container container, int id)
