@@ -50,6 +50,9 @@
     div.labkey-filter-dialog {
         z-index: 20000 !important;
     }
+    div.x-combo-list{
+        z-index: 20020 !important;
+    }
 </style>
 
 <p><%= PageFlowUtil.filter(subjectNounSingular) %> groups allow you to quickly filter data in a study to groups of <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> you define.
