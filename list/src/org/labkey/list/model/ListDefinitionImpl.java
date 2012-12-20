@@ -39,6 +39,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.WrapperDataIterator;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -809,13 +810,15 @@ public class ListDefinitionImpl implements ListDefinition
         context.setFailFast(false);
         context.setForImport(true);
         DataIteratorBuilder dib = lqus.createImportETL(user, getContainer(), loader, context);
+        DataIterator insertIt = null;
+        DataIterator attach = null;
 
         try
         {
             ExperimentService.get().ensureTransaction();
 
-            DataIterator insertIt = dib.getDataIterator(context);
-            DataIterator attach = _AttachmentImportDataIterator_wrap(insertIt, errors, user, attachmentDir);
+            insertIt = dib.getDataIterator(context);
+            attach = _AttachmentImportDataIterator_wrap(insertIt, errors, user, attachmentDir);
             Pump p = new Pump(attach, context);
             p.run();
             int inserted = p.getRowCount();
@@ -832,6 +835,8 @@ public class ListDefinitionImpl implements ListDefinition
         }
         finally
         {
+            DataIteratorUtil.closeQuietly(attach);
+            DataIteratorUtil.closeQuietly(insertIt);
             ExperimentService.get().closeTransaction();
         }
     }
