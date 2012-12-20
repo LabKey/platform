@@ -391,6 +391,8 @@ public class SampleMindedTransformTask
         outputRow.put("record_id", rowIndex);
         outputRow.put("originating_location", siteId);
         outputRow.put("global_unique_specimen_id", barcode);
+        String ptid = removeNonNullValue(outputRow, "participantid");
+        outputRow.put("ptid", ptid);
         outputRow.put("tube_type", outputRow.get("vesseldomaintype"));
         // Fix up the visit number
         String visit = removeNonNullValue(outputRow, "visitname");
