@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.template.DialogTemplate" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.api.view.ViewServlet" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DialogTemplate me = (DialogTemplate) HttpView.currentView();
@@ -69,7 +71,14 @@
     </tr>
     </table>
 <script type="text/javascript">
+
     LABKEY.loadScripts();
 </script>
+    <!--<%= h(request.getHeader("User-Agent")) %>--><%
+    if (null != request.getAttribute(ViewServlet.REQUEST_STARTTIME))
+    { %>
+    <!--<%= text("time " + DateUtil.formatDuration(System.currentTimeMillis() - (Long) request.getAttribute(ViewServlet.REQUEST_STARTTIME))) %> --><%
+    }
+%>
 </body>
 </html>

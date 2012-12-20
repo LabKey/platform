@@ -15,7 +15,6 @@
  */
 package org.labkey.api.etl;
 
-import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -38,18 +37,18 @@ import java.util.Set;
 public class ListofMapsDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
 {
     List<ColumnInfo> _cols = new ArrayList<ColumnInfo>();
-    final List<Map<String,Object>> _rows;
+    protected List<Map<String,Object>> _rows;
     int _currentRow = -1;
     
 
-    public ListofMapsDataIterator(List<ColumnInfo> cols, List<Map<String, Object>> rows)
+    protected ListofMapsDataIterator(List<ColumnInfo> cols)
     {
         super(null);
-        cols.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
-        cols.addAll(cols);
-        _rows = initRows(rows);
+        _cols.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
+        _cols.addAll(cols);
     }
     
+
     public ListofMapsDataIterator(Set<String> colNames, List<Map<String, Object>> rows)
     {
         super(null);
@@ -59,7 +58,8 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
         _rows = initRows(rows);
     }
 
-    private List<Map<String,Object>> initRows(List<Map<String,Object>> rows)
+
+    protected List<Map<String,Object>> initRows(List<Map<String,Object>> rows)
     {
         boolean debug = false;
         assert true == (debug = true);
@@ -71,7 +71,11 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
             {
                 // assumes all ArrayListMaps are case insensitive
                 assert row instanceof CaseInsensitiveMapWrapper || row instanceof ArrayListMap;
-                copy.add(Collections.unmodifiableMap(row));
+                if (row instanceof ArrayListMap)
+                    ((ArrayListMap)row).setReadOnly(true);
+                else
+                    row = Collections.unmodifiableMap(row);
+                copy.add(row);
             }
             return copy;
         }
@@ -80,6 +84,7 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
             return rows;
         }
     }
+
 
     @Override
     public int getColumnCount()

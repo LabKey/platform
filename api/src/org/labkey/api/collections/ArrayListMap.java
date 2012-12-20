@@ -25,6 +25,8 @@ import java.util.*;
 
 public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializable
 {
+    boolean _readonly = false;
+
     private static final Object DOES_NOT_CONTAINKEY = new Object()
     {
         @Override
@@ -33,6 +35,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
             return "ArrayListMap.DOES_NOT_CONTAINKEY";
         }
     };
+
     private V convertToV(Object o)
     {
         return o == DOES_NOT_CONTAINKEY ? null : (V)o;
@@ -173,6 +176,8 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public V put(K key, V value)
     {
+        if (_readonly)
+            throw new IllegalStateException();
         Integer I = _findMap.get(key);
         int i;
 
@@ -194,8 +199,10 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public void clear()
     {
-        _findMap.clear();
-        _row.clear();
+        if (_readonly)
+            throw new IllegalStateException();
+        for (int i=0 ; i<_row.size() ; i++)
+            _row.set(i, DOES_NOT_CONTAINKEY);
     }
 
 
@@ -244,6 +251,8 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     /** use getFindMap().remove(key) */
     public V remove(Object key)
     {
+        if (_readonly)
+            throw new IllegalStateException();
         Integer I = _findMap.get(key);
         if (null == I)
             return null;
@@ -330,6 +339,12 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     protected List<Object> getRow()
     {
         return _row;
+    }
+
+
+    public void setReadOnly(boolean b)
+    {
+        _readonly = b;
     }
 
 

@@ -799,9 +799,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         @Override
         public Map<String, Object> getMap()
         {
-            boolean debug = false;
-            assert debug = true;
-            return debug ? Collections.unmodifiableMap(_row) : _row;
+            _row.setReadOnly(true);
+            return _row;
         }
 
         @Override

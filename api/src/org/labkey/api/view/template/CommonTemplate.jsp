@@ -216,7 +216,7 @@ if (null != me.getView("moduleNav"))
     <!--<%= h(request.getHeader("User-Agent")) %>--><%
     if (null != request.getAttribute(ViewServlet.REQUEST_STARTTIME))
     { %>
-    <!--<%= "time " + (System.currentTimeMillis() - (Long)request.getAttribute(ViewServlet.REQUEST_STARTTIME)) + "ms" %> --><%
+    <!--<%= text("time " + (System.currentTimeMillis() - (Long)request.getAttribute(ViewServlet.REQUEST_STARTTIME)) + "ms") %> --><%
     }
 %>
 </body>
