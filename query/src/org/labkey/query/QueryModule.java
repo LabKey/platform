@@ -224,7 +224,8 @@ public class QueryModule extends DefaultModule
                 SqlParser.SqlParserTestCase.class,
                 JdbcType.TestCase.class,
                 QNode.TestCase.class,
-                SimpleFilter.FilterTestCase.class
+                SimpleFilter.FilterTestCase.class,
+                TableWriter.TestCase.class
         ));
     }
 

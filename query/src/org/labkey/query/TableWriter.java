@@ -18,9 +18,11 @@ package org.labkey.query;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.admin.ImportContext;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
@@ -29,20 +31,25 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 
+import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
-import org.labkey.query.controllers.QueryController;
+import org.labkey.query.controllers.QueryController.ExportTablesForm;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,7 +77,7 @@ public class TableWriter
         return write(c, user, dir, null);
     }
 
-    public boolean write(Container c, User user, VirtualFile dir, QueryController.ExportTablesForm form) throws Exception
+    public boolean write(Container c, User user, VirtualFile dir, ExportTablesForm form) throws Exception
     {
         QueryService queryService = QueryService.get();
         List<QueryDefinition> queries = null;
@@ -119,7 +126,7 @@ public class TableWriter
 
                 // Write meta data
                 TableType tableXml = tablesXml.addNewTable();
-                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(tableInfo, queryDef, getColumnsToExport(tableInfo, true, false));
+                TableTableInfoWriter xmlWriter = new TableTableInfoWriter(tableInfo, queryDef, getColumnsToExport(tableInfo, true, false));
                 xmlWriter.writeTable(tableXml);
 
                 // Write data
@@ -209,14 +216,14 @@ public class TableWriter
         }
     }
 
-    private static class ListTableInfoWriter extends org.labkey.api.data.TableInfoWriter
+    private static class TableTableInfoWriter extends TableInfoWriter
     {
         private final QueryDefinition _def;
         private final TableInfo _tableInfo;
         private final Map<String, DomainProperty> _properties = new HashMap<String, DomainProperty>();
         private Domain _domain;
 
-        protected ListTableInfoWriter(TableInfo tableInfo, QueryDefinition def, Collection <ColumnInfo> columns)
+        protected TableTableInfoWriter(TableInfo tableInfo, QueryDefinition def, Collection<ColumnInfo> columns)
         {
             super(tableInfo, columns, null);
             _def = def;
@@ -266,6 +273,42 @@ public class TableWriter
             //    return propertyURI;
 
             return null;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+
+        @Test
+        public void test()
+        {
+            TestContext testContext = TestContext.get();
+            ExportTablesForm form = new ExportTablesForm();
+            JSONArray queries = new JSONArray();
+            queries.put("Containers");
+            queries.put("Users");
+            JSONObject schema = new JSONObject();
+            schema.put("schemaName", "Core");
+            schema.put("queries", queries);
+            JSONArray schemas = new JSONArray();
+            schemas.put(schema);
+            form.setSchemas(schemas);
+
+            try
+            {
+                Container container = ContainerManager.getContainerService().getForPath("/");
+                File file = FileUtil.getTempDirectory();
+
+                ZipFile zip = new ZipFile(file, FileUtil.makeFileNameWithTimestamp("JunitTest", "tables.zip"));
+                TableWriter tableWriter = new TableWriter();
+
+                tableWriter.write(container, testContext.getUser(), zip, form);
+                zip.close();
+            }
+            catch (Exception e)
+            {
+                assertTrue(false);
+            }
         }
     }
 }
