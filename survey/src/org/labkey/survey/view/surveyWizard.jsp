@@ -24,6 +24,21 @@
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
+<style type="text/css">
+
+    .themed-panel span.x4-panel-header-text-default {
+        color: black;
+    }
+
+    div.lk-survey-panel {
+
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+</style>
+
 <%!
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -71,6 +86,7 @@
 
         var panel = Ext4.create('LABKEY.ext4.SurveyPanel', {
             rowId           : <%=rowId%>,
+            cls             : 'lk-survey-panel themed-panel',
             surveyDesignId  : <%=surveyDesignId%>,
             responsesPk     : <%=q(responsesPk)%>,
             surveyLabel     : <%=q(surveyLabel)%>,
