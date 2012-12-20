@@ -188,7 +188,8 @@ function setElementDisplayByCheckbox(checkbox, element)
             </td>
         </tr>
         <tr>
-            <td colspan="2" class="local-text-block">In each notification email, a table of requested specimens can be included in the email body or as an attachment or not at all.</td>
+            <td colspan="2" class="local-text-block">In each notification email, a table of requested specimens can be included in the email body or as an attachment or not at all. To customize
+            that table, create a custom view called SpecimenEmail on the SpecimenDetail table.</td>
         </tr>
         <tr>
             <th align="right" rowspan="4" class="labkey-form-label local-left-label-width-th">Include Requested Specimens Table:</th>
