@@ -219,8 +219,21 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         }
                         else
                         {
-                            // if the question is not defined as ext, use the column metadata form helper
-                            config = LABKEY.ext.Ext4Helper.getFormEditorConfig(question);
+                            // the labkey formhelper doesn't support file upload fields, so we'll step in here and
+                            // add one manually
+                            if (question.inputType == 'file')
+                            {
+                                config = {
+                                    fieldLabel : question.caption,
+                                    name : question.name,
+                                    xtype : 'filefield'
+                                };
+                            }
+                            else
+                            {
+                                // if the question is not defined as ext, use the column metadata form helper
+                                config = LABKEY.ext.Ext4Helper.getFormEditorConfig(question);
+                            }
                         }
 
                         // survey specific question configurations (required field display, etc.)
@@ -675,5 +688,26 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             Ext4.MessageBox.alert('Error', error.errorInfo);
         else
             Ext4.MessageBox.alert('Error', 'An unknown error has ocurred.');
+    },
+
+    saveSurveyAttachments : function() {
+
+        var file = this.down('#item-irb_approval_file');
+        if (file)
+        {
+            this.exportForm.add(file);
+            var form = this.exportForm.getForm();
+
+            var options = {
+                method  :'POST',
+                form    : form,
+                url     : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponseAttachments.api'),
+                success : function() {
+                },
+                failure : LABKEY.Utils.displayAjaxErrorResponse,
+                scope : this
+            };
+            form.doAction(new Ext4.form.action.Submit(options));
+        }
     }
 });

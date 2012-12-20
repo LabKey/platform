@@ -24,8 +24,10 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
@@ -43,11 +45,13 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.SQLException;
@@ -630,6 +634,31 @@ public class SurveyController extends SpringActionController
                 response.put("success", false);
             }
             return response;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class UpdateSurveyResponseAttachmentsAction extends FormHandlerAction<Object>
+    {
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            List<AttachmentFile> files = getAttachmentFileList();
+            if (!files.isEmpty())
+            {
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return null;
         }
     }
 }
