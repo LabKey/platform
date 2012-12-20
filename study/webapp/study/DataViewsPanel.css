@@ -164,3 +164,17 @@ div.thumbnail svg
 .x4-reset .report-filter-panel .x4-column-header-inner {
     padding-top: 3px !important;
 }
+
+/* Part of Browser.js -- migrate if necessary */
+table.fb-details {
+    margin: 5px 40px;
+}
+
+table.fb-details th {
+    text-align: right;
+    color: #404040;
+}
+
+table.fb-details td {
+    padding-left: 5px;
+}

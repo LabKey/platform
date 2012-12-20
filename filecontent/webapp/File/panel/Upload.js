@@ -90,9 +90,9 @@ Ext4.define('File.panel.Upload', {
         var radioPanel = {
             xtype   : 'panel',
             layout  : 'form',
-            width: 110,
+            width: 140,
             border : false,
-            margins: '0 0 0 0',
+            margins: '0 0 0 40',
             items : [{
                 xtype     : 'radiogroup',
                 width     : 110,
@@ -130,7 +130,6 @@ Ext4.define('File.panel.Upload', {
             deferredRender : true,
             activeItem : 0,
             border : false,
-            flex  : 2,
             items : [this.getSingleUpload(), this.getMultiUpload()]
         });
 
@@ -181,6 +180,7 @@ Ext4.define('File.panel.Upload', {
             name  : 'file',
             fieldLabel : 'Choose a File',
             labelSeparator : '',
+            labelAlign : 'right',
             buttonText : 'Browse',
             listeners: {
                 change: function() {
@@ -210,6 +210,7 @@ Ext4.define('File.panel.Upload', {
             name  : 'description',
             fieldLabel : 'Description',
             labelSeparator : '',
+            labelAlign : 'right',
             width : 382,
             margin: '5 0 0 0',
             disabled : true
@@ -241,7 +242,7 @@ Ext4.define('File.panel.Upload', {
                 margins: '0 0 5 0'
             },
             items: [
-                {xtype:'button', text: 'Choose File', width: 120, handler: function(){
+                {xtype:'button', text: 'Choose File', handler: function(){
                     if (this.transferApplet) {
                         var appletEl = this.transferApplet.getApplet();
                         if (appletEl){
@@ -249,7 +250,7 @@ Ext4.define('File.panel.Upload', {
                         }
                     }
                 }, scope: this},
-                {xtype:'button', text:'Choose folder', width: 120, handler: function(){
+                {xtype:'button', text:'Choose folder', handler: function(){
                     if (this.transferApplet) {
                         var appletEl = this.transferApplet.getApplet();
                         if (appletEl){
@@ -257,7 +258,7 @@ Ext4.define('File.panel.Upload', {
                         }
                     }
                 }, scope: this},
-                {xtype:'button', text:'Drag and drop', width: 120, handler: function(){
+                {xtype:'button', text:'Drag and drop', handler: function(){
                     if (this.transferApplet) {
                         var appletEl = this.transferApplet.getApplet();
                         if (appletEl){
@@ -343,9 +344,6 @@ Ext4.define('File.panel.Upload', {
         // Enable or disable applet buttons depending on permissions (canWrite and canMkDir)
 
         try {
-//            console.log('setting to: \'' + record.data.path + '\'')
-            console.log('Changing relative URL to: ');
-            console.log(record.data.id);
             this.transferApplet.changeWorkingDirectory(record.data.id);
             if(canWrite || canMkdir){
                 this.transferApplet.setEnabled(true);
@@ -416,7 +414,6 @@ Ext4.define('File.panel.Upload', {
 
         var summary = this.transferApplet.getSummary();
 
-        console.log(summary.info);
         if (summary.info != this.lastSummary.info)
         {
             if (summary.info == 0)
