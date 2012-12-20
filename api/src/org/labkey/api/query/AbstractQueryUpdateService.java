@@ -42,7 +42,6 @@ import org.labkey.api.etl.TriggerDataBuilderHelper;
 import org.labkey.api.etl.WrapperDataIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
@@ -190,26 +189,33 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         DataIterator it = etl.getDataIterator(context);
 
-        if (null != rows)
+        try
         {
-            MapDataIterator maps = DataIteratorUtil.wrapMap(etl.getDataIterator(context), false);
-            it = new WrapperDataIterator(maps)
+            if (null != rows)
             {
-                @Override
-                public boolean next() throws BatchValidationException
+                MapDataIterator maps = DataIteratorUtil.wrapMap(etl.getDataIterator(context), false);
+                it = new WrapperDataIterator(maps)
                 {
-                    boolean ret = super.next();
-                    if (ret)
-                        rows.add(((MapDataIterator)_delegate).getMap());
-                    return ret;
-                }
-            };
+                    @Override
+                    public boolean next() throws BatchValidationException
+                    {
+                        boolean ret = super.next();
+                        if (ret)
+                            rows.add(((MapDataIterator)_delegate).getMap());
+                        return ret;
+                    }
+                };
+            }
+
+            Pump pump = new Pump(it, context);
+            pump.run();
+
+            return pump.getRowCount();
         }
-
-        Pump pump = new Pump(it, context);
-        pump.run();
-
-        return pump.getRowCount();
+        finally
+        {
+            DataIteratorUtil.closeQuietly(it);
+        }
     }
 
 

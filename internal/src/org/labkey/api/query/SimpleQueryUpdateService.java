@@ -18,9 +18,16 @@ package org.labkey.api.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.SimpleUserSchema.SimpleTable;
+import org.labkey.api.security.User;
+
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: kevink
@@ -35,6 +42,21 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public SimpleQueryUpdateService(final SimpleTable queryTable, TableInfo dbTable, DomainUpdateHelper helper)
     {
         super(queryTable, dbTable, helper);
+    }
+
+    @Override
+    public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws SQLException
+    {
+        DataIteratorContext context = new DataIteratorContext(errors);
+        return _importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
+    }
+
+    @Override
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, false), extraScriptContext);
+        return result;
     }
 
     @Override

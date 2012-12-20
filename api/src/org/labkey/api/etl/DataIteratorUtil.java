@@ -17,6 +17,7 @@
 package org.labkey.api.etl;
 
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.junit.Assert;
 import org.labkey.api.ScrollableDataIterator;
@@ -258,6 +259,21 @@ public class DataIteratorUtil
         Pump pump = new Pump(insert, context);
         pump.run();
         return pump.getRowCount();
+    }
+
+
+    public static void closeQuietly(DataIterator it)
+    {
+        if (null == it)
+            return;
+        try
+        {
+            it.close();
+        }
+        catch (Exception x)
+        {
+            Logger.getLogger(it.getClass()).warn("Unexpected error closing DataIterator", x);
+        }
     }
 
 

@@ -330,12 +330,14 @@ public class StatementUtils
 
         for (ColumnInfo column : table.getColumns())
         {
+            if (column instanceof WrappedColumn)
+                continue;
             if (column.isAutoIncrement())
             {
                 autoIncrementColumn = column;
                 continue;
             }
-            if (column.isVersionColumn())
+            if (column.isVersionColumn() && column != colModified)
                 continue;
             if (done.contains(column.getName()))
                 continue;

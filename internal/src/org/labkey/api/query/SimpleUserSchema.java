@@ -462,6 +462,12 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public CaseInsensitiveHashMap<String> remapSchemaColumns()
         {
+            if (null != getRealTable().getColumn("container") && null != getColumn("folder"))
+            {
+                CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<String>();
+                    m.put("container", "folder");
+                return m;
+            }
             return null;
         }
 

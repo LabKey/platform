@@ -20,6 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * User: matthewb
@@ -57,4 +58,7 @@ public interface DataIterator extends Closeable
      * MSInspectFeatursDataHandler uses error values as well, but that's what ValidationException is for
      */
     Object get(int i);
+
+    @Override
+    void close() throws IOException;
 }

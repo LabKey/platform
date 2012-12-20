@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -37,6 +38,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     Connection _conn = null;
     final TableInfo _table;
     final Container _c;
+    boolean _selectIds = false;
 
     public static TableInsertDataIterator create(DataIterator data, TableInfo table, DataIteratorContext context)
     {
@@ -58,16 +60,44 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         this._table = table;
         this._c = c;
 
+        ColumnInfo colAutoIncrement = null;
+        Integer indexAutoIncrement = null;
+
         Map<String,Integer> map = DataIteratorUtil.createColumnNameMap(data);
         for (ColumnInfo col : table.getColumns())
         {
             Integer index = map.get(col.getName());
+            if (col.isAutoIncrement())
+            {
+                indexAutoIncrement = index;
+                colAutoIncrement = col;
+            }
             FieldKey mvColumnName = col.getMvColumnName();
             if (null == index || null == mvColumnName)
                 continue;
             data.getColumnInfo(index).setMvColumnName(mvColumnName);
         }
+
+        // NOTE StatementUtils figures out reselect etc, but we need to get our metadata straight at construct time
+        // Can't move StatementUtils.insertStatement here because the transaction might not be started yet
+        boolean forImport = _context.isForImport();
+        boolean hasTriggers = _table.hasTriggers(_c);
+        _selectIds = !forImport || hasTriggers;
+        if (_selectIds)
+        {
+            SchemaTableInfo t = (SchemaTableInfo)((UpdateableTableInfo)table).getSchemaTableInfo();
+            // check that there is actually an autoincrement column in schema table (List has fake auto increment)
+            for (ColumnInfo col : t.getColumns())
+            {
+                if (col.isAutoIncrement())
+                {
+                    setRowIdColumn(indexAutoIncrement==null?-1:indexAutoIncrement, colAutoIncrement);
+                    break;
+                }
+            }
+        }
     }
+
 
     @Override
     void init()
@@ -76,12 +106,9 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
-            boolean forImport = _context.isForImport();
-            boolean hasTriggers = _table.hasTriggers(_c);
-            boolean selectIds = !forImport || hasTriggers;
-            _stmt = StatementUtils.insertStatement(_conn, _table, _c, null, selectIds, false);
+            _stmt = StatementUtils.insertStatement(_conn, _table, _c, null, _selectIds, false);
             super.init();
-            if (selectIds)
+            if (_selectIds)
                 _batchSize = 1;
         }
         catch (SQLException x)
@@ -103,9 +130,15 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         init();
     }
 
+
+    boolean _closed = false;
+
     @Override
     public void close() throws IOException
     {
+        if (_closed)
+            return;
+        _closed = true;
         super.close();
         _scope.releaseConnection(_conn);
     }

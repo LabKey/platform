@@ -325,6 +325,7 @@ checkRequired:
     @Override
     public void close() throws IOException
     {
+        _data.close();
     }
 
 
