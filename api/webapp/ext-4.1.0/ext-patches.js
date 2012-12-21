@@ -6,6 +6,9 @@ Ext4.USE_NATIVE_JSON = true;
 // set the default ajax timeout from 30's to 5 minutes
 Ext4.Ajax.timeout = 5 * 60 * 1000;
 
+// set csrf value for all requests
+Ext4.Ajax.defaultHeaders = {'X-LABKEY-CSRF': LABKEY.CSRF};
+
 // The form field triggers are getting widths of 0px in Ext 4.1.0 because of the Ext.form.field.Trigger beforeRender function
 Ext4.form.field.Trigger.prototype.triggerWidth = 17;
 

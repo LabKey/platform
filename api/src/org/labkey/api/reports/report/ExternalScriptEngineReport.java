@@ -24,6 +24,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.RConnectionHolder;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -67,7 +68,7 @@ import java.util.Map;
  * script engines are invoked by running an application in an external process. Information is exchanged between the
  * web server and application through the file system.
  */
-public class ExternalScriptEngineReport extends ScriptEngineReport implements AttachmentParent
+public class ExternalScriptEngineReport extends ScriptEngineReport implements AttachmentParent, Report.ScriptExecutor
 {
     public static final String TYPE = "ReportService.externalScriptEngineReport";
     public static final String CACHE_DIR = "cached";
@@ -83,7 +84,10 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     {
         final VBox view = new VBox();
 
-        renderReport(context, new Renderer<HttpView>()
+        // todo: pass inputParameters down from upper layers like we do for
+        // executeScript API below.  Currently they are still taken off the
+        // URL under the covers
+        renderReport(context, null, new Renderer<HttpView>()
         {
             @Override
             public void handleValidationError(String error)
@@ -108,12 +112,42 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         return view;
     }
 
+    public List<ScriptOutput> executeScript(ViewContext context, Map<String, Object> inputParameters) throws Exception
+    {
+        final List<ScriptOutput> scriptOutputs = new ArrayList<ScriptOutput>();
+
+        renderReport(context, inputParameters, new Renderer<List<ScriptOutput>>()
+        {
+            @Override
+            public void handleValidationError(String message)
+            {
+                scriptOutputs.add(new ScriptOutput(ScriptOutput.ScriptOutputType.error, "Validation error", message));
+            }
+
+            @Override
+            public boolean handleRuntimeException(Exception e)
+            {
+                String message = makeExceptionString(e, "%s: %s");
+                scriptOutputs.add(new ScriptOutput(ScriptOutput.ScriptOutputType.error, e.getClass().getName(), message));
+                return true;
+            }
+
+            @Override
+            public List<ScriptOutput> render(List<ParamReplacement> parameters) throws IOException
+            {
+
+                return renderParameters(ExternalScriptEngineReport.this, scriptOutputs, parameters, false );
+            }
+        });
+
+        return scriptOutputs;
+    }
 
     public Thumbnail getThumbnail(ViewContext context)
     {
         try
         {
-            return renderReport(context, new Renderer<Thumbnail>()
+            return renderReport(context, null, new Renderer<Thumbnail>()
             {
                 @Override
                 public void handleValidationError(String error)
@@ -147,7 +181,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         K render(List<ParamReplacement> parameters) throws IOException;
     }
 
-    protected <K> K renderReport(ViewContext context, Renderer<K> renderer) throws IOException
+    protected <K> K renderReport(ViewContext context, Map<String, Object> inputParameters, Renderer<K> renderer) throws IOException
     {
         String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
 
@@ -176,11 +210,11 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         {
             try
             {
-                runScript(context, outputSubst, createInputDataFile(context));
+                runScript(context, outputSubst, createInputDataFile(context), inputParameters);
             }
             catch (ScriptException e)
             {
-                boolean continueOn = renderer.handleRuntimeException(e);
+                    boolean continueOn = renderer.handleRuntimeException(e);
 
                 if (!continueOn)
                     return null;
@@ -207,17 +241,20 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             return renderer.render(outputSubst);
     }
 
-    private HttpView handleException(Exception e)
+    private String makeExceptionString(Exception e, String formatString)
     {
         final String error1 = "Error executing command";
         final String error2 = PageFlowUtil.filter(e.getMessage());
+        return String.format(formatString, error1, error2);
+    }
 
-        String err = "<font class=\"labkey-error\">" + error1 + "</font><pre>" + error2 + "</pre>";
-        return new HtmlView(err);
+    private HttpView handleException(Exception e)
+    {
+        return new HtmlView(makeExceptionString(e, "<font class=\"labkey-error\">%s</font><pre>%s</pre>"));
     }
 
     @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws ScriptException
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine();
         RConnectionHolder rh = null;
@@ -279,7 +316,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                     }
                 }
 
-                Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv));
+                Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
 
                 // render the output into the console
                 if (output != null)

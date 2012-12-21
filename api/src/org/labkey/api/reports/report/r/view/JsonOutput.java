@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012 LabKey Corporation
+ * Copyright (c) 2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,87 +16,84 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.json.JSONObject;
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.io.File;
 import java.io.PrintWriter;
 
 /**
  * Created by IntelliJ IDEA.
- * User: Karl Lum
- * Date: May 7, 2008
+ * User: Dax Hawkins
+ * Date: Dec 14, 2012
  */
-public class HtmlOutput extends AbstractParamReplacement
+public class JsonOutput extends AbstractParamReplacement
 {
-    public static final String ID = "htmlout:";
+    public static final String ID = "jsonout:";
 
-    public HtmlOutput()
+    public JsonOutput()
     {
-        this(ID);
-    }
-
-    protected HtmlOutput(String id)
-    {
-        super(id);
+        super(ID);
     }
 
     public File convertSubstitution(File directory) throws Exception
     {
         if (directory != null)
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.html", directory);
+            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.json", directory);
         else
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.html");
+            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.json");
 
         return _file;
     }
 
-    protected String getLabel()
+    public HttpView render(ViewContext context)
     {
-        return "HTML output";
+        return new JsonOutputView(this);
     }
 
     public ScriptOutput renderAsScriptOutput() throws Exception
     {
-        HtmlOutputView view = new HtmlOutputView(this, getLabel());
-        return new ScriptOutput(ScriptOutput.ScriptOutputType.html, getName(), view.renderInternalAsString());
+        JsonOutputView view = new JsonOutputView(this);
+        return new ScriptOutput(ScriptOutput.ScriptOutputType.json, getName(), view.renderInternalAsString() );
     }
 
-    public HttpView render(ViewContext context)
+    public static class JsonOutputView extends ROutputView
     {
-        return new HtmlOutputView(this, getLabel());
-    }
-
-    public static class HtmlOutputView extends ROutputView
-    {
-        public HtmlOutputView(ParamReplacement param, String label)
+        public JsonOutputView(ParamReplacement param)
         {
             super(param);
-            setLabel(label);
+            setLabel("Json output");
         }
 
+        @Override
         protected String renderInternalAsString() throws Exception
         {
-            return PageFlowUtil.getFileContentsAsString(getFile());
+            if (getFile() != null && getFile().exists() && (getFile().length() > 0))
+                return PageFlowUtil.getFileContentsAsString(getFile());
+
+            return null;
         }
 
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            if (getFile() != null && getFile().exists() && (getFile().length() > 0))
+            String rawValue = renderInternalAsString();
+
+            if (null != rawValue)
             {
                 out.write("<table class=\"labkey-output\">");
                 renderTitle(model, out);
                 if (isCollapse())
-                    out.write("<tr style=\"display:none\"><td>");
+                    out.write("<tr style=\"display:none\"><td><pre>");
                 else
-                    out.write("<tr><td>");
-                out.write(renderInternalAsString());
-                out.write("</td></tr>");
+                    out.write("<tr><td><pre>");
+                out.write(PageFlowUtil.filter(rawValue, false, true));
+                out.write("</pre></td></tr>");
                 out.write("</table>");
             }
         }

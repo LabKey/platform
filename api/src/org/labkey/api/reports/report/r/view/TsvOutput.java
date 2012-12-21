@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.r.view;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.util.PageFlowUtil;
@@ -58,6 +59,12 @@ public class TsvOutput extends AbstractParamReplacement
         return _file;
     }
 
+    public ScriptOutput renderAsScriptOutput()
+    {
+        TabReportView view = new TabReportView(this);
+        return new ScriptOutput(ScriptOutput.ScriptOutputType.tsv, getName(), view.renderInternalAsString());
+    }
+
     public HttpView render(ViewContext context)
     {
         return new TabReportView(this);
@@ -93,6 +100,15 @@ public class TsvOutput extends AbstractParamReplacement
         {
             super(param);
             setLabel("TSV output");
+        }
+
+        @Override
+        protected String renderInternalAsString()
+        {
+            if (getFile() != null && getFile().exists() && (getFile().length() > 0))
+                return PageFlowUtil.getFileContentsAsString(getFile());
+
+            return null;
         }
 
         @Override

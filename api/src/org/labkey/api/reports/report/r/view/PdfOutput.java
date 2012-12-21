@@ -19,6 +19,7 @@ package org.labkey.api.reports.report.r.view;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.services.ServiceRegistry;
@@ -39,7 +40,7 @@ import java.io.InputStream;
  * User: Karl Lum
  * Date: May 7, 2008
  */
-public class PdfOutput extends AbstractParamReplacement
+public class PdfOutput extends DownloadParamReplacement
 {
     public static final String ID = "pdfout:";
 
@@ -50,10 +51,7 @@ public class PdfOutput extends AbstractParamReplacement
     
     public File convertSubstitution(File directory) throws Exception
     {
-        if (directory != null)
-            _file = new File(directory, getName().concat(".pdf"));
-
-        return _file;
+        return convertSubstitution(directory, ".pdf");
     }
 
     public HttpView render(ViewContext context)
@@ -61,7 +59,16 @@ public class PdfOutput extends AbstractParamReplacement
         if (getReport() instanceof AttachmentParent)
             return new PdfReportView(this, getReport());
         else
-            return new HtmlView("Unable to render this output, no report associated with this replacement param");
+            return new HtmlView(DownloadParamReplacement.UNABlE_TO_RENDER);
+    }
+
+    public ScriptOutput renderAsScriptOutput() throws Exception
+    {
+        if (getReport() instanceof AttachmentParent)
+            return renderAsScriptOutput(new PdfReportView(this, getReport()),
+                    ScriptOutput.ScriptOutputType.pdf);
+        else
+            return renderAsScriptOutputError();
     }
 
     public static class PdfReportView extends DownloadOutputView

@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.Report;
@@ -56,5 +57,12 @@ public class ConsoleOutput extends AbstractParamReplacement
             view.setCollapse(true);
 
         return view;
+    }
+
+    @Override
+    public ScriptOutput renderAsScriptOutput() throws Exception
+    {
+        ROutputView view = new TextOutput.TextOutputView(this);
+        return new ScriptOutput(ScriptOutput.ScriptOutputType.console, "console", view.renderInternalAsString());
     }
 }

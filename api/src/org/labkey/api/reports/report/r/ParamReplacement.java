@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.r;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -64,4 +65,5 @@ public interface ParamReplacement
 
     public HttpView render(ViewContext context);
     public @Nullable Thumbnail renderThumbnail() throws IOException;
+    public ScriptOutput renderAsScriptOutput() throws Exception;
 }

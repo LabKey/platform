@@ -21,7 +21,26 @@
  * @namespace Report static class that allows programmatic manipulation of reports and their underlying engines.
  */
 LABKEY.Report = new function(){
-    // private methods and data
+    /**
+     * Private function to decode json output parameters into objects
+     * @param config
+     * @return {Mixed}
+     */
+    function getExecuteSuccessCallbackWrapper(callbackFn, scope)
+    {
+        return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
+            if (data && data.outputParams) {
+                for (var idx = 0; idx < data.outputParams.length; idx++) {
+                    var param = data.outputParams[idx];
+                    if (param.type == 'json') {
+                        param.value = LABKEY.ExtAdapter.decode(param.value);
+                    }
+                }
+            }
+            if (callbackFn)
+                callbackFn.call(scope || this, data, options, response);
+        }, this);
+    }
 
     //public interface
     /** @scope LABKEY.Report */
@@ -77,6 +96,60 @@ LABKEY.Report = new function(){
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
+        },
+        /**
+         * Executes a report script
+         *
+         * @param {Object} config A configuration object with the following properties.
+         * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
+         * @param {Object} [config.scope] The scope to use when calling the callbacks (defaults to this).
+         * @param {String} config.scriptId Identifier for the script to execute
+         * @param {String} config.reportSessionId Identifier for the report session to delete.
+         * @param {String} config.inputParams An object with properties for input parameters.
+         * @param {Function} config.success The function to call if the operation is successful.  This function will
+         * receive an object with the following properties
+         * <ul>
+         *     <li>console:  a string[] of information written by the script to the console</li>
+         *     <li>error:  any exception thrown by the script that halted execution</li>
+         *     <li>ouputParams:  an outputParam[] of any output parameters (imgout, jsonout, etc) returned by the script</li>
+         * </ul>
+         * @param {Function} [config.failure] A function to call if an error preventing script execution occurs.
+         * This function will receive one parameter of type object with the following properites:
+         * <ul>
+         *  <li>exception: The exception message.</li>
+         * </ul>
+         */
+        execute : function(config) {
+            if (!config)
+                throw "You must supply a config object to call this method.";
+
+            if (!config.reportId)
+                throw "You must supply a value for the reportId config property.";
+
+            var execParams = {};
+
+            // bind client input params to our parameter map
+            for (var key in config.inputParams)
+            {
+                execParams["inputParams[" + key + "]"] = config.inputParams[key];
+            }
+
+            // must have a script id  by now, the scriptId is the reportId
+            execParams["reportId"] = config.reportId;
+
+            // optional session id
+            if (config.reportSessionId)
+            {
+                execParams["reportSessionId"] = config.reportSessionId;
+            }
+
+            return LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("reports", "execute", config.containerPath),
+                method: 'POST',
+                success: getExecuteSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                params : execParams
+            });
         }
-  };
+    };
 };

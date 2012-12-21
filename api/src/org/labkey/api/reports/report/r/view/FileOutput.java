@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.view.HtmlView;
@@ -30,7 +31,7 @@ import java.io.File;
  * User: Karl Lum
  * Date: May 7, 2008
  */
-public class FileOutput extends AbstractParamReplacement
+public class FileOutput extends DownloadParamReplacement
 {
     public static final String ID = "fileout:";
 
@@ -41,10 +42,17 @@ public class FileOutput extends AbstractParamReplacement
 
     public File convertSubstitution(File directory) throws Exception
     {
-        if (directory != null)
-            _file = new File(directory, getName().concat(".txt"));
+        return convertSubstitution(directory, ".txt");
+    }
 
-        return _file;
+    public ScriptOutput renderAsScriptOutput() throws Exception
+    {
+        if (getReport() instanceof AttachmentParent)
+            return renderAsScriptOutput(new FileoutReportView(this, getReport()),
+                    ScriptOutput.ScriptOutputType.file);
+
+        else
+            return renderAsScriptOutputError();
     }
 
     public HttpView render(ViewContext context)
@@ -52,7 +60,7 @@ public class FileOutput extends AbstractParamReplacement
         if (getReport() instanceof AttachmentParent)
             return new FileoutReportView(this, (AttachmentParent)getReport());
         else
-            return new HtmlView("Unable to render this output, no report associated with this replacement param");
+            return new HtmlView(DownloadParamReplacement.UNABlE_TO_RENDER);
     }
 
     public static class FileoutReportView extends DownloadOutputView

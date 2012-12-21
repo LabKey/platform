@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.RReport;
@@ -55,6 +56,12 @@ public class TextOutput extends AbstractParamReplacement
         return new TextOutputView(this);
     }
 
+    public ScriptOutput renderAsScriptOutput() throws Exception
+    {
+        TextOutputView view = new TextOutputView(this);
+        return new ScriptOutput(ScriptOutput.ScriptOutputType.text, getName(), view.renderInternalAsString());
+    }
+
     public static class TextOutputView extends ROutputView
     {
         public TextOutputView(ParamReplacement param)
@@ -63,9 +70,20 @@ public class TextOutput extends AbstractParamReplacement
             setLabel("Text output");
         }
 
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        @Override
+        protected String renderInternalAsString() throws Exception
         {
             if (getFile() != null && getFile().exists() && (getFile().length() > 0))
+                return PageFlowUtil.getFileContentsAsString(getFile());
+
+            return null;
+        }
+
+        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        {
+            String rawValue = renderInternalAsString();
+
+            if (null != rawValue)
             {
                 out.write("<table class=\"labkey-output\">");
                 renderTitle(model, out);
@@ -73,7 +91,7 @@ public class TextOutput extends AbstractParamReplacement
                     out.write("<tr style=\"display:none\"><td><pre>");
                 else
                     out.write("<tr><td><pre>");
-                out.write(PageFlowUtil.filter(PageFlowUtil.getFileContentsAsString(getFile()), false, true));
+                out.write(PageFlowUtil.filter(rawValue, false, true));
                 out.write("</pre></td></tr>");
                 out.write("</table>");
             }

@@ -883,6 +883,7 @@ api/src/org/labkey/api/reports/report/ReportIdentifierConverter.java -text
 api/src/org/labkey/api/reports/report/ReportUrls.java -text
 api/src/org/labkey/api/reports/report/Rlogo.jpg -text
 api/src/org/labkey/api/reports/report/ScriptEngineReport.java -text
+api/src/org/labkey/api/reports/report/ScriptOutput.java -text
 api/src/org/labkey/api/reports/report/ScriptReport.java -text
 api/src/org/labkey/api/reports/report/ScriptReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/query.png -text
@@ -891,9 +892,11 @@ api/src/org/labkey/api/reports/report/r/ParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacementSvc.java -text
 api/src/org/labkey/api/reports/report/r/view/ConsoleOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/DownloadOutputView.java -text
+api/src/org/labkey/api/reports/report/r/view/DownloadParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/view/FileOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/HtmlOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/ImageOutput.java -text
+api/src/org/labkey/api/reports/report/r/view/JsonOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/PdfOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/PostscriptOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/ROutputView.java -text

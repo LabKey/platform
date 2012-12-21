@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.security.User;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.view.ActionURL;
@@ -34,6 +35,7 @@ import org.labkey.api.writer.VirtualFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: Mark Igra
@@ -158,6 +160,16 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     {
        // public ResultSet generateResultSet(ViewContext context) throws Exception;
         public Results generateResults(ViewContext context) throws Exception;
+    }
+
+    /**
+     * Script based reports can execute and return a list of object objects instead
+     * of rendering into html.  The list of script outputs may include errors, console output
+     * or output parameters.
+     */
+    public interface ScriptExecutor
+    {
+        public List<ScriptOutput> executeScript(ViewContext context, Map<String, Object> inputParameters) throws Exception;
     }
 
     /**

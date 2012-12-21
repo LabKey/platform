@@ -53,6 +53,7 @@ import org.labkey.api.reports.report.r.view.ROutputView;
 import org.labkey.api.reports.report.r.view.SvgOutput;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
+import org.labkey.api.reports.report.r.view.JsonOutput;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
@@ -116,6 +117,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         ParamReplacementSvc.get().registerHandler(new PdfOutput());
         ParamReplacementSvc.get().registerHandler(new FileOutput());
         ParamReplacementSvc.get().registerHandler(new PostscriptOutput());
+        ParamReplacementSvc.get().registerHandler(new JsonOutput());
     }
 
     public String getType()
@@ -478,6 +480,45 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return ColumnInfo.propNameFromName(r).toLowerCase();
     }
 
+    /**
+     * used to render output parameters for script execution without rendering the output into HTML
+     */
+    public static List<ScriptOutput> renderParameters(ScriptEngineReport report, final List<ScriptOutput> scriptOutputs, List<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
+    {
+        return handleParameters(report, parameters, new ParameterHandler<List<ScriptOutput>>()
+        {
+            @Override
+            public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames)
+            {
+                param.setReport(report);
+                try
+                {
+                    scriptOutputs.add(param.renderAsScriptOutput());
+                }
+                catch(Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
+                return true;
+            }
+
+            @Override
+            public List<ScriptOutput> cleanup(ScriptEngineReport report)
+            {
+                // undone: this breaks our paradigm a bit - we need to ensure the view is rendered, however,
+                // undone: to cleanup the parameter, so maybe this isn't so wacky.
+                HttpView view = null;
+
+                if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground)))
+                {
+                    // todo: remove the TempFileCleanup view class when we refactor
+                    FileUtil.deleteDir(new File(report.getReportDir().getAbsolutePath()));
+                }
+
+                return scriptOutputs;
+            }
+        });
+    }
 
     public static HttpView renderViews(ScriptEngineReport report, final VBox view, List<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
     {
@@ -584,25 +625,26 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      * @return
      * @throws Exception
      */
-    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws Exception
+    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
     {
-        return processScript(engine, context, getDescriptor().getProperty(ScriptReportDescriptor.Prop.script), inputDataTsv, outputSubst);
+        return processScript(engine, context, getDescriptor().getProperty(ScriptReportDescriptor.Prop.script), inputDataTsv, outputSubst, inputParameters);
     }
 
-    public abstract String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws ScriptException;
+    public abstract String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException;
 
     /**
      * Takes a script source, adds a prolog, processes any input and output replacement parameters
      * @param script
      * @param inputFile
      * @param outputSubst
+     * @param inputParameters - client-passed params that get injected into the prolog of the report script
      * @throws Exception
      */
-    protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst) throws Exception
+    protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters) throws Exception
     {
         if (!StringUtils.isEmpty(script))
         {
-            script = StringUtils.defaultString(getScriptProlog(engine, context, inputFile)) + script;
+            script = StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
 
             if (inputFile != null)
                 script = processInputReplacement(engine, script, inputFile);
@@ -611,7 +653,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return script;
     }
 
-    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile)
+    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters)
     {
         return null;
     }

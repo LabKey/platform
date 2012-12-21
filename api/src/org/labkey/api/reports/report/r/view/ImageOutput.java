@@ -21,6 +21,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -63,16 +64,28 @@ public class ImageOutput extends AbstractParamReplacement
 
     public HttpView render(ViewContext context)
     {
+        return new ImgReportView(this, canDeleteFile());
+    }
+
+    @Override
+    public ScriptOutput renderAsScriptOutput() throws Exception
+    {
+        ImgReportView view = new ImgReportView(this, canDeleteFile());
+        return new ScriptOutput(ScriptOutput.ScriptOutputType.image, getName(), view.renderInternalAsString());
+    }
+
+    private boolean canDeleteFile()
+    {
         Report report = getReport();
-        boolean deleteFile = true;
 
         if (report != null)
         {
             if (BooleanUtils.toBoolean(report.getDescriptor().getProperty(ReportDescriptor.Prop.cached)) ||
                 BooleanUtils.toBoolean(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground)))
-                deleteFile = false;
+                return false;
         }
-        return new ImgReportView(this, deleteFile);
+
+        return true;
     }
 
     public static class ImgReportView extends ROutputView
@@ -87,8 +100,10 @@ public class ImageOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected String renderInternalAsString() throws Exception
         {
+            String imgUrl = null;
+
             if (getFile() != null && getFile().exists())
             {
                 if (getFile().length() > 0)
@@ -103,26 +118,36 @@ public class ImageOutput extends AbstractParamReplacement
                     {
                         String key = "temp:" + GUID.makeGUID();
                         getViewContext().getRequest().getSession(true).setAttribute(key, imgFile);
-
-                        out.write("<table class=\"labkey-output\">");
-                        renderTitle(model, out);
-                        if (isCollapse())
-                            out.write("<tr style=\"display:none\"><td>");
-                        else
-                            out.write("<tr><td>");
-                        out.write("<img id=\"resultImage\" src=\"");
-
                         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer());
                         url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(_deleteFile), "cacheFile", "true"));
-
-                        out.write(url.getLocalURIString());
-                        out.write("\">");
-                        out.write("</td></tr>");
-                        out.write("</table>");
+                        imgUrl = url.getLocalURIString();
                     }
                 }
                 else
                     getFile().delete();
+            }
+
+            return imgUrl;
+        }
+
+        @Override
+        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        {
+            String imgUrl = renderInternalAsString();
+
+            if (null != imgUrl)
+            {
+                out.write("<table class=\"labkey-output\">");
+                renderTitle(model, out);
+                if (isCollapse())
+                    out.write("<tr style=\"display:none\"><td>");
+                else
+                    out.write("<tr><td>");
+                out.write("<img id=\"resultImage\" src=\"");
+                out.write(imgUrl);
+                out.write("\">");
+                out.write("</td></tr>");
+                out.write("</table>");
             }
         }
     }

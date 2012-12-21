@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.r;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.thumbnail.Thumbnail;
 
 import java.io.File;
@@ -108,4 +109,6 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     {
         return null; // Subclasses that can should implement this
     }
+
+    public abstract ScriptOutput renderAsScriptOutput() throws Exception;
 }

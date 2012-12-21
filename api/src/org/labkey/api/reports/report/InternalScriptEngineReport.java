@@ -37,6 +37,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /*
 * User: Karl Lum
@@ -69,7 +70,9 @@ public class InternalScriptEngineReport extends ScriptEngineReport
 
         try
         {
-            runScript(context, outputSubst, createInputDataFile(context));
+            // todo: when we refactor, pass inputParameters down from the upper layer
+            // through the renderReport API.
+            runScript(context, outputSubst, createInputDataFile(context), null);
         }
         catch (ScriptException e)
         {
@@ -90,7 +93,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     }
 
     @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws ScriptException
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine();
         if (engine != null)
@@ -110,7 +113,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 bindings.put("consoleOut", consolePw);
 
                 bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
-                Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv));
+                Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
                 consolePw.flush();
                 String consoleString = consoleOut.toString();
 

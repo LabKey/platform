@@ -40,6 +40,7 @@ public abstract class DownloadOutputView extends ROutputView
 {
     private String _fileType;
     private AttachmentParent _parent;
+    private String _lastError;
 
     DownloadOutputView(ParamReplacement param, AttachmentParent parent, String fileType)
     {
@@ -49,49 +50,35 @@ public abstract class DownloadOutputView extends ROutputView
         setLabel("Attachment output");
     }
 
-    @Override
-    protected void renderInternal(Object model, PrintWriter out) throws Exception
+    protected String renderException(Exception e)
     {
+        String message = "Error, unable to upload file: " + e.getMessage();
+        if (e.getMessage().contains("larger than the maximum"))
+        {
+            message += ". Contact your administrator to have the maximum file size increased.";
+        }
+
+        return message;
+    }
+
+    @Override
+    protected String renderInternalAsString() throws Exception
+    {
+        String downloadUrl = null;
+
         if (getFile() != null && getFile().exists() && (getFile().length() > 0))
         {
             if (_parent.getEntityId() != null)
             {
-                try
-                {
-                    AttachmentFile form = new FileAttachmentFile(getFile());
-                    AttachmentService.get().deleteAttachment(_parent, getFile().getName(), null);
-                    AttachmentService.get().addAttachments(_parent, Collections.singletonList(form), getViewContext().getUser());
-                }
-                catch (IOException e)
-                {
-                    if (e.getMessage().contains("larger than the maximum"))
-                    {
-                        out.write("Error, unable to upload file: " + e.getMessage() + ". Contact your administrator to have the maximum file size increased.");
-                    }
-                    else
-                    {
-                        out.write("Error, unable to upload file: " + e.getMessage());
-                    }
-                }
-            }
-            out.write("<table class=\"labkey-output\">");
-            renderTitle(model, out);
-            if (isCollapse())
-                out.write("<tr style=\"display:none\"><td>");
-            else
-                out.write("<tr><td>");
+                AttachmentFile form = new FileAttachmentFile(getFile());
+                AttachmentService.get().deleteAttachment(_parent, getFile().getName(), null);
+                AttachmentService.get().addAttachments(_parent, Collections.singletonList(form), getViewContext().getUser());
 
-            if (_parent.getEntityId() != null)
-            {
                 for (Attachment a : AttachmentService.get().getAttachments(_parent))
                 {
                     if (getFile().getName().equals(a.getName()))
                     {
-                        out.write("<a href=\"");
-                        out.write(PageFlowUtil.filter(a.getDownloadUrl(PageFlowUtil.urlProvider(ReportUrls.class).getDownloadClass())));
-                        out.write("\">");
-                        out.write(_fileType);
-                        out.write(" output file (click to download)</a>");
+                        downloadUrl = PageFlowUtil.filter(a.getDownloadUrl(PageFlowUtil.urlProvider(ReportUrls.class).getDownloadClass()));
                         break;
                     }
                 }
@@ -102,16 +89,52 @@ public abstract class DownloadOutputView extends ROutputView
                 // file hasn't been saved yet
                 String key = "temp:" + GUID.makeGUID();
                 getViewContext().getRequest().getSession(true).setAttribute(key, newFile);
-
-                out.write("<a href=\"");
-                out.write(PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer()).
-                        addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", "false", "attachment", "true")).getLocalURIString());
-                out.write("\">");
-                out.write(_fileType);
-                out.write(" output file (click to download)</a>");
+                downloadUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer()).
+                        addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", "false", "attachment", "true")).getLocalURIString();
             }
-            out.write("</td></tr>");
-            out.write("</table>");
         }
+
+        return downloadUrl;
+    }
+
+    @Override
+    protected void renderInternal(Object model, PrintWriter out) throws Exception
+    {
+        String downloadUrl = null;
+        boolean errorWritten = false;
+
+        try
+        {
+            downloadUrl = renderInternalAsString();
+        }
+        catch (IOException e)
+        {
+            out.write(renderException(e));
+            errorWritten = true;
+        }
+
+        // if we "failed" because the file doesn't exist then no
+        // exception is thrown; just return immediately.
+        if (null == downloadUrl && !errorWritten)
+            return;
+
+        out.write("<table class=\"labkey-output\">");
+        renderTitle(model, out);
+        if (isCollapse())
+            out.write("<tr style=\"display:none\"><td>");
+        else
+            out.write("<tr><td>");
+
+        if (null != downloadUrl)
+        {
+            out.write("<a href=\"");
+            out.write(downloadUrl);
+            out.write("\">");
+            out.write(_fileType);
+            out.write(" output file (click to download)</a>");
+        }
+
+        out.write("</td></tr>");
+        out.write("</table>");
     }
 }

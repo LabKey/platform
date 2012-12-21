@@ -48,6 +48,8 @@ import javax.script.ScriptEngineManager;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class RReport extends ExternalScriptEngineReport implements DynamicThumbnailProvider
 {
@@ -110,7 +112,54 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         return "\"" + StringUtils.strip(r, "'") + "\"";
     }
 
-    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile)
+    private void appendParamList(StringBuilder labkey, Map<String, Object> inputParameters)
+    {
+        String sep = "";
+        Set<Map.Entry<String, Object>> setParameters = inputParameters.entrySet();
+        for (Map.Entry<String, Object> param : setParameters)
+        {
+            labkey.append(sep);
+            appendParam(labkey, param.getKey(), (String) param.getValue());
+            sep = ",";
+        }
+    }
+
+    // todo: remove this overload when we no longer need to pull parameters off the URL
+    private void appendParamList(StringBuilder labkey, Pair<String,String>[] inputParameters)
+    {
+        String sep = "";
+        for (Pair<String, String> param : inputParameters)
+        {
+            labkey.append(sep);
+            appendParam(labkey, param.getKey(), param.getValue());
+            sep = ",";
+        }
+    }
+
+    private void appendParam(StringBuilder labkey, String key, String value)
+    {
+        labkey.append(toR(key));
+        labkey.append("=");
+        labkey.append(toR(value));
+    }
+
+    private boolean hasParameters(Map<String, Object> inputParameters, Pair<String, String>[] urlParameters)
+    {
+        // if inputParameters were explicitly passed in then override any url parameters we may have
+        if (inputParameters != null)
+            return (inputParameters.size() > 0);
+
+        //
+        // todo:  remove this fallback code when we refactor report execution.  Input parameters should be passed
+        // in so that they are not taken off the URL.  Note that if inputParamters is not null but size 0 do not fallback
+        //
+        if (urlParameters != null)
+           return (urlParameters.length > 0);
+
+        return false;
+    }
+
+    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters)
     {
         StringBuilder labkey = new StringBuilder();
 
@@ -127,21 +176,19 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         labkey.append("labkey.url.path=").append(toR(url.getExtraPath() + "/")).append("\n");
         labkey.append("labkey.url.base=").append(toR(url.getBaseServerURI() + context.getContextPath() + "/")).append("\n");
 
-        // url parameters
-        Pair<String, String>[] params = url.getParameters();
-        if (params.length > 0)
+        //
+        // todo:  remove the fallback to URL parameters off the query string when we explicitly pass in parameters in the
+        // render case
+        //
+        Pair<String,String>[] urlParameters = url.getParameters();
+        if (hasParameters(inputParameters, urlParameters))
         {
-            String sep = "";
             labkey.append("labkey.url.params <- list(");
 
-            for (Pair<String, String> param : params)
-            {
-                labkey.append(sep);
-                labkey.append(toR(param.getKey()));
-                labkey.append("=");
-                labkey.append(toR(param.getValue()));
-                sep = ",";
-            }
+            if (inputParameters != null)
+                appendParamList(labkey, inputParameters);
+            else
+                appendParamList(labkey, urlParameters);
 
             labkey.append(")\n");
         }
@@ -264,9 +311,9 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         return scriptOut;
     }
 
-    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws Exception
+    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
     {
-        String script = super.createScript(engine, context, outputSubst, inputDataTsv);
+        String script = super.createScript(engine, context, outputSubst, inputDataTsv, inputParameters);
         File inputData = new File(getReportDir(), DATA_INPUT);
 
         /**
@@ -287,7 +334,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
                     final String rScript = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
                     final File rScriptFile = new File(getReportDir(), rName + ".R");
 
-                    String includedScript = processScript(engine, context, rScript, inputData, outputSubst);
+                    String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters);
 
                     try
                     {

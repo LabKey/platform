@@ -98,6 +98,11 @@ public class ROutputView extends HttpView
         _properties = properties;
     }
 
+    protected String renderInternalAsString() throws Exception
+    {
+        return null;
+    }
+
     protected void renderTitle(Object model, PrintWriter out) throws Exception
     {
         StringBuffer sb = new StringBuffer();
