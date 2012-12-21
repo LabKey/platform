@@ -39,6 +39,48 @@
 %>
 <%=formatMissedErrors("form")%>
 <script type="text/javascript">
+
+function removeAnnouncementAttachment(eid, name, xid)
+{
+    if (Ext)
+    {
+        function remove()
+        {
+            var params = {
+                entityId : eid,
+                name: name
+            };
+
+            Ext.Ajax.request({
+                url    : LABKEY.ActionURL.buildURL('announcements', 'deleteAttachment'),
+                method : 'POST',
+                success: function() {
+                    var el = document.getElementById(xid);
+                    if (el) {
+                        el.parentNode.removeChild(el);
+                    }
+                },
+                failure: function() {
+                    alert('Failed to remove attachment.');
+                },
+                params : params
+            });
+        }
+
+        Ext.Msg.show({
+            title : 'Remove Attachment',
+            msg : 'Please confirm you would like to remove this attachment. This cannot be undone.',
+            buttons: LABKEY.ExtAdapter.Msg.OKCANCEL,
+            icon: LABKEY.ExtAdapter.Msg.QUESTION,
+            fn  : function(b) {
+                if (b == 'ok') {
+                    remove();
+                }
+            }
+        });
+    }
+}
+
 function validateForm(form)
 {
     if(form.title){
@@ -54,6 +96,7 @@ function validateForm(form)
         return true;
     }
 }
+
 Ext.onReady(function(){
     new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
 });

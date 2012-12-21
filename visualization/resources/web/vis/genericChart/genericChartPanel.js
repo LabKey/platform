@@ -3,23 +3,19 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-LABKEY.requiresExt4Sandbox(true);
-
-LABKEY.requiresCss("study/DataViewsPanel.css");
 LABKEY.requiresCss("_images/icons.css");
-
-LABKEY.requiresScript("vis/genericOptionsPanel.js");
-LABKEY.requiresScript("vis/mainTitleOptionsPanel.js");
-LABKEY.requiresScript("vis/developerOptionsPanel.js");
-
-LABKEY.requiresScript("vis/genericChart/genericChartOptionsPanel.js");
-LABKEY.requiresScript("vis/genericChart/genericChartAxisPanel.js");
-LABKEY.requiresScript("vis/genericChart/genericChartGroupingPanel.js");
+LABKEY.requiresCss("study/DataViewsPanel.css");
 
 Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     extend : 'Ext.panel.Panel',
+
+//    requires : [
+//        'LABKEY.vis.DeveloperOptionsPanel',
+//        'LABKEY.vis.GenericChartOptionsPanel',
+//        'LABKEY.vis.GenericChartAxisPanel',
+//        'LABKEY.vis.GenericChartGroupingPanel'
+//    ],
 
     constructor : function(config) {
 
@@ -1341,7 +1337,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             name        : this.reportName.getValue(),
             reportId    : this.reportId,
             description : this.reportDescription.getValue(),
-            public      : this.reportPermission.getValue().public || false,
+            "public"    : this.reportPermission.getValue()["public"] || false,
             schemaName  : this.schemaName,
             queryName   : this.queryName,
             viewName    : this.viewName,
@@ -1468,7 +1464,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                                 data.name = values.name;
                                 data.description = values.description;
-                                data.public = values.public || false;
+                                data["public"] = values["public"] || false;
                                 data.reportId = null;
 
                                 this.saveReport(data);
@@ -1539,9 +1535,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.reportDescription.setValue(config.description);
 
         if (this.reportPermission)
-            this.reportPermission.setValue({public : config.public});
+            this.reportPermission.setValue({"public" : config["public"]});
 
-        var json = Ext4.decode(config.jsonData)
+        var json = Ext4.decode(config.jsonData);
         if (json.queryConfig.filterArray)
         {
             this.userFilters = [];

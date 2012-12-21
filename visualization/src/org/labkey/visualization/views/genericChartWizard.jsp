@@ -27,7 +27,17 @@
 <%@ page import="org.labkey.api.data.PropertyManager" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.add(ClientDependency.fromFilePath("vischart"));
+        return resources;
+    }
+%>
 <%
     JspView<VisualizationController.GenericReportForm> me = (JspView<VisualizationController.GenericReportForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
@@ -57,15 +67,7 @@
 
     String renderId = "generic-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-
-<script type="text/javascript">
-    LABKEY.requiresClientAPI(true);
-    LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresScript("vis/genericChart/genericChartPanel.js");
-    LABKEY.requiresVisualization();
-
-</script>
-
+<div id="<%=h(renderId)%>" style="width:100%;"></div>
 <script type="text/javascript">
     Ext4.QuickTips.init();
 
@@ -93,11 +95,11 @@
             firstLoad: true
         });
 
-        var _resize = function(w,h) {
-            LABKEY.Utils.resizeToViewport(panel, w, -1); // don't fit to height
+        var resize = function() {
+            if (panel && panel.doLayout) { panel.doLayout(); }
         };
 
-        Ext4.EventManager.onWindowResize(_resize);
+        Ext4.EventManager.onWindowResize(resize);
     });
 
     function customizeGenericReport(elementId) {
@@ -111,6 +113,4 @@
     }
 
 </script>
-
-<div id="<%=h(renderId)%>" style="width:100%;"></div>
 

@@ -3715,6 +3715,7 @@ visualization/Visualization.iml -text
 visualization/build.xml -text
 visualization/module.properties -text
 visualization/resources/config/module.xml -text
+visualization/resources/web/timechart.lib.xml -text
 visualization/resources/web/vis/SVGConverter.js -text
 visualization/resources/web/vis/developerOptionsPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartAxisPanel.js -text
@@ -3733,6 +3734,7 @@ visualization/resources/web/vis/timeChart/saveOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/timeChartPanel.js -text
 visualization/resources/web/vis/timeChart/xAxisOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/yAxisOptionsPanel.js -text
+visualization/resources/web/vischart.lib.xml -text
 visualization/src/org/labkey/visualization/VisualizationController.java -text
 visualization/src/org/labkey/visualization/VisualizationModule.java -text
 visualization/src/org/labkey/visualization/report/GenericChartReportImpl.java -text

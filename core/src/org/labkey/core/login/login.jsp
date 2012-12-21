@@ -106,15 +106,5 @@
             <%=PageFlowUtil.generateSubmitButton((bean.agreeOnly ? "Agree" : "Sign In"), "", "name=\"SUBMIT\"")%>
         </td></tr>
     </table>
+    <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
 </form>
-<script type="text/javascript">
-    // Ensures enter button work on all browsers.
-    (function(){
-        var forms = document.getElementsByTagName('form');
-
-        for (var i=0;i < forms.length;i++)
-        {
-            addInputSubmitEvent(forms[i]); // from utils.js
-        }
-    })();
-</script>

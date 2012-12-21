@@ -1,0 +1,17 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="vis/SVGConverter.js"/>
+        <script path="vis/genericOptionsPanel.js"/>
+        <script path="vis/mainTitleOptionsPanel.js"/>
+        <script path="vis/developerOptionsPanel.js"/>
+
+        <script path="vis/genericChart/genericChartOptionsPanel.js"/>
+        <script path="vis/genericChart/genericChartAxisPanel.js"/>
+        <script path="vis/genericChart/genericChartGroupingPanel.js"/>
+        <script path="vis/genericChart/genericChartPanel.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4"/>
+        <dependency path="vis/vis"/>
+    </dependencies>
+</libraries>

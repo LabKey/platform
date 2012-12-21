@@ -3,12 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-Ext4.namespace("LABKEY.vis");
-
-Ext4.tip.QuickTipManager.init();
-$h = Ext4.util.Format.htmlEncode;
-
 Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
     extend : 'LABKEY.vis.GenericOptionsPanel',
@@ -57,7 +51,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                 fieldLabel: 'Report Name',
                 labelWidth: 125,
                 hidden: !this.isSavedReport() && this.canSaveChanges(),
-                value: $h(this.isSavedReport() ? this.reportInfo.name : null),
+                value: Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.name : null),
                 anchor: '100%'
             }),
             Ext4.create('Ext.form.field.TextArea', {
@@ -77,7 +71,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                 fieldLabel: 'Report Description',
                 labelWidth: 125,
                 hidden: this.canSaveChanges(),
-                value: $h(this.isSavedReport() ? this.reportInfo.description : null),
+                value: Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.description : null),
                 anchor: '100%'
             }),
             Ext4.create('Ext.form.RadioGroup', {
@@ -255,12 +249,12 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
             this.down('#reportName').setVisible(!this.isSavedReport());
             this.down('#reportName').setValue(this.isSavedReport() ? this.reportInfo.name : null);
             this.down('#reportNameDisplay').setVisible(this.isSavedReport());
-            this.down('#reportNameDisplay').setValue($h(this.isSavedReport() ? this.reportInfo.name : null));
+            this.down('#reportNameDisplay').setValue(Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.name : null));
 
             this.down('#reportDescription').setVisible(this.canSaveChanges());
             this.down('#reportDescription').setValue(this.isSavedReport() ? this.reportInfo.description : null);
             this.down('#reportDescriptionDisplay').setVisible(!this.canSaveChanges());
-            this.down('#reportDescriptionDisplay').setValue($h(this.isSavedReport() ? this.reportInfo.description : null));
+            this.down('#reportDescriptionDisplay').setValue(Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.description : null));
 
             if (!this.currentlyShared)
                 this.down('#onlyMe').setValue(true);

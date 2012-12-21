@@ -15,10 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.core.admin.FileSettingsForm" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -63,11 +61,5 @@
         <span style="font-size: smaller; font-style: italic;">we strongly encourage to you to allow this basic level of reporting</span>
     </div>
     <%=generateSubmitButton("Next")%>
+    <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
 </form>
-
-<script type="text/javascript">
-    Ext.onReady(function()
-    {
-        addInputSubmitEvent(document.getElementById("newInstallSettingsForm"));
-    });
-</script>

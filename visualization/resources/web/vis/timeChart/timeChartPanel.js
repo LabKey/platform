@@ -4,29 +4,10 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-Ext4.namespace("LABKEY.vis");
-
-LABKEY.requiresScript("vis/genericOptionsPanel.js");
-LABKEY.requiresScript("vis/mainTitleOptionsPanel.js");
-LABKEY.requiresScript("vis/developerOptionsPanel.js");
-
-LABKEY.requiresScript("vis/timeChart/initialMeasurePanel.js");
-LABKEY.requiresScript("vis/timeChart/saveOptionsPanel.js");
-LABKEY.requiresScript("vis/timeChart/measureOptionsPanel.js");
-LABKEY.requiresScript("vis/timeChart/yAxisOptionsPanel.js");
-LABKEY.requiresScript("vis/timeChart/xAxisOptionsPanel.js");
-LABKEY.requiresScript("vis/timeChart/groupingOptionsPanel.js");
-LABKEY.requiresScript("vis/timeChart/aestheticOptionsPanel.js");
-LABKEY.requiresScript("vis/timeChart/participantSelector.js");
-LABKEY.requiresScript("vis/timeChart/groupSelector.js");
+LABKEY.requiresCss("_images/icons.css");
 
 LABKEY.requiresScript("study/ParticipantFilterPanel.js");
 LABKEY.requiresScript("study/MeasurePicker.js");
-
-LABKEY.requiresCss("_images/icons.css");
-
-Ext4.tip.QuickTipManager.init();
-$h = Ext4.util.Format.htmlEncode;
 
 Ext4.define('LABKEY.vis.TimeChartPanel', {
 
@@ -2260,7 +2241,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 if(this.canEdit && config.replace){
                     Ext4.Msg.show({
                         title:'Warning',
-                        msg: 'A report by the name \'' + $h(config.reportName) + '\' already exists. Would you like to replace it?',
+                        msg: 'A report by the name \'' + Ext4.util.Format.htmlEncode(config.reportName) + '\' already exists. Would you like to replace it?',
                         buttons: Ext4.Msg.YESNO,
                         fn: function(btnId, text, opt){
                             if(btnId == 'yes'){
@@ -2275,7 +2256,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 else{
                     Ext4.Msg.show({
                         title:'Error',
-                        msg: 'A report by the name \'' + $h(config.reportName) + '\' already exists.  Please choose a different name.',
+                        msg: 'A report by the name \'' + Ext4.util.Format.htmlEncode(config.reportName) + '\' already exists.  Please choose a different name.',
                         buttons: Ext4.Msg.OK,
                         icon: Ext4.MessageBox.ERROR
                     });

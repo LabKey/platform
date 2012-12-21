@@ -47,7 +47,7 @@
 
     function init()
     {
-        var dataViewsPanel = Ext4.create('LABKEY.ext4.DataViewsPanel', {
+        var dvp = Ext4.create('LABKEY.ext4.DataViewsPanel', {
             id          : 'data-views-panel-<%= webPartId %>',
             renderTo    : 'dataset-browsing-<%= me.getModelBean().getIndex() %>',
             pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
@@ -57,11 +57,11 @@
             allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>
         });
 
-        var _resize = function(w,h) {
-            LABKEY.Utils.resizeToViewport(dataViewsPanel, w, -1, null, null, 15); // don't fit to height
+        var resize = function() {
+            if (dvp && dvp.doLayout) { dvp.doLayout(); }
         };
 
-        Ext4.EventManager.onWindowResize(_resize);
+        Ext4.EventManager.onWindowResize(resize);
     }
 
     /**

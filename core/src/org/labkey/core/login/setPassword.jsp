@@ -95,11 +95,5 @@
         </div>
     <div style="padding-top: 1em;"><%=PageFlowUtil.generateSubmitButton(bean.buttonText, "", "name=\"set\"")%><%=text(bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : "")%></div><%
     } %>
+    <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
 </form>
-
-<script type="text/javascript">
-    Ext.onReady(function()
-    {
-        addInputSubmitEvent(document.getElementById("setPasswordForm"));
-    });
-</script>

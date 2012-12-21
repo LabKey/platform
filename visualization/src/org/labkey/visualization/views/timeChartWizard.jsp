@@ -27,7 +27,17 @@
 <%@ page import="org.labkey.api.data.PropertyManager" %>
 <%@ page import="org.labkey.api.util.ExtUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.add(ClientDependency.fromFilePath("timechart"));
+        return resources;
+    }
+%>
 <%
     JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
@@ -59,13 +69,7 @@
 
     String elementId = "vis-wizard-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-
-<script type="text/javascript">
-    LABKEY.requiresExt4ClientAPI(true);
-    LABKEY.requiresVisualization();
-    LABKEY.requiresScript("vis/timeChart/timeChartPanel.js");
-</script>
-
+<div id="<%=h(elementId)%>" class="extContainer"></div>
 <script type="text/javascript">
     Ext4.onReady(function(){
         // if the URL is requesting a report by Id, but it does not exist, display an error message
@@ -166,5 +170,3 @@
         });
     }
 </script>
-
-<div id="<%=h(elementId)%>" class="extContainer"></div>

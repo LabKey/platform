@@ -3,12 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-Ext4.namespace("LABKEY.vis");
-
-Ext4.tip.QuickTipManager.init();
-$h = Ext4.util.Format.htmlEncode;
-
 Ext4.define('LABKEY.vis.InitialMeasurePanel', {
 
     extend : 'Ext.panel.Panel',
