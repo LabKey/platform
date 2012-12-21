@@ -17,8 +17,14 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a ColumnInfo for an aggregate in a crosstab table info
@@ -67,6 +73,84 @@ public class AggregateColumnInfo extends ColumnInfo
                 ((LookupForeignKey)getFk()).setPrefixColumnCaption(false);
             }
         }
+    }
+
+    @Override
+    public ForeignKey getFk()
+    {
+        final ForeignKey fk = super.getFk();
+        if (fk != null)
+        {
+            // Wrap the foreign key in a delegating class that propagates any CrosstabMember information
+            return new ForeignKey()
+            {
+                @Override
+                public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                {
+                    ColumnInfo result = fk.createLookupColumn(parent, displayField);
+                    if (result != null)
+                    {
+                        result.setCrosstabColumnMember(getCrosstabColumnMember());
+                    }
+                    return result;
+                }
+
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return fk.getLookupTableInfo();
+                }
+
+                @Override
+                public StringExpression getURL(ColumnInfo parent)
+                {
+                    return fk.getURL(parent);
+                }
+
+                @Override
+                public NamedObjectList getSelectList(RenderContext ctx)
+                {
+                    return fk.getSelectList(ctx);
+                }
+
+                @Override
+                public Container getLookupContainer()
+                {
+                    return fk.getLookupContainer();
+                }
+
+                @Override
+                public String getLookupTableName()
+                {
+                    return fk.getLookupTableName();
+                }
+
+                @Override
+                public String getLookupSchemaName()
+                {
+                    return fk.getLookupSchemaName();
+                }
+
+                @Override
+                public String getLookupColumnName()
+                {
+                    return fk.getLookupColumnName();
+                }
+
+                @Override
+                public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
+                {
+                    return fk.remapFieldKeys(parent, mapping);
+                }
+
+                @Override
+                public Set<FieldKey> getSuggestedColumns()
+                {
+                    return fk.getSuggestedColumns();
+                }
+            };
+        }
+        return fk;
     }
 
     @Override

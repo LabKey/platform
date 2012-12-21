@@ -58,64 +58,52 @@ public class CrosstabDataRegion extends DataRegion
     {
         if (_numMemberMeasures > 0)
         {
-            if (_settings.getMeasures().size() != 1)
+            //add a row for the column axis label if there is one
+            out.write("<tr>\n");
+            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2, false);
+            renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (showRecordSelectors ? 1 : 0),
+                    _settings.getColumnAxis().getCaption(), out);
+            out.write("</tr>\n");
+
+            //add an extra row for the column dimension members
+            out.write("<tr>\n");
+
+            List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
+
+            // Output a group header for each column's crosstab member.
+            CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
+            boolean alternate = true;
+            for (Pair<CrosstabMember, List<DisplayColumn>> group : groupedByMember)
             {
-                //add a row for the column axis label if there is one
-                out.write("<tr>\n");
-                renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2, false);
-                renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (showRecordSelectors ? 1 : 0),
-                        _settings.getColumnAxis().getCaption(), out);
-                out.write("</tr>\n");
+                CrosstabMember currentMember = group.first;
+                List<DisplayColumn> memberColumns = group.second;
+                if (memberColumns.isEmpty())
+                    continue;
 
-                //add an extra row for the column dimension members
-                out.write("<tr>\n");
+                alternate = !alternate;
 
-                List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
-
-                // Output a group header for each column's crosstab member.
-                CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
-                boolean alternate = true;
-                for (Pair<CrosstabMember, List<DisplayColumn>> group : groupedByMember)
+                if (currentMember != null)
                 {
-                    CrosstabMember currentMember = group.first;
-                    List<DisplayColumn> memberColumns = group.second;
-                    if (memberColumns.isEmpty())
-                        continue;
-
-                    alternate = !alternate;
-
-                    if (currentMember != null)
-                    {
-                        renderColumnGroupHeader(memberColumns.size(),
-                                getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
-                    }
-
-                    for (DisplayColumn renderer : memberColumns)
-                    {
-                        if (alternate)
-                            renderer.addDisplayClass("labkey-alternate-col");
-                        if (currentMember != null)
-                        {
-                            String memberCaption = currentMember.getCaption();
-                            String innerCaption = renderer.getCaption(ctx);
-                            if (StringUtils.startsWith(innerCaption,memberCaption))
-                                renderer.setCaption(StringUtils.trim(innerCaption.substring(memberCaption.length())));
-                        }
-                    }
+                    renderColumnGroupHeader(memberColumns.size(),
+                            getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
                 }
 
-                //end the col dimension member header row
-                out.write("</tr>\n");
+                for (DisplayColumn renderer : memberColumns)
+                {
+                    if (alternate)
+                        renderer.addDisplayClass("labkey-alternate-col");
+                    if (currentMember != null)
+                    {
+                        String memberCaption = currentMember.getCaption();
+                        String innerCaption = renderer.getCaption(ctx);
+                        if (StringUtils.startsWith(innerCaption,memberCaption))
+                            renderer.setCaption(StringUtils.trim(innerCaption.substring(memberCaption.length())));
+                    }
+                }
             }
-            else
-            {
-                out.write("<tr>");
-                if (_numRowAxisCols > 0) // 16478 - ensure group header is placed over the correct set of columns
-                    out.write("<td colspan=\"" + _numRowAxisCols + "\"></td>");
-                renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (showRecordSelectors ? 1 : 0),
-                        _settings.getColumnAxis().getCaption(), out);
-                out.write("</tr>");
-            }
+
+            //end the col dimension member header row
+            out.write("</tr>\n");
         }
 
         //call the base class to finish rendering the headers
