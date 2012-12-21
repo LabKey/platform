@@ -394,47 +394,6 @@ function removeFilePicker(tblId, linkId, rowId)
     updateInstructions(document.getElementById(linkId), table.rows.length);
 }
 
-function removeAnnouncementAttachment(eid, name, xid)
-{
-    if (Ext)
-    {
-        function remove()
-        {
-            var params = {
-                entityId : eid,
-                name: name
-            };
-
-            LABKEY.ExtAdapter.Ajax.request({
-                url    : LABKEY.ActionURL.buildURL('announcements', 'deleteAttachment'),
-                method : 'POST',
-                success: function() {
-                    var el = document.getElementById(xid);
-                    if (el) {
-                        el.parentNode.removeChild(el);
-                    }
-                },
-                failure: function() {
-                    alert('Failed to remove attachment.');
-                },
-                params : params
-            });
-        }
-
-        LABKEY.ExtAdapter.Msg.show({
-            title : 'Remove Attachment',
-            msg : 'Please confirm you would like to remove this attachment. This cannot be undone.',
-            buttons: LABKEY.ExtAdapter.Msg.OKCANCEL,
-            icon: LABKEY.ExtAdapter.Msg.QUESTION,
-            fn  : function(b) {
-                if (b == 'ok') {
-                    remove();
-                }
-            }
-        });
-    }
-}
-
 function updateInstructions(instructions, rowCount)
 {
     if (0 == rowCount)
@@ -466,34 +425,6 @@ function isTrueOrUndefined(obj)
 {
     return obj === undefined || obj === true;
 }
-
-// IE doesn't submit forms on enter, so this method allows one to hook up input elements to submit forms
-function addInputSubmitEvent(form, inputs)
-{
-    if (!input)
-    {
-        inputs = form.getElementsByTagName('input');
-    }
-    else if (!LABKEY.ExtAdapter.isArray(inputs))
-    {
-        inputs = [inputs];
-    }
-
-    for (var j = 0; j < inputs.length; j++)
-    {
-        var input = inputs[j];
-        input.onkeydown = function(e)
-        {
-            e = e || window.event;
-            if (e.keyCode == 13)
-            {
-                form.submit();
-                return false;
-            }
-        };
-    }
-}
-
 
 /**
  * Event handler that can be attached to text areas to let them handle indent/outdent with TAB/SHIFT-TAB.
