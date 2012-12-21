@@ -215,7 +215,13 @@ Ext4.define('Study.window.ParticipantGroup', {
                     text : "Cancel",
                     margin: 3,
                     handler : function(){this.fireEvent('closewindow');},
-                    scope : this
+                    scope : this,
+                    listeners : {
+                        afterrender : function(){
+                            this.fireEvent("donewithbuttons");
+                        },
+                        scope : this
+                    }
                 }, infoCombo, this.webPartPanel
             ]
         });
@@ -233,7 +239,10 @@ Ext4.define('Study.window.ParticipantGroup', {
         this.callParent(arguments);
         //This class exists for testing purposes (e.g. ReportTest)
         this.cls = "doneLoadingTestMarker";
-//        this.height = (simplePanel.el.dom.scrollHeight > 500) ? 500 : simplePanel.el.dom.scrollHeight;
+
+        if(this.hideDataRegion){
+            this.on('donewithbuttons', function(){this.height = simplePanel.el.dom.scrollHeight;});
+        }
     },
 
     onDemographicSelect : function(combo, records, idx) {
