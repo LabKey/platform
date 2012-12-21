@@ -1775,7 +1775,7 @@ public class QueryView extends WebPartView<Object>
         // Return the sort of column names that should be used in TSV export.
         // Consider: maybe all query types should use "queryColumnName".  That has
         // dots separating foreign keys, but otherwise looks really nice.
-        return TSVGridWriter.ColumnHeaderType.caption;
+        return TSVGridWriter.ColumnHeaderType.propertyName;
     }
 
     public TSVGridWriter getTsvWriter() throws SQLException, IOException
