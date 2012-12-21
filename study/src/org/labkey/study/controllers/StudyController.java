@@ -1594,7 +1594,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(BulkEditForm bulkEditForm, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView<StudyImpl>(getStudy(), "manageSites.jsp", getStudy(), errors);
+            ModelAndView view = new StudyJspView<StudyImpl>(getStudy(), "manageLocations.jsp", getStudy(), errors);
             return view;
         }
 
@@ -1623,16 +1623,16 @@ public class StudyController extends BaseStudyController
                 }
                 if (emptyLabel)
                 {
-                    errors.reject("manageSites", "Some site labels could not be updated: empty labels are not allowed.");
+                    errors.reject("manageLocations", "Some location labels could not be updated: empty labels are not allowed.");
                 }
 
             }
             if (form.getNewId() != null || form.getNewLabel() != null)
             {
                 if (form.getNewId() == null)
-                    errors.reject("manageSites", "Unable to create site: an ID is required for all sites.");
+                    errors.reject("manageLocations", "Unable to create location: an ID is required for all locations.");
                 else if (form.getNewLabel() == null)
-                    errors.reject("manageSites", "Unable to create site: a label is required for all sites.");
+                    errors.reject("manageLocations", "Unable to create location: a label is required for all locations.");
                 else
                 {
                     try
@@ -1645,7 +1645,7 @@ public class StudyController extends BaseStudyController
                     }
                     catch (NumberFormatException e)
                     {
-                        errors.reject("manageSites", "Unable to create site: ID must be an integer.");
+                        errors.reject("manageLocations", "Unable to create location: ID must be an integer.");
                     }
                 }
             }
@@ -1660,7 +1660,7 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
-            return root.addChild("Manage Sites");
+            return root.addChild("Manage Locations");
         }
     }
 

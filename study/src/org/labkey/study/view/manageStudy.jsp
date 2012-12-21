@@ -168,8 +168,8 @@
     </tr>
     <tr>
         <th align="left">Locations</th>
-        <td>This study references <%= getSites().length %> labs/sites/repositories</td>
-        <td><%= textLink("Manage Labs/Sites", ManageSitesAction.class) %></td>
+        <td>This study references <%= getSites().length %> locations (labs/sites/repositories)</td>
+        <td><%= textLink("Manage Locations", ManageSitesAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Location Types</th>
