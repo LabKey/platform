@@ -3464,9 +3464,9 @@ survey/src/org/labkey/survey/query/SurveysTable.java -text
 survey/src/org/labkey/survey/view/customizeSurveysWebPart.jsp -text
 survey/src/org/labkey/survey/view/surveyDesignWizard.jsp -text
 survey/src/org/labkey/survey/view/surveyWizard.jsp -text
-survey/web/survey/SurveyGridQuestion.js -text
-survey/web/survey/SurveyPanel.js -text
-survey/web/survey/surveyDesignPanel.js -text
+survey/webapp/survey/SurveyGridQuestion.js -text
+survey/webapp/survey/SurveyPanel.js -text
+survey/webapp/survey/surveyDesignPanel.js -text
 timeline/Timeline.iml -text
 timeline/build.xml -text
 timeline/minifyTimeline -text
