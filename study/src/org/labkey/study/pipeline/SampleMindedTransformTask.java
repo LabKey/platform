@@ -400,10 +400,11 @@ public class SampleMindedTransformTask
         {
             visit = visit.substring("visit".length()).trim();
         }
-//        if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit) || "CIB".equalsIgnoreCase(visit) || "PT1".equalsIgnoreCase(visit))
-//        {
-//            visit = "999";
-//        }
+        // UNDONE: This should not be here this is what SequenceNumImportHelper and the visit import maps is for
+        if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit) || "CIB".equalsIgnoreCase(visit) || "PT1".equalsIgnoreCase(visit))
+        {
+            visit = "999";
+        }
         outputRow.put("visit_value", visit);
 
         outputRow.put("primary_specimen_type_id", primaryId);
