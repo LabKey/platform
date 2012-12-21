@@ -110,6 +110,8 @@ import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.xml.ApiTestsDocument;
 import org.labkey.query.xml.TestCaseType;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -4891,64 +4893,100 @@ public class QueryController extends SpringActionController
         public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ExportTablesAction extends ApiAction<ExportTablesForm>
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ExportTablesAction extends FormViewAction<ExportTablesForm>
     {
-        public ApiResponse execute(ExportTablesForm form, BindException errors) throws Exception
+        private ActionURL _successUrl;
+
+        @Override
+        public void validateCommand(ExportTablesForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ExportTablesForm form, BindException errors)
         {
             HttpServletResponse httpResponse = getViewContext().getResponse();
             Container container = getContainer();
             TableWriter writer = new TableWriter();
-            ZipFile zip = new ZipFile(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"));
-            writer.write(container, getUser(), zip, form);
-            zip.close();
-//            ApiSimpleResponse response = new ApiSimpleResponse();
-//            response.put("success", false);
-//            return response;
-            return null;
+
+            try
+            {
+                ZipFile zip = new ZipFile(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"));
+                writer.write(container, getUser(), zip, form);
+                zip.close();
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+            }
+            
+            if (errors.hasErrors())
+            {
+                _successUrl = new ActionURL(ExportTablesAction.class, getContainer());
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public ModelAndView getView(ExportTablesForm form, boolean reshow, BindException errors) throws Exception
+        {
+            // When exporting the zip to the browser, the base action will attempt to reshow the view since we returned
+            // null as the success URL; returning null here causes the base action to stop pestering the action.
+            if (reshow && !errors.hasErrors())
+                return null;
+            
+            return new JspView<ExportTablesForm>("/org/labkey/query/controllers/exportTables.jsp", form, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Export Tables");
+        }
+
+        @Override
+        public ActionURL getSuccessURL(ExportTablesForm form)
+        {
+            return _successUrl;
         }
     }
 
-    public static class ExportTablesForm implements CustomApiForm
+    public static class ExportTablesForm implements HasBindParameters
     {
-        JSONArray _schemas;
+        HashMap<String, ArrayList<String>> _schemas;
 
-        public JSONArray getSchemas()
+        public HashMap<String, ArrayList<String>> getSchemas()
         {
             return _schemas;
         }
 
-        public void setSchemas(JSONArray schemas)
+        public void setSchemas(HashMap<String, ArrayList<String>> schemas)
         {
             _schemas = schemas;
         }
 
-        @Override
-        public void bindProperties(Map<String, Object> props)
+
+        public BindException bindParameters(PropertyValues values)
         {
-            _schemas = (JSONArray) props.get("schemas");
-        }
+            BindException errors;
+            errors = new NullSafeBindException(this, "form");
+            _schemas = new HashMap<String, ArrayList<String>>();
 
-        public String getSchemaName(JSONObject o) throws NullPointerException
-        {
-            // Get the schemaName for a given object in the _schemas JSONArray.
-            String schemaName = (String) o.get("schemaName");
+            for (PropertyValue value : values.getPropertyValues())
+            {
+                String[] queries = ((String)value.getValue()).split(";");
 
-            if (schemaName == null)
-                throw new NullPointerException("schema name not found.");
-            else
-                return schemaName;
-        }
+                if(queries == null || queries.length == 0)
+                {
+                    errors.reject(ERROR_MSG, "At least one query must be specified for each schema.");
+                }
 
-        public JSONArray getQueryNames(JSONObject o) throws NullPointerException
-        {
-            // Get the query names for a given object in the _schemas JSONArray.
-            JSONArray queryNames = (JSONArray) o.get("queries");
+                _schemas.put(value.getName(), new ArrayList<String>(Arrays.asList(queries)));
+            }
 
-            if(queryNames == null)
-                throw new NullPointerException("query names not found.");
-            else
-                return queryNames;
+            return errors;
         }
     }
 }

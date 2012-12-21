@@ -81,7 +81,7 @@ public class TableWriter
     {
         QueryService queryService = QueryService.get();
         List<QueryDefinition> queries = null;
-        if (null == form || null == form.getSchemas() || form.getSchemas().length() == 0)
+        if (null == form || null == form.getSchemas() || form.getSchemas().size() == 0)
         {
             // If no form, get all user queries in container
             queries = queryService.getQueryDefs(user, c);
@@ -89,17 +89,16 @@ public class TableWriter
         else
         {
             queries = new ArrayList<QueryDefinition>();
-            JSONArray schemaArray = form.getSchemas();
-            for (int i = 0; i < schemaArray.length(); i += 1)
+            HashMap<String, ArrayList<String>> schemaMap = form.getSchemas();
+
+            for (String schemaName : schemaMap.keySet())
             {
-                JSONObject jsonObject = schemaArray.getJSONObject(i);
-                String schemaName = form.getSchemaName(jsonObject);
                 UserSchema schema = queryService.getUserSchema(user, c, schemaName);
                 Map<String, QueryDefinition> schemaQueries = schema.getQueryDefs();
-                JSONArray queryArray = form.getQueryNames(jsonObject);
-                for (int k = 0; k < queryArray.length(); k += 1)
+                ArrayList<String> queryNames = schemaMap.get(schemaName);
+
+                for (String queryName : queryNames)
                 {
-                    String queryName = queryArray.getString(k);
                     QueryDefinition queryDef = schemaQueries.get(queryName);    // user defined queries
                     if (null == queryDef)
                         queryDef = schema.getQueryDefForTable(queryName);       // builtins
@@ -284,14 +283,11 @@ public class TableWriter
         {
             TestContext testContext = TestContext.get();
             ExportTablesForm form = new ExportTablesForm();
-            JSONArray queries = new JSONArray();
-            queries.put("Containers");
-            queries.put("Users");
-            JSONObject schema = new JSONObject();
-            schema.put("schemaName", "Core");
-            schema.put("queries", queries);
-            JSONArray schemas = new JSONArray();
-            schemas.put(schema);
+            ArrayList<String> queries = new ArrayList<String>();
+            queries.add("Containers");
+            queries.add("Users");
+            HashMap<String, ArrayList<String>> schemas = new HashMap<String, ArrayList<String>>();
+            schemas.put("core", queries);
             form.setSchemas(schemas);
 
             try

@@ -261,7 +261,7 @@ Ext4.define('File.panel.TransferApplet', {
                 var text = record.text;
 
                 if(!text){
-                    continue
+                    continue;
                 }
 
                 if(level >= this.ERROR_INT){
@@ -275,7 +275,7 @@ Ext4.define('File.panel.TransferApplet', {
                 }
             }
         }
-        
+
         if(updated){
             this.fireEvent("update");
         }
