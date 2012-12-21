@@ -37,6 +37,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -44,8 +45,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.views.DataViewProvider;
-import org.labkey.api.data.views.DataViewProvider.EditInfo.Property;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -77,12 +76,14 @@ import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReport;
+import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportJob;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -94,6 +95,7 @@ import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -145,6 +147,7 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
@@ -660,6 +663,155 @@ public class ReportsController extends SpringActionController
             return new ApiSimpleResponse("success", true);
         }
     }
+
+    public static class ExecuteScriptForm
+    {
+        private String _reportSessionId;
+        private String _reportId;
+        private Map<String, Object> _inputParams;
+
+        public ExecuteScriptForm()
+        {
+            _inputParams = new ArrayListMap<String, Object>();
+        }
+
+        public String getReportSessionId()
+        {
+            return _reportSessionId;
+        }
+
+        public void setReportSessionId(String reportSessionId)
+        {
+            _reportSessionId = reportSessionId;
+        }
+
+        public String getReportId()
+        {
+            return _reportId;
+        }
+
+        public void setReportId(String reportId)
+        {
+            _reportId = reportId;
+        }
+
+        public Map<String, Object> getInputParams()
+        {
+            return _inputParams;
+        }
+
+        public void setInputParams(Map<String, Object> inputParams)
+        {
+            _inputParams = inputParams;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class) @CSRF
+    public class ExecuteAction extends MutatingApiAction<ExecuteScriptForm>
+    {
+        //
+        // returned object from the execute action must have these fields
+        //
+        public static final String OUTPUT_CONSOLE = "console";
+        public static final String OUTPUT_ERROR = "errors";
+        public static final String OUTPUT_PARAMS = "outputParams";
+
+        public ApiResponse execute(ExecuteScriptForm form, BindException errors) throws Exception
+        {
+            //
+            // validate input parameters
+            //
+            String reportId = form.getReportId();
+
+            if (null == reportId || reportId.length() == 0)
+                throw new IllegalArgumentException("You must provide a value for the " + Report.renderParam.reportId.name() + " parameter!");
+
+            Report report = getReport(reportId);
+
+            //
+            // validate that the underlying report is present and based on a script
+            //
+            if (null == report)
+                throw new IllegalArgumentException("Unknown report id");
+
+            if (!(report instanceof Report.ScriptExecutor))
+                throw new IllegalArgumentException("The specified report is not based upon a script and therefore cannot be executed.");
+
+            //
+            // execute the script
+            //
+            Report.ScriptExecutor exec = (Report.ScriptExecutor) report;
+            List<ScriptOutput> outputs = exec.executeScript(getViewContext(), form.getInputParams());
+
+            //
+            // break the outputs into console, error, and output params
+            //
+            return buildResponse(outputs);
+        }
+
+        //
+        // Build our response object.  It must look like:
+        // {
+        //      console: string[]
+        //      errors: string[]
+        //      outputParams: ScriptOutput[]
+        // }
+        //
+        private ApiResponse buildResponse(List<ScriptOutput> outputs) throws Exception
+        {
+            ArrayList<String> consoleOutputs = new ArrayList<String>();
+            ArrayList<String> errorOutputs = new ArrayList<String>();
+            ArrayList<ScriptOutput> removeItems = new ArrayList<ScriptOutput>();
+
+            // collect any console and error output types and put them in their own collections
+            for (ScriptOutput output : outputs)
+            {
+                if (output.getType() == ScriptOutput.ScriptOutputType.console)
+                {
+                    consoleOutputs.add(output.getValue());
+                    removeItems.add(output);
+                }
+
+                if (output.getType() == ScriptOutput.ScriptOutputType.error)
+                {
+                    errorOutputs.add(output.getValue());
+                    removeItems.add(output);
+                }
+            }
+
+            // remove console and error outputs
+            outputs.removeAll(removeItems);
+
+            // build the response object
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put(OUTPUT_CONSOLE, consoleOutputs);
+            response.put(OUTPUT_ERROR, errorOutputs);
+            response.putBeanList(OUTPUT_PARAMS, outputs, "name", "type", "value");
+            return response;
+        }
+
+        // consider:  making a utility function that is shared with ReportsWebPart.java
+        // consider:  move from ReportsWebPart .java to ReportUtil class?
+        private Report getReport(String reportId)
+        {
+            if (reportId != null)
+            {
+                ReportIdentifier rid = ReportService.get().getReportIdentifier(reportId);
+
+                //allow bare report ids for backward compatibility
+                if (rid == null && NumberUtils.isDigits(reportId))
+                    rid = new DbReportIdentifier(Integer.parseInt(reportId));
+
+                if (rid != null)
+                {
+                    return rid.getReport(getViewContext());
+                }
+            }
+
+            return null;
+        }
+    }
+
 
     @RequiresPermissionClass(InsertPermission.class)  // Need insert AND developer (checked below)
     public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
