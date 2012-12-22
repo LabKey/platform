@@ -354,7 +354,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         }
 
         @Override
-        public boolean shouldCloseResultSet()
+        public boolean shouldClose()
         {
             return _closeResultSet;
         }

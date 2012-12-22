@@ -12,6 +12,6 @@ import java.sql.SQLException;
 public interface ResultSetFactory
 {
     ResultSet getResultSet(Connection conn) throws SQLException;
-    boolean shouldCloseResultSet();
+    boolean shouldClose();
     void handleSqlException(SQLException e, Connection conn);
 }

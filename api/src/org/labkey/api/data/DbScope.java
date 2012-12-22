@@ -1121,6 +1121,9 @@ public class DbScope
                     {
                         TableInfo table = schema.getTable(name);
 
+                        if (null == name)
+                            _log.error("Table is null: " + schema.getName() + "." + name);
+
                         if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
                             tables.add(table);
                     }

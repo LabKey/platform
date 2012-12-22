@@ -170,7 +170,7 @@ public class ExceptionUtil
 
 
     public static ErrorRenderer getErrorRenderer(int responseStatus, String message, Throwable ex,
-                                                 HttpServletRequest request, boolean isPart, boolean isStartupFailure)
+                             @Nullable HttpServletRequest request, boolean isPart, boolean isStartupFailure)
     {
         if (!isStartupFailure && responseStatus == HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
             logExceptionToMothership(request, ex);
@@ -189,7 +189,7 @@ public class ExceptionUtil
         return installing ? ExceptionReportingLevel.HIGH : AppProps.getInstance().getExceptionReportingLevel();
     }
 
-    /** request may be null if this is coming from a background thread or init */
+    // request may be null if this is coming from a background thread or init
     public static void logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
     {
         if (ViewServlet.isShuttingDown())

@@ -521,7 +521,7 @@ public class Table
         }
         finally
         {
-            doFinally(null, stmt, conn, schema.getScope());
+            doClose(null, stmt, conn, schema.getScope());
         }
     }
 
@@ -585,7 +585,7 @@ public class Table
 
 
     // Typical finally block cleanup
-    static void doFinally(@Nullable ResultSet rs, @Nullable Statement stmt, @Nullable Connection conn, @NotNull DbScope scope)
+    static void doClose(@Nullable ResultSet rs, @Nullable Statement stmt, @Nullable Connection conn, @NotNull DbScope scope)
     {
         try
         {
@@ -909,7 +909,7 @@ public class Table
         }
         finally
         {
-            doFinally(rs, stmt, conn, schema.getScope());
+            doClose(rs, stmt, conn, schema.getScope());
             closeParameters(parameters);
         }
 
@@ -1052,7 +1052,7 @@ public class Table
 
         finally
         {
-            doFinally(null, stmt, conn, schema.getScope());
+            doClose(null, stmt, conn, schema.getScope());
         }
 
         return (fieldsIn instanceof Map && !(fieldsIn instanceof BoundMap)) ? (K)fields : fieldsIn;

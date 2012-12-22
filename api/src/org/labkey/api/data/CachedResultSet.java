@@ -985,7 +985,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
 
     public Statement getStatement() throws SQLException
     {
-        return (Statement) throwNYI();
+        return null;   // C
     }
 
     public Object getObject(int i, Map<String, Class<?>> map) throws SQLException

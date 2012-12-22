@@ -56,7 +56,11 @@ public abstract class JdbcCommand
     {
         // Close Connection only if we got it from the scope (i.e., _conn is null)
         @Nullable Connection connToClose = (null == _conn ? conn : null);
-        Table.doFinally(rs, null, connToClose, getScope());
+        Table.doClose(rs, null, connToClose, getScope());
+    }
+
+    protected void afterComplete(ResultSet rs)
+    {
     }
 
     @NotNull

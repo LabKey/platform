@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
@@ -317,7 +318,7 @@ public class DataRegion extends AbstractDataRegion
 
 
     @SuppressWarnings({"AssertWithSideEffects"})
-    public LinkedHashMap<FieldKey, ColumnInfo> getSelectColumns()
+    public @NotNull LinkedHashMap<FieldKey, ColumnInfo> getSelectColumns()
     {
         TableInfo table = getTable();
         List<DisplayColumn> displayCols = getDisplayColumns();

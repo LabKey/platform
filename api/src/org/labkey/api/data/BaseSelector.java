@@ -3,9 +3,9 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.RowMap;
 
 import java.lang.reflect.Array;
-import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -197,8 +197,10 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         }
         finally
         {
-            if (factory.shouldCloseResultSet() || !success)
+            if (factory.shouldClose() || !success)
                 close(rs, conn);
+
+            afterComplete(rs);
         }
     }
 
@@ -240,31 +242,27 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
 
         if (null == factory)
-            throw new IllegalArgumentException("Cound not find object factory for " + clazz.getSimpleName() + ".");
+            throw new IllegalArgumentException("Could not find object factory for " + clazz.getSimpleName() + ".");
 
         return factory;
     }
 
     @Override
-    public <K, V> Map<K, V> fillValueMap(final Map<K, V> map)
+    public <K, V> Map<K, V> fillValueMap(final Map<K, V> fillMap)
     {
-        forEach(new ForEachBlock<ResultSet>()
+        // Standard map enumeration ensures that standard type conversion happenes (vs. ResultSet enumeration and rs.getObject())
+        forEachMap(new ForEachBlock<Map<String, Object>>()
         {
             @Override
-            public void exec(ResultSet rs) throws SQLException
+            public void exec(Map<String, Object> map) throws SQLException
             {
+                RowMap rowMap = (RowMap)map;
                 //noinspection unchecked
-                map.put((K)convert(rs.getObject(1)), (V)convert(rs.getObject(2)));
-            }
-
-            // Special handling for Clob on SQL Server
-            private Object convert(Object o) throws SQLException
-            {
-                return o instanceof Clob ? ConvertHelper.convertClobToString((Clob)o) : o;
+                fillMap.put((K)rowMap.get(1), (V)rowMap.get(2));
             }
         });
 
-        return map;
+        return fillMap;
     }
 
     @Override
