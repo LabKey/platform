@@ -21,7 +21,7 @@ DELETE FROM prop.properties WHERE "set" IN
   (SELECT "set" FROM prop.propertysets WHERE ObjectId NOT IN
     (SELECT EntityId FROM core.Containers));
 
--- Clean out any Properties that belong to a PropertySets that don't exist anymore
+-- Clean out any Properties that belong to a PropertySet that doesn't exist anymore
 DELETE FROM prop.properties WHERE "set" NOT IN
   (SELECT "set" FROM prop.propertysets);
 
