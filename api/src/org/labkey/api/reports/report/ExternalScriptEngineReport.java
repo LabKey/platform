@@ -20,6 +20,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.QueryService.NamedParameterNotProvided;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
@@ -214,12 +215,19 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             }
             catch (ScriptException e)
             {
-                    boolean continueOn = renderer.handleRuntimeException(e);
+                boolean continueOn = renderer.handleRuntimeException(e);
 
                 if (!continueOn)
                     return null;
             }
             catch (ValidationException e)
+            {
+                boolean continueOn = renderer.handleRuntimeException(e);
+
+                if (!continueOn)
+                    return null;
+            }
+            catch (NamedParameterNotProvided e)
             {
                 boolean continueOn = renderer.handleRuntimeException(e);
 
@@ -238,7 +246,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             cacheResults(context, outputSubst);
         }
 
-            return renderer.render(outputSubst);
+        return renderer.render(outputSubst);
     }
 
     private String makeExceptionString(Exception e, String formatString)
