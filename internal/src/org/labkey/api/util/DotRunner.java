@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -135,14 +136,22 @@ public class DotRunner
     public static String getConfigurationErrorHtml(String message)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("Unable to display graph view: cannot run ");
+        sb.append("<p>Unable to display graph view: cannot run ");
         sb.append(dotExePath);
-        sb.append(" due to an error.\n<BR><pre>");
+        sb.append(" due to an error.\n</p><pre>");
         sb.append(PageFlowUtil.filter(message));
         sb.append("</pre>");
-        sb.append("For help on fixing your system configuration, please consult the Graphviz section of the ");
+        sb.append("<p>Regardless of the specific error message, please first verify that the program '" + dotExePath + "' is on your system PATH");
+        if (!StringUtils.isEmpty(System.getenv("PATH")))
+        {
+            sb.append(" (");
+            sb.append(PageFlowUtil.filter(System.getenv("PATH")));
+            sb.append(")");
+        }
+        sb.append(".</p>");
+        sb.append("<p>For help on fixing your system configuration, please consult the Graphviz section of the ");
         sb.append((new HelpTopic("thirdPartyCode")).getSimpleLinkHtml("LabKey Server documentation on third party components"));
-        sb.append(".<br>");
+        sb.append(".</p>");
 
         return sb.toString();
     }
