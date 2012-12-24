@@ -29,7 +29,9 @@ import org.labkey.data.xml.ButtonMenuItem;
 import org.labkey.data.xml.PermissionType;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -49,6 +51,7 @@ public class ButtonBarConfig
     private boolean _includeStandardButtons = false;
     private String[] _scriptIncludes;
     private String _onRenderScript;
+    private Set<String> _hiddenStandardButtons = new HashSet<String>();
 
     private static final Logger LOG = Logger.getLogger(ButtonBarConfig.class);
 
@@ -146,7 +149,14 @@ public class ButtonBarConfig
         if (item.getOriginalText() != null)
         {
             BuiltInButtonConfig buttonConfig = new BuiltInButtonConfig(item.getOriginalText(), item.getText());
-            
+            if (item.isSetHidden())
+            {
+                buttonConfig.setHidden(item.getHidden());
+                if (item.getHidden())
+                {
+                    _hiddenStandardButtons.add(item.getOriginalText());
+                }
+            }
             if (item.isSetInsertBefore())
                 buttonConfig.setInsertBefore(item.getInsertBefore());
             else if (item.isSetInsertAfter())
@@ -342,6 +352,11 @@ public class ButtonBarConfig
     public void setItems(List<ButtonConfig> items)
     {
         _items = items;
+    }
+
+    public Set<String> getHiddenStandardButtons()
+    {
+        return _hiddenStandardButtons;
     }
 
     public boolean isIncludeStandardButtons()

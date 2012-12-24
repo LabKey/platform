@@ -153,8 +153,7 @@ public class ButtonBar extends DisplayElement
                 String[] scriptIncludes = config.getScriptIncludes();
                 if (scriptIncludes != null && scriptIncludes.length > 0)
                 {
-                    for (String scriptInclude : scriptIncludes)
-                        allScriptIncludes.add(scriptInclude);
+                    Collections.addAll(allScriptIncludes, scriptIncludes);
                 }
             }
 
@@ -176,7 +175,7 @@ public class ButtonBar extends DisplayElement
 
     /**
      * Checks if any of the configured buttons with permission to render has requires selection.
-     * This method should be called after the ButtonBar has been configured by {@link #setConfigs(RenderContext, List<ButtonBarConfig>)}.
+     * This method should be called after the ButtonBar has been configured by {@link #setConfigs(RenderContext, List)}.
      *
      * @param ctx RenderContext used to check if button should render (has permission)
      * @return true if any of the configured buttons requires selection.
@@ -221,9 +220,6 @@ public class ButtonBar extends DisplayElement
      * Apply the list of ButtonBarConfigs to this ButtonBar and populate the list of buttons.
      * After the configs are set the ButtonBar is locked and no new buttons may be added.
      * We may remove this restriction in later releases.
-     *
-     * @param ctx
-     * @param configs
      */
     public void setConfigs(RenderContext ctx, List<ButtonBarConfig> configs)
     {
@@ -271,7 +267,7 @@ public class ButtonBar extends DisplayElement
 
             for (DisplayElement elem : originalButtons)
             {
-                if (!newCaptions.contains(elem.getCaption()))
+                if (!newCaptions.contains(elem.getCaption()) && !config.getHiddenStandardButtons().contains(elem.getCaption()))
                     _elementList.add(elem);
             }
         }

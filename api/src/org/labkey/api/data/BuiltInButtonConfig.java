@@ -35,6 +35,7 @@ public class BuiltInButtonConfig implements ButtonConfig
     private String _originalCaption;
     private String _insertAfter, _insertBefore;
     private Integer _insertPosition;
+    private boolean _hidden = false;
 
     public BuiltInButtonConfig(String originalCaption)
     {
@@ -90,14 +91,12 @@ public class BuiltInButtonConfig implements ButtonConfig
 
     public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)
     {
-        if (null == _caption)
-            return null;
-
         for (DisplayElement de : originalButtons)
         {
             if (de instanceof ActionButton && _originalCaption.equalsIgnoreCase(de.getCaption()))
             {
-                if (!_caption.equals(_originalCaption))
+                de.setVisible(!_hidden);
+                if (_caption != null && !_caption.equals(_originalCaption))
                 {
                     de.setCaption(_caption);
                     return de;
@@ -107,5 +106,10 @@ public class BuiltInButtonConfig implements ButtonConfig
             }
         }
         return null;
+    }
+
+    public void setHidden(boolean hidden)
+    {
+        _hidden = hidden;
     }
 }
