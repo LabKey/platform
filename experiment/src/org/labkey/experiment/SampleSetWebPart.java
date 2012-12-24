@@ -69,7 +69,6 @@ public class SampleSetWebPart extends QueryView
     {
         UserSchema schema = getSchema();
         QuerySettings settings = schema.getSettings(portalCtx, dataRegionName, ExpSchema.TableType.SampleSets.toString());
-        settings.setAllowChooseQuery(false);
         if (_narrow)
         {
             settings.setViewName("NameOnly");

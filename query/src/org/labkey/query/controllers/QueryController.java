@@ -2474,7 +2474,6 @@ public class QueryController extends SpringActionController
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
-            settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
 
@@ -2723,7 +2722,6 @@ public class QueryController extends SpringActionController
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
-            settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
 

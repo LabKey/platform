@@ -44,7 +44,6 @@ public class PlateQueryViewImpl extends PlateQueryView
     public PlateQueryViewImpl(ViewContext context, QuerySettings settings, SimpleFilter filter)
     {
         super(new PlateSchema(context.getUser(), context.getContainer()), settings);
-        getSettings().setAllowChooseQuery(false);
         _filter = filter;
     }
 

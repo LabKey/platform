@@ -88,7 +88,6 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
             setTitleHref(list.urlShowData());
 
             QuerySettings settings = getSettings();
-            settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
         }
     }

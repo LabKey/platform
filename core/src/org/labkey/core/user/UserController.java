@@ -603,7 +603,6 @@ public class UserController extends SpringActionController
         protected QueryView createQueryView(final ShowUsersForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, getContainer().isRoot() ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME);
-            settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(true);
             settings.getBaseSort().insertSortColumn("email");
             SimpleFilter filter = authorizeAndGetProjectMemberFilter();

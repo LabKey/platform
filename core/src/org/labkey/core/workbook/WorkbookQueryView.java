@@ -41,8 +41,7 @@ public class WorkbookQueryView extends QueryView
         super(schema);
 
         QuerySettings settings = schema.getSettings(ctx, QueryView.DATAREGIONNAME_DEFAULT, CoreQuerySchema.WORKBOOKS_TABLE_NAME);
-        settings.setAllowChooseQuery(false);
-        settings.setBaseSort(new Sort("ID")); 
+        settings.setBaseSort(new Sort("ID"));
         //settings.setContainerFilterName(ContainerFilter.Type.CurrentAndSubfolders.name());
         setSettings(settings);
 

@@ -50,7 +50,6 @@ public class PipelineQueryView extends QueryView
         super(new PipelineQuerySchema(context.getUser(), context.getContainer()), null, errors);
         _buttonOption = buttonOption;
         setSettings(createSettings(context));
-        getSettings().setAllowChooseQuery(false);
         _context = context;
         _apiAction = apiAction;
         _returnURL = returnURL;

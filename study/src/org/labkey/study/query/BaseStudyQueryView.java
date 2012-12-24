@@ -47,7 +47,6 @@ public abstract class BaseStudyQueryView extends QueryView
     public BaseStudyQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort)
     {
         super(schema, settings);
-        getSettings().setAllowChooseQuery(false);
         _filter = filter;
         _sort = sort;
     }

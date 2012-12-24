@@ -459,7 +459,6 @@ public class ExperimentController extends SpringActionController
 
             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "Material", _source.getName());
-            settings.setAllowChooseQuery(false);
             QueryView queryView = new QueryView(schema, settings, errors)
             {
                 @Override
@@ -575,7 +574,6 @@ public class ExperimentController extends SpringActionController
         {
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "Materials", ExpSchema.TableType.Materials.toString());
-            settings.setAllowChooseQuery(false);
             QueryView view = new QueryView(schema, settings, errors)
             {
                 protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -828,7 +826,6 @@ public class ExperimentController extends SpringActionController
                 schema = new SamplesSchema(getUser(), getContainer());
                 settings = schema.getSettings(getViewContext(), dataRegionName, ss.getName());
             }
-                settings.setAllowChooseQuery(false);
             QueryView materialsView = new QueryView(schema, settings, null)
             {
                 protected TableInfo createTable()
@@ -1264,7 +1261,6 @@ public class ExperimentController extends SpringActionController
             super(new ExpSchema(context.getUser(), context.getContainer()), settings, errors);
             setTitle(title);
             setFrame(FrameType.TITLE);
-            settings.setAllowChooseQuery(false);
             _run = run;
             _type = type;
             setShowBorders(true);

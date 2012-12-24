@@ -43,7 +43,6 @@ public class AssayListQueryView extends QueryView
         setShowRecordSelectors(false);
         setShadeAlternatingRows(true);
         setShowBorders(true);
-        getSettings().setAllowChooseQuery(false);
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)

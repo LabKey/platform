@@ -120,7 +120,6 @@ public class DataSetQueryView extends StudyQueryView
         // Only show link to edit if permission allows it
         setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canWrite(getUser()));
 
-        getSettings().setAllowChooseQuery(false);
         getSettings().setAllowChooseView(false);
 
         if (form.getVisitRowId() != 0)

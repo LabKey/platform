@@ -150,7 +150,6 @@ public class CBCAssayController extends SpringActionController
 
             String name = AssayProtocolSchema.DATA_TABLE_NAME;
             QuerySettings settings = schema.getSettings(form.getViewContext(), name, name);
-            settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
             settings.setMaxRows(Table.ALL_ROWS);

@@ -37,7 +37,6 @@ public class StudyListQueryView extends QueryView
     {
         super(QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), "study"));
         QuerySettings settings = getSchema().getSettings(ctx, "qwpStudies", "StudyProperties");
-        settings.setAllowChooseQuery(false);
         settings.setBaseSort(new Sort("Label"));
         setSettings(settings);
         setShowUpdateColumn(false);

@@ -36,7 +36,6 @@ public class ExperimentRunGroupsView extends VBox
     {
         ExpSchema schema = new ExpSchema(user, c);
         QuerySettings settings = schema.getSettings(getViewContext(), "Experiments", ExpSchema.EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME);
-        settings.setAllowChooseQuery(false);
         QueryView experimentsView = new QueryView(schema, settings, errors)
         {
             protected TableInfo createTable()

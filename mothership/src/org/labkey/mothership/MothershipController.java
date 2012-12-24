@@ -138,7 +138,6 @@ public class MothershipController extends SpringActionController
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
-            settings.setAllowChooseQuery(false);
             settings.getBaseSort().insertSortColumn("-SVNRevision");
             
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
@@ -343,7 +342,6 @@ public class MothershipController extends SpringActionController
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "ExceptionSummary", MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
-            settings.setAllowChooseQuery(false);
             settings.getBaseSort().insertSortColumn("-ExceptionStackTraceId");
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
@@ -404,7 +402,6 @@ public class MothershipController extends SpringActionController
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "serverInstallations", MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
             settings.setSchemaName(schema.getSchemaName());
-            settings.setAllowChooseQuery(false);
             settings.getBaseSort().insertSortColumn("-LastPing");
 
             List<Aggregate> aggregates = new ArrayList<Aggregate>();
@@ -497,7 +494,6 @@ public class MothershipController extends SpringActionController
             
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_WITH_STACK_TABLE_NAME);
-            settings.setAllowChooseQuery(false);
             settings.getBaseSort().insertSortColumn("-Created");
             settings.getBaseFilter().addCondition("ServerSessionId", session.getServerSessionId());
 
@@ -530,7 +526,6 @@ public class MothershipController extends SpringActionController
 
             MothershipSchema schema = new MothershipSchema(MothershipController.this.getUser(), MothershipController.this.getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "ServerSessions", "ServerSessions");
-            settings.setAllowChooseQuery(false);
             settings.getBaseSort().insertSortColumn("-ServerSessionId");
             settings.getBaseFilter().addCondition("ServerInstallationId", installation.getServerInstallationId());
 
@@ -570,7 +565,6 @@ public class MothershipController extends SpringActionController
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
-            settings.setAllowChooseQuery(false);
             settings.getBaseSort().insertSortColumn("-Created");
             settings.getBaseFilter().addCondition("ExceptionStackTraceId", stackTrace.getExceptionStackTraceId());
 

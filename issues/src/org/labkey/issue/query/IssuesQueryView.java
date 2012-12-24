@@ -43,7 +43,6 @@ public class IssuesQueryView extends QueryView
         super(schema, settings, errors);
         _context = context;
         setShowDetailsColumn(false);
-        getSettings().setAllowChooseQuery(false);
         getSettings().getBaseSort().insertSortColumn("-IssueId");
     }
 

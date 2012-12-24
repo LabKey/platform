@@ -48,7 +48,6 @@ public class ExtensibleObjectQueryView extends QueryView
         setShowBorders(true);
         QuerySettings settings = getSchema().getSettings(context, domainInfo.getDomainName());
         settings.setQueryName(getQueryName(domainInfo));
-        settings.setAllowChooseQuery(false);
         setSettings(settings);
     }
 

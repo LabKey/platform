@@ -823,7 +823,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             DataRegionSelection.clearAll(getViewContext(), key);
 
             QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME);
-            settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(true);
             settings.getBaseSort().insertSortColumn("DisplayName");
 

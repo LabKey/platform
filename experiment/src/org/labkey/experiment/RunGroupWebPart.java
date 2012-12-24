@@ -85,7 +85,6 @@ public class RunGroupWebPart extends QueryView
     {
         QuerySettings settings = getSchema().getSettings(portalCtx, dataRegionName);
         settings.setSchemaName(getSchema().getSchemaName());
-        settings.setAllowChooseQuery(false);
         if (_narrow)
         {
             settings.setViewName("NameOnly");

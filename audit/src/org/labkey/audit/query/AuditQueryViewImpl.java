@@ -44,7 +44,6 @@ public class AuditQueryViewImpl extends AuditLogQueryView
     public AuditQueryViewImpl(UserSchema schema, QuerySettings settings, @Nullable SimpleFilter filter)
     {
         super(schema, settings, filter);
-        getSettings().setAllowChooseQuery(false);
     }
 
     public void addDisplayColumn(int index, DisplayColumn dc)

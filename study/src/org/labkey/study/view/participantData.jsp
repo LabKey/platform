@@ -82,7 +82,6 @@
     queryView.setShadeAlternatingRows(true);
     queryView.setShowBorders(true);
     queryView.setShowRecordSelectors(true);
-    queryView.getSettings().setAllowChooseQuery(false);
     queryView.getSettings().setAllowChooseView(true);
     queryView.getSettings().setAllowCustomizeView(false);
 
