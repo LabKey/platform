@@ -228,8 +228,8 @@ public abstract class BaseStudyTable extends FilteredTable
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
 
         // add the sequenceNum column so we have it for later queries
-        ColumnInfo sequenceNumColumn = addColumn(new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue")));
-        sequenceNumColumn.setHidden(true);
+        // Make it visible by default since it's useful in scenarios like specimen lookups from assay data
+        addColumn(new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue")));
 
         if (timepointType == TimepointType.DATE || timepointType == TimepointType.CONTINUOUS)
         {
