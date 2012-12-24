@@ -49,7 +49,7 @@ public class QuerySettings
     private String _dataRegionName;
     private List<FieldKey> _fieldKeys;
     private ReportIdentifier _reportId;
-    private boolean _allowChooseQuery = true;
+    private boolean _allowChooseQuery = false;
     private boolean _allowChooseView = true;
     private boolean _allowCustomizeView = true;
     private boolean _ignoreUserFilter;

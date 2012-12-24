@@ -49,7 +49,6 @@ public class AssayBatchesView extends AbstractAssayView
 
         AssayProtocolSchema schema = provider.createProtocolSchema(context.getUser(), context.getContainer(), protocol, null);
         QuerySettings settings = schema.getSettings(context, dataRegionName, AssayProtocolSchema.BATCHES_TABLE_NAME);
-        settings.setAllowChooseQuery(false);
 
         BatchListQueryView batchesView = new BatchListQueryView(protocol, schema, settings);
 

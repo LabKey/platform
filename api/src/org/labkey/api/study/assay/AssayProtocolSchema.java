@@ -449,7 +449,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
     protected QuerySettings createQuerySettings(String dataRegionName, String queryName, String viewName)
     {
         QuerySettings result = super.createQuerySettings(dataRegionName, queryName, viewName);
-        result.setAllowChooseQuery(false);
         if (RUNS_TABLE_NAME.equals(queryName))
         {
             result.setBaseSort(new Sort("-RowId"));

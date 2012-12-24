@@ -61,7 +61,6 @@ public class ExperimentRunListView extends QueryView
         QuerySettings settings = schema.getSettings(model, tableName, tableName);
         settings.getQueryDef(schema);
         settings.setBaseSort(new Sort("-RowId"));
-        settings.setAllowChooseQuery(false);
         settings.setAllowChooseView(allowCustomizations);
         return settings;
     }

@@ -41,7 +41,6 @@ public abstract class NestableQueryView extends QueryView
     public NestableQueryView(UserSchema schema, QuerySettings settings, boolean expanded, boolean allowNesting, QueryNestingOption... queryNestingOptions)
     {
         super(schema, settings);
-        settings.setAllowChooseQuery(false);
         _expanded = expanded;
         _allowNesting = allowNesting;
         _queryNestingOptions = queryNestingOptions;
