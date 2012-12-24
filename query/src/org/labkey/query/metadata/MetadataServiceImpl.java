@@ -461,13 +461,27 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             {
                 xmlColumn.setMeasure(gwtColumnInfo.isMeasure());
             }
+            else if (xmlColumn.isSetMeasure())
+            {
+                xmlColumn.unsetMeasure();
+            }
+
             if (gwtColumnInfo.isDimension() != rawColumnInfo.isDimension())
             {
                 xmlColumn.setDimension(gwtColumnInfo.isDimension());
             }
+            else if (xmlColumn.isSetDimension())
+            {
+                xmlColumn.unsetDimension();
+            }
+
             if (gwtColumnInfo.isProtected() != rawColumnInfo.isProtected())
             {
                 xmlColumn.setProtected(gwtColumnInfo.isProtected());
+            }
+            else if (xmlColumn.isSetProtected())
+            {
+                xmlColumn.unsetProtected();
             }
 
             // Set the label
