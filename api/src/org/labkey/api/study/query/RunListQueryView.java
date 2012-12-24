@@ -88,7 +88,7 @@ public class RunListQueryView extends ExperimentRunListView
         DataView result = super.createDataView();
         if (_schema.getProvider().getImportURL(getContainer(), _schema.getProtocol()) != null && getContainer().hasPermission(getUser(), InsertPermission.class))
         {
-            result.getDataRegion().setNoRowsMessage("No runs to show. To add new runs, use the Import Data button above.");
+            result.getDataRegion().setNoRowsMessage("No runs to show. To add new runs, use the Import Data button.");
         }
         SimpleFilter filter = (SimpleFilter) result.getRenderContext().getBaseFilter();
         _replacedRunFilter.addFilterCondition(filter, REPLACED_FIELD_KEY);
