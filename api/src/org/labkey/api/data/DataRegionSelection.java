@@ -16,11 +16,13 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpSession;
@@ -107,7 +109,10 @@ public class DataRegionSelection
     public static String getSelectionKeyFromRequest(ViewContext context)
     {
         String selectionKey = context.getRequest().getParameter(DATA_REGION_SELECTION_KEY);
-        assert !(AppProps.getInstance().isDevMode() && selectionKey == null) : "Could not find " + DATA_REGION_SELECTION_KEY + " in request parameters";
+        if (AppProps.getInstance().isDevMode() && selectionKey == null)
+        {
+            throw new NotFoundException("Could not find " + DATA_REGION_SELECTION_KEY + " in request parameters");
+        }
         return selectionKey;
     }
 
@@ -119,7 +124,7 @@ public class DataRegionSelection
      * @param clearSession Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids
      */
-    public static Set<String> getSelected(ViewContext context, String key, boolean mergeSession, boolean clearSession)
+    public static Set<String> getSelected(ViewContext context, @Nullable String key, boolean mergeSession, boolean clearSession)
     {
         Set<String> result = new LinkedHashSet<String>();
         String[] values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
@@ -182,9 +187,9 @@ public class DataRegionSelection
     }
 
     /**
-     * Removes all selection state from the session for the given key.
+     * Removes all selection state from the session for the given key. If key is null, the request parameter DATA_REGION_SELECTION_KEY is used.
      */
-    public static void clearAll(ViewContext context, String key)
+    public static void clearAll(ViewContext context, @Nullable String key)
     {
         if (key == null)
             key = getSelectionKeyFromRequest(context);
