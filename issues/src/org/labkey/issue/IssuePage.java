@@ -30,7 +30,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController.DownloadAction;
 import org.labkey.issue.model.Issue;

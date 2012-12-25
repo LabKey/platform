@@ -28,6 +28,7 @@ import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
@@ -49,7 +50,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
@@ -154,20 +154,13 @@ public class DomainImpl implements Domain
             return new Container[0];
         SQLFragment sql = new SQLFragment("SELECT DISTINCT exp.object.container FROM exp.object WHERE exp.object.objectid IN ");
         sql.append(sqlObjectIds);
-        try
+        String[] ids = new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(String.class);
+        Container[] ret = new Container[ids.length];
+        for (int i = 0; i < ids.length; i ++)
         {
-            String[] ids = Table.executeArray(ExperimentService.get().getSchema(), sql, String.class);
-            Container[] ret = new Container[ids.length];
-            for (int i = 0; i < ids.length; i ++)
-            {
-                ret[i] = ContainerManager.getForId(ids[i]);
-            }
-            return ret;
+            ret[i] = ContainerManager.getForId(ids[i]);
         }
-        catch (SQLException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        return ret;
     }
 
     public Container[] getInstanceContainers(User user, Class<? extends Permission> perm)

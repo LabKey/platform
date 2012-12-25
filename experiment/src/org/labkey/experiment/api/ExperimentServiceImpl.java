@@ -1696,13 +1696,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         try
         {
             String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
-            int[] runIds = ArrayUtils.toPrimitive(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+            int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
             ExpExperimentImpl[] exps = getExperiments(c, user, false, true, true);
             ExpSampleSet[] sampleSets = getSampleSets(c, user, false);
 
             sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
-            int[] protIds = ArrayUtils.toPrimitive(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+            int[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
             getExpSchema().getScope().ensureTransaction();
             
@@ -1742,12 +1742,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             // we get this list now so that it doesn't include all of the run-scoped Materials that were
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
-            int[] matIds = ArrayUtils.toPrimitive(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+            int[] matIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
             deleteMaterialByRowIds(user, c, matIds);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ? ;";
-            int[] dataIds = ArrayUtils.toPrimitive(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+            int[] dataIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
             deleteDataByRowIds(c, dataIds);
 
             getExpSchema().getScope().commitTransaction();

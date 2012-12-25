@@ -2351,25 +2351,6 @@ public class StudyManager
         return true;
     }
 
-    public String getDatasetType(Container c, int datasetId)
-    {
-        // not using executeSingleton, so I can distinguish not found from typeURI is null
-        try
-        {
-            String[] result = Table.executeArray(getSchema(), "SELECT typeURI FROM study.dataset WHERE container=? AND datasetid=?",
-                    new Object[]{c.getId(), datasetId}, String.class);
-            if (result.length == 0)
-                return null;
-            assert result.length == 1;
-            return result[0];
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
-
     public ParticipantDataset[] getParticipantDatasets(Container container, Collection<String> lsids) throws SQLException
     {
         StringBuilder whereClause = new StringBuilder();
@@ -2488,16 +2469,9 @@ public class StudyManager
 
     private String[] getParticipantIds(Study study, int participantGroupId, int rowLimit)
     {
-        try
-        {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            SQLFragment sql = getSQLFragmentForParticipantIds(study, participantGroupId, rowLimit, schema, "ParticipantId");
-            return Table.executeArray(schema, sql, String.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        SQLFragment sql = getSQLFragmentForParticipantIds(study, participantGroupId, rowLimit, schema, "ParticipantId");
+        return new SqlSelector(schema, sql).getArray(String.class);
     }
 
     private static final String ALTERNATEID_COLUMN_NAME = "AlternateId";
@@ -2568,54 +2542,23 @@ public class StudyManager
 
     public String[] getParticipantIdsForCohort(Study study, int currentCohortId, int rowLimit)
     {
-        try
-        {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? AND CurrentCohortId = ? ORDER BY ParticipantId", study.getContainer().getId(), currentCohortId);
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? AND CurrentCohortId = ? ORDER BY ParticipantId", study.getContainer().getId(), currentCohortId);
 
-            if (rowLimit > 0)
-                sql = schema.getSqlDialect().limitRows(sql, rowLimit);
-            return Table.executeArray(schema, sql, String.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        if (rowLimit > 0)
+            sql = schema.getSqlDialect().limitRows(sql, rowLimit);
+
+        return new SqlSelector(schema, sql).getArray(String.class);
     }
 
     public String[] getParticipantIdsNotInCohorts(Study study, User user)
     {
-        try
-        {
-            TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? AND CurrentCohortId IS NULL",
-                    study.getContainer().getId());
+        TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? AND CurrentCohortId IS NULL",
+                study.getContainer().getId());
 
-            return Table.executeArray(schema, sql, String.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
-    public String[] getParticipantIdsNotInGroups(Study study, User user)
-    {
-        try
-        {
-            TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? " +
-                    "AND ParticipantId NOT IN (SELECT DISTINCT ParticipantId FROM " + groupMapTable + " WHERE Container = ?)",
-                    study.getContainer().getId(), study.getContainer().getId());
-
-            return Table.executeArray(schema, sql, String.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new SqlSelector(schema, sql).getArray(String.class);
     }
 
     public String[] getParticipantIdsNotInGroupCategory(Study study, User user, int categoryId)

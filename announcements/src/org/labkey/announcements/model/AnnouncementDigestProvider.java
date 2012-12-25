@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.message.digest.MessageDigest;
@@ -42,6 +43,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -75,9 +77,9 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
     public List<Container> getContainersWithNewMessages(Date start, Date end) throws SQLException
     {
         SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Created >= ? and Created < ?", start, end);
-        String[] containerIds = Table.executeArray(_comm.getSchema(), sql, String.class);
+        Collection<String> containerIds = new SqlSelector(_comm.getSchema(), sql).getCollection(String.class);
 
-        List<Container> containers = new ArrayList<Container>(containerIds.length);
+        List<Container> containers = new ArrayList<Container>(containerIds.size());
 
         for (String id : containerIds)
         {

@@ -141,7 +141,7 @@ public class IssueManager
             Issue[] issues = Table.selectForDisplay(
                     _issuesSchema.getTableInfoIssues(),
                     Table.ALL_COLUMNS, f, null, Issue.class);
-            if (null == issues || issues.length < 1)
+            if (issues.length < 1)
                 return null;
             Issue issue = issues[0];
 
@@ -415,18 +415,10 @@ public class IssueManager
         if(null != user && !user.isActive())
             return 0;
 
-        try
-        {
-            emailPreference = Table.executeArray(
-                    _issuesSchema.getSchema(),
-                    "SELECT EmailOption FROM " + _issuesSchema.getTableInfoEmailPrefs() + " WHERE Container=? AND UserId=?",
-                    new Object[]{c.getId(), userId},
-                    Integer.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        emailPreference = new SqlSelector(
+                _issuesSchema.getSchema(),
+                "SELECT EmailOption FROM " + _issuesSchema.getTableInfoEmailPrefs() + " WHERE Container=? AND UserId=?",
+                c, userId).getArray(Integer.class);
 
         if (emailPreference.length == 0)
         {
@@ -436,7 +428,7 @@ public class IssueManager
             }
             return DEFAULT_EMAIL_PREFS;
         }
-        return emailPreference[0].intValue();
+        return emailPreference[0];
     }
 
     public static class EntryTypeNames

@@ -28,6 +28,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
@@ -846,14 +847,8 @@ public class ParticipantGroupManager
         sql.append(getTableInfoParticipantGroupMap(), "GroupMap");
         sql.append(" WHERE Container = ? ORDER BY ParticipantId");
         sql.add(container);
-        try
-        {
-            return Table.executeArray(StudySchema.getInstance().getSchema(), sql, String.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(String.class);
     }
 
 

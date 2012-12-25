@@ -844,7 +844,7 @@ public class SampleManager
     public Specimen[] getRequestSpecimens(SampleRequest request)
     {
         return new SqlSelector(StudySchema.getInstance().getSchema(), REQUEST_SPECIMEN_JOIN,
-                request.getRowId(), request.getContainer().getId()).getArray(Specimen.class);
+                request.getRowId(), request.getContainer()).getArray(Specimen.class);
     }
 
     public RepositorySettings getRepositorySettings(Container container)

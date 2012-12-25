@@ -60,7 +60,6 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -684,7 +683,7 @@ public class AnnouncementManager
 
 
     // TODO: Fix inconsistency -- cid is @NotNull and we check c != null, yet some code below allows for c == null
-    public static void indexMessages(SearchService.IndexTask task, @NotNull String containerId, Date modifiedSince, String threadId)
+    public static void indexMessages(final SearchService.IndexTask task, final @NotNull String containerId, Date modifiedSince, String threadId)
     {
         assert null != containerId;
         if (null == containerId || (null != modifiedSince && null != threadId))
@@ -693,70 +692,68 @@ public class AnnouncementManager
         Container c = ContainerManager.getForId(containerId);
         if (null == c || isSecure(c))
             return;
-        
-        ResultSet rs = null;
-        ResultSet rs2 = null;
 
-        try
+        SQLFragment sql = new SQLFragment("SELECT entityId FROM " + _comm.getTableInfoThreads());
+        sql.append(" WHERE container = ?");
+        sql.add(containerId);
+        String and = " AND ";
+
+        if (null != threadId)
         {
-            SQLFragment sql = new SQLFragment("SELECT entityId FROM " + _comm.getTableInfoThreads());
-            sql.append(" WHERE container = ?");
-            sql.add(containerId);
-            String and = " AND ";
+            sql.append(and).append(" entityid = ?");
+            sql.add(threadId);
+        }
+        else
+        {
+            SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, null).toSQLFragment(null, null);
+            if (!modified.isEmpty())
+                sql.append(and).append(modified);
+        }
 
-            if (null != threadId)
-            {
-                sql.append(and).append(" entityid = ?");
-                sql.add(threadId);
-            }
-            else
-            {
-                SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, null).toSQLFragment(null, null);
-                if (!modified.isEmpty())
-                    sql.append(and).append(modified);
-            }
-
-            rs = Table.executeQuery(_comm.getSchema(), sql.getSQL(), sql.getParamsArray());
-
-            while (rs.next())
+        new SqlSelector(_comm.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String entityId = rs.getString(1);
                 _indexThread(task, containerId, entityId);
                 if (Thread.interrupted())
                     return;
             }
+        });
 
-            // Get the attachments... unfortunately, they're attached to individual announcementModels, not to the thread,
-            // so we need a different query.
-            // find all messages that have attachments
-            sql = new SQLFragment("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent");
-            sql.append("\nWHERE a.container = ?");
-            sql.add(containerId);
-            and = " AND ";
-            if (null != threadId)
+        // Get the attachments... unfortunately, they're attached to individual announcementModels, not to the thread,
+        // so we need a different query.
+        // find all messages that have attachments
+        sql = new SQLFragment("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent");
+        sql.append("\nWHERE a.container = ?");
+        sql.add(containerId);
+        and = " AND ";
+        if (null != threadId)
+        {
+            sql.append(and).append("(a.entityId = ? OR a.parent = ?)");
+            sql.add(threadId);
+            sql.add(threadId);
+        }
+        else
+        {
+            SQLFragment modified = new SearchService.LastIndexedClause(CoreSchema.getInstance().getTableInfoDocuments(), modifiedSince, "d").toSQLFragment(null, null);
+            if (!modified.isEmpty())
+                sql.append(and).append(modified);
+        }
+        sql.append("\nGROUP BY a.EntityId");
+
+        final Collection<String> annIds = new HashSet<String>();
+        final Map<String, AnnouncementModel> map = new HashMap<String, AnnouncementModel>();
+
+        new SqlSelector(_comm.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
-                sql.append(and).append("(a.entityId = ? OR a.parent = ?)");
-                sql.add(threadId);
-                sql.add(threadId);
-            }
-            else
-            {
-                SQLFragment modified = new SearchService.LastIndexedClause(CoreSchema.getInstance().getTableInfoDocuments(), modifiedSince, "d").toSQLFragment(null, null);
-                if (!modified.isEmpty())
-                    sql.append(and).append(modified);
-            }
-            sql.append("\nGROUP BY a.EntityId");
-
-            Collection<String> annIds = new HashSet<String>();
-            Map<String, AnnouncementModel> map = new HashMap<String, AnnouncementModel>();
-
-            rs2 = Table.executeQuery(_comm.getSchema(), sql.getSQL(), sql.getParamsArray());
-
-            while (rs2.next())
-            {
-                String entityId = rs2.getString(1);
-                String parent = rs2.getString(2);
-                String title = rs2.getString(3);
+                String entityId = rs.getString(1);
+                String parent = rs.getString(2);
+                String title = rs.getString(3);
 
                 annIds.add(entityId);
                 AnnouncementModel ann = new AnnouncementModel();
@@ -766,49 +763,39 @@ public class AnnouncementManager
                 ann.setTitle(title);
                 map.put(entityId, ann);
             }
+        });
 
-            if (!annIds.isEmpty())
+        if (!annIds.isEmpty())
+        {
+            List<Pair<String, String>> list = AttachmentService.get().listAttachmentsForIndexing(annIds, modifiedSince);
+            ActionURL url = new ActionURL(AnnouncementsController.DownloadAction.class, null);
+            url.setExtraPath(containerId);
+            ActionURL urlThread = new ActionURL(AnnouncementsController.ThreadAction.class, null);
+            urlThread.setExtraPath(containerId);
+
+            for (Pair<String, String> pair : list)
             {
-                List<Pair<String, String>> list = AttachmentService.get().listAttachmentsForIndexing(annIds, modifiedSince);
-                ActionURL url = new ActionURL(AnnouncementsController.DownloadAction.class, null);
-                url.setExtraPath(containerId);
-                ActionURL urlThread = new ActionURL(AnnouncementsController.ThreadAction.class, null);
-                urlThread.setExtraPath(containerId);
+                String entityId = pair.first;
+                String documentName = pair.second;
+                AnnouncementModel ann = map.get(entityId);
+                ActionURL attachmentUrl = url.clone()
+                        .replaceParameter("entityId", entityId)
+                        .replaceParameter("name", documentName);
+                attachmentUrl.setExtraPath(ann.getContainerId());
 
-                for (Pair<String, String> pair : list)
-                {
-                    String entityId = pair.first;
-                    String documentName = pair.second;
-                    AnnouncementModel ann = map.get(entityId);
-                    ActionURL attachmentUrl = url.clone()
-                            .replaceParameter("entityId", entityId)
-                            .replaceParameter("name", documentName);
-                    attachmentUrl.setExtraPath(ann.getContainerId());
+                String e = StringUtils.isEmpty(ann.getParent()) ? ann.getEntityId() : ann.getParent();
+                NavTree t = new NavTree("message", urlThread.clone().addParameter("entityId", e));
+                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
 
-                    String e = StringUtils.isEmpty(ann.getParent()) ? ann.getEntityId() : ann.getParent();
-                    NavTree t = new NavTree("message", urlThread.clone().addParameter("entityId", e));
-                    String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
-
-                    String displayTitle = "\"" + documentName + "\" attached to message \"" + ann.getTitle() + "\"";
-                    WebdavResource attachmentRes = AttachmentService.get().getDocumentResource(
-                            new Path(entityId, documentName),
-                            attachmentUrl, displayTitle,
-                            ann,
-                            documentName, searchCategory);
-                    attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                    task.addResource(attachmentRes, SearchService.PRIORITY.item);
-                }
+                String displayTitle = "\"" + documentName + "\" attached to message \"" + ann.getTitle() + "\"";
+                WebdavResource attachmentRes = AttachmentService.get().getDocumentResource(
+                        new Path(entityId, documentName),
+                        attachmentUrl, displayTitle,
+                        ann,
+                        documentName, searchCategory);
+                attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+                task.addResource(attachmentRes, SearchService.PRIORITY.item);
             }
-        }
-        catch (SQLException x)
-        {
-            _log.error(x);
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-            ResultSetUtil.close(rs2);
         }
     }
 
