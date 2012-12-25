@@ -57,6 +57,23 @@ public class ResultSetSelectorTestCase extends AbstractSelectorTestCase<ResultSe
     {
         try
         {
+            // If we're passed a non-scrollable ResultSet we need to wrap it... but first, test exception handling
+            if (rs.getType() == ResultSet.TYPE_FORWARD_ONLY)
+            {
+                try
+                {
+                    ResultSetSelector selector = new ResultSetSelector(scope, rs, null);
+                    selector.setCompletionAction(ResultSetSelector.CompletionAction.ScrollToTop);
+                    fail("ScrollToTop should have thrown with non-scrollable ResultSet");
+                }
+                catch (IllegalStateException e)
+                {
+                    assertEquals("Non-scrollable ResultSet can't be used with ScrollToTop", e.getMessage());
+                }
+
+                rs = Table.cacheResultSet(rs, true, Table.ALL_ROWS, null);
+            }
+
             ResultSetSelector selector = new ResultSetSelector(scope, rs, null);
             selector.setCompletionAction(ResultSetSelector.CompletionAction.ScrollToTop);
 
