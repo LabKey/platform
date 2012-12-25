@@ -206,6 +206,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
 
     // TODO: forEachFieldKeyMap()
 
+    // TODO: Convert to return Map<FieldKey, List<Aggregate.Result>>
     public Map<String, List<Aggregate.Result>> getAggregates(final List<Aggregate> aggregates)
     {
         AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, _columns);

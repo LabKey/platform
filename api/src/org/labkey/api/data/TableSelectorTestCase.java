@@ -15,27 +15,21 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ResultSetUtil;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
 * User: adam
 * Date: 1/19/12
 * Time: 5:54 PM
 */
-public class TableSelectorTestCase extends Assert
+public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelector>
 {
     @Test
     public void testTableSelector() throws SQLException
@@ -48,8 +42,21 @@ public class TableSelectorTestCase extends Assert
     {
         TableSelector selector = new TableSelector(table, null, null);
 
-        testSelectorMethods(selector, clazz);
+        test(selector, clazz);
         testOffsetAndLimit(selector, clazz);
+    }
+
+    @Override
+    protected void verifyResultSets(TableSelector tableSelector, int expectedRowCount, boolean expectedComplete) throws SQLException
+    {
+        super.verifyResultSets(tableSelector, expectedRowCount, expectedComplete);
+
+        // Test caching and scrolling options
+        verifyResultSet(tableSelector.getResultSet(false, false), expectedRowCount, expectedComplete);
+        verifyResultSet(tableSelector.getResultSet(true, false), expectedRowCount, expectedComplete);
+        verifyResultSet(tableSelector.getResultSet(true, true), expectedRowCount, expectedComplete);
+
+        verifyResultSet(tableSelector.getResults(), expectedRowCount, expectedComplete);
     }
 
     private <K> void testOffsetAndLimit(TableSelector selector, Class<K> clazz) throws SQLException
@@ -103,90 +110,5 @@ public class TableSelectorTestCase extends Assert
             assertEquals(count, selector.getCollection(clazz).size());
             verifyResultSets(selector, count, true);
         }
-    }
-
-    public static void verifyResultSets(Selector selector, int expectedRowCount, boolean expectedComplete) throws SQLException
-    {
-        // Test normal ResultSet
-        verifyResultSet(selector.getResultSet(), expectedRowCount, expectedComplete);
-
-        if (selector instanceof ExecutingSelector)
-        {
-            // Test caching and scrolling options
-            ExecutingSelector eSelector = (ExecutingSelector)selector;
-            verifyResultSet(eSelector.getResultSet(false, false), expectedRowCount, expectedComplete);
-            verifyResultSet(eSelector.getResultSet(true, false), expectedRowCount, expectedComplete);
-            verifyResultSet(eSelector.getResultSet(true, true), expectedRowCount, expectedComplete);
-
-            if (eSelector instanceof TableSelector)
-            {
-                // Test results
-                verifyResultSet(((TableSelector)eSelector).getResults(), expectedRowCount, expectedComplete);
-            }
-        }
-    }
-
-    private static void verifyResultSet(Table.TableResultSet rs, int expectedRowCount, boolean expectedComplete) throws SQLException
-    {
-        try
-        {
-            int rsCount = 0;
-            while(rs.next())
-                rsCount++;
-            assertEquals(expectedRowCount, rsCount);
-            assertEquals(expectedComplete, rs.isComplete());
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-    }
-
-    private <K> void testSelectorMethods(Selector selector, Class<K> clazz) throws SQLException
-    {
-        assertTrue("exists() failed", selector.exists() || selector.getRowCount() == 0);
-
-        K[] array = selector.getArray(clazz);
-        Collection<K> collection = selector.getCollection(clazz);
-
-        final MutableInt forEachCount = new MutableInt(0);
-        selector.forEach(new Selector.ForEachBlock<ResultSet>() {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                forEachCount.increment();
-            }
-        });
-
-        final MutableInt mapCount = new MutableInt(0);
-        selector.forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(Map<String, Object> map) throws SQLException
-            {
-                mapCount.increment();
-            }
-        });
-
-        final MutableInt objCount = new MutableInt(0);
-        selector.forEach(new Selector.ForEachBlock<K>()
-        {
-            @Override
-            public void exec(K object) throws SQLException
-            {
-                objCount.increment();
-            }
-        }, clazz);
-
-        verifyResultSets(selector, array.length, true);
-
-        assertTrue
-        (
-            array.length == collection.size() &&
-            array.length == forEachCount.intValue() &&
-            array.length == mapCount.intValue() &&
-            array.length == objCount.intValue() &&
-            array.length == selector.getRowCount()
-        );
     }
 }

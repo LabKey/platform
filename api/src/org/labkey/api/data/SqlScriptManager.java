@@ -28,6 +28,7 @@ import org.labkey.api.module.ModuleContext;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,9 +51,9 @@ public class SqlScriptManager
         if (_core.getTableInfoSqlScripts().getTableType() != DatabaseTableType.TABLE)
             return Collections.emptySet();
 
-        String[] runFilenames = Table.executeArray(_core.getSchema(), "SELECT FileName FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ?", new Object[]{provider.getProviderName()}, String.class);
-
-        Set<SqlScript> runScripts = new HashSet<SqlScript>(runFilenames.length);
+        SqlSelector selector = new SqlSelector(_core.getSchema(), "SELECT FileName FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ?", provider.getProviderName());
+        Collection<String> runFilenames = selector.getCollection(String.class);
+        Set<SqlScript> runScripts = new HashSet<SqlScript>(runFilenames.size());
 
         for (String filename : runFilenames)
         {

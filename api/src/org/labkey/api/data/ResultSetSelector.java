@@ -17,7 +17,6 @@ public class ResultSetSelector extends BaseSelector
     private final ResultSet _rs;
     private CompletionAction _completionAction = CompletionAction.Close;
 
-    // TODO: Pass in (or set) a shouldCloseResultSet flag?
     protected ResultSetSelector(DbScope scope, ResultSet rs, @Nullable Connection conn)
     {
         super(scope, conn);
@@ -122,6 +121,11 @@ public class ResultSetSelector extends BaseSelector
         }
 
         _completionAction = action;
+    }
+
+    public ResultSet getUnderlyingResultSet()
+    {
+        return _rs;
     }
 
     public enum CompletionAction

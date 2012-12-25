@@ -131,13 +131,6 @@ public class Table
         return new LegacyTableSelector(table, select, filter, sort).setMaxRows(maxRows).setOffset(offset).getArray(clss);
     }
 
-    // return a result from a one column resultset. K should be a string or number type
-    @Deprecated // Use TableSelector
-    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
-    {
-        return new LegacyTableSelector(col, filter, sort).getArray(c);
-    }
-
     @NotNull
     @Deprecated // Use TableSelector
     public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
@@ -161,6 +154,27 @@ public class Table
             return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
         else
             return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
+    }
+
+    // return a result from a one column resultset. K should be a string or number type
+    @Deprecated // Use TableSelector
+    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
+    {
+        return new LegacyTableSelector(col, filter, sort).getArray(c);
+    }
+
+    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
+    }
+
+    // return an array from a one column resultset. K can be simple type (string, number, date), a map, or a bean
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).getArray(c);
     }
 
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
@@ -328,22 +342,6 @@ public class Table
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
-    }
-
-    // 11 usages
-    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated // Use SqlSelector
-    public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).getArray(c);
-    }
-
-    // 19 usages
-    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated // Use SqlSelector
-    public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
     }
 
     // 62 usages

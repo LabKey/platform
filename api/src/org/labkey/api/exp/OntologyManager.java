@@ -810,11 +810,11 @@ public class OntologyManager
                     " INNER JOIN " + getTinfoPropertyDescriptor() + " PD ON (PD.PropertyId = PDM.PropertyId) " +
                     " WHERE DD.DomainId = " + dd.getDomainId() +
                     " AND PD.Container = DD.Container";
-            Integer[] objIdsToDelete = Table.executeArray(getExpSchema(), selectObjectsToDelete, new Object[]{}, Integer.class);
+            Integer[] objIdsToDelete = new SqlSelector(getExpSchema(), selectObjectsToDelete).getArray(Integer.class);
 
             String sep;
-            StringBuilder sqlIN=null;
-            Integer[] ownerObjIds=null;
+            StringBuilder sqlIN = null;
+            Integer[] ownerObjIds = null;
 
             if (objIdsToDelete.length > 0)
             {
@@ -833,7 +833,7 @@ public class OntologyManager
                         " (SELECT DISTINCT SUBO.OwnerObjectId FROM " + getTinfoObject() + " SUBO " +
                         " WHERE SUBO.ObjectId IN ( " + sqlIN.toString() + " ) )";
 
-                ownerObjIds = Table.executeArray(getExpSchema(), selectOwnerObjects, new Object[]{}, Integer.class);
+                ownerObjIds = new SqlSelector(getExpSchema(), selectOwnerObjects).getArray(Integer.class);
             }
 
             String deleteTypePropsSql = "DELETE FROM " + getTinfoObjectProperty() +
@@ -914,7 +914,7 @@ public class OntologyManager
                             " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (PDM.DomainId = DD.DomainId) " +
                             " WHERE DD.DomainId = ? ";
 
-            Integer[] pdIdsToDelete = Table.executeArray(getExpSchema(), selectPDsToDelete, new Object[]{dd.getDomainId()}, Integer.class);
+            Integer[] pdIdsToDelete = new SqlSelector(getExpSchema(), selectPDsToDelete, dd.getDomainId()).getArray(Integer.class);
 
             String deletePDMs = "DELETE FROM " + getTinfoPropertyDomain() +
                     " WHERE DomainId =  " +
@@ -1810,8 +1810,8 @@ public class OntologyManager
 
         //TODO: Currently no way to edit these descriptors. But once there is, need to invalidate the cache.
         String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
-        PropertyDescriptor[] pdArray = new SqlSelector(getExpSchema(),  sql, propertyURI,
-                                                                proj.getId(),
+        PropertyDescriptor[] pdArray = new SqlSelector(getExpSchema(), sql, propertyURI,
+                                                                proj,
                                                                 _sharedContainer.getId()).getArray(PropertyDescriptor.class);
         if (pdArray.length > 0)
         {
@@ -1872,7 +1872,7 @@ public class OntologyManager
 
         String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE DomainURI = ? AND Project IN (?,?) ";
         DomainDescriptor[] ddArray = new SqlSelector(getExpSchema(),  sql, domainURI,
-                                                                proj.getId(),
+                                                                proj,
                                                                 _sharedContainer.getId()).getArray(DomainDescriptor.class);
         if (ddArray.length > 0)
         {
@@ -1902,14 +1902,14 @@ public class OntologyManager
 
         if (null != project)
         {
-            DomainDescriptor[] dds = new SqlSelector(getExpSchema(), sql, project.getId()).getArray(DomainDescriptor.class);
+            DomainDescriptor[] dds = new SqlSelector(getExpSchema(), sql, project).getArray(DomainDescriptor.class);
             for (DomainDescriptor dd : dds)
             {
                 ret.put(dd.getDomainURI(), dd);
             }
             if (!project.equals(ContainerManager.getSharedContainer()))
             {
-                DomainDescriptor[] projectDDs = new SqlSelector(getExpSchema(), sql, ContainerManager.getSharedContainer().getId()).getArray(DomainDescriptor.class);
+                DomainDescriptor[] projectDDs = new SqlSelector(getExpSchema(), sql, ContainerManager.getSharedContainer()).getArray(DomainDescriptor.class);
                 for (DomainDescriptor dd : projectDDs)
                 {
                     if (!ret.containsKey(dd.getDomainURI()))

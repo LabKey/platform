@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import java.util.List;
+
 public class SqlSelector extends ExecutingSelector<SqlSelector.SimpleSqlFactory, SqlSelector>
 {
     private final SQLFragment _sql;
@@ -28,7 +30,7 @@ public class SqlSelector extends ExecutingSelector<SqlSelector.SimpleSqlFactory,
     }
 
     // Execute select SQL against a scope
-    public SqlSelector(DbScope scope, String sql)
+    public SqlSelector(DbScope scope, CharSequence sql)
     {
         this(scope, new SQLFragment(sql));
     }
@@ -40,13 +42,19 @@ public class SqlSelector extends ExecutingSelector<SqlSelector.SimpleSqlFactory,
     }
 
     // Execute select SQL against a schema; simple query with no parameters
-    public SqlSelector(DbSchema schema, String sql)
+    public SqlSelector(DbSchema schema, CharSequence sql)
     {
         this(schema.getScope(), sql);
     }
 
-    // Execute select SQL against a schema; simple query with no parameters
-    public SqlSelector(DbSchema schema, String sql, Object... params)
+    // Execute select SQL against a schema
+    public SqlSelector(DbSchema schema, CharSequence sql, Object... params)
+    {
+        this(schema.getScope(), new SQLFragment(sql, params));
+    }
+
+    // Execute select SQL against a schema
+    public SqlSelector(DbSchema schema, CharSequence sql, List<Object> params)
     {
         this(schema.getScope(), new SQLFragment(sql, params));
     }
