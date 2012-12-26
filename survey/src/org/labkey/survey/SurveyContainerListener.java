@@ -32,6 +32,7 @@ public class SurveyContainerListener implements ContainerListener
     @Override
     public void containerDeleted(Container c, User user)
     {
+        SurveyManager.get().delete(c);
     }
 
     @Override

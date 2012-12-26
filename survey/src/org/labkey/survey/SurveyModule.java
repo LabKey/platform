@@ -36,6 +36,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -45,6 +46,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
 import org.labkey.survey.query.SurveyQuerySchema;
 import org.labkey.survey.query.SurveyQuerySettings;
@@ -114,7 +116,21 @@ public class SurveyModule extends DefaultModule
     @Override
     public Collection<String> getSummary(Container c)
     {
-        return Collections.emptyList();
+        Collection<String> results = new ArrayList<String>();
+
+        SurveyDesign[] surveyDesigns = SurveyManager.get().getSurveyDesigns(c);
+        if(surveyDesigns.length > 0)
+        {
+            results.add(StringUtilsLabKey.pluralize(surveyDesigns.length, " survey design"));
+        }
+
+        Survey[] surveys = SurveyManager.get().getSurveys(c);
+        if(surveys.length > 0)
+        {
+            results.add(StringUtilsLabKey.pluralize(surveys.length, " survey"));
+        }
+
+        return results;
     }
 
     @Override

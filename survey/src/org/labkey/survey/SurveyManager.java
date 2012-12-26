@@ -24,7 +24,9 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
@@ -171,8 +173,36 @@ public class SurveyManager
         return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter("rowId", surveyId), null).getObject(SurveyDesign.class);
     }
 
+    public SurveyDesign[] getSurveyDesigns(Container container)
+    {
+        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter(FieldKey.fromParts("container"), container), null).getArray(SurveyDesign.class);
+    }
+
     public Survey getSurvey(Container container, User user, int rowId)
     {
-        return new TableSelector(SurveySchema.getInstance().getSurveysTable(), new SimpleFilter(FieldKey.fromParts("rowId"), rowId), null).getObject(Survey.class);
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("container"), container);
+        filter.addCondition(FieldKey.fromParts("rowId"), rowId);
+        return new TableSelector(SurveySchema.getInstance().getSurveysTable(), filter, null).getObject(Survey.class);
+    }
+
+    public Survey[] getSurveys(Container container)
+    {
+        return new TableSelector(SurveySchema.getInstance().getSurveysTable(), new SimpleFilter(FieldKey.fromParts("container"), container), null).getArray(Survey.class);
+    }
+
+    // delete all survey designs and survey instances in this container
+    public void delete(Container c)
+    {
+        SurveySchema s = SurveySchema.getInstance();
+        SqlExecutor executor = new SqlExecutor(s.getSchema());
+
+        SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
+        deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE Container = ?").add(c);
+        executor.execute(deleteSurveysSql);
+
+        SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
+        deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE Container = ?").add(c);
+        executor.execute(deleteSurveyDesignsSql);
     }
 }

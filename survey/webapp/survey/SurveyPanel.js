@@ -17,13 +17,24 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         Ext4.apply(config, {
             border: true,
             width: 870,
+            minHeight: 25,
             layout: {
                 type: 'hbox',
                 pack: 'start',
                 align: 'stretchmax'
             },
             trackResetOnLoad: true,
-            items: []
+            items: [],
+            sections: [],
+            validStatus: {},
+            changeHandlers: {},
+            listeners: {
+                scope: this,
+                afterrender: function() {
+                    if (this.sections && this.sections.length == 0)
+                        this.setLoading(true);
+                }
+            }
         });
 
         this.callParent([config]);
@@ -139,7 +150,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         var changeHandlers = this.changeHandlers[cmp.getName()];
         if (Ext4.isArray(changeHandlers))
         {
-            var values = this.getForm().getValues(false, true);
+            var values = this.getForm().getValues();
 
             for (var i=0; i < changeHandlers.length; i++)
             {
@@ -148,17 +159,38 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 var changeFn = info.fn;
 
                 changeFn().call(this, me, cmp, newValue, oldValue, values);
+
+                this.clearHiddenFieldValues(me);
             }
+        }
+    },
+
+    clearHiddenFieldValues : function(cmp) {
+        if (cmp.isHidden())
+        {
+            // the component can either be a form field itself or a container that has multiple fields
+            if (cmp.isFormField)
+                this.clearFieldValue(cmp);
+            else
+                Ext4.each(cmp.query('field'), this.clearFieldValue, this);
+        }
+    },
+
+    clearFieldValue : function(field) {
+        // only "reset" form fields that are not displayfields
+        if (field && field.isFormField && field.getXType() != 'displayfield')
+        {
+            // TODO: there is an issue that combos with "forceSelection: true" are not being cleared/reset
+            if (field.clearValue != undefined)
+                field.clearValue();
+            else
+                field.setValue(null);
         }
     },
 
     generateSurveySections : function(surveyConfig) {
 
-        this.sections = [];
-        this.validStatus = {};
-
         this.addSurveyStartPanel();
-        this.changeHandlers = {};
 
         // add each of the survey sections as a panel to the sections array
         if (surveyConfig.survey)
@@ -289,6 +321,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         // if we have an existing survey record, initialize the fields based on the surveyResults
         if (this.initialResponses != null)
             this.getForm().setValues(this.initialResponses);
+
+        this.clearLoadingMask();
     },
 
     configureFieldListeners : function() {
@@ -689,6 +723,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             Ext4.MessageBox.alert('Error', error.errorInfo);
         else
             Ext4.MessageBox.alert('Error', 'An unknown error has ocurred.');
+
+        this.clearLoadingMask();
     },
 
     saveSurveyAttachments : function() {
@@ -710,5 +746,9 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             };
             form.doAction(new Ext4.form.action.Submit(options));
         }
+    },
+
+    clearLoadingMask: function() {
+        this.setLoading(false);
     }
 });

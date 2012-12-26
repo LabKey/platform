@@ -79,15 +79,17 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
     },
 
     resetOriginalValue : function() {
-        this.originalVlue = this.getValue();
+        this.originalValue = this.getValue();
+    },
+
+    clearValue : function() {
+        this.getStore().loadData([]);
+        this.setDirty(true);
     },
 
     setValue : function(data) {
-        if (data)
-        {
-            this.getStore().loadData(Ext4.decode(data));
-            this.setDirty(false);
-        }
+        this.getStore().loadData(data ? Ext4.decode(data) : []);
+        this.setDirty(false);
     },
 
     getValue : function() {
