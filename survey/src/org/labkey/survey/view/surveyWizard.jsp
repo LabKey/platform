@@ -58,6 +58,7 @@
     Integer surveyDesignId = null;
     String responsesPk = null;
     String surveyLabel = null;
+    boolean submitted = false;
     String returnURL = null;
     if (bean != null)
     {
@@ -65,6 +66,7 @@
         surveyDesignId = bean.getSurveyDesignId();
         responsesPk = bean.getResponsesPk();
         surveyLabel = bean.getLabel();
+        submitted = bean.isSubmitted();
         returnURL = bean.getSrcURL().toString();
     }
 
@@ -90,6 +92,7 @@
             surveyDesignId  : <%=surveyDesignId%>,
             responsesPk     : <%=q(responsesPk)%>,
             surveyLabel     : <%=q(surveyLabel)%>,
+            isSubmitted     : <%=submitted%>,
             autosaveInterval: 60000,
             renderTo        : <%=q(renderId)%>,
             returnURL       : <%=q(returnURL)%>

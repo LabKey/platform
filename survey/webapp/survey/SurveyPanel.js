@@ -50,18 +50,21 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         }, this);
 
         // add a delayed task for automatically saving the survey responses
-        var autoSaveFn = function(count){
-            // without btn/event arguments so we don't show the success msg
-            this.saveSurvey(null, null, false);
-        };
-        this.autoSaveTask = Ext4.TaskManager.start({
-            run: autoSaveFn,
-            interval: this.autosaveInterval || 60000, // default is 1 min
-            scope: this
-        });
+        if (this.isSubmitted == undefined || !this.isSubmitted)
+        {
+            var autoSaveFn = function(count){
+                // without btn/event arguments so we don't show the success msg
+                this.saveSurvey(null, null, false);
+            };
+            this.autoSaveTask = Ext4.TaskManager.start({
+                run: autoSaveFn,
+                interval: this.autosaveInterval || 60000, // default is 1 min
+                scope: this
+            });
 
-        // check dirty state on page navigation
-        window.onbeforeunload = LABKEY.beforeunload(this.isSurveyDirty, this);
+            // check dirty state on page navigation
+            window.onbeforeunload = LABKEY.beforeunload(this.isSurveyDirty, this);
+        }
     },
 
     initComponent : function() {
@@ -163,6 +166,25 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 this.clearHiddenFieldValues(me);
             }
         }
+
+        var sectionPanel = cmp.up('.panel[sectionPanel=true]');
+        if (sectionPanel)
+        {
+            var changed = false;
+            if ((oldValue == null || oldValue.toString().length == 0) && (newValue != null && newValue.toString().length > 0))
+            {
+                sectionPanel.completedQuestions++;
+                changed = true;
+            }
+            else if ((newValue == null || newValue.toString().length == 0) && (oldValue != null && oldValue.toString().length > 0))
+            {
+                sectionPanel.completedQuestions--;
+                changed = true;
+            }
+
+            //if (changed)
+            //    sectionPanel.setTitle(sectionPanel.origTitle + (sectionPanel.completedQuestions > 0 ? " (" + sectionPanel.completedQuestions + ")" : ""));
+        }
     },
 
     clearHiddenFieldValues : function(cmp) {
@@ -199,6 +221,9 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 var sectionPanel = Ext4.create('Ext.panel.Panel', {
                     border: false,
                     header: this.surveyLayout == 'card' ? false : (section.header != undefined ? section.header : true),
+                    sectionPanel: true, // marker for looking for a components parent section
+                    completedQuestions: 0, // counter for the section header to show progress when a panel is collapsed
+                    origTitle: section.title || '',
                     title: section.title || '',
                     defaults: {
                         labelWidth: section.defaultLabelWidth || 350,
@@ -340,6 +365,10 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             // add a global change listener for all questions so we can map them to any change handlers specified in the survey
             field.addListener('change', this.questionChangeHandler, this);
 
+            // if this survey has already been submitted, make the field readOnly
+            if (this.isSubmitted)
+                field.setReadOnly(true);
+
         }, this);
     },
 
@@ -359,6 +388,12 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             config.uncheckedValue = 'false';
         }
 
+        // set the date field format
+        if (config.xtype == 'datefield')
+        {
+            config.format = question.format ? question.format : "Y-m-d";
+        }
+
         // if the question has a description, append it to the field label
         if (question.description)
             config.fieldLabel += "<br/>" + question.description;
@@ -366,6 +401,14 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         // if hidden, apply that to the config
         if (hidden != undefined && hidden)
             config.hidden = true;
+
+        // if the question has a short caption (used in the submit button disabled info), make sure it is applied
+        if (question.shortCaption)
+            config.shortCaption = question.shortCaption;
+
+        // if this survey has already been submitted, make the field readOnly
+        if (this.isSubmitted)
+            config.readOnly = true;
 
         return config;
     },
@@ -396,6 +439,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             labelSeparator: '',
             padding: 10,
             allowBlank: false,
+            readOnly: this.isSubmitted,
             width: 800,
             listeners: {
                 scope: this,
@@ -462,29 +506,32 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             style: "text-align: center;"
         });
 
-        this.sections.push(Ext4.create('Ext.panel.Panel', {
-            title: 'End Survey',
-            layout: {
-                type: 'hbox',
-                align: 'top',
-                pack: 'center'
-            },
-            header: false,
-            border: false,
-            bodyStyle: 'padding-top: 25px;',
-            defaults: { border: false, width: 250 },
-            items: [{
-                xtype: 'panel',
-                layout: {type: 'vbox', align: 'center'},
-                items: [this.saveBtn, this.saveDisabledInfo, this.autosaveInfo]
-            },
-            {xtype: 'label', width: 100, value: null},
-            {
-                xtype: 'panel',
-                layout: {type: 'vbox', align: 'center'},
-                items: [this.submitBtn, this.submitInfo]
-            }]
-        }));
+        if (this.isSubmitted == undefined || !this.isSubmitted)
+        {
+            this.sections.push(Ext4.create('Ext.panel.Panel', {
+                title: 'End Survey',
+                layout: {
+                    type: 'hbox',
+                    align: 'top',
+                    pack: 'center'
+                },
+                header: false,
+                border: false,
+                bodyStyle: 'padding-top: 25px;',
+                defaults: { border: false, width: 250 },
+                items: [{
+                    xtype: 'panel',
+                    layout: {type: 'vbox', align: 'center'},
+                    items: [this.saveBtn, this.saveDisabledInfo, this.autosaveInfo]
+                },
+                {xtype: 'label', width: 100, value: null},
+                {
+                    xtype: 'panel',
+                    layout: {type: 'vbox', align: 'center'},
+                    items: [this.submitBtn, this.submitInfo]
+                }]
+            }));
+        }
     },
 
     setSurveyLayout : function(surveyConfig) {
@@ -575,7 +622,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     },
 
     saveSurvey : function(btn, evt, toSubmit) {
-        console.log('Attempting save at ' + new Date().format('g:i:s A'));
+        //console.log('Attempting save at ' + new Date().format('g:i:s A'));
 
         // check to see if there is anything to be saved (or submitted)
         if (!this.isSurveyDirty() && !toSubmit)
@@ -586,7 +633,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         // get the dirty form values and add the survey's rowId, surveyDesignId, and responsesPk
         // note: these are not stored as hidden fields because we are only getting the dirty values (which they won't be)
         var values = this.getForm().getValues(false, true);
-        console.log(values);
+        //console.log(values);
 
         // check to make sure the survey label is not null, it is required
         if (!this.surveyLabel)
@@ -698,7 +745,13 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         for (var name in this.validStatus)
         {
             if (!this.validStatus[name])
-                msg += "-" + name + "<br/>";
+            {
+                var cmp = this.down('[name=' + name + ']');
+                if (cmp)
+                {
+                    msg += "-" + (cmp.shortCaption ? cmp.shortCaption : name) + "<br/>";
+                }
+            }
         }
 
         if (msg.length > 0)

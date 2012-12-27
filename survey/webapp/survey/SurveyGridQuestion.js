@@ -21,7 +21,7 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
         this.callParent([config]);
 
         // add listeners to the store to set the dirty state on add, update, remove
-        if (this.getStore())
+        if (this.getStore() && !this.readOnly)
         {
             this.getStore().addListener('add', function(){ this.setDirty(true); }, this);
             this.getStore().addListener('remove', function(){ this.setDirty(true); }, this);
@@ -33,48 +33,51 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
         this.originalValue = this.value;
         this.dirty = false;
 
-        this.rowEditor = Ext4.create('Ext.grid.plugin.RowEditing', {
-            clicksToEdit: 2
-        });
-        this.plugins = [this.rowEditor];
+        if (!this.readOnly)
+        {
+            this.rowEditor = Ext4.create('Ext.grid.plugin.RowEditing', {
+                clicksToEdit: 2
+            });
+            this.plugins = [this.rowEditor];
 
-        this.selModel = Ext4.create('Ext.selection.RowModel', {
-            allowDeselect: true,
-            listeners: {
-                scope: this,
-                selectionchange: function() {
-                    this.down('#remove-selected-btn').setDisabled(!this.getSelectionModel().hasSelection());
+            this.selModel = Ext4.create('Ext.selection.RowModel', {
+                allowDeselect: true,
+                listeners: {
+                    scope: this,
+                    selectionchange: function() {
+                        this.down('#remove-selected-btn').setDisabled(!this.getSelectionModel().hasSelection());
+                    }
                 }
-            }
-        });
+            });
 
-        this.dockedItems = [{
-            xtype: 'toolbar',
-            dock: 'bottom',
-            ui: 'footer',
-            items: [{
-                text:'Add Record',
-                handler: function() {
-                    // if the grid height is too small, the row editor will be masked
-                    if (this.getHeight() < 130)
-                        this.minHeight = 130;
+            this.dockedItems = [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                ui: 'footer',
+                items: [{
+                    text:'Add Record',
+                    handler: function() {
+                        // if the grid height is too small, the row editor will be masked
+                        if (this.getHeight() < 130)
+                            this.minHeight = 130;
 
-                    var record = this.getStore().add({});
-                    this.rowEditor.startEdit(this.getStore().getCount() - 1, 0);
-                },
-                scope: this
-            },{
-                itemId: 'remove-selected-btn',
-                text:'Remove Selected',
-                disabled: true,
-                handler: function() {
-                    var selected = this.getSelectionModel().getSelection();
-                    if (selected)
-                        this.getStore().remove(selected);
-                },
-                scope: this
-            }]
-        }];
+                        var record = this.getStore().add({});
+                        this.rowEditor.startEdit(this.getStore().getCount() - 1, 0);
+                    },
+                    scope: this
+                },{
+                    itemId: 'remove-selected-btn',
+                    text:'Remove Selected',
+                    disabled: true,
+                    handler: function() {
+                        var selected = this.getSelectionModel().getSelection();
+                        if (selected)
+                            this.getStore().remove(selected);
+                    },
+                    scope: this
+                }]
+            }];
+        }
 
         this.callParent();
     },
@@ -130,6 +133,10 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
 
     isValid : function() {
         return true;
+    },
+
+    setReadOnly : function() {
+        // not implemented, set via the question config instead
     }
 });
 

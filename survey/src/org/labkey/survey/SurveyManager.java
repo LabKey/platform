@@ -92,7 +92,12 @@ public class SurveyManager
                     if (dc.isQueryColumn())
                     {
                         Map<String, Object> metaDataMap = JsonWriter.getMetaData(dc, null, false, true, false);
-                        columns.add(getTrimmedMetaData(metaDataMap));
+                        Map<String, Object> trimmedMap = getTrimmedMetaData(metaDataMap);
+
+                        // set defaults for the survey questions
+                        trimmedMap.put("width", 800);
+
+                        columns.add(trimmedMap);
                     }
                 }
                 panel.put("questions", columns);
@@ -106,7 +111,7 @@ public class SurveyManager
     public Map<String, Object> getTrimmedMetaData(Map<String, Object> origMap)
     {
         // trim the metadata property map to just those properties needed for rendering the Survey questions
-        String[] props = {"name", "caption", "hidden", "jsonType", "inputType", "rows", "cols", "lookup"};
+        String[] props = {"name", "caption", "shortCaption", "hidden", "jsonType", "inputType", "lookup"};
         Map<String, Object> trimmedMap = new LinkedHashMap<String, Object>();
         for (String property : props)
         {

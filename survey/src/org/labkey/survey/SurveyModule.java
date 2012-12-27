@@ -214,9 +214,9 @@ public class SurveyModule extends DefaultModule
                 settings.setSurveyDesignId(surveyDesign.getRowId());
                 settings.setReturnUrl(context.getActionURL().clone());
 
-                // set base filter to the given survey design id and only show non-submitted surveys
+                // set base filter to the given survey design id
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("SurveyDesignId"), surveyDesign.getRowId());
-                filter.addCondition(FieldKey.fromParts("Submitted"), null, CompareType.ISBLANK);
+                //filter.addCondition(FieldKey.fromParts("Submitted"), null, CompareType.ISBLANK);
                 settings.setBaseFilter(filter);
 
                 QueryView queryView = schema.createView(context, settings, errors);

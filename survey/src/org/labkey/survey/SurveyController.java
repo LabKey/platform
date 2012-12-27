@@ -139,13 +139,13 @@ public class SurveyController extends SpringActionController
                     form.setLabel(survey.getLabel());
                     form.setStatus(survey.getStatus());
                     form.setResponsesPk(survey.getResponsesPk());
-
-                    if (survey.getSubmitted() != null)
-                        errors.reject(ERROR_MSG, "Error: You are not allowed to update a survey that has already been submitted. Please contact the site administrator if the survey status for this record needs to be changed.");
+                    form.setSubmitted(survey.getSubmitted() != null);
 
                     SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
                     if (surveyDesign != null)
-                        _title = "Update " + surveyDesign.getLabel();
+                    {
+                        _title = (form.isSubmitted() ? "Review " : "Update ") + surveyDesign.getLabel();
+                    }
                 }
             }
             else if (form.getSurveyDesignId() != null)
@@ -431,38 +431,47 @@ public class SurveyController extends SpringActionController
                         tvf.setViewContext(getViewContext());
                         tvf.setTypedValues(form.getResponses(), false);
 
-                        if (!survey.isNew())
+                        // don't allow saving changes to a submitted survey
+                        if (survey.getSubmitted() != null)
                         {
-                            Map<String, Object> keys = new HashMap<String, Object>();
-
-                            keys.put(pk.toString(), survey.getResponsesPk());
-                            tvf.setOldValues(keys);
+                            response.put("errorInfo", "You are not allowed to update a survey that has already been submitted.");
+                            response.put("success", false);
                         }
-
-                        if (form.isSubmitted())
+                        else
                         {
-                            survey.setSubmittedBy(getUser().getUserId());
-                            survey.setSubmitted(new Date());
-                        }
-
-                        Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
-
-                        if (!row.isEmpty())
-                        {
-                            if (survey.isNew())
+                            if (!survey.isNew())
                             {
-                                // update the survey instance with the key for the answers so that existing answers can
-                                // be updated.
-                                Object key = row.get(pk.toString());
-                                survey.setResponsesPk(String.valueOf(key));
-                            }
-                            survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
+                                Map<String, Object> keys = new HashMap<String, Object>();
 
-                            response.put("surveyResults", row);
-                            response.put("survey", new JSONObject(survey));
+                                keys.put(pk.toString(), survey.getResponsesPk());
+                                tvf.setOldValues(keys);
+                            }
+
+                            if (form.isSubmitted())
+                            {
+                                survey.setSubmittedBy(getUser().getUserId());
+                                survey.setSubmitted(new Date());
+                            }
+
+                            Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
+
+                            if (!row.isEmpty())
+                            {
+                                if (survey.isNew())
+                                {
+                                    // update the survey instance with the key for the answers so that existing answers can
+                                    // be updated.
+                                    Object key = row.get(pk.toString());
+                                    survey.setResponsesPk(String.valueOf(key));
+                                }
+                                survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
+
+                                response.put("surveyResults", row);
+                                response.put("survey", new JSONObject(survey));
+                            }
+                            response.put("success", !row.isEmpty());
+                            dbschema.getScope().commitTransaction();
                         }
-                        response.put("success", !row.isEmpty());
-                        dbschema.getScope().commitTransaction();
                     }
                     finally
                     {
