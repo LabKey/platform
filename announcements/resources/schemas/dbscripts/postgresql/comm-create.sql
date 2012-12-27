@@ -35,5 +35,5 @@ CREATE VIEW comm.Threads AS
 
 -- View that joins each wiki with its current version.  Not used directly by LabKey, but helpful for administrators.
 CREATE VIEW comm.PagesAndVersions AS
-    SELECT p.Container, p.Name, pv.Title, pv.Body
+    SELECT p.Container, p.Name, pv.Title, pv.Body, p.Created, p.Modified
         FROM comm.Pages p INNER JOIN comm.PageVersions pv ON p.PageVersionId = pv.RowId;

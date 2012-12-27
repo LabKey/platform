@@ -97,7 +97,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public double getVersion()
     {
-        return 12.30;
+        return 12.31;
     }
 
     @Override
@@ -257,7 +257,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
 
-    public void enumerateDocuments(final SearchService.IndexTask task, final Container c, final Date modifiedSince)
+    public void enumerateDocuments(final SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
         Runnable r = new Runnable()
             {

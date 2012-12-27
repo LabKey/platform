@@ -254,6 +254,7 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="PagesAndVersions" tableDbType="VIEW">
+    <ns:tableUrl>/wiki/page.view?name=${Name}</ns:tableUrl>
     <ns:columns>
       <ns:column columnName="Container">
         <ns:isHidden>true</ns:isHidden>
@@ -263,6 +264,8 @@
       </ns:column>
       <ns:column columnName="Title"/>
       <ns:column columnName="Body"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="Modified"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="EmailFormats" tableDbType="TABLE">

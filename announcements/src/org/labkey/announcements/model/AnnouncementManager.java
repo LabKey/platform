@@ -676,7 +676,7 @@ public class AnnouncementManager
         }
     }
 
-    public static void indexMessages(SearchService.IndexTask task, Container c, Date modifiedSince)
+    public static void indexMessages(SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
         indexMessages(task, c.getId(), modifiedSince, null);
     }
