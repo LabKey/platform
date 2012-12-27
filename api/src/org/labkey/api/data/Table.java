@@ -305,14 +305,14 @@ public class Table
 
     // ===== SqlExecutor methods below =====
 
-    // 92 usages
+    // 80 usages
     @Deprecated // Use SqlExecutor
     public static int execute(DbSchema schema, SQLFragment f) throws SQLException
     {
         return new LegacySqlExecutor(schema).execute(f);
     }
 
-    // 333 usages
+    // 299 usages
     @Deprecated // Use SqlExecutor
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
