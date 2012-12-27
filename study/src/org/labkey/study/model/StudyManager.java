@@ -3058,9 +3058,11 @@ public class StudyManager
         // Returns a SQL statement that produces a single number from a date, in the form of YYYYMMDD.
         SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
         SQLFragment sql = new SQLFragment();
+        sql.append("CAST((");
         sql.append("(10000 * ").append(dialect.getDatePart(Calendar.YEAR, dateColumnName)).append(") + ");
         sql.append("(100 * ").append(dialect.getDatePart(Calendar.MONTH, dateColumnName)).append(") + ");
         sql.append("(").append(dialect.getDatePart(Calendar.DAY_OF_MONTH, dateColumnName)).append(")");
+        sql.append(") AS VARCHAR(36))");
         return sql;
     }
 
