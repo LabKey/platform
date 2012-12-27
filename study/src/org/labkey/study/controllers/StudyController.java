@@ -2409,25 +2409,7 @@ public class StudyController extends BaseStudyController
                     else
                         continue; // No logging if we can't find a matching run
 
-                    AuditLogEvent event = new AuditLogEvent();
-
-                    event.setCreatedBy(getUser());
-                    event.setEventType(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
-                    event.setContainerId(sourceContainer.getId());
-                    event.setKey1(getContainer().getId());
-
-                    String assayName = def.getLabel();
-                    ExpProtocol protocol = def.getAssayProtocol();
-                    if (protocol != null)
-                        assayName = protocol.getName();
-
-                    event.setIntKey1(NumberUtils.toInt(protocolId));
-                    Collection<String> lsids = entry.getValue();
-                    event.setComment(lsids.size() + " row(s) were recalled to the assay: " + assayName);
-
-                    Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DataSetDefinition.DATASETKEY, form.getDatasetId());
-
-                    AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
+                    StudyService.get().addAssayRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
             def.deleteRows(getUser(), allLsids);

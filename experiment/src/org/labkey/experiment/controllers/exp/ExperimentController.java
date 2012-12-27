@@ -60,6 +60,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -123,7 +124,9 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -2115,7 +2118,22 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView("run", "showRunGraph", runs, deleteForm);
+            List<Pair<SecurableResource, ActionURL>> permissionDatasetRows = new ArrayList<Pair<SecurableResource, ActionURL>>();
+            List<Pair<SecurableResource, ActionURL>> noPermissionDatasetRows = new ArrayList<Pair<SecurableResource, ActionURL>>();
+            for (DataSet dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
+            {
+                ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDataSetId());
+                if (dataset.canWrite(getUser()))
+                {
+                    permissionDatasetRows.add(new Pair<SecurableResource, ActionURL>(dataset, url));
+                }
+                else
+                {
+                    noPermissionDatasetRows.add(new Pair<SecurableResource, ActionURL>(dataset, url));
+                }
+            }
+
+            return new ConfirmDeleteView("run", ShowRunGraphAction.class, runs, deleteForm, Collections.<ExpRun>emptyList(), "dataset(s) have one or more rows which", permissionDatasetRows, noPermissionDatasetRows);
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException
@@ -2237,7 +2255,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView(noun, "protocolDetails", protocols, deleteForm, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
+            return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, deleteForm, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
         }
 
         private List<ExpProtocol> getProtocols(DeleteForm deleteForm)
@@ -2300,7 +2318,7 @@ public class ExperimentController extends SpringActionController
         {
             List<ExpMaterial> materials = getMaterials(deleteForm, false);
             List<ExpRun> runs = getRuns(materials);
-            return new ConfirmDeleteView("Sample", "showMaterial", materials, deleteForm, runs);
+            return new ConfirmDeleteView("Sample", ShowMaterialAction.class, materials, deleteForm, runs);
         }
 
         private List<ExpRun> getRuns(List<ExpMaterial> materials)
@@ -2360,7 +2378,7 @@ public class ExperimentController extends SpringActionController
             List<ExpData> datas = getDatas(deleteForm, false);
             List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(datas);
 
-            return new ConfirmDeleteView("Data", "showData", datas, deleteForm, runs);
+            return new ConfirmDeleteView("Data", ShowDataAction.class, datas, deleteForm, runs);
         }
 
         private List<ExpData> getDatas(DeleteForm deleteForm, boolean clear)
@@ -2413,7 +2431,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView(allBatches ? "batch" : "run group", "details", experiments, deleteForm, runs);
+            return new ConfirmDeleteView(allBatches ? "batch" : "run group", DetailsAction.class, experiments, deleteForm, runs);
         }
 
         private List<ExpExperiment> lookupExperiments(DeleteForm deleteForm)
@@ -2488,7 +2506,7 @@ public class ExperimentController extends SpringActionController
                 throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer(), "To delete a sample set, you must be in its folder or project."));
             }
 
-            return new ConfirmDeleteView("Sample Set", "showMaterialSource", sampleSets, deleteForm, getRuns(sampleSets));
+            return new ConfirmDeleteView("Sample Set", ShowMaterialSourceAction.class, sampleSets, deleteForm, getRuns(sampleSets));
         }
 
         private List<ExpSampleSet> getSampleSets(DeleteForm deleteForm)

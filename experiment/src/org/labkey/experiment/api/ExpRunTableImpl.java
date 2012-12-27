@@ -697,6 +697,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         public ExperimentsForeignKey()
         {
+            setPublic(false);
         }
 
         private synchronized ExpExperiment[] getExperiments()

@@ -99,6 +99,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -112,6 +113,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -1375,7 +1377,32 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     ExpProtocol protocol = run.getProtocol();
                     ProtocolImplementation protocolImpl = null;
                     if (protocol != null)
+                    {
                         protocolImpl = protocol.getImplementation();
+                        for (DataSet dataset : StudyService.get().getDatasetsForAssayRuns(Collections.<ExpRun>singletonList(run), user))
+                        {
+                            if (!dataset.canWrite(user))
+                            {
+                                throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
+                            }
+                            UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
+                            TableInfo tableInfo = schema.getTable(dataset.getName());
+                            AssayProvider provider = AssayService.get().getProvider(protocol);
+                            if (provider != null)
+                            {
+                                AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+                                SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
+                                Collection<String> lsids = new TableSelector(tableInfo, Collections.<String>singleton("LSID"), filter, null).getCollection(String.class);
+                                for (String lsid : lsids)
+                                {
+                                    // Do the actual delete on the dataset for the rows in question
+                                    StudyService.get().deleteDatasetRow(user, dataset.getContainer(), dataset.getDataSetId(), lsid);
+                                }
+                                // Add an audit event to the copy to study history
+                                StudyService.get().addAssayRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
+                            }
+                        }
+                    }
 
                     // Grab these to delete after we've deleted the Data rows
                     ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
@@ -1479,10 +1506,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             return;
 
         List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
-        for (ExpRun run : runs)
-        {
-            run.delete(user);
-        }
 
         String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ", ");
 
@@ -1506,11 +1529,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     batch.delete(user);
                 }
 
-                List<DataSet> datasets = StudyService.get().getDatasetsForAssayProtocol(protocolToDelete);
-                for (DataSet dataset : datasets)
+                for (DataSet dataset : StudyService.get().getDatasetsForAssayProtocol(protocolToDelete))
                 {
                     dataset.delete(user);
                 }
+            }
+
+            // Delete runs after deleting datasets so that we don't have to do the work to clear out the data rows
+            for (ExpRun run : runs)
+            {
+                run.delete(user);
             }
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());

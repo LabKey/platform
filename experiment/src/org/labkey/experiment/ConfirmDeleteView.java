@@ -27,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import java.util.Collections;
@@ -47,7 +48,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private final ViewContext _viewContext;
         private final List<? extends ExpObject> _objects;
         private final String _objectType;
-        private final String _detailAction;
+        private final Class<? extends Controller> _detailAction;
         private ReturnURLString _returnURL;
         private String _dataRegionSelectionKey;
         private Integer _singleObjectRowId;
@@ -55,7 +56,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private final List<Pair<SecurableResource, ActionURL>> _deleteableExtras;
         private final List<Pair<SecurableResource, ActionURL>> _noPermissionExtras;
 
-        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, ViewContext viewContext, List<? extends ExpObject> objects, String objectType, String detailAction, Integer singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras)
+        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, ViewContext viewContext, List<? extends ExpObject> objects, String objectType, Class<? extends Controller> detailAction, Integer singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras)
         {
             _runsWithPermission = runsWithPermission;
             _runsWithoutPermission = runsWithoutPermission;
@@ -94,7 +95,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             return _objectType;
         }
 
-        public String getDetailAction()
+        public Class<? extends Controller> getDetailAction()
         {
             return _detailAction;
         }
@@ -140,17 +141,17 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         }
     }
 
-    public ConfirmDeleteView(String objectType, String detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form) throws ServletException
+    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form) throws ServletException
     {
         this(objectType, detailAction, objects, form, Collections.<ExpRun>emptyList());
     }
 
-    public ConfirmDeleteView(String objectType, String detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form, List<? extends ExpRun> runs) throws ServletException
+    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form, List<? extends ExpRun> runs) throws ServletException
     {
         this(objectType, detailAction, objects, form, runs, null, Collections.<Pair<SecurableResource, ActionURL>>emptyList(), Collections.<Pair<SecurableResource, ActionURL>>emptyList());
     }
 
-    public ConfirmDeleteView(String objectType, String detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form, List<? extends ExpRun> runs, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras) throws ServletException
+    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form, List<? extends ExpRun> runs, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras) throws ServletException
     {
         super("/org/labkey/experiment/ConfirmDelete.jsp");
 

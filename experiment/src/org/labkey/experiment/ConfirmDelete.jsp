@@ -49,7 +49,7 @@ else
 
     <ul>
     <% for (ExpObject object : bean.getObjects()) { %>
-        <li><a href="<%= h(bean.getDetailAction()) %>.view?rowId=<%= object.getRowId() %>"><%= h(object.getName()) %></a></li>
+        <li><a href="<%= h(new ActionURL(bean.getDetailAction(), getViewContext().getContainer()).addParameter("rowId", object.getRowId())) %>"><%= h(object.getName()) %></a></li>
     <% } %>
     </ul>
 
@@ -78,15 +78,15 @@ else
     <% } %>
 
 <% if (bean.getNoPermissionExtras().size() > 0) { %>
-    <span class="labkey-error">The <%= h(bean.getObjectType()) %><%= h(bean.getObjects().size() > 1 ? "s" : "") %> are also referenced by the following
-        <%= h(bean.getExtraNoun()) %><%= h(bean.getNoPermissionExtras().size() > 1 ? "s" : "") %>, which you do not have permission to delete:</span>
+    <span class="labkey-error">
+        <%= h(bean.getNoPermissionExtras().size() > 1 ? Integer.toString(bean.getNoPermissionExtras().size()) : "One") %> <%= h(bean.getExtraNoun())%><%= h(bean.getDeleteableExtras().size() > 1 ? "s" : "") %> reference the <%= h(bean.getObjectType()) %>, but you do not have permission to delete them:</span>
 
     <ul>
     <%  int count = 0;
     for (Pair<SecurableResource, ActionURL> entry : bean.getNoPermissionExtras()) {
         if (count >= 50)
         {
-            %>(<%= bean.getNoPermissionExtras().size() - count %> <%= h(bean.getExtraNoun()) %>s omitted from list)<%
+            %>(<%= bean.getNoPermissionExtras().size() - count %> others omitted from list)<%
             break;
         }
         count++;

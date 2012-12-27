@@ -31,11 +31,13 @@ import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -46,10 +48,13 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.importer.StudyImportJob;
@@ -62,7 +67,6 @@ import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
 
 import java.io.File;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -106,7 +110,7 @@ public class StudyServiceImpl implements StudyService.Service
         return study == null ? null : study.getLabel();
     }
 
-    public DataSet getDataSet(Container c, int datasetId)
+    public DataSetDefinition getDataSet(Container c, int datasetId)
     {
         Study study = StudyManager.getInstance().getStudy(c);
         if (study != null)
@@ -139,7 +143,7 @@ public class StudyServiceImpl implements StudyService.Service
              defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
 
         String managedKey = null;
-        if (def.getKeyType()== DataSet.KeyType.SUBJECT_VISIT_OTHER && def.getKeyManagementType() != DataSet.KeyManagementType.None)
+        if (def.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER && def.getKeyManagementType() != DataSet.KeyManagementType.None)
             managedKey = def.getKeyPropertyName();
 
         ensureTransaction();
@@ -423,6 +427,31 @@ public class StudyServiceImpl implements StudyService.Service
     }
 */
 
+    public void addAssayRecallAuditEvent(DataSet def, int rowCount, Container sourceContainer, User user)
+    {
+        AuditLogEvent event = new AuditLogEvent();
+
+        event.setCreatedBy(user);
+        event.setEventType(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
+        event.setContainerId(sourceContainer.getId());
+        event.setKey1(def.getStudy().getContainer().getId());
+
+        String assayName = def.getLabel();
+        ExpProtocol protocol = def.getAssayProtocol();
+        if (protocol != null)
+        {
+            assayName = protocol.getName();
+            event.setIntKey1(protocol.getRowId());
+        }
+
+        event.setComment(rowCount + " row(s) were recalled to the assay: " + assayName);
+
+        Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DataSetDefinition.DATASETKEY, def.getDataSetId());
+
+        AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
+    }
+
+
     /**
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
      * if both are set, it's an edit
@@ -611,30 +640,75 @@ public class StudyServiceImpl implements StudyService.Service
         return result;
     }
 
-    public List<DataSet> getDatasetsForAssayProtocol(ExpProtocol protocol)
+    public Set<DataSetDefinition> getDatasetsForAssayProtocol(ExpProtocol protocol)
     {
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
-        SimpleFilter filter = new SimpleFilter("protocolid", protocol.getRowId());
-        List<DataSet> result = new ArrayList<DataSet>();
-        ResultSet rs = null;
-        try
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("protocolid"), protocol.getRowId());
+        Set<DataSetDefinition> result = new HashSet<DataSetDefinition>();
+        Map<String, Object>[] rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getArray(Map.class);
+        for (Map<String, Object> row : rows)
         {
-            rs = Table.select(datasetTable, new CsvSet("container,protocolid,datasetid"), filter, null);
-            while (rs.next())
+            String containerId = (String)row.get("container");
+            int datasetId = ((Number)row.get("datasetid")).intValue();
+            Container container = ContainerManager.getForId(containerId);
+            result.add(getDataSet(container, datasetId));
+        }
+        return result;
+    }
+
+    @Override
+    public Set<DataSet> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user)
+    {
+        // Cache the datasets for a specific protocol (assay design)
+        Map<ExpProtocol, Set<DataSetDefinition>> protocolDatasets = new HashMap<ExpProtocol, Set<DataSetDefinition>>();
+        // Remember all of the run RowIds for a given protocol (assay design)
+        Map<ExpProtocol, List<Integer>> allProtocolRunIds = new HashMap<ExpProtocol, List<Integer>>();
+
+        // Go through the runs and figure out what protocols they belong to, and what datasets they could have been copied to
+        for (ExpRun run : runs)
+        {
+            ExpProtocol protocol = run.getProtocol();
+            Set<DataSetDefinition> datasets = protocolDatasets.get(protocol);
+            if (datasets == null)
             {
-                Container container = ContainerManager.getForId(rs.getString("container"));
-                int datasetId = rs.getInt("datasetid");
-                result.add(getDataSet(container, datasetId));
+                datasets = getDatasetsForAssayProtocol(protocol);
+                protocolDatasets.put(protocol, datasets);
+            }
+            List<Integer> protocolRunIds = allProtocolRunIds.get(protocol);
+            if (protocolRunIds == null)
+            {
+                protocolRunIds = new ArrayList<Integer>();
+                allProtocolRunIds.put(protocol, protocolRunIds);
+            }
+            protocolRunIds.add(run.getRowId());
+        }
+
+        // All of the datasets that have rows backed by data in the specified runs
+        Set<DataSet> result = new HashSet<DataSet>();
+
+        for (Map.Entry<ExpProtocol, Set<DataSetDefinition>> entry : protocolDatasets.entrySet())
+        {
+            for (DataSetDefinition dataset : entry.getValue())
+            {
+                // Don't enforce permissions for the current user - we still want to tell them if the data
+                // has been copied even if they can't see the dataset.
+                UserSchema schema = new StudyQuerySchema(dataset.getStudy(), user, false);
+                TableInfo tableInfo = schema.getTable(dataset.getName());
+                AssayProvider provider = AssayService.get().getProvider(entry.getKey());
+                if (provider != null)
+                {
+                    AssayTableMetadata tableMetadata = provider.getTableMetadata(entry.getKey());
+                    SimpleFilter filter = new SimpleFilter();
+                    filter.addInClause(tableMetadata.getRunRowIdFieldKeyFromResults(), allProtocolRunIds.get(entry.getKey()));
+                    long count = new TableSelector(tableInfo, filter, null).getRowCount();
+                    if (count > 0)
+                    {
+                        result.add(dataset);
+                    }
+                }
             }
         }
-        catch (SQLException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-        finally
-        {
-            if (rs != null) try {rs.close();} catch (SQLException se) {}
-        }
+
         return result;
     }
 
