@@ -132,34 +132,28 @@ public class IssueManager
 
     public static Issue getIssue(@Nullable Container c, int issueId)
     {
-        try
-        {
-            SimpleFilter f = new SimpleFilter("issueId", issueId);
-            if (null != c)
-                f.addCondition("container", c.getId());
+        SimpleFilter f = new SimpleFilter("issueId", issueId);
+        if (null != c)
+            f.addCondition("container", c.getId());
 
-            Issue[] issues = Table.selectForDisplay(
-                    _issuesSchema.getTableInfoIssues(),
-                    Table.ALL_COLUMNS, f, null, Issue.class);
-            if (issues.length < 1)
-                return null;
-            Issue issue = issues[0];
+        TableSelector selector = new TableSelector(
+                _issuesSchema.getTableInfoIssues(),
+                Table.ALL_COLUMNS, f, null);
+        selector.setForDisplay(true);
+        Issue issue = selector.getObject(Issue.class);
+        if (issue == null)
+            return null;
 
-            Collection<Issue.Comment> comments = new TableSelector(_issuesSchema.getTableInfoComments(),
-                    new SimpleFilter("issueId", issue.getIssueId()),
-                    new Sort("CommentId")).getCollection(Issue.Comment.class);
-            issue.setComments(new ArrayList<Issue.Comment>(comments));
+        List<Issue.Comment> comments = new TableSelector(_issuesSchema.getTableInfoComments(),
+                new SimpleFilter("issueId", issue.getIssueId()),
+                new Sort("CommentId")).getArrayList(Issue.Comment.class);
+        issue.setComments(comments);
 
-            Collection<Integer> dups = new TableSelector(_issuesSchema.getTableInfoIssues().getColumn("IssueId"),
-                    new SimpleFilter("Duplicate", issueId),
-                    new Sort("IssueId")).getCollection(Integer.class);
-            issue.setDuplicates(dups);
-            return issue;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        Collection<Integer> dups = new TableSelector(_issuesSchema.getTableInfoIssues().getColumn("IssueId"),
+                new SimpleFilter("Duplicate", issueId),
+                new Sort("IssueId")).getCollection(Integer.class);
+        issue.setDuplicates(dups);
+        return issue;
     }
 
 

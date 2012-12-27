@@ -373,7 +373,7 @@ public class IssuesController extends SpringActionController
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             if (null == _issue)
             {
-                throw new NotFoundException("Unable to find " + names.singularName + " " + form.getIssueId());
+                throw new NotFoundException("Unable to find " + names.singularName.getSource() + " " + form.getIssueId());
             }
 
             IssuePage page = new IssuePage(getContainer(), getUser());
