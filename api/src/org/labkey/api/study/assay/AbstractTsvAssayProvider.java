@@ -116,9 +116,8 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
      */
     public void renameObjectIdDatasetColumn(User user, ExpProtocol protocol) throws SQLException
     {
-        List<DataSet> dataSets = StudyService.get().getDatasetsForAssayProtocol(protocol);
         // Iterate through all of the studies that contain a dataset created by copying from this assay
-        for (DataSet<DataSet> dataSet : dataSets)
+        for (DataSet<DataSet> dataSet : StudyService.get().getDatasetsForAssayProtocol(protocol))
         {
             Domain domain = dataSet.getDomain();
             DomainProperty property = domain.getPropertyByName("ObjectId");
@@ -225,8 +224,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         ModuleUpgrader.getLogger().info(insertInto.toString());
         Table.execute(toTable.getSchema(), insertInto);
 
-        List<DataSet> dataSets = StudyService.get().getDatasetsForAssayProtocol(protocol);
-        for (DataSet dataSet : dataSets)
+        for (DataSet dataSet : StudyService.get().getDatasetsForAssayProtocol(protocol))
         {
             Domain dataSetDomain = dataSet.getDomain();
             SQLFragment updateKeysSQL = new SQLFragment("UPDATE " + DATASET_SCHEMA_NAME + "." + dataSetDomain.getStorageTableName());

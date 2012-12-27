@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
@@ -117,21 +118,6 @@ public class StudyService
         public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String,Object> data, List<String> errors)
                 throws SQLException;
 
-        /*
-         * USE DatasetUpdateService
-         *
-         * Insert a single dataset row
-         * @return the lsid for the new dataset row
-         * @param u the user performing the insert
-         * @param c container the dataset is in
-         * @param datasetId the dataset definition id
-         * @param data the data to be updated
-         * @param errors any errors during update will be added to this list
-        public String insertDatasetRow(User u, Container c, int datasetId, Map<String,Object> data, List<String> errors)
-                throws SQLException;
-         */
-
-
         /**
          * Fetches a single row from a dataset given an LSID
          * @param u The user
@@ -164,9 +150,17 @@ public class StudyService
         public ActionURL getDatasetURL(Container container, int datasetId);
 
         /**
-         * Returns the set of containers which have ever had data copied from the provided protocol
+         * Returns the set of datasets which have ever had data copied from the provided protocol
          */
-        public List<DataSet> getDatasetsForAssayProtocol(ExpProtocol protocol);
+        public Set<? extends DataSet> getDatasetsForAssayProtocol(ExpProtocol protocol);
+
+        /**
+         * Returns the set of datasets which currently contain rows from the provided runs. The user may not have
+         * permission to read or modify all of the datasets that are returned.
+         */
+        public Set<? extends DataSet> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
+
+        public void addAssayRecallAuditEvent(DataSet def, int rowCount, Container sourceContainer, User user);
 
         public List<SecurableResource> getSecurableResources(Container container, User user);
 

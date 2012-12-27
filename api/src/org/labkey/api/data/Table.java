@@ -226,9 +226,10 @@ public class Table
     }
 
 
-    // 3 usages
+    // 2 usages
+    /** Use TableSelector instead */
     @NotNull
-    @Deprecated // Use TableSelector
+    @Deprecated
     public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
             throws SQLException
     {
@@ -239,8 +240,9 @@ public class Table
     }
 
 
-    // 35 usages
-    @Deprecated // Use TableSelector
+    // 32 usages
+    /** Use TableSelector instead */
+    @Deprecated
     public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
     {
         return new TableSelector(table).getObject(pk, clss);
