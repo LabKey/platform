@@ -71,7 +71,12 @@ public class ImageOutput extends AbstractParamReplacement
     public ScriptOutput renderAsScriptOutput() throws Exception
     {
         ImgReportView view = new ImgReportView(this, canDeleteFile());
-        return new ScriptOutput(ScriptOutput.ScriptOutputType.image, getName(), view.renderInternalAsString());
+        String image = view.renderInternalAsString();
+
+        if (null != image)
+            return new ScriptOutput(ScriptOutput.ScriptOutputType.image, getName(), image);
+
+        return null;
     }
 
     private boolean canDeleteFile()

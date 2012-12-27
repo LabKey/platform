@@ -46,7 +46,11 @@ public abstract class DownloadParamReplacement extends AbstractParamReplacement
     protected ScriptOutput renderAsScriptOutput(DownloadOutputView view, ScriptOutput.ScriptOutputType scriptOutputType) throws Exception
     {
         String downloadUrl  = view.renderInternalAsString();
-        return new ScriptOutput(scriptOutputType, getName(), downloadUrl);
+
+        if (null != downloadUrl)
+            return new ScriptOutput(scriptOutputType, getName(), downloadUrl);
+
+        return null;
     }
 
     protected ScriptOutput renderAsScriptOutputError()

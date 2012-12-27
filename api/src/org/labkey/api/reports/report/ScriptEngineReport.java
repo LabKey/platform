@@ -493,7 +493,14 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 param.setReport(report);
                 try
                 {
-                    scriptOutputs.add(param.renderAsScriptOutput());
+                    //
+                    // Even if there is a script error we keep processing the output
+                    // parameters.  If the parameter files don't exist then don't create a
+                    // parameter object.
+                    //
+                    ScriptOutput output = param.renderAsScriptOutput();
+                    if (null != output)
+                        scriptOutputs.add(output);
                 }
                 catch(Exception e)
                 {

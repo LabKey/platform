@@ -64,7 +64,12 @@ public class HtmlOutput extends AbstractParamReplacement
     public ScriptOutput renderAsScriptOutput() throws Exception
     {
         HtmlOutputView view = new HtmlOutputView(this, getLabel());
-        return new ScriptOutput(ScriptOutput.ScriptOutputType.html, getName(), view.renderInternalAsString());
+        String html = view.renderInternalAsString();
+
+        if (null != html)
+            return new ScriptOutput(ScriptOutput.ScriptOutputType.html, getName(), html);
+
+        return null;
     }
 
     public HttpView render(ViewContext context)
@@ -82,12 +87,16 @@ public class HtmlOutput extends AbstractParamReplacement
 
         protected String renderInternalAsString() throws Exception
         {
-            return PageFlowUtil.getFileContentsAsString(getFile());
+            if (getFile() != null && getFile().exists() && (getFile().length() > 0))
+                return PageFlowUtil.getFileContentsAsString(getFile());
+
+            return null;
         }
 
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            if (getFile() != null && getFile().exists() && (getFile().length() > 0))
+            String html = renderInternalAsString();
+            if (null != html)
             {
                 out.write("<table class=\"labkey-output\">");
                 renderTitle(model, out);
@@ -95,7 +104,7 @@ public class HtmlOutput extends AbstractParamReplacement
                     out.write("<tr style=\"display:none\"><td>");
                 else
                     out.write("<tr><td>");
-                out.write(renderInternalAsString());
+                out.write(html);
                 out.write("</td></tr>");
                 out.write("</table>");
             }

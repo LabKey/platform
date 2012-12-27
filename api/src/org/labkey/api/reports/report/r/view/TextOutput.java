@@ -59,7 +59,12 @@ public class TextOutput extends AbstractParamReplacement
     public ScriptOutput renderAsScriptOutput() throws Exception
     {
         TextOutputView view = new TextOutputView(this);
-        return new ScriptOutput(ScriptOutput.ScriptOutputType.text, getName(), view.renderInternalAsString());
+        String text = view.renderInternalAsString();
+
+        if (null != text)
+            return new ScriptOutput(ScriptOutput.ScriptOutputType.text, getName(), text);
+
+        return null;
     }
 
     public static class TextOutputView extends ROutputView

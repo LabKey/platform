@@ -60,7 +60,12 @@ public class JsonOutput extends AbstractParamReplacement
     public ScriptOutput renderAsScriptOutput() throws Exception
     {
         JsonOutputView view = new JsonOutputView(this);
-        return new ScriptOutput(ScriptOutput.ScriptOutputType.json, getName(), view.renderInternalAsString() );
+        String json = view.renderInternalAsString();
+
+        if (null != json)
+            return new ScriptOutput(ScriptOutput.ScriptOutputType.json, getName(), json);
+
+        return null;
     }
 
     public static class JsonOutputView extends ROutputView

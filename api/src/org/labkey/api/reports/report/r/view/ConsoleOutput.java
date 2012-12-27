@@ -63,6 +63,11 @@ public class ConsoleOutput extends AbstractParamReplacement
     public ScriptOutput renderAsScriptOutput() throws Exception
     {
         ROutputView view = new TextOutput.TextOutputView(this);
-        return new ScriptOutput(ScriptOutput.ScriptOutputType.console, "console", view.renderInternalAsString());
+        String console = view.renderInternalAsString();
+
+        if (null != console)
+            return new ScriptOutput(ScriptOutput.ScriptOutputType.console, "console", console);
+
+        return null;
     }
 }

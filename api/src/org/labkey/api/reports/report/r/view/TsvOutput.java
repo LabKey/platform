@@ -62,7 +62,12 @@ public class TsvOutput extends AbstractParamReplacement
     public ScriptOutput renderAsScriptOutput()
     {
         TabReportView view = new TabReportView(this);
-        return new ScriptOutput(ScriptOutput.ScriptOutputType.tsv, getName(), view.renderInternalAsString());
+        String tsv = view.renderInternalAsString();
+
+        if (null != tsv)
+            return new ScriptOutput(ScriptOutput.ScriptOutputType.tsv, getName(), tsv);
+
+        return null;
     }
 
     public HttpView render(ViewContext context)
