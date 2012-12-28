@@ -77,6 +77,7 @@ public class SurveyManager
             if (view != null)
             {
                 survey.put("layout", "auto");
+                survey.put("showCounts", false); // whether or not to show the count of completed questions next to the section header
 
                 Map<String, Object> panel = new HashMap<String, Object>();
 

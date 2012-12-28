@@ -16,7 +16,6 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
 
         Ext4.applyIf(config, {
             frame   : false,
-            //border  : false,
             layout : {
                 type : 'border'
             }
@@ -30,6 +29,7 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
 
         this.items.push(this.createMainPanel());
         this.items.push(this.createTemplatePanel());
+        this.items.push(this.createExamplesPanel());
 
         var createTemplateBtn = Ext4.create('Ext.button.Button', {
             text : 'Generate Survey Questions',
@@ -232,17 +232,8 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
         var formPanel = Ext4.create('Ext.form.Panel', {
             //border  : false,
             frame   : false,
-            bodyPadding : 20,
-            html : '<textarea rows="34" name="metadata" id="' + id + '"></textarea>',
+            html    : '<textarea rows="44" name="metadata" id="' + id + '"></textarea>',
             region  : 'center',
-/*
-            fieldDefaults  : {
-                labelWidth : 100,
-                width      : 375,
-                style      : 'padding: 4px 0',
-                labelSeparator : ''
-            },
-*/
             items   : items
         });
         formPanel.on('render', function(cmp){
@@ -284,5 +275,323 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
             form.setValues(survey);
             this.codeMirror.setValue(survey.metadata);
         }
+    },
+
+    createExamplesPanel : function() {
+        var items = [];
+
+        items.push({
+            title : 'Attachment',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "jsonType": "string",<br/>' +
+                    '    "hidden": false,<br/>' +
+                    '    "width": 800,<br/>' +
+                    '    "inputType": "file",<br/>' +
+                    '    "name": "attfield",<br/>' +
+                    '    "caption": "Attachment Field",<br/>' +
+                    '    "shortCaption": "Attachment Field",<br/>' +
+                    '    "required": false<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : 'Checkbox (Single)',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "jsonType": "boolean",<br/>' +
+                    '    "hidden": false,<br/>' +
+                    '    "width": 800,<br/>' +
+                    '    "inputType": "checkbox",<br/>' +
+                    '    "name": "boolfield",<br/>' +
+                    '    "caption": "Boolean Field",<br/>' +
+                    '    "shortCaption": "Boolean Field",<br/>' +
+                    '    "required": false<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : '<span style="font-style: italic;">Checkbox Group (ExtJS)</span>',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '  "extConfig": {<br/>' +
+                    '    "xtype": "fieldcontainer",<br/>' +
+                    '    "width": 800,<br/>' +
+                    '    "hidden": false,<br/>' +
+                    '    "name": "checkbox_group",<br/>' +
+                    '    "margin": "10px 10px 15px",<br/>' +
+                    '    "fieldLabel": "CB Group (ExtJS)",<br/>' +
+                    '    "items": [{<br/>' +
+                    '      "xtype": "panel",<br/>' +
+                    '      "border": true,<br/>' +
+                    '      "bodyStyle":"padding-left:5px;",<br/>' +
+                    '      "defaults": { <br/>' +
+                    '        "xtype": "checkbox", <br/>' +
+                    '        "inputValue": "true", <br/>' +
+                    '        "uncheckedValue": "false"<br/>' +
+                    '      },<br/>' +
+                    '      "items": [<br/>' +
+                    '          { <br/>' +
+                    '            "boxLabel": "CB 1", <br/>' +
+                    '            "name": "checkbox_1" <br/>' +
+                    '          },<br/>' +
+                    '          { <br/>' +
+                    '            "boxLabel": "CB 2", <br/>' +
+                    '            "name": "checkbox_2" <br/>' +
+                    '          },<br/>' +
+                    '          { <br/>' +
+                    '            "boxLabel": "CB 3", <br/>' +
+                    '            "name": "checkbox_3" <br/>' +
+                    '          }<br/>' +
+                    '      ]<br/>' +
+                    '    }]<br/>' +
+                    '  }<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : 'Combobox (Lookup)',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "jsonType": "int",<br/>' +
+                    '    "hidden": false,<br/>' +
+                    '    "width": 800,<br/>' +
+                    '    "inputType": "text",<br/>' +
+                    '    "name": "lkfield",<br/>' +
+                    '    "caption": "Lookup Field",<br/>' +
+                    '    "shortCaption": "Lookup Field",<br/>' +
+                    '    "required": false,<br/>' +
+                    '    "lookup": {<br/>' +
+                    '        "keyColumn": "Key",<br/>' +
+                    '        "schema": "lists",<br/>' +
+                    '        "displayColumn": "Value",<br/>' +
+                    '        "schemaName": "lists",<br/>' +
+                    '        "queryName": "lookup1",<br/>' +
+                    '        "table": "lookup1",<br/>' +
+                    '        "isPublic": true,<br/>' +
+                    '        "public": true<br/>' +
+                    '    }<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : '<span style="font-style: italic;">Combobox (ExtJS)</span>',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "extConfig": {<br/>' +
+                    '        "width": 800,<br/>' +
+                    '        "hidden": false,<br/>' +
+                    '        "xtype": "combo",<br/>' +
+                    '        "name": "cb_extjs",<br/>' +
+                    '        "fieldLabel": "CB (ExtJS)",<br/>' +
+                    '        "queryMode": "local",<br/>' +
+                    '        "displayField": "value",<br/>' +
+                    '        "valueField": "value",<br/>' +
+                    '        "emptyText": "Select...",<br/>' +
+                    '        "forceSelection": true,<br/>' +
+                    '        "store": {<br/>' +
+                    '            "fields": ["value"],<br/>' +
+                    '            "data" : [<br/>' +
+                    '                {"value": "Yes"},<br/>' +
+                    '                {"value": "No"}<br/>' +
+                    '            ]<br/>' +
+                    '        }<br/>' +
+                    '    }<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : 'Date Picker',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "jsonType": "date",<br/>' +
+                    '    "hidden": false,<br/>' +
+                    '    "width": 800,<br/>' +
+                    '    "inputType": "text",<br/>' +
+                    '    "name": "dtfield",<br/>' +
+                    '    "caption": "Date Field",<br/>' +
+                    '    "shortCaption": "Date Field",<br/>' +
+                    '    "required": false<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : '<span style="font-style: italic;">Display Field (ExtJS)</span>',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "extConfig": {<br/>' +
+                    '        "width": 800,<br/>' +
+                    '        "xtype": "displayfield",<br/>' +
+                    '        "name": "dsplfield",<br/>' +
+                    '        "hideLabel": true,<br/>' +
+                    '        "value": "Some text."<br/>' +
+                    '    }<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : 'Double (Numeric)',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "jsonType": "float",<br/>' +
+                    '    "hidden": false,<br/>' +
+                    '    "width": 800,<br/>' +
+                    '    "inputType": "text",<br/>' +
+                    '    "name": "dblfield",<br/>' +
+                    '    "caption": "Double Field",<br/>' +
+                    '    "shortCaption": "Double Field",<br/>' +
+                    '    "required": false<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : 'Integer',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "jsonType": "int",<br/>' +
+                    '    "hidden": false,<br/>' +
+                    '    "width": 800,<br/>' +
+                    '    "inputType": "text",<br/>' +
+                    '    "name": "intfield",<br/>' +
+                    '    "caption": "Integer Field",<br/>' +
+                    '    "shortCaption": "Integer Field",<br/>' +
+                    '    "required": false<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : '<span style="font-style: italic;">Number Range (ExtJS)</span>',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "extConfig": {<br/>' +
+                    '        "xtype": "fieldcontainer",<br/>' +
+                    '        "fieldLabel": "Number Range",<br/>' +
+                    '        "margin": "10px 10px 15px",<br/>' +
+                    '        "layout": "hbox",<br/>' +
+                    '        "width": 800,<br/>' +
+                    '        "items": [<br/>' +
+                    '            { <br/>' +
+                    '              "xtype": "numberfield", <br/>' +
+                    '              "fieldLabel": "Min", <br/>' +
+                    '              "name": "min_num", <br/>' +
+                    '              "width": 175 <br/>' +
+                    '            },<br/>' +
+                    '            { <br/>' +
+                    '              "xtype": "label", <br/>' +
+                    '              "width": 25 <br/>' +
+                    '            },<br/>' +
+                    '            { <br/>' +
+                    '              "xtype": "numberfield", <br/>' +
+                    '              "fieldLabel": "Max", <br/>' +
+                    '              "name": "max_num", <br/>' +
+                    '              "width": 175 <br/>' +
+                    '            }<br/>' +
+                    '        ]<br/>' +
+                    '    }<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : '<span style="font-style: italic;">Survey Grid Question (ExtJS)</span>',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    ' "extConfig": {<br/>' +
+                    '     "xtype": "surveygridquestion",<br/>' +
+                    '     "name": "gridquestion",<br/>' +
+                    '     "columns": {<br/>' +
+                    '       "items": [{<br/>' +
+                    '          "text": "Field 1", <br/>' +
+                    '          "dataIndex": "field1", <br/>' +
+                    '          "width": 350,<br/>' +
+                    '          "editor": {<br/>' +
+                    '             "xtype": "combo", <br/>' +
+                    '             "queryMode": "local", <br/>' +
+                    '             "displayField":"value",<br/>' +
+                    '             "valueField": "value", <br/>' +
+                    '             "forceSelection": true,<br/>' +
+                    '             "store": {<br/>' +
+                    '               "fields": ["value"], <br/>' +
+                    '               "data" : [{<br/>' +
+                    '                 "value": "Value 1"<br/>' +
+                    '               }, {<br/>' +
+                    '                 "value": "Value 2"<br/>' +
+                    '               }, {<br/>' +
+                    '                 "value": "Value 3"<br/>' +
+                    '               }]<br/>' +
+                    '             }<br/>' +
+                    '          }<br/>' +
+                    '        },<br/>' +
+                    '        {<br/>' +
+                    '            "text": "Field 2", <br/>' +
+                    '            "dataIndex": "field2", <br/>' +
+                    '            "width": 200,<br/>' +
+                    '            "editor": {<br/>' +
+                    '              "xtype": "textfield"<br/>' +
+                    '            }<br/>' +
+                    '        },<br/>' +
+                    '        {<br/>' +
+                    '            "text": "Field 3", <br/>' +
+                    '            "dataIndex": "field3", <br/>' +
+                    '            "width": 200,<br/>' +
+                    '            "editor": {<br/>' +
+                    '              "xtype": "textfield"<br/>' +
+                    '             }<br/>' +
+                    '        }]<br/>' +
+                    '    },<br/>' +
+                    '    "store": {<br/>' +
+                    '        "xtype": "json",<br/>' +
+                    '        "fields": [<br/>' +
+                    '            "field1",<br/>' +
+                    '            "field2",<br/>' +
+                    '            "field3"<br/>' +
+                    '        ]<br/>' +
+                    '    }<br/>' +
+                    ' }<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : 'Text Area',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "jsonType": "string",<br/>' +
+                    '    "hidden": false,<br/>' +
+                    '    "width": 800,<br/>' +
+                    '    "inputType": "textarea",<br/>' +
+                    '    "name": "txtfield",<br/>' +
+                    '    "caption": "Textarea Field",<br/>' +
+                    '    "shortCaption": "Textarea Field",<br/>' +
+                    '    "required": false<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : 'Text Field (w/ Skip Logic)',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "jsonType": "string",<br/>' +
+                    '    "width": 800,<br/>' +
+                    '    "inputType": "text",<br/>' +
+                    '    "name": "strfield",<br/>' +
+                    '    "caption": "String Field",<br/>' +
+                    '    "shortCaption": "String Field",<br/>' +
+                    '    "required": false,<br/>' +
+                    '    "hidden": true,<br/>' +
+                    '    "listeners" : {<br/>' +
+                    '       "change" : {<br/>' +
+                    '          "question" : "cb_extjs",<br/>' +
+                    '          "fn" : "function(me, cmp, newValue, oldValue){if (me) me.setVisible(newValue == \'Yes\');} "<br/>' +
+                    '        }<br/>' +
+                    '    }<br/>' +
+                    '}</code>'
+        });
+
+        return Ext4.create('Ext.panel.Panel', {
+            layout: {
+                type             : 'accordion',
+                titleCollapse    : true,
+                animate          : true,
+                hideCollapseTool : true
+            },
+            defaults: {
+                collapsed : true,
+                bodyPadding : 5,
+                autoScroll  : true
+            },
+            frame   : false,
+            region  : 'east',
+            width   : 300,
+            title   : 'Question Examples',
+            collapsible : true,
+            collapsed   : true,
+            items   : items
+        });
     }
 });

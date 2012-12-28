@@ -23,14 +23,15 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
         // add listeners to the store to set the dirty state on add, update, remove
         if (this.getStore() && !this.readOnly)
         {
-            this.getStore().addListener('add', function(){ this.setDirty(true); }, this);
-            this.getStore().addListener('remove', function(){ this.setDirty(true); }, this);
-            this.getStore().addListener('update', function(){ this.setDirty(true); }, this);
+            this.getStore().addListener('add', this.gridChanged, this);
+            this.getStore().addListener('remove', this.gridChanged, this);
+            this.getStore().addListener('update', this.gridChanged, this);
         }
     },
 
     initComponent : function() {
         this.originalValue = this.value;
+        this.storeCount = 0;
         this.dirty = false;
 
         if (!this.readOnly)
@@ -82,6 +83,12 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
         this.callParent();
     },
 
+    gridChanged : function(setDirty) {
+        this.setDirty(setDirty);
+        this.fireEvent('change', this, this.getStore().getCount(), this.storeCount);
+        this.storeCount = this.getStore().getCount();
+    },
+
     getName : function() {
         return this.name;
     },
@@ -92,12 +99,12 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
 
     clearValue : function() {
         this.getStore().loadData([]);
-        this.setDirty(true);
+        this.gridChanged(true);
     },
 
     setValue : function(data) {
         this.getStore().loadData(data ? Ext4.decode(data) : []);
-        this.setDirty(false);
+        this.gridChanged(false);
     },
 
     getValue : function() {

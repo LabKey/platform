@@ -18,7 +18,7 @@
  -->
 <ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <ns:table tableName="SurveyDesigns" tableDbType="TABLE">
-      <ns:description>Contains a row for each new survey design in this folder.</ns:description>
+      <ns:description>Contains a row for each survey design.</ns:description>
       <ns:columns>
         <ns:column columnName="RowId"/>
         <ns:column columnName="Container"/>
@@ -45,7 +45,7 @@
       </ns:columns>
     </ns:table>
     <ns:table tableName="Surveys" tableDbType="TABLE">
-      <ns:description>Contains a row for each new survey instance create by a user.</ns:description>
+      <ns:description>Contains a row for each user survey instance.</ns:description>
       <ns:columns>
         <ns:column columnName="RowId"/>
         <ns:column columnName="Container"/>

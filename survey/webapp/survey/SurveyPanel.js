@@ -121,7 +121,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                     {
                         var metadata = Ext4.JSON.decode(o.survey.metadata);
                         this.setLabelCaption(metadata);
-                        this.getSurveyLayout(metadata);
+                        this.setShowCounts(metadata);
+                        this.setSurveyLayout(metadata);
                         this.generateSurveySections(metadata);
                     }
                     else
@@ -141,7 +142,13 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             this.labelCaption = surveyConfig.survey.labelCaption;
     },
 
-    getSurveyLayout : function(surveyConfig) {
+    setShowCounts : function(surveyConfig) {
+        this.showCounts = false;
+        if (surveyConfig.survey && surveyConfig.survey.showCounts)
+            this.showCounts = surveyConfig.survey.showCounts;
+    },
+
+    setSurveyLayout : function(surveyConfig) {
         this.surveyLayout = 'auto';
         if (surveyConfig.survey && surveyConfig.survey.layout)
             this.surveyLayout = surveyConfig.survey.layout;
@@ -167,11 +174,38 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             }
         }
 
+        if (this.showCounts)
+            this.udpateSectionCount(cmp, newValue, oldValue);
+    },
+
+    udpateSectionCount : function(cmp, newValue, oldValue) {
+
         var sectionPanel = cmp.up('.panel[sectionPanel=true]');
         if (sectionPanel)
         {
             var changed = false;
-            if ((oldValue == null || oldValue.toString().length == 0) && (newValue != null && newValue.toString().length > 0))
+
+            // special case for checkbox fields since the value is never null (i.e. true or false)
+            if (cmp.getXType() == "checkboxfield")
+            {
+                sectionPanel.completedQuestions = sectionPanel.completedQuestions + (newValue ? 1 : -1);
+                changed = true;
+            }
+            // special case for any custom question types
+            else if (cmp.getXType() == "surveygridquestion")
+            {
+                if (newValue > 0 && oldValue == 0)
+                {
+                    sectionPanel.completedQuestions++;
+                    changed = true;
+                }
+                else if (newValue == 0 && oldValue > 0)
+                {
+                    sectionPanel.completedQuestions--;
+                    changed = true;
+                }
+            }
+            else if ((oldValue == null || oldValue.toString().length == 0) && (newValue != null && newValue.toString().length > 0))
             {
                 sectionPanel.completedQuestions++;
                 changed = true;
@@ -182,8 +216,14 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 changed = true;
             }
 
-            //if (changed)
-            //    sectionPanel.setTitle(sectionPanel.origTitle + (sectionPanel.completedQuestions > 0 ? " (" + sectionPanel.completedQuestions + ")" : ""));
+            if (changed)
+            {
+                sectionPanel.setTitle(sectionPanel.origTitle + (sectionPanel.completedQuestions > 0 ? " (" + sectionPanel.completedQuestions + ")" : ""));
+
+                // if we are in card layout, update the side bar titles
+                if (this.sideBar)
+                    this.sideBar.update({steps: this.getStepsDataArr()});
+            }
         }
     },
 
@@ -339,7 +379,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         this.addSurveyEndPanel();
 
-        this.setSurveyLayout(surveyConfig);
+        this.configureSurveyLayout(surveyConfig);
 
         this.configureFieldListeners();
 
@@ -534,7 +574,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         }
     },
 
-    setSurveyLayout : function(surveyConfig) {
+    configureSurveyLayout : function(surveyConfig) {
 
         this.currentStep = 0;
 
@@ -633,7 +673,6 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         // get the dirty form values and add the survey's rowId, surveyDesignId, and responsesPk
         // note: these are not stored as hidden fields because we are only getting the dirty values (which they won't be)
         var values = this.getForm().getValues(false, true);
-        //console.log(values);
 
         // check to make sure the survey label is not null, it is required
         if (!this.surveyLabel)
