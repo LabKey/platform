@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -27,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
@@ -236,15 +238,28 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
                 Object value = row.get(prop.getName());
                 if(null != value && value instanceof String)
                     value = StringUtils.trimToNull((String)value);
-                bean.setProperty(prop, convertType(value, table.getColumn(prop.getName())));
+                bean.setProperty(prop, convertType(value, table.getColumn(prop.getName()), prop));
             }
         }
     }
 
-    protected Object convertType(Object value, ColumnInfo col) throws ConversionException
+    @Override
+    protected Map<String, Object> coerceTypes(Map<String, Object> row)
+    {
+        // do nothing, list specific type conversion occurs later during bean population with the convertType method.
+        return row;
+    }
+
+    protected Object convertType(Object value, ColumnInfo col, DomainProperty prop) throws ConversionException
     {
         if(null == value || null == col || value.getClass().equals(col.getJavaClass()))
             return value;
+
+        // attachment type information is not propogated to columninfos so look it up in the property descriptor
+        if (prop.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT &&
+                AttachmentFile.class.isAssignableFrom(value.getClass()))
+            return value;
+
         Class targetType = col.getJavaClass();
         Converter converter = ConvertUtils.lookup(targetType);
         if(null == converter)

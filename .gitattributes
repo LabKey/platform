@@ -3458,6 +3458,7 @@ survey/src/org/labkey/survey/SurveyController.java -text
 survey/src/org/labkey/survey/SurveyForm.java -text
 survey/src/org/labkey/survey/SurveyManager.java -text
 survey/src/org/labkey/survey/SurveyModule.java -text
+survey/src/org/labkey/survey/SurveyQuestion.java -text
 survey/src/org/labkey/survey/SurveySchema.java -text
 survey/src/org/labkey/survey/model/Survey.java -text
 survey/src/org/labkey/survey/model/SurveyDesign.java -text
@@ -3470,6 +3471,7 @@ survey/src/org/labkey/survey/query/SurveysTable.java -text
 survey/src/org/labkey/survey/view/customizeSurveysWebPart.jsp -text
 survey/src/org/labkey/survey/view/surveyDesignWizard.jsp -text
 survey/src/org/labkey/survey/view/surveyWizard.jsp -text
+survey/webapp/survey/AttachmentField.js -text
 survey/webapp/survey/SurveyGridQuestion.js -text
 survey/webapp/survey/SurveyPanel.js -text
 survey/webapp/survey/surveyDesignPanel.js -text

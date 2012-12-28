@@ -18,42 +18,49 @@ package org.labkey.survey;
 
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
-import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ReturnURLString;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -487,63 +494,6 @@ public class SurveyController extends SpringActionController
 
             return response;
         }
-
-        protected Map<String, Object> doInsertUpdate(TableViewForm form, BindException errors, boolean insert) throws Exception
-        {
-            TableInfo table = form.getTable();
-            Map<String, Object> values = form.getTypedColumns();
-
-            QueryUpdateService qus = table.getUpdateService();
-            if (qus == null)
-                throw new IllegalArgumentException("The query '" + table.getName() + "' in the schema '" + table.getSchema().getName() + "' is not updatable.");
-
-            try
-            {
-                Map<String, Object> row;
-
-                if (insert)
-                {
-                    BatchValidationException batchErrors = new BatchValidationException();
-                    List<Map<String, Object>> updated = qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null);
-                    if (batchErrors.hasErrors())
-                        throw batchErrors;
-
-                    assert(updated.size() == 1);
-                    row = updated.get(0);
-                }
-                else
-                {
-                    Map<String, Object> oldValues = null;
-                    if (form.getOldValues() instanceof Map)
-                    {
-                        oldValues = (Map<String, Object>)form.getOldValues();
-                        if (!(oldValues instanceof CaseInsensitiveMapWrapper))
-                            oldValues = new CaseInsensitiveMapWrapper<Object>(oldValues);
-                    }
-                    List<Map<String, Object>> updated = qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
-
-                    assert(updated.size() == 1);
-                    row = updated.get(0);
-                }
-                return row;
-            }
-            catch (SQLException x)
-            {
-                if (!SqlDialect.isConstraintException(x))
-                    throw x;
-                errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
-            }
-            catch (BatchValidationException x)
-            {
-                x.addToErrors(errors);
-            }
-            catch (Exception x)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
-                //ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
-            }
-            return Collections.emptyMap();
-        }
     }
 
     public static class SurveyResponseForm extends SurveyForm implements CustomApiForm
@@ -592,6 +542,63 @@ public class SurveyController extends SpringActionController
         return null;
     }
 
+    protected Map<String, Object> doInsertUpdate(TableViewForm form, BindException errors, boolean insert) throws Exception
+    {
+        TableInfo table = form.getTable();
+        Map<String, Object> values = form.getTypedColumns();
+
+        QueryUpdateService qus = table.getUpdateService();
+        if (qus == null)
+            throw new IllegalArgumentException("The query '" + table.getName() + "' in the schema '" + table.getSchema().getName() + "' is not updatable.");
+
+        try
+        {
+            Map<String, Object> row;
+
+            if (insert)
+            {
+                BatchValidationException batchErrors = new BatchValidationException();
+                List<Map<String, Object>> updated = qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null);
+                if (batchErrors.hasErrors())
+                    throw batchErrors;
+
+                assert(updated.size() == 1);
+                row = updated.get(0);
+            }
+            else
+            {
+                Map<String, Object> oldValues = null;
+                if (form.getOldValues() instanceof Map)
+                {
+                    oldValues = (Map<String, Object>)form.getOldValues();
+                    if (!(oldValues instanceof CaseInsensitiveMapWrapper))
+                        oldValues = new CaseInsensitiveMapWrapper<Object>(oldValues);
+                }
+                List<Map<String, Object>> updated = qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
+
+                assert(updated.size() == 1);
+                row = updated.get(0);
+            }
+            return row;
+        }
+        catch (SQLException x)
+        {
+            if (!SqlDialect.isConstraintException(x))
+                throw x;
+            errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
+        }
+        catch (BatchValidationException x)
+        {
+            x.addToErrors(errors);
+        }
+        catch (Exception x)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
+            //ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
+        }
+        return Collections.emptyMap();
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class GetSurveyResponseAction extends ApiAction<SurveyForm>
     {
@@ -607,6 +614,39 @@ public class SurveyController extends SpringActionController
 
                 if (surveyDesign != null)
                 {
+                    TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
+                    FieldKey pk = table.getAuditRowPk();
+                    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), surveyDesign.getSchemaName());
+
+                    if (schema != null)
+                    {
+                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, surveyDesign.getQueryName());
+
+                        Object value = survey.getResponsesPk();
+                        ColumnInfo col = table.getColumn(pk);
+
+                        if (!value.getClass().equals(col.getJavaClass()))
+                        {
+                            Class targetType = col.getJavaClass();
+                            Converter converter = ConvertUtils.lookup(targetType);
+                            if(null == converter)
+                                throw new ConversionException("Cannot convert the value for column " + col.getName() + " from a " + value.getClass().toString() + " into a " + targetType.toString());
+
+                            value = converter.convert(targetType, value);
+                        }
+                        settings.setBaseFilter(new SimpleFilter(pk, value));
+                        QueryView view = schema.createView(getViewContext(), settings, errors);
+
+                        if (view != null)
+                        {
+                            ApiQueryResponse queryResponse = new ExtendedApiQueryResponse(view, getViewContext(), false, true,
+                                    surveyDesign.getSchemaName(), surveyDesign.getQueryName(), settings.getOffset(), null,
+                                    false, false, false);
+                            return queryResponse;
+                        }
+                    }
+
+/*
                     TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
                     FieldKey pk = table.getAuditRowPk();
 
@@ -635,6 +675,7 @@ public class SurveyController extends SpringActionController
                             }
                         }
                     }
+*/
                 }
             }
             else
@@ -646,28 +687,121 @@ public class SurveyController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
-    public class UpdateSurveyResponseAttachmentsAction extends FormHandlerAction<Object>
+    public static class SurveyAttachmentForm extends SurveyForm
     {
-        @Override
-        public void validateCommand(Object target, Errors errors)
+        private String _questionName;
+        private String _entityId;
+
+        public String getQuestionName()
         {
+            return _questionName;
         }
 
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public void setQuestionName(String questionName)
         {
-            List<AttachmentFile> files = getAttachmentFileList();
-            if (!files.isEmpty())
-            {
-            }
-            return true;
+            _questionName = questionName;
         }
 
-        @Override
-        public URLHelper getSuccessURL(Object o)
+        public String getEntityId()
         {
-            return null;
+            return _entityId;
+        }
+
+        public void setEntityId(String entityId)
+        {
+            _entityId = entityId;
         }
     }
+
+    @RequiresPermissionClass(InsertPermission.class)
+     public class UpdateSurveyResponseAttachmentsAction extends ApiAction<SurveyAttachmentForm>
+    {
+        @Override
+        public ApiResponse execute(SurveyAttachmentForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Survey survey = getSurvey(form);
+
+            if (!survey.isNew())
+            {
+                List<AttachmentFile> files = getAttachmentFileList();
+                if (!files.isEmpty())
+                {
+                    SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), survey.getSurveyDesignId());
+
+                    if (surveyDesign != null)
+                    {
+                        TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
+                        FieldKey pk = table.getAuditRowPk();
+
+                        if (table != null && pk != null)
+                        {
+                            DbSchema dbschema = table.getSchema();
+                            try
+                            {
+                                dbschema.getScope().ensureTransaction();
+                                ColumnInfo col = table.getColumn(FieldKey.fromParts(form.getQuestionName()));
+
+                                // if the column is an attachment type, it only allows a single file per question (this is the basic case)
+                                if (col.getJavaClass() == File.class)
+                                {
+                                    TableViewForm tvf = new TableViewForm(table);
+
+                                    tvf.setViewContext(getViewContext());
+
+                                    AttachmentFile af = files.get(0);
+                                    tvf.setTypedValues(Collections.singletonMap(form.getQuestionName(), (Object)af), false);
+
+                                    // add the survey answer row pk
+                                    Map<String, Object> keys = new HashMap<String, Object>();
+                                    keys.put(pk.toString(), survey.getResponsesPk());
+                                    tvf.setOldValues(keys);
+
+                                    Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
+
+                                    response.put("success", row.isEmpty());
+                                    response.put("value", row.get(form.getQuestionName()));
+                                }
+
+/*
+                                if (form.getEntityId() == null)
+                                {
+                                    // create an entity id so we can associate attachments with this question
+                                    form.setEntityId(GUID.makeGUID());
+
+                                    TableViewForm tvf = new TableViewForm(table);
+
+                                    tvf.setViewContext(getViewContext());
+//                                    tvf.setTypedValues(Collections.singletonMap(form.getQuestionName(), (Object)form.getEntityId()), false);
+
+                                    AttachmentFile af = files.get(0);
+                                    tvf.setTypedValues(Collections.singletonMap(form.getQuestionName(), (Object)af), false);
+
+                                    // add the survey answer row pk
+                                    Map<String, Object> keys = new HashMap<String, Object>();
+                                    keys.put(pk.toString(), survey.getResponsesPk());
+                                    tvf.setOldValues(keys);
+
+                                    Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
+                                    response.put("success", row.isEmpty());
+                                }
+
+                                // and save the attachments
+                                SurveyQuestion question = new SurveyQuestion(getContainer().getId(), form.getEntityId());
+                                AttachmentService.get().addAttachments(question, files, getUser());
+*/
+                                dbschema.getScope().commitTransaction();
+                            }
+                            finally
+                            {
+                                dbschema.getScope().closeConnection();
+                            }
+                       }
+                    }
+                }
+            }
+            return response;
+        }
+    }
+
 }

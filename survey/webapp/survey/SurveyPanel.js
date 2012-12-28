@@ -7,6 +7,7 @@
 LABKEY.requiresExt4ClientAPI();
 LABKEY.requiresScript("/extWidgets/Ext4Helper.js");
 LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
+LABKEY.requiresScript("/survey/AttachmentField.js");
 
 Ext4.define('LABKEY.ext4.SurveyPanel', {
 
@@ -75,7 +76,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     },
 
     getSurveyResponses : function() {
-        this.initialResponses = null;
+        this.initialResponses = {};
 
         if (this.rowId)
         {
@@ -87,10 +88,14 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 success : function(resp){
                     var o = Ext4.decode(resp.responseText);
 
-                    if (o.success)
+                    if (o.rowCount && o.rowCount === 1)
                     {
-                        if (o.surveyResults)
-                            this.initialResponses = o.surveyResults;
+                        // save the raw row and process the entries so we can initialize the form
+                        this.rowMap = o.rows[0];
+                        Ext4.Object.each(this.rowMap, function(key, value){
+
+                            this.initialResponses[key] = value.value;
+                        }, this);
 
                         this.getSurveyDesign();
                     }
@@ -166,11 +171,14 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             {
                 var info = changeHandlers[i];
                 var me = this.down('#item-' + info.name);
-                var changeFn = info.fn;
+                if (me)
+                {
+                    var changeFn = info.fn;
 
-                changeFn().call(this, me, cmp, newValue, oldValue, values);
+                    changeFn().call(this, me, cmp, newValue, oldValue, values);
 
-                this.clearHiddenFieldValues(me);
+                    this.clearHiddenFieldValues(me);
+                }
             }
         }
 
@@ -321,10 +329,24 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                             // add one manually
                             if (question.inputType == 'file')
                             {
+                                var attachment = undefined;
+                                var entry = this.rowMap[question.name];
+
+                                if (entry && entry.value)
+                                {
+                                    attachment = {};
+                                    attachment.icon = LABKEY.Utils.getFileIconUrl(entry.value);
+                                    attachment.name = entry.value;
+                                    attachment.downloadURL = entry.url;
+                                }
+
                                 config = {
                                     fieldLabel : question.caption,
+                                    attachment : attachment,
                                     name : question.name,
-                                    xtype : 'filefield'
+                                    fieldWidth : 450,
+                                    itemId : 'attachment-field',
+                                    xtype : 'attachmentfield'
                                 };
                             }
                             else
@@ -338,7 +360,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         config = this.customizeQuestionConfig(question, config, hidden);
 
                         // add a component id for retrieval
-                        if (config.name)
+                        if (config.name && !config.itemId)
                             config.itemId = 'item-' + config.name;
 
                         // register any configured listeners
@@ -703,6 +725,9 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                     if (o.survey["responsesPk"])
                         this.responsesPk = o.survey["responsesPk"];
 
+                    // save any attachments added to this survey
+                    this.saveSurveyAttachments();
+
                     // reset the values so that the form's dirty state is cleared, with one special case for the survey label field
                     var currentValues = this.getForm().getValues();
                     currentValues[this.down('.textfield[itemId=surveyLabel]').getName()] = this.down('.textfield[itemId=surveyLabel]').getValue();
@@ -821,22 +846,32 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
     saveSurveyAttachments : function() {
 
-        var file = this.down('#item-irb_approval_file');
-        if (file)
-        {
-            this.exportForm.add(file);
-            var form = this.exportForm.getForm();
+        var fields = Ext4.ComponentQuery.query('#attachment-field', this);
 
-            var options = {
-                method  :'POST',
-                form    : form,
-                url     : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponseAttachments.api'),
-                success : function() {
-                },
-                failure : LABKEY.Utils.displayAjaxErrorResponse,
-                scope : this
-            };
-            form.doAction(new Ext4.form.action.Submit(options));
+        if (Ext4.isArray(fields) && fields.length > 0)
+        {
+            for (var i=0; i < fields.length; i++)
+            {
+                var cmp = fields[i];
+                var form = cmp.getFormPanel().getForm();
+
+                if (form.hasUpload() && form.isDirty())
+                {
+                    var options = {
+                        method  :'POST',
+                        form    : form,
+                        params  : {rowId : this.rowId, questionName : cmp.name},
+                        url     : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponseAttachments.api'),
+                        success : function() {
+
+                            // need to refresh the component
+                        },
+                        failure : LABKEY.Utils.displayAjaxErrorResponse,
+                        scope : this
+                    };
+                    form.doAction(new Ext4.form.action.Submit(options));
+                }
+            }
         }
     },
 
