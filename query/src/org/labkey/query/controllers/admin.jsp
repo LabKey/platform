@@ -27,8 +27,10 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.query.persist.LinkedSchemaDef" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<h2>External Schemas</h2>
 <p>
     Administrators can define external schemas to make data stored in PostgreSQL, Microsoft SQL Server, and SAS available
     for viewing, querying, and editing via LabKey Server.  This feature should be used with great care since, depending
@@ -41,9 +43,10 @@
 </p>
 <%
     Container c = getContainer();
-    List<ExternalSchemaDef> defs = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
     boolean isAdmin = getUser().isAdministrator();
+    QueryUrlsImpl urls = new QueryUrlsImpl();
 
+    List<ExternalSchemaDef> defs = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
     if (defs.isEmpty()) { %>
 <p>There are no database user schemas defined in this folder.</p>
 <% }
@@ -79,16 +82,14 @@ else
 
     <table>
     <%
-    QueryUrlsImpl urls = new QueryUrlsImpl();
 
     for (ExternalSchemaDef def : defs)
     {
         ActionURL urlEdit = urls.urlUpdateExternalSchema(c, def);
-        ActionURL urlView = new ActionURL(QueryController.SchemaAction.class, c);
-        urlView.addParameter("schemaName", def.getUserSchemaName());
+        ActionURL urlView = urls.urlSchemaBrowser(c, def.getUserSchemaName());
         ActionURL urlReload = urlEdit.clone();
         urlReload.setAction(QueryController.ReloadExternalSchemaAction.class);
-        ActionURL urlDelete = QueryController.getDeleteExternalSchemaURL(c, def.getExternalSchemaId());
+        ActionURL urlDelete = urls.urlDeleteExternalSchema(c, def);
 
     %>
 
@@ -121,7 +122,7 @@ else
 <%
     if (isAdmin)
     { %>
-    <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, c)%>" text="define new schema"/>
+    <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, c)%>" text="new external schema"/>
     <!--TODO: Enable bulk publish/unpublish labkey:link href="<%= new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, c)%>" text="define multiple new schemas"/--><%
     }
 
@@ -131,3 +132,50 @@ else
     }
     %>
 
+
+<h2>Linked Schemas</h2>
+<p>
+    Linked schemas can be created by refrencing an existing LabKey schema in the current or different folder.
+    The linked schema may expose some or all of the tables in the original schema.  The linked tables
+    may be filtered such that only a subset of the rows are available in the linked schema.
+</p>
+<%
+    List<LinkedSchemaDef> linkedSchemas = Arrays.asList(QueryManager.get().getLinkedSchemaDefs(c));
+    if (linkedSchemas.isEmpty()) { %>
+<p>There are no linked schemas defined in this folder.</p>
+<% }
+else
+{
+    Collections.sort(linkedSchemas, new Comparator<LinkedSchemaDef>()
+    {
+        @Override
+        public int compare(LinkedSchemaDef def1, LinkedSchemaDef def2)
+        {
+            return def1.getUserSchemaName().compareToIgnoreCase(def2.getUserSchemaName());
+        }
+    }); %>
+
+        <table>
+    <%
+
+    for (LinkedSchemaDef linkedSchema : linkedSchemas)
+    {
+        ActionURL urlView = urls.urlSchemaBrowser(c, linkedSchema.getUserSchemaName());
+        ActionURL urlEdit = new ActionURL(QueryController.EditLinkedSchemaAction.class, c).addParameter("externalSchemaId", Integer.toString(linkedSchema.getExternalSchemaId()));
+        ActionURL urlDelete = new ActionURL(QueryController.DeleteLinkedSchemaAction.class, c).addParameter("externalSchemaId", Integer.toString(linkedSchema.getExternalSchemaId()));
+    %>
+
+        <tr>
+            <td><%=h(linkedSchema.getUserSchemaName())%></td>
+            <td><labkey:link text="view schema" href="<%=h(urlView)%>" /></td>
+            <% if (isAdmin) {%><td><labkey:link text="edit definition" href="<%=h(urlEdit)%>" /></td><%}%>
+            <% if (isAdmin) {%><td><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
+        </tr><%
+    } %>
+    </table><%
+}
+%>
+<br>
+<% if (isAdmin) { %>
+<labkey:link href="<%= new ActionURL(QueryController.InsertLinkedSchemaAction.class, c)%>" text="new linked schema"/>
+<% } %>

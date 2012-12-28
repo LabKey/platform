@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2012 LabKey Corporation
+ * Copyright (c) 2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,55 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.query.persist;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 
-public class ExternalSchemaDef extends AbstractExternalSchemaDef
+public class LinkedSchemaDef extends AbstractExternalSchemaDef
 {
-    static public class Key extends AbstractExternalSchemaDef.Key<ExternalSchemaDef>
+    static public class Key extends AbstractExternalSchemaDef.Key<LinkedSchemaDef>
     {
         public Key(@Nullable Container container)
         {
-            super(ExternalSchemaDef.class, container);
+            super(LinkedSchemaDef.class, container);
         }
 
         @Override
         public SchemaType getSchemaType()
         {
-            return SchemaType.external;
+            return SchemaType.linked;
         }
     }
 
-    private boolean _editable;
-    private boolean _indexable = true;
-
-    // Source database schema name.
-    public String getDbSchemaName()
+    // Source container id is an alias for data source.
+    public String getSourceContainerId()
     {
-        return getSourceSchemaName();
+        return getDataSource();
     }
 
-    public boolean isEditable()
+    public Container lookupSourceContainer()
     {
-        return _editable;
-    }
+        String containerId = getSourceContainerId();
+        if (containerId != null)
+            return ContainerManager.getForId(containerId);
 
-    public void setEditable(boolean editable)
-    {
-        _editable = editable;
-    }
-
-    public boolean isIndexable()
-    {
-        return _indexable;
-    }
-
-    public void setIndexable(boolean indexable)
-    {
-        _indexable = indexable;
+        return null;
     }
 
     @Override
@@ -71,10 +57,7 @@ public class ExternalSchemaDef extends AbstractExternalSchemaDef
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        ExternalSchemaDef that = (ExternalSchemaDef) o;
-
-        if (_editable != that._editable) return false;
-        if (_indexable != that._indexable) return false;
+        LinkedSchemaDef that = (LinkedSchemaDef) o;
 
         return true;
     }
@@ -83,8 +66,6 @@ public class ExternalSchemaDef extends AbstractExternalSchemaDef
     public int hashCode()
     {
         int result = super.hashCode();
-        result = 31 * result + (_editable ? 1 : 0);
-        result = 31 * result + (_indexable ? 1 : 0);
         return result;
     }
 }

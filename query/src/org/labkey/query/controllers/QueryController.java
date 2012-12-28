@@ -93,6 +93,7 @@ import org.labkey.data.xml.TablesType;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.TableWriter;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryAuditViewFactory;
@@ -101,6 +102,7 @@ import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.metadata.MetadataServiceImpl;
 import org.labkey.query.metadata.client.MetadataEditor;
+import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryDef;
@@ -229,6 +231,13 @@ public class QueryController extends SpringActionController
         public ActionURL urlUpdateExternalSchema(Container c, ExternalSchemaDef def)
         {
             ActionURL url = new ActionURL(QueryController.EditExternalSchemaAction.class, c);
+            url.addParameter("externalSchemaId", Integer.toString(def.getExternalSchemaId()));
+            return url;
+        }
+
+        public ActionURL urlDeleteExternalSchema(Container c, ExternalSchemaDef def)
+        {
+            ActionURL url = new ActionURL(QueryController.DeleteExternalSchemaAction.class, c);
             url.addParameter("externalSchemaId", Integer.toString(def.getExternalSchemaId()));
             return url;
         }
@@ -390,10 +399,10 @@ public class QueryController extends SpringActionController
                                 sb.append("              <tr><td>");
                                 sb.append("<a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(PageFlowUtil.filter(def.getUserSchemaName()));
 
-                                if (!def.getDbSchemaName().equals(def.getUserSchemaName()))
+                                if (!def.getSourceSchemaName().equals(def.getUserSchemaName()))
                                 {
                                     sb.append(" (");
-                                    sb.append(PageFlowUtil.filter(def.getDbSchemaName()));
+                                    sb.append(PageFlowUtil.filter(def.getSourceSchemaName()));
                                     sb.append(")");
                                 }
 
@@ -3177,22 +3186,19 @@ public class QueryController extends SpringActionController
         }
     }
 
-
-    @RequiresSiteAdmin
-    public class InsertExternalSchemaAction extends FormViewAction<ExternalSchemaForm>
+    private abstract class BaseInsertExternalSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends FormViewAction<F>
     {
-        public void validateCommand(ExternalSchemaForm form, Errors errors)
+        protected BaseInsertExternalSchemaAction(Class<F> commandClass)
         {
-			form.validate(errors);
+            super(commandClass);
         }
 
-        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
+        public void validateCommand(F form, Errors errors)
         {
-            setHelpTopic(new HelpTopic("externalSchemas"));
-            return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
+            form.validate(errors);
         }
 
-        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
+        public boolean handlePost(F form, BindException errors) throws Exception
         {
             try
             {
@@ -3212,7 +3218,7 @@ public class QueryController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(ExternalSchemaForm externalSchemaForm)
+        public ActionURL getSuccessURL(F form)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
@@ -3220,8 +3226,227 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             new AdminAction().appendNavTrail(root);
-            root.addChild("Define External Schema", new QueryUrlsImpl().urlInsertExternalSchema(getContainer()));
+            root.addChild("Define Schema", new ActionURL(getClass(), getContainer()));
             return root;
+        }
+
+    }
+
+    @RequiresSiteAdmin
+    public class InsertLinkedSchemaAction extends BaseInsertExternalSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
+    {
+        public InsertLinkedSchemaAction()
+        {
+            super(LinkedSchemaForm.class);
+        }
+
+        public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
+        {
+            setHelpTopic(new HelpTopic("linkedSchema"));
+            return new JspView<LinkedSchemaBean>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class InsertExternalSchemaAction extends BaseInsertExternalSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
+    {
+        public InsertExternalSchemaAction()
+        {
+            super(ExternalSchemaForm.class);
+        }
+
+        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
+        {
+            setHelpTopic(new HelpTopic("externalSchemas"));
+            return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
+        }
+    }
+
+    private abstract class BaseDeleteSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends ConfirmAction<F>
+    {
+        protected BaseDeleteSchemaAction(Class<F> commandClass)
+        {
+            super(commandClass);
+        }
+
+        public String getConfirmText()
+        {
+            return "Delete";
+        }
+
+        public ModelAndView getConfirmView(F form, BindException errors) throws Exception
+        {
+            form.refreshFromDb();
+            return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
+        }
+
+        public boolean handlePost(F form, BindException errors) throws Exception
+        {
+            delete(form);
+            return true;
+        }
+
+        protected abstract void delete(F form) throws Exception;
+
+        public void validateCommand(F form, Errors errors)
+        {
+        }
+
+        public ActionURL getSuccessURL(F form)
+        {
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class DeleteLinkedSchemaAction extends BaseDeleteSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
+    {
+        public DeleteLinkedSchemaAction()
+        {
+            super(LinkedSchemaForm.class);
+        }
+
+        protected void delete(LinkedSchemaForm form) throws Exception
+        {
+            form.refreshFromDb();
+            QueryManager.get().delete(getUser(), form.getBean());
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class DeleteExternalSchemaAction extends BaseDeleteSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
+    {
+        public DeleteExternalSchemaAction()
+        {
+            super(ExternalSchemaForm.class);
+        }
+
+        protected void delete(ExternalSchemaForm form) throws Exception
+        {
+            form.refreshFromDb();
+            QueryManager.get().delete(getUser(), form.getBean());
+        }
+    }
+
+    private abstract class BaseEditSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends FormViewAction<F>
+    {
+        protected BaseEditSchemaAction(Class<F> commandClass)
+        {
+            super(commandClass);
+        }
+
+        public void validateCommand(F form, Errors errors)
+        {
+            form.validate(errors);
+        }
+
+        protected abstract T getFromDb(int externalSchemaId);
+
+        protected T getDef(F form, boolean reshow, BindException errors) throws Exception
+        {
+            T def;
+            Container defContainer;
+
+            if (reshow)
+            {
+                def = form.getBean();
+                T fromDb = getFromDb(def.getExternalSchemaId());
+                defContainer = fromDb.lookupContainer();
+            }
+            else
+            {
+                form.refreshFromDb();
+                def = form.getBean();
+                defContainer = def.lookupContainer();
+            }
+
+            if (!getContainer().equals(defContainer))
+                throw new UnauthorizedException();
+
+            return def;
+        }
+
+        public boolean handlePost(F form, BindException errors) throws Exception
+        {
+            T def = form.getBean();
+            T fromDb = getFromDb(def.getExternalSchemaId());
+
+            // Unauthorized if def in the database reports a different container
+            if (!getContainer().equals(fromDb.lookupContainer()))
+                throw new UnauthorizedException();
+
+            try
+            {
+                form.doUpdate();
+                ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, getContainer(), null);
+            }
+            catch (SQLException e)
+            {
+                if (SqlDialect.isConstraintException(e))
+                {
+                    errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
+                    return false;
+                }
+
+                throw e;
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(F externalSchemaForm)
+        {
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new AdminAction().appendNavTrail(root);
+            root.addChild("Edit Schema", new ActionURL(getClass(), getContainer()));
+            return root;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class EditLinkedSchemaAction extends BaseEditSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
+    {
+        public EditLinkedSchemaAction()
+        {
+            super(LinkedSchemaForm.class);
+        }
+
+        protected LinkedSchemaDef getFromDb(int externalId)
+        {
+            return QueryManager.get().getLinkedSchemaDef(externalId);
+        }
+
+        public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
+        {
+            LinkedSchemaDef def = getDef(form, reshow, errors);
+
+            setHelpTopic(new HelpTopic("linkedSchemas"));
+            return new JspView<LinkedSchemaBean>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class EditExternalSchemaAction extends BaseEditSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
+    {
+        public EditExternalSchemaAction()
+        {
+            super(ExternalSchemaForm.class);
+        }
+
+        protected ExternalSchemaDef getFromDb(int externalId)
+        {
+            return QueryManager.get().getExternalSchemaDef(externalId);
+        }
+
+        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
+        {
+            ExternalSchemaDef def = getDef(form, reshow, errors);
+
+            setHelpTopic(new HelpTopic("externalSchemas"));
+            return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
         }
     }
 
@@ -3273,21 +3498,68 @@ public class QueryController extends SpringActionController
         }
     }
 
-
-    public static class ExternalSchemaBean
+    public static abstract class BaseExternalSchemaBean<T extends AbstractExternalSchemaDef>
     {
-        private final Map<DbScope, Collection<String>> _scopesAndSchemas = new LinkedHashMap<DbScope, Collection<String>>();
-        private final Map<DbScope, Collection<String>> _scopesAndSchemasIncludingSystem = new LinkedHashMap<DbScope, Collection<String>>();
-        private final Container _c;
-        private final ExternalSchemaDef _def;
-        private final boolean _insert;
-        private final Map<String, String> _help = new HashMap<String, String>();
+        protected final Container _c;
+        protected final T _def;
+        protected final boolean _insert;
+        protected final Map<String, String> _help = new HashMap<String, String>();
 
-        public ExternalSchemaBean(Container c, ExternalSchemaDef def, boolean insert)
+        public BaseExternalSchemaBean(Container c, T def, boolean insert)
         {
             _c = c;
             _def = def;
             _insert = insert;
+
+            TableInfo ti = QueryManager.get().getTableInfoExternalSchema();
+
+            for (ColumnInfo ci : ti.getColumns())
+                if (null != ci.getDescription())
+                    _help.put(ci.getName(), ci.getDescription());
+        }
+
+        public T getSchemaDef()
+        {
+            return _def;
+        }
+
+        public boolean isInsert()
+        {
+            return _insert;
+        }
+
+        public ActionURL getReturnURL()
+        {
+            return new ActionURL(AdminAction.class, _c);
+        }
+
+        public String getHelpHTML(String fieldName)
+        {
+            return _help.get(fieldName);
+        }
+    }
+
+    public static class LinkedSchemaBean extends BaseExternalSchemaBean<LinkedSchemaDef>
+    {
+        public LinkedSchemaBean(Container c, LinkedSchemaDef def, boolean insert)
+        {
+            super(c, def, insert);
+        }
+
+        public ActionURL getDeleteURL()
+        {
+            return new ActionURL(DeleteLinkedSchemaAction.class, _c).addParameter("externalSchemaId", _def.getExternalSchemaId());
+        }
+    }
+
+    public static class ExternalSchemaBean extends BaseExternalSchemaBean<ExternalSchemaDef>
+    {
+        private final Map<DbScope, Collection<String>> _scopesAndSchemas = new LinkedHashMap<DbScope, Collection<String>>();
+        private final Map<DbScope, Collection<String>> _scopesAndSchemasIncludingSystem = new LinkedHashMap<DbScope, Collection<String>>();
+
+        public ExternalSchemaBean(Container c, ExternalSchemaDef def, boolean insert)
+        {
+            super(c, def, insert);
             Collection<DbScope> scopes = DbScope.getDbScopes();
 
             for (DbScope scope : scopes)
@@ -3348,12 +3620,6 @@ public class QueryController extends SpringActionController
                     }
                 }
             }
-
-            TableInfo ti = QueryManager.get().getTableInfoExternalSchema();
-
-            for (ColumnInfo ci : ti.getColumns())
-                if (null != ci.getDescription())
-                    _help.put(ci.getName(), ci.getDescription());
         }
 
         public Collection<DbScope> getScopes()
@@ -3369,103 +3635,9 @@ public class QueryController extends SpringActionController
                 return _scopesAndSchemas.get(scope);
         }
 
-        public ExternalSchemaDef getSchemaDef()
-        {
-            return _def;
-        }
-
-        public boolean isInsert()
-        {
-            return _insert;
-        }
-
-        public ActionURL getReturnURL()
-        {
-            return new ActionURL(AdminAction.class, _c);
-        }
-
         public ActionURL getDeleteURL()
         {
-            return getDeleteExternalSchemaURL(_c, _def.getExternalSchemaId());
-        }
-
-        public String getHelpHTML(String fieldName)
-        {
-            return _help.get(fieldName);
-        }
-    }
-
-
-    @RequiresSiteAdmin
-    public class EditExternalSchemaAction extends FormViewAction<ExternalSchemaForm>
-    {
-		public void validateCommand(ExternalSchemaForm form, Errors errors)
-		{
-            form.validate(errors);
-		}
-
-        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
-        {
-            ExternalSchemaDef def;
-            Container defContainer;
-
-            if (reshow)
-            {
-                def = form.getBean();
-                ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getExternalSchemaId());
-                defContainer = fromDb.lookupContainer();
-            }
-            else
-            {
-                form.refreshFromDb();
-                def = form.getBean();
-                defContainer = def.lookupContainer();
-            }
-
-            if (!getContainer().equals(defContainer))
-                throw new UnauthorizedException();
-
-            setHelpTopic(new HelpTopic("externalSchemas"));
-            return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
-        }
-
-        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
-        {
-            ExternalSchemaDef def = form.getBean();
-            ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getExternalSchemaId());
-
-            // Unauthorized if def in the database reports a different container
-            if (!getContainer().equals(fromDb.lookupContainer()))
-                throw new UnauthorizedException();
-
-            try
-            {
-                form.doUpdate();
-                ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, getContainer(), null);
-            }
-            catch (SQLException e)
-            {
-                if (SqlDialect.isConstraintException(e))
-                {
-                    errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
-                    return false;
-                }
-
-                throw e;
-            }
-            return true;
-        }
-
-        public ActionURL getSuccessURL(ExternalSchemaForm externalSchemaForm)
-        {
-            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            new AdminAction().appendNavTrail(root);
-            root.addChild("Edit External Schema", new QueryUrlsImpl().urlInsertExternalSchema(getContainer()));
-            return root;
+            return new QueryUrlsImpl().urlDeleteExternalSchema(_c, _def);
         }
     }
 
@@ -3533,44 +3705,6 @@ public class QueryController extends SpringActionController
     }
 
 
-    public static ActionURL getDeleteExternalSchemaURL(Container c, int schemaId)
-    {
-        ActionURL url = new ActionURL(DeleteExternalSchemaAction.class, c);
-        url.addParameter("externalSchemaId", schemaId);
-        return url;
-    }
-
-
-    @RequiresSiteAdmin
-    public class DeleteExternalSchemaAction extends ConfirmAction<ExternalSchemaForm>
-    {
-        public String getConfirmText()
-        {
-            return "Delete";
-        }
-
-        public ModelAndView getConfirmView(ExternalSchemaForm form, BindException errors) throws Exception
-        {
-            form.refreshFromDb();
-            return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
-        }
-
-        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
-        {
-            form.refreshFromDb();
-            QueryManager.get().delete(getUser(), form.getBean());
-            return true;
-        }
-
-        public void validateCommand(ExternalSchemaForm externalSchemaForm, Errors errors)
-        {
-        }
-
-        public ActionURL getSuccessURL(ExternalSchemaForm externalSchemaForm)
-        {
-            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
-        }
-    }
 
 
     // UNDONE: should use POST, change to FormHandlerAction

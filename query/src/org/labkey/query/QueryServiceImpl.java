@@ -91,11 +91,14 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.data.xml.externalSchema.TemplateSchemaDocument;
+import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
+import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
@@ -1049,7 +1052,7 @@ public class QueryServiceImpl extends QueryService
             }
             catch (Exception e)
             {
-                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource(), e);
+                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 
@@ -1068,11 +1071,138 @@ public class QueryServiceImpl extends QueryService
             }
             catch (Exception e)
             {
-                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource(), e);
+                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 
         return null;
+    }
+
+    public Map<String, UserSchema> getLinkedSchemas(User user, Container c)
+    {
+        Map<String, UserSchema> ret = new HashMap<String, UserSchema>();
+        LinkedSchemaDef[] defs = QueryManager.get().getLinkedSchemaDefs(c);
+
+        for (LinkedSchemaDef def : defs)
+        {
+            try
+            {
+                UserSchema schema = LinkedSchema.get(user, c, def);
+                ret.put(def.getUserSchemaName(), schema);
+            }
+            catch (Exception e)
+            {
+                Container sourceContainer = def.lookupSourceContainer();
+                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + sourceContainer != null ? sourceContainer.getName() : "<unknown container>", e);
+            }
+        }
+
+        return ret;
+    }
+
+    public UserSchema getLinkedSchema(User user, Container c, String name)
+    {
+        LinkedSchemaDef def = QueryManager.get().getLinkedSchemaDef(c, name);
+
+        if (null != def)
+        {
+            try
+            {
+                return LinkedSchema.get(user, c, def);
+            }
+            catch (Exception e)
+            {
+                Container sourceContainer = def.lookupSourceContainer();
+                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + sourceContainer != null ? sourceContainer.getName() : "<unknown container>", e);
+            }
+        }
+
+        return null;
+    }
+
+    public TemplateSchemaType getSchemaTemplate(Container c, String templateName)
+    {
+        if (templateName == null)
+            return null;
+
+        for (Module module : c.getActiveModules())
+        {
+            Resource schemasDir = module.getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
+            if (schemasDir != null && schemasDir.isCollection())
+            {
+                for (Resource resource : schemasDir.list())
+                {
+                    String name = resource.getName();
+                    if (name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION) && templateName.equalsIgnoreCase(name.substring(0, name.length() - SCHEMA_TEMPLATE_EXTENSION.length())))
+                    {
+                        try
+                        {
+                            TemplateSchemaDocument doc = TemplateSchemaDocument.Factory.parse(resource.getInputStream());
+                            XmlBeansUtil.validateXmlDocument(doc, resource.getName());
+                            TemplateSchemaType template = doc.getTemplateSchema();
+                            return template;
+                        }
+                        catch (XmlException e)
+                        {
+                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                        }
+                        catch (XmlValidationException e)
+                        {
+                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                        }
+                        catch (IOException e)
+                        {
+                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get list of available schema template XML files for the Container's active modules.
+     */
+    public Collection<TemplateSchemaType> getSchemaTemplates(Container c)
+    {
+        Set<TemplateSchemaType> ret = new HashSet<TemplateSchemaType>();
+        for (Module module : c.getActiveModules())
+        {
+            Resource schemasDir = module.getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
+            if (schemasDir != null && schemasDir.isCollection())
+            {
+                for (Resource resource : schemasDir.list())
+                {
+                    String name = resource.getName();
+                    if (name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
+                    {
+                        try
+                        {
+                            TemplateSchemaDocument doc = TemplateSchemaDocument.Factory.parse(resource.getInputStream());
+                            XmlBeansUtil.validateXmlDocument(doc, resource.getName());
+                            TemplateSchemaType template = doc.getTemplateSchema();
+                            ret.add(template);
+                        }
+                        catch (XmlException e)
+                        {
+                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                        }
+                        catch (XmlValidationException e)
+                        {
+                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                        }
+                        catch (IOException e)
+                        {
+                            _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        return ret;
     }
 
     @Override

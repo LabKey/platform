@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
@@ -22,10 +23,15 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.MultiTablesType;
+import org.labkey.data.xml.externalSchema.ExportedSchemaType;
 import org.labkey.data.xml.externalSchema.ExternalSchemaDocument;
 import org.labkey.data.xml.externalSchema.ExternalSchemaType;
+import org.labkey.data.xml.externalSchema.LinkedSchemaDocument;
+import org.labkey.data.xml.externalSchema.LinkedSchemaType;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.ExternalSchemaDef;
+import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryManager;
 
 import java.util.Arrays;
@@ -38,7 +44,8 @@ import java.util.List;
 public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
 {
     private static final String DEFAULT_DIRECTORY = "externalSchemas";
-    public static final String FILE_EXTENSION =  ".externalschema.xml";   
+    public static final String EXTERNAL_SCHEMA_FILE_EXTENSION =  ".externalschema.xml";
+    public static final String LINKED_SCHEMA_FILE_EXTENSION =  ".linkedschema.xml";
 
     @Override
     public FolderWriter create()
@@ -57,45 +64,85 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
         @Override
         public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
         {
-            List<ExternalSchemaDef> defs = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
-            if (defs.size() > 0)
+            List<ExternalSchemaDef> externalSchemas = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
+            List<LinkedSchemaDef> linkedSchemas = Arrays.asList(QueryManager.get().getLinkedSchemaDefs(c));
+            if (!externalSchemas.isEmpty() || !linkedSchemas.isEmpty())
             {
                 ctx.getXml().addNewExternalSchemas().setDir(DEFAULT_DIRECTORY);
                 VirtualFile extSchemasDir = vf.getDir(DEFAULT_DIRECTORY);
 
-                for (ExternalSchemaDef def : defs)
+                writeExternalSchemas(externalSchemas, extSchemasDir);
+                writeLinkedSchemas(linkedSchemas, extSchemasDir);
+            }
+        }
+
+        private void writeExternalSchemas(List<ExternalSchemaDef> defs, VirtualFile extSchemasDir) throws Exception
+        {
+            for (ExternalSchemaDef def : defs)
+            {
+                ExternalSchemaDocument defDoc = ExternalSchemaDocument.Factory.newInstance();
+                ExternalSchemaType defXml = defDoc.addNewExternalSchema();
+
+                defXml.setEditable(def.isEditable());
+                defXml.setIndexable(def.isIndexable());
+                defXml.setDataSource(def.getDataSource());
+
+                addCommonProperties(defXml, def);
+
+                extSchemasDir.saveXmlBean(def.getUserSchemaName() + EXTERNAL_SCHEMA_FILE_EXTENSION, defDoc);
+            }
+        }
+
+        private void writeLinkedSchemas(List<LinkedSchemaDef> defs, VirtualFile extSchemasDir) throws Exception
+        {
+            for (LinkedSchemaDef def : defs)
+            {
+                LinkedSchemaDocument defDoc = LinkedSchemaDocument.Factory.newInstance();
+                LinkedSchemaType defXml = defDoc.addNewLinkedSchema();
+
+                // XXX: Should serialize container path or container id?
+                Container sourceContainer = def.lookupSourceContainer();
+                defXml.setSourceContainer(sourceContainer.getId());
+
+                addCommonProperties(defXml, def);
+
+                extSchemasDir.saveXmlBean(def.getUserSchemaName() + EXTERNAL_SCHEMA_FILE_EXTENSION, defDoc);
+            }
+        }
+
+        private void addCommonProperties(ExportedSchemaType defXml, AbstractExternalSchemaDef def) throws XmlException
+        {
+            defXml.setUserSchemaName(def.getUserSchemaName());
+
+            if (def.getSchemaTemplate() != null)
+            {
+                defXml.setSchemaTemplate(def.getSchemaTemplate());
+            }
+            else
+            {
+                defXml.setSourceSchemaName(def.getSourceSchemaName());
+
+                ExternalSchemaType.Tables tablesXml = defXml.addNewTables();
+                String tables = def.getTables();
+                if (tables == null || tables.equals("*"))
                 {
-                    ExternalSchemaDocument defDoc = ExternalSchemaDocument.Factory.newInstance();
-                    ExternalSchemaType defXml = defDoc.addNewExternalSchema();
-                    defXml.setDataSource(def.getDataSource());
-                    defXml.setDbSchemaName(def.getDbSchemaName());
-                    defXml.setUserSchemaName(def.getUserSchemaName());
-                    defXml.setEditable(def.isEditable());
-                    defXml.setIndexable(def.isIndexable());
-
-                    ExternalSchemaType.Tables tablesXml = defXml.addNewTables();
-                    String tables = def.getTables();
-                    if (tables.equals("*"))
+                    tablesXml.addTableName("*");
+                }
+                else
+                {
+                    for (String table : tables.split(","))
                     {
-                        tablesXml.addTableName("*");
+                        tablesXml.addTableName(table);
                     }
-                    else
-                    {
-                        for (String table : tables.split(","))
-                        {
-                            tablesXml.addTableName(table);
-                        }
-                    }
+                }
 
-                    if (null != def.getMetaData())
-                    {
-                        MultiTablesType metaDataXml = MultiTablesType.Factory.parse(def.getMetaData());
-                        defXml.setMetadata(metaDataXml);
-                    }
-
-                    extSchemasDir.saveXmlBean(def.getUserSchemaName() + FILE_EXTENSION, defDoc);
+                if (null != def.getMetaData())
+                {
+                    MultiTablesType metaDataXml = MultiTablesType.Factory.parse(def.getMetaData());
+                    defXml.setMetadata(metaDataXml);
                 }
             }
+
         }
 
         @Override

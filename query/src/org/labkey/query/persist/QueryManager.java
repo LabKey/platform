@@ -42,6 +42,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 
@@ -259,14 +260,11 @@ public class QueryManager
     }
 
     
-    public boolean canInherit(int flag)
-    {
-        return (flag & FLAG_INHERITABLE) != 0;
-    }
-
     public ExternalSchemaDef getExternalSchemaDef(int id)
     {
-        return Table.selectObject(getTableInfoExternalSchema(), id, ExternalSchemaDef.class);
+        ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(null);
+        key.setExternalSchemaId(id);
+        return key.selectObject();
     }
 
     public ExternalSchemaDef[] getExternalSchemaDefs(@Nullable Container container)
@@ -287,6 +285,7 @@ public class QueryManager
 
     public ExternalSchemaDef insert(User user, ExternalSchemaDef def) throws Exception
     {
+        checkDefConstraints(def);
         ExternalSchemaDef ret = Table.insert(user, getTableInfoExternalSchema(), def);
         ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, def.lookupContainer(), null);
         return ret;
@@ -294,6 +293,7 @@ public class QueryManager
 
     public ExternalSchemaDef update(User user, ExternalSchemaDef def) throws Exception
     {
+        checkDefConstraints(def);
         ExternalSchemaDef ret = Table.update(user, getTableInfoExternalSchema(), def, def.getExternalSchemaId());
         ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, def.lookupContainer(), null);
         return ret;
@@ -320,6 +320,72 @@ public class QueryManager
         ExternalSchema.uncache(def);
     }
 
+    public LinkedSchemaDef getLinkedSchemaDef(int id)
+    {
+        LinkedSchemaDef.Key key = new LinkedSchemaDef.Key(null);
+        key.setExternalSchemaId(id);
+        return key.selectObject();
+    }
+
+    public LinkedSchemaDef[] getLinkedSchemaDefs(@Nullable Container container)
+    {
+        LinkedSchemaDef.Key key = new LinkedSchemaDef.Key(container);
+        return key.select();
+    }
+
+    public LinkedSchemaDef getLinkedSchemaDef(Container container, String userSchemaName)
+    {
+        if (userSchemaName == null)
+            return null;
+
+        LinkedSchemaDef.Key key = new LinkedSchemaDef.Key(container);
+        key.setUserSchemaName(userSchemaName);
+        return key.selectObject();
+    }
+
+    public LinkedSchemaDef insert(User user, LinkedSchemaDef def) throws Exception
+    {
+        checkDefConstraints(def);
+        return Table.insert(user, getTableInfoExternalSchema(), def);
+    }
+
+    public LinkedSchemaDef update(User user, LinkedSchemaDef def) throws Exception
+    {
+        checkDefConstraints(def);
+        return Table.update(user, getTableInfoExternalSchema(), def, def.getExternalSchemaId());
+    }
+
+    public void delete(User user, LinkedSchemaDef def) throws Exception
+    {
+        Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
+    }
+
+    private void checkDefConstraints(AbstractExternalSchemaDef def)
+    {
+        if (def.getUserSchemaName() == null)
+            throw new IllegalArgumentException("UserSchemaName must not be null");
+
+        if (def.getSchemaTemplate() == null)
+        {
+            if (def.getSourceSchemaName() == null || def.getTables() == null)
+                throw new IllegalArgumentException("SourceSchemaName and Tables must be provided when not using a schema template");
+        }
+        else
+        {
+            TemplateSchemaType template = def.lookupTemplate(def.lookupContainer());
+            if (template == null)
+                throw new IllegalArgumentException("Template '" + def.getSchemaTemplate() + "' not found in container");
+
+            if (def.getSourceSchemaName() != null || def.getTables() != null || def.getMetaData() != null)
+                throw new IllegalArgumentException("SourceSchemaName, Tables, and Metadata must not be provided when using a schema template");
+        }
+    }
+
+
+    public boolean canInherit(int flag)
+    {
+        return (flag & FLAG_INHERITABLE) != 0;
+    }
 
     public int setCanInherit(int flag, boolean f)
     {

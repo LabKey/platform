@@ -16,12 +16,12 @@
 
 package org.labkey.query.controllers;
 
-import org.labkey.query.persist.ExternalSchemaDef;
+import org.labkey.query.persist.LinkedSchemaDef;
 
-public class ExternalSchemaForm extends AbstractExternalSchemaForm<ExternalSchemaDef>
+public class LinkedSchemaForm extends AbstractExternalSchemaForm<LinkedSchemaDef>
 {
-    public ExternalSchemaForm()
+    public LinkedSchemaForm()
     {
-        super(ExternalSchemaDef.class);
+        super(LinkedSchemaDef.class);
     }
 }

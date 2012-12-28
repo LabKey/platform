@@ -110,7 +110,7 @@ var dataSourceCombo = new Ext.form.ComboBox({fieldLabel:'Data Source', mode:'loc
 var includeLabel = new Ext.form.Label({text:'Show System Schemas', align:"middle", padding:"4"});
 var includeSystemCheckBox = new LABKEY.ext.Checkbox({name:'includeSystem', id:'myincludeSystem', boxLabel:'Show System Schemas'});
 // Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out).
-var dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', store:dataSources[<%=coreIndex%>][3], editable:true, triggerAction:'all', allowBlank:false, helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'}, value:<%=q(def.getDbSchemaName())%>});
+var sourceSchemaCombo = new Ext.form.ComboBox({name:'sourceSchemaName', fieldLabel:'Source Schema Name', store:dataSources[<%=coreIndex%>][3], editable:true, triggerAction:'all', allowBlank:false, helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("SourceSchemaName")%>'}, value:<%=q(def.getSourceSchemaName())%>});
 var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:'<%=bean.getHelpHTML("UserSchemaName")%>'}, value:<%=q(def.getUserSchemaName())%>});
 var editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', helpPopup:{title:'Editable', html:'<%=bean.getHelpHTML("Editable")%>'}});
 var indexableCheckBox = new LABKEY.ext.Checkbox({name:'indexable', /*id:'myeditable',*/ fieldLabel:'Index Schema Meta Data', helpPopup:{title:'Index Schema Meta Data', html:'<%=bean.getHelpHTML("Indexable")%>'}, checked:<%=def.isIndexable()%>});
@@ -157,9 +157,9 @@ var DatabaseSchemaNamePanel = Ext.extend(Ext.Panel, {
         this.fieldLabel = 'Database Schema Name';
         this.layout = 'table';
         this.layoutConfig = {columns:2};
-        this.items = [dbSchemaCombo, includeSystemCheckBox];
+        this.items = [sourceSchemaCombo, includeSystemCheckBox];
         this.border = false;
-        this.helpPopup = {title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'};
+        this.helpPopup = {title:'Source Schema Name', html:'<%=bean.getHelpHTML("SourceSchemaName")%>'};
         this.defaults = {cellCls:'systemSchemaStyleClass'};
         DatabaseSchemaNamePanel.superclass.initComponent.apply(this, arguments);
     }
@@ -190,7 +190,7 @@ Ext.onReady(function()
     new Ext.Resizable(metaDataTextArea.el, {handles:'se', wrap:true});
     dataSourceCombo.on('select', dataSourceCombo_onSelect);
     includeSystemCheckBox.on('check', includeSystemCheckBox_onCheck);
-    dbSchemaCombo.on('select', dbSchemaCombo_onSelect);
+    sourceSchemaCombo.on('select', sourceSchemaCombo_onSelect);
     grid.on('expand', updateTableTitle);
     grid.on('collapse', updateTableTitle);
     initEditable(<%=def.isEditable()%>, <%=initialScope.getSqlDialect().isEditable()%>);
@@ -202,9 +202,9 @@ function dataSourceCombo_onSelect()
 {
     userSchemaText.setValue("");
     var dataSourceIndex = store.find("value", dataSourceCombo.getValue());
-    dbSchemaCombo.store.loadData(dataSources[dataSourceIndex][schemaIndex]);
-    dbSchemaCombo.setValue("");
-    dbSchemaCombo_onSelect();  // reset all fields that depend on database schema name
+    sourceSchemaCombo.store.loadData(dataSources[dataSourceIndex][schemaIndex]);
+    sourceSchemaCombo.setValue("");
+    sourceSchemaCombo_onSelect();  // reset all fields that depend on database schema name
 }
 
 function includeSystemCheckBox_onCheck()
@@ -214,9 +214,9 @@ function includeSystemCheckBox_onCheck()
 }
 
 // Default to schema name = database schema name, editable false, editable disabled for non-editable scopes, meta data blank
-function dbSchemaCombo_onSelect()
+function sourceSchemaCombo_onSelect()
 {
-    userSchemaText.setValue(dbSchemaCombo.getValue());
+    userSchemaText.setValue(sourceSchemaCombo.getValue());
     var dataSourceIndex = store.find("value", dataSourceCombo.getValue());
     initEditable(false, dataSources[dataSourceIndex][2]);
     metaDataTextArea.setValue("");
@@ -232,7 +232,7 @@ function initEditable(value, enabled)
 function loadTables()
 {
     var dataSource = dataSourceCombo.getValue();
-    var schemaName = dbSchemaCombo.getValue();
+    var schemaName = sourceSchemaCombo.getValue();
 
     // dataSource and/or schemaName could be empty, but action handles this
     tableStore.load({
@@ -287,7 +287,7 @@ function updateTableTitle()
     var selectedCount = grid.selModel.getCount();
     var title = "&nbsp;";
 
-    if (dbSchemaCombo.getValue() != '')
+    if (sourceSchemaCombo.getValue() != '')
     {
         if (selectedCount == tableStore.getCount())
         {

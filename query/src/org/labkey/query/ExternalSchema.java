@@ -32,9 +32,12 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.data.ExternalSchemaTable;
+import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.ExternalSchemaDef;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -65,51 +68,58 @@ public class ExternalSchema extends SimpleUserSchema
         });
     }
 
-    private final ExternalSchemaDef _def;
+    private final AbstractExternalSchemaDef _def;
+    private final TemplateSchemaType _template;
     private final Map<String, TableType> _metaDataMap;
 
     public static ExternalSchema get(User user, Container container, ExternalSchemaDef def)
     {
-        TableType[] tableTypes = parseTableTypes(def);
+        TemplateSchemaType template = def.lookupTemplate(container);
+        TableType[] tableTypes = parseTableTypes(def, template);
         Map<String, TableType> metaDataMap = new CaseInsensitiveHashMap<TableType>();
 
         for (TableType tt : tableTypes)
             metaDataMap.put(tt.getTableName(), tt);
 
-        DbSchema schema = getDbSchema(def);
-        Collection<String> availableTables = getAvailableTables(def, schema, metaDataMap);
+        DbSchema schema = getDbSchema(def, template);
+        Collection<String> availableTables = getAvailableTables(def, template, schema, metaDataMap);
         Collection<String> hiddenTables = getHiddenTables(tableTypes);
 
-        return new ExternalSchema(user, container, def, schema, metaDataMap, availableTables, hiddenTables);
+        return new ExternalSchema(user, container, def, template, schema, metaDataMap, availableTables, hiddenTables);
     }
 
-    protected ExternalSchema(User user, Container container, ExternalSchemaDef def, DbSchema schema,
+    protected ExternalSchema(User user, Container container, AbstractExternalSchemaDef def, TemplateSchemaType template, DbSchema schema,
         Map<String, TableType> metaDataMap, Collection<String> availableTables, Collection<String> hiddenTables)
     {
         super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.",
                 user, container, schema, availableTables, hiddenTables);
 
         _def = def;
+        _template = template;
         _metaDataMap = metaDataMap;
     }
 
-    private static DbSchema getDbSchema(ExternalSchemaDef def)
+    private static DbSchema getDbSchema(ExternalSchemaDef def, TemplateSchemaType template)
     {
         DbScope scope = DbScope.getDbScope(def.getDataSource());
-
-        if (null != scope)
-            return scope.getSchema(def.getDbSchemaName());
-        else
+        if (scope == null)
             return null;
+
+        String sourceSchemaName = template != null ? template.getSourceSchemaName() : def.getSourceSchemaName();
+        return scope.getSchema(sourceSchemaName);
     }
 
-    private static @NotNull TableType[] parseTableTypes(ExternalSchemaDef def)
+    private static @NotNull TableType[] parseTableTypes(ExternalSchemaDef def, TemplateSchemaType template)
     {
-        if (def.getMetaData() != null)
+        if (template != null && template.getMetadata() != null)
+            return template.getMetadata().getTables().getTableArray();
+
+        String metadata = def.getMetaData();
+        if (metadata != null)
         {
             try
             {
-                TablesDocument doc = TablesDocument.Factory.parse(def.getMetaData());
+                TablesDocument doc = TablesDocument.Factory.parse(metadata);
 
                 if (doc.getTables() != null)
                     return doc.getTables().getTableArray();
@@ -123,9 +133,9 @@ public class ExternalSchema extends SimpleUserSchema
         return new TableType[0];
     }
 
-    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, @Nullable DbSchema schema, Map<String, TableType> metaDataMap)
+    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, TemplateSchemaType template, @Nullable DbSchema schema, Map<String, TableType> metaDataMap)
     {
-        Collection<String> tableNames = getAvailableTables(def, schema);
+        Collection<String> tableNames = getAvailableTables(def, template, schema);
 
         if (tableNames.isEmpty() || metaDataMap.isEmpty())
             return tableNames;
@@ -142,30 +152,46 @@ public class ExternalSchema extends SimpleUserSchema
         return xmlTableNames;
     }
 
-    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, @Nullable DbSchema schema)
+    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, TemplateSchemaType template, @Nullable DbSchema schema)
     {
         if (null == schema)
             return Collections.emptySet();
 
-        String allowedTableNames = def.getTables();
-
-        if ("*".equals(allowedTableNames))
+        Set<String> allowed = null;
+        if (template != null)
         {
-            return schema.getTableNames();
+            TemplateSchemaType.Tables tables = template.getTables();
+            if (tables != null)
+            {
+                String[] tableNames = tables.getTableNameArray();
+                if (tableNames != null)
+                {
+                    if (tableNames.length == 1 && tableNames[0].equals("*"))
+                        return schema.getTableNames();
+                    else
+                        allowed = new HashSet<String>(Arrays.asList(tableNames));
+                }
+            }
         }
         else
         {
-            // Some tables in the "allowed" list may no longer exist, so check each table in the schema.  #13002
-            @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
-            Set<String> allowed = new CsvSet(allowedTableNames);
-            Set<String> available = new HashSet<String>(allowed.size());
-
-            for (String name : allowed)
-                if (null != schema.getTable(name))
-                    available.add(name);
-
-            return available;
+            String allowedTableNames = def.getTables();
+            if ("*".equals(allowedTableNames))
+                return schema.getTableNames();
+            else
+                allowed = new CsvSet(allowedTableNames);
         }
+
+        if (allowed == null || allowed.size() == 0)
+            return Collections.emptySet();
+
+        // Some tables in the "allowed" list may no longer exist, so check each table in the schema.  #13002
+        Set<String> available = new HashSet<String>(allowed.size());
+        for (String name : allowed)
+            if (null != schema.getTable(name))
+                available.add(name);
+
+        return available;
     }
 
     private static @NotNull Collection<String> getHiddenTables(TableType[] tableTypes)
@@ -185,12 +211,12 @@ public class ExternalSchema extends SimpleUserSchema
 
         if (null != scope)
         {
-            String schemaName = def.getDbSchemaName();
+            String schemaName = def.getSourceSchemaName();
 
             // Don't uncache module schemas, even those pointed at by external schemas.  Reloading these schemas is
             // unnecessary (they don't change) and causes us to leak DbCaches.  See #10508.
             if (!scope.isModuleSchema(schemaName))
-                scope.invalidateSchema(def.getDbSchemaName());
+                scope.invalidateSchema(def.getSourceSchemaName());
         }
     }
 
@@ -208,12 +234,12 @@ public class ExternalSchema extends SimpleUserSchema
 
     public boolean areTablesEditable()
     {
-        return _def.isEditable();
+        return _def instanceof ExternalSchemaDef && ((ExternalSchemaDef)_def).isEditable();
     }
 
     public boolean shouldIndexMetaData()
     {
-        return _def.isIndexable();
+        return _def instanceof ExternalSchemaDef && ((ExternalSchemaDef)_def).isIndexable();
     }
 
     @Override

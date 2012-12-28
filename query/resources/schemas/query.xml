@@ -72,9 +72,9 @@
                 <ns:columnTitle>Schema Name</ns:columnTitle>
                 <ns:description>Name of the schema as referred to from within LabKey Server.</ns:description>
             </ns:column>
-            <ns:column columnName="DbSchemaName">
+            <ns:column columnName="SourceSchemaName">
                 <ns:nullable>false</ns:nullable>
-                <ns:columnTitle>Database Schema Name</ns:columnTitle>
+                <ns:columnTitle>Source Schema Name</ns:columnTitle>
                 <ns:description>The name of the physical schema in the underlying database.</ns:description>
             </ns:column>
             <ns:column columnName="Editable">
@@ -88,6 +88,14 @@
             </ns:column>
             <ns:column columnName="MetaData">
                 <ns:description>You can use a specialized XML format to specify which columns are look-ups, formats, captions, etc.</ns:description>
+            </ns:column>
+            <ns:column columnName="SchemaType">
+                <ns:description>Type of schema; either "external" or "linked".</ns:description>
+                <ns:isHidden>true</ns:isHidden>
+            </ns:column>
+            <ns:column columnName="SchemaTemplate">
+                <ns:description>Name of schema template defined in a module.</ns:description>
+                <ns:isHidden>true</ns:isHidden>
             </ns:column>
         </ns:columns>
     </ns:table>

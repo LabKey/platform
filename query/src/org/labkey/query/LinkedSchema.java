@@ -28,7 +28,8 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.data.xml.TableType;
-import org.labkey.query.persist.ExternalSchemaDef;
+import org.labkey.data.xml.externalSchema.TemplateSchemaType;
+import org.labkey.query.persist.LinkedSchemaDef;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -47,72 +48,50 @@ public class LinkedSchema extends ExternalSchema
             @Override
             public QuerySchema getSchema(User user, Container container, String name)
             {
-                //QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
-                //return svc.getLinkedSchema(user, container, name);
-
-                // TEMPORARY HACK
-                if (name.equals("LinkedLists"))
-                    return LinkedSchema.get(user, container);
-
-                return null;
+                QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
+                return svc.getLinkedSchema(user, container, name);
             }
 
             @NotNull
             @Override
             public Collection<String> getSchemaNames(User user, Container container)
             {
-                //QueryServiceImpl svc = (QueryServiceImpl) QueryService.get();
-                //return svc.getLinkedSchemas(user, container).keySet();
-
-                // TEMPORARY HACK
-                return Collections.singleton("LinkedLists");
+                QueryServiceImpl svc = (QueryServiceImpl) QueryService.get();
+                return svc.getLinkedSchemas(user, container).keySet();
             }
         });
     }
 
     private final UserSchema _sourceSchema;
 
-    public static LinkedSchema get(User user, Container container)
+    public static LinkedSchema get(User user, Container container, LinkedSchemaDef def)
     {
-        Container parentContainer = container.getParent();
-        if (parentContainer == null || parentContainer.isRoot())
-            return null;
-
-        ExternalSchemaDef def = new ExternalSchemaDef();
-        def.setDbSchemaName("lists");
-        def.setUserSchemaName("LinkedLists");
-        //def.setSourceSchemaContainer(parentContainer);
-
-        return get(user, container, parentContainer, def);
-    }
-
-    public static LinkedSchema get(User user, Container container, Container sourceContainer, ExternalSchemaDef def)
-    {
-        UserSchema sourceSchema = getSourceSchema(def, user, sourceContainer);
+        TemplateSchemaType template = def.lookupTemplate(container);
+        UserSchema sourceSchema = getSourceSchema(def, template, user);
         if (sourceSchema == null)
             return null;
 
         Map<String, TableType> metaDataMap = new CaseInsensitiveHashMap<TableType>();
 
-        return new LinkedSchema(user, container, def, sourceSchema, metaDataMap, sourceSchema.getTableNames(), Collections.<String>emptySet());
+        return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, sourceSchema.getTableNames(), Collections.<String>emptySet());
     }
 
-    private static UserSchema getSourceSchema(ExternalSchemaDef def, User user, Container container)
+    private static UserSchema getSourceSchema(LinkedSchemaDef def, TemplateSchemaType template, User user)
     {
-        SchemaKey sourceSchemaName = SchemaKey.fromString(def.getDbSchemaName());
-        Container sourceContainer = container; //def.getSourceContainer();
-        User sourceUser = user; //def.getSourceUser();
+        SchemaKey sourceSchemaName = SchemaKey.fromString(template != null ? template.getSourceSchemaName() : def.getSourceSchemaName());
 
-        UserSchema sourceSchema = QueryService.get().getUserSchema(sourceUser, sourceContainer, sourceSchemaName);
+        Container sourceContainer = def.lookupSourceContainer();
+        if (sourceContainer == null || sourceSchemaName == null)
+            return null;
+
+        UserSchema sourceSchema = QueryService.get().getUserSchema(user, sourceContainer, sourceSchemaName);
         return sourceSchema;
     }
 
-    private LinkedSchema(User user, Container container, ExternalSchemaDef def, UserSchema sourceSchema,
+    private LinkedSchema(User user, Container container, LinkedSchemaDef def, TemplateSchemaType template, UserSchema sourceSchema,
                          Map<String, TableType> metaDataMap, Collection<String> availableTables, Collection<String> hiddenTables)
     {
-        //super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' linked schema.",
-        //        user, container, sourceSchema.getDbSchema(), availableTables, hiddenTables);
-        super(user, container, def, sourceSchema.getDbSchema(), metaDataMap, availableTables, hiddenTables);
+        super(user, container, def, template, sourceSchema.getDbSchema(), metaDataMap, availableTables, hiddenTables);
 
         _sourceSchema = sourceSchema;
     }
