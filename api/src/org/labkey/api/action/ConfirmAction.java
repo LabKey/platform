@@ -41,6 +41,11 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
     {
     }
 
+    protected ConfirmAction(Class<FORM> commandClass)
+    {
+        super(commandClass);
+    }
+
     public String getConfirmText()
     {
         return "OK";

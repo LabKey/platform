@@ -52,6 +52,9 @@ abstract public class QueryService
     static private QueryService instance;
 
     public static final String MODULE_QUERIES_DIRECTORY = "queries";
+    public static final String MODULE_SCHEMAS_DIRECTORY = "schemas";
+
+    public static final String SCHEMA_TEMPLATE_EXTENSION = ".template.xml";
 
     static public QueryService get()
     {

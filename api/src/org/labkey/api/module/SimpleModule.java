@@ -126,7 +126,7 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     {
         if (_schemaNames == null)
         {
-            Resource schemasDir = getModuleResource("schemas");
+            Resource schemasDir = getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
             if (schemasDir != null && schemasDir.isCollection())
             {
                 final Set<String> schemaNames = new LinkedHashSet<String>();
@@ -135,7 +135,7 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
                     public void execute(Resource resource)
                     {
                         String name = resource.getName();
-                        if (name.endsWith(".xml"))
+                        if (name.endsWith(".xml") && !name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
                         {
                             try
                             {
