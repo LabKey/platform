@@ -392,6 +392,40 @@ public class PropertyManager
         }
     }
 
+    /**
+     * Return full property entries. Use this function to return property entries that are part
+     * of multiple property sets.
+     *
+     * @param user   User of the property. If null properties for all users (NOT JUST THE NULL USER) will be found.
+     * @param container Container to search for. If null  properties of all containers will be found
+     * @param category category to search for. If null  properties of all categories will be found
+     * @param key      key to search for. If null all keys will be returned
+     * @return array containing found properties
+     */
+    public static PropertyEntry[] findPropertyEntries(User user, Container container, String category, String key)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        if (null != user)
+            filter.addCondition(FieldKey.fromString("UserId"), user.getUserId());
+        if (null != container)
+            filter.addCondition(FieldKey.fromString("ObjectId"), container.getId());
+        if (null != category)
+            filter.addCondition(FieldKey.fromString("Category"), category);
+        if (null != key)
+            filter.addCondition(FieldKey.fromString("Name"), key);
+
+        Sort sort = new Sort("UserId,ObjectId,Category,Name");
+        try
+        {
+            return Table.select(prop.getTableInfoPropertyEntries(), Table.ALL_COLUMNS, filter, sort, PropertyEntry.class);
+        }
+        catch (Exception x)
+        {
+            _log.error("selecting properties", x);
+            return null;
+        }
+    }
+
     public static class PropertyMap extends HashMap<String, String>
     {
         private final int _set;
@@ -486,6 +520,67 @@ public class PropertyManager
         }
     }
 
+
+    public static class PropertyEntry
+    {
+        private int _userId;
+        private String _objectId;
+        private String _category;
+        private String _key;
+        private String _value;
+
+        public int getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(int userId)
+        {
+            this._userId = userId;
+        }
+
+        public String getObjectId()
+        {
+            return _objectId;
+        }
+
+        public void setObjectId(String _objectId)
+        {
+            this._objectId = _objectId;
+        }
+
+        public String getCategory()
+        {
+            return _category;
+        }
+
+        public void setCategory(String _category)
+        {
+            this._category = _category;
+        }
+
+        public String getKey()
+        {
+            return _key;
+        }
+
+        public void setKey(String key)
+        {
+            this._key = key;
+        }
+
+        public String getValue()
+        {
+            return _value;
+        }
+
+        public void setValue(String value)
+        {
+            this._value = value;
+        }
+
+
+    }
 
     public static class TestCase extends Assert
     {
