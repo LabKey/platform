@@ -103,7 +103,7 @@ Ext.onReady(function(){
 </script>
 <form method="post" action="<%=h(baseUrl.setAction("update.post").getLocalURIString())%>" enctype="multipart/form-data" onSubmit="return validateForm(this)">
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
-<input type="hidden" name="entityId" value="<%=ann.getEntityId()%>">
+<input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">
 <%=generateReturnUrlFormField(bean.returnURL)%>
 <table><%

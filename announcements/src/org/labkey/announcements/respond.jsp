@@ -102,7 +102,7 @@ if (settings.hasExpires())
 %>
     <tr>
     <td class="labkey-form-label">Body</td><td colspan=2 width="100%"><textarea cols="60" rows="15" id="body" name="body" style="width:100%;"><%=h(form.get("body"))%></textarea>
-        <input type="hidden" name="parentId" value="<%=bean.parentAnnouncementModel.getEntityId()%>"/>
+        <input type="hidden" name="parentId" value="<%=h(bean.parentAnnouncementModel.getEntityId())%>"/>
     </td>
 </tr><%
     

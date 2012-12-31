@@ -112,6 +112,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -888,6 +889,16 @@ public class AnnouncementsController extends SpringActionController
     {
         private AnnouncementModel _parent;
 
+        @Override
+        public BindException bindParameters(PropertyValues m) throws Exception
+        {
+            // issue 16732: check that if a parentId is present, it is a GUID
+            if (m.getPropertyValue("parentId") != null && !GUID.isGUID(m.getPropertyValue("parentId").getValue().toString()))
+                throw createThreadNotFoundException(getContainer());
+
+            return super.bindParameters(m);
+        }
+
         public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
         {
             Permissions perm = getPermissions();
@@ -1188,6 +1199,16 @@ public class AnnouncementsController extends SpringActionController
     public class UpdateAction extends FormViewAction<AnnouncementForm>
     {
         private AnnouncementModel _ann;
+
+        @Override
+        public BindException bindParameters(PropertyValues m) throws Exception
+        {
+            // issue 16731: check that if an entityId is present, it is a GUID
+            if (m.getPropertyValue("entityId") != null && !GUID.isGUID(m.getPropertyValue("entityId").getValue().toString()))
+                throw new NotFoundException();
+
+            return super.bindParameters(m);
+        }
 
         public ActionURL getSuccessURL(AnnouncementForm form)
         {
