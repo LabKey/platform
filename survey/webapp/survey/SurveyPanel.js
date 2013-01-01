@@ -76,6 +76,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     },
 
     getSurveyResponses : function() {
+        this.rowMap = {};
         this.initialResponses = {};
 
         if (this.rowId)
@@ -250,7 +251,6 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         // only "reset" form fields that are not displayfields
         if (field && field.isFormField && field.getXType() != 'displayfield')
         {
-            // TODO: there is an issue that combos with "forceSelection: true" are not being cleared/reset
             if (field.clearValue != undefined)
                 field.clearValue();
             else
@@ -692,9 +692,12 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         this.toggleSaveBtn(false, false);
 
-        // get the dirty form values and add the survey's rowId, surveyDesignId, and responsesPk
-        // note: these are not stored as hidden fields because we are only getting the dirty values (which they won't be)
-        var values = this.getForm().getValues(false, true);
+        // get the dirty form values which are also valid and to be submitted
+        this.submitValues = {};
+        Ext4.each(this.getForm().getFields().items, function(field){
+            if (field.submitValue && field.isDirty() && field.isValid())
+                this.submitValues[field.getName()] = field.getSubmitValue();
+        }, this);
 
         // check to make sure the survey label is not null, it is required
         if (!this.surveyLabel)
@@ -712,7 +715,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                 rowId          : this.rowId ? this.rowId : undefined,
                 responsesPk    : this.responsesPk ? this.responsesPk : undefined,
                 label          : this.surveyLabel,
-                responses      : values,
+                responses      : this.submitValues,
                 submit         : toSubmit
             },
             success : function(resp){
@@ -729,9 +732,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                     this.saveSurveyAttachments();
 
                     // reset the values so that the form's dirty state is cleared, with one special case for the survey label field
-                    var currentValues = this.getForm().getValues();
-                    currentValues[this.down('.textfield[itemId=surveyLabel]').getName()] = this.down('.textfield[itemId=surveyLabel]').getValue();
-                    this.getForm().setValues(currentValues);
+                    this.submitValues[this.down('.textfield[itemId=surveyLabel]').getName()] = this.down('.textfield[itemId=surveyLabel]').getValue();
+                    this.getForm().setValues(this.submitValues);
 
                     var msgBox = Ext4.create('Ext.window.Window', {
                         title    : 'Success',

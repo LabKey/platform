@@ -8,6 +8,7 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
     extend: 'Ext.grid.Panel',
     alias: 'widget.surveygridquestion',
     isFormField: true,
+    submitValue: true,
 
     constructor : function(config) {
 
@@ -127,6 +128,10 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
         return data;
     },
 
+    getSubmitValue : function() {
+        return this.getValue();
+    },
+
     setDirty : function(isDirty) {
         if (this.dirty != isDirty)
             this.fireEvent('dirtychange', this, isDirty);
@@ -140,6 +145,10 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
 
     isValid : function() {
         return true;
+    },
+
+    clearInvalid : function() {
+        // not implemented since there isn't really an invalid state for this question type
     },
 
     setReadOnly : function() {
