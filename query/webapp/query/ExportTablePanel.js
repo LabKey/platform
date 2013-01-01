@@ -12,25 +12,29 @@ Ext4.define('HIPC.tree.ExportTablePanel', {
     selectNodeAndAllChildren: function(node){
         node.set('checked', true);
         node.eachChild(this.selectNodeAndAllChildren);
+        this.enableExportButton(this.getView().getChecked().length);
     },
 
     deselectNodeAndAllChildren: function(node){
         node.set('checked', false);
-        node.eachChild(this.deselectNodeAndAllChildren);
+        node.eachChild(this.deselectNodeAndAllChildren, this);
+        this.enableExportButton(this.getView().getChecked().length);
     },
 
     deselectNodeAndParents: function(node){
         // This function is used to deselect all parent nodes that are selected.
         node.set('checked', false);
+
         if(node.parentNode != null && node.parentNode.get('checked') === true){
             this.deselectNodeAndParents(node.parentNode);
         }
+
+        this.enableExportButton(this.getView().getChecked().length);
     },
 
     addParams: function(formPanel){
         var schemas = [];
         this.getRootNode().eachChild(function(node){
-
             var schemaName = node.get('text');
             var queryNames = [];
 
@@ -38,12 +42,12 @@ Ext4.define('HIPC.tree.ExportTablePanel', {
                 if(queryNode.get('checked')){
                     queryNames.push(queryNode.get('text'));
                 }
-            });
+            }, this);
 
             if(queryNames.length > 0){
                 formPanel.add({xtype: 'hidden', name: schemaName, value: queryNames.join(';')});
             }
-        });
+        }, this);
     },
 
     getQueriesCallback: function(data){
@@ -101,7 +105,24 @@ Ext4.define('HIPC.tree.ExportTablePanel', {
             }]
         });
 
+        // Issue 16869
+        var sortTask = new Ext4.util.DelayedTask(function(){
+            this.treeStore.sort();
+        }, this);
+
+        this.treeStore.on('append', function(){
+            sortTask.delay(250);
+        }, this);
+
         return this.treeStore
+    },
+
+    enableExportButton: function(numberOfRecords){
+        if(numberOfRecords > 0){
+            this.exportButton.setDisabled(false);
+        } else {
+            this.exportButton.setDisabled(true);
+        }
     },
 
     onExportButtonClicked: function(){
@@ -139,20 +160,25 @@ Ext4.define('HIPC.tree.ExportTablePanel', {
 
         this.store = this.getTreeStore();
 
+        this.exportButton = Ext4.create('Ext.button.Button', {
+            text: 'Export Selected',
+            disabled: true,
+            handler: this.onExportButtonClicked,
+            scope: this
+        });
+
         this.dockedItems = [{
             xtype: 'toolbar',
-            items: {
-                text: 'Export Selected',
-                handler: this.onExportButtonClicked,
-                scope: this
-            }
+            items: this.exportButton
         }];
 
         this.on('checkchange', function(node, checked){
             if(checked){
-                node.eachChild(this.selectNodeAndAllChildren);
+                this.enableExportButton(this.getView().getChecked().length);
+                node.eachChild(this.selectNodeAndAllChildren, this);
             } else {
-                node.eachChild(this.deselectNodeAndAllChildren);
+                this.enableExportButton(this.getView().getChecked().length);
+                node.eachChild(this.deselectNodeAndAllChildren, this);
 
                 if(node.parentNode != null){
                     this.deselectNodeAndParents(node.parentNode);
