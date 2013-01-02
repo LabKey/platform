@@ -106,7 +106,7 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
 
                 addCommonProperties(defXml, def);
 
-                extSchemasDir.saveXmlBean(def.getUserSchemaName() + EXTERNAL_SCHEMA_FILE_EXTENSION, defDoc);
+                extSchemasDir.saveXmlBean(def.getUserSchemaName() + LINKED_SCHEMA_FILE_EXTENSION, defDoc);
             }
         }
 

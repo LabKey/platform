@@ -107,6 +107,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                     QueryManager.get().delete(ctx.getUser(), existingDef);
 
                 form = new ExternalSchemaForm();
+                form.setTypedValue("schematype", "external");
                 form.setTypedValue("dataSource", schemaXml.getDataSource());
                 form.setTypedValue("editable", schemaXml.getEditable());
                 form.setTypedValue("indexable", schemaXml.getIndexable());
@@ -124,8 +125,8 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                     QueryManager.get().delete(ctx.getUser(), existingDef);
 
                 form = new LinkedSchemaForm();
-                form.setTypedValue("sourceContainerId", schemaXml.getSourceContainer());
-
+                form.setTypedValue("schematype", "linked");
+                form.setTypedValue("dataSource", schemaXml.getSourceContainer());
             }
             else
                 throw new ImportException("Unable to get an instance of external or linked schema from " + relativePath);
@@ -156,6 +157,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
 
                 form.setTypedValue("sourceSchemaName", sourceSchemaName);
 
+                String schemaTables = "*";
                 if (exportedXml.isSetTables())
                 {
                     String[] tables = exportedXml.getTables().getTableNameArray();
@@ -166,8 +168,9 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                         tablesSb.append(sep).append(table);
                         sep = ",";
                     }
-                    form.setTypedValue("tables", tablesSb.toString());
+                    schemaTables = tablesSb.toString();
                 }
+                form.setTypedValue("tables", schemaTables);
 
                 if (exportedXml.isSetMetadata())
                 {
