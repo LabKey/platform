@@ -48,7 +48,7 @@ public class ZipFile extends AbstractVirtualFile
         this(getOutputStream(response, name), true);
     }
 
-    private ZipFile(OutputStream out, boolean shouldCloseOutputStream)
+    public ZipFile(OutputStream out, boolean shouldCloseOutputStream)
     {
         this(new ZipOutputStream(out), null, "", shouldCloseOutputStream);
     }
