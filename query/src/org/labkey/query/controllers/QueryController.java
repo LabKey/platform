@@ -24,6 +24,7 @@ import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.tika.io.IOUtils;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -121,7 +122,10 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -5042,15 +5046,24 @@ public class QueryController extends SpringActionController
             Container container = getContainer();
             TableWriter writer = new TableWriter();
 
+            OutputStream outputStream = null;
             try
             {
-                ZipFile zip = new ZipFile(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"));
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                outputStream = new BufferedOutputStream(baos);
+                ZipFile zip = new ZipFile(outputStream, true);
                 writer.write(container, getUser(), zip, form);
                 zip.close();
+
+                PageFlowUtil.streamFileBytes(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"), baos.toByteArray(), false);
             }
             catch (Exception e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
+            }
+            finally
+            {
+                IOUtils.closeQuietly(outputStream);
             }
             
             if (errors.hasErrors())
