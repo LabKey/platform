@@ -1,0 +1,11 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="clientapi/ext4/Util.js"/>
+        <script path="clientapi/ext4/data/Reader.js"/>
+        <script path="clientapi/ext4/data/Proxy.js"/>
+        <script path="clientapi/ext4/data/Store.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4" />
+    </dependencies>
+</libraries>

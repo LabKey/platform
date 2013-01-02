@@ -1480,6 +1480,11 @@ api/webapp/clientapi/ext3/QueryWebPart.js -text
 api/webapp/clientapi/ext3/SecurityPolicy.js -text
 api/webapp/clientapi/ext3/Store.js -text
 api/webapp/clientapi/ext3/Utils.js -text
+api/webapp/clientapi/ext4.lib.xml -text
+api/webapp/clientapi/ext4/Util.js -text
+api/webapp/clientapi/ext4/data/Proxy.js -text
+api/webapp/clientapi/ext4/data/Reader.js -text
+api/webapp/clientapi/ext4/data/Store.js -text
 api/webapp/ext-3.4.0/INCLUDE_ORDER.txt -text
 api/webapp/ext-3.4.0/adapter/ext/ext-base-debug.js -text
 api/webapp/ext-3.4.0/adapter/ext/ext-base.js -text
