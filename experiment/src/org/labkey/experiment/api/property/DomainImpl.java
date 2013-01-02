@@ -72,7 +72,7 @@ public class DomainImpl implements Domain
         _dd = dd;
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
         _properties = new ArrayList<DomainPropertyImpl>(pds.length);
-        DomainPropertyManager.ConditionalFormatWithPropertyId[] allFormats = DomainPropertyManager.get().getConditionalFormats(this);
+        List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
         for (PropertyDescriptor pd : pds)
         {
             List<ConditionalFormat> formats = new ArrayList<ConditionalFormat>();

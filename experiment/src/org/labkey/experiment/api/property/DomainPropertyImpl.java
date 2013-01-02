@@ -563,7 +563,7 @@ public class DomainPropertyImpl implements DomainProperty
         if (_formats == null)
         {
             _formats = new ArrayList<ConditionalFormat>();
-            _formats.addAll(Arrays.asList(DomainPropertyManager.get().getConditionalFormats(this)));
+            _formats.addAll(DomainPropertyManager.get().getConditionalFormats(this));
         }
         return _formats;
     }

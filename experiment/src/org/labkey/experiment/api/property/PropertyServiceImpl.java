@@ -172,7 +172,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
     @Override
     public List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc)
     {
-        return Arrays.asList(DomainPropertyManager.get().getConditionalFormats(desc));
+        return DomainPropertyManager.get().getConditionalFormats(desc);
     }
 
     @Override

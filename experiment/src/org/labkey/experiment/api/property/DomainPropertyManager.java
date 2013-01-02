@@ -15,18 +15,24 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.GUID;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +46,23 @@ public class DomainPropertyManager
 {
     private static final DomainPropertyManager _instance = new DomainPropertyManager();
 
+    private BlockingCache<GUID, List<ConditionalFormatWithPropertyId>> _conditionalFormatCache = CacheManager.getBlockingCache(500, CacheManager.DAY, "ConditionalFormats", new CacheLoader<GUID, List<ConditionalFormatWithPropertyId>>()
+    {
+        @Override
+        public List<ConditionalFormatWithPropertyId> load(GUID containerId, @Nullable Object argument)
+        {
+            SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
+            sql.append(getTinfoConditionalFormat(), "CF");
+            sql.append(" WHERE CF.PropertyId IN ");
+            sql.append("(SELECT PropertyId FROM ");
+            sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
+            sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
+            sql.add(containerId);
+
+            return new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class);
+        }
+    });
+
     private DomainPropertyManager(){}
 
     public static DomainPropertyManager get()
@@ -49,7 +72,7 @@ public class DomainPropertyManager
 
     private static DbSchema getExpSchema()
     {
-        return DbSchema.get("exp");
+        return ExperimentServiceImpl.get().getExpSchema();
     }
 
     public TableInfo getTinfoValidator()
@@ -77,39 +100,26 @@ public class DomainPropertyManager
         return getValidators(property.getPropertyId());
     }
 
-    public ConditionalFormat[] getConditionalFormats(DomainPropertyImpl property)
+    public List<ConditionalFormat> getConditionalFormats(DomainPropertyImpl property)
     {
         return getConditionalFormats(property._pd);
     }
 
-    public ConditionalFormat[] getConditionalFormats(PropertyDescriptor property)
+    public List<ConditionalFormat> getConditionalFormats(PropertyDescriptor property)
     {
-        try
+        List<ConditionalFormat> result = new ArrayList<ConditionalFormat>();
+        if (property != null && property.getPropertyId() != 0)
         {
-            if (property != null && property.getPropertyId() != 0)
+            List<ConditionalFormatWithPropertyId> containerConditionalFormats = _conditionalFormatCache.get(property.getContainer().getEntityId());
+            for (ConditionalFormatWithPropertyId containerConditionalFormat : containerConditionalFormats)
             {
-                String cacheKey = getCacheKey(property.getPropertyId());
-                ConditionalFormat[] formats = (ConditionalFormat[])DbCache.get(getTinfoConditionalFormat(), cacheKey);
-
-                if (formats != null)
-                    return formats;
-
-                String sql = "SELECT CF.* " +
-                        "FROM " + getTinfoConditionalFormat() + " CF " +
-                        "WHERE CF.PropertyId = ? " +
-                        "ORDER BY SortOrder";
-
-                formats = Table.executeQuery(getExpSchema(), sql, new Object[]{property.getPropertyId()}, ConditionalFormat.class);
-
-                DbCache.put(getTinfoConditionalFormat(), cacheKey, formats);
-                return formats;
+                if (containerConditionalFormat.getPropertyId() == property.getPropertyId())
+                {
+                    result.add(containerConditionalFormat);
+                }
             }
-            return new ConditionalFormat[0];
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return result;
     }
 
     public static class ConditionalFormatWithPropertyId extends ConditionalFormat
@@ -127,35 +137,9 @@ public class DomainPropertyManager
         }
     }
 
-    public ConditionalFormatWithPropertyId[] getConditionalFormats(Domain domain)
+    public List<ConditionalFormatWithPropertyId> getConditionalFormats(Container container)
     {
-        try
-        {
-            if (domain != null && domain.getTypeId() != 0)
-            {
-                String cacheKey = getCacheKey(domain);
-                ConditionalFormatWithPropertyId[] formats = (ConditionalFormatWithPropertyId[])DbCache.get(getTinfoConditionalFormat(), cacheKey);
-
-                if (formats != null)
-                    return formats;
-
-                String sql = "SELECT CF.* " +
-                        "FROM " + getTinfoConditionalFormat() + " CF " +
-                        "WHERE CF.PropertyId IN " +
-                        "(SELECT PropertyId FROM " + OntologyManager.getTinfoPropertyDomain() + " WHERE DomainId = ?)" +
-                        "ORDER BY PropertyId, SortOrder";
-
-                formats = Table.executeQuery(getExpSchema(), sql, new Object[]{domain.getTypeId()}, ConditionalFormatWithPropertyId.class);
-
-                DbCache.put(getTinfoConditionalFormat(), cacheKey, formats);
-                return formats;
-            }
-            return new ConditionalFormatWithPropertyId[0];
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return _conditionalFormatCache.get(container.getEntityId());
     }
 
     private String getCacheKey(int propertyId)
@@ -163,39 +147,27 @@ public class DomainPropertyManager
         return String.valueOf(propertyId);
     }
 
-    private String getCacheKey(Domain domain)
-    {
-        return "Domain" + domain.getTypeId();
-    }
-
     private PropertyValidator[] getValidators(int propertyId)
     {
-        try
+        if (propertyId != 0)
         {
-            if (propertyId != 0)
-            {
-                String cacheKey = getCacheKey(propertyId);
-                PropertyValidator[] validators = (PropertyValidator[])DbCache.get(getTinfoValidator(), cacheKey);
+            String cacheKey = getCacheKey(propertyId);
+            PropertyValidator[] validators = (PropertyValidator[])DbCache.get(getTinfoValidator(), cacheKey);
 
-                if (validators != null)
-                    return validators;
-
-                String sql = "SELECT PV.* " +
-                        "FROM " + getTinfoValidator() + " PV " +
-                        "INNER JOIN " + getTinfoValidatorReference() + " VR ON (PV.RowId = VR.ValidatorId) " +
-                        "WHERE VR.PropertyId = ?\n";
-
-                validators = Table.executeQuery(getExpSchema(), sql, new Object[]{propertyId}, PropertyValidator.class);
-
-                DbCache.put(getTinfoValidator(), cacheKey, validators);
+            if (validators != null)
                 return validators;
-            }
-            return new PropertyValidator[0];
+
+            String sql = "SELECT PV.* " +
+                    "FROM " + getTinfoValidator() + " PV " +
+                    "INNER JOIN " + getTinfoValidatorReference() + " VR ON (PV.RowId = VR.ValidatorId) " +
+                    "WHERE VR.PropertyId = ?\n";
+
+            validators = new SqlSelector(getExpSchema(), sql, propertyId).getArray(PropertyValidator.class);
+
+            DbCache.put(getTinfoValidator(), cacheKey, validators);
+            return validators;
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new PropertyValidator[0];
     }
 
     /**
@@ -204,45 +176,31 @@ public class DomainPropertyManager
      */
     public void removePropertyValidator(User user, DomainProperty property, IPropertyValidator validator)
     {
-        try
+        if (property.getPropertyId() != 0)
         {
-            if (property.getPropertyId() != 0)
-            {
-                _removeValidatorReference(property.getPropertyId(), validator.getRowId());
+            _removeValidatorReference(property.getPropertyId(), validator.getRowId());
 
-                String sql = "DELETE FROM " + getTinfoValidator() +
-                            " WHERE RowId = ?" +
-                            " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
-                                " WHERE  VR.ValidatorId = ?)";
-                Table.execute(getExpSchema(), sql, validator.getRowId(), validator.getRowId());
-                DbCache.remove(getTinfoValidator(), getCacheKey(property.getPropertyId()));
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
+            String sql = "DELETE FROM " + getTinfoValidator() +
+                        " WHERE RowId = ?" +
+                        " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
+                            " WHERE  VR.ValidatorId = ?)";
+            new SqlExecutor(getExpSchema()).execute(sql, validator.getRowId(), validator.getRowId());
+            DbCache.remove(getTinfoValidator(), getCacheKey(property.getPropertyId()));
         }
     }
 
     private void _removePropertyValidator(int propertyId, int validatorId)
     {
-        try
+        if (propertyId != 0)
         {
-            if (propertyId != 0)
-            {
-                _removeValidatorReference(propertyId, validatorId);
+            _removeValidatorReference(propertyId, validatorId);
 
-                String sql = "DELETE FROM " + getTinfoValidator() +
-                            " WHERE RowId = ?" +
-                            " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
-                                " WHERE  VR.ValidatorId = ?)";
-                Table.execute(getExpSchema(), sql, validatorId, validatorId);
-                DbCache.remove(getTinfoValidator(), getCacheKey(propertyId));
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
+            String sql = "DELETE FROM " + getTinfoValidator() +
+                        " WHERE RowId = ?" +
+                        " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
+                            " WHERE  VR.ValidatorId = ?)";
+            new SqlExecutor(getExpSchema()).execute(sql, validatorId, validatorId);
+            DbCache.remove(getTinfoValidator(), getCacheKey(propertyId));
         }
     }
 
@@ -263,49 +221,35 @@ public class DomainPropertyManager
 
     public void addValidatorReference(DomainProperty property, IPropertyValidator validator)
     {
-        try
+        if (property.getPropertyId() != 0 && validator.getRowId() != 0)
         {
-            if (property.getPropertyId() != 0 && validator.getRowId() != 0)
+            String sql = "SELECT ValidatorId FROM " + getTinfoValidatorReference() + " WHERE ValidatorId=? AND PropertyId=?";
+            Integer id = new SqlSelector(getExpSchema(), sql, validator.getRowId(), property.getPropertyId()).getObject(Integer.class);
+            if (id == null)
             {
-                String sql = "SELECT ValidatorId FROM " + getTinfoValidatorReference() + " WHERE ValidatorId=? AND PropertyId=?";
-                Integer id = Table.executeSingleton(getExpSchema(), sql, new Object[]{validator.getRowId(), property.getPropertyId()}, Integer.class);
-                if (id == null)
-                {
-                    SQLFragment insertSQL = new SQLFragment();
-                    insertSQL.append("INSERT INTO ");
-                    insertSQL.append(getTinfoValidatorReference());
-                    insertSQL.append(" (ValidatorId,PropertyId) VALUES(?,?)");
-                    insertSQL.add(validator.getRowId());
-                    insertSQL.add(property.getPropertyId());
+                SQLFragment insertSQL = new SQLFragment();
+                insertSQL.append("INSERT INTO ");
+                insertSQL.append(getTinfoValidatorReference());
+                insertSQL.append(" (ValidatorId,PropertyId) VALUES(?,?)");
+                insertSQL.add(validator.getRowId());
+                insertSQL.add(property.getPropertyId());
 
-                    Table.execute(getExpSchema(), insertSQL);
-                }
+                new SqlExecutor(getExpSchema()).execute(insertSQL);
             }
-            else
-                throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        else
+            throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
     }
 
     private void _removeValidatorReference(int propertyId, int validatorId)
     {
-        try
+        if (propertyId != 0 && validatorId != 0)
         {
-            if (propertyId != 0 && validatorId != 0)
-            {
-                String sql = "DELETE FROM " + getTinfoValidatorReference() + " WHERE ValidatorId=? AND PropertyId=?";
-                Table.execute(getExpSchema(), sql, validatorId, propertyId);
-            }
-            else
-                throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
+            String sql = "DELETE FROM " + getTinfoValidatorReference() + " WHERE ValidatorId=? AND PropertyId=?";
+            new SqlExecutor(getExpSchema()).execute(sql, validatorId, propertyId);
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        else
+            throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
     }
 
     public void removeValidatorsForPropertyDescriptor(int descriptorId)
@@ -318,34 +262,28 @@ public class DomainPropertyManager
 
     public void deleteAllValidatorsAndFormats(Container c) throws SQLException
     {
-        String deletePropValidatorRefSql = "DELETE FROM " + getTinfoValidatorReference() +
-                " WHERE ValidatorId IN (SELECT RowId FROM " + getTinfoValidator() + " WHERE Container = ?)";
-        Table.execute(getExpSchema(), deletePropValidatorRefSql, c.getId());
+        SqlExecutor executor = new SqlExecutor(getExpSchema());
+        SQLFragment validatorReferenceSQL = new SQLFragment("DELETE FROM " + getTinfoValidatorReference() +
+                " WHERE ValidatorId IN (SELECT RowId FROM " + getTinfoValidator() + " WHERE Container = ?)", c.getId());
+        executor.execute(validatorReferenceSQL);
 
-        String deletePropValidatorSql = "DELETE FROM " + getTinfoValidator() + " WHERE Container = ?";
-        Table.execute(getExpSchema(), deletePropValidatorSql, c.getId());
+        SQLFragment validatorSQL = new SQLFragment("DELETE FROM " + getTinfoValidator() + " WHERE Container = ?", c.getId());
+        executor.execute(validatorSQL);
 
-        String deleteConditionalFormatsSql = "DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId IN " +
-                "(SELECT PropertyId FROM " + OntologyManager.getTinfoPropertyDescriptor() + " WHERE Container = ?)";
-        Table.execute(getExpSchema(), deleteConditionalFormatsSql, c.getId());
+        SQLFragment deleteConditionalFormatsSQL = new SQLFragment("DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId IN " +
+                "(SELECT PropertyId FROM " + OntologyManager.getTinfoPropertyDescriptor() + " WHERE Container = ?)", c.getId());
+        executor.execute(deleteConditionalFormatsSQL);
 
         DbCache.clear(getTinfoValidator());
-        DbCache.clear(getTinfoConditionalFormat());
+        _conditionalFormatCache.remove(c.getEntityId());
     }
 
     public void deleteConditionalFormats(int propertyId)
     {
-        try
-        {
-            String deleteFormatSql = "DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId = ?";
-            Table.execute(getExpSchema(), deleteFormatSql, propertyId);
-            // Cached both on property and domain level, so blow the whole cache
-            DbCache.clear(getTinfoConditionalFormat());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SQLFragment sql = new SQLFragment("DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId = ?", propertyId);
+        new SqlExecutor(getExpSchema()).execute(sql);
+        // Blow the cache
+        _conditionalFormatCache.clear();
     }
 
     public void saveConditionalFormats(User user, PropertyDescriptor prop, List<ConditionalFormat> formats)
@@ -371,8 +309,8 @@ public class DomainPropertyManager
                 row.put("PropertyId", prop.getPropertyId());
 
                 Table.insert(user, getTinfoConditionalFormat(), row);
-                // Cached both on property and domain level, so blow the whole cache
-                DbCache.clear(getTinfoConditionalFormat());
+                // Blow the cache for the container
+                _conditionalFormatCache.remove(prop.getContainer().getEntityId());
             }
         }
         catch (SQLException e)
