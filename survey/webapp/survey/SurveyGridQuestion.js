@@ -16,7 +16,7 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
             columns: [],
             store: null,
             border: true,
-            scrollOffset: 10
+            forceFit: true
         });
 
         this.callParent([config]);
@@ -37,16 +37,12 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
 
         if (!this.readOnly)
         {
-            this.rowEditor = Ext4.create('Ext.grid.plugin.RowEditing', {
-                clicksToEdit: 2
-            });
-            this.plugins = [this.rowEditor];
-
             this.selModel = Ext4.create('Ext.selection.RowModel', {
                 allowDeselect: true,
                 listeners: {
                     scope: this,
                     selectionchange: function() {
+                        this.down('#edit-selected-btn').setDisabled(!this.getSelectionModel().hasSelection());
                         this.down('#remove-selected-btn').setDisabled(!this.getSelectionModel().hasSelection());
                     }
                 }
@@ -58,13 +54,22 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
                 ui: 'footer',
                 items: [{
                     text:'Add Record',
+                    handler: function(){
+                        // call method without a 'record' param to add a new entry
+                        this.showUpdateRecordWindow();
+                    },
+                    scope: this
+                },{
+                    itemId: 'edit-selected-btn',
+                    text:'Edit Selected',
+                    disabled: true,
                     handler: function() {
-                        // if the grid height is too small, the row editor will be masked
-                        if (this.getHeight() < 130)
-                            this.minHeight = 130;
-
-                        var record = this.getStore().add({});
-                        this.rowEditor.startEdit(this.getStore().getCount() - 1, 0);
+                        var selectedArr = this.getSelectionModel().getSelection();
+                        if (selectedArr)
+                        {
+                            // call method with a 'record' param to edit an entry
+                            this.showUpdateRecordWindow(selectedArr[0]);
+                        }
                     },
                     scope: this
                 },{
@@ -153,6 +158,65 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
 
     setReadOnly : function() {
         // not implemented, set via the question config instead
+    },
+
+    showUpdateRecordWindow : function(record) {
+        // if we have a proper columns array for this component, add a window with the form panel
+        if (this.columns)
+        {
+            var formItems = [];
+            Ext4.each(this.columns, function(column){
+                var formItem;
+                if (!column.editor)
+                    formItem = {xtype: 'displayfield'};
+                else
+                    formItem = column.editor;
+
+                formItem.fieldLabel = column.text;
+                formItem.name = column.dataIndex;
+                formItem.value = record ? record.get(column.dataIndex) : null;
+
+                formItems.push(formItem);
+            });
+
+            var win = Ext4.create('Ext.window.Window', {
+                border: false,
+                modal: true,
+                title: record ? 'Edit Record' : ' Add Record',
+                minHeight: 100,
+                minWidth: 200,
+                items: [{
+                    itemId: 'recordWindowFormPanel',
+                    xtype: 'form',
+                    border: false,
+                    bodyStyle: 'padding: 5px;',
+                    items: formItems
+                }],
+                buttonAlign: 'center',
+                buttons: [{
+                    text: 'Update',
+                    handler: function() {
+                        // either update the given record or add a new one
+                        var values = win.down('#recordWindowFormPanel').getForm().getValues();
+                        if (record)
+                        {
+                            Ext4.each(values, function(val) {
+                                record.set(val, values[val]);
+                            });
+                        }
+                        else
+                            this.getStore().add(values);
+
+                        win.close();
+                    },
+                    scope: this
+                },{
+                    text: 'Cancel',
+                    handler: function() { win.close(); }
+                }]
+            });
+            win.show();
+        }
     }
 });
 
