@@ -26,6 +26,7 @@ public class AutoCompleteTextareaTag extends AutoCompleteTag
 {
     int _rows = 8;
     int _cols = 60;
+    int _tabindex;
 
     public int getRows()
     {
@@ -45,6 +46,16 @@ public class AutoCompleteTextareaTag extends AutoCompleteTag
     public void setCols(int cols)
     {
         _cols = cols;
+    }
+
+    public int getTabindex()
+    {
+        return _tabindex;
+    }
+
+    public void setTabindex(int tabindex)
+    {
+        _tabindex = tabindex;
     }
 
     @Override
@@ -69,6 +80,8 @@ public class AutoCompleteTextareaTag extends AutoCompleteTag
     protected void addOptionalAttrs(StringBuilder sb)
     {
         super.addOptionalAttrs(sb);
+
+        sb.append("                tabIndex    : " + getTabindex() + ",\n");
 
         if (getValue() != null)
             sb.append("                html : ").append(PageFlowUtil.jsString(getValue())).append(",\n");
