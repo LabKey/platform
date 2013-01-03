@@ -21,7 +21,7 @@
  * @namespace Visualization static class to programmatically retrieve visualization-ready data.  Also allows
  * persistence of various visualization types.
  */
-LABKEY.Visualization = new function() {
+LABKEY.Query.Visualization = new function() {
 
     function formatParams(config)
     {
@@ -92,7 +92,7 @@ LABKEY.Visualization = new function() {
     }
 
     /*-- public methods --*/
-    /** @scope LABKEY.Visualization */
+    /** @scope LABKEY.Query.Visualization */
     return {
         getTypes : function(config) {
 
@@ -119,12 +119,12 @@ LABKEY.Visualization = new function() {
         /**
          * Returns the set of plottable measures found in the current container.
          * @param config An object which contains the following configuration properties.
-         * @param {Array} config.filters An array of {@link LABKEY.Visualization.Filter} objects.
+         * @param {Array} config.filters An array of {@link LABKEY.Query.Visualization.Filter} objects.
          * @param {Boolean} [config.dateMeasures] Indicates whether date measures should be returned instead of numeric measures.
          * Defaults to false.
          * @param {Function} config.success
 				Function called when execution succeeds. Will be called with one argument:
-				<ul><li><b>measures</b>: an array of {@link LABKEY.Visualization.Measure} objects.</li>
+				<ul><li><b>measures</b>: an array of {@link LABKEY.Query.Visualization.Measure} objects.</li>
          * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -139,7 +139,7 @@ LABKEY.Visualization = new function() {
                 if (json.measures && json.measures.length)
                 {
                     for (var i=0; i < json.measures.length; i++)
-                        measures.push(new LABKEY.Visualization.Measure(json.measures[i]));
+                        measures.push(new LABKEY.Query.Visualization.Measure(json.measures[i]));
                 }
                 return measures;
             }
@@ -161,7 +161,7 @@ LABKEY.Visualization = new function() {
          * @param config An object which contains the following configuration properties.
          * @param {Array} config.measures An array of objects with the following structure:
          * <ul>
-         *      <li><b>measure</b>: Generally an augmented {@link LABKEY.Visualization.Measure}, but can be any object
+         *      <li><b>measure</b>: Generally an augmented {@link LABKEY.Query.Visualization.Measure}, but can be any object
          *          with the following properties:
          *          <ul>
          *              <li><b>name</b>: The name of this measure.</li>
@@ -172,7 +172,7 @@ LABKEY.Visualization = new function() {
          *              <li><b>allowNullResults</b>: Optional, defaults to true.  If true, this measure will be joined to other measures via an outer join, which will allow results
          *                  from other measures at timepoints not present for this measure (possibly resulting in null/blank values for this measure).  If false, other measures will be inner joined
          *                  to this measure, which will produce a dataset without null values for this measure, but which may not include all data from joined measures.</li>
-         *              <li><b>aggregate</b>: See {@link LABKEY.Visualization.Aggregate}.  Required if a 'dimension' property is specified, ignored otherwise.  Indicates
+         *              <li><b>aggregate</b>: See {@link LABKEY.Query.Visualization.Aggregate}.  Required if a 'dimension' property is specified, ignored otherwise.  Indicates
          *                                    what data should be returned if pivoting by dimension results in multiple underlying values
          *                                    per series data point.</li>
          *          </ul>
@@ -180,14 +180,14 @@ LABKEY.Visualization = new function() {
          *          <ul>
          *              <li><b>zeroDateCol</b>: A measure object (with properties for name, queryName, and
          *                                              schemaName) of type date that will be used to align data points in terms of days, weeks, or months.</li>
-         *              <li><b>interval</b>: See {@link LABKEY.Visualization.Interval}.  The type of interval that should be calculated between the measure date and the zero date.
+         *              <li><b>interval</b>: See {@link LABKEY.Query.Visualization.Interval}.  The type of interval that should be calculated between the measure date and the zero date.
          *          </ul>
          *      </li>
          *      <li><b>axis</b>:
          *          <ul><li><b>timeAxis</b>: Boolean.  Indicates whether this measure corresponds to a time axis.</li></ul>
          *      </li>
          *      <li><b>dimension</b>:  Used to pivot a resultset into multiple series.  Generally an augmented
-         *          {@link LABKEY.Visualization.Dimension}, but can be any object with the following properties:
+         *          {@link LABKEY.Query.Visualization.Dimension}, but can be any object with the following properties:
          *          <ul>
          *              <li><b>name</b>: The name of this dimension.</li>
          *              <li><b>schemaName</b>: The name of the schema containing the query that contains this dimension.</li>
@@ -197,7 +197,7 @@ LABKEY.Visualization = new function() {
          *          </ul>
          *      </li>
          * </ul>
-         * @param {Array} [config.sorts] Generally an array of augmented {@link LABKEY.Visualization.Dimension} or {@link LABKEY.Visualization.Measure}
+         * @param {Array} [config.sorts] Generally an array of augmented {@link LABKEY.Query.Visualization.Dimension} or {@link LABKEY.Query.Visualization.Measure}
          * objects, but can be an array of any objects with the following properties:
          *          <ul>
          *              <li><b>name</b>: The name of this dimension.</li>
@@ -248,7 +248,7 @@ LABKEY.Visualization = new function() {
          * visualization is scoped to a specific query, it will also appear in the views menu for that query.
          * @param config An object which contains the following configuration properties.
          * @param {String} config.name The name this visualization should be saved under.
-         * @param {String} config.type The type of visualization being saved.  Should be an instance of {@link LABKEY.Visualization.Type}.
+         * @param {String} config.type The type of visualization being saved.  Should be an instance of {@link LABKEY.Query.Visualization.Type}.
          * @param {Object} config.visualizationConfig An arbitrarily complex JavaScript object that contains all information required to
          * recreate the report.
          * @param {Boolean} [config.replace] Whether this 'save' call should replace an existing report with the same name.
@@ -308,7 +308,7 @@ LABKEY.Visualization = new function() {
         },
 
         /**
-         * Retrieves a saved visualization.  See {@link LABKEY.Visualization.save}.
+         * Retrieves a saved visualization.  See {@link LABKEY.Query.Visualization.save}.
          * @param config An object which contains the following configuration properties.
          * @param {String} config.name The name this visualization to be retrieved.
          * @param {String} [config.schemaName] Optional, but required if config.queryName is provided.  Limits the search for
@@ -326,7 +326,7 @@ LABKEY.Visualization = new function() {
                             <li><b>type</b>: The visualization type</li>
                             <li><b>schemaName</b>: The schema to which this visualization has been scoped, if any</li>
                             <li><b>queryName</b>: The query to which this visualization has been scoped, if any</li>
-                            <li><b>visualizationConfig</b>: The configuration object provided to {@link LABKEY.Visualization.save}</li>
+                            <li><b>visualizationConfig</b>: The configuration object provided to {@link LABKEY.Query.Visualization.save}</li>
                         </ul>
                     </li>
                     <li><b>request</b>: the XMLHttpRequest object</li>
@@ -370,11 +370,11 @@ LABKEY.Visualization = new function() {
         /**
          * Retrieves a saved visualization based on identifying parameters found on the current URL.  Method returns true or false,
          * depending on whether the URL contains a saved visualization identifier.  If true, the success or failure callback
-         * function will be called just as with {@link LABKEY.Visualization.get}.  If false, no callbacks will be called.
+         * function will be called just as with {@link LABKEY.Query.Visualization.get}.  If false, no callbacks will be called.
          * This method allows callers to use a single method to retrieve saved visualizations, regardless of how they are identified on the URL.
          * @param config An object which contains the following configuration properties.
-         * @param {Function} config.success Function called when the saved visualization was successfully retrieved. See {@link LABKEY.Visualization.get} for details.
-         * @param {Function} [config.failure] Function called when the saved visualization could not be retrieved.  See {@link LABKEY.Visualization.get} for details.
+         * @param {Function} config.success Function called when the saved visualization was successfully retrieved. See {@link LABKEY.Query.Visualization.get} for details.
+         * @param {Function} [config.failure] Function called when the saved visualization could not be retrieved.  See {@link LABKEY.Query.Visualization.get} for details.
          * @return Boolean indicating whether the current URL includes parameters that identify a saved visualization.
          */
         getFromUrl : function(config)
@@ -402,7 +402,7 @@ LABKEY.Visualization = new function() {
             }
 
             if (valid)
-                LABKEY.Visualization.get(params);
+                LABKEY.Query.Visualization.get(params);
             return valid;
         },
 
@@ -415,9 +415,14 @@ LABKEY.Visualization = new function() {
 };
 
 /**
+ * @deprecated Use {@link LABKEY.Query.Visualization}
+ */
+LABKEY.Visualization = LABKEY.Query.Visualization;
+
+/**
  * @namespace Visualization Measures are plottable data elements (columns).  They may be of numeric or date types.
  */
-Ext4.define('LABKEY.Visualization.Measure', {
+Ext4.define('LABKEY.Query.Visualization.Measure', {
 
     constructor : function(config)
     {
@@ -473,7 +478,7 @@ Ext4.define('LABKEY.Visualization.Measure', {
     },
 
     /**
-     * Returns the set of available {@link LABKEY.Visualization.Dimension} objects for this measure.
+     * Returns the set of available {@link LABKEY.Query.Visualization.Dimension} objects for this measure.
      * @param config An object which contains the following configuration properties.
      * @param config.includeDemographics {Boolean} Applies only to measures from study datsets.
      * Indicates whether dimensions from demographic datasets should be included
@@ -501,7 +506,7 @@ Ext4.define('LABKEY.Visualization.Measure', {
             if (json.dimensions && json.dimensions.length)
             {
                 for (var i=0; i < json.dimensions.length; i++)
-                    dimensions.push(new LABKEY.Visualization.Dimension(json.dimensions[i]));
+                    dimensions.push(new LABKEY.Query.Visualization.Dimension(json.dimensions[i]));
             }
             return dimensions;
         }
@@ -518,11 +523,16 @@ Ext4.define('LABKEY.Visualization.Measure', {
 });
 
 /**
- * @namespace Visualization Dimensions are data elements (columns) on which {@link LABKEY.Visualization.Measure} objects
+ * @deprecated Use {@link LABKEY.Query.Visualization.Measure}
+ */
+LABKEY.Visualization.Measure = LABKEY.Query.Visualization.Measure;
+
+/**
+ * @namespace Visualization Dimensions are data elements (columns) on which {@link LABKEY.Query.Visualization.Measure} objects
  *  can be pivoted or transformed.  For example, the 'Analyte Name' dimension may be used to pivit a single 'Result' measure
  * into one series per Analyte.
  */
-Ext4.define('LABKEY.Visualization.Dimension', {
+Ext4.define('LABKEY.Query.Visualization.Dimension', {
 
     constructor : function(config)
     {
@@ -613,10 +623,15 @@ Ext4.define('LABKEY.Visualization.Dimension', {
 });
 
 /**
- * @namespace Visualization Helper class to allow filtering of the measures returned by the
- * {@link LABKEY.Visualization.getMeasures} method.
+ * @deprecated Use {@link LABKEY.Query.Visualization.Dimension}
  */
-LABKEY.Visualization.Filter = new function()
+LABKEY.Visualization.Dimension = LABKEY.Query.Visualization.Dimension;
+
+/**
+ * @namespace Visualization Helper class to allow filtering of the measures returned by the
+ * {@link LABKEY.Query.Visualization.getMeasures} method.
+ */
+LABKEY.Query.Visualization.Filter = new function()
 {
     function getURLParameterValue(config)
     {
@@ -633,10 +648,10 @@ LABKEY.Visualization.Filter = new function()
         return params.join('|');
     }
 
-    /** @scope LABKEY.Visualization.Filter */
+    /** @scope LABKEY.Query.Visualization.Filter */
     return {
         /**
-         * @namespace Visualization Possible query types for measure filters.  See {@link LABKEY.Visualization.Filter}.
+         * @namespace Visualization Possible query types for measure filters.  See {@link LABKEY.Query.Visualization.Filter}.
         */
         QueryType : {
             /** Return only queries that are built-in to the server */
@@ -650,13 +665,13 @@ LABKEY.Visualization.Filter = new function()
         },
 
         /**
-         * Creates a new filter object for use in {@link LABKEY.Visualization.getMeasures}.
+         * Creates a new filter object for use in {@link LABKEY.Query.Visualization.getMeasures}.
          * @param config An object which contains the following configuration properties.
          * @param {String} config.schemaName Required.  Only measures from the specified schema will be returned.
          * @param {String} [config.queryName] If specified, only measures from the specified query will be returned.
          * @param {Object} [config.queryType] If specified, only measures from the specified query types will be returned
-         * Valid values for queryType are:  {@link LABKEY.Visualization.Filter.QueryType}.ALL, {@link LABKEY.Visualization.Filter.QueryType}.BUILT_IN,
-         * and {@link LABKEY.Visualization.Filter.QueryType}.CUSTOM.  By default, all queries will be returned.
+         * Valid values for queryType are:  {@link LABKEY.Query.Visualization.Filter.QueryType}.ALL, {@link LABKEY.Query.Visualization.Filter.QueryType}.BUILT_IN,
+         * and {@link LABKEY.Query.Visualization.Filter.QueryType}.CUSTOM.  By default, all queries will be returned.
          */
         create : function(config)
         {
@@ -669,9 +684,14 @@ LABKEY.Visualization.Filter = new function()
 };
 
 /**
- * @namespace Visualization Possible aggregates when pivoting a resultset by a dimension.  See  {@link LABKEY.Visualization.getData}.
+ * @deprecated Use {@link LABKEY.Query.Visualization.Filter}
  */
-LABKEY.Visualization.Aggregate = {
+LABKEY.Visualization.Filter = LABKEY.Query.Visualization.Filter;
+
+/**
+ * @namespace Visualization Possible aggregates when pivoting a resultset by a dimension.  See  {@link LABKEY.Query.Visualization.getData}.
+ */
+LABKEY.Query.Visualization.Aggregate = {
     /** Calculates a sum/total. */
     SUM: "SUM",
     /** Calculates an average. */
@@ -685,9 +705,14 @@ LABKEY.Visualization.Aggregate = {
 };
 
 /**
- * @namespace Visualization Possible intervals for aligning series in time plots.  See  {@link LABKEY.Visualization.getData}.
+ * @deprecated Use {@link LABKEY.Query.Visualization.Aggregate}
  */
-LABKEY.Visualization.Interval = {
+LABKEY.Visualization.Aggregate = LABKEY.Query.Visualization.Aggregate;
+
+/**
+ * @namespace Visualization Possible intervals for aligning series in time plots.  See  {@link LABKEY.Query.Visualization.getData}.
+ */
+LABKEY.Query.Visualization.Interval = {
     /** Align by the number of days since the zero date. */
     DAY : "DAY",
     /** Align by the number of weeks since the zero date. */
@@ -699,12 +724,22 @@ LABKEY.Visualization.Interval = {
 };
 
 /**
- * @namespace Visualization A predefined set of visualization types, for use in the config.type property in the
- * {@link LABKEY.Visualization.save} method.
+ * @deprecated Use {@link LABKEY.Query.Visualization.Interval}
  */
-LABKEY.Visualization.Type = {
+LABKEY.Visualization.Interval = LABKEY.Query.Visualization.Interval;
+
+/**
+ * @namespace Visualization A predefined set of visualization types, for use in the config.type property in the
+ * {@link LABKEY.Query.Visualization.save} method.
+ */
+LABKEY.Query.Visualization.Type = {
     /**
      * Plots data over time, aligning different series based on configurable start dates.
      */
     TimeChart : 'ReportService.TimeChartReport'
 };
+
+/**
+ * @deprecated Use {@link LABKEY.Query.Visualization.Type}
+ */
+LABKEY.Visualization.Type = LABKEY.Query.Visualization.Type;
