@@ -73,6 +73,7 @@ LABKEY.Report = new function(){
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
+
         /**
          * Deletes an underlying report session
          *
@@ -97,15 +98,16 @@ LABKEY.Report = new function(){
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
+
         /**
          * Executes a report script
          *
          * @param {Object} config A configuration object with the following properties.
          * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
          * @param {Object} [config.scope] The scope to use when calling the callbacks (defaults to this).
-         * @param {String} config.scriptId Identifier for the script to execute
-         * @param {String} config.reportSessionId Identifier for the report session to delete.
-         * @param {String} config.inputParams An object with properties for input parameters.
+         * @param {String} config.reportId Identifier for the report to execute
+         * @param {String} [config.reportSessionId] Execute within the existsing report session.
+         * @param {String} [config.inputParams] An object with properties for input parameters.
          * @param {Function} config.success The function to call if the operation is successful.  This function will
          * receive an object with the following properties
          * <ul>
