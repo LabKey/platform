@@ -220,7 +220,7 @@
     %>
                         </td>
                         <td>
-                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=completionUrl.getLocalURIString()%>" rows="4" cols="30" value="<%=PageFlowUtil.filter(bean.getNotifyListString(false).toString())%>"/>
+                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="100" cols="30" value="<%=PageFlowUtil.filter(bean.getNotifyListString(false).toString())%>"/>
                         </td>
                     </tr>
     <%
