@@ -141,20 +141,12 @@ public class TableWriter
                     // Sort the data rows by PK, #11261
                     Sort sort = tableInfo.getPkColumnNames().size() == 0 ? null : new Sort(tableInfo.getPkColumnNames().get(0));
 
-                    try
-                    {
-                        Results rs = QueryService.get().select(tableInfo, columns, null, sort);
-                        TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
-                        tsvWriter.setApplyFormats(false);
-                        tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
-                        PrintWriter out = dir.getPrintWriter(queryDef.getName() + ".tsv");
-                        tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
-                    }
-                    catch (Exception e)
-                    {
-                        // Could be a bad user query
-                        int i = 1;
-                    }
+                    Results rs = QueryService.get().select(tableInfo, columns, null, sort);
+                    TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
+                    tsvWriter.setApplyFormats(false);
+                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                    PrintWriter out = dir.getPrintWriter(queryDef.getName() + ".tsv");
+                    tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
                 }
             }
 
