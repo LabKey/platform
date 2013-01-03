@@ -1366,7 +1366,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.measuresDialog = Ext4.create('LABKEY.ext4.MeasuresDialog', {
                 multiSelect : true,
                 closeAction :'hide',
-                filter : LABKEY.Visualization.Filter.create({schemaName: 'study', queryType: LABKEY.Visualization.Filter.QueryType.BUILT_IN}),
+                filter : LABKEY.Query.Visualization.Filter.create({schemaName: 'study', queryType: LABKEY.Query.Visualization.Filter.QueryType.BUILT_IN}),
                 allColumns    : true,
                 canShowHidden : true,
                 forceQuery    : true,

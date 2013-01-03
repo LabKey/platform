@@ -82,7 +82,7 @@
 </style>
 
 <script type="text/javascript">
-    LABKEY.requiresClientAPI(); // required for LABKEY.Visualization
+    LABKEY.requiresClientAPI(); // required for LABKEY.Query.Visualization
     LABKEY.requiresExt4Sandbox(true);
     LABKEY.requiresScript("TemplateHelper.js");
     LABKEY.requiresScript("study/ParticipantReport.js");

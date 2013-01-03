@@ -408,7 +408,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             proxy: {
                 type: 'ajax',
                 url : LABKEY.ActionURL.buildURL('visualization', 'getZeroDate', LABKEY.ActionURL.getContainer(), {
-                    filters: [LABKEY.Visualization.Filter.create({schemaName: 'study'})],
+                    filters: [LABKEY.Query.Visualization.Filter.create({schemaName: 'study'})],
                     dateMeasures: false
                 }),
                 reader: {

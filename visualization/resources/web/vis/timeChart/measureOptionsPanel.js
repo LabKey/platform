@@ -266,7 +266,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                         this.measureDimensionComboBox.enable();
                         this.dimensionAggregateLabel.enable();
                         this.dimensionAggregateComboBox.enable();
-                        this.setDimensionAggregate(LABKEY.Visualization.Aggregate.AVG);
+                        this.setDimensionAggregate(LABKEY.Query.Visualization.Aggregate.AVG);
 
                         // if saved chart, then set dimension value based on the saved value
                         if (this.measures[measureIndex].dimension.name)
@@ -340,10 +340,10 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             ]
         });
 
-        // get the list of aggregate options from LABKEY.Visualization.Aggregate
+        // get the list of aggregate options from LABKEY.Query.Visualization.Aggregate
         var aggregates = new Array();
-        for(var item in LABKEY.Visualization.Aggregate){
-            aggregates.push([LABKEY.Visualization.Aggregate[item]]);
+        for(var item in LABKEY.Query.Visualization.Aggregate){
+            aggregates.push([LABKEY.Query.Visualization.Aggregate[item]]);
         }
 
         // initialize the aggregate combobox
@@ -565,7 +565,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             proxy: {
                 type: 'ajax',
                 url : LABKEY.ActionURL.buildURL('visualization', 'getMeasures', LABKEY.ActionURL.getContainer(), {
-                    filters: [LABKEY.Visualization.Filter.create({schemaName: measure.schemaName, queryName: measure.queryName})],
+                    filters: [LABKEY.Query.Visualization.Filter.create({schemaName: measure.schemaName, queryName: measure.queryName})],
                     dateMeasures: true
                 }),
                 reader: {

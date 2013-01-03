@@ -190,9 +190,9 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
  * @constructor
  * @augments Ext.panel.Panel
  * @param {boolean} [multiSelect] if true, display a grid panel with a checkbox column to allow selection of more than one measure. Default: false.
- * @param {object} [filter] LABKEY.Visualization.Filter object to allow filtering of the measures returned by the LABKEY.Visualization.getMeasures method.
- * @param {boolean} [allColumns] passed to LABKEY.Visualization.getMeasures method
- * @param {boolean} [canShowHidden] if true, add a "Show All" checkbox to the display to tell the LABKEY.Visualization.getMeasures method whether or not the show hidden columns
+ * @param {object} [filter] LABKEY.Query.Visualization.Filter object to allow filtering of the measures returned by the LABKEY.Query.Visualization.getMeasures method.
+ * @param {boolean} [allColumns] passed to LABKEY.Query.Visualization.getMeasures method
+ * @param {boolean} [canShowHidden] if true, add a "Show All" checkbox to the display to tell the LABKEY.Query.Visualization.getMeasures method whether or not the show hidden columns
  * @param (object) [helpText] object with a title and text attribute to be displayed in a tooltip in the grid top toolbar
  * @param {boolean} [forceQuery] if true, call the getMeasures method on init
  * @param {boolean} [hideDemographicMeasures] if true, hide the measures from demographic datasets from the display
@@ -253,11 +253,11 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
 
     getMeasures : function(cmp, clearCache) {
 
-        var filter = this.filter || LABKEY.Visualization.Filter.create({schemaName: 'study'});
+        var filter = this.filter || LABKEY.Query.Visualization.Filter.create({schemaName: 'study'});
 
         if (this.selectedMeasure)
         {
-            filter = LABKEY.Visualization.Filter.create({schemaName: this.selectedMeasure.schemaName,
+            filter = LABKEY.Query.Visualization.Filter.create({schemaName: this.selectedMeasure.schemaName,
                 queryName: this.selectedMeasure.queryName});
         }
 
@@ -266,7 +266,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         {
             if (!this.isLoading) {
                 this.isLoading = true;
-                LABKEY.Visualization.getMeasures({
+                LABKEY.Query.Visualization.getMeasures({
                     filters      : [filter],
                     dateMeasures : this.isDateAxis,
                     allColumns   : this.allColumns,
@@ -692,10 +692,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
  * Constructs a new LabKey MeasuresDataView to display a grid of all measures with columns for dataset, label, and description using the supplied configuration.
  * @constructor
  * @augments Ext.panel.Panel
- * @param {object} [filter] LABKEY.Visualization.Filter object to allow filtering of the measures returned by the LABKEY.Visualization.getMeasures method.
+ * @param {object} [filter] LABKEY.Query.Visualization.Filter object to allow filtering of the measures returned by the LABKEY.Query.Visualization.getMeasures method.
  * @param {boolean} [multiSelect] True to allow multiple measures to be selected at once
- * @param {boolean} [allColumns] passed to LABKEY.Visualization.getMeasures method
- * @param {boolean} [showHidden] passed to LABKEY.Visualization.getMeasures method
+ * @param {boolean} [allColumns] passed to LABKEY.Query.Visualization.getMeasures method
+ * @param {boolean} [showHidden] passed to LABKEY.Query.Visualization.getMeasures method
 **/
 Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
@@ -892,9 +892,9 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     getMeasures : function(cmp) {
 
-        var filter = this.filter || LABKEY.Visualization.Filter.create({schemaName: 'study'});
+        var filter = this.filter || LABKEY.Query.Visualization.Filter.create({schemaName: 'study'});
 
-        LABKEY.Visualization.getMeasures({
+        LABKEY.Query.Visualization.getMeasures({
             filters      : [filter],
             allColumns   : this.allColumns,
             showHidden   : this.showHidden,

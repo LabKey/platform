@@ -226,7 +226,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         this.editorMeasurePanel = Ext4.create('LABKEY.vis.MeasureOptionsPanel', {
             origMeasures: this.chartInfo.measures,
-            filterUrl: this.chartInfo.filterUrl ? this.chartInfo.filterUrl : LABKEY.Visualization.getDataFilterFromURL(),
+            filterUrl: this.chartInfo.filterUrl ? this.chartInfo.filterUrl : LABKEY.Query.Visualization.getDataFilterFromURL(),
             filterQuery: this.chartInfo.filterQuery ? this.chartInfo.filterQuery : this.getFilterQuery(),
             viewInfo: this.viewInfo,
             filtersParentPanel: this.filtersPanel,
@@ -834,7 +834,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (this.chartInfo.displayIndividual)
         {
             //Get data for individual lines.
-            LABKEY.Visualization.getData({
+            LABKEY.Query.Visualization.getData({
                 success: function(data){
                     // set the dirty state for non-saved time chart once data is requested
                     if (!this.editorSavePanel.isSavedReport())
@@ -915,7 +915,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 groups.push(group.id + '-' + group.type);
             }
 
-            LABKEY.Visualization.getData({
+            LABKEY.Query.Visualization.getData({
                 success: function(data){
                     this.aggregateData = data;
 
@@ -2101,7 +2101,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             errorBars: "None",
             aggregateType: "Mean",
             subject: {},
-            filterUrl: LABKEY.Visualization.getDataFilterFromURL(),
+            filterUrl: LABKEY.Query.Visualization.getDataFilterFromURL(),
             filterQuery: this.getFilterQuery()
         }
     },
@@ -2234,7 +2234,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     checkSaveChart: function(config){
         // see if a report by this name already exists within this container
-        LABKEY.Visualization.get({
+        LABKEY.Query.Visualization.get({
             name: config.reportName,
             success: function(result, request, options){
                 // a report by that name already exists within the container, if the user can update, ask if they would like to replace
@@ -2274,7 +2274,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // get the chart info to be saved
         this.chartInfo = this.getChartInfoFromOptionPanels();
 
-        LABKEY.Visualization.save({
+        LABKEY.Query.Visualization.save({
             name: config.reportName,
             description: config.reportDescription,
             shared: config.reportShared,
@@ -2282,7 +2282,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             thumbnailType: config.reportThumbnailType,
             svg: config.reportSvg,
             replace: config.replace,
-            type: LABKEY.Visualization.Type.TimeChart,
+            type: LABKEY.Query.Visualization.Type.TimeChart,
             success: this.saveChartSuccess(config.replace, config.reportName),
             schemaName: config.schema,
             queryName: config.query,

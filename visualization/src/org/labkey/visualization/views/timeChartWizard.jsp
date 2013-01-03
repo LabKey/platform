@@ -91,7 +91,7 @@
     function showTimeChartWizard(config)
     {
         // get the type information from the server
-        LABKEY.Visualization.getTypes({
+        LABKEY.Query.Visualization.getTypes({
             successCallback : function(types){storeVisualizationTypes(types, config);},
             failureCallback : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
             scope: this
@@ -108,7 +108,7 @@
         }
 
         // see if the wizard is being accessed with a saved visualization referenced on the URL
-        if(LABKEY.Visualization.getFromUrl(config)) {
+        if(LABKEY.Query.Visualization.getFromUrl(config)) {
             // we have a saved chart being access, viewSavedChart will be called
         }
         else {
@@ -118,7 +118,7 @@
     }
 
     function viewSavedChart(result, response, options){
-        if(result.type == LABKEY.Visualization.Type.TimeChart){
+        if(result.type == LABKEY.Query.Visualization.Type.TimeChart){
             var saveReportInfo = {
                 name: result.name,
                 description: result.description,
