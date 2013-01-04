@@ -706,7 +706,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @CSRF
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExecuteAction extends MutatingApiAction<ExecuteScriptForm>
     {
         //

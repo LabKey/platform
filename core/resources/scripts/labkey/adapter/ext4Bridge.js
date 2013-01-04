@@ -101,7 +101,7 @@ exports.request = function(options){
     var xmlData = options.xmlData,
         jsonData = options.jsonData;
 
-    var hs = setupHeaders(options)
+    var hs = setupHeaders(options);
 
     if (xmlData || jsonData) {
         if (!hs || !hs[CONTENTTYPE]) {
@@ -119,6 +119,6 @@ exports.request = function(options){
         scope: options.scope || this,
         success: options.success,
         failure: options.failure
-    }
+    };
     return mockRequest(method || options.method || "POST", url, hs, cb, data);
-}
+};
