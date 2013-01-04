@@ -41,7 +41,8 @@ Ext4.define('LABKEY.SQVModel', {
         })
 
         this.queryStore = Ext4.create('Ext.data.Store', {
-            model : 'queryModel'
+            model : 'queryModel',
+            sorters : {property: 'name', direction : 'ASC'}
         });
 
         //Store and model for the viewCombo
@@ -55,7 +56,8 @@ Ext4.define('LABKEY.SQVModel', {
         });
 
         this.viewStore = Ext4.create('Ext.data.Store', {
-            model : 'viewModel'
+            model : 'viewModel',
+            sorters : {property: 'name', direction : 'ASC'}
         });
 
 
@@ -68,7 +70,8 @@ Ext4.define('LABKEY.SQVModel', {
         }
 
         this.schemaStore = Ext4.create('Ext.data.Store', {
-            model : 'schemaModel'
+            model : 'schemaModel',
+            sorters : {property: 'schema', direction : 'ASC'}
         });
 
         var me = this;
