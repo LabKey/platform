@@ -31,6 +31,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
@@ -239,13 +240,10 @@ public class StudyReload
             {
                 attemptReload();    // Ignore success messages
             }
-            catch (SQLException e)
+            catch (Throwable t)
             {
-                LOG.error("SQLException saving study reload state", e);
-            }
-            catch (ImportException e)
-            {
-                LOG.error("Error reloading study: " + e.getMessage());
+                // Throwing from run() will kill the reload task, suppressing all future attempts; log to mothership and continue, so we retry later.
+                ExceptionUtil.logExceptionToMothership(null, t);
             }
         }
 
