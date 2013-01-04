@@ -112,11 +112,16 @@ Ext4.define('LABKEY.SQVModel', {
                 scope : this
             });
 
-            config.listeners = {
-                afterrender : function(cb) {
+            // merge in listeners
+            config.listeners = config.listeners || {};
+            config.listeners['afterrender'] = {
+                fn : function(cb) {
                     this.schemaCombo = cb;
                 },
-                select :  function(cb){
+                scope : this
+            };
+            config.listeners['change'] = {
+                fn : function(cb){
                     if(this.queryCombo){
                         this.changeQueryStore(cb.getRawValue());
                     }
@@ -146,16 +151,19 @@ Ext4.define('LABKEY.SQVModel', {
                 scope:this
             });
 
-            config.listeners = {
-                scope : this,
-                afterrender : function(cb) {
+            config.listeners = config.listeners || {};
+            config.listeners['afterrender'] = {
+                fn : function(cb) {
                     this.queryCombo = cb;
                     if(cb.defaultSchema){
                         this.changeQueryStore(cb.defaultSchema);
                         cb.fieldLabel = cb.defaultSchema;
                     }
                 },
-                select :  function(cb){
+                scope : this
+            };
+            config.listeners['change'] = {
+                fn :  function(cb){
                     var schema = "";
 
                     if(cb.defaultSchema){
@@ -169,7 +177,10 @@ Ext4.define('LABKEY.SQVModel', {
                        this.changeViewStore(schema, cb.getRawValue());
                     }
                 },
-                dataloaded : function(cb){
+                scope : this
+            };
+            config.listeners['dataloaded'] = {
+                fn : function(cb){
                     if(!this.initallyLoaded){
                       this.initiallyLoaded = true;
                       if(cb.initialValue){
@@ -178,7 +189,8 @@ Ext4.define('LABKEY.SQVModel', {
                           cb.fireEvent('select', cb);
                       }
                     }
-                }
+                },
+                scope : this
             };
             return config;
         },
