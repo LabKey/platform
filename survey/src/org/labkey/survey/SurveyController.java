@@ -29,6 +29,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
@@ -37,27 +38,36 @@ import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
@@ -68,6 +78,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SurveyController extends SpringActionController
 {
@@ -417,6 +428,7 @@ public class SurveyController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             SurveyDesign surveyDesign = null;
+
             if (form.getSurveyDesignId() != null)
                 surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
 
@@ -804,4 +816,51 @@ public class SurveyController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteSurveysAction extends FormHandlerAction<QueryForm>
+    {
+        private ActionURL _returnURL;
+
+        @Override
+        public void validateCommand(QueryForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        {
+            String returnURL = (String)this.getProperty(QueryParam.srcURL);
+            if (returnURL != null)
+                _returnURL = new ActionURL(returnURL);
+
+            DbScope scope = SurveySchema.getInstance().getSchema().getScope();
+
+            try {
+                scope.ensureTransaction();
+
+                for (String surveyDesign : DataRegionSelection.getSelected(getViewContext(), true))
+                {
+                    int rowId = NumberUtils.toInt(surveyDesign);
+                    SurveyManager.get().deleteSurveyDesign(getContainer(), getUser(), rowId, true);
+                }
+                scope.commitTransaction();
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(QueryForm form)
+        {
+            return _returnURL;
+        }
+    }
 }

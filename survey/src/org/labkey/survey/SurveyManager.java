@@ -211,4 +211,43 @@ public class SurveyManager
         deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE Container = ?").add(c);
         executor.execute(deleteSurveyDesignsSql);
     }
+
+    /**
+     * Deletes a specified survey design
+     * @param c
+     * @param user
+     * @param surveyId
+     * @param deleteSurveyInstances - true to delete survey instances of this design
+     */
+    public void deleteSurveyDesign(Container c, User user, int surveyId, boolean deleteSurveyInstances)
+    {
+        DbScope scope = SurveySchema.getInstance().getSchema().getScope();
+
+        try {
+            scope.ensureTransaction();
+
+            SurveySchema s = SurveySchema.getInstance();
+            SqlExecutor executor = new SqlExecutor(s.getSchema());
+
+            if (deleteSurveyInstances)
+            {
+                SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
+                deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE SurveyDesignId = ?").add(surveyId);
+                executor.execute(deleteSurveysSql);
+            }
+            SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
+            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE RowId = ?").add(surveyId);
+            executor.execute(deleteSurveyDesignsSql);
+
+            scope.commitTransaction();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+    }
 }

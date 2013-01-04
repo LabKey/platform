@@ -173,11 +173,13 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
         });
 
         items.push(model.makeSchemaComboConfig({
-            name : 'schemaName',
+            name    : 'schemaName',
+            itemId  : 'schemaCombo',
             allowBlank : false
         }));
         items.push(model.makeQueryComboConfig({
             name : 'queryName',
+            itemId : 'queryCombo',
             allowBlank : false
         }));
 
@@ -267,10 +269,27 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
             Ext.MessageBox.alert('Error', 'An unknown error has ocurred, unable to save the survey.');
     },
 
+    initCombo : function(cmp, value) {
+
+        if (cmp.getStore().getCount() == 0)
+        {
+            this.initCombo.defer(20, this, [cmp, value]);
+            return;
+        }
+        else
+            cmp.select(value, true);
+    },
+
     loadSurvey : function(survey) {
 
         var form = this.formPanel.getForm();
         if (form) {
+
+            var schemaCombo = this.down('#schemaCombo');
+            if (schemaCombo && survey.schemaName)
+            {
+                this.initCombo(schemaCombo, survey.schemaName);
+            }
 
             form.setValues(survey);
             this.codeMirror.setValue(survey.metadata);

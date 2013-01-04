@@ -61,4 +61,17 @@ public class SurveyDesignQueryView extends QueryView
 
         bar.add(insert);
     }
+
+    @Override
+    public ActionButton createDeleteButton()
+    {
+        ActionURL url = new ActionURL(SurveyController.DeleteSurveysAction.class, getContainer());
+        url.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
+
+        ActionButton btnDelete = new ActionButton(url, "Delete");
+        btnDelete.setActionType(ActionButton.Action.POST);
+        btnDelete.setRequiresSelection(true, "Are you sure you want to delete this survey design and its associated surveys?", "Are you sure you want to delete these ${selectedCount} survey designs and their associated survey instances?");
+
+        return btnDelete;
+    }
 }
