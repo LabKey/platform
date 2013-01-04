@@ -195,6 +195,17 @@ public final class RhinoService
 
             script.invokeFn("doTest");
         }
+
+        @Test
+        public void reportTest() throws Exception
+        {
+            String js = "scripts/validationTest/reportTest.js";
+            ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
+            ScriptReference script = svc.compile(r);
+
+            script.invokeFn("doTest");
+        }
     }
 }
 

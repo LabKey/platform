@@ -150,7 +150,7 @@ LABKEY.Report = new function(){
                 method: 'POST',
                 success: getExecuteSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
-                params : execParams
+                jsonData : execParams
             });
         }
     };
