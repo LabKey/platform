@@ -18,7 +18,6 @@ package org.labkey.issue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.util.HString;
 import org.labkey.issue.model.Issue;
 
 import java.util.Collection;
@@ -36,41 +35,47 @@ public enum ColumnType
     INT1(0, "int1", false)
     {
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             throw new IllegalStateException("Shouldn't be setting value for column type INT1");
         }
 
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
-            return HString.valueOf(issue.getInt1());
+            if(issue.getInt1() != null)
+                return String.valueOf(issue.getInt1());
+            else
+                return null;
         }
     },
     INT2(0, "int2", false)
     {
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             throw new IllegalStateException("Shouldn't be setting value for column type INT2");
         }
 
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
-            return HString.valueOf(issue.getInt2());
+            if(issue.getInt2() != null)
+                return String.valueOf(issue.getInt2());
+            else
+                return null;
         }
     },
     AREA(1, "area", true)
     {
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
             return issue.getArea();
         }
 
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             issue.setArea(value);
         }
@@ -78,13 +83,13 @@ public enum ColumnType
     TYPE(2, "type", true)
     {
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
             return issue.getType();
         }
 
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             issue.setType(value);
         }
@@ -92,13 +97,13 @@ public enum ColumnType
     MILESTONE(3, "milestone", true)
     {
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
             return issue.getMilestone();
         }
 
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             issue.setMilestone(value);
         }
@@ -106,29 +111,29 @@ public enum ColumnType
     PRIORITY(6, "priority", true)
     {
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
-            return HString.valueOf(issue.getPriority());
+            return String.valueOf(issue.getPriority());
         }
 
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
-            issue.setPriority(null != value ? value.parseInt() : 3);
-        }
-
-        @NotNull
-        @Override
-        public HString[] getInitialValues()
-        {
-            return HString.array(false, "0", "1", "2", "3", "4");
+            issue.setPriority(null != value ? Integer.parseInt(value) : 3);
         }
 
         @NotNull
         @Override
-        public HString getInitialDefaultValue()
+        public String[] getInitialValues()
         {
-            return new HString("3", false);
+            return new String[]{"0", "1", "2", "3", "4"};
+        }
+
+        @NotNull
+        @Override
+        public String getInitialDefaultValue()
+        {
+            return "3";
         }
 
         @Override
@@ -140,29 +145,29 @@ public enum ColumnType
     RESOLUTION(7, "resolution", false)
     {
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
             return issue.getResolution();
         }
 
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             issue.setResolution(value);
         }
 
         @NotNull
         @Override
-        public HString[] getInitialValues()
+        public String[] getInitialValues()
         {
-            return HString.array(false, "Fixed", "Duplicate", "Won't Fix", "Not Repro", "By Design");
+            return new String[]{"Fixed", "Duplicate", "Won't Fix", "Not Repro", "By Design"};
         }
 
         @NotNull
         @Override
-        public HString getInitialDefaultValue()
+        public String getInitialDefaultValue()
         {
-            return new HString("Fixed", false);
+            return "Fixed";
         }
 
         @Override
@@ -174,13 +179,13 @@ public enum ColumnType
     STRING1(4, "string1", false)
     {
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             issue.setString1(value);
         }
 
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
             return issue.getString1();
         }
@@ -188,13 +193,13 @@ public enum ColumnType
     STRING2(5, "string2", false)
     {
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             issue.setString2(value);
         }
 
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
             return issue.getString2();
         }
@@ -202,13 +207,13 @@ public enum ColumnType
     STRING3(8, "string3", false)
     {
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             issue.setString3(value);
         }
 
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
             return issue.getString3();
         }
@@ -216,13 +221,13 @@ public enum ColumnType
     STRING4(9, "string4", false)
     {
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             issue.setString4(value);
         }
 
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
             return issue.getString4();
         }
@@ -230,13 +235,13 @@ public enum ColumnType
     STRING5(10, "string5", false)
     {
         @Override
-        public void setValue(Issue issue, HString value)
+        public void setValue(Issue issue, String value)
         {
             issue.setString5(value);
         }
 
         @Override
-        public HString getValue(Issue issue)
+        public String getValue(Issue issue)
         {
             return issue.getString5();
         }
@@ -251,7 +256,7 @@ public enum ColumnType
     private static final Map<String, ColumnType> mapByColumnName = new CaseInsensitiveHashMap<ColumnType>(15);
     private static final Map<Integer, ColumnType> mapByOrdinal = new HashMap<Integer, ColumnType>(15);
     private static final Collection<ColumnType> customStringColumns = new LinkedList<ColumnType>();
-    private static final HString[] noKeywords = new HString[0];
+    private static final String[] noKeywords = new String[0];
 
     static
     {
@@ -310,22 +315,22 @@ public enum ColumnType
         return true;
     }
 
-    public @NotNull HString[] getInitialValues()
+    public @NotNull String[] getInitialValues()
     {
         return noKeywords;
     }
 
-    public @NotNull HString getInitialDefaultValue()
+    public @NotNull String getInitialDefaultValue()
     {
         throw new IllegalStateException("Initial default value must be specified iff getInitialValues() is implemented");
     }
 
-    public abstract HString getValue(Issue issue);
+    public abstract String getValue(Issue issue);
 
-    public abstract void setValue(Issue issue, HString value);
+    public abstract void setValue(Issue issue, String value);
 
     // Convenience method for setting default
-    public void setDefaultValue(Issue issue, Map<ColumnType, HString> defaults)
+    public void setDefaultValue(Issue issue, Map<ColumnType, String> defaults)
     {
         setValue(issue, defaults.get(this));
     }

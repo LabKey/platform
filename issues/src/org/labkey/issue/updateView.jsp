@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -125,7 +124,7 @@
             }
 %>
                 <td colspan="3">
-                <%=bean.writeInput("title", issue.getTitle(), new HString("id=title tabindex=0 style=\"width:100%;\"", false))%>
+                <%=bean.writeInput("title", issue.getTitle(), "id=title tabindex=0 style=\"width:100%;\"")%>
                 </td></tr>
             <tr>
                 <td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td>
@@ -135,21 +134,21 @@
                         <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=text(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=text(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.RESOLUTION)%></td><td><%=bean.writeSelect(ColumnType.RESOLUTION, 10)%></td></tr>
-        <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus().getSource())) { %>
+        <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus())) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
                         <% if (bean.isEditable("duplicate")) {
-                                if(issue.getResolution().getSource().equals("Duplicate"))
+                                if(issue.getResolution().equals("Duplicate"))
                                 {
                                     //Enabled duplicate field.
                         %>
-                                    <%=bean.writeInput("duplicate", HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\""))%>
+                                    <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"10\"")%>
                         <%
                                 }
                                 else
                                 {
                                     //Disabled duplicate field.
                         %>
-                                    <%=bean.writeInput("duplicate", HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\" disabled"))%>
+                                    <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"10\" disabled")%>
                         <%
                                 }
                         %>
@@ -236,7 +235,7 @@
                     <%=text(bean.writeCustomColumn(ColumnType.STRING5, 20))%>
                 </table></td>
             </tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect(new HString("assignedTo", false), HString.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 0)%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 0)%></td></tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.TYPE)%></td><td><%=bean.writeSelect(ColumnType.TYPE, 0)%></td></tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.AREA)%></td><td><%=bean.writeSelect(ColumnType.AREA, 0)%></td></tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.PRIORITY)%></td><td><%=bean.writeSelect(ColumnType.PRIORITY, 0)%></td></tr>
@@ -280,7 +279,7 @@
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>
-        <%=text(comment.getComment().getSource())%>
+        <%=text(comment.getComment())%>
         <%=text(bean.renderAttachments(context, comment))%>
 <%
     }

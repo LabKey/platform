@@ -87,7 +87,6 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
-import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -390,7 +389,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new ListAction(getViewContext()).appendNavTrail(root)
-                    .addChild(getSingularEntityName().getSource() + " " + _issue.getIssueId() + ": " + _issue.getTitle().getSource(), getURL());
+                    .addChild(getSingularEntityName().getSource() + " " + _issue.getIssueId() + ": " + _issue.getTitle(), getURL());
         }
 
         public ActionURL getURL()
@@ -544,7 +543,9 @@ public class IssuesController extends SpringActionController
             _issue.open(c, user);
             validateNotifyList(_issue, form, errors);
             // convert from email addresses & display names to userids before we hit the database
-            _issue.parseNotifyList(_issue.getNotifyList().toString());
+
+            if(_issue.getNotifyList() != null)
+                _issue.parseNotifyList(_issue.getNotifyList().toString());
 
             ChangeSummary changeSummary;
 
@@ -611,7 +612,7 @@ public class IssuesController extends SpringActionController
 
     private Issue setNewIssueDefaults(Issue issue) throws SQLException, ServletException
     {
-        Map<ColumnType, HString> defaults = IssueManager.getAllDefaults(getContainer());
+        Map<ColumnType, String> defaults = IssueManager.getAllDefaults(getContainer());
 
         ColumnType.AREA.setDefaultValue(issue, defaults);
         ColumnType.TYPE.setDefaultValue(issue, defaults);
@@ -654,7 +655,7 @@ public class IssuesController extends SpringActionController
 
             Issue duplicateOf = null;
             if (ResolveAction.class.equals(form.getAction()) &&
-                    issue.getResolution().getSource().equals("Duplicate") &&
+                    issue.getResolution().equals("Duplicate") &&
                     issue.getDuplicate() != null &&
                     !issue.getDuplicate().equals(prevIssue.getDuplicate()))
             {
@@ -689,7 +690,7 @@ public class IssuesController extends SpringActionController
                     issue.change(user);
 
                 // convert from email addresses & display names to userids before we hit the database
-                issue.parseNotifyList(issue.getNotifyList().toString());
+                issue.parseNotifyList(issue.getNotifyList());
 
                 changeSummary = createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnCaptions(), getUser());
                 IssueManager.saveIssue(user, c, issue);
@@ -697,9 +698,9 @@ public class IssuesController extends SpringActionController
 
                 if (duplicateOf != null)
                 {
-                    HStringBuilder hsb = new HStringBuilder();
-                    hsb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this bug.</em>");
-                    Issue.Comment dupComment = duplicateOf.addComment(user, hsb.toHString());
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this bug.</em>");
+                    Issue.Comment dupComment = duplicateOf.addComment(user, sb.toString());
                     IssueManager.saveIssue(user, c, duplicateOf);
                 }
 
@@ -722,7 +723,7 @@ public class IssuesController extends SpringActionController
             String change = ReopenAction.class.equals(form.getAction()) ? "reopened" : getActionName(form.getAction()) + "d";
             if ("resolved".equalsIgnoreCase(change) && issue.getResolution() != null)
             {
-                change += " as " + issue.getResolution().getSource(); // Issue 12273
+                change += " as " + issue.getResolution(); // Issue 12273
             }
             sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction());
             return true;
@@ -850,7 +851,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new DetailsAction(_issue, getViewContext()).appendNavTrail(root)
-                    .addChild("Update " + getSingularEntityName().getSource() + ": " + _issue.getTitle().getSource());
+                    .addChild("Update " + getSingularEntityName().getSource() + ": " + _issue.getTitle());
         }
     }
 
@@ -907,11 +908,11 @@ public class IssuesController extends SpringActionController
 
             _issue.beforeResolve(user);
 
-            if (_issue.getResolution().isEmpty())
+            if (_issue.getResolution() == null || _issue.getResolution().isEmpty())
             {
-                Map<ColumnType, HString> defaults = IssueManager.getAllDefaults(getContainer());
+                Map<ColumnType, String> defaults = IssueManager.getAllDefaults(getContainer());
 
-                HString resolution = defaults.get(ColumnType.RESOLUTION);
+                String resolution = defaults.get(ColumnType.RESOLUTION);
 
                 if (resolution != null && !resolution.isEmpty() && form.get("resolution") == null)
                 {
@@ -919,7 +920,7 @@ public class IssuesController extends SpringActionController
                 }
                 else if (form.get("resolution") != null)
                 {
-                    _issue.setResolution(new HString(form.get("resolution").toString()));
+                    _issue.setResolution((String) form.get("resolution"));
                 }
             }
 
@@ -1057,7 +1058,7 @@ public class IssuesController extends SpringActionController
     
     private void validateRequiredFields(IssuesForm form, Errors errors)
     {
-        HString requiredFields = IssueManager.getRequiredIssueFields(getContainer());
+        String requiredFields = IssueManager.getRequiredIssueFields(getContainer());
         final Map<String, String> newFields = form.getStrings();
         if (!"0".equals(newFields.get("issueId")) && requiredFields.indexOf("comment") != -1)
         {
@@ -1101,13 +1102,13 @@ public class IssuesController extends SpringActionController
 
         // When resolving Duplicate, the 'duplicate' field should be set.
         if ("Duplicate".equals(newFields.get("resolution")))
-            validateRequired("duplicate", newFields.get("duplicate"), new HString("duplicate"), requiredErrors);
+            validateRequired("duplicate", newFields.get("duplicate"), "duplicate", requiredErrors);
 
         errors.addAllErrors(requiredErrors);
     }
 
 
-    private void validateRequired(String columnName, String value, HString requiredFields, Errors errors)
+    private void validateRequired(String columnName, String value, String requiredFields, Errors errors)
     {
         if (requiredFields != null)
         {
@@ -1139,8 +1140,6 @@ public class IssuesController extends SpringActionController
         List<String> invalidEmails = new ArrayList<String>();
         List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
 
-        StringBuilder message = new StringBuilder();
-
         for (String rawEmail : invalidEmails)
         {
             rawEmail = rawEmail.trim();
@@ -1152,8 +1151,8 @@ public class IssuesController extends SpringActionController
                 User user = UserManager.getUserByDisplayName(rawEmail);
                 if (user == null)
                 {
-                    message.append("Failed to add user ").append(rawEmail).append(": Invalid email address");
-                    errors.rejectValue("notifyList","Error",new Object[] {message.toString()}, message.toString());
+                    String message = "Failed to add user " + rawEmail + ": Invalid email address";
+                    errors.rejectValue("notifyList","Error",new Object[] {message}, message);
                 }
             }
         }
@@ -1407,13 +1406,13 @@ public class IssuesController extends SpringActionController
         public void validateCommand(AdminForm form, Errors errors)
         {
             _type = ColumnType.forOrdinal(form.getType());
-            HString keyword = form.getKeyword();
+            String keyword = form.getKeyword();
 
             if (null == _type)
             {
                 errors.reject(ERROR_MSG, "Unknown keyword type");
             }
-            if (null == keyword || StringUtils.isBlank(keyword.getSource()))
+            if (null == keyword || StringUtils.isBlank(keyword))
             {
                 errors.reject(ERROR_MSG, "Enter a value in the text box before clicking any of the \"Add <Keyword>\" buttons");
             }
@@ -1423,7 +1422,7 @@ public class IssuesController extends SpringActionController
                 {
                     try
                     {
-                        Integer.parseInt(keyword.getSource());
+                        Integer.parseInt(keyword);
                     }
                     catch (NumberFormatException e)
                     {
@@ -2046,7 +2045,7 @@ public class IssuesController extends SpringActionController
             {
                 JSONObject jsonComment = new JSONObject(new BeanMap(c));
                 jsonComment.put("createdByName", c.getCreatedByName(user));
-                jsonComment.put("comment", c.getComment().getSource());
+                jsonComment.put("comment", c.getComment());
                 comments.put(comments.length(),  jsonComment);
                 // ATTACHMENTS
             }
@@ -2080,11 +2079,11 @@ public class IssuesController extends SpringActionController
     }
 
 
-    static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String field2, HString from, HString to, boolean newIssue)
+    static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String field2, String from, String to, boolean newIssue)
     {
         String encField = PageFlowUtil.filter(field2);
-        from = from == null ? HString.EMPTY : from;
-        to = to == null ? HString.EMPTY : to;
+        from = from == null ? "" : from;
+        to = to == null ? "" : to;
         if (!from.equals(to))
         {
             sbText.append(encField);
@@ -2095,13 +2094,13 @@ public class IssuesController extends SpringActionController
             else
             {
                 sbText.append(" changed from ");
-                sbText.append(HString.EMPTY.equals(from) ? "blank" : "\"" + from.getSource() + "\"");
+                sbText.append(HString.EMPTY.equals(from) ? "blank" : "\"" + from + "\"");
             }
             sbText.append(" to ");
-            sbText.append(HString.EMPTY.equals(to) ? "blank" : "\"" + to.getSource() + "\"");
+            sbText.append(HString.EMPTY.equals(to) ? "blank" : "\"" + to + "\"");
             sbText.append("\n");
-            HString encFrom = PageFlowUtil.filter(from);
-            HString encTo = PageFlowUtil.filter(to);
+            String encFrom = PageFlowUtil.filter(from);
+            String encTo = PageFlowUtil.filter(to);
             sbHTML.append("<tr><td>").append(encField).append("</td><td>").append(encFrom).append("</td><td>&raquo;</td><td>").append(encTo).append("</td></tr>\n");
         }
     }
@@ -2169,16 +2168,16 @@ public class IssuesController extends SpringActionController
             _appendChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(currentUser), issue.getAssignedToName(currentUser), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Notify",
-                    new HString(StringUtils.join(previous.getNotifyListDisplayNames(null),";")),
-                    new HString(StringUtils.join(issue.getNotifyListDisplayNames(null),";")),
+                    StringUtils.join(previous.getNotifyListDisplayNames(null),";"),
+                    StringUtils.join(issue.getNotifyListDisplayNames(null),";"),
                     newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", HString.valueOf(previous.getPriority()), HString.valueOf(issue.getPriority()), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", String.valueOf(previous.getPriority()), String.valueOf(issue.getPriority()), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), newIssue);
 
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", HString.valueOf(previous.getInt1()), HString.valueOf(issue.getInt1()), customColumns, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", HString.valueOf(previous.getInt2()), HString.valueOf(issue.getInt2()), customColumns, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", String.valueOf(previous.getInt1()), String.valueOf(issue.getInt1()), customColumns, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", String.valueOf(previous.getInt2()), String.valueOf(issue.getInt2()), customColumns, newIssue);
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string1", previous.getString1(), issue.getString1(), customColumns, newIssue);
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string2", previous.getString2(), issue.getString2(), customColumns, newIssue);
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string3", previous.getString3(), issue.getString3(), customColumns, newIssue);
@@ -2189,7 +2188,7 @@ public class IssuesController extends SpringActionController
         }
 
         //why we are wrapping issue comments in divs???
-        HStringBuilder formattedComment = new HStringBuilder();
+        StringBuilder formattedComment = new StringBuilder();
         formattedComment.append("<div class=\"wiki\">");
         formattedComment.append(sbHTMLChanges);
         //render issues as plain text with links
@@ -2204,10 +2203,10 @@ public class IssuesController extends SpringActionController
 
         formattedComment.append("</div>");
 
-        return new ChangeSummary(issue.addComment(user, formattedComment.toHString()), sbTextChanges.toString(), summary);
+        return new ChangeSummary(issue.addComment(user, formattedComment.toString()), sbTextChanges.toString(), summary);
     }
 
-    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String field, HString from, HString to, Map<String, String> columnCaptions, boolean newIssue)
+    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String field, String from, String to, Map<String, String> columnCaptions, boolean newIssue)
     {
         String caption = columnCaptions.get(field);
 
@@ -2257,7 +2256,7 @@ public class IssuesController extends SpringActionController
     public static class AdminBean
     {
         private List<ColumnInfo> _columns;
-        private HString _requiredFields;
+        private String _requiredFields;
         private IssueManager.EntryTypeNames _entryTypeNames;
 
         public IssueManager.CustomColumnConfiguration ccc;
@@ -2266,7 +2265,7 @@ public class IssuesController extends SpringActionController
         public Group assignedToGroup;
         public Sort.SortDirection commentSort;
 
-        public AdminBean(List<ColumnInfo> columns, HString requiredFields, IssueManager.EntryTypeNames typeNames)
+        public AdminBean(List<ColumnInfo> columns, String requiredFields, IssueManager.EntryTypeNames typeNames)
         {
             _columns = columns;
             _requiredFields = requiredFields;
@@ -2274,7 +2273,7 @@ public class IssuesController extends SpringActionController
         }
 
         public List<ColumnInfo> getColumns(){return _columns;}
-        public HString getRequiredFields(){return _requiredFields;}
+        public String getRequiredFields(){return _requiredFields;}
         public IssueManager.EntryTypeNames getEntryTypeNames() {return _entryTypeNames;}
     }
 
@@ -2392,7 +2391,7 @@ public class IssuesController extends SpringActionController
     public static class AdminForm
     {
         private int type;
-        private HString keyword;
+        private String keyword;
 
 
         public int getType()
@@ -2407,13 +2406,13 @@ public class IssuesController extends SpringActionController
         }
 
 
-        public HString getKeyword()
+        public String getKeyword()
         {
             return keyword;
         }
 
 
-        public void setKeyword(HString keyword)
+        public void setKeyword(String keyword)
         {
             this.keyword = keyword;
         }

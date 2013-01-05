@@ -27,8 +27,6 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController.DownloadAction;
@@ -69,7 +67,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private Class<? extends Controller> _action;
     private String _body;
     private boolean _hasUpdatePermissions;
-    private HString _requiredFields;
+    private String _requiredFields;
     private String _dataRegionSelectionKey;
     private boolean _print = false;
 
@@ -199,12 +197,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _hasUpdatePermissions;
     }
 
-    public HString getRequiredFields()
+    public String getRequiredFields()
     {
         return _requiredFields;
     }
 
-    public void setRequiredFields(HString requiredFields)
+    public void setRequiredFields(String requiredFields)
     {
         _requiredFields = requiredFields;
     }
@@ -249,11 +247,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
 
     // Field is always standard column name, which is HTML safe
-    public HString writeInput(String field, HString value, HString extra)
+    public String writeInput(String field, String value, String extra)
     {
         if (!isEditable(field))
-            return new HString(filter(value.getSource(), false, true));
-        final HStringBuilder sb = new HStringBuilder();
+            return filter(value, false, true);
+        
+        final StringBuilder sb = new StringBuilder();
 
         sb.append("<input name=\"");
         sb.append(field);
@@ -268,27 +267,27 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             sb.append(extra);
             sb.append(">");
         }
-        return sb.toHString();
+        return sb.toString();
     }
 
     // Limit number of characters in an integer field
-    public HString writeIntegerInput(ColumnType type, int tabIndex)
+    public String writeIntegerInput(ColumnType type, int tabIndex)
     {
-        return writeInput(type.getColumnName(), type.getValue(getIssue()), new HString("maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"", false));
+        return writeInput(type.getColumnName(), type.getValue(getIssue()), "maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"");
     }
 
-    public HString writeInput(String field, HString value, int tabIndex)
+    public String writeInput(String field, String value, int tabIndex)
     {
-        return writeInput(field, value, new HString("tabIndex=\"" + tabIndex + "\"", false));
+        return writeInput(field, value, "tabIndex=\"" + tabIndex + "\"");
     }
 
-    public HString writeSelect(HString field, HString value, HString display, HString options, int tabIndex)
+    public String writeSelect(String field, String value, String display, String options, int tabIndex)
     {
-        if (!isEditable(field.getSource()))
+        if (!isEditable(field))
         {
             return filter(display);
         }
-        final HStringBuilder sb = new HStringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append("<select id=\"");
         sb.append(PageFlowUtil.filter(field));
         sb.append("\" name=\"");
@@ -307,13 +306,13 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         }
         sb.append(options);
         sb.append("</select>");
-        return sb.toHString();
+        return sb.toString();
     }
 
-    public HString writeSelect(ColumnType type, int tabIndex) throws IOException
+    public String writeSelect(ColumnType type, int tabIndex) throws IOException
     {
-        HString value = type.getValue(getIssue());
-        return writeSelect(new HString(type.getColumnName(), false), value, value, KeywordManager.getKeywordOptions(_c, type), tabIndex);
+        String value = type.getValue(getIssue());
+        return writeSelect(type.getColumnName(), value, value, KeywordManager.getKeywordOptions(_c, type), tabIndex);
     }
 
     public boolean isEditable(String field)
@@ -321,10 +320,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _editable.contains(field);
     }
 
-    public HString getUserOptions()
+    public String getUserOptions()
     {
         Collection<User> members = IssueManager.getAssignedToList(_c, getIssue());
-        HStringBuilder select = new HStringBuilder();
+        StringBuilder select = new StringBuilder();
         select.append("<option value=\"\"></option>");
 
         for (User member : members)
@@ -334,11 +333,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             select.append("</option>\n");
         }
 
-        return select.toHString();
+        return select.toString();
     }
 
 
-    public HString getNotifyListString(boolean asEmail)
+    public String getNotifyListString(boolean asEmail)
     {
         if (asEmail)
         {
@@ -351,34 +350,33 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 sb.append(e.getEmailAddress());
                 nl = "\n";
             }
-            return new HString(sb.toString(),false);
+            return sb.toString();
         }
         else
         {
             List<String> names = _issue.getNotifyListDisplayNames(_user);
-            if (names.isEmpty())
-                return HString.EMPTY;
-            return new HString(StringUtils.join(names, "\n"));
+
+            return StringUtils.join(names, "\n");
         }
     }
 
 
-    public HString getNotifyList()
+    public String getNotifyList()
     {
         if (!isEditable("notifyList"))
         {
             return filter(getNotifyListString(false));
         }
-        return new HString("");
+        return "";
     }
 
 
-    public HString getLabel(ColumnType type)
+    public String getLabel(ColumnType type)
     {
         return getLabel(type.getColumnName());
     }
 
-    public HString getLabel(String columnName)
+    public String getLabel(String columnName)
     {
         ColumnInfo col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
         String name = null;
@@ -392,11 +390,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         {
             String label = PageFlowUtil.filter(name).replaceAll(" ", "&nbsp;");
             if (_requiredFields != null && _requiredFields.indexOf(columnName.toLowerCase()) != -1)
-                return new HString(label + "<span class=\"labkey-error\">*</span>", false);
-            return new HString(label, false);
+                return label + "<span class=\"labkey-error\">*</span>";
+            return label;
         }
 
-        return new HString(columnName, false);
+        return columnName;
     }
 
     public String _toString(Object a)

@@ -177,7 +177,7 @@
 </form>
 
 <%!
-    public boolean isRequired(String name, HString requiredFields)
+    public boolean isRequired(String name, String requiredFields)
     {
         if (requiredFields != null)
         {

@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.model.Issue;
@@ -120,30 +119,30 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _recipients == null ? "user@domain.com" : _recipients;
             }
         });
-        _replacements.add(new HStringReplacementParam("title", "The current title of the issue")
+        _replacements.add(new StringReplacementParam("title", "The current title of the issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getTitle();
             }
         });
-        _replacements.add(new HStringReplacementParam("status", "The current status of the issue")
+        _replacements.add(new StringReplacementParam("status", "The current status of the issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getStatus();
             }
         });
-        _replacements.add(new HStringReplacementParam("type", "The current type of the issue")
+        _replacements.add(new StringReplacementParam("type", "The current type of the issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getType();
             }
         });
-        _replacements.add(new HStringReplacementParam("area", "The current area of the issue")
+        _replacements.add(new StringReplacementParam("area", "The current area of the issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getArea();
             }
@@ -160,9 +159,9 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _newIssue.getPriority().toString(); 
             }
         });
-        _replacements.add(new HStringReplacementParam("milestone", "The current milestone of the issue")
+        _replacements.add(new StringReplacementParam("milestone", "The current milestone of the issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getMilestone();
             }
@@ -195,9 +194,9 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _newIssue.getResolvedBy();
             }
         });
-        _replacements.add(new HStringReplacementParam("resolution", "The resolution type that was last used for this issue")
+        _replacements.add(new StringReplacementParam("resolution", "The resolution type that was last used for this issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getResolution();
             }
@@ -216,12 +215,12 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _newIssue.getClosedBy();
             }
         });
-        _replacements.add(new HStringReplacementParam("notifyList", "The current notification list for this issue")
+        _replacements.add(new StringReplacementParam("notifyList", "The current notification list for this issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 List<String> names = _newIssue.getNotifyListDisplayNames(null);
-                return new HString(StringUtils.join(names, ";"));
+                return StringUtils.join(names, ";");
             }
         });
         _replacements.add(new ReplacementParam("int1", "The first admin-configurable integer field this issue")
@@ -238,37 +237,37 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _newIssue == null || _newIssue.getInt2() == null ? null : _newIssue.getInt2().toString();
             }
         });
-        _replacements.add(new HStringReplacementParam("string1", "The first admin-configurable string field this issue")
+        _replacements.add(new StringReplacementParam("string1", "The first admin-configurable string field this issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getString1();
             }
         });
-        _replacements.add(new HStringReplacementParam("string2", "The second admin-configurable string field this issue")
+        _replacements.add(new StringReplacementParam("string2", "The second admin-configurable string field this issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getString2();
             }
         });
-        _replacements.add(new HStringReplacementParam("string3", "The third admin-configurable string field this issue")
+        _replacements.add(new StringReplacementParam("string3", "The third admin-configurable string field this issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getString3();
             }
         });
-        _replacements.add(new HStringReplacementParam("string4", "The fourth admin-configurable string field this issue")
+        _replacements.add(new StringReplacementParam("string4", "The fourth admin-configurable string field this issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getString4();
             }
         });
-        _replacements.add(new HStringReplacementParam("string5", "The fifth admin-configurable string field this issue")
+        _replacements.add(new StringReplacementParam("string5", "The fifth admin-configurable string field this issue")
         {
-            public HString getHStringValue(Container c)
+            public String getStringValue(Container c)
             {
                 return _newIssue.getString5();
             }
@@ -285,10 +284,10 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
 
         _replacements.addAll(super.getValidReplacements());
     }
-
-    private abstract class HStringReplacementParam extends ReplacementParam
+    
+    private abstract class StringReplacementParam extends ReplacementParam
     {
-        public HStringReplacementParam(String name, String description)
+        public StringReplacementParam(String name, String description)
         {
             super(name, description);
         }
@@ -300,11 +299,11 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
             {
                 return null;
             }
-            HString string = getHStringValue(c);
-            return string == null ? null : string.getSource();
+            
+            return getStringValue(c);
         }
-
-        protected abstract HString getHStringValue(Container c);
+        
+        protected abstract String getStringValue(Container c);
     }
 
     private abstract class UserIdReplacementParam extends ReplacementParam

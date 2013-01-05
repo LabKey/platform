@@ -69,7 +69,7 @@ public class KeywordManager
 
                 if (keywords.isEmpty())
                 {
-                    HString[] initialValues = type.getInitialValues();
+                    String[] initialValues = type.getInitialValues();
 
                     if (initialValues.length > 0)
                     {
@@ -87,13 +87,13 @@ public class KeywordManager
     }
 
 
-    public static void addKeyword(Container c, ColumnType type, HString... keywords)
+    public static void addKeyword(Container c, ColumnType type, String... keywords)
     {
         synchronized (KEYWORD_LOCK)
         {
             SqlExecutor executor = new SqlExecutor(IssuesSchema.getInstance().getSchema());
 
-            for (HString keyword : keywords)
+            for (String keyword : keywords)
             {
                 executor.execute("INSERT INTO " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
                         c.getId(), type.getOrdinal(), keyword);
@@ -105,7 +105,7 @@ public class KeywordManager
 
 
     // Clear old default value and set new one
-    public static void setKeywordDefault(Container c, ColumnType type, HString keyword)
+    public static void setKeywordDefault(Container c, ColumnType type, String keyword)
     {
         clearKeywordDefault(c, type);
 
@@ -132,7 +132,7 @@ public class KeywordManager
     }
 
 
-    public static void deleteKeyword(Container c, ColumnType type, HString keyword)
+    public static void deleteKeyword(Container c, ColumnType type, String keyword)
     {
         Collection<Keyword> keywords = null;
 
@@ -184,7 +184,7 @@ public class KeywordManager
     }
 
 
-    public static HString getKeywordOptions(final Container c, final ColumnType type)
+    public static String getKeywordOptions(final Container c, final ColumnType type)
     {
         Collection<Keyword> keywords = getKeywords(c, type);
         StringBuilder sb = new StringBuilder(keywords.size() * 30);
@@ -199,13 +199,13 @@ public class KeywordManager
             sb.append("</option>\n");
         }
 
-        return new HString(sb);
+        return sb.toString();
     }
 
 
     public static class Keyword
     {
-        private HString _keyword;
+        private String _keyword;
         private boolean _default = false;
 
         public boolean isDefault()
@@ -219,13 +219,13 @@ public class KeywordManager
             _default = def;
         }
 
-        public HString getKeyword()
+        public String getKeyword()
         {
             return _keyword;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setKeyword(HString keyword)
+        public void setKeyword(String keyword)
         {
             _keyword = keyword;
         }

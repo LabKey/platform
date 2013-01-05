@@ -24,7 +24,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 
 import java.io.Serializable;
@@ -39,45 +38,45 @@ import java.util.List;
 
 public class Issue extends Entity implements Serializable, Cloneable
 {
-    public static HString statusOPEN = new HString("open",false);
-    public static HString statusRESOLVED = new HString("resolved",false);
-    public static HString statusCLOSED = new HString("closed",false);
+    public static String statusOPEN = "open";
+    public static String statusRESOLVED = "resolved";
+    public static String statusCLOSED = "closed";
 
     protected byte[] _ts;
     protected int issueId;
-    protected HString title;
-    protected HString status;
+    protected String title;
+    protected String status;
     protected Integer assignedTo;
-    protected HString type;
+    protected String type;
 
-    protected HString area;
+    protected String area;
     protected Integer priority;
-    protected HString milestone;
-    protected HString buildFound;
+    protected String milestone;
+    protected String buildFound;
 
-    protected HString tag;
+    protected String tag;
 
     protected Integer resolvedBy;
     protected Date resolved;
-    protected HString resolution;
+    protected String resolution;
     protected Integer duplicate;
     protected Collection<Integer> duplicates;
 
     protected Integer closedBy;
     protected Date closed;
 
-    protected HString string1;
-    protected HString string2;
-    protected HString string3;
-    protected HString string4;
-    protected HString string5;
+    protected String string1;
+    protected String string2;
+    protected String string3;
+    protected String string4;
+    protected String string5;
     protected Integer int1;
     protected Integer int2;
 
     protected List<Comment> _comments = new ArrayList<Comment>();
     protected List<Comment> _added = null;
 
-    protected HString _notifyList;
+    protected String _notifyList;
 
     public Issue()
     {
@@ -174,25 +173,25 @@ public class Issue extends Entity implements Serializable, Cloneable
         this.issueId = issueId;
     }
 
-    public HString getTitle()
+    public String getTitle()
     {
         return title;
     }
 
 
-    public void setTitle(HString title)
+    public void setTitle(String title)
     {
         this.title = title;
     }
 
 
-    public HString getStatus()
+    public String getStatus()
     {
         return status;
     }
 
 
-    public void setStatus(HString status)
+    public void setStatus(String status)
     {
         this.status = status;
     }
@@ -211,31 +210,31 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public HString getAssignedToName(User currentUser)
+    public String getAssignedToName(User currentUser)
     {
-        return new HString(UserManager.getDisplayName(assignedTo, currentUser));
+        return UserManager.getDisplayName(assignedTo, currentUser);
     }
 
 
-    public HString getType()
+    public String getType()
     {
         return type;
     }
 
 
-    public void setType(HString type)
+    public void setType(String type)
     {
         this.type = type;
     }
 
 
-    public HString getArea()
+    public String getArea()
     {
         return area;
     }
 
 
-    public void setArea(HString area)
+    public void setArea(String area)
     {
         this.area = area;
     }
@@ -254,13 +253,13 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public HString getMilestone()
+    public String getMilestone()
     {
         return milestone;
     }
 
 
-    public void setMilestone(HString milestone)
+    public void setMilestone(String milestone)
     {
         this.milestone = milestone;
     }
@@ -286,13 +285,13 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public HString getTag()
+    public String getTag()
     {
         return tag;
     }
 
 
-    public void setTag(HString tag)
+    public void setTag(String tag)
     {
         this.tag = tag;
     }
@@ -329,13 +328,13 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public HString getResolution()
+    public String getResolution()
     {
         return resolution;
     }
 
 
-    public void setResolution(HString resolution)
+    public void setResolution(String resolution)
     {
         this.resolution = resolution;
     }
@@ -396,52 +395,52 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public HString getString2()
+    public String getString2()
     {
         return string2;
     }
 
-    public void setString2(HString string2)
+    public void setString2(String string2)
     {
         this.string2 = string2;
     }
 
-    public HString getString1()
+    public String getString1()
     {
         return string1;
     }
 
-    public void setString1(HString string1)
+    public void setString1(String string1)
     {
         this.string1 = string1;
     }
 
-    public HString getString3()
+    public String getString3()
     {
         return string3;
     }
 
-    public void setString3(HString string3)
+    public void setString3(String string3)
     {
         this.string3 = string3;
     }
 
-    public HString getString4()
+    public String getString4()
     {
         return string4;
     }
 
-    public void setString4(HString string4)
+    public void setString4(String string4)
     {
         this.string4 = string4;
     }
 
-    public HString getString5()
+    public String getString5()
     {
         return string5;
     }
 
-    public void setString5(HString string5)
+    public void setString5(String string5)
     {
         this.string5 = string5;
     }
@@ -514,7 +513,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
 
     // UNDONE: MAKE work in Table version
-    public Comment addComment(User user, HString text)
+    public Comment addComment(User user, String text)
     {
         Comment comment = new Comment();
         comment.beforeInsert(user, getContainerId());
@@ -529,10 +528,10 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public void setNotifyList(HString notifyList)
+    public void setNotifyList(String notifyList)
     {
         if (null != notifyList)
-            notifyList = new HString(notifyList.replace(";","\n"));
+            notifyList = notifyList.replace(";","\n");
         _notifyList = notifyList;
     }
 
@@ -551,11 +550,11 @@ public class Issue extends Entity implements Serializable, Cloneable
                 u = UserManager.getUserByDisplayName(name);
             parsed.add(null == u ? name : String.valueOf(u.getUserId()));
         }
-        _notifyList = new HString(StringUtils.join(parsed,";"));
+        _notifyList = StringUtils.join(parsed,";");
     }
 
 
-    public HString getNotifyList()
+    public String getNotifyList()
     {
         return _notifyList;
     }
@@ -564,7 +563,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     public List<String> getNotifyListDisplayNames(User user)
     {
         ArrayList<String> ret = new ArrayList<String>();
-        String[] raw = StringUtils.split(null==_notifyList?"":_notifyList.getSource(), ";\n");
+        String[] raw = StringUtils.split(null == _notifyList ? "" :_notifyList, ";\n");
         for (String id : raw)
         {
             if (null == (id = StringUtils.trimToNull(id)))
@@ -591,7 +590,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     public List<ValidEmail> getNotifyListEmail()
     {
         ArrayList<ValidEmail> ret = new ArrayList<ValidEmail>();
-        String[] raw = StringUtils.split(null==_notifyList?"":_notifyList.getSource(), ";\n");
+        String[] raw = StringUtils.split(null == _notifyList ? "" : _notifyList, ";\n");
         for (String id : raw)
         {
             if (null == (id=StringUtils.trimToNull(id)))
@@ -622,7 +621,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
         private Issue issue;
         private int commentId;
-        private HString comment;
+        private String comment;
 
         public Comment()
         {
@@ -630,7 +629,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
         public Comment(String comment)
         {
-            this.comment = new HString(comment, false);
+            this.comment = comment;
         }
 
         public Issue getIssue()
@@ -658,12 +657,12 @@ public class Issue extends Entity implements Serializable, Cloneable
             return UserManager.getDisplayName(getCreatedBy(), currentUser);
         }
 
-        public HString getComment()
+        public String getComment()
         {
             return comment;
         }
 
-        public void setComment(HString comment)
+        public void setComment(String comment)
         {
             this.comment = comment;
         }

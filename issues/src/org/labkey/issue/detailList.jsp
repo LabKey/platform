@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.data.DataRegionSelection"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
-<%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -91,7 +90,7 @@
             {
 %>
                 <tr><td class="labkey-form-label">Duplicate</td><td>
-                <%=bean.writeInput("duplicate", HString.valueOf(issue.getDuplicate()), 10)%>
+                <%=bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10)%>
                 </td></tr>
 <%
             }
@@ -127,7 +126,7 @@
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>
-        <%=text(comment.getComment().getSource())%>
+        <%=text(comment.getComment())%>
         <%=text(bean.renderAttachments(context, comment))%>
 <%
         }

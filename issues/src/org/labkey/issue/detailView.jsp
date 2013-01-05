@@ -18,7 +18,6 @@
 
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
@@ -94,7 +93,7 @@
             <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.TYPE)%></td><td><%=h(issue.getType())%></td></tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.AREA)%></td><td><%=h(issue.getArea())%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.PRIORITY)%></td><td><%=bean._toString(issue.getPriority())%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.PRIORITY)%></td><td><%=h(issue.getPriority())%></td></tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.MILESTONE)%></td><td><%=h(issue.getMilestone())%></td></tr>
         </table></td>
         <td valign="top"><table>
@@ -106,7 +105,7 @@
             {
                 %><tr><td class="labkey-form-label">Duplicate</td><td>
                 <% if (bean.isEditable("duplicate")) { %>
-                    <%=bean.writeInput("duplicate", HString.valueOf(issue.getDuplicate()), 10)%>
+                    <%=bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10)%>
                 <% } else { %>
                     <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
                 <% } %>
@@ -149,7 +148,7 @@
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>
-        <%=comment.getComment().getSource()%>
+        <%=comment.getComment()%>
         <%=bean.renderAttachments(context, comment)%><%
     }
 %>

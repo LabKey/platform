@@ -199,9 +199,9 @@ public class IssueManager
     }
 
 
-    public static Map<ColumnType, HString> getAllDefaults(Container container) throws SQLException
+    public static Map<ColumnType, String> getAllDefaults(Container container) throws SQLException
     {
-        final Map<ColumnType, HString> defaults = new HashMap<ColumnType, HString>();
+        final Map<ColumnType, String> defaults = new HashMap<ColumnType, String>();
         SimpleFilter filter = new SimpleFilter("container", container.getId()).addCondition("Default", true);
         Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
 
@@ -214,7 +214,7 @@ public class IssueManager
                 assert null != type;
 
                 if (null != type)
-                    defaults.put(type, new HString(rs.getString("Keyword"), true));
+                    defaults.put(type,rs.getString("Keyword"));
             }
         });
 
@@ -606,11 +606,11 @@ public class IssueManager
         return message;
     }
 
-    public static HString getRequiredIssueFields(Container container)
+    public static String getRequiredIssueFields(Container container)
     {
         Map<String, String> map = PropertyManager.getProperties(container, ISSUES_PREF_MAP);
         String requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
-        return new HString(null == requiredFields ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFields, true);
+        return null == requiredFields ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFields;
     }
 
 
@@ -927,7 +927,7 @@ public class IssueManager
             out.write(PageFlowUtil.filter(title));
             out.write("\n");
             for (Issue.Comment c : _comments)
-                out.write(c.getComment().getSource());
+                out.write(c.getComment());
             out.close();
             return new FileStream.ByteArrayFileStream(bos.toByteArray());
         }
@@ -971,9 +971,9 @@ public class IssueManager
                 Issue issue = new Issue();
                 issue.open(c, user);
                 issue.setAssignedTo(user.getUserId());
-                issue.setTitle(new HString("This is a junit test bug",false));
-                issue.setTag(new HString("junit",false));
-                issue.addComment(user, new HString("new issue",false));
+                issue.setTitle("This is a junit test bug");
+                issue.setTag("junit");
+                issue.addComment(user, "new issue");
                 issue.setPriority(3);
 
                 IssueManager.saveIssue(user, c, issue);
@@ -983,15 +983,15 @@ public class IssueManager
             // verify
             {
                 Issue issue = IssueManager.getIssue(c, issueId);
-                assertEquals("This is a junit test bug", issue.getTitle().getSource());
+                assertEquals("This is a junit test bug", issue.getTitle());
                 assertEquals(user.getUserId(), issue.getCreatedBy());
                 assertTrue(issue.getCreated().getTime() != 0);
                 assertTrue(issue.getModified().getTime() != 0);
                 assertEquals(user.getUserId(), issue.getAssignedTo().intValue());
                 assertEquals(Issue.statusOPEN, issue.getStatus());
                 assertEquals(1, issue.getComments().size());
-				HString comment = (issue.getComments().iterator().next()).getComment();
-                assertTrue(HString.eq("new issue", comment));
+				String comment = (issue.getComments().iterator().next()).getComment();
+                assertTrue("new issue".equals(comment));
             }
 
             //
@@ -999,7 +999,7 @@ public class IssueManager
             //
             {
                 Issue issue = IssueManager.getIssue(c, issueId);
-                issue.addComment(user, new HString("what was I thinking"));
+                issue.addComment(user, "what was I thinking");
                 IssueManager.saveIssue(user, c, issue);
             }
 
@@ -1008,8 +1008,8 @@ public class IssueManager
                 Issue issue = IssueManager.getIssue(c, issueId);
                 assertEquals(2, issue.getComments().size());
                 Iterator it = issue.getComments().iterator();
-                assertEquals("new issue", ((Issue.Comment) it.next()).getComment().getSource());
-                assertEquals("what was I thinking", ((Issue.Comment) it.next()).getComment().getSource());
+                assertEquals("new issue", ((Issue.Comment) it.next()).getComment());
+                assertEquals("what was I thinking", ((Issue.Comment) it.next()).getComment());
             }
 
             //
@@ -1017,7 +1017,7 @@ public class IssueManager
             //
             {
                 Issue issue = IssueManager.getIssue(c, issueId);
-                issue.addComment(user, new HString("invalid character <\u0010>"));
+                issue.addComment(user, "invalid character <\u0010>");
                 try
                 {
                     IssueManager.saveIssue(user, c, issue);
@@ -1039,8 +1039,8 @@ public class IssueManager
                 issue.resolve(user);
 
                 Issue copy = (Issue) JunitUtil.copyObject(issue);
-                copy.setResolution(new HString("fixed"));
-                copy.addComment(user, new HString("fixed it"));
+                copy.setResolution("fixed");
+                copy.addComment(user, "fixed it");
                 IssueManager.saveIssue(user, c, copy);
             }
 
@@ -1060,7 +1060,7 @@ public class IssueManager
                 issue.close(user);
 
                 Issue copy = (Issue) JunitUtil.copyObject(issue);
-                copy.addComment(user, new HString("closed"));
+                copy.addComment(user, "closed");
                 IssueManager.saveIssue(user, c, copy);
             }
 
