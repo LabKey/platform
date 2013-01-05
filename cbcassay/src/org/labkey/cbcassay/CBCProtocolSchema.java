@@ -15,6 +15,7 @@
  */
 package org.labkey.cbcassay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.DetailsURL;
@@ -65,6 +66,7 @@ public class CBCProtocolSchema extends AssayProtocolSchema
         return table;
     }
 
+    @Nullable
     @Override
     protected ResultsQueryView createDataQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
