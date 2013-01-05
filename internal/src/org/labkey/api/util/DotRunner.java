@@ -78,7 +78,7 @@ public class DotRunner
 
         if (result._returnCode != 0)
         {
-            throw new IOException("Graph generation failed with error code " + result._returnCode + " - " + result._output);
+            throw new IOException("Graph generation failed with error code " + result._returnCode + ":\n" + result._output);
         }
     }
 
@@ -99,11 +99,12 @@ public class DotRunner
             if (err != 0)
             {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 String line;
                 while ((line = reader.readLine()) != null)
                 {
-                    sb.append(line + "\n");
+                    sb.append(line);
+                    sb.append("\n");
                 }
                 sb.append("(Exit code: ");
                 sb.append(err);
@@ -183,7 +184,7 @@ public class DotRunner
         {
             if (procReader != null)
             {
-                try { procReader.close(); } catch (IOException eio) {}
+                try { procReader.close(); } catch (IOException ignored) {}
             }
             if (writer != null)
             {

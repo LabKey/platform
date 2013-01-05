@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.study.query.ResultsQueryView;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 
 /**
@@ -38,6 +39,10 @@ public class AssayResultsView extends AbstractAssayView
         AssayProtocolSchema schema = provider.createProtocolSchema(getViewContext().getUser(), getViewContext().getContainer(), protocol, null);
         QuerySettings settings = schema.getSettings(getViewContext(), dataRegionName, AssayProtocolSchema.DATA_TABLE_NAME);
         ResultsQueryView resultsView = schema.createDataQueryView(getViewContext(), settings, errors);
+        if (resultsView == null)
+        {
+            throw new NotFoundException("No results QueryView available for '" + protocol.getName() + "' of type '" + provider+ "'");
+        }
         setupViews(resultsView, minimizeLinks, provider, protocol);
     }
 }

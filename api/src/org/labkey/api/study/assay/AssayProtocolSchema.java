@@ -456,6 +456,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return result;
     }
 
+    @Nullable
     protected RunListQueryView createRunsQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
         RunListQueryView queryView = new RunListQueryView(this, settings, new AssayRunType(getProtocol(), getContainer()));
@@ -475,6 +476,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return queryView;
     }
 
+    @Nullable
     protected ResultsQueryView createDataQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
         ResultsQueryView queryView = new ResultsQueryView(_protocol, context, settings);
