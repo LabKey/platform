@@ -74,7 +74,7 @@
         <a href="<%=detailsURL%>"><%=h(issue.getTitle())%></a>
         <div class="comment-text">
             <%
-                String s = comment.getComment().getSource();
+                String s = comment.getComment();
                 if (s != null && s.length() > COMMENT_MAX_LEN)
                 {
                     s = s.substring(0, COMMENT_MAX_LEN) + " <i>... <a href='" + detailsURL + "'>more</a></i>";

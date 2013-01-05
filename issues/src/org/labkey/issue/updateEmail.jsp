@@ -28,7 +28,7 @@
     IssuesController.UpdateEmailPage bean = me.getModelBean();
     Container c = getViewContext().getContainer();
 
-    HString changeComment = new HString("(No change comment)",false);
+    String changeComment = "(No change comment)";
     String modifiedBy = "(unknown)";
     Issue.Comment lastComment = bean.issue.getLastComment();
 
@@ -53,7 +53,7 @@
 <body><%
         %>You can review this issue here: <a href="<%=h(bean.url)%>"><%=h(bean.url)%></a><br/><%
         %>Modified by: <%=h(modifiedBy)%><br/><%
-        %><%=text(changeComment.getSource())%>
+        %><%=text(changeComment)%>
 </body>
 </html>
 <%
