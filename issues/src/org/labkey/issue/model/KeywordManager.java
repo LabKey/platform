@@ -156,7 +156,7 @@ public class KeywordManager
         if (keywords == null || keywords.isEmpty())
         {
             String columnName = type.getColumnName();
-            HString requiredFields = IssueManager.getRequiredIssueFields(c);
+            String requiredFields = IssueManager.getRequiredIssueFields(c);
 
             if (null != columnName && requiredFields.contains(columnName))
             {
