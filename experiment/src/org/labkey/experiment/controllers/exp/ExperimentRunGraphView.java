@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.controllers.exp;
 
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.exp.ExperimentException;
@@ -95,7 +96,7 @@ public class ExperimentRunGraphView extends WebPartView
         catch (IOException e)
         {
             out.println("<p> Error in generating graph:</p>");
-            out.println("<p>" + e.getMessage() + "</p>");
+            out.println("<pre>" + PageFlowUtil.filter(e.getMessage()) + "</pre>");
             _log.error("Error generating graph", e);
         }
     }

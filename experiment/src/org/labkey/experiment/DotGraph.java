@@ -15,6 +15,8 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.lang3.ObjectUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -34,17 +36,17 @@ public class DotGraph
 {
     PrintWriter pwOut;
     ActionURL urlBase;
-    private static String GROUP_ID_PREFIX = "Grp";
-    private static String PROTOCOLAPP_COLOR = "#F7F7A3";
-    private static String MATERIAL_COLOR = "#FFCC99";
-    private static String DATA_COLOR = "#BBE3E3";
-    private static String EXPRUN_COLOR = "#FF7F50";
-    private static String LINKEDRUN_COLOR = "#CDB79E";
-    private static String GROUP_COLOR = "#C0C0C0";
-    private static String LABEL_FONT = "helvetica";
-    private static int LABEL_DEFAULT_FONTSIZE = 30;
-    private static int LABEL_SMALL_FONTSIZE = 24;
-    private static int LABEL_CHAR_WIDTH = 20;
+    private static final String GROUP_ID_PREFIX = "Grp";
+    private static final String PROTOCOLAPP_COLOR = "#F7F7A3";
+    private static final String MATERIAL_COLOR = "#FFCC99";
+    private static final String DATA_COLOR = "#BBE3E3";
+    private static final String EXPRUN_COLOR = "#FF7F50";
+    private static final String LINKEDRUN_COLOR = "#CDB79E";
+    private static final String GROUP_COLOR = "#C0C0C0";
+    private static final String LABEL_FONT = "helvetica";
+    private static final int LABEL_DEFAULT_FONTSIZE = 30;
+    private static final int LABEL_SMALL_FONTSIZE = 24;
+    private static final int LABEL_CHAR_WIDTH = 20;
 
     SortedMap<Integer, DotNode> pendingMNodes;
     SortedMap<Integer, DotNode> pendingDNodes;
@@ -287,9 +289,9 @@ public class DotGraph
 
     private void addConnectorObject(Integer srcRow, Integer trgtRow,
                                     Map<Integer, DotNode> pendingSrcMap,
-                                    Map<Integer, DotNode> writtenSrcMap,
+                                    @Nullable Map<Integer, DotNode> writtenSrcMap,
                                     Map<Integer, DotNode> pendingTrgtMap,
-                                    Map<Integer, DotNode> writtenTrgtMap, String label)
+                                    Map<Integer, DotNode> writtenTrgtMap, @Nullable String label)
     {
         DotNode src = null;
         DotNode trgt = null;
@@ -437,7 +439,7 @@ public class DotGraph
         private String wrap(String l)
         {
             String [] labelParts = StringUtils.split(label);
-            StringBuffer sb = new StringBuffer(labelParts[0]);
+            StringBuilder sb = new StringBuilder(labelParts[0]);
             int linewidth = sb.length();
             for (int i = 1; i < labelParts.length; i++)
             {
@@ -497,7 +499,11 @@ public class DotGraph
 
     private String escape(String s)
     {
-        return s == null ? null : s.replace("\"", "\\\"");
+        if (s == null)
+        {
+            return null;
+        }
+        return s.replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
     }
 
     private class MNode extends DotNode
@@ -592,14 +598,14 @@ public class DotGraph
 
         public void addNode(DotNode newnode)
         {
-            assert (gMap.get(gMap.firstKey()).type == newnode.type);
+            assert (ObjectUtils.equals(gMap.get(gMap.firstKey()).type, newnode.type));
             gMap.put(newnode.id, newnode);
         }
 
         public void save(PrintWriter out, ActionURL url)
         {
             String sep = "";
-            StringBuffer sbIn = new StringBuffer();
+            StringBuilder sbIn = new StringBuilder();
             for (Integer rowid : gMap.keySet())
             {
                 sbIn.append(sep).append(rowid);
