@@ -180,11 +180,23 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         };
 
-        if (useGrouping && !isTree) {
-            config["groupField"] = 'category';
-        }
-
         this.store = Ext4.create(isTree ? 'Ext.data.TreeStore' : 'Ext.data.Store', config);
+
+        if (useGrouping && !isTree) {
+
+            // 15764
+            this.store.groupers.add({
+                property : 'category',
+                dataProperty : 'categoryDisplayOrder',
+                sorterFn : function(a, b) {
+                    var me = this,
+                        c1 = me.getRoot(a)[me.dataProperty],
+                        c2 = me.getRoot(b)[me.dataProperty];
+
+                    return c1 > c2 ? 1 : (c1 < c2 ? -1 : 0);
+                }
+            });
+        }
         return this.store;
     },
 
@@ -764,20 +776,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.gridPanel.setLoading(false);
 
         this.hiddenFilter();
-        // sorting 'groups' as opposed to the rows in a group on a grouping feature is not immediately present
-        // TODO: Possible option (from Ext 3.4) : http://www.sencha.com/forum/showthread.php?109047-Grid-grouping-and-sorting&p=515917#post515917
-//        for (var i = 0; i < s.groupers.items.length; i++) {
-//            s.groupers.items[i].updateSortFunction(function(rec1, rec2){
-//                var cdo1 = rec1.data.categoryDisplayOrder,
-//                    cdo2 = rec2.data.categoryDisplayOrder;
-//
-//                if (cdo1 < cdo2)
-//                    return -1;
-//                else if (cdo1 == cdo2)
-//                    return 0;
-//                return 1;
-//            });
-//        }
     },
 
     onGroupChange : function(store, groupers) {
