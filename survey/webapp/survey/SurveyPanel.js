@@ -752,8 +752,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         this.closeMsgBox = new Ext4.util.DelayedTask(function(){
                             msgBox.hide();
 
-                            if (this.returnUrl)
-                                window.location = this.returnUrl;
+                            if (this.returnURL)
+                                window.location = this.returnURL;
                             else
                                 window.history.back();
                         }, this);
