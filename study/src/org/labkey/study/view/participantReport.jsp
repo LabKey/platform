@@ -25,7 +25,20 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.add(ClientDependency.fromFilePath("clientapi"));
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("/study/ParticipantReport.js"));
+        resources.add(ClientDependency.fromFilePath("/study/MeasurePicker.js"));
+        return resources;
+    }
+%>
 <%
     JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm> me = (JspView<ParticipantReportForm>) HttpView.currentView();
     ParticipantReportForm bean = me.getModelBean();
@@ -81,12 +94,11 @@
     }
 </style>
 
+<div id="<%=filterRenderId%>" class="report-filter-window-outer" style="position:<%=bean.isAllowOverflow() ? "absolute" : "absolute"%>;"></div>
+<div id="<%= renderId%>" class="dvc" style="width:100%"></div>
+
 <script type="text/javascript">
-    LABKEY.requiresClientAPI(); // required for LABKEY.Query.Visualization
-    LABKEY.requiresExt4Sandbox(true);
     LABKEY.requiresScript("TemplateHelper.js");
-    LABKEY.requiresScript("study/ParticipantReport.js");
-    LABKEY.requiresScript("study/MeasurePicker.js");
 </script>
 
 <script type="text/javascript">
@@ -112,13 +124,13 @@
 
         var _resize = function(w,h) {
             LABKEY.Utils.resizeToViewport(panel, w, -1); // don't fit to height
-        }
+        };
 
         if (<%=!bean.isAllowOverflow()%>)
             Ext4.EventManager.onWindowResize(_resize);
     });
 
-    function customizeParticipantReport(elementId) {
+    var customizeParticipantReport = function(elementId) {
 
         function initPanel() {
             var panel = Ext4.getCmp(elementId);
@@ -129,7 +141,4 @@
     }
 
 </script>
-
-<div id="<%=filterRenderId%>" class="report-filter-window-outer" style="position:<%=bean.isAllowOverflow() ? "absolute" : "absolute"%>;"></div>
-<div id="<%= renderId%>" class="dvc" style="width:100%"></div>
 

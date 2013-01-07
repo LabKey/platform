@@ -27,6 +27,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
+import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.visualization.VisualizationController;
 
@@ -49,7 +50,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         form.setReportId(getReportId());
         form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(context.getRequest()));
 
-        JspView view = new JspView<VisualizationController.GenericReportForm>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
+        JspView view = new JspView<VisualizationController.GenericReportForm>(getDescriptor().getViewClass(), form);
 
         view.setTitle(getDescriptor().getReportName());
         view.setFrame(WebPartView.FrameType.PORTAL);

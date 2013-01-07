@@ -21,6 +21,10 @@ import org.json.JSONObject;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.template.ClientDependency;
+
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 /**
@@ -62,5 +66,20 @@ public class ParticipantReportDescriptor extends ReportDescriptor
         }
 
         return super.adjustPropertyValue(context, key, value);
+    }
+
+    @Override
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> d = super.getClientDependencies();
+        JspView v = new JspView(getViewClass());
+        d.addAll(v.getClientDependencies());
+        return d;
+    }
+
+    @Override
+    public String getViewClass()
+    {
+        return "/org/labkey/study/view/participantReport.jsp";
     }
 }

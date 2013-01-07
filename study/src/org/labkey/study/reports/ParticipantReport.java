@@ -85,7 +85,7 @@ public class ParticipantReport extends AbstractReport
         form.setReportId(getReportId());
         form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(context.getRequest()));
 
-        JspView<ReportsController.ParticipantReportForm> view = new JspView<ReportsController.ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
+        JspView<ReportsController.ParticipantReportForm> view = new JspView<ReportsController.ParticipantReportForm>(getDescriptor().getViewClass(), form);
 
         String rwp = (String)context.get("reportWebPart");
         form.setExpanded(!(rwp != null));
