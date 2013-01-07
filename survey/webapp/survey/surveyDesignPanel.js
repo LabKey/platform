@@ -76,7 +76,11 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                 if (form.isValid()) {
 
                     var values = form.getValues();
-                    values.metadata = this.codeMirror.getValue();
+
+                    // hack: since we are not able to update the CodeMirror input field via selenium, we reshow the
+                    // textarea and enter the value there, so check to see if the metadata textarea has a value first
+                    var metadata = Ext4.get(this.metadataId).dom.value;
+                    values.metadata = metadata != null && metadata.length > 0 ? metadata :this.codeMirror.getValue();
 
                     Ext4.Ajax.request({
                         url     : LABKEY.ActionURL.buildURL('survey', 'saveSurveyTemplate.api'),
@@ -230,17 +234,17 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
 
         var items = [];
 
-        var id = Ext4.id();
+        this.metadataId = Ext4.id();
         var formPanel = Ext4.create('Ext.form.Panel', {
             //border  : false,
             frame   : false,
-            html    : '<textarea rows="44" name="metadata" id="' + id + '"></textarea>',
+            html    : '<textarea rows="44" name="metadata" id="' + this.metadataId + '"></textarea>',
             region  : 'center',
             items   : items
         });
         formPanel.on('render', function(cmp){
 
-            var code = Ext4.get(id);
+            var code = Ext4.get(this.metadataId);
             var size = cmp.getSize();
 
             if (code) {

@@ -18,8 +18,12 @@ package org.labkey.survey;
 
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
@@ -42,6 +46,7 @@ import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -109,10 +114,15 @@ public class SurveyManager
         return new JSONObject(survey);
     }
 
+    public List<String> getKeyMetaDataProps()
+    {
+        return Arrays.asList("name", "caption", "shortCaption", "hidden", "jsonType", "inputType", "lookup");
+    }
+
     public Map<String, Object> getTrimmedMetaData(Map<String, Object> origMap)
     {
         // trim the metadata property map to just those properties needed for rendering the Survey questions
-        String[] props = {"name", "caption", "shortCaption", "hidden", "jsonType", "inputType", "lookup"};
+        List<String> props = getKeyMetaDataProps();
         Map<String, Object> trimmedMap = new LinkedHashMap<String, Object>();
         for (String property : props)
         {
@@ -248,6 +258,34 @@ public class SurveyManager
         finally
         {
             scope.closeConnection();
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGetMetaDataForColumn()
+        {
+            SurveyManager sm = SurveyManager.get();
+            ColumnInfo ci = new ColumnInfo("test");
+            DisplayColumn dc = new DataColumn(ci, false);
+            Map<String, Object> metaDataMap = JsonWriter.getMetaData(dc, null, false, true, false);
+            Map<String, Object> trimmedMap = sm.getTrimmedMetaData(metaDataMap);
+
+            // we may not have all of the key properties in our trimmed map, but we shouldn't have any extras
+            List<String> props = sm.getKeyMetaDataProps();
+            for (String key : trimmedMap.keySet())
+            {
+                assertTrue("Unexpected property in the trimmed metadata map", props.contains(key));
+            }
+
+            // check a few of the key properties
+            assertTrue("Unexpected property value", trimmedMap.get("name").equals("test"));
+            assertTrue("Unexpected property value", trimmedMap.get("caption").equals("Test"));
+            assertTrue("Unexpected property value", trimmedMap.get("shortCaption").equals("Test"));
+            assertTrue("Unexpected property value", trimmedMap.get("hidden").equals(false));
+            assertTrue("Unexpected property value", trimmedMap.get("jsonType").equals("string"));
+            assertTrue("Unexpected property value", trimmedMap.get("inputType").equals("text"));
         }
     }
 }

@@ -492,6 +492,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         items.push({
             xtype: 'textfield',
+            name: '_surveyLabel_', // for selenium testing
             itemId: 'surveyLabel',
             value: this.surveyLabel,
             submitValue: false, // this field applies to the surveys table not the responses
@@ -750,7 +751,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         msgBox.show();
                         this.closeMsgBox = new Ext4.util.DelayedTask(function(){
                             msgBox.hide();
-
+console.log(this.returnUrl);
+console.log(window.history);
                             if (this.returnUrl)
                                 window.location = this.returnUrl;
                             else

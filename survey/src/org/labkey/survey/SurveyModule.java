@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -215,7 +216,7 @@ public class SurveyModule extends DefaultModule
 
                 BindException errors = new NullSafeBindException(this, "form");
                 UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SurveyQuerySchema.SCHEMA_NAME);
-                SurveyQuerySettings settings = (SurveyQuerySettings)schema.getSettings(context, SurveyQueryView.DATA_REGION + surveyDesign.getRowId(), SurveyQuerySchema.SURVEYS_TABLE_NAME);
+                SurveyQuerySettings settings = (SurveyQuerySettings)schema.getSettings(context, SurveyQueryView.DATA_REGION + webPart.getIndex(), SurveyQuerySchema.SURVEYS_TABLE_NAME);
                 settings.setSurveyDesignId(surveyDesign.getRowId());
                 settings.setReturnUrl(context.getActionURL().clone());
 
@@ -234,5 +235,14 @@ public class SurveyModule extends DefaultModule
                 return new HtmlView("Surveys", "Survey Design id is invalid");
             }
         }
+    }
+
+    @NotNull
+    @Override
+    public Set<Class> getUnitTests()
+    {
+        Set<Class> set = new HashSet<Class>();
+        set.add(SurveyManager.TestCase.class);
+        return set;
     }
 }

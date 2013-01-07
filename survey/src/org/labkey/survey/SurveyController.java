@@ -626,13 +626,14 @@ public class SurveyController extends SpringActionController
 
                 if (surveyDesign != null)
                 {
+                    Container container = ContainerManager.getForId(surveyDesign.getContainerId());
                     TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
                     FieldKey pk = table.getAuditRowPk();
-                    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), surveyDesign.getSchemaName());
+                    UserSchema schema = QueryService.get().getUserSchema(getUser(), container, surveyDesign.getSchemaName());
 
                     if (schema != null)
                     {
-                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, surveyDesign.getQueryName());
+                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, table.getName());
 
                         Object value = survey.getResponsesPk();
                         ColumnInfo col = table.getColumn(pk);
@@ -652,42 +653,11 @@ public class SurveyController extends SpringActionController
                         if (view != null)
                         {
                             ApiQueryResponse queryResponse = new ExtendedApiQueryResponse(view, getViewContext(), false, true,
-                                    surveyDesign.getSchemaName(), surveyDesign.getQueryName(), settings.getOffset(), null,
+                                    schema.getName(), table.getName(), settings.getOffset(), null,
                                     false, false, false);
                             return queryResponse;
                         }
                     }
-
-/*
-                    TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
-                    FieldKey pk = table.getAuditRowPk();
-
-                    if (table != null && pk != null)
-                    {
-                        QueryUpdateService qus = table.getUpdateService();
-                        if (qus != null)
-                        {
-                            List<Map<String, Object>> keys = new ArrayList<Map<String, Object>>();
-                            keys.add(Collections.singletonMap(pk.toString(), (Object)survey.getResponsesPk()));
-
-                            List<Map<String, Object>> rows = qus.getRows(getUser(), getContainer(), keys);
-
-                            assert rows.size() <= 1;
-
-                            if (rows.size() == 1)
-                            {
-                                response.put("surveyResults", rows.get(0));
-                                response.put("success", true);
-                            }
-                            else if (rows.size() == 0)
-                            {
-                                errors.reject(ERROR_MSG, "The requested survey responses primary key does not exist in the "
-                                        + surveyDesign.getSchemaName() + "." + surveyDesign.getQueryName() + " table.");
-                                response.put("success", false);
-                            }
-                        }
-                    }
-*/
                 }
             }
             else
