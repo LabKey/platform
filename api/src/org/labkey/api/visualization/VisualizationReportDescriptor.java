@@ -16,7 +16,10 @@
 package org.labkey.api.visualization;
 
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.template.ClientDependency;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 /**
@@ -38,5 +41,14 @@ public class VisualizationReportDescriptor extends ReportDescriptor
     public Map<String, Object> getReportProps() throws Exception
     {
         return null;
+    }
+
+    @Override
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> d = super.getClientDependencies();
+        JspView v = new JspView(getViewClass());
+        d.addAll(v.getClientDependencies());
+        return d;
     }
 }

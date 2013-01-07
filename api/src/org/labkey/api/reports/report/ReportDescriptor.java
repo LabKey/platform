@@ -803,4 +803,9 @@ public enum Prop implements ReportProperty
     {
         return new LinkedHashSet<ClientDependency>();
     }
+
+    public String getViewClass()
+    {
+        return null;
+    }
 }

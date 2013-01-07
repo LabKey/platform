@@ -33,4 +33,9 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
     {
         setDescriptorType(TYPE);
     }
+
+    public String getViewClass()
+    {
+        return "/org/labkey/visualization/views/genericChartWizard.jsp";
+    }
 }

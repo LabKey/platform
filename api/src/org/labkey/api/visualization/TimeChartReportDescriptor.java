@@ -21,15 +21,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.jsp.JspBase;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.template.ClientDependency;
 
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -86,16 +82,6 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
         return super.adjustPropertyValue(context, key, value);
     }
 
-    @Override
-    public LinkedHashSet<ClientDependency> getClientDependencies()
-    {
-        LinkedHashSet<ClientDependency> d = super.getClientDependencies();
-        JspView v = new JspView(getViewClass());
-        d.addAll(v.getClientDependencies());
-        return d;
-    }
-
-    // This is used to allow render-time dependency loading for TimeChart Reports.
     public String getViewClass()
     {
         return "/org/labkey/visualization/views/timeChartWizard.jsp";
