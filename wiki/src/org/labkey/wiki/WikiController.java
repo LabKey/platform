@@ -27,6 +27,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.CommSchema;
@@ -75,6 +76,7 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TextExtractor;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
@@ -872,7 +874,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    private Container getDestContainer(String destContainer, String path) throws SQLException
+    private Container getDestContainer(String destContainer, String path)
     {
         if (destContainer == null)
         {
@@ -914,16 +916,7 @@ public class WikiController extends SpringActionController
 
         public ActionURL getSuccessURL(CopyWikiForm copyWikiForm)
         {
-            Container destContainer;
-
-            try
-            {
-                destContainer = getDestContainer(copyWikiForm.getDestContainer(), copyWikiForm.getPath());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            Container destContainer = getDestContainer(copyWikiForm.getDestContainer(), copyWikiForm.getPath());
 
             return getBeginURL(destContainer);
         }
@@ -995,24 +988,18 @@ public class WikiController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class CopySinglePageAction extends FormViewAction<CopyWikiForm>
+    public class CopySinglePageAction extends SimpleRedirectAction<CopyWikiForm>
     {
-        public ModelAndView getView(CopyWikiForm copyWikiForm, boolean reshow, BindException errors) throws Exception
+        @Override
+        public URLHelper getRedirectURL(CopyWikiForm form) throws Exception
         {
-            return null;
-        }
-
-        public boolean handlePost(CopyWikiForm form, BindException errors) throws Exception
-        {
-            //user must have admin perms on both source and destination container
-
-            //get page name if specified (for single page copy)
             HString pageName = form.getPageName();
             Container cSrc = getSourceContainer(form.getSourceContainer());
             Container cDest = getDestContainer(form.getDestContainer(), form.getPath());
             if (pageName == null || cSrc == null || cDest == null)
                 throw new NotFoundException();
 
+            //user must have admin perms on both source and destination container
             if (!cDest.hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException();
 
@@ -1028,17 +1015,7 @@ public class WikiController extends SpringActionController
 
             displayWikiModuleInDestContainer(cDest);
 
-            ActionURL url = getPageURL(newWikiPage, cDest);
-            throw new RedirectException(url);
-        }
-
-        public void validateCommand(CopyWikiForm copyWikiForm, Errors errors)
-        {
-        }
-
-        public ActionURL getSuccessURL(CopyWikiForm copyWikiForm)
-        {
-            return null;  //handlePost throws
+            return getPageURL(newWikiPage, cDest);
         }
 
         public NavTree appendNavTrail(NavTree root)
