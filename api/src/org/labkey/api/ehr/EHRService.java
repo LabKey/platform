@@ -54,13 +54,11 @@ abstract public class EHRService
 
     abstract public List<Resource> getExtraTriggerScripts(Container c);
 
-    abstract public void registerTableCustomizer(TableCustomizer customizer);
+    abstract public void registerTableCustomizer(Module owner, TableCustomizer customizer);
 
-    abstract public void registerTableCustomizer(TableCustomizer customizer, String schema);
+    abstract public void registerTableCustomizer(Module owner, TableCustomizer customizer, String schema, String query);
 
-    abstract public void registerTableCustomizer(TableCustomizer customizer, String schema, String query);
-
-    abstract public List<TableCustomizer> getCustomizers(String schema, String query);
+    abstract public List<TableCustomizer> getCustomizers(Container c, String schema, String query);
 
     /**
      * Allow modules to provide JS and other dependencies that will be loaded whenever
@@ -71,4 +69,8 @@ abstract public class EHRService
     abstract public void registerClientDependency(ClientDependency cd, Module owner);
 
     abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c, User u);
+
+    abstract public void setDateFormat(Container c, String format);
+
+    abstract public String getDateFormat(Container c);
 }

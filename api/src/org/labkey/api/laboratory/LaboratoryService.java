@@ -17,6 +17,7 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -47,6 +48,8 @@ abstract public class LaboratoryService
 
     static private final String URI = "http://cpas.labkey.com/laboratory#";
     static public final String ASSAYRESULT_CONCEPT_URI = URI + "assayResult";
+    static public final String SAMPLEDATE_CONCEPT_URI = URI + "sampleDate";
+    static public final String PARTICIPANT_CONCEPT_URI = "http://cpas.labkey.com/Study#ParticipantId";
 
     public static LaboratoryService get()
     {
@@ -91,4 +94,6 @@ abstract public class LaboratoryService
     abstract public void registerClientDependency(ClientDependency cd, Module owner);
 
     abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c, User u);
+
+    abstract public TableCustomizer getLaboratoryTableCustomizer();
 }

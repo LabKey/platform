@@ -927,6 +927,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             nullable = xmlCol.getNullable();
         if (xmlCol.isSetProtected())
             isProtected = xmlCol.getProtected();
+        if (xmlCol.isSetConceptURI())
+            conceptURI = xmlCol.getConceptURI();
 
         if (xmlCol.isSetImportAliases())
             importAliases.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));
