@@ -16,9 +16,11 @@
 package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.reports.Report;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ThumbnailUtil;
 import org.labkey.api.view.HBox;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
@@ -26,6 +28,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.TimeChartReport;
+import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.visualization.VisualizationController;
 
 import java.io.InputStream;
@@ -45,10 +48,20 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
 
         form.setReportId(getReportId());
         form.setAllowToggleMode(false);
-        JspView timeChartWizard = new JspView<VisualizationController.GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
 
-        timeChartWizard.setFrame(WebPartView.FrameType.NONE);
-        return new HBox(timeChartWizard);
+        Report report = form.getReportId().getReport(context);
+
+        if (null != report)
+        {
+            TimeChartReportDescriptor descriptor = (TimeChartReportDescriptor) report.getDescriptor();
+
+            JspView timeChartWizard = new JspView<VisualizationController.GetVisualizationForm>(descriptor.getViewClass(), form);
+
+            timeChartWizard.setFrame(WebPartView.FrameType.NONE);
+            return new HBox(timeChartWizard);
+        }
+
+        return new HBox(new HtmlView("Failed to find report."));
     }
 
     @Override

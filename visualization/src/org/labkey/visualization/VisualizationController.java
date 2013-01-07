@@ -94,6 +94,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
+import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.visualization.sql.StudyVisualizationProvider;
@@ -1386,27 +1387,33 @@ public class VisualizationController extends SpringActionController
         public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
         {
             form.setAllowToggleMode(true);
-            JspView timeChartWizard = new JspView<GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
 
-            timeChartWizard.setTitle(TITLE);
-            timeChartWizard.setFrame(WebPartView.FrameType.NONE);
-
-            VBox boxView = new VBox(timeChartWizard);
-
+            VBox boxView = new VBox();
             Report report = getReport(form);
 
             if (report != null)
             {
-                _navTitle = report.getDescriptor().getReportName();
+                TimeChartReportDescriptor descriptor = (TimeChartReportDescriptor) report.getDescriptor();
+                JspView timeChartWizard = new JspView<GetVisualizationForm>(descriptor.getViewClass(), form);
+
+                timeChartWizard.setTitle(TITLE);
+                timeChartWizard.setFrame(WebPartView.FrameType.NONE);
+                boxView.addView(timeChartWizard);
+
+                _navTitle = descriptor.getReportName();
 
                 // check if the report is shared and if not, whether the user has access to the report
-                if (report.getDescriptor().getOwner() == null || (report.getDescriptor().getOwner() != null && report.getDescriptor().getOwner() == getUser().getUserId()))
+                if (descriptor.getOwner() == null || (descriptor.getOwner() != null && descriptor.getOwner() == getUser().getUserId()))
                 {
-                    String title = "Discuss report - " + report.getDescriptor().getReportName();
+                    String title = "Discuss report - " + descriptor.getReportName();
                     DiscussionService.Service service = DiscussionService.get();
                     HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
                     boxView.addView(discussion);
                 }
+            }
+            else
+            {
+                boxView.addView(new HtmlView("Failed to find report."));
             }
 
             return boxView;

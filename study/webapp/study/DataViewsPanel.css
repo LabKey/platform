@@ -50,6 +50,16 @@
     font-weight: bold;
 }
 
+/* Tree Column */
+.dvc .dvcategory img.x4-tree-icon {
+    display: none !important;
+}
+
+.dvc .dvcategory div.x4-grid-cell-inner {
+    font: bold 13px 'Verdana, Arial, Helvetica, sans serif';
+    border-bottom: 2px solid #154B76;
+}
+
 .x4-reset .dataset-search .x4-form-text {
     font-size: 18px;
     padding-left: 6px;

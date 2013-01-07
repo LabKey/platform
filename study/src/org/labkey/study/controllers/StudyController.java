@@ -6885,6 +6885,52 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    /**
+     * This action is currently just an example. This would provide the proper configuration for a tree-based
+     * layout of categorized data views. For now only dummy data is generated for rendering.
+     * See 'asTree' in DataViewsPanel.js.
+     */
+    @RequiresPermissionClass(ReadPermission.class)
+    public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
+    {
+        @Override
+        public ApiResponse execute(BrowseDataForm browseDataForm, BindException errors) throws Exception
+        {
+            HttpServletResponse resp = getViewContext().getResponse();
+            resp.setContentType("application/json");
+            resp.getWriter().write(getTreeData().toString());
+
+            return null;
+        }
+
+        private JSONObject getTreeData()
+        {
+            JSONObject child = new JSONObject();
+            child.put("name", "Report21");
+            child.put("leaf", true);
+
+            JSONArray children = new JSONArray();
+            children.put(child);
+
+            JSONObject category = new JSONObject();
+            category.put("name", "Exams");
+            category.put("icon", false);
+            category.put("expanded", true);
+            category.put("children", children);
+            category.put("cls", "dvcategory");
+
+            JSONArray rootChildren = new JSONArray();
+            rootChildren.put(category);
+
+            JSONObject root = new JSONObject();
+            root.put("name", ".");
+            root.put("expanded", true);
+            root.put("children", rootChildren);
+
+            return root;
+        }
+    }
+
     public static class BrowseDataForm extends ReturnUrlForm implements CustomApiForm
     {
         private int index;

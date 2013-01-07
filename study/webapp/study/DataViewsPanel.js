@@ -35,14 +35,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'createdByUserId',      type : 'int'},
             {name : 'authorUserId',
                 convert : function(v, record){
-                    if (record.raw.author)
+                    if (record.raw && record.raw.author)
                         return record.raw.author.userId;
                     else return 0;
                 }
             },
             {name : 'authorDisplayName',
                 convert : function(v, record){
-                    if (record.raw.author)
+                    if (record.raw && record.raw.author)
                         return record.raw.author.displayName;
                     else return '';
                 }
@@ -138,7 +138,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 style : 'margin-bottom: 10px',
                 hidden : true,
                 preventHeader : true,
-//                flex   : 1.2,
                 border : false, frame : false
             });
             items.push(this[regions[r]]);
@@ -146,7 +145,21 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return items;
     },
 
-    initializeViewStore : function(useGrouping) {
+    getViewProxy : function(isTree) {
+        return {
+            type   : 'ajax',
+            url    : LABKEY.ActionURL.buildURL('study', 'browseData' + (isTree ? 'Tree' : '') + '.api'),
+            extraParams : {
+                // These parameters are required for specific webpart filtering
+                pageId      : this.pageId,
+                index       : this.index,
+                returnUrl   : this.returnUrl
+            },
+            reader : isTree ? 'json' : { type : 'json', root : 'data' }
+        };
+    },
+
+    initializeViewStore : function(useGrouping, isTree) {
 
         if (this.store)
             return this.store;
@@ -155,20 +168,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             pageSize: 100,
             model   : 'Dataset.Browser.View',
             autoLoad: true,
-            proxy   : {
-                type   : 'ajax',
-                url    : LABKEY.ActionURL.buildURL('study', 'browseData.api'),
-                extraParams : {
-                    // These parameters are required for specific webpart filtering
-                    pageId      : this.pageId,
-                    index       : this.index,
-                    returnUrl   : this.returnUrl
-                },
-                reader : {
-                    type : 'json',
-                    root : 'data'
-                }
-            },
+            proxy   : this.getViewProxy(isTree),
             listeners : {
                 beforeload : function(){
                     if (this.gridPanel)
@@ -180,11 +180,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         };
 
-        if (useGrouping) {
+        if (useGrouping && !isTree) {
             config["groupField"] = 'category';
         }
 
-        this.store = Ext4.create('Ext.data.Store', config);
+        this.store = Ext4.create(isTree ? 'Ext.data.TreeStore' : 'Ext.data.Store', config);
         return this.store;
     },
 
@@ -260,19 +260,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             border   : false,
             frame    : false,
             layout   : 'fit'
-//            height   : 575
         });
 
         this.centerPanel.on('render', this.configureGrid, this);
 
-        var _panel = Ext4.create('Ext.panel.Panel', {
+        return Ext4.create('Ext.panel.Panel', {
             border : false, frame : false,
             layout : 'fit',
             flex   : 4,
             region : 'center',
             items  : [this.centerPanel]
         });
-        return _panel;
     },
 
     /**
@@ -290,7 +288,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.dateFormat = json.dateFormat;
             this.dateRenderer = Ext4.util.Format.dateRenderer(json.dateFormat);
             this.editInfo = json.editInfo;
-            this.initGrid(true, json.visibleColumns);
+
+            /* Experimental -- Set to true to view data as nested tree */
+            var asTree = false;
+
+            this.initGrid(true, json.visibleColumns, asTree);
         };
         
         this.centerPanel.getEl().mask('Initializing...');
@@ -342,7 +344,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         });
     },
 
-    initGrid : function(useGrouping, visibleColumns) {
+    initGrid : function(useGrouping, visibleColumns, asTree) {
 
         /**
          * Enable Grouping by Category
@@ -465,15 +467,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        this.gridPanel = Ext4.create('Ext.grid.Panel', {
+        this.gridPanel = Ext4.create(asTree ? 'Ext.tree.Panel' : 'Ext.grid.Panel', {
             id       : 'data-browser-grid-' + this.webpartId,
-            store    : this.initializeViewStore(useGrouping),
+            store    : this.initializeViewStore(useGrouping, asTree),
             tbar     : this.initSearch(),
             border   : false, frame: false,
             layout   : 'fit',
             cls      : 'iScroll', // webkit custom scroll bars
             scroll   : 'vertical',
-            columns  : this.initGridColumns(visibleColumns),
+            columns  : this.initGridColumns(visibleColumns, asTree),
             multiSelect: true,
             region   : 'center',
             viewConfig : {
@@ -505,6 +507,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 },
                 scope : this
             },
+
+            /* Tree Configurations */
+            rootVisible : false,
+
             scope     : this
         });
 
@@ -513,7 +519,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.centerPanel.add(this.gridPanel);
     },
 
-    initGridColumns : function(visibleColumns) {
+    initGridColumns : function(visibleColumns, isTree) {
 
         var detailsTpl =
                 '<tpl if="detailsUrl">' +
@@ -555,7 +561,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             hidden   : true,
             scope    : this
         },{
-            xtype    : 'templatecolumn',
+            xtype    : isTree ? 'treecolumn' : 'templatecolumn',
             text     : 'Name',
             flex     : 1,
             sortable : true,

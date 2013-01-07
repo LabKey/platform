@@ -19,16 +19,15 @@ package org.labkey.visualization;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
-import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.visualization.report.GenericChartReportImpl;
 import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.report.VisualizationUIProvider;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
 
 public class VisualizationModule extends DefaultModule
 {

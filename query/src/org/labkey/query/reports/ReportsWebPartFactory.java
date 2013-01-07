@@ -17,16 +17,17 @@
 package org.labkey.query.reports;
 
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.view.*;
-import org.labkey.folder.xml.FolderDocument;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.query.reports.view.ReportsWebPart;
 import org.labkey.query.reports.view.ReportsWebPartConfig;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
