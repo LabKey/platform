@@ -27,6 +27,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -6892,40 +6893,216 @@ public class StudyController extends BaseStudyController
     public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
     {
         @Override
-        public ApiResponse execute(BrowseDataForm browseDataForm, BindException errors) throws Exception
+        public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
             HttpServletResponse resp = getViewContext().getResponse();
             resp.setContentType("application/json");
-            resp.getWriter().write(getTreeData().toString());
+            resp.getWriter().write(getTreeData(form).toString());
 
             return null;
         }
 
-        private JSONObject getTreeData()
+        private JSONObject getTreeData(BrowseDataForm form) throws Exception
         {
-            JSONObject child = new JSONObject();
-            child.put("name", "Report21");
-            child.put("leaf", true);
+            List<DataViewProvider.Type> visibleDataTypes = getVisibleDataTypes(form);
 
-            JSONArray children = new JSONArray();
-            children.put(child);
+            int startingDefaultDisplayOrder = 0;
+            Set<String> defaultCategories = new TreeSet<String>(new Comparator<String>(){
+                @Override
+                public int compare(String s1, String s2)
+                {
+                    return s1.compareToIgnoreCase(s2);
+                }
+            });
 
-            JSONObject category = new JSONObject();
-            category.put("name", "Exams");
-            category.put("icon", false);
-            category.put("expanded", true);
-            category.put("children", children);
-            category.put("cls", "dvcategory");
+            if (null != form.getReturnUrl())
+                getViewContext().put("returnUrl", form.getReturnUrl());
 
-            JSONArray rootChildren = new JSONArray();
-            rootChildren.put(category);
+            // get the data view information from all visible providers
+            List<DataViewInfo> views = new ArrayList<DataViewInfo>();
 
+            for (DataViewProvider.Type type : visibleDataTypes)
+            {
+                views.addAll(DataViewService.get().getProvider(type, getViewContext()).getViews(getViewContext()));
+            }
+
+            for (DataViewInfo info : views)
+            {
+                ViewCategory category = info.getCategory();
+
+                if (category != null)
+                {
+                    if (category.getDisplayOrder() != ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER)
+                    {
+                        startingDefaultDisplayOrder = Math.max(startingDefaultDisplayOrder, category.getDisplayOrder());
+                    }
+                    else
+                        defaultCategories.add(category.getLabel());
+                }
+            }
+
+            // add the default categories after the explicit categories
+            Map<String, Integer> defaultCategoryMap = new HashMap<String, Integer>();
+            for (Iterator<String> it = defaultCategories.iterator(); it.hasNext(); )
+            {
+                defaultCategoryMap.put(it.next(), ++startingDefaultDisplayOrder);
+            }
+
+            // This is just to hand down display order -- might not be necessary in tree case
+            for (DataViewInfo info : views)
+            {
+                ViewCategory category = info.getCategory();
+
+                if (category != null)
+                {
+                    if (category.getDisplayOrder() == ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER && defaultCategoryMap.containsKey(category.getLabel()))
+                        category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
+                }
+            }
+
+            return buildTree(views);
+        }
+
+        private JSONObject buildTree(List<DataViewInfo> views)
+        {
+            // Construct root node
             JSONObject root = new JSONObject();
             root.put("name", ".");
             root.put("expanded", true);
+            JSONArray rootChildren = new JSONArray();
+
+            // Group views by Category
+            Map<String, List<DataViewInfo>> categories = new HashMap<String, List<DataViewInfo>>();
+
+            // Build Display Order Map
+            TreeSet<DataViewInfo> order = new TreeSet<DataViewInfo>(new Comparator<DataViewInfo>()
+            {
+                @Override
+                public int compare(DataViewInfo o1, DataViewInfo o2)
+                {
+                    return ((Integer) o1.getCategory().getDisplayOrder()).compareTo((Integer) o2.getCategory().getDisplayOrder());
+                }
+            });
+
+            for (DataViewInfo info : views)
+            {
+                ViewCategory category = info.getCategory();
+                if (null != category)
+                {
+                    if (!categories.containsKey(category.getLabel()))
+                    {
+                        categories.put(category.getLabel(), new ArrayList<DataViewInfo>());
+                        order.add(info);
+                    }
+                    categories.get(category.getLabel()).add(info);
+                }
+            }
+
+            String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
+            if (dateFormat == null)
+                dateFormat = DateUtil.getStandardDateFormatString();
+
+            for (DataViewInfo o : order)
+            {
+                String label = o.getCategory().getLabel();
+                JSONArray children = new JSONArray();
+                for (DataViewInfo v : categories.get(label))
+                {
+                    JSONObject child = DataViewService.get().toJSON(getContainer(), getUser(), v, dateFormat);
+                    child.put("name", v.getName());
+                    child.put("leaf", true);
+                    child.put("icon", v.getIcon());
+                    children.put(child);
+                }
+
+                JSONObject category = new JSONObject();
+                category.put("name", label);
+                category.put("icon", false);
+                category.put("expanded", true);
+                category.put("children", children);
+                category.put("cls", "dvcategory");
+
+                rootChildren.put(category);
+            }
+
             root.put("children", rootChildren);
 
             return root;
+        }
+
+        private List<DataViewProvider.Type> getVisibleDataTypes(BrowseDataForm form)
+        {
+            List<DataViewProvider.Type> visibleDataTypes = new ArrayList<DataViewProvider.Type>();
+            Map<String, String> props;
+            Portal.WebPart webPart = getWebPart(form);
+
+            if (null != webPart)
+                props = webPart.getPropertyMap();
+            else
+                props = resolveJSONProperties(form.getProps());
+
+            for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
+            {
+                boolean visible = getCheckedState(type.getName(), props, true);
+
+                if (visible)
+                    visibleDataTypes.add(type);
+            }
+
+            return visibleDataTypes;
+        }
+
+        @Nullable
+        private Portal.WebPart getWebPart(BrowseDataForm form)
+        {
+            return Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+        }
+
+        private Boolean getCheckedState(String prop, Map<String, String> propMap, boolean defaultState)
+        {
+            if (propMap.containsKey(prop))
+            {
+                return !propMap.get(prop).equals("0");
+            }
+            return defaultState;
+        }
+
+        private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
+        {
+            JSONObject jsonProps = (JSONObject) formProps;
+            Map<String, String> props = new HashMap<String, String>();
+            boolean explicit = false;
+
+            if (null != jsonProps && jsonProps.size() > 0)
+            {
+                try
+                {
+                    // Data Types Filter
+                    JSONArray dataTypes = jsonProps.getJSONArray("dataTypes");
+                    for (int i=0; i < dataTypes.length(); i++)
+                    {
+                        props.put((String) dataTypes.get(i), "on");
+                        explicit = true;
+                    }
+                }
+                catch (JSONException x)
+                {
+                    /* No-op */
+                }
+
+                if (explicit)
+                {
+                    for (ViewInfo.DataType t : ViewInfo.DataType.values())
+                    {
+                        if (!props.containsKey(t.name()))
+                        {
+                            props.put(t.name(), "0");
+                        }
+                    }
+                }
+            }
+
+            return props;
         }
     }
 
