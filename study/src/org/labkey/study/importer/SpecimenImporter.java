@@ -1054,7 +1054,7 @@ public class SpecimenImporter
         SampleManager.getInstance().clearCaches(container);
         Specimen[] specimens;
         int offset = 0;
-        Map<Integer, SiteImpl> siteMap = new HashMap<Integer, SiteImpl>();
+        Map<Integer, LocationImpl> siteMap = new HashMap<Integer, LocationImpl>();
         String vialPropertiesSql = "UPDATE " + StudySchema.getInstance().getTableInfoVial() +
                 " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
                 "FirstProcessedByInitials = ?, AtRepository = ?, " +
@@ -1081,24 +1081,24 @@ public class SpecimenImporter
             {
                 Specimen specimen = entry.getKey();
                 List<SpecimenEvent> dateOrderedEvents = entry.getValue();
-                Integer processingLocation = SampleManager.getInstance().getProcessingSiteId(dateOrderedEvents);
+                Integer processingLocation = SampleManager.getInstance().getProcessingLocationId(dateOrderedEvents);
                 String firstProcessedByInitials = SampleManager.getInstance().getFirstProcessedByInitials(dateOrderedEvents);
-                Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(dateOrderedEvents);
+                Integer currentLocation = SampleManager.getInstance().getCurrentLocationId(dateOrderedEvents);
                 boolean atRepository = false;
                 if (currentLocation != null)
                 {
-                    SiteImpl site;
+                    LocationImpl location;
                     if (!siteMap.containsKey(currentLocation))
                     {
-                        site = StudyManager.getInstance().getSite(specimen.getContainer(), currentLocation.intValue());
-                        if (site != null)
-                            siteMap.put(currentLocation, site);
+                        location = StudyManager.getInstance().getLocation(specimen.getContainer(), currentLocation.intValue());
+                        if (location != null)
+                            siteMap.put(currentLocation, location);
                     }
                     else
-                        site = siteMap.get(currentLocation);
+                        location = siteMap.get(currentLocation);
 
-                    if (site != null)
-                        atRepository = site.isRepository() != null && site.isRepository().booleanValue();
+                    if (location != null)
+                        atRepository = location.isRepository() != null && location.isRepository().booleanValue();
                 }
 
                 // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value

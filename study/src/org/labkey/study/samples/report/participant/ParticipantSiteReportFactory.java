@@ -21,7 +21,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenController;
-import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReport;
@@ -44,31 +44,31 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
     {
         VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         List<ParticipantVisitReport> reports = new ArrayList<ParticipantVisitReport>();
-        Set<SiteImpl> enrollmentSites;
+        Set<LocationImpl> enrollmentLocations;
         if (_enrollmentSiteId == null)
         {
-            enrollmentSites = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
+            enrollmentLocations = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
             // add null to the set so we can search for ptid without an enrollment site:
-            enrollmentSites.add(null);
+            enrollmentLocations.add(null);
         }
         else if (_enrollmentSiteId == -1)
         {
-            enrollmentSites = Collections.singleton(null);
+            enrollmentLocations = Collections.singleton(null);
         }
         else
         {
-            enrollmentSites = Collections.singleton(StudyManager.getInstance().getSite(getContainer(), _enrollmentSiteId));
+            enrollmentLocations = Collections.singleton(StudyManager.getInstance().getLocation(getContainer(), _enrollmentSiteId));
         }
 
-        for (SiteImpl site : enrollmentSites)
+        for (LocationImpl location : enrollmentLocations)
         {
-            String label = site != null ? site.getLabel() : "[No enrollment site assigned]";
+            String label = location != null ? location.getLabel() : "[No enrollment location assigned]";
             SimpleFilter filter = new SimpleFilter();
             addBaseFilters(filter);
-            if (site != null)
+            if (location != null)
             {
                 filter.addWhereClause("" + StudyService.get().getSubjectColumnName(getContainer()) + " IN (SELECT ParticipantId FROM study.Participant " +
-                        "WHERE EnrollmentSiteId = ? AND Container = ?)", new Object[] { site.getRowId(), getContainer().getId() }, FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())));
+                        "WHERE EnrollmentSiteId = ? AND Container = ?)", new Object[] { location.getRowId(), getContainer().getId() }, FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())));
             }
             else
             {
@@ -88,10 +88,10 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>(super.getAdditionalFormInputHtml());
-        Set<SiteImpl> sites = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
+        Set<LocationImpl> locations = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
         // add null to the set so we can search for ptid without an enrollment site:
-        sites.add(null);
-        inputs.add(getEnrollmentSitePicker("enrollmentSiteId", sites, _enrollmentSiteId));
+        locations.add(null);
+        inputs.add(getEnrollmentSitePicker("enrollmentSiteId", locations, _enrollmentSiteId));
         return inputs;
     }
 
@@ -107,7 +107,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
 
     public String getLabel()
     {
-        return "By Enrollment Site";
+        return "By Enrollment Location";
     }
 
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()

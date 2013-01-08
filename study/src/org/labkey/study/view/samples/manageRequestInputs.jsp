@@ -178,8 +178,8 @@
             <th valign="bottom">Help Text</th>
             <th valign="bottom">Multiline</th>
             <th valign="bottom">Required</th>
-            <th valign="bottom">Remember by Site<%= helpPopup("Remember by Site",
-                    "If checked, the input will be pre-populated with the previous value entered for the destination site.")%></th>
+            <th valign="bottom">Remember by Site<%= helpPopup("Remember by Location",
+                    "If checked, the input will be pre-populated with the previous value entered for the destination location.")%></th>
         </tr>
     <%
         SampleManager.SpecimenRequestInput[] inputs = bean.getInputs();
@@ -188,12 +188,12 @@
             SampleManager.SpecimenRequestInput input = inputs[inputIndex];
     %>
         <tr>
-            <td><%= tdButtons %></td>
+            <td><%= text(tdButtons) %></td>
             <td><input type="text" name="title" size="20" value="<%= h(input.getTitle()) %>"></td>
             <td><input type="text" name="helpText" size="50" value="<%= h(input.getHelpText()) %>"></td>
-            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="multiline" <%= input.isMultiLine() ? "CHECKED" : "" %>></td>
-            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="required"<%= input.isRequired() ? "CHECKED" : "" %>></td>
-            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="rememberSiteValue"<%= input.isRememberSiteValue() ? "CHECKED" : "" %>></td>
+            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="multiline" <%= text(input.isMultiLine() ? "CHECKED" : "") %>></td>
+            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="required"<%= text(input.isRequired() ? "CHECKED" : "") %>></td>
+            <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="rememberSiteValue"<%= text(input.isRememberSiteValue() ? "CHECKED" : "") %>></td>
         </tr>
     <%
         }

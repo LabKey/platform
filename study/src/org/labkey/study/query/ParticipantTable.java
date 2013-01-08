@@ -42,8 +42,6 @@ import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 
-import java.util.Map;
-
 public class ParticipantTable extends FilteredTable
 {
     StudyQuerySchema _schema;
@@ -124,7 +122,7 @@ public class ParticipantTable extends FilteredTable
         initialCohortColumn.setFk(new CohortForeignKey(_schema, showCohorts, initialCohortColumn.getLabel()));
         addColumn(initialCohortColumn);
 
-        ForeignKey fkSite = SiteTable.fkFor(_schema);
+        ForeignKey fkSite = LocationTable.fkFor(_schema);
         addWrapColumn(_rootTable.getColumn("EnrollmentSiteId")).setFk(fkSite);
         addWrapColumn(_rootTable.getColumn("CurrentSiteId")).setFk(fkSite);
         addWrapColumn(_rootTable.getColumn("StartDate"));

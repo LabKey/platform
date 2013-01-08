@@ -37,8 +37,6 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
@@ -1586,7 +1584,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ManageSitesAction extends FormViewAction<BulkEditForm>
+    public class ManageLocationsAction extends FormViewAction<BulkEditForm>
     {
         public void validateCommand(BulkEditForm target, Errors errors)
         {
@@ -1609,16 +1607,16 @@ public class StudyController extends BaseStudyController
                     labelLookup.put(ids[i], labels[i]);
 
                 boolean emptyLabel = false;
-                for (SiteImpl site : getStudy().getSites())
+                for (LocationImpl location : getStudy().getLocations())
                 {
-                    String label = labelLookup.get(site.getRowId());
+                    String label = labelLookup.get(location.getRowId());
                     if (label == null)
                         emptyLabel = true;
-                    else if (!label.equals(site.getLabel()))
+                    else if (!label.equals(location.getLabel()))
                     {
-                        site = site.createMutable();
-                        site.setLabel(label);
-                        StudyManager.getInstance().updateSite(getUser(), site);
+                        location = location.createMutable();
+                        location.setLabel(label);
+                        StudyManager.getInstance().updateSite(getUser(), location);
                     }
                 }
                 if (emptyLabel)
@@ -1637,11 +1635,11 @@ public class StudyController extends BaseStudyController
                 {
                     try
                     {
-                        SiteImpl site = new SiteImpl();
-                        site.setLabel(form.getNewLabel());
-                        site.setLdmsLabCode(Integer.parseInt(form.getNewId()));
-                        site.setContainer(getContainer());
-                        StudyManager.getInstance().createSite(getUser(), site);
+                        LocationImpl location = new LocationImpl();
+                        location.setLabel(form.getNewLabel());
+                        location.setLdmsLabCode(Integer.parseInt(form.getNewId()));
+                        location.setContainer(getContainer());
+                        StudyManager.getInstance().createSite(getUser(), location);
                     }
                     catch (NumberFormatException e)
                     {

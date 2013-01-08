@@ -22,14 +22,14 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.study.StudySchema;
 
-public class SiteTable extends BaseStudyTable
+public class LocationTable extends BaseStudyTable
 {
     static public ForeignKey fkFor(StudyQuerySchema schema)
     {
         return new QueryForeignKey(schema, "Site", "RowId", "Label");
     }
 
-    public SiteTable(StudyQuerySchema schema)
+    public LocationTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSite());
         _schema = schema;

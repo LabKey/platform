@@ -146,7 +146,7 @@ public class StudyQuerySchema extends UserSchema
             // All these require studies defined
             ret.add(STUDY_DATA_TABLE_NAME);
             ret.add(StudyService.get().getSubjectTableName(getContainer()));
-            ret.add("Site");
+            ret.add("Location");
             if (_study.getTimepointType() != TimepointType.CONTINUOUS)
                 ret.add("Visit");
 
@@ -278,9 +278,9 @@ public class StudyQuerySchema extends UserSchema
         {
             return new VialTable(this);
         }
-        if ("Site".equalsIgnoreCase(name))
+        if ("Site".equalsIgnoreCase(name) || "Location".equalsIgnoreCase(name))
         {
-            SiteTable ret = new SiteTable(this);
+            LocationTable ret = new LocationTable(this);
             return ret;
         }
 

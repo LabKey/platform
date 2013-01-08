@@ -325,21 +325,21 @@ public class SampleManager
     }
 
 
-    public SiteImpl getCurrentSite(Specimen specimen)
+    public LocationImpl getCurrentLocation(Specimen specimen)
     {
-        Integer siteId = getCurrentSiteId(specimen);
+        Integer siteId = getCurrentLocationId(specimen);
         if (siteId != null)
-            return StudyManager.getInstance().getSite(specimen.getContainer(), siteId.intValue());
+            return StudyManager.getInstance().getLocation(specimen.getContainer(), siteId.intValue());
         return null;
     }
 
-    public Integer getCurrentSiteId(Specimen specimen)
+    public Integer getCurrentLocationId(Specimen specimen)
     {
         List<SpecimenEvent> events = getDateOrderedEventList(specimen);
-        return getCurrentSiteId(events);
+        return getCurrentLocationId(events);
     }
 
-    public Integer getCurrentSiteId(List<SpecimenEvent> dateOrderedEvents)
+    public Integer getCurrentLocationId(List<SpecimenEvent> dateOrderedEvents)
     {
         if (!dateOrderedEvents.isEmpty())
         {
@@ -355,7 +355,7 @@ public class SampleManager
         return null;
     }
 
-    private boolean skipAsProcessingSite(SpecimenEvent event)
+    private boolean skipAsProcessingLocation(SpecimenEvent event)
     {
         boolean allNullDates = event.getLabReceiptDate() == null && event.getStorageDate() == null && event.getShipDate() == null;
         //
@@ -369,7 +369,7 @@ public class SampleManager
             SpecimenEvent firstEvent = dateOrderedEvents.get(0);
             // walk backwards through the events until we find an event with at least one date field filled in that isn't
             // the first event.  Leaving all specimen event dates blank shouldn't make an event the processing location.
-            for (int i = 1; i < dateOrderedEvents.size() - 1 && skipAsProcessingSite(firstEvent); i++)
+            for (int i = 1; i < dateOrderedEvents.size() - 1 && skipAsProcessingLocation(firstEvent); i++)
                 firstEvent = dateOrderedEvents.get(i);
             return firstEvent;
         }
@@ -381,7 +381,7 @@ public class SampleManager
         return dateOrderedEvents.get(dateOrderedEvents.size() - 1);
     }
 
-    public Integer getProcessingSiteId(List<SpecimenEvent> dateOrderedEvents)
+    public Integer getProcessingLocationId(List<SpecimenEvent> dateOrderedEvents)
     {
         SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
         return firstEvent != null ? firstEvent.getLabId() : null;
@@ -393,19 +393,19 @@ public class SampleManager
         return firstEvent != null ? firstEvent.getProcessedByInitials() : null;
     }
 
-    public SiteImpl getOriginatingSite(Specimen specimen)
+    public LocationImpl getOriginatingLocation(Specimen specimen)
     {
         if (specimen.getOriginatingLocationId() != null)
         {
-            SiteImpl site = StudyManager.getInstance().getSite(specimen.getContainer(), specimen.getOriginatingLocationId().intValue());
-            if (site != null)
-                return site;
+            LocationImpl location = StudyManager.getInstance().getLocation(specimen.getContainer(), specimen.getOriginatingLocationId().intValue());
+            if (location != null)
+                return location;
         }
 
         List<SpecimenEvent> events = getDateOrderedEventList(specimen);
-        Integer firstLabId = getProcessingSiteId(events);
+        Integer firstLabId = getProcessingLocationId(events);
         if (firstLabId != null)
-            return StudyManager.getInstance().getSite(specimen.getContainer(), firstLabId.intValue());
+            return StudyManager.getInstance().getLocation(specimen.getContainer(), firstLabId.intValue());
         else
             return null;
     }
@@ -2260,23 +2260,23 @@ public class SampleManager
             (additiveType != null ? additiveType : "all");
     }
 
-    public SiteImpl[] getSitesWithRequests(Container container)
+    public LocationImpl[] getSitesWithRequests(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM study.site WHERE rowid IN\n" +
                 "(SELECT destinationsiteid FROM study.samplerequest WHERE container = ?)\n" +
                 "AND container = ? ORDER BY label", container.getId(), container.getId());
 
-        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(SiteImpl.class);
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(LocationImpl.class);
     }
 
-    public SiteImpl[] getSites(Container container)
+    public LocationImpl[] getSites(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM study.site WHERE Container = ? ORDER BY label", container.getId());
 
-        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(SiteImpl.class);
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(LocationImpl.class);
     }
 
-    public Set<SiteImpl> getEnrollmentSitesWithRequests(Container container)
+    public Set<LocationImpl> getEnrollmentSitesWithRequests(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT Participant.EnrollmentSiteId FROM study.SpecimenDetail AS Specimen, " +
                 "study.SampleRequestSpecimen AS RequestSpecimen, \n" +
@@ -2297,7 +2297,7 @@ public class SampleManager
         return getSitesWithIdSql(container, "EnrollmentSiteId", sql);
     }
 
-    public Set<SiteImpl> getEnrollmentSitesWithSpecimens(Container container)
+    public Set<LocationImpl> getEnrollmentSitesWithSpecimens(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT EnrollmentSiteId FROM study.SpecimenDetail AS Specimen, study.Participant AS Participant\n" +
                 "WHERE Specimen.Ptid = Participant.ParticipantId AND\n" +
@@ -2309,14 +2309,14 @@ public class SampleManager
         return getSitesWithIdSql(container, "EnrollmentSiteId", sql);
     }
 
-    private Set<SiteImpl> getSitesWithIdSql(Container container, String idColumnName, SQLFragment sql)
+    private Set<LocationImpl> getSitesWithIdSql(Container container, String idColumnName, SQLFragment sql)
     {
         ResultSet rs = null;
         try
         {
-            Set<SiteImpl> sites = new TreeSet<SiteImpl>(new Comparator<SiteImpl>()
+            Set<LocationImpl> locations = new TreeSet<LocationImpl>(new Comparator<LocationImpl>()
             {
-                public int compare(SiteImpl s1, SiteImpl s2)
+                public int compare(LocationImpl s1, LocationImpl s2)
                 {
                     if (s1 == null && s2 == null)
                         return 0;
@@ -2334,11 +2334,11 @@ public class SampleManager
                 // try getObject first to see if we have a value for our row; getInt will coerce the null to
                 // zero, which could (theoretically) be a valid site ID.
                 if (rs.getObject(idColumnName) == null)
-                    sites.add(null);
+                    locations.add(null);
                 else
-                    sites.add(StudyManager.getInstance().getSite(container, rs.getInt(idColumnName)));
+                    locations.add(StudyManager.getInstance().getLocation(container, rs.getInt(idColumnName)));
             }
-            return sites;
+            return locations;
         }
         catch (SQLException e)
         {

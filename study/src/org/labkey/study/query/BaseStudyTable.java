@@ -180,7 +180,7 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
-                SiteTable result = new SiteTable(_schema);
+                LocationTable result = new LocationTable(_schema);
                 result.setContainerFilter(ContainerFilter.EVERYTHING);
                 return result;
             }

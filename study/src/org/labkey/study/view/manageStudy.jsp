@@ -31,7 +31,6 @@
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageReloadAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageSitesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyPropertiesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
@@ -168,8 +167,8 @@
     </tr>
     <tr>
         <th align="left">Locations</th>
-        <td>This study references <%= getSites().length %> locations (labs/sites/repositories)</td>
-        <td><%= textLink("Manage Locations", ManageSitesAction.class) %></td>
+        <td>This study references <%= getLocations().length %> locations (labs/sites/repositories)</td>
+        <td><%= textLink("Manage Locations", StudyController.ManageLocationsAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Location Types</th>

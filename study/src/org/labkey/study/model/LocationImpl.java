@@ -17,14 +17,14 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.study.Site;
+import org.labkey.api.study.Location;
 
 /**
  * User: brittp
  * Date: Jan 6, 2006
  * Time: 10:28:38 AM
  */
-public class SiteImpl extends AbstractStudyEntity<SiteImpl> implements Site
+public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements Location
 {
     private int _rowId; // INT IDENTITY(1,1),
     private Integer _externalId; // INT,
@@ -37,11 +37,11 @@ public class SiteImpl extends AbstractStudyEntity<SiteImpl> implements Site
     private Boolean _endpoint = Boolean.FALSE; // Bit,
     private String _label;
 
-    public SiteImpl()
+    public LocationImpl()
     {
     }
 
-    public SiteImpl(Container container, String label)
+    public LocationImpl(Container container, String label)
     {
         super(container);
         _label = label;

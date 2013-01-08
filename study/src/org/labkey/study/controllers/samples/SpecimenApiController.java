@@ -29,7 +29,6 @@ import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.*;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -163,13 +162,13 @@ public class SpecimenApiController extends BaseStudyController
 
     private Map<String, Object> getLocation(Container container, int siteId)
     {
-        SiteImpl location = StudyManager.getInstance().getSite(container, siteId);
+        LocationImpl location = StudyManager.getInstance().getLocation(container, siteId);
         if (location == null)
             return null;
         return getLocation(location);
     }
 
-    private Map<String, Object> getLocation(SiteImpl site)
+    private Map<String, Object> getLocation(LocationImpl site)
     {
         Map<String, Object> location = new HashMap<String, Object>();
         location.put("endpoint", site.isEndpoint());
@@ -201,10 +200,10 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(SampleApiForm form, BindException errors) throws Exception
         {
             final List<Map<String, Object>> repositories = new ArrayList<Map<String, Object>>();
-            for (SiteImpl site : StudyManager.getInstance().getSites(getContainer()))
+            for (LocationImpl location : StudyManager.getInstance().getSites(getContainer()))
             {
-                if (site.isRepository())
-                    repositories.add(getLocation(site));
+                if (location.isRepository())
+                    repositories.add(getLocation(location));
             }
             return new ApiResponse()
             {

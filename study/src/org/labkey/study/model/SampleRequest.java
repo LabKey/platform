@@ -17,7 +17,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.study.Site;
+import org.labkey.api.study.Location;
 import org.labkey.study.SampleManager;
 import org.labkey.study.requirements.RequirementOwner;
 
@@ -173,7 +173,7 @@ public class SampleRequest extends AbstractStudyCachable<SampleRequest> implemen
         builder.append("Request ID ").append(_rowId);
         if (_destinationSiteId != null)
         {
-            Site destination = StudyManager.getInstance().getSite(_container, _destinationSiteId);
+            Location destination = StudyManager.getInstance().getLocation(_container, _destinationSiteId);
             builder.append(", destination ").append(destination.getDisplayName());
         }
         return builder.toString();

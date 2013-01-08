@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.study.model.SiteImpl" %>
+<%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -30,29 +30,29 @@
     JspView<StudyImpl> view = (JspView<StudyImpl>)HttpView.currentView();
     StudyImpl s = view.getModelBean();
     User user = (User)request.getUserPrincipal();
-    SiteImpl[] sites = s.getSites();
+    LocationImpl[] locations = s.getLocations();
     boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, AdminPermission.class);
  %>
 
 <div width="600px">
-Spreadsheet Export allows you to export data from one site exclusively, or to export all data from all sites simultaneously.
-Before you export, you can select the source site or sites using the "Site" drop-down menu.
+Spreadsheet Export allows you to export data from one location exclusively, or to export all data from all locations simultaneously.
+Before you export, you can select the source location or locations using the "Location" drop-down menu.
 <ul>
-<li><b>All Sites</b>. If you select "All Sites" from the dropdown "Site" menu, you will export all data for all
-    <%= h(StudyService.get().getSubjectNounPlural(getViewContext().getContainer())) %> across all sites.</li>
-<li ><b>Single Site</b>. If you select a particular site from the "Site" menu, you will export only data associated with the chosen site.</li>
+<li><b>All Locations</b>. If you select "All Locations" from the dropdown "Location" menu, you will export all data for all
+    <%= h(StudyService.get().getSubjectNounPlural(getViewContext().getContainer())) %> across all locations.</li>
+<li ><b>Single Site</b>. If you select a particular location from the "Site" menu, you will export only data associated with the chosen location.</li>
 </ul>
 </div>
 <% if (isAdmin)
 { %><%    WebPartView.startTitleFrame(out, "Administrative Options", null, "600", null);%>
 As an administrator you can export via the "Export" button or save a view definition to the server via the "Save" button.<br><br>
 When you save the view definition, it will be listed in the reports and views web part. Each time a user clicks on the view, the current data will be downloaded.
-The saved view can also be secured so that only a subset of users (e.g. users from the particular site) can see it.<br><br>
+The saved view can also be secured so that only a subset of users (e.g. users from the particular location) can see it.<br><br>
 
-    Requirements for retrieving data for a single site:
+    Requirements for retrieving data for a single location:
     <ol>
-    <li>You must have imported a Specimen Archive in order for the "Sites" dropdown to list sites. The Specimen Archive defines a list of sites for your Study. </li>
-    <li>You must associate ParticipantIDs with CurrentSiteIds via a "Participant Dataset". This step allows participant data records to be mapped to sites.</li>
+    <li>You must have imported a Specimen Archive in order for the "Locations" dropdown to list locations. The Specimen Archive defines a list of locations for your Study. </li>
+    <li>You must associate ParticipantIDs with CurrentSiteIds via a "Participant Dataset". This step allows participant data records to be mapped to locations.</li>
     </ol> See the <%=helpLink("exportExcel", "help page")%> for more information.
 <% WebPartView.endTitleFrame(out);
 }
@@ -60,14 +60,14 @@ The saved view can also be secured so that only a subset of users (e.g. users fr
 %>
 <%    WebPartView.startTitleFrame(out, "Configure", null, "600", null);%>
     <form action="exportExcel.view" method=GET>
-    <table><tr><th class="labkey-form-label">Site</th><td><select <%= isAdmin ? "onChange='siteId_onChange(this)'" : ""%> id=siteId name=siteId><option value="0">ALL</option>
+    <table><tr><th class="labkey-form-label">Site</th><td><select <%= text(isAdmin ? "onChange='siteId_onChange(this)'" : "")%> id=locationId name=locationId><option value="0">ALL</option>
 <%
-for (SiteImpl site : sites)
+for (LocationImpl location : locations)
 {
-    String label = site.getLabel();
+    String label = location.getLabel();
     if (label == null || label.length() == 0)
-        label = "" + site.getRowId();
-    %><option value="<%=site.getRowId()%>"><%=h(label)%></option><%
+        label = "" + location.getRowId();
+    %><option value="<%=location.getRowId()%>"><%=h(label)%></option><%
 }
 %></select></td></tr>
 <%  if (isAdmin)
@@ -79,20 +79,20 @@ for (SiteImpl site : sites)
 <%=generateSubmitButton("Export")%>
         <% if (isAdmin)
         {   %>
-            <input type=hidden name=reportType value="<%=ExportExcelReport.TYPE%>">
-            <input type=hidden id=params name=params value="siteId=-1">
+            <input type=hidden name=reportType value="<%=text(ExportExcelReport.TYPE)%>">
+            <input type=hidden id=params name=params value="locationId=-1">
             <%=PageFlowUtil.generateSubmitButton("Save", "this.form.action='saveReport.view'")%>
 
         <script type="text/javascript">
         var sites = {};
         sites['0'] = 'ALL';
             <%
-            for (SiteImpl site : sites)
+            for (LocationImpl location : locations)
             {
-                String label = site.getLabel();
+                String label = location.getLabel();
                 if (label == null || label.length() == 0)
-                    label = "" + site.getRowId();
-                %>sites['<%=site.getRowId()%>']=<%=PageFlowUtil.jsString(label)%>;<%
+                    label = "" + location.getRowId();
+                %>sites['<%=location.getRowId()%>']=<%=PageFlowUtil.jsString(label)%>;<%
                 out.print("\n");
             }%>
 

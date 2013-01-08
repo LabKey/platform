@@ -18,7 +18,7 @@ package org.labkey.study.requirements;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.Site;
+import org.labkey.api.study.Location;
 
 /**
  * User: brittp
@@ -35,15 +35,15 @@ public interface RequirementActor<A extends RequirementActor>
 
     void addMembers(User... users);
 
-    void addMembers(Site site, User... users);
+    void addMembers(Location location, User... users);
 
     User[] getMembers();
 
-    User[] getMembers(Site site);
+    User[] getMembers(Location location);
 
     void removeMembers(User... members);
 
-    void removeMembers(Site site, User... members);
+    void removeMembers(Location location, User... members);
 
     void deleteAllGroups();
 

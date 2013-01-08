@@ -179,7 +179,7 @@ public class StudyManager
 
     private final QueryHelper<StudyImpl> _studyHelper;
     private final QueryHelper<VisitImpl> _visitHelper;
-    private final QueryHelper<SiteImpl> _siteHelper;
+    private final QueryHelper<LocationImpl> _locationHelper;
     private final DataSetHelper _dataSetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
 
@@ -237,13 +237,13 @@ public class StudyManager
                 }
             }, VisitImpl.class);
 
-        _siteHelper = new QueryHelper<SiteImpl>(new TableInfoGetter()
+        _locationHelper = new QueryHelper<LocationImpl>(new TableInfoGetter()
             {
                 public TableInfo getTableInfo()
                 {
                     return StudySchema.getInstance().getTableInfoSite();
                 }
-            }, SiteImpl.class);
+            }, LocationImpl.class);
 
         _cohortHelper = new QueryHelper<CohortImpl>(new TableInfoGetter()
             {
@@ -1083,75 +1083,75 @@ public class StudyManager
     }
 
 
-    public SiteImpl[] getSites(Container container)
+    public LocationImpl[] getSites(Container container)
     {
-        return _siteHelper.get(container, "Label");
+        return _locationHelper.get(container, "Label");
     }
 
-    public List<SiteImpl> getValidRequestingLocations(Container container)
+    public List<LocationImpl> getValidRequestingLocations(Container container)
     {
         Study study = getStudy(container);
-        List<SiteImpl> validSites = new ArrayList<SiteImpl>();
-        SiteImpl[] sites = getSites(container);
-        for (int i = 0; i < sites.length; i += 1)
+        List<LocationImpl> validLocations = new ArrayList<LocationImpl>();
+        LocationImpl[] locations = getSites(container);
+        for (int i = 0; i < locations.length; i += 1)
         {
-            SiteImpl site = sites[i];
-            if (isSiteValidRequestingLocation(study, site))
+            LocationImpl location = locations[i];
+            if (isSiteValidRequestingLocation(study, location))
             {
-                validSites.add(site);
+                validLocations.add(location);
             }
         }
-        return validSites;
+        return validLocations;
     }
 
     public boolean isSiteValidRequestingLocation(Container container, int id)
     {
         Study study = getStudy(container);
-        SiteImpl site = getSite(container, id);
-        return isSiteValidRequestingLocation(study, site);
+        LocationImpl location = getLocation(container, id);
+        return isSiteValidRequestingLocation(study, location);
     }
 
-    private boolean isSiteValidRequestingLocation(Study study, SiteImpl site)
+    private boolean isSiteValidRequestingLocation(Study study, LocationImpl location)
     {
-        if (null == site)
+        if (null == location)
             return false;
 
-        if (site.isRepository() && study.isAllowReqLocRepository())
+        if (location.isRepository() && study.isAllowReqLocRepository())
         {
             return true;
         }
-        if (site.isClinic() && study.isAllowReqLocClinic())
+        if (location.isClinic() && study.isAllowReqLocClinic())
         {
             return true;
         }
-        if (site.isSal() && study.isAllowReqLocSal())
+        if (location.isSal() && study.isAllowReqLocSal())
         {
             return true;
         }
-        if (site.isEndpoint() && study.isAllowReqLocEndpoint())
+        if (location.isEndpoint() && study.isAllowReqLocEndpoint())
         {
             return true;
         }
-        if (!site.isRepository() && !site.isClinic() && !site.isSal() && !site.isEndpoint())
+        if (!location.isRepository() && !location.isClinic() && !location.isSal() && !location.isEndpoint())
         {   // It has no location type, so allow it
             return true;
         }
         return false;
     }
 
-    public SiteImpl getSite(Container container, int id)
+    public LocationImpl getLocation(Container container, int id)
     {
-        return _siteHelper.get(container, id);
+        return _locationHelper.get(container, id);
     }
 
-    public void createSite(User user, SiteImpl site) throws SQLException
+    public void createSite(User user, LocationImpl location) throws SQLException
     {
-        _siteHelper.create(user, site);
+        _locationHelper.create(user, location);
     }
 
-    public void updateSite(User user, SiteImpl site) throws SQLException
+    public void updateSite(User user, LocationImpl location) throws SQLException
     {
-        _siteHelper.update(user, site);
+        _locationHelper.update(user, location);
     }
 
     public void createVisitDataSetMapping(User user, Container container, int visitId,
@@ -2143,7 +2143,7 @@ public class StudyManager
         Study study = getStudy(c);
         _studyHelper.clearCache(c);
         _visitHelper.clearCache(c);
-        _siteHelper.clearCache(c);
+        _locationHelper.clearCache(c);
         AssayManager.get().clearProtocolCache();
         if (unmaterializeDatasets && null != study)
             for (DataSetDefinition def : getDataSetDefinitions(study))
@@ -2209,8 +2209,8 @@ public class StudyManager
             assert deletedTables.add(_tableInfoUploadLog);
             Table.delete(_dataSetHelper.getTableInfo(), containerFilter);
             assert deletedTables.add(_dataSetHelper.getTableInfo());
-            Table.delete(_siteHelper.getTableInfo(), containerFilter);
-            assert deletedTables.add(_siteHelper.getTableInfo());
+            Table.delete(_locationHelper.getTableInfo(), containerFilter);
+            assert deletedTables.add(_locationHelper.getTableInfo());
             Table.delete(_visitHelper.getTableInfo(), containerFilter);
             assert deletedTables.add(_visitHelper.getTableInfo());
             Table.delete(_studyHelper.getTableInfo(), containerFilter);

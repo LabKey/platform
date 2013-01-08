@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
-<%@ page import="org.labkey.study.model.SiteImpl" %>
+<%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -27,15 +27,15 @@
 %>
 <labkey:errors/>
 <p>Vials from the selected specimens can be shipped to you from multiple locations.  Please select your preferred location:</p>
-<form action="<%= bean.getFormTarget().getLocalURIString() %>" method="POST">
-<%= bean.getSourceForm().getHiddenFormInputs(me.getViewContext()) %>
+<form action="<%= h(bean.getFormTarget().getLocalURIString()) %>" method="POST">
+<%= h(bean.getSourceForm().getHiddenFormInputs(me.getViewContext())) %>
 <p>
     <select name="preferredLocation">
     <%
-        for (SiteImpl site : bean.getPossibleSites())
+        for (LocationImpl location : bean.getPossibleLocations())
         {
     %>
-    <option value="<%= site.getRowId() %>"><%= h(site.getLabel())%></option>
+    <option value="<%= location.getRowId() %>"><%= h(location.getLabel())%></option>
     <%
         }
     %>

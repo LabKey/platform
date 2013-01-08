@@ -51,9 +51,9 @@ public abstract class BaseStudyPage extends JspBase
         return getStudy().getDataSets();
     }
 
-    protected SiteImpl[] getSites()
+    protected LocationImpl[] getLocations()
     {
-        return getStudy().getSites();
+        return getStudy().getLocations();
     }
 
     protected CohortImpl[] getCohorts(User user)

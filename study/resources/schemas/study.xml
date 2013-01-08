@@ -134,16 +134,16 @@
         <ns:description>Timestamp of the last specimen load.</ns:description>
       </ns:column>
       <ns:column columnName="AllowReqLocRepository">
-        <ns:description>Whether to allow Repository sites to be Requesting Locations.</ns:description>
+        <ns:description>Whether to allow Repository locations to be Requesting Locations.</ns:description>
       </ns:column>
       <ns:column columnName="AllowReqLocClinic">
-        <ns:description>Whether to allow Clinic sites to be Requesting Locations.</ns:description>
+        <ns:description>Whether to allow Clinic locations to be Requesting Locations.</ns:description>
       </ns:column>
       <ns:column columnName="AllowReqLocSal">
-        <ns:description>Whether to allow Site Affiliated Lab sites to be Requesting Locations.</ns:description>
+        <ns:description>Whether to allow Site Affiliated Lab locations to be Requesting Locations.</ns:description>
       </ns:column>
       <ns:column columnName="AllowReqLocEndpoint">
-        <ns:description>Whether to allow Endpoint Lab sites to be Requesting Locations.</ns:description>
+        <ns:description>Whether to allow Endpoint Lab locations to be Requesting Locations.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -425,10 +425,10 @@
         <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantId</ns:propertyURI>
       </ns:column>
       <ns:column columnName="EnrollmentSiteId">
-        <ns:description>The enrollment site of each subject.</ns:description>
+        <ns:description>The enrollment location of each subject.</ns:description>
       </ns:column>
       <ns:column columnName="CurrentSiteId">
-        <ns:description>The current site of each subject.</ns:description>
+        <ns:description>The current location of each subject.</ns:description>
       </ns:column>
       <ns:column columnName="StartDate">
         <ns:description>The start date for each subject.</ns:description>

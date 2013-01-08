@@ -434,21 +434,21 @@ public class SampleMindedTransformTask
         outputRow.put("processed_by_initials", outputRow.get("activityuser"));
         outputRow.put("comments", activity);
 
-        String destinationSite = getNonNullValue(outputRow, "destination_site");
-        if ("".equals(destinationSite))
+        String destinationLocation = getNonNullValue(outputRow, "destination_site");
+        if ("".equals(destinationLocation))
         {
-            destinationSite = getNonNullValue(outputRow, "destinationsite");
+            destinationLocation = getNonNullValue(outputRow, "destinationsite");
         }
-        if (destinationSite.trim().length() == 0 || "N/A".equalsIgnoreCase(destinationSite))
+        if (destinationLocation.trim().length() == 0 || "N/A".equalsIgnoreCase(destinationLocation))
         {
-            destinationSite = shortName;
+            destinationLocation = shortName;
         }
 
         Integer labId;
         try
         {
             // Try using the given name as the ID if it's an integer
-            labId = Integer.parseInt(destinationSite);
+            labId = Integer.parseInt(destinationLocation);
             if (!labIds.containsValue(labId))
             {
                 labIds.put(labId.toString(), labId);
@@ -456,7 +456,7 @@ public class SampleMindedTransformTask
         }
         catch (NumberFormatException e)
         {
-            labId = labIds.get(destinationSite);
+            labId = labIds.get(destinationLocation);
             if (labId == null)
             {
                 // We don't have an existing ID, so find one that's available
@@ -465,7 +465,7 @@ public class SampleMindedTransformTask
                 {
                     labId += 1;
                 }
-                labIds.put(destinationSite, labId);
+                labIds.put(destinationLocation, labId);
             }
         }
 
@@ -778,7 +778,7 @@ public class SampleMindedTransformTask
         public void testParseLabsTSV() throws IOException
         {
             Map<String, Integer> labs = new HashMap<String, Integer>();
-            _task.parseLabs(labs, new BufferedReader(new StringReader("Site Number\tSite Name\n501\tLab AA\n502\tLab BB\n503\tLab CC")));
+            _task.parseLabs(labs, new BufferedReader(new StringReader("Location Number\tLocation Name\n501\tLab AA\n502\tLab BB\n503\tLab CC")));
             assertEquals("Wrong number of labs", 3, labs.size());
             assertEquals("Wrong lab name", 501, labs.get("Lab AA"));
         }
@@ -919,7 +919,7 @@ public class SampleMindedTransformTask
             assertEquals("Bad receiving handling", null, outputRow.get("ship_date"));
             assertEquals("Bad receiving handling", null, outputRow.get("processing_date"));
 
-            row.put("activity", "Ship Specimens from Clinical Site");
+            row.put("activity", "Ship Specimens from Clinical Location");
             outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
             assertEquals("Bad receiving handling", null, outputRow.get("lab_receipt_date"));
             assertEquals("Bad receiving handling", new Date(date), outputRow.get("ship_date"));

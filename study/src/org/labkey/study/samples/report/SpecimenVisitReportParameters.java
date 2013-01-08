@@ -36,7 +36,7 @@ import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.CohortImpl;
 
@@ -322,26 +322,26 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         }
     }
 
-    protected Pair<String, String> getEnrollmentSitePicker(String inputName, Set<SiteImpl> sites, Integer selectedSiteId)
+    protected Pair<String, String> getEnrollmentSitePicker(String inputName, Set<LocationImpl> locations, Integer selectedSiteId)
     {
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"").append(inputName).append("\">");
-        builder.append("<option value=\"\">All enrollment sites</option>");
-        for (SiteImpl site : sites)
+        builder.append("<option value=\"\">All enrollment locations</option>");
+        for (LocationImpl location : locations)
         {
-            if (site == null)
+            if (location == null)
             {
                 builder.append("<option value=\"-1\"");
                 if (selectedSiteId != null && selectedSiteId.intValue() == -1)
                     builder.append(" SELECTED");
-                builder.append(">Unassigned enrollment site</option>");
+                builder.append(">Unassigned enrollment location</option>");
             }
             else
             {
-                builder.append("<option value=\"").append(site.getRowId()).append("\"");
-                if (selectedSiteId != null && selectedSiteId.intValue() == site.getRowId())
+                builder.append("<option value=\"").append(location.getRowId()).append("\"");
+                if (selectedSiteId != null && selectedSiteId.intValue() == location.getRowId())
                     builder.append(" SELECTED");
-                builder.append(">").append(PageFlowUtil.filter(site.getLabel())).append("</option");
+                builder.append(">").append(PageFlowUtil.filter(location.getLabel())).append("</option");
             }
         }
         builder.append("</select>");

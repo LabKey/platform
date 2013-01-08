@@ -90,11 +90,11 @@ public class SampleRequestRequirement extends DefaultRequirement<SampleRequestRe
         return SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), _actorId);
     }
 
-    public SiteImpl getSite()
+    public LocationImpl getLocation()
     {
         if (_siteId == null)
             return null;
-        return StudyManager.getInstance().getSite(_container, _siteId);
+        return StudyManager.getInstance().getLocation(_container, _siteId);
     }
 
     public Integer getActorId()
@@ -184,7 +184,7 @@ public class SampleRequestRequirement extends DefaultRequirement<SampleRequestRe
         if (_actorId != null)
             builder.append(getActor().getLabel());
         if (_siteId != null)
-            builder.append(" (").append(getSite().getLabel()).append(")");
+            builder.append(" (").append(getLocation().getLabel()).append(")");
         if (_description != null)
         {
             if (builder.length() > 0 && _description.length() > 0)

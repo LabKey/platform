@@ -27,4 +27,4 @@
     User user = (User) request.getUserPrincipal();
     Container root = ContainerManager.getRoot();
 %>
-Per site security is NYI
+Per location security is NYI

@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
-<%@ page import="org.labkey.study.model.SiteImpl"%>
+<%@ page import="org.labkey.study.model.LocationImpl"%>
 <%@ page import="org.labkey.study.model.Specimen"%>
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -54,12 +54,12 @@
     </tr>
     <%
         int rowCount = 0;
-        for (SiteImpl site : bean.getLabs())
+        for (LocationImpl location : bean.getLabs())
         {
             String downloadURLPrefix =  buildURL(SpecimenController.DownloadSpecimenListAction.class) + "id=" + bean.getSampleRequest().getRowId() +
                     "&destSiteId=" + bean.getSampleRequest().getDestinationSiteId() +
                     "&listType=" + bean.getType().toString() +
-                    "&sourceSiteId=" + site.getRowId();
+                    "&sourceSiteId=" + location.getRowId();
 
             if (bean.isExportAsWebPage())
                 downloadURLPrefix += "&exportAsWebPage=true&export=";
@@ -67,7 +67,7 @@
                 downloadURLPrefix += "&export=";
     %>
     <tr class="<%= text(rowCount++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row") %>" valign="top">
-        <td><%= h(site.getDisplayName()) %></td>
+        <td><%= h(location.getDisplayName()) %></td>
         <td>
             <table>
                 <tr>
@@ -82,7 +82,7 @@
         <td>
             <table>
                 <%
-                    for (Specimen specimen : bean.getSpecimens(site))
+                    for (Specimen specimen : bean.getSpecimens(location))
                     {
                 %>
                     <tr valign="top">
@@ -98,10 +98,10 @@
                 <%
                     for (ActorNotificationRecipientSet possibleNotification : bean.getPossibleNotifications())
                     {
-                        SiteImpl notifySite = possibleNotification.getSite();
-                        if (notifySite != null &&
-                                notifySite.getRowId() != bean.getSampleRequest().getDestinationSiteId() &&
-                                notifySite.getRowId() != site.getRowId())
+                        LocationImpl notifyLocation = possibleNotification.getLocation();
+                        if (notifyLocation != null &&
+                                notifyLocation.getRowId() != bean.getSampleRequest().getDestinationSiteId() &&
+                                notifyLocation.getRowId() != location.getRowId())
                             continue;
 
                         boolean hasEmailAddresses = possibleNotification.getEmailAddresses().length > 0;
@@ -111,7 +111,7 @@
                     <td valign="middle">
                         <input type="checkbox"
                                name="notify"
-                               value="<%= site.getRowId() %>,<%= h(possibleNotification.getFormValue()) %>" <%= text(hasEmailAddresses ? "" : "DISABLED") %>>
+                               value="<%= location.getRowId() %>,<%= h(possibleNotification.getFormValue()) %>" <%= text(hasEmailAddresses ? "" : "DISABLED") %>>
                     </td>
                     <td valign="middle">
                         <%= h(possibleNotification.getShortRecipientDescription())%><%= hasEmailAddresses ?
@@ -120,8 +120,8 @@
                             " " + possibleNotification.getConfigureEmailsLinkHTML() %>
                     </td>
                     <td valign="middle">
-                        <%= text(notifySite != null && notifySite.getRowId() == bean.getSampleRequest().getDestinationSiteId() ? "Requesting&nbsp;Location&nbsp;" : "") %>
-                        <%= text(notifySite != null && notifySite.getRowId() == site.getRowId() ? bean.getType().getDisplay() + "&nbsp;Location" : "") %>
+                        <%= text(notifyLocation != null && notifyLocation.getRowId() == bean.getSampleRequest().getDestinationSiteId() ? "Requesting&nbsp;Location&nbsp;" : "") %>
+                        <%= text(notifyLocation != null && notifyLocation.getRowId() == location.getRowId() ? bean.getType().getDisplay() + "&nbsp;Location" : "") %>
                     </td>
                 </tr>
                 <%

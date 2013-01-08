@@ -23,11 +23,11 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.study.Location;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.StudySchema;
 import org.labkey.api.util.Pair;
-import org.labkey.api.study.Site;
 
 import java.util.List;
 import java.util.Iterator;
@@ -47,9 +47,9 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         addMembers(null, users);
     }
 
-    public void addMembers(@Nullable Site site, User... users)
+    public void addMembers(@Nullable Location location, User... users)
     {
-        Integer groupId = getGroupId(site, true);
+        Integer groupId = getGroupId(location, true);
         Group group = SecurityManager.getGroup(groupId);
 
         for (User user : users)
@@ -72,9 +72,9 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         return getMembers(null);
     }
 
-    public User[] getMembers(@Nullable Site site)
+    public User[] getMembers(@Nullable Location location)
     {
-        Integer groupId = getGroupId(site, false);
+        Integer groupId = getGroupId(location, false);
         if (groupId == null)
             return new User[0];
         List<Pair<Integer, String>> userIds = SecurityManager.getGroupMemberNamesAndIds(groupId);
@@ -90,9 +90,9 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         removeMembers(null, members);
     }
 
-    public void removeMembers(@Nullable Site site, User... members)
+    public void removeMembers(@Nullable Location location, User... members)
     {
-        Integer groupId = getGroupId(site, false);
+        Integer groupId = getGroupId(location, false);
         if (groupId == null)
             throw new IllegalStateException("Group Id does not exist.");
         Group group = SecurityManager.getGroup(groupId);
@@ -107,15 +107,15 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         return getGroupId(null, createIfMissing);
     }
 
-    public Integer getGroupId(@Nullable Site site, boolean createIfMissing)
+    public Integer getGroupId(@Nullable Location location, boolean createIfMissing)
     {
         String groupName = getGroupName() + " " + getPrimaryKey();
         Integer groupId;
-        if (site != null)
+        if (location != null)
         {
-            groupId = SecurityManager.getGroupId(getContainer(), groupName, site.getEntityId(), false);
+            groupId = SecurityManager.getGroupId(getContainer(), groupName, location.getEntityId(), false);
             if (groupId == null && createIfMissing)
-                groupId = SecurityManager.createGroup(getContainer(), groupName, PrincipalType.MODULE, site.getEntityId()).getUserId();
+                groupId = SecurityManager.createGroup(getContainer(), groupName, PrincipalType.MODULE, location.getEntityId()).getUserId();
         }
         else
         {
@@ -129,10 +129,10 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     public void deleteAllGroups()
     {
         List<Integer> groupsToDelete = new ArrayList<Integer>();
-        Site[] sites = StudyManager.getInstance().getSites(getContainer());
-        for (Site site : sites)
+        Location[] locations = StudyManager.getInstance().getSites(getContainer());
+        for (Location location : locations)
         {
-            Integer id = getGroupId( site, false);
+            Integer id = getGroupId(location, false);
             if (id != null)
                 groupsToDelete.add(id);
         }

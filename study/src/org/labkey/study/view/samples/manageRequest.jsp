@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
-<%@ page import="org.labkey.api.study.Site"%>
+<%@ page import="org.labkey.api.study.Location"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.study.model.SampleRequestActor" %>
 <%@ page import="org.labkey.study.model.SampleRequestRequirement" %>
 <%@ page import="org.labkey.study.model.SampleRequestStatus" %>
-<%@ page import="org.labkey.study.model.SiteImpl" %>
+<%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.Specimen" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
@@ -61,9 +61,9 @@
         comments = "[No description provided]";
     SampleRequestActor[] actors = SampleManager.getInstance().getRequirementsProvider().getActors(context.getContainer());
     SampleRequestRequirement[] requirements = SampleManager.getInstance().getRequestRequirements(bean.getSampleRequest());
-    Site destinationSite = bean.getDestinationSite();
+    Location destinationLocation = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSampleRequest().getCreatedBy());
-    SiteImpl[] sites = StudyManager.getInstance().getSites(context.getContainer());
+    LocationImpl[] locations = StudyManager.getInstance().getSites(context.getContainer());
     boolean notYetSubmitted = false;
     if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer()))
     {
@@ -218,7 +218,7 @@
 %>
     <table class="labkey-request-warnings">
 <%
-    boolean multipleSites = bean.getProvidingSites().length > 1;
+    boolean multipleSites = bean.getProvidingLocations().length > 1;
     if (bean.hasMissingSpecimens() || multipleSites)
     {
 %>
@@ -236,7 +236,7 @@
                 <%
                     for (String specId : bean.getMissingSpecimens())
                     {
-                        %><b><%= specId %></b><br><%
+                        %><b><%= h(specId) %></b><br><%
                     }
 
                     if (bean.isRequestManager())
@@ -262,9 +262,9 @@
                 Multiple locations are expected if some vials have already shipped while others have not.
                 Current locations for this request are:<br>
                 <%
-                    for (Site site : bean.getProvidingSites())
+                    for (Location location : bean.getProvidingLocations())
                     {
-                        %><b><%= h(site.getLabel()) %></b><br><%
+                        %><b><%= h(location.getLabel()) %></b><br><%
                     }
                 %>
             </td>
@@ -380,7 +380,7 @@
                     </tr>
                     <tr>
                         <th valign="top" align="right">Requesting Location</th>
-                        <td><%= h(destinationSite != null ? h(destinationSite.getDisplayName()) : "Not specified") %></td>
+                        <td><%= h(destinationLocation != null ? h(destinationLocation.getDisplayName()) : "Not specified") %></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Request Date</th>
@@ -435,14 +435,14 @@
                     <%
                         for (SampleRequestRequirement requirement : requirements)
                         {
-                            Site site = requirement.getSite();
+                            Location location = requirement.getLocation();
                             String siteLabel;
-                            if (site == null)
+                            if (location == null)
                                 siteLabel = "N/A";
-                            else if (site.getLabel() == null)
+                            else if (location.getLabel() == null)
                                 siteLabel = "";
                             else
-                                siteLabel = site.getDisplayName();
+                                siteLabel = location.getDisplayName();
                     %>
                             <tr>
                                 <td><%= h(requirement.getActor().getLabel()) %></td>
@@ -481,10 +481,10 @@
                                     <option value="-1"></option>
                                     <option value="0">[N/A]</option>
                                     <%
-                                        for (SiteImpl site : sites)
+                                        for (LocationImpl location : locations)
                                         {
                                     %>
-                                    <option value="<%= site.getRowId() %>"><%= h(site.getDisplayName()) %></option>
+                                    <option value="<%= location.getRowId() %>"><%= h(location.getDisplayName()) %></option>
                                     <%
                                         }
                                     %>

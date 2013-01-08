@@ -46,8 +46,8 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.Location;
 import org.labkey.api.study.ParticipantCategory;
-import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -231,7 +231,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return ids;
     }
 
-    public SiteImpl[] getSites()
+    public LocationImpl[] getLocations()
     {
         return StudyManager.getInstance().getSites(getContainer());
     }
@@ -889,8 +889,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             appendKeyword(sb, cohort.getLabel());
         */
 
-        for (Site site : getSites())
-            appendKeyword(sb, site.getLabel());
+        for (Location location : getLocations())
+            appendKeyword(sb, location.getLabel());
 
         return sb.toString();
     }

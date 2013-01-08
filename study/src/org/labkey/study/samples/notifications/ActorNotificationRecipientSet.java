@@ -18,12 +18,12 @@ package org.labkey.study.samples.notifications;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.Site;
+import org.labkey.api.study.Location;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.SampleManager;
 import org.labkey.study.model.SampleRequestActor;
-import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 
 /**
@@ -34,13 +34,13 @@ import org.labkey.study.model.StudyManager;
 public class ActorNotificationRecipientSet extends NotificationRecipientSet
 {
     private SampleRequestActor _actor;
-    private SiteImpl _site;
+    private LocationImpl _location;
 
-    public ActorNotificationRecipientSet(SampleRequestActor actor, SiteImpl site)
+    public ActorNotificationRecipientSet(SampleRequestActor actor, LocationImpl location)
     {
-        super(init(actor, site));
+        super(init(actor, location));
         _actor = actor;
-        _site = site;
+        _location = location;
     }
 
     public SampleRequestActor getActor()
@@ -48,14 +48,14 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         return _actor;
     }
 
-    public SiteImpl getSite()
+    public LocationImpl getLocation()
     {
-        return _site;
+        return _location;
     }
 
-    private static String[] init(SampleRequestActor actor, Site site)
+    private static String[] init(SampleRequestActor actor, Location location)
     {
-        User[] users = actor.getMembers(site);
+        User[] users = actor.getMembers(location);
         String[] addresses = new String[users.length];
         for (int i = 0; i < users.length; i++)
             addresses[i] = users[i].getEmail();
@@ -66,8 +66,8 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
     {
         StringBuilder shortDesc = new StringBuilder();
         shortDesc.append(getActor().getLabel());
-        if (getSite() != null)
-            shortDesc.append(", ").append(getSite().getDisplayName());
+        if (getLocation() != null)
+            shortDesc.append(", ").append(getLocation().getDisplayName());
         return shortDesc.toString();
     }
 
@@ -81,7 +81,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
 
     public String getFormValue()
     {
-        return getActor().getRowId() + "," + (getSite() != null ? getSite().getRowId() : "-1");
+        return getActor().getRowId() + "," + (getLocation() != null ? getLocation().getRowId() : "-1");
     }
 
     public static ActorNotificationRecipientSet getFromFormValue(Container container, String formValue)
@@ -90,15 +90,15 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         int actorId = Integer.parseInt(ids[0]);
         int siteId = Integer.parseInt(ids[1]);
         SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(container, actorId);
-        SiteImpl site = siteId >= 0 ? StudyManager.getInstance().getSite(container, siteId) : null;
-        return new ActorNotificationRecipientSet(actor, site);
+        LocationImpl location = siteId >= 0 ? StudyManager.getInstance().getLocation(container, siteId) : null;
+        return new ActorNotificationRecipientSet(actor, location);
     }
 
     public String getConfigureEmailsLinkHTML()
     {
         String configureMembersURL = "showGroupMembers.view?id=" + getActor().getRowId();
-        if (getSite() != null)
-            configureMembersURL += "&siteId=" + getSite().getRowId();
+        if (getLocation() != null)
+            configureMembersURL += "&siteId=" + getLocation().getRowId();
         configureMembersURL += "&returnUrl=" + PageFlowUtil.encode(HttpView.currentContext().getActionURL().getLocalURIString());
         return PageFlowUtil.textLink("Configure Addresses", configureMembersURL);
     }

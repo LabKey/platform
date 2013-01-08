@@ -45,7 +45,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.study.Site;
+import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
@@ -64,6 +64,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SampleRequest;
@@ -71,7 +72,6 @@ import org.labkey.study.model.SampleRequestActor;
 import org.labkey.study.model.SampleRequestEvent;
 import org.labkey.study.model.SampleRequestRequirement;
 import org.labkey.study.model.SampleRequestStatus;
-import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -342,22 +342,22 @@ public class SpecimenUtils
         List<ActorNotificationRecipientSet> possibleNotifications = new ArrayList<ActorNotificationRecipientSet>();
         // allow notification of all parties listed in the request requirements:
         for (SampleRequestRequirement requirement : sampleRequest.getRequirements())
-            addIfNotPresent(requirement.getActor(), requirement.getSite(), possibleNotifications);
+            addIfNotPresent(requirement.getActor(), requirement.getLocation(), possibleNotifications);
 
         // allow notification of all site-based actors at the destination site, and all study-wide actors:
-        Map<Integer, SiteImpl> relevantSites = new HashMap<Integer, SiteImpl>();
+        Map<Integer, LocationImpl> relevantSites = new HashMap<Integer, LocationImpl>();
         if (sampleRequest.getDestinationSiteId() == null)
         {
             throw new IllegalStateException("Request " + sampleRequest.getRowId() + " in folder " +
                     sampleRequest.getContainer().getPath() + " does not have a valid destination site id.");
         }
-        SiteImpl destSite = StudyManager.getInstance().getSite(sampleRequest.getContainer(), sampleRequest.getDestinationSiteId().intValue());
-        relevantSites.put(destSite.getRowId(), destSite);
+        LocationImpl destLocation = StudyManager.getInstance().getLocation(sampleRequest.getContainer(), sampleRequest.getDestinationSiteId().intValue());
+        relevantSites.put(destLocation.getRowId(), destLocation);
         for (Specimen specimen : sampleRequest.getSpecimens())
         {
-            SiteImpl site = SampleManager.getInstance().getCurrentSite(specimen);
-            if (site != null && !relevantSites.containsKey(site.getRowId()))
-                relevantSites.put(site.getRowId(), site);
+            LocationImpl location = SampleManager.getInstance().getCurrentLocation(specimen);
+            if (location != null && !relevantSites.containsKey(location.getRowId()))
+                relevantSites.put(location.getRowId(), location);
         }
 
         SampleRequestActor[] allActors = SampleManager.getInstance().getRequirementsProvider().getActors(sampleRequest.getContainer());
@@ -366,10 +366,10 @@ public class SpecimenUtils
         {
             if (actor.isPerSite())
             {
-                for (SiteImpl site : relevantSites.values())
+                for (LocationImpl location : relevantSites.values())
                 {
                     if (actor.isPerSite())
-                        addIfNotPresent(actor, site, possibleNotifications);
+                        addIfNotPresent(actor, location, possibleNotifications);
                 }
             }
             else
@@ -380,8 +380,8 @@ public class SpecimenUtils
         {
             public int compare(ActorNotificationRecipientSet first, ActorNotificationRecipientSet second)
             {
-                String firstSite = first.getSite() != null ? first.getSite().getLabel() : "";
-                String secondSite = second.getSite() != null ? second.getSite().getLabel() : "";
+                String firstSite = first.getLocation() != null ? first.getLocation().getLabel() : "";
+                String secondSite = second.getLocation() != null ? second.getLocation().getLabel() : "";
                 int comp = firstSite.compareToIgnoreCase(secondSite);
                 if (comp == 0)
                 {
@@ -399,20 +399,20 @@ public class SpecimenUtils
         return possibleNotifications;
     }
 
-    private boolean addIfNotPresent(SampleRequestActor actor, SiteImpl site, List<ActorNotificationRecipientSet> list)
+    private boolean addIfNotPresent(SampleRequestActor actor, LocationImpl location, List<ActorNotificationRecipientSet> list)
     {
         for (ActorNotificationRecipientSet actorSite : list)
         {
             if (actorSite.getActor().getRowId() == actor.getRowId())
             {
-                if (actorSite.getSite() == null && site == null)
+                if (actorSite.getLocation() == null && location == null)
                     return false;
                 else
-                if (actorSite.getSite() != null && site != null && actorSite.getSite().getRowId() == site.getRowId())
+                if (actorSite.getLocation() != null && location != null && actorSite.getLocation().getRowId() == location.getRowId())
                     return false;
             }
         }
-        list.add(new ActorNotificationRecipientSet(actor, site));
+        list.add(new ActorNotificationRecipientSet(actor, location));
         return true;
     }
 
@@ -431,16 +431,16 @@ public class SpecimenUtils
             out.write("<option value=''>&lt;Show All&gt;</option>");
             String excludeStr = ctx.getRequest().getParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
             int siteId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
-            List<SiteImpl> sites = StudyManager.getInstance().getValidRequestingLocations(ctx.getContainer());
-            for (SiteImpl site : sites)
+            List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(ctx.getContainer());
+            for (LocationImpl location : locations)
             {
                 out.write("<option value=\"");
-                out.write(String.valueOf(site.getRowId()));
+                out.write(String.valueOf(location.getRowId()));
                 out.write("\"");
-                if (site.getRowId() == siteId)
+                if (location.getRowId() == siteId)
                     out.write(" SELECTED ");
                 out.write("\">");
-                out.write(PageFlowUtil.filter(site.getDisplayName()));
+                out.write(PageFlowUtil.filter(location.getDisplayName()));
                 out.write("</option>");
             }
             out.write("</select>");
@@ -575,10 +575,10 @@ public class SpecimenUtils
 
         public String getRequestingSiteName()
         {
-            Site destSite = StudyManager.getInstance().getSite(_notification.getSampleRequest().getContainer(),
+            Location destLocation = StudyManager.getInstance().getLocation(_notification.getSampleRequest().getContainer(),
                     _notification.getSampleRequest().getDestinationSiteId());
-            if (destSite != null)
-                return destSite.getDisplayName();
+            if (destLocation != null)
+                return destLocation.getDisplayName();
             else
                 return null;
         }
@@ -746,7 +746,7 @@ public class SpecimenUtils
     {
         private Container _container;
         private Collection<Integer> _possibleLocationIds;
-        private SiteImpl[] _possibleLocations = null;
+        private LocationImpl[] _possibleLocations = null;
 
         public AmbiguousLocationException(Container container, Collection<Integer> possibleLocationIds)
         {
@@ -759,15 +759,15 @@ public class SpecimenUtils
             return _possibleLocationIds;
         }
 
-        public SiteImpl[] getPossibleLocations()
+        public LocationImpl[] getPossibleLocations()
         {
             if (_possibleLocations == null)
             {
-                _possibleLocations = new SiteImpl[_possibleLocationIds.size()];
+                _possibleLocations = new LocationImpl[_possibleLocationIds.size()];
                 int idx = 0;
 
                 for (Integer id : _possibleLocationIds)
-                    _possibleLocations[idx++] = StudyManager.getInstance().getSite(_container, id.intValue());
+                    _possibleLocations[idx++] = StudyManager.getInstance().getLocation(_container, id.intValue());
             }
             return _possibleLocations;
         }
@@ -777,7 +777,7 @@ public class SpecimenUtils
     {
         private Collection<Integer> _providingLocationIds;
         private Specimen[] _specimens;
-        private Site[] _providingLocations;
+        private Location[] _providingLocations;
 
         public RequestedSpecimens(Specimen[] specimens, Collection<Integer> providingLocationIds)
         {
@@ -796,20 +796,20 @@ public class SpecimenUtils
             }
         }
 
-        public Site[] getProvidingLocations()
+        public Location[] getProvidingLocations()
         {
             if (_providingLocations == null)
             {
                 if (_specimens == null || _specimens.length == 0)
-                    _providingLocations = new Site[0];
+                    _providingLocations = new Location[0];
                 else
                 {
                     Container container = _specimens[0].getContainer();
-                    _providingLocations = new Site[_providingLocationIds.size()];
+                    _providingLocations = new Location[_providingLocationIds.size()];
                     int siteIndex = 0;
 
                     for (Integer siteId : _providingLocationIds)
-                        _providingLocations[siteIndex++] = StudyManager.getInstance().getSite(container, siteId.intValue());
+                        _providingLocations[siteIndex++] = StudyManager.getInstance().getLocation(container, siteId.intValue());
                 }
             }
             return _providingLocations;
@@ -963,10 +963,10 @@ public class SpecimenUtils
         return grid;
     }
 
-    public SimpleFilter getSpecimenListFilter(SampleRequest sampleRequest, SiteImpl srcSite, SpecimenController.LabSpecimenListsBean.Type type)
+    public SimpleFilter getSpecimenListFilter(SampleRequest sampleRequest, LocationImpl srcLocation, SpecimenController.LabSpecimenListsBean.Type type)
     {
         SpecimenController.LabSpecimenListsBean bean = new SpecimenController.LabSpecimenListsBean(this, sampleRequest, type);
-        List<Specimen> specimens = bean.getSpecimens(srcSite);
+        List<Specimen> specimens = bean.getSpecimens(srcLocation);
         Object[] params = new Object[specimens.size() + 1];
         params[params.length - 1] = sampleRequest.getContainer().getId();
         StringBuilder whereClause = new StringBuilder();
@@ -986,39 +986,39 @@ public class SpecimenUtils
         return filter;
     }
 
-    private String getSpecimenListFileName(SiteImpl srcSite, SiteImpl destSite)
+    private String getSpecimenListFileName(LocationImpl srcLocation, LocationImpl destLocation)
     {
         StringBuilder filename = new StringBuilder();
-        filename.append(getShortSiteLabel(srcSite)).append("_to_").append(getShortSiteLabel(destSite));
+        filename.append(getShortSiteLabel(srcLocation)).append("_to_").append(getShortSiteLabel(destLocation));
         filename.append("_").append(DateUtil.formatDate());
         return filename.toString();
     }
 
-    public TSVGridWriter getSpecimenListTsvWriter(SampleRequest sampleRequest, SiteImpl srcSite,
-                                                   SiteImpl destSite, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
+    public TSVGridWriter getSpecimenListTsvWriter(SampleRequest sampleRequest, LocationImpl srcLocation,
+                                                   LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
         DataRegion dr = createDataRegionForWriters(sampleRequest);
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
-        ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcSite, type));
+        ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcLocation, type));
         Results rs = dr.getResultSet(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
         TSVGridWriter tsv = new TSVGridWriter(rs, cols);
-        tsv.setFilenamePrefix(getSpecimenListFileName(srcSite, destSite));
+        tsv.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
         return tsv;
     }
 
-    public ExcelWriter getSpecimenListXlsWriter(SampleRequest sampleRequest, SiteImpl srcSite,
-                                                 SiteImpl destSite, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
+    public ExcelWriter getSpecimenListXlsWriter(SampleRequest sampleRequest, LocationImpl srcLocation,
+                                                 LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
         DataRegion dr = createDataRegionForWriters(sampleRequest);
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
-        ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcSite, type));
+        ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcLocation, type));
         Results rs = dr.getResultSet(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
         ExcelWriter xl = new ExcelWriter(rs, cols);
-        xl.setFilenamePrefix(getSpecimenListFileName(srcSite, destSite));
+        xl.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
         return xl;
     }
 
@@ -1036,17 +1036,17 @@ public class SpecimenUtils
         return dr;
     }
 
-    private String getShortSiteLabel(SiteImpl site)
+    private String getShortSiteLabel(LocationImpl location)
     {
         String label;
-        if (site.getLabel() != null && site.getLabel().length() > 0)
-            label = site.getLabel().substring(0, Math.min(site.getLabel().length(), 15));
-        else if (site.getLdmsLabCode() != null)
-            label = "ldmsId" + site.getLdmsLabCode();
-        else if (site.getLabwareLabCode() != null && site.getLabwareLabCode().length() > 0)
-            label = "labwareId" + site.getLabwareLabCode();
+        if (location.getLabel() != null && location.getLabel().length() > 0)
+            label = location.getLabel().substring(0, Math.min(location.getLabel().length(), 15));
+        else if (location.getLdmsLabCode() != null)
+            label = "ldmsId" + location.getLdmsLabCode();
+        else if (location.getLabwareLabCode() != null && location.getLabwareLabCode().length() > 0)
+            label = "labwareId" + location.getLabwareLabCode();
         else
-            label = "rowId" + site.getRowId();
+            label = "rowId" + location.getRowId();
         return label.replaceAll("\\W+", "_");
     }
 

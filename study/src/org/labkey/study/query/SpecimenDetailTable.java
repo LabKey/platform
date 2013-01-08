@@ -77,7 +77,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new SiteTable(_schema);
+                return new LocationTable(_schema);
             }
         });
         siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -94,7 +94,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new SiteTable(_schema);
+                return new LocationTable(_schema);
             }
         });
         addColumn(siteLdmsCodeColumn);

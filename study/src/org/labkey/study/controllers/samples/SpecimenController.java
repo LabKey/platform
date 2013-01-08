@@ -18,7 +18,6 @@ package org.labkey.study.controllers.samples;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -32,7 +31,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
@@ -74,8 +72,8 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Location;
 import org.labkey.api.study.SamplesUrls;
-import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -119,6 +117,7 @@ import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.SampleRequest;
 import org.labkey.study.model.SampleRequestActor;
@@ -126,7 +125,6 @@ import org.labkey.study.model.SampleRequestEvent;
 import org.labkey.study.model.SampleRequestRequirement;
 import org.labkey.study.model.SampleRequestStatus;
 import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.model.SpecimenComment;
 import org.labkey.study.model.SpecimenTypeSummary;
@@ -942,7 +940,7 @@ public class SpecimenController extends BaseStudyController
         private List<ActorNotificationRecipientSet> _possibleNotifications;
         protected List<String> _missingSpecimens = null;
         private Boolean _submissionResult;
-        private Site[] _providingSites;
+        private Location[] _providingLocations;
         private ReturnURLString _returnUrl;
 
         public ManageRequestBean(ViewContext context, SampleRequest sampleRequest, boolean forExport, Boolean submissionResult, ReturnURLString returnUrl) throws SQLException, ServletException
@@ -1021,16 +1019,16 @@ public class SpecimenController extends BaseStudyController
             return SampleManager.getInstance().getRequestStatus(_sampleRequest.getContainer(), _sampleRequest.getStatusId());
         }
 
-        public Site getDestinationSite() throws SQLException
+        public Location getDestinationSite() throws SQLException
         {
             Integer destinationSiteId = _sampleRequest.getDestinationSiteId();
             if (destinationSiteId != null)
             {
-                SiteImpl[] sites = StudyManager.getInstance().getSites(_sampleRequest.getContainer());
-                for (SiteImpl site : sites)
+                LocationImpl[] locations = StudyManager.getInstance().getSites(_sampleRequest.getContainer());
+                for (LocationImpl location : locations)
                 {
-                    if (destinationSiteId.intValue() == site.getRowId())
-                        return site;
+                    if (destinationSiteId.intValue() == location.getRowId())
+                        return location;
                 }
             }
             return null;
@@ -1056,9 +1054,9 @@ public class SpecimenController extends BaseStudyController
             return _submissionResult != null && _submissionResult.booleanValue();
         }
 
-        public Site[] getProvidingSites()
+        public Location[] getProvidingLocations()
         {
-            if (_providingSites == null)
+            if (_providingLocations == null)
             {
                 Set<Integer> siteSet = new HashSet<Integer>();
                 for (Specimen specimen : _samples)
@@ -1067,12 +1065,12 @@ public class SpecimenController extends BaseStudyController
                     if (siteId != null)
                         siteSet.add(siteId);
                 }
-                _providingSites = new Site[siteSet.size()];
+                _providingLocations = new Location[siteSet.size()];
                 int i = 0;
                 for (Integer siteId : siteSet)
-                    _providingSites[i++] = StudyManager.getInstance().getSite(getContainer(), siteId);
+                    _providingLocations[i++] = StudyManager.getInstance().getLocation(getContainer(), siteId);
             }
-            return _providingSites;
+            return _providingLocations;
         }
 
         public ReturnURLString getReturnUrl()
@@ -1428,7 +1426,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         private String[] _inputs;
-        private int _destinationSite;
+        private int _destinationLocation;
         private int[] _sampleRowIds;
         private boolean[] _required;
         private boolean _fromGroupedView;
@@ -1445,8 +1443,8 @@ public class SpecimenController extends BaseStudyController
                 for (String input : _inputs)
                     builder.append("<input type=\"hidden\" name=\"inputs\" value=\"").append(PageFlowUtil.filter(input)).append("\">\n");
             }
-            if (_destinationSite != 0)
-                builder.append("<input type=\"hidden\" name=\"destinationSite\" value=\"").append(_destinationSite).append("\">\n");
+            if (_destinationLocation != 0)
+                builder.append("<input type=\"hidden\" name=\"destinationLocation\" value=\"").append(_destinationLocation).append("\">\n");
             if (_returnUrl != null)
                 builder.append("<input type=\"hidden\" name=\"returnUrl\" value=\"").append(PageFlowUtil.filter(_returnUrl)).append("\">\n");
             if (_sampleRowIds != null)
@@ -1496,14 +1494,14 @@ public class SpecimenController extends BaseStudyController
             _sampleRowIds = sampleRowIds;
         }
 
-        public int getDestinationSite()
+        public int getDestinationLocation()
         {
-            return _destinationSite;
+            return _destinationLocation;
         }
 
-        public void setDestinationSite(int destinationSite)
+        public void setDestinationLocation(int destinationLocation)
         {
-            _destinationSite = destinationSite;
+            _destinationLocation = destinationLocation;
         }
 
         public String[] getInputs()
@@ -1622,7 +1620,7 @@ public class SpecimenController extends BaseStudyController
             super(context, requestedSpecimens != null ? requestedSpecimens.getSpecimens() : null, false, false, false, false);
             _errors = errors;
             _inputs = SampleManager.getInstance().getNewSpecimenRequestInputs(context.getContainer());
-            _selectedSite = form.getDestinationSite();
+            _selectedSite = form.getDestinationLocation();
             _inputValues = form.getInputs();
             _container = context.getContainer();
             _returnUrl = form.getReturnUrl();
@@ -1676,7 +1674,7 @@ public class SpecimenController extends BaseStudyController
         public void validateCommand(CreateSampleRequestForm form, Errors errors)
         {
             boolean missingRequiredInput = false;
-            if (form.getDestinationSite() <= 0)
+            if (form.getDestinationLocation() <= 0)
                 missingRequiredInput = true;
 
             for (int i = 0; i < form.getInputs().length && !missingRequiredInput; i++)
@@ -1704,8 +1702,8 @@ public class SpecimenController extends BaseStudyController
             for (int i = 0; i < expectedInputs.length; i++)
             {
                 SampleManager.SpecimenRequestInput expectedInput = expectedInputs[i];
-                if (form.getDestinationSite() != 0 && expectedInput.isRememberSiteValue())
-                    expectedInput.setDefaultSiteValue(getContainer(), form.getDestinationSite(), inputs[i]);
+                if (form.getDestinationLocation() != 0 && expectedInput.isRememberSiteValue())
+                    expectedInput.setDefaultSiteValue(getContainer(), form.getDestinationLocation(), inputs[i]);
                 if (i > 0)
                     comments.append("\n\n");
                 comments.append(expectedInput.getTitle()).append(":\n");
@@ -1722,8 +1720,8 @@ public class SpecimenController extends BaseStudyController
             _sampleRequest.setCreated(ts);
             _sampleRequest.setModified(ts);
             _sampleRequest.setEntityId(GUID.makeGUID());
-            if (form.getDestinationSite() > 0)
-                _sampleRequest.setDestinationSiteId(form.getDestinationSite());
+            if (form.getDestinationLocation() > 0)
+                _sampleRequest.setDestinationSiteId(form.getDestinationLocation());
             _sampleRequest.setStatusId(SampleManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), false).getRowId());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
@@ -1831,19 +1829,19 @@ public class SpecimenController extends BaseStudyController
     public static class SelectSpecimenProviderBean
     {
         private HiddenFormInputGenerator _sourceForm;
-        private SiteImpl[] _possibleSites;
+        private LocationImpl[] _possibleLocations;
         private ActionURL _formTarget;
 
-        public SelectSpecimenProviderBean(HiddenFormInputGenerator sourceForm, SiteImpl[] possibleSites, ActionURL formTarget)
+        public SelectSpecimenProviderBean(HiddenFormInputGenerator sourceForm, LocationImpl[] possibleLocations, ActionURL formTarget)
         {
             _sourceForm = sourceForm;
-            _possibleSites = possibleSites;
+            _possibleLocations = possibleLocations;
             _formTarget = formTarget;
         }
 
-        public SiteImpl[] getPossibleSites()
+        public LocationImpl[] getPossibleLocations()
         {
-            return _possibleSites;
+            return _possibleLocations;
         }
 
         public ActionURL getFormTarget()
@@ -1912,7 +1910,7 @@ public class SpecimenController extends BaseStudyController
     public static class AddToExistingRequestBean extends SamplesViewBean
     {
         private SpecimenRequestQueryView _requestsGrid;
-        private Site[] _providingLocations;
+        private Location[] _providingLocations;
 
         public AddToExistingRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens) throws ServletException
         {
@@ -1954,7 +1952,7 @@ public class SpecimenController extends BaseStudyController
             return _requestsGrid;
         }
 
-        public Site[] getProvidingLocations()
+        public Location[] getProvidingLocations()
         {
             return _providingLocations;
         }
@@ -2164,7 +2162,7 @@ public class SpecimenController extends BaseStudyController
             Integer requirementActorId = _requirement.getActorId();
             Integer notificationActorId = notification.getActor() != null ? notification.getActor().getRowId() : null;
             Integer requirementSiteId = _requirement.getSiteId();
-            Integer notificationSiteId = notification.getSite() != null ? notification.getSite().getRowId() : null;
+            Integer notificationSiteId = notification.getLocation() != null ? notification.getLocation().getRowId() : null;
             return nullSafeEqual(requirementActorId, notificationActorId) &&
                     nullSafeEqual(requirementSiteId, notificationSiteId);
         }
@@ -2692,8 +2690,8 @@ public class SpecimenController extends BaseStudyController
             if (request == null)
                 throw new NotFoundException();
 
-            SiteImpl receivingSite = StudyManager.getInstance().getSite(getContainer(), request.getDestinationSiteId());
-            if (receivingSite == null)
+            LocationImpl receivingLocation = StudyManager.getInstance().getLocation(getContainer(), request.getDestinationSiteId());
+            if (receivingLocation == null)
                 throw new NotFoundException();
 
             final LabSpecimenListsBean.Type type;
@@ -2706,7 +2704,7 @@ public class SpecimenController extends BaseStudyController
                 throw new NotFoundException();
             }
 
-            Map<SiteImpl, List<ActorNotificationRecipientSet>> notifications = new HashMap<SiteImpl, List<ActorNotificationRecipientSet>>();
+            Map<LocationImpl, List<ActorNotificationRecipientSet>> notifications = new HashMap<LocationImpl, List<ActorNotificationRecipientSet>>();
             if (form.getNotify() != null)
             {
                 for (String tuple : form.getNotify())
@@ -2717,27 +2715,27 @@ public class SpecimenController extends BaseStudyController
                     int[] ids = new int[3];
                     for (int i = 0; i < 3; i++)
                         ids[i] = Integer.parseInt(idStrs[i]);
-                    SiteImpl originatingOrProvidingSite = StudyManager.getInstance().getSite(getContainer(), ids[0]);
+                    LocationImpl originatingOrProvidingLocation = StudyManager.getInstance().getLocation(getContainer(), ids[0]);
                     SampleRequestActor notifyActor = SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), ids[1]);
-                    SiteImpl notifySite = null;
+                    LocationImpl notifyLocation = null;
                     if (notifyActor.isPerSite() && ids[2] >= 0)
-                        notifySite = StudyManager.getInstance().getSite(getContainer(), ids[2]);
-                    List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingSite);
+                        notifyLocation = StudyManager.getInstance().getLocation(getContainer(), ids[2]);
+                    List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingLocation);
                     if (emailRecipients == null)
                     {
                         emailRecipients = new ArrayList<ActorNotificationRecipientSet>();
-                        notifications.put(originatingOrProvidingSite, emailRecipients);
+                        notifications.put(originatingOrProvidingLocation, emailRecipients);
                     }
-                    emailRecipients.add(new ActorNotificationRecipientSet(notifyActor, notifySite));
+                    emailRecipients.add(new ActorNotificationRecipientSet(notifyActor, notifyLocation));
                 }
 
 
-                for (final SiteImpl originatingOrProvidingSite : notifications.keySet())
+                for (final LocationImpl originatingOrProvidingLocation : notifications.keySet())
                 {
                     List<AttachmentFile> formFiles = getAttachmentFileList();
                     if (form.isSendTsv())
                     {
-                        TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingSite, receivingSite, type);
+                        TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingLocation, receivingLocation, type);
                         StringBuilder tsvBuilder = new StringBuilder();
                         tsvWriter.write(tsvBuilder);
                         formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(), "text/tsv"));
@@ -2750,7 +2748,7 @@ public class SpecimenController extends BaseStudyController
                         {
                             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
                             ostream = new BufferedOutputStream(byteStream);
-                            ExcelWriter xlsWriter = getUtils().getSpecimenListXlsWriter(request, originatingOrProvidingSite, receivingSite, type);
+                            ExcelWriter xlsWriter = getUtils().getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type);
                             xlsWriter.write(ostream);
                             ostream.flush();
                             formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + ".xls", byteStream.toByteArray(), "application/vnd.ms-excel"));
@@ -2766,20 +2764,20 @@ public class SpecimenController extends BaseStudyController
                     if (form.getComments() != null)
                         content.append(form.getComments());
 
-                    String header = type.getDisplay() + " location notification of specimen shipment to " + receivingSite.getDisplayName();
+                    String header = type.getDisplay() + " location notification of specimen shipment to " + receivingLocation.getDisplayName();
                     try
                     {
                         SampleRequestEvent event = SampleManager.getInstance().createRequestEvent(getUser(), request,
                             SampleManager.RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
 
-                        List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingSite);
+                        List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingLocation);
                             DefaultRequestNotification notification = new DefaultRequestNotification(request, emailRecipients,
                                 header, event, content.toString(), null, getViewContext())
                         {
                             @Override
                             protected Specimen[] getSpecimenList() throws SQLException
                             {
-                                SimpleFilter filter = getUtils().getSpecimenListFilter(getSampleRequest(), originatingOrProvidingSite, type);
+                                SimpleFilter filter = getUtils().getSpecimenListFilter(getSampleRequest(), originatingOrProvidingLocation, type);
                                 return Table.select(StudySchema.getInstance().getTableInfoSpecimenDetail(), Table.ALL_COLUMNS, filter, null, Specimen.class);
                             }
 
@@ -2885,9 +2883,9 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(ExportSiteForm form, BindException errors) throws Exception
         {
             SampleRequest sampleRequest = SampleManager.getInstance().getRequest(getContainer(), form.getId());
-            SiteImpl sourceSite = StudyManager.getInstance().getSite(getContainer(), form.getSourceSiteId());
-            SiteImpl destSite = StudyManager.getInstance().getSite(getContainer(), form.getDestSiteId());
-            if (sampleRequest == null || sourceSite == null || destSite == null)
+            LocationImpl sourceLocation = StudyManager.getInstance().getLocation(getContainer(), form.getSourceSiteId());
+            LocationImpl destLocation = StudyManager.getInstance().getLocation(getContainer(), form.getDestSiteId());
+            if (sampleRequest == null || sourceLocation == null || destLocation == null)
                 throw new NotFoundException();
 
             LabSpecimenListsBean.Type type = LabSpecimenListsBean.Type.valueOf(form.getListType());
@@ -2895,13 +2893,13 @@ public class SpecimenController extends BaseStudyController
             {
                 if (EXPORT_TSV.equals(form.getExport()))
                 {
-                    TSVGridWriter writer = getUtils().getSpecimenListTsvWriter(sampleRequest, sourceSite, destSite, type);
+                    TSVGridWriter writer = getUtils().getSpecimenListTsvWriter(sampleRequest, sourceLocation, destLocation, type);
                     writer.setExportAsWebPage(form.isExportAsWebPage());
                     writer.write(getViewContext().getResponse());
                 }
                 else if (EXPORT_XLS.equals(form.getExport()))
                 {
-                    ExcelWriter writer = getUtils().getSpecimenListXlsWriter(sampleRequest, sourceSite, destSite, type);
+                    ExcelWriter writer = getUtils().getSpecimenListXlsWriter(sampleRequest, sourceLocation, destLocation, type);
                     writer.write(getViewContext().getResponse());
                 }
             }
@@ -3030,18 +3028,18 @@ public class SpecimenController extends BaseStudyController
                 Specimen[] specimens = _sampleRequest.getSpecimens();
                 for (Specimen specimen : specimens)
                 {
-                    SiteImpl site;
+                    LocationImpl location;
                     if (_type == LabSpecimenListsBean.Type.ORIGINATING)
-                        site = SampleManager.getInstance().getOriginatingSite(specimen);
+                        location = SampleManager.getInstance().getOriginatingLocation(specimen);
                     else
-                        site = SampleManager.getInstance().getCurrentSite(specimen);
-                    if (site != null)
+                        location = SampleManager.getInstance().getCurrentLocation(specimen);
+                    if (location != null)
                     {
-                        List<Specimen> current = _specimensBySiteId.get(site.getRowId());
+                        List<Specimen> current = _specimensBySiteId.get(location.getRowId());
                         if (current == null)
                         {
                             current = new ArrayList<Specimen>();
-                            _specimensBySiteId.put(site.getRowId(), current);
+                            _specimensBySiteId.put(location.getRowId(), current);
                         }
                         current.add(specimen);
                     }
@@ -3057,19 +3055,19 @@ public class SpecimenController extends BaseStudyController
             return _possibleNotifications;
         }
 
-        public Set<SiteImpl> getLabs()
+        public Set<LocationImpl> getLabs()
         {
             Map<Integer, List<Specimen>> siteIdToSpecimens = getSpecimensBySiteId();
-            Set<SiteImpl> sites = new HashSet<SiteImpl>(siteIdToSpecimens.size());
+            Set<LocationImpl> locations = new HashSet<LocationImpl>(siteIdToSpecimens.size());
             for (Integer siteId : siteIdToSpecimens.keySet())
-                sites.add(StudyManager.getInstance().getSite(_sampleRequest.getContainer(), siteId));
-            return sites;
+                locations.add(StudyManager.getInstance().getLocation(_sampleRequest.getContainer(), siteId));
+            return locations;
         }
 
-        public List<Specimen> getSpecimens(SiteImpl site)
+        public List<Specimen> getSpecimens(LocationImpl location)
         {
             Map<Integer, List<Specimen>> siteSpecimenLists = getSpecimensBySiteId();
-            return siteSpecimenLists.get(site.getRowId());
+            return siteSpecimenLists.get(location.getRowId());
         }
 
         public Type getType()

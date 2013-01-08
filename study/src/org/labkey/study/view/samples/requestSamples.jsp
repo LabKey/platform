@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.study.SampleManager"%>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
-<%@ page import="org.labkey.study.model.SiteImpl"%>
+<%@ page import="org.labkey.study.model.LocationImpl"%>
 <%@ page import="org.labkey.study.model.Specimen"%>
 <%@ page import="org.labkey.study.model.StudyManager"%>
 <%@ page import="org.springframework.validation.BindException" %>
@@ -33,7 +33,7 @@
     JspView<SpecimenController.NewRequestBean> me = (JspView<SpecimenController.NewRequestBean>) HttpView.currentView();
     SpecimenController.NewRequestBean bean = me.getModelBean();
     ViewContext context = me.getViewContext();
-    List<SiteImpl> sites = StudyManager.getInstance().getValidRequestingLocations(context.getContainer());
+    List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(context.getContainer());
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
     Specimen[] specimens = bean.getSamples();
     SampleManager.SpecimenRequestInput[] inputs = bean.getInputs();
@@ -76,7 +76,7 @@ DefaultValues['input<%= i %>'] = new Object();
 
 function setDefaults()
 {
-    var siteId = document.getElementById('destinationSite').value;
+    var siteId = document.getElementById('destinationLocation').value;
     for (var elementId in DefaultValues)
     {
         var elem = document.getElementById(elementId);
@@ -119,14 +119,14 @@ function setDefaults()
         </tr>
         <tr>
             <td>
-                <select id='destinationSite' name="destinationSite" onChange="setDefaults()">
+                <select id='destinationLocation' name="destinationLocation" onChange="setDefaults()">
                     <option value="0"></option>
                     <%
-                        for (SiteImpl site : sites)
+                        for (LocationImpl location : locations)
                         {
                     %>
-                    <option value="<%= site.getRowId() %>" <%= text(bean.getSelectedSite() == site.getRowId() ? "SELECTED" : "")%>>
-                        <%= h(site.getDisplayName()) %>
+                    <option value="<%= location.getRowId() %>" <%= text(bean.getSelectedSite() == location.getRowId() ? "SELECTED" : "")%>>
+                        <%= h(location.getDisplayName()) %>
                     </option>
                     <%
                         }

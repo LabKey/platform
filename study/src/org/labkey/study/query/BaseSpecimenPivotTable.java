@@ -24,8 +24,8 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SampleManager;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.PrimaryType;
-import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.SpecimenTypeSummary;
 
 import java.sql.SQLException;
@@ -298,17 +298,17 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     {
         Map<Integer, NameLabelPair> siteMap = new HashMap<Integer, NameLabelPair>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        SiteImpl[] sites = SampleManager.getInstance().getSites(container);
+        LocationImpl[] locations = SampleManager.getInstance().getSites(container);
 
-        for (SiteImpl site : sites)
+        for (LocationImpl location : locations)
         {
-            legalMap.putName(site.getLabel(), site.getRowId());
+            legalMap.putName(location.getLabel(), location.getRowId());
         }
 
-        for (SiteImpl site : sites)
+        for (LocationImpl location : locations)
         {
-            siteMap.put(site.getRowId(), new NameLabelPair(
-                    getLabel(site.getLabel(), site.getRowId(), legalMap), site.getLabel()));
+            siteMap.put(location.getRowId(), new NameLabelPair(
+                    getLabel(location.getLabel(), location.getRowId(), legalMap), location.getLabel()));
         }
         return siteMap;
     }

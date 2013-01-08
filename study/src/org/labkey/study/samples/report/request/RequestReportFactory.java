@@ -16,7 +16,7 @@
 package org.labkey.study.samples.report.request;
 
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.study.Site;
+import org.labkey.api.study.Location;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.VisitImpl;
@@ -44,8 +44,8 @@ public class RequestReportFactory extends BaseRequestReportFactory
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        Site[] sites = SampleManager.getInstance().getSitesWithRequests(getContainer());
-        if (sites == null)
+        Location[] locations = SampleManager.getInstance().getSitesWithRequests(getContainer());
+        if (locations == null)
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
         VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());

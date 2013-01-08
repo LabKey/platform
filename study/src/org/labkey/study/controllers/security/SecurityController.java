@@ -541,8 +541,8 @@ public class SecurityController extends SpringActionController
             if (redirect != null)
                 dsView.addObject("redirect", redirect.getLocalURIString());
 
-            JspView<StudyImpl> siteView = new JspView<StudyImpl>("/org/labkey/study/security/sites.jsp", study);
-            siteView.setTitle("Restricted Dataset Permissions (per Site)");
+            JspView<StudyImpl> siteView = new JspView<StudyImpl>("/org/labkey/study/security/locations.jsp", study);
+            siteView.setTitle("Restricted Dataset Permissions (per Location)");
 
             VBox v = new VBox();
             v.addView(studySecurityView);

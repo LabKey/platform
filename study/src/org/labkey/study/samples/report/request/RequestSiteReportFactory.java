@@ -16,12 +16,12 @@
 package org.labkey.study.samples.report.request;
 
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.study.Site;
+import org.labkey.api.study.Location;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenController;
-import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReport;
@@ -55,29 +55,29 @@ public class RequestSiteReportFactory extends BaseRequestReportFactory
 
     public String getLabel()
     {
-        Site site = _siteId != null ? StudyManager.getInstance().getSite(getContainer(), _siteId) : null;
-        return "By Requesting Location" + (site != null ? ": " + site.getLabel() : "");
+        Location location = _siteId != null ? StudyManager.getInstance().getLocation(getContainer(), _siteId) : null;
+        return "By Requesting Location" + (location != null ? ": " + location.getLabel() : "");
     }
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        SiteImpl[] sites;
+        LocationImpl[] locations;
         if (getSiteId() != null)
-            sites = new SiteImpl[] { StudyManager.getInstance().getSite(getContainer(), getSiteId()) };
+            locations = new LocationImpl[] { StudyManager.getInstance().getLocation(getContainer(), getSiteId()) };
         else
-            sites = SampleManager.getInstance().getSitesWithRequests(getContainer());
-        if (sites == null)
+            locations = SampleManager.getInstance().getSitesWithRequests(getContainer());
+        if (locations == null)
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
         VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
-        for (SiteImpl site : sites)
+        for (LocationImpl location : locations)
         {
             SimpleFilter filter = new SimpleFilter();
             Object[] params;
             if (isCompletedRequestsOnly())
-                params = new Object[] { Boolean.TRUE, Boolean.TRUE, site.getRowId(), getContainer().getId()};
+                params = new Object[] { Boolean.TRUE, Boolean.TRUE, location.getRowId(), getContainer().getId()};
             else
-                params = new Object[] { Boolean.TRUE, site.getRowId(), getContainer().getId()};
+                params = new Object[] { Boolean.TRUE, location.getRowId(), getContainer().getId()};
             filter.addWhereClause("globaluniqueid IN\n" +
                     "(\n" +
                     "     SELECT specimenglobaluniqueid FROM study.samplerequestspecimen WHERE samplerequestid IN\n" +
@@ -90,7 +90,7 @@ public class RequestSiteReportFactory extends BaseRequestReportFactory
                     "     )\n" +
                     ")", params);
             addBaseFilters(filter);
-            reports.add(new RequestSiteReport(site.getLabel(), filter, this, visits, site.getRowId(), isCompletedRequestsOnly()));
+            reports.add(new RequestSiteReport(location.getLabel(), filter, this, visits, location.getRowId(), isCompletedRequestsOnly()));
         }
         return reports;
     }
@@ -105,13 +105,13 @@ public class RequestSiteReportFactory extends BaseRequestReportFactory
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"siteId\">\n" +
                 "<option value=\"\">All Requesting Locations</option>\n");
-        for (SiteImpl site : SampleManager.getInstance().getSitesWithRequests(getContainer()))
+        for (LocationImpl location : SampleManager.getInstance().getSitesWithRequests(getContainer()))
         {
-            builder.append("<option value=\"").append(site.getRowId()).append("\"");
-            if (_siteId != null && site.getRowId() == _siteId)
+            builder.append("<option value=\"").append(location.getRowId()).append("\"");
+            if (_siteId != null && location.getRowId() == _siteId)
                 builder.append(" SELECTED");
             builder.append(">");
-            builder.append(PageFlowUtil.filter(site.getLabel()));
+            builder.append(PageFlowUtil.filter(location.getLabel()));
             builder.append("</option>\n");
         }
         builder.append("</select>");

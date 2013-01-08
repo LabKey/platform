@@ -18,19 +18,18 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.model.SampleRequestRequirement"%>
-<%@ page import="org.labkey.study.model.SiteImpl"%>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="java.util.List"%>
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.study.Site" %>
+<%@ page import="org.labkey.api.study.Location" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ManageRequirementBean> me = (JspView<SpecimenController.ManageRequirementBean>) HttpView.currentView();
     SpecimenController.ManageRequirementBean bean = me.getModelBean();
     SampleRequestRequirement requirement = bean.getRequirement();
-    Site site = requirement.getSite();
-    String siteLabel = site != null ? site.getDisplayName() : "N/A";
+    Location location = requirement.getLocation();
+    String locationLabel = location != null ? location.getDisplayName() : "N/A";
 
     String deleteURL = buildURL(SpecimenController.DeleteRequirementAction.class, "id=" + requirement.getRequestId() +
             "&requirementId=" + requirement.getRowId());
@@ -49,7 +48,7 @@
     <tr>
         <td class="labkey-form-label">
             This request is in a final state; no changes are allowed.<br>
-            To make changes, you must <a href="<%=buildURL(SpecimenController.ManageRequestStatusAction.class) + "id=" + requirement.getRequestId() %>">
+            To make changes, you must <a href="<%=text(buildURL(SpecimenController.ManageRequestStatusAction.class) + "id=" + requirement.getRequestId()) %>">
             change the request's status</a> to a non-final state.
         </td>
     </tr>
@@ -64,15 +63,15 @@
             <table>
                 <tr>
                     <th align="left">Actor</th>
-                    <td><%= requirement.getActor().getLabel() %></td>
+                    <td><%= h(requirement.getActor().getLabel()) %></td>
                 </tr>
                 <tr>
-                    <th align="left">Site</th>
-                    <td><%= siteLabel %></td>
+                    <th align="left">Location</th>
+                    <td><%= h(locationLabel) %></td>
                 </tr>
                 <tr>
                     <th align="left">Description</th>
-                    <td><%= requirement.getDescription() %></td>
+                    <td><%= text(requirement.getDescription()) %></td>
                 </tr>
                 <%
                     if (!bean.isRequestManager())
@@ -81,8 +80,8 @@
                 <tr>
                     <th align="left">Status</th>
                     <td>
-                        <span class="<%= requirement.isComplete() ? "labkey-message" : "labkey-error"%>" style="font-weight:bold;">
-                            <%= requirement.isComplete() ? "Complete" : "Incomplete" %>
+                        <span class="<%= text(requirement.isComplete() ? "labkey-message" : "labkey-error")%>" style="font-weight:bold;">
+                            <%= text(requirement.isComplete() ? "Complete" : "Incomplete") %>
                         </span>
                     </td>
                 </tr>
@@ -113,7 +112,7 @@
                         <td>&nbsp;</td>
                         <th align="left">
                             <input type="checkbox"
-                                   name="complete" <%= requirement.isComplete() ? "CHECKED" : ""%>>
+                                   name="complete" <%= text(requirement.isComplete() ? "CHECKED" : "")%>>
                             Complete
                         </th>
                     </tr>
@@ -142,8 +141,8 @@
                             %>
                             <input type="checkbox"
                                    name="notificationIdPairs"
-                                   value="<%= possibleNotification.getFormValue() %>" <%= hasEmailAddresses ? "" : "DISABLED" %>
-                                   <%= hasEmailAddresses && bean.isDefaultNotification(possibleNotification) ? "CHECKED" : "" %>>
+                                   value="<%= text(possibleNotification.getFormValue()) %>" <%= text(hasEmailAddresses ? "" : "DISABLED") %>
+                                   <%= text(hasEmailAddresses && bean.isDefaultNotification(possibleNotification) ? "CHECKED" : "") %>>
                             <%= h(possibleNotification.getShortRecipientDescription())%><%= hasEmailAddresses ?
                                 helpPopup("Group Members", possibleNotification.getEmailAddresses("<br>") + "<br>" +
                                         possibleNotification.getConfigureEmailsLinkHTML(), true) :

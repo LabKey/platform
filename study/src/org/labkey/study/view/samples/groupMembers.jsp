@@ -79,10 +79,10 @@
         <input type="hidden" name="id" value="<%= bean.getActor().getRowId() %>">
 
         <%
-            if (bean.getSite() != null)
+            if (bean.getLocation() != null)
             {
         %>
-            <input type="hidden" name="siteId" value="<%= bean.getSite().getRowId() %>">
+            <input type="hidden" name="locationId" value="<%= bean.getLocation().getRowId() %>">
         <%
             }
         %>

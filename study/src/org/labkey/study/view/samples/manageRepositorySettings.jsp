@@ -33,11 +33,11 @@
 %>
 <form action="<%=h(buildURL(SpecimenController.ManageRepositorySettingsAction.class))%>" method="POST">
     <div>
-        <input type="radio" name="simple" value="true" <%=settings.isSimple() ? "CHECKED" : "" %>> Standard Specimen Repository - allows you to upload a list of available specimens
+        <input type="radio" name="simple" value="true" <%=text(settings.isSimple() ? "CHECKED" : "") %>> Standard Specimen Repository - allows you to upload a list of available specimens
     </div>
     <div>
-        <input type="radio" name="simple" value="false" <%=settings.isSimple() ? "" : "CHECKED" %>> Advanced (External) Specimen Repository -
-                relies on an external set of tools to track movement of specimens between sites. The advanced system also enables a customizable specimen
+        <input type="radio" name="simple" value="false" <%=text(settings.isSimple() ? "" : "CHECKED") %>> Advanced (External) Specimen Repository -
+                relies on an external set of tools to track movement of specimens between locations. The advanced system also enables a customizable specimen
                 request system.
     </div>
     <br/>

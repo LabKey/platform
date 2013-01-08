@@ -3051,6 +3051,7 @@ study/src/org/labkey/study/model/DatasetReorderer.java -text
 study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
+study/src/org/labkey/study/model/LocationImpl.java -text
 study/src/org/labkey/study/model/Participant.java -text
 study/src/org/labkey/study/model/ParticipantCategoryImpl.java -text
 study/src/org/labkey/study/model/ParticipantCategoryListener.java -text
@@ -3070,7 +3071,6 @@ study/src/org/labkey/study/model/SampleRequestRequirement.java -text
 study/src/org/labkey/study/model/SampleRequestStatus.java -text
 study/src/org/labkey/study/model/SecurityType.java -text
 study/src/org/labkey/study/model/SequenceNumImportHelper.java -text
-study/src/org/labkey/study/model/SiteImpl.java -text
 study/src/org/labkey/study/model/Specimen.java -text
 study/src/org/labkey/study/model/SpecimenComment.java -text
 study/src/org/labkey/study/model/SpecimenEvent.java -text
@@ -3141,6 +3141,7 @@ study/src/org/labkey/study/query/DatasetUpdateService.java -text
 study/src/org/labkey/study/query/DerivativeTypeTable.java -text
 study/src/org/labkey/study/query/ExtensibleObjectQueryView.java -text
 study/src/org/labkey/study/query/LocationSpecimenListTable.java -text
+study/src/org/labkey/study/query/LocationTable.java -text
 study/src/org/labkey/study/query/ParticipantCategoryTable.java -text
 study/src/org/labkey/study/query/ParticipantDataSetTable.java -text
 study/src/org/labkey/study/query/ParticipantGroupCohortUnionTable.java -text
@@ -3154,7 +3155,6 @@ study/src/org/labkey/study/query/PtidObfuscatingDisplayColumn.java -text
 study/src/org/labkey/study/query/PublishedRecordQueryView.java -text
 study/src/org/labkey/study/query/QCStateTable.java -text
 study/src/org/labkey/study/query/SimpleSpecimenTable.java -text
-study/src/org/labkey/study/query/SiteTable.java -text
 study/src/org/labkey/study/query/SpecimenCommentTable.java -text
 study/src/org/labkey/study/query/SpecimenDetailTable.java -text
 study/src/org/labkey/study/query/SpecimenEventQueryView.java -text
@@ -3247,6 +3247,7 @@ study/src/org/labkey/study/samples/settings/RepositorySettings.java -text
 study/src/org/labkey/study/samples/settings/RequestNotificationSettings.java -text
 study/src/org/labkey/study/samples/settings/StatusSettings.java -text
 study/src/org/labkey/study/security/datasets.jsp -text
+study/src/org/labkey/study/security/locations.jsp -text
 study/src/org/labkey/study/security/permissions/LockSpecimensPermission.java -text
 study/src/org/labkey/study/security/permissions/ManageDisplaySettingsPermission.java -text
 study/src/org/labkey/study/security/permissions/ManageNewRequestFormPermission.java -text
@@ -3263,7 +3264,6 @@ study/src/org/labkey/study/security/roles/AbstractSpecimenRole.java -text
 study/src/org/labkey/study/security/roles/AssayDesignerRole.java -text
 study/src/org/labkey/study/security/roles/SpecimenCoordinatorRole.java -text
 study/src/org/labkey/study/security/roles/SpecimenRequesterRole.java -text
-study/src/org/labkey/study/security/sites.jsp -text
 study/src/org/labkey/study/security/study.jsp -text
 study/src/org/labkey/study/security/studySecurity.jsp -text
 study/src/org/labkey/study/view/AssayBaseWebPartFactory.java -text

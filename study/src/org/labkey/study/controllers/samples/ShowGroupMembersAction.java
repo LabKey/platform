@@ -33,7 +33,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.SampleRequestActor;
-import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
 import org.springframework.validation.BindException;
@@ -41,7 +41,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +48,7 @@ import java.util.List;
 public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersAction.UpdateGroupForm>
 {
     private SampleRequestActor _actor;
-    private SiteImpl _site;
+    private LocationImpl _location;
 
     public void validateCommand(UpdateGroupForm target, Errors errors)
     {
@@ -58,22 +57,22 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     public ModelAndView getView(UpdateGroupForm form, boolean reshow, BindException errors) throws Exception
     {
         SampleRequestActor actor = getActor(form);
-        SiteImpl site = getSite(form);
+        LocationImpl location = getLocation(form);
 
         if (actor == null)
             throw new NotFoundException();
 
-        User[] members = actor.getMembers(site);
+        User[] members = actor.getMembers(location);
 
         return new JspView<GroupMembersBean>("/org/labkey/study/view/samples/groupMembers.jsp",
-                new GroupMembersBean(actor, site, members, form.getReturnUrl()), errors);
+                new GroupMembersBean(actor, location, members, form.getReturnUrl()), errors);
     }
 
     public boolean handlePost(UpdateGroupForm form, BindException errors) throws Exception
     {
         String[] emailsToDelete = form.getDelete();
         SampleRequestActor actor = getActor(form);
-        SiteImpl site = getSite(form);
+        LocationImpl location = getLocation(form);
 
         if (emailsToDelete != null && emailsToDelete.length > 0)
         {
@@ -89,7 +88,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                     users[i++] = UserManager.getUser(email);
                     assert users[i - 1] != null : email.getEmailAddress() + " is not associated with a user account.";
                 }
-                actor.removeMembers(site, users);
+                actor.removeMembers(location, users);
             }
             else
                 throw new ServletException("Invalid email address" + (invalidEmails.size() > 1 ? "es: " : ": ") + StringUtils.join(invalidEmails.toArray()));
@@ -134,7 +133,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                 }
             }
 
-            actor.addMembers(site, newMembers.toArray(new User[newMembers.size()]));
+            actor.addMembers(location, newMembers.toArray(new User[newMembers.size()]));
         }
 
         return !errors.hasErrors();
@@ -156,14 +155,14 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     {
         BaseStudyController._appendManageStudy(root, getViewContext().getContainer(), getViewContext().getUser());
 
-        if (_site != null)
+        if (_location != null)
             root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getViewContext().getContainer()).addParameter("showMemberSites", _actor.getRowId()));
         else
             root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getViewContext().getContainer()));
 
         String title = _actor.getLabel();
-        if (_site != null)
-            title += ", " + _site.getLabel();
+        if (_location != null)
+            title += ", " + _location.getLabel();
 
         root.addChild(title);
 
@@ -178,30 +177,30 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         return _actor;
     }
 
-    private SiteImpl getSite(UpdateGroupForm form)
+    private LocationImpl getLocation(UpdateGroupForm form)
     {
-        if (_site == null && form.getSiteId() != null)
-            _site = StudyManager.getInstance().getSite(getViewContext().getContainer(), form.getSiteId());
+        if (_location == null && form.getLocationId() != null)
+            _location = StudyManager.getInstance().getLocation(getViewContext().getContainer(), form.getLocationId());
 
-        return _site;
+        return _location;
     }
 
     public static class UpdateGroupForm extends SpecimenController.IdForm
     {
-        private Integer _siteId;
+        private Integer _locationId;
         private String[] _delete;
         private boolean _sendEmail;
         private String _names;
         private ReturnURLString _returnUrl;
 
-        public Integer getSiteId()
+        public Integer getLocationId()
         {
-            return _siteId;
+            return _locationId;
         }
 
-        public void setSiteId(Integer siteId)
+        public void setLocationId(Integer locationId)
         {
-            _siteId = siteId;
+            _locationId = locationId;
         }
 
         public String getNames()
@@ -248,15 +247,15 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     public static class GroupMembersBean
     {
         private SampleRequestActor _actor;
-        private SiteImpl _site;
+        private LocationImpl _location;
         private User[] _members;
         private String _ldapDomain;
         private ReturnURLString _returnUrl;
 
-        public GroupMembersBean(SampleRequestActor actor, SiteImpl site, User[] members, ReturnURLString returnUrl)
+        public GroupMembersBean(SampleRequestActor actor, LocationImpl location, User[] members, ReturnURLString returnUrl)
         {
             _actor = actor;
-            _site = site;
+            _location = location;
             _members = members;
             _ldapDomain = AuthenticationManager.getLdapDomain();
             _returnUrl = returnUrl;
@@ -272,9 +271,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             return _members;
         }
 
-        public SiteImpl getSite()
+        public LocationImpl getLocation()
         {
-            return _site;
+            return _location;
         }
 
         public String getLdapDomain()

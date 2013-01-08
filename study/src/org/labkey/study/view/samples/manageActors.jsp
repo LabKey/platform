@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.model.SiteImpl"%>
+<%@ page import="org.labkey.study.model.LocationImpl"%>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -81,14 +81,14 @@
                 <%
                     if (showMemberSitesId == actor.getRowId())
                     {
-                        if (study.getSites().length > 0)
+                        if (study.getLocations().length > 0)
                         {
                     %>
                         <b>Choose Site</b>:<br>
                         <%
-                            for (SiteImpl site : study.getSites())
+                            for (LocationImpl location : study.getLocations())
                             {
-                            %><a href="<%= h(buildURL(ShowGroupMembersAction.class)) + "id=" + actor.getRowId() + "&siteId=" + site.getRowId() %>"><%= h(site.getDisplayName()) %></a><br><%
+                            %><a href="<%= h(buildURL(ShowGroupMembersAction.class)) + "id=" + actor.getRowId() + "&locationId=" + location.getRowId() %>"><%= h(location.getDisplayName()) %></a><br><%
                             }
                         }
                         else

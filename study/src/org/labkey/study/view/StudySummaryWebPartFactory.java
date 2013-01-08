@@ -23,7 +23,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Site;
+import org.labkey.api.study.Location;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -86,9 +86,9 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return getStudy().getDataSets();
         }
 
-        public Site[] getSites() throws SQLException
+        public Location[] getSites() throws SQLException
         {
-            return getStudy().getSites();
+            return getStudy().getLocations();
         }
 
         public Cohort[] getCohorts(User user) throws SQLException

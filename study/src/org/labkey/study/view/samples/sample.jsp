@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.study.Site"%>
+<%@ page import="org.labkey.api.study.Location"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -30,7 +30,7 @@
     JspView<SpecimenController.SpecimenEventBean> me = (JspView<SpecimenController.SpecimenEventBean>) HttpView.currentView();
     SpecimenController.SpecimenEventBean bean = me.getModelBean();
     Specimen sample = bean.getSpecimen();
-    Site originatingLocation = SampleManager.getInstance().getOriginatingSite(sample);
+    Location originatingLocation = SampleManager.getInstance().getOriginatingLocation(sample);
     SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(sample);
     ActionURL commentsLink = new ActionURL(SpecimenController.UpdateCommentsAction.class, sample.getContainer());
     commentsLink.addParameter("rowId", sample.getRowId());
@@ -91,7 +91,7 @@ if (comment != null)
     {
 %>
     <br><strong>NOTE</strong>: Quality control state for this vial was set manually; it will remain
-    <%= comment.isQualityControlFlag() ? "flagged" : "unflagged" %> until manually changed.<br>
+    <%= text(comment.isQualityControlFlag() ? "flagged" : "unflagged") %> until manually changed.<br>
 <%
     }
 }

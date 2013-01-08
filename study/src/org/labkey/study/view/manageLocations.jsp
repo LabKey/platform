@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.SiteImpl"%>
+<%@ page import="org.labkey.study.model.LocationImpl"%>
 <%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -27,7 +27,7 @@
     StudyImpl study = me.getModelBean();
 %>
 <labkey:errors/>
-<form action="<%=h(buildURL(StudyController.ManageSitesAction.class))%>" method="POST">
+<form action="<%=h(buildURL(StudyController.ManageLocationsAction.class))%>" method="POST">
     <table>
         <tr>
             <th>&nbsp;</th>
@@ -36,20 +36,20 @@
             <th>Location Type</th>
         </tr>
         <%
-            for (SiteImpl site : study.getSites())
+            for (LocationImpl location : study.getLocations())
             {
         %>
             <tr>
                 <td>&nbsp;</td>
                 <td align="center">
-                    <%= site.getLdmsLabCode()%>
-                    <input type="hidden" name="ids" value="<%= site.getRowId()%>">
+                    <%= location.getLdmsLabCode()%>
+                    <input type="hidden" name="ids" value="<%= location.getRowId()%>">
                 </td>
                 <td>
-                    <input type="text" name="labels" size="40" value="<%= site.getLabel() != null ? h(site.getLabel()) : "" %>">
+                    <input type="text" name="labels" size="40" value="<%= text(location.getLabel() != null ? h(location.getLabel()) : "") %>">
                 </td>
                 <td>
-                    <%= h(site.getTypeString()) %>
+                    <%= h(location.getTypeString()) %>
                 </td>
             </tr>
         <%

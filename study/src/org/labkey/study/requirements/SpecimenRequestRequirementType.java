@@ -17,9 +17,9 @@
 package org.labkey.study.requirements;
 
 import org.labkey.study.SampleManager;
+import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.SampleRequest;
 import org.labkey.study.model.SampleRequestRequirement;
-import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.Specimen;
 
 import java.util.ArrayList;
@@ -47,9 +47,9 @@ public enum SpecimenRequestRequirementType implements RequirementType
                         Set<Integer> originatingSiteIds = new HashSet<Integer>();
                         for (Specimen specimen : specimens)
                         {
-                            SiteImpl originatingSite = SampleManager.getInstance().getOriginatingSite(specimen);
-                            if (originatingSite != null)
-                                originatingSiteIds.add(originatingSite.getRowId());
+                            LocationImpl originatingLocation = SampleManager.getInstance().getOriginatingLocation(specimen);
+                            if (originatingLocation != null)
+                                originatingSiteIds.add(originatingLocation.getRowId());
                         }
                         for (Integer siteId : originatingSiteIds)
                         {
@@ -74,9 +74,9 @@ public enum SpecimenRequestRequirementType implements RequirementType
                         Set<Integer> providerSiteIds = new HashSet<Integer>();
                         for (Specimen specimen : specimens)
                         {
-                            SiteImpl providingSite = SampleManager.getInstance().getCurrentSite(specimen);
-                            if (providingSite != null)
-                                providerSiteIds.add(providingSite.getRowId());
+                            LocationImpl providingLocation = SampleManager.getInstance().getCurrentLocation(specimen);
+                            if (providingLocation != null)
+                                providerSiteIds.add(providingLocation.getRowId());
                         }
                         for (Integer siteId : providerSiteIds)
                         {
