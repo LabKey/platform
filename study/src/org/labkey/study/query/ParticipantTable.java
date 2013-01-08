@@ -123,8 +123,9 @@ public class ParticipantTable extends FilteredTable
         addColumn(initialCohortColumn);
 
         ForeignKey fkSite = LocationTable.fkFor(_schema);
-        addWrapColumn(_rootTable.getColumn("EnrollmentSiteId")).setFk(fkSite);
-        addWrapColumn(_rootTable.getColumn("CurrentSiteId")).setFk(fkSite);
+        addColumn(new AliasedColumn(this, "EnrollmentLocationId", _rootTable.getColumn("EnrollmentSiteId"))).setFk(fkSite);
+        addColumn(new AliasedColumn(this, "CurrentLocationId", _rootTable.getColumn("CurrentSiteId"))).setFk(fkSite);
+
         addWrapColumn(_rootTable.getColumn("StartDate"));
         setTitleColumn(StudyService.get().getSubjectColumnName(getContainer()));
 
@@ -181,5 +182,15 @@ public class ParticipantTable extends FilteredTable
     public ContainerContext getContainerContext()
     {
         return _schema.getContainer();
+    }
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        if ("EnrollmentSiteId".equalsIgnoreCase(name))
+            return getColumn("EnrollmentLocationId");
+        if ("CurrentSiteId".equalsIgnoreCase(name))
+            return getColumn("CurrentLocationId");
+        return super.resolveColumn(name);
     }
 }
