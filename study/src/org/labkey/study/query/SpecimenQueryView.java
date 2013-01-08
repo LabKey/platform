@@ -901,4 +901,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         button.addMenuItem("Manage Views", url);
     }
+
+    @Override
+    protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
+    {
+        // Return the sort of column names that should be used in TSV export.
+        // Consider: maybe all query types should use "queryColumnName".  That has
+        // dots separating foreign keys, but otherwise looks really nice.
+        return TSVGridWriter.ColumnHeaderType.caption;
+    }
 }
