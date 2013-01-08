@@ -20,14 +20,19 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.view.NotFoundException;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jan 15, 2007
  */
@@ -234,38 +239,5 @@ public class EmailTemplateService
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART);
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART);
         PropertyManager.saveProperties(map);
-    }
-
-    public void upgradeTo102()
-    {
-        // We used to store templates as specially prefixed key/values in the user preferences properties map
-        // They should now be stored in a separate property set, and we're changing from using % as the delimiter to ^
-        Map<String, String> oldProperties = UserManager.getUserPreferences(true);
-        Map<String, String> newProperties = getProperties(ContainerManager.getRoot(), true);
-
-        // Iterate over a copy so we can modify the real map as we go 
-        for (Map.Entry<String, String> entry : new HashMap<String, String>(oldProperties).entrySet())
-        {
-            String key = entry.getKey();
-            if (key.startsWith("emailTemplateProperty"))
-            {
-                // Old key format is three parts - "emailTemplateProperty/<TEMPLATE_CLASS_NAME>/<subject or body>"
-                String[] parts = key.split(EMAIL_TEMPLATE_DELIM);
-
-                if (parts.length == 3)
-                {
-                    // Change the delimiter
-                    String value = entry.getValue();
-                    value = value.replace('%', '^');
-
-                    // New key format is two parts - "<TEMPLATE_CLASS_NAME>/<subject or body>"
-                    newProperties.put(parts[1] + EMAIL_TEMPLATE_DELIM + parts[2], value);
-                }
-                // Get rid of it in the old location
-                oldProperties.remove(key);
-            }
-        }
-        PropertyManager.saveProperties(oldProperties);
-        PropertyManager.saveProperties(newProperties);
     }
 }
