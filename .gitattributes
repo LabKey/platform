@@ -1050,6 +1050,7 @@ api/src/org/labkey/api/study/AbstractPlateTypeHandler.java -text
 api/src/org/labkey/api/study/Cohort.java -text
 api/src/org/labkey/api/study/DataSet.java -text
 api/src/org/labkey/api/study/DataSetTable.java -text
+api/src/org/labkey/api/study/Location.java -text
 api/src/org/labkey/api/study/ParticipantCategory.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
 api/src/org/labkey/api/study/Plate.java -text
@@ -1061,7 +1062,6 @@ api/src/org/labkey/api/study/Position.java -text
 api/src/org/labkey/api/study/PositionImpl.java -text
 api/src/org/labkey/api/study/PropertySet.java -text
 api/src/org/labkey/api/study/SamplesUrls.java -text
-api/src/org/labkey/api/study/Site.java -text
 api/src/org/labkey/api/study/SpecimenService.java -text
 api/src/org/labkey/api/study/Study.java -text
 api/src/org/labkey/api/study/StudyCachable.java -text

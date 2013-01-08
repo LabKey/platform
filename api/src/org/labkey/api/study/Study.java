@@ -39,7 +39,7 @@ public interface Study extends StudyEntity
 
     List<? extends DataSet> getDataSetsByType(String[] types);
 
-    Site[] getSites();
+    Location[] getLocations();
 
     Cohort[] getCohorts(User user);
 

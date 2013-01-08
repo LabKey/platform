@@ -20,7 +20,7 @@ package org.labkey.api.study;
  * User: kevink
  * Date: May 27, 2009
  */
-public interface Site extends StudyEntity
+public interface Location extends StudyEntity
 {
     Boolean isEndpoint();
 
