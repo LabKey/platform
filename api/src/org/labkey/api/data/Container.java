@@ -1039,13 +1039,21 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Map<String, Object> toJSON(User user)
     {
+        return toJSON(user, true);
+    }
+
+    public Map<String, Object> toJSON(User user, boolean includePermissions)
+    {
         Map<String, Object> containerProps = new HashMap<String,Object>();
         containerProps.put("name", getName());
         containerProps.put("id", getId());
         containerProps.put("path", getPath());
         containerProps.put("sortOrder", getSortOrder());
-        containerProps.put("userPermissions", getPolicy().getPermsAsOldBitMask(user));
-        containerProps.put("effectivePermissions", getPolicy().getPermissionNames(user));
+        if (includePermissions)
+        {
+            containerProps.put("userPermissions", getPolicy().getPermsAsOldBitMask(user));
+            containerProps.put("effectivePermissions", getPolicy().getPermissionNames(user));
+        }
         if (null != getDescription())
             containerProps.put("description", getDescription());
         containerProps.put("isWorkbook", isWorkbook());

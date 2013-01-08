@@ -2041,19 +2041,7 @@ public class PageFlowUtil
 
         if (null != container)
         {
-            JSONObject containerProps = new JSONObject();
-
-            // This is by contract the unencoded container path -- see LABKEY.ActionURL.getContainer
-            containerProps.put("path", container.getPath());
-
-            containerProps.put("id", container.getId());
-            containerProps.put("name", container.getName());
-            containerProps.put("type", container.getContainerNoun());
-            Container parent = container.getParent();
-            containerProps.put("parentPath", parent==null ? null : parent.getPath());
-            containerProps.put("parentId", parent==null ? null : parent.getId());
-
-            json.put("container", containerProps);
+            json.put("container", container.toJSON(user, false));
             json.put("demoMode", DemoMode.isDemoMode(container, user));
         }
 
