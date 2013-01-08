@@ -47,13 +47,13 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
         addWrapParticipantColumn("ParticipantId");
 
         ColumnInfo groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
-        groupIdColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label"));
+        groupIdColumn.setFk(new QueryForeignKey(_userSchema, StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label"));
         addColumn(groupIdColumn);
 
         if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
         {
             ColumnInfo currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));
-            currentCohortColumn.setFk(new CohortForeignKey(_schema));
+            currentCohortColumn.setFk(new CohortForeignKey(_userSchema));
             addColumn(currentCohortColumn);
         }
 

@@ -32,7 +32,6 @@ public class LocationTable extends BaseStudyTable
     public LocationTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSite());
-        _schema = schema;
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();

@@ -70,7 +70,7 @@ public class ListSchema extends UserSchema
         {
             // don't call def.getTable(),
             // UserSchema will call afterConstruct()
-            return new ListTable(getUser(), def);
+            return new ListTable(this, def);
         }
         return null;
     }

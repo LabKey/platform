@@ -35,7 +35,7 @@ import java.util.Collection;
 import java.util.List;
 
 
-public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements UpdateableTableInfo
+public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSchema> implements UpdateableTableInfo
 {
     private Container _container;
     private static final Logger _logger = Logger.getLogger(ExternalSchemaTable.class);
@@ -55,12 +55,6 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements
             _logger.error("Malformed XML for external table: " + getSchema() + "." + getName(), e);
             //otherwise ignore malformed XML
         }
-    }
-
-    @Override
-    public ExternalSchema getUserSchema()
-    {
-        return (ExternalSchema)super.getUserSchema();
     }
 
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)

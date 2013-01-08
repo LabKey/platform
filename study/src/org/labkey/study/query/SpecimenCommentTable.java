@@ -27,7 +27,7 @@ import org.labkey.study.StudySchema;
  * User: brittp
  * Created: July 15, 2008 11:13:43 AM
  */
-public class SpecimenCommentTable extends FilteredTable
+public class SpecimenCommentTable extends FilteredTable<StudyQuerySchema>
 {
     public SpecimenCommentTable(final StudyQuerySchema schema)
     {
@@ -36,7 +36,7 @@ public class SpecimenCommentTable extends FilteredTable
 
     public SpecimenCommentTable(final StudyQuerySchema schema, boolean joinBackToSpecimens)
     {
-        super(StudySchema.getInstance().getTableInfoSpecimenComment(), schema.getContainer());
+        super(StudySchema.getInstance().getTableInfoSpecimenComment(), schema);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();

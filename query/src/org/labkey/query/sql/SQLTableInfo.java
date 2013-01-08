@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 
 import org.labkey.api.data.*;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.UserSchema;
 
 
 public class SQLTableInfo extends AbstractTableInfo
@@ -43,6 +44,12 @@ public class SQLTableInfo extends AbstractTableInfo
     public void setFromSQL(SQLFragment sql)
     {
         _fromSQL = sql;
+    }
+
+    @Override
+    public UserSchema getUserSchema()
+    {
+        return null;
     }
 }
 

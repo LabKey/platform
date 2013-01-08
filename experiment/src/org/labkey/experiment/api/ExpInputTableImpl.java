@@ -79,7 +79,7 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
         {
             // We're filtering on a single run, so we can bypass some of the permissions checking based on whether
             // the user has permission to the run's container or not
-            if (_run.getContainer().hasPermission(_schema.getUser(), ReadPermission.class))
+            if (_run.getContainer().hasPermission(_userSchema.getUser(), ReadPermission.class))
             {
                 // All we care is that the run exists and matches the TargetApplicationId
                 sqlFragment.append(" IS NOT NULL ");

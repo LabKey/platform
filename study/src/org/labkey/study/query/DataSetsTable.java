@@ -31,11 +31,11 @@ import org.labkey.study.model.StudyManager;
  * User: brittp
  * Created: Apr 30, 2008 11:13:43 AM
  */
-public class DataSetsTable extends FilteredTable
+public class DataSetsTable extends FilteredTable<StudyQuerySchema>
 {
     public DataSetsTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoDataSet(), schema.getContainer());
+        super(StudySchema.getInstance().getTableInfoDataSet(), schema);
         setName("Datasets");
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {

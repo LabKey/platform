@@ -33,11 +33,11 @@ import java.util.List;
  * User: brittp
  * Created: Apr 30, 2008 11:13:56 AM
  */
-public class DataSetColumnsTable extends FilteredTable
+public class DataSetColumnsTable extends FilteredTable<StudyQuerySchema>
 {
     public DataSetColumnsTable(final StudyQuerySchema schema)
     {
-        super(ExperimentService.get().getTinfoPropertyDescriptor(), schema.getContainer());
+        super(ExperimentService.get().getTinfoPropertyDescriptor(), schema);
         setDescription("Metadata table containing one row of metadata for each column in all study datasets.");
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");

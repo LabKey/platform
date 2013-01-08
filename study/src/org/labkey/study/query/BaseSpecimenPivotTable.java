@@ -39,7 +39,7 @@ import java.util.Map;
  * User: klum
  * Date: Mar 14, 2012
  */
-public abstract class BaseSpecimenPivotTable extends FilteredTable
+public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySchema>
 {
     protected static final String AGGREGATE_DELIM = "::";
     protected static final String TYPE_DELIM = "-";
@@ -167,7 +167,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
 
     public BaseSpecimenPivotTable(final TableInfo tinfo, final StudyQuerySchema schema)
     {
-        super(tinfo, schema.getContainer());
+        super(tinfo, schema);
 
         Logger.getInstance(BaseSpecimenPivotTable.class).debug("creating specimen pivot\n" +
                 "SCHEMA=" + schema.getName() + " " + schema.getClass().getSimpleName()+"@"+System.identityHashCode(schema) + "\n" +

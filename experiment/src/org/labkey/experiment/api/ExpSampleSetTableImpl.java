@@ -50,7 +50,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         {
             case Folder:
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
-                columnInfo.setFk(new ContainerForeignKey(_schema, new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer())));
+                columnInfo.setFk(new ContainerForeignKey(_userSchema, new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer())));
                 return columnInfo;
             case Description:
             case LSID:
@@ -70,7 +70,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
             {
                 SQLFragment sql = new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".LSID IN (SELECT MaterialSourceLSID FROM " +
                     ExperimentServiceImpl.get().getTinfoActiveMaterialSource() + " WHERE Container = ?) THEN ? ELSE ? END)");
-                sql.add(_schema.getContainer());
+                sql.add(_userSchema.getContainer());
                 sql.add(Boolean.TRUE);
                 sql.add(Boolean.FALSE);
                 ExprColumn result = new ExprColumn(this, "Active", sql, JdbcType.BOOLEAN);
@@ -107,7 +107,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.Active);
         addColumn(ExpSampleSetTable.Column.SampleCount);
 
-        setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _schema.getContainer()),
+        setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId")));
     }
 }

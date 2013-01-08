@@ -55,7 +55,7 @@ import java.util.Set;
 * User: klum
 * Date: 9/19/12
 */
-public class UsersTable extends SimpleUserSchema.SimpleTable
+public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     List<FieldKey> _defaultColumns;
     Set<String> _illegalColumns;

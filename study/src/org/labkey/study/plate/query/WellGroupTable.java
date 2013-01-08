@@ -68,7 +68,7 @@ public class WellGroupTable extends BasePlateTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new PlateTable(_schema);
+                return new PlateTable(_userSchema);
             }
         });
         addColumn(plateIdColumn);

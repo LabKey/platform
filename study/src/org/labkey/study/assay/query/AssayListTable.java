@@ -34,20 +34,17 @@ import java.util.*;
  * Date: Jun 28, 2007
  * Time: 11:07:32 AM
  */
-public class AssayListTable extends FilteredTable
+public class AssayListTable extends FilteredTable<AssaySchemaImpl>
 {
-    protected AssaySchemaImpl _schema;
     public AssayListTable(AssaySchemaImpl schema)
     {
-        super(ExperimentService.get().getTinfoProtocol(), schema.getContainer(), new ContainerFilter.WorkbookAssay(schema.getUser()));
+        super(ExperimentService.get().getTinfoProtocol(), schema, new ContainerFilter.WorkbookAssay(schema.getUser()));
         setDescription("Contains all of the assay definitions visible in this folder");
         addCondition(_rootTable.getColumn("ApplicationType"), "ExperimentRun");
         setName(AssaySchema.ASSAY_LIST_TABLE_NAME);
         setTitleColumn("Name");
 
-        _schema = schema;
-
-        ActionURL url = new ActionURL(AssayController.AssayBeginAction.class, _schema.getContainer());
+        ActionURL url = new ActionURL(AssayController.AssayBeginAction.class, _userSchema.getContainer());
         DetailsURL detailsURL = new DetailsURL(url, "rowId", FieldKey.fromParts("RowId"))
         {
             @Override
@@ -61,7 +58,7 @@ public class AssayListTable extends FilteredTable
                 }
             }
         };
-        detailsURL.setContainerContext(_schema.getContainer());
+        detailsURL.setContainerContext(_userSchema.getContainer());
 
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         ColumnInfo nameCol = addWrapColumn(_rootTable.getColumn("Name"));

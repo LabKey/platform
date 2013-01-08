@@ -38,7 +38,6 @@ import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -78,7 +77,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
 
             case CreatedBy:
                 ColumnInfo createdBy = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
-                createdBy.setFk(new UserIdQueryForeignKey(_schema.getUser(),_schema.getContainer()));
+                createdBy.setFk(new UserIdQueryForeignKey(_userSchema.getUser(),_userSchema.getContainer()));
                 return createdBy;
 
             default:

@@ -225,15 +225,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addCondition(new SQLFragment(" RowId IN ( SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " "
                     +  " WHERE ExperimentId = " +  experiment.getRowId() + " ) "));
 
-        if (_schema.getContainer().equals(ContainerManager.getSharedContainer()))
+        if (_userSchema.getContainer().equals(ContainerManager.getSharedContainer()))
         {
             // If we're in the /Shared project, look everywhere
-            setContainerFilter(new ContainerFilter.AllFolders(_schema.getUser()));
+            setContainerFilter(new ContainerFilter.AllFolders(_userSchema.getUser()));
         }
         else if (getContainer().isProject())
         {
             // If we're in a project, look in subfolders
-            setContainerFilter(new ContainerFilter.CurrentAndSubfolders(_schema.getUser()));
+            setContainerFilter(new ContainerFilter.CurrentAndSubfolders(_userSchema.getUser()));
         }
     }
 
@@ -704,7 +704,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             if (_experiments == null)
             {
-                _experiments = ExperimentServiceImpl.get().getExperiments(getContainer(), _schema.getUser(), true, false);
+                _experiments = ExperimentServiceImpl.get().getExperiments(getContainer(), _userSchema.getUser(), true, false);
             }
             return _experiments;
         }

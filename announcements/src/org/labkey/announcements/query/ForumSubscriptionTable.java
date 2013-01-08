@@ -55,11 +55,11 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 
         ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         addColumn(folderColumn);
-        folderColumn.setFk(new ContainerForeignKey(_schema));
+        folderColumn.setFk(new ContainerForeignKey(_userSchema));
 
         ColumnInfo modifiedByColumn = wrapColumn("ModifiedBy", getRealTable().getColumn("LastModifiedBy"));
         addColumn(modifiedByColumn);
-        modifiedByColumn.setFk(new UserIdQueryForeignKey(_schema.getUser(), getContainer()));
+        modifiedByColumn.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer()));
         modifiedByColumn.setUserEditable(false);
 
         ColumnInfo emailOptionColumn = wrapColumn("EmailOption", getRealTable().getColumn("EmailOptionId"));
@@ -68,7 +68,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return _schema.createEmailOptionTable();
+                return _userSchema.createEmailOptionTable();
             }
         });
         addColumn(emailOptionColumn);
@@ -79,7 +79,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return _schema.createEmailFormatTable();
+                return _userSchema.createEmailFormatTable();
             }
         });
         addColumn(emailFormatColumn);

@@ -16,9 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -39,7 +37,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.wiki.WikiRendererDisplayColumn;
 import org.labkey.api.wiki.WikiRendererType;
@@ -86,7 +83,7 @@ public class StudyPropertiesTable extends BaseStudyTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
             }
         });
         descriptionColumn.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -157,7 +154,7 @@ public class StudyPropertiesTable extends BaseStudyTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        User user = _schema.getUser();
+        User user = _userSchema.getUser();
         if (!getContainer().hasPermission(user, AdminPermission.class))
             return null;
         return new StudyPropertiesUpdateService(this);

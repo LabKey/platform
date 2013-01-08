@@ -37,9 +37,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -62,7 +60,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                AnnouncementTable result = _schema.createAnnouncementTable();
+                AnnouncementTable result = _userSchema.createAnnouncementTable();
                 result.addCondition(new SimpleFilter(FieldKey.fromParts("Parent"), null, CompareType.ISBLANK));
                 return result;
             }

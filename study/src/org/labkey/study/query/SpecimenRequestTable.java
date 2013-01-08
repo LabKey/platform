@@ -45,7 +45,7 @@ public class SpecimenRequestTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new SpecimenRequestStatusTable(_schema);
+                return new SpecimenRequestStatusTable(_userSchema);
             }
         });
         statusColumn.setKeyField(true);

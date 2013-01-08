@@ -57,19 +57,17 @@ import java.util.Map;
  * User: jeckels
  * Date: Feb 5, 2012
  */
-public class AnnouncementTable extends FilteredTable
+public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
 {
-    private final AnnouncementSchema _schema;
     private Boolean _secure;
 
     public AnnouncementTable(AnnouncementSchema schema)
     {
-        super(CommSchema.getInstance().getTableInfoAnnouncements(), schema.getContainer());
-        _schema = schema;
+        super(CommSchema.getInstance().getTableInfoAnnouncements(), schema);
         wrapAllColumns(true);
         removeColumn(getColumn("Container"));
         ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
-        folderColumn.setFk(new ContainerForeignKey(_schema));
+        folderColumn.setFk(new ContainerForeignKey(_userSchema));
         addColumn(folderColumn);
         setDescription("Contains one row per announcement or reply");
         getColumn("Parent").setFk(new LookupForeignKey("EntityId")
@@ -77,7 +75,7 @@ public class AnnouncementTable extends FilteredTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                AnnouncementTable result = new AnnouncementTable(_schema);
+                AnnouncementTable result = new AnnouncementTable(_userSchema);
                 result.addCondition(new SimpleFilter(FieldKey.fromParts("Parent"), null, CompareType.ISBLANK));
                 result.setPublic(false);
                 return result;
@@ -89,7 +87,7 @@ public class AnnouncementTable extends FilteredTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
             }
         });
 
@@ -112,9 +110,9 @@ public class AnnouncementTable extends FilteredTable
         formattedBodyColumn.setShownInInsertView(false);
         formattedBodyColumn.setShownInDetailsView(true);
 
-        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_schema.getUser(), getContainer()));
-        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_schema.getUser(), getContainer()));
-        getColumn("AssignedTo").setFk(new UserIdQueryForeignKey(_schema.getUser(), getContainer()));
+        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer()));
+        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer()));
+        getColumn("AssignedTo").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer()));
 
         setName(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME);
         setPublicSchemaName(AnnouncementSchema.SCHEMA_NAME);
@@ -123,14 +121,14 @@ public class AnnouncementTable extends FilteredTable
     @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return _schema.getContainer().hasPermission(user, perm);
+        return _userSchema.getContainer().hasPermission(user, perm);
     }
 
     private boolean isSecure()
     {
         if (_secure == null)
         {
-            _secure = DiscussionService.get().getSettings(_schema.getContainer()).isSecure();
+            _secure = DiscussionService.get().getSettings(_userSchema.getContainer()).isSecure();
         }
         return _secure.booleanValue();
     }

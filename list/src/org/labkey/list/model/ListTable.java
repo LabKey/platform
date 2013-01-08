@@ -65,7 +65,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class ListTable extends FilteredTable implements UpdateableTableInfo
+public class ListTable extends FilteredTable<ListSchema> implements UpdateableTableInfo
 {
     public static TableInfo getIndexTable(ListDefinition.KeyType keyType)
     {
@@ -84,9 +84,9 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     private final ListDefinition _list;
     private final List<FieldKey> _defaultVisibleColumns;
 
-    public ListTable(User user, ListDefinition listDef)
+    public ListTable(ListSchema schema, ListDefinition listDef)
     {
-        super(getIndexTable(listDef.getKeyType()));
+        super(getIndexTable(listDef.getKeyType()), schema);
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
@@ -114,7 +114,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 
         for (DomainProperty property : listDef.getDomain().getProperties())
         {
-            PropertyColumn column = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, listDef.getContainer(), user, false);
+            PropertyColumn column = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, listDef.getContainer(), _userSchema.getUser(), false);
 
             if (property.getName().equalsIgnoreCase(colKey.getName()))
             {
@@ -130,7 +130,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 
             if (property.isMvEnabled())
             {
-                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), user);
+                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), _userSchema.getUser());
             }
 
             // UNDONE: Move AttachmentDisplayColumn to API and attach in PropertyColumn.copyAttributes()
@@ -156,10 +156,10 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         // Make standard created & modified columns available.
         addColumn("Created", false);
         ColumnInfo createdBy = addColumn("CreatedBy", false);
-        UserIdQueryForeignKey.initColumn(user, listDef.getContainer(), createdBy, true);
+        UserIdQueryForeignKey.initColumn(_userSchema.getUser(), listDef.getContainer(), createdBy, true);
         addColumn("Modified", false);
         ColumnInfo modifiedBy = addColumn("ModifiedBy", false);
-        UserIdQueryForeignKey.initColumn(user, listDef.getContainer(), modifiedBy, true);
+        UserIdQueryForeignKey.initColumn(_userSchema.getUser(), listDef.getContainer(), modifiedBy, true);
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);

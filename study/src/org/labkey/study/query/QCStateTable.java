@@ -23,11 +23,11 @@ import org.labkey.study.StudySchema;
  * User: brittp
  * Created: July 15, 2008 11:13:43 AM
  */
-public class QCStateTable extends FilteredTable
+public class QCStateTable extends FilteredTable<StudyQuerySchema>
 {
     public QCStateTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoQCState(), schema.getContainer());
+        super(StudySchema.getInstance().getTableInfoQCState(), schema);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();

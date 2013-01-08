@@ -57,16 +57,14 @@ import java.util.TreeMap;
  * User: Karl Lum
  * Date: Oct 19, 2007
  */
-public class AuditLogTable extends FilteredTable
+public class AuditLogTable extends FilteredTable<UserSchema>
 {
     private AuditLogService.AuditViewFactory _viewFactory;
-    private UserSchema _schema;
 
     public AuditLogTable(UserSchema schema, TableInfo tInfo, String viewFactoryName)
     {
-        super(tInfo, schema.getContainer());
+        super(tInfo, schema);
 
-        _schema = schema;
         _viewFactory = AuditLogService.get().getAuditViewFactory(viewFactoryName);
         setInsertURL(LINK_DISABLER);
 
@@ -153,7 +151,7 @@ public class AuditLogTable extends FilteredTable
             addCondition(filter);
         }
 
-        if (isGuest(_schema.getUser()))
+        if (isGuest(_userSchema.getUser()))
         {
             // issue: 14511 - return an empty result set for guests
             addCondition(new SQLFragment("1 = 0"));
@@ -231,7 +229,7 @@ public class AuditLogTable extends FilteredTable
     {
         if (_viewFactory != null)
         {
-            _viewFactory.setupTable(this, _schema);
+            _viewFactory.setupTable(this, _userSchema);
         }
     }
 

@@ -16,7 +16,6 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -39,14 +38,11 @@ import java.util.Map;
  * Provides a Query-ized TableInfo that contains every row from every dataset in the study.
  * Eventually merge with StudyUnionTableInfo.
  */
-public class StudyDataTable extends FilteredTable
+public class StudyDataTable extends FilteredTable<StudyQuerySchema>
 {
-    StudyQuerySchema _schema;
-
     public StudyDataTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()), schema.getContainer());
-        _schema = schema;
+        super(StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()), schema);
 
         List<FieldKey> defaultColumns = new LinkedList<FieldKey>();
 
@@ -54,7 +50,7 @@ public class StudyDataTable extends FilteredTable
         datasetColumn.setFk(new LookupForeignKey(getDataSetURL(), "entityId", "entityId", "Name") {
             public TableInfo getLookupTableInfo()
             {
-                return new DataSetsTable(_schema);
+                return new DataSetsTable(_userSchema);
             }
         });
         addColumn(datasetColumn);
@@ -62,7 +58,7 @@ public class StudyDataTable extends FilteredTable
 
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         ColumnInfo participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("participantid"));
-        participantIdColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
+        participantIdColumn.setFk(new QueryForeignKey(_userSchema, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
         addColumn(participantIdColumn);
         defaultColumns.add(FieldKey.fromParts(subjectColName));
 
@@ -110,7 +106,7 @@ public class StudyDataTable extends FilteredTable
         addColumn(additionalKeyColumn);
         defaultColumns.add(additionalKeyColumn.getFieldKey());
         
-        StudyImpl study = _schema.getStudy();
+        StudyImpl study = _userSchema.getStudy();
         if (study != null)
         {
             PropertyDescriptor[] pds = study.getSharedProperties();
@@ -135,7 +131,7 @@ public class StudyDataTable extends FilteredTable
 
     public ActionURL getDataSetURL()
     {
-        return new ActionURL(StudyController.DatasetAction.class, _schema.getContainer());
+        return new ActionURL(StudyController.DatasetAction.class, _userSchema.getContainer());
     }
 
 }

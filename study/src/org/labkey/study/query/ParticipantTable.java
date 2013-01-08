@@ -42,15 +42,12 @@ import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 
-public class ParticipantTable extends FilteredTable
+public class ParticipantTable extends FilteredTable<StudyQuerySchema>
 {
-    StudyQuerySchema _schema;
-
     public ParticipantTable(StudyQuerySchema schema, boolean hideDataSets)
     {
-        super(StudySchema.getInstance().getTableInfoParticipant(), schema.getContainer());
+        super(StudySchema.getInstance().getTableInfoParticipant(), schema);
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
-        _schema = schema;
 
         Study study = StudyManager.getInstance().getStudy(schema.getContainer());
         ColumnInfo rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
@@ -67,12 +64,12 @@ public class ParticipantTable extends FilteredTable
             {
                 if (displayField == null)
                     return null;
-                return new ParticipantDataSetTable(_schema, parent).getColumn(displayField);
+                return new ParticipantDataSetTable(_userSchema, parent).getColumn(displayField);
             }
 
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantDataSetTable(_schema, null);
+                return new ParticipantDataSetTable(_userSchema, null);
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -84,7 +81,7 @@ public class ParticipantTable extends FilteredTable
         datasetColumn.setHidden(hideDataSets);
 
         ColumnInfo containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
-        containerCol = ContainerForeignKey.initColumn(containerCol, _schema);
+        containerCol = ContainerForeignKey.initColumn(containerCol, _userSchema);
         containerCol.setHidden(true);
         addColumn(containerCol);
 
@@ -100,7 +97,7 @@ public class ParticipantTable extends FilteredTable
         {
             currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CurrentCohortId"));
         }
-        currentCohortColumn.setFk(new CohortForeignKey(_schema, showCohorts, currentCohortColumn.getLabel()));
+        currentCohortColumn.setFk(new CohortForeignKey(_userSchema, showCohorts, currentCohortColumn.getLabel()));
         addColumn(currentCohortColumn);
 
 
@@ -119,23 +116,22 @@ public class ParticipantTable extends FilteredTable
             initialCohortColumn = new AliasedColumn(this, "InitialCohort", _rootTable.getColumn("CurrentCohortId"));
             initialCohortColumn.setHidden(true);
         }
-        initialCohortColumn.setFk(new CohortForeignKey(_schema, showCohorts, initialCohortColumn.getLabel()));
+        initialCohortColumn.setFk(new CohortForeignKey(_userSchema, showCohorts, initialCohortColumn.getLabel()));
         addColumn(initialCohortColumn);
 
-        ForeignKey fkSite = LocationTable.fkFor(_schema);
-        addColumn(new AliasedColumn(this, "EnrollmentLocationId", _rootTable.getColumn("EnrollmentSiteId"))).setFk(fkSite);
-        addColumn(new AliasedColumn(this, "CurrentLocationId", _rootTable.getColumn("CurrentSiteId"))).setFk(fkSite);
-
+        ForeignKey fkSite = LocationTable.fkFor(_userSchema);
+        addWrapColumn(_rootTable.getColumn("EnrollmentSiteId")).setFk(fkSite);
+        addWrapColumn(_rootTable.getColumn("CurrentSiteId")).setFk(fkSite);
         addWrapColumn(_rootTable.getColumn("StartDate"));
         setTitleColumn(StudyService.get().getSubjectColumnName(getContainer()));
 
         setDetailsURL(new DetailsURL(getBaseDetailsURL(), "participantId",
-                FieldKey.fromParts(StudyService.get().getSubjectColumnName(_schema.getContainer()))));
+                FieldKey.fromParts(StudyService.get().getSubjectColumnName(_userSchema.getContainer()))));
 
         setDefaultVisibleColumns(getDefaultVisibleColumns());
 
         // join in participant categories
-        for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), _schema.getUser()))
+        for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), _userSchema.getUser()))
         {
             ColumnInfo categoryColumn = new ParticipantCategoryColumn(category, this);
             addColumn(categoryColumn);
@@ -144,7 +140,7 @@ public class ParticipantTable extends FilteredTable
 
     public ActionURL getBaseDetailsURL()
     {
-        return new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
+        return new ActionURL(StudyController.ParticipantAction.class, _userSchema.getContainer());
     }
 
 
@@ -181,16 +177,6 @@ public class ParticipantTable extends FilteredTable
     @Override
     public ContainerContext getContainerContext()
     {
-        return _schema.getContainer();
-    }
-
-    @Override
-    protected ColumnInfo resolveColumn(String name)
-    {
-        if ("EnrollmentSiteId".equalsIgnoreCase(name))
-            return getColumn("EnrollmentLocationId");
-        if ("CurrentSiteId".equalsIgnoreCase(name))
-            return getColumn("CurrentLocationId");
-        return super.resolveColumn(name);
+        return _userSchema.getContainer();
     }
 }

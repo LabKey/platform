@@ -39,16 +39,14 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.Map;
 
-public class ParticipantVisitTable extends FilteredTable
+public class ParticipantVisitTable extends FilteredTable<StudyQuerySchema>
 {
-    StudyQuerySchema _schema;
     Map<String, ColumnInfo> _demographicsColumns;
 
     public ParticipantVisitTable(StudyQuerySchema schema, boolean hideDataSets)
     {
-        super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema.getContainer());
+        super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema);
         setName(StudyService.get().getSubjectVisitTableName(schema.getContainer()));
-        _schema = schema;
         _demographicsColumns = new CaseInsensitiveHashMap<ColumnInfo>();
         Study study = StudyService.get().getStudy(schema.getContainer());
 
@@ -64,7 +62,7 @@ public class ParticipantVisitTable extends FilteredTable
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        return new VisitTable(_schema);
+                        return new VisitTable(_userSchema);
                     }
                 };
                 visitColumn.setFk(visitFK);
@@ -92,7 +90,7 @@ public class ParticipantVisitTable extends FilteredTable
                     cohortColumn = new AliasedColumn(this, "Cohort", col);
                 }
                 cohortColumn.setLabel(col.getLabel());
-                cohortColumn.setFk(new CohortForeignKey(_schema, showCohorts, cohortColumn.getLabel()));
+                cohortColumn.setFk(new CohortForeignKey(_userSchema, showCohorts, cohortColumn.getLabel()));
                 addColumn(cohortColumn);
             }
             else if ("ParticipantSequenceNum".equalsIgnoreCase(col.getName()))
@@ -114,14 +112,14 @@ public class ParticipantVisitTable extends FilteredTable
                 addWrapColumn(col);
         }
 
-        for (DataSetDefinition dataset : _schema.getStudy().getDataSets())
+        for (DataSetDefinition dataset : _userSchema.getStudy().getDataSets())
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
             if (!dataset.canRead(schema.getUser()))
                 continue;
 
-            String name = _schema.decideTableName(dataset);
+            String name = _userSchema.decideTableName(dataset);
             if (name == null)
                 continue;
 
@@ -186,7 +184,7 @@ public class ParticipantVisitTable extends FilteredTable
         {
             try
             {
-                DataSetTableImpl ret = _schema.createDataSetTableInternal(dsd);
+                DataSetTableImpl ret = _userSchema.createDataSetTableInternal(dsd);
                 ret.hideParticipantLookups();
                 return ret;
             }

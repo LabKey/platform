@@ -24,7 +24,7 @@ import org.labkey.api.query.UserSchema;
 * User: kevink
 * Date: 12/10/12
 */
-public class LinkedTableInfo extends SimpleUserSchema.SimpleTable
+public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public LinkedTableInfo(UserSchema schema, TableInfo table)
     {

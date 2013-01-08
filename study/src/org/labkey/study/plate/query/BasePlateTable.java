@@ -29,16 +29,13 @@ import org.labkey.api.view.ActionURL;
  * Date: Nov 3, 2006
  * Time: 10:06:59 AM
  */
-public abstract class BasePlateTable extends FilteredTable
+public abstract class BasePlateTable extends FilteredTable<PlateSchema>
 {
-    protected PlateSchema _schema;
-
     public BasePlateTable(PlateSchema schema, TableInfo info)
     {
-        super(info, schema.getContainer());
-        _schema = schema;
+        super(info, schema);
 
-        ActionURL url = PageFlowUtil.urlProvider(PlateUrls.class).getPlateDetailsURL(_schema.getContainer());
+        ActionURL url = PageFlowUtil.urlProvider(PlateUrls.class).getPlateDetailsURL(_userSchema.getContainer());
         setDetailsURL(new DetailsURL(url, "rowId", FieldKey.fromParts(getPlateIdColumnName())));
     }
 

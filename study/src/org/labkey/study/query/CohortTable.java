@@ -93,7 +93,7 @@ public class CohortTable extends BaseStudyTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        User user = _schema.getUser();
+        User user = _userSchema.getUser();
         if (!getContainer().hasPermission(user, AdminPermission.class))
             return null;
         return new CohortUpdateService(this);
@@ -102,7 +102,7 @@ public class CohortTable extends BaseStudyTable
     @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        if (!(user instanceof User) || !StudyManager.getInstance().showCohorts(_schema.getContainer(), (User)user))
+        if (!(user instanceof User) || !StudyManager.getInstance().showCohorts(_userSchema.getContainer(), (User)user))
             return false;
         return canReadOrIsAdminPermission(user, perm);
     }

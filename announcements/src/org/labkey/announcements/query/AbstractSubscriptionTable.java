@@ -35,18 +35,15 @@ import java.util.Map;
  * User: jeckels
  * Date: Feb 10, 2012
  */
-public class AbstractSubscriptionTable extends FilteredTable
+public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
 {
-    protected final AnnouncementSchema _schema;
-
     public AbstractSubscriptionTable(TableInfo table, AnnouncementSchema schema)
     {
-        super(table, schema.getContainer());
-        _schema = schema;
+        super(table, schema);
 
         ColumnInfo userColumn = wrapColumn("User", getRealTable().getColumn("UserId"));
         addColumn(userColumn);
-        userColumn.setFk(new UserIdQueryForeignKey(_schema.getUser(), getContainer()));
+        userColumn.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer()));
 
         // Only admins can see subscriptions for other users
         if (!schema.getContainer().hasPermission(schema.getUser(), AdminPermission.class))

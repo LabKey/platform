@@ -15,8 +15,6 @@
  */
 package org.labkey.survey.query;
 
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -39,11 +37,11 @@ import java.util.List;
  * User: klum
  * Date: 12/7/12
  */
-public class SurveysTable extends FilteredTable
+public class SurveysTable extends FilteredTable<SurveyQuerySchema>
 {
-    public SurveysTable(TableInfo table, Container container)
+    public SurveysTable(TableInfo table, SurveyQuerySchema schema)
     {
-        super(table, container);
+        super(table, schema);
 
         wrapAllColumns(true);
 
@@ -59,7 +57,7 @@ public class SurveysTable extends FilteredTable
         ));
         setDefaultVisibleColumns(defaultColumns);
 
-        ActionURL updateUrl = new ActionURL(SurveyController.UpdateSurveyAction.class, container);
+        ActionURL updateUrl = new ActionURL(SurveyController.UpdateSurveyAction.class, schema.getContainer());
         setUpdateURL(new DetailsURL(updateUrl, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
     }
 

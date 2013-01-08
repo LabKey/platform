@@ -108,7 +108,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), _schema);
+                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), _userSchema);
                         sampleSetTable.populate();
                         return sampleSetTable;
                     }
@@ -181,7 +181,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             Domain domain = ss.getType();
             if (domain != null)
             {
-                ret.setFk(new PropertyForeignKey(domain, _schema));
+                ret.setFk(new PropertyForeignKey(domain, _userSchema));
             }
         }
         ret.setIsUnselectable(true);
@@ -256,7 +256,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             }
             if (!ss.getContainer().equals(getContainer()))
             {
-                setContainerFilter(new ContainerFilter.CurrentPlusExtras(_schema.getUser(), ss.getContainer()));
+                setContainerFilter(new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), ss.getContainer()));
             }
         }
 
@@ -285,7 +285,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ExpSchema(_schema.getUser(), _schema.getContainer()).getTable(ExpSchema.TableType.SampleSets);
+                return new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getTable(ExpSchema.TableType.SampleSets);
             }
 
             @Override
@@ -300,7 +300,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
 
         ColumnInfo runCol = addColumn(ExpMaterialTable.Column.Run);
-        runCol.setFk(new ExpSchema(_schema.getUser(), getContainer()).getRunIdForeignKey());
+        runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey());
         runCol.setShownInInsertView(false);
         runCol.setShownInUpdateView(false);
 
@@ -363,7 +363,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         for (DomainProperty dp : ss.getPropertiesForType())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
-            ColumnInfo propColumn = new PropertyColumn(pd, lsidColumn, _schema.getContainer(), _schema.getUser(), true);
+            ColumnInfo propColumn = new PropertyColumn(pd, lsidColumn, _userSchema.getContainer(), _userSchema.getUser(), true);
             if (isIdCol(ss, pd))
             {
                 propColumn.setNullable(false);
@@ -426,7 +426,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (_ss != null || perm.isAssignableFrom(DeletePermission.class) || perm.isAssignableFrom(ReadPermission.class))
-            return _schema.getContainer().hasPermission(user, perm);
+            return _userSchema.getContainer().hasPermission(user, perm);
 
         // don't allow insert/update on exp.Materials without a sample set
         return false;

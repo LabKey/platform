@@ -56,10 +56,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class BaseStudyTable extends FilteredTable
+public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 {
-    protected StudyQuerySchema _schema;
-
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable)
     {
         this(schema, realTable, false);
@@ -72,7 +70,7 @@ public abstract class BaseStudyTable extends FilteredTable
 
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, boolean includeSourceStudyData, boolean skipPermissionChecks)
     {
-        super(realTable, schema.getContainer(), includeSourceStudyData ? new ContainerFilter.StudyAndSourceStudy(schema.getUser(), skipPermissionChecks) : null);
+        super(realTable, schema, includeSourceStudyData ? new ContainerFilter.StudyAndSourceStudy(schema.getUser(), skipPermissionChecks) : null);
         if (!includeSourceStudyData && skipPermissionChecks)
             throw new IllegalArgumentException("Skipping permission checks only applies when including source study data");
         if (includeSourceStudyData && getParticipantColumnName() != null)
@@ -103,7 +101,6 @@ public abstract class BaseStudyTable extends FilteredTable
                 }
             }
         }
-        _schema = schema;
     }
 
     protected String getParticipantColumnName()
@@ -120,7 +117,7 @@ public abstract class BaseStudyTable extends FilteredTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return _schema.getTable(StudyService.get().getSubjectTableName(getContainer()));
+                return _userSchema.getTable(StudyService.get().getSubjectTableName(getContainer()));
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -136,7 +133,7 @@ public abstract class BaseStudyTable extends FilteredTable
 
         // Don't setKeyField. Use addQueryFieldKeys where needed
 
-        if (DemoMode.isDemoMode(_schema.getContainer(), _schema.getUser()))
+        if (DemoMode.isDemoMode(_userSchema.getContainer(), _userSchema.getUser()))
         {
             participantColumn.setDisplayColumnFactory(new DisplayColumnFactory()
             {
@@ -180,7 +177,7 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
-                LocationTable result = new LocationTable(_schema);
+                LocationTable result = new LocationTable(_userSchema);
                 result.setContainerFilter(ContainerFilter.EVERYTHING);
                 return result;
             }
@@ -191,7 +188,7 @@ public abstract class BaseStudyTable extends FilteredTable
     protected ColumnInfo addContainerColumn()
     {
         ColumnInfo containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
-        containerCol = ContainerForeignKey.initColumn(containerCol, _schema);
+        containerCol = ContainerForeignKey.initColumn(containerCol, _userSchema);
         containerCol.setHidden(true);
         return addColumn(containerCol);
     }
@@ -205,11 +202,11 @@ public abstract class BaseStudyTable extends FilteredTable
             {
                 BaseStudyTable result;
                 if (rootTableColumnName.equals("PrimaryTypeId"))
-                    result = new PrimaryTypeTable(_schema);
+                    result = new PrimaryTypeTable(_userSchema);
                 else if (rootTableColumnName.equals("DerivativeTypeId") || rootTableColumnName.equals("DerivativeTypeId2"))
-                    result = new DerivativeTypeTable(_schema);
+                    result = new DerivativeTypeTable(_userSchema);
                 else if (rootTableColumnName.equals("AdditiveTypeId"))
-                    result = new AdditiveTypeTable(_schema);
+                    result = new AdditiveTypeTable(_userSchema);
                 else
                     throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
                 result.setContainerFilter(ContainerFilter.EVERYTHING);
@@ -250,7 +247,7 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
-                VisitTable visitTable = new VisitTable(_schema);
+                VisitTable visitTable = new VisitTable(_userSchema);
                 visitTable.setContainerFilter(ContainerFilter.EVERYTHING);
                 return visitTable;
             }
@@ -357,7 +354,7 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
-                SpecimenCommentTable result = new SpecimenCommentTable(_schema, joinBackToSpecimens);
+                SpecimenCommentTable result = new SpecimenCommentTable(_userSchema, joinBackToSpecimens);
                 result.setContainerFilter(ContainerFilter.EVERYTHING);
                 return result;
             }
@@ -377,7 +374,7 @@ public abstract class BaseStudyTable extends FilteredTable
 
     protected ColumnInfo createSpecimenCommentColumn(StudyQuerySchema schema, boolean includeVialComments)
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(_schema.getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(_userSchema.getContainer());
 
         DataSetDefinition defPtid = null;
         DataSetDefinition defPtidVisit = null;
@@ -436,7 +433,7 @@ public abstract class BaseStudyTable extends FilteredTable
                     ptidVisitCommentAlias = ColumnInfo.legalNameFromName(ptidVisitCommentProperty);
             }
 
-            List<String> commentFields = new ArrayList();
+            List<String> commentFields = new ArrayList<String>();
 
             if (_includeVialComments)
             {
@@ -675,7 +672,7 @@ public abstract class BaseStudyTable extends FilteredTable
 
     protected boolean canReadOrIsAdminPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return ReadPermission.class == perm && _schema.getContainer().hasPermission(user, perm) ||
-                _schema.getContainer().hasPermission(user, AdminPermission.class);
+        return ReadPermission.class == perm && _userSchema.getContainer().hasPermission(user, perm) ||
+                _userSchema.getContainer().hasPermission(user, AdminPermission.class);
     }
 }

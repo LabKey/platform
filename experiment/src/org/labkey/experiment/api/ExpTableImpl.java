@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
@@ -39,19 +40,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-abstract public class ExpTableImpl<C extends Enum> extends FilteredTable implements ExpTable<C>
+abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSchema> implements ExpTable<C>
 {
-    protected final UserSchema _schema;
     private final ExpObjectImpl _objectType;
     private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<Class<? extends Permission>>();
     private Domain _domain;
 
-    protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, ExpObjectImpl objectType)
+    protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType)
     {
-        super(rootTable, schema.getContainer());
+        super(rootTable, schema);
         _objectType = objectType;
         setName(name);
-        _schema = schema;
         _allowablePermissions.add(DeletePermission.class);
         _allowablePermissions.add(ReadPermission.class);
     }
@@ -88,7 +87,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         ColumnInfo result = addColumn(containerCol);
-        ContainerForeignKey.initColumn(result, _schema, url);
+        ContainerForeignKey.initColumn(result, _userSchema, url);
         return result;
     }
 
@@ -152,7 +151,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     protected ColumnInfo createFlagColumn(String alias)
     {
         ColumnInfo ret = wrapColumn(alias, getLSIDColumn());
-        ret.setFk(new FlagForeignKey(urlFlag(true), urlFlag(false), _schema.getContainer(), _schema.getUser()));
+        ret.setFk(new FlagForeignKey(urlFlag(true), urlFlag(false), _userSchema.getContainer(), _userSchema.getUser()));
         ret.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -183,7 +182,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
-            return _allowablePermissions.contains(perm) && _schema.getContainer().hasPermission(user, perm);
+            return _allowablePermissions.contains(perm) && _userSchema.getContainer().hasPermission(user, perm);
         return false;
     }
 
@@ -198,7 +197,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         if (legacyName != null && domain.getProperties().length > 0)
         {
             colProperty = wrapColumn(legacyName, getLSIDColumn());
-            colProperty.setFk(new PropertyForeignKey(domain, _schema));
+            colProperty.setFk(new PropertyForeignKey(domain, _userSchema));
             // Hide because the preferred way to get to these values is to add them directly to the table, instead of having
             // them under the legacyName node
             colProperty.setHidden(true);
@@ -211,7 +210,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         for (DomainProperty dp : domain.getProperties())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
-            ColumnInfo propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _schema.getUser(), false);
+            ColumnInfo propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false);
             if (getColumn(propColumn.getName()) == null)
             {
                 addColumn(propColumn);
@@ -239,11 +238,11 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
 
     public ExpSchema getExpSchema()
     {
-        if (_schema instanceof ExpSchema)
+        if (_userSchema instanceof ExpSchema)
         {
-            return (ExpSchema)_schema;
+            return (ExpSchema)_userSchema;
         }
-        ExpSchema schema = new ExpSchema(_schema.getUser(), _schema.getContainer());
+        ExpSchema schema = new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
         schema.setContainerFilter(getContainerFilter());
         return schema;
     }
@@ -251,7 +250,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     @Override
     public String getPublicSchemaName()
     {
-        return _publicSchemaName == null ? _schema.getSchemaName() : _publicSchemaName;
+        return _publicSchemaName == null ? _userSchema.getSchemaName() : _publicSchemaName;
     }
 
 }

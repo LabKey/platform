@@ -90,20 +90,18 @@ import java.util.Map;
 import java.util.Set;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
-public class DataSetTableImpl extends FilteredTable implements DataSetTable
+public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements DataSetTable
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
-    StudyQuerySchema _schema;
     DataSetDefinition _dsd;
     TableInfo _fromTable;
 
     public DataSetTableImpl(final StudyQuerySchema schema, DataSetDefinition dsd)
     {
-        super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions()));
+        super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions()), schema);
         setDescription("Contains up to one row of " + dsd.getLabel() + " data for each " +
                 dsd.getKeyTypeDescription() + " combination.");
-        _schema = schema;
         _dsd = dsd;
         _title = dsd.getLabel();
 
@@ -162,8 +160,8 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                     {
                         // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
                         // but we need to pass arguments to ParticipantTable constructor to hide datasets.
-                        TableInfo table = new ParticipantTable(_schema, true);
-                        table.overlayMetadata(StudyService.get().getSubjectTableName(_schema.getContainer()), schema, new ArrayList<QueryException>());
+                        TableInfo table = new ParticipantTable(_userSchema, true);
+                        table.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), schema, new ArrayList<QueryException>());
                         ((ParticipantTable)table).afterConstruct();
                         return table;
                     }
@@ -214,7 +212,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
             }
-            else if (baseColumn.getName().equalsIgnoreCase("SequenceNum") && _schema.getStudy().getTimepointType() != TimepointType.VISIT)
+            else if (baseColumn.getName().equalsIgnoreCase("SequenceNum") && _userSchema.getStudy().getTimepointType() != TimepointType.VISIT)
             {
                 // wrap the sequencenum column and set a format to prevent scientific notation, since the sequencenum values
                 // for date-based studies can be quite large (e.g., 20091014).
@@ -250,7 +248,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 addColumn(qcStateColumn);
                 // Hide the QCState column if the study doesn't have QC states defined. Otherwise, don't hide it
                 // but don't include it in the default set of columns either
-                if (!StudyManager.getInstance().showQCStates(_schema.getContainer()))
+                if (!StudyManager.getInstance().showQCStates(_userSchema.getContainer()))
                     qcStateColumn.setHidden(true);
             }
             else if ("ParticipantSequenceNum".equalsIgnoreCase(name))
@@ -262,7 +260,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        return new ParticipantVisitTable(_schema, true);
+                        return new ParticipantVisitTable(_userSchema, true);
                     }
                 });
                 pvColumn.setIsUnselectable(true);
@@ -311,8 +309,8 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                         @Override
                         public TableInfo getLookupTableInfo()
                         {
-                            SpecimenDetailTable table = (SpecimenDetailTable)_schema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
-                            table.addCondition(new SimpleFilter(FieldKey.fromParts("Container"), _schema.getContainer().getId()));
+                            SpecimenDetailTable table = (SpecimenDetailTable)_userSchema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
+                            table.addCondition(new SimpleFilter(FieldKey.fromParts("Container"), _userSchema.getContainer().getId()));
                             return table;
                         }
                     });
@@ -379,7 +377,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         // columns from the ParticipantVisit table
 
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-        if (_schema.getStudy().getTimepointType() == TimepointType.DATE)
+        if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
         {
             ColumnInfo dayColumn = new AliasedColumn(this, "Day", participantVisit.getColumn("Day"));
             dayColumn.setUserEditable(false);
@@ -569,10 +567,10 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
 
         SQLFragment from = new SQLFragment();
         from.append("(SELECT DS.*, PV.VisitRowId");
-        if (_schema.getStudy().getTimepointType() == TimepointType.DATE)
+        if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
             from.append(", PV.Day");
         from.append("\nFROM ").append(super.getFromSQL("DS")).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
-                " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = '" + _schema.getContainer().getId() + "') AS ").append(alias);
+                " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = '" + _userSchema.getContainer().getId() + "') AS ").append(alias);
 
         if (_dsd.isAssayData())
         {
@@ -606,7 +604,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         boolean includePV = false;
         if (cols.contains(new FieldKey(null, "VisitRowId")))
             includePV = true;
-        else if (_schema.getStudy().getTimepointType() == TimepointType.DATE && cols.contains(new FieldKey(null, "Day")))
+        else if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE && cols.contains(new FieldKey(null, "Day")))
             includePV = true;
         return _getFromSQL(alias, includePV);
     }
@@ -625,7 +623,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             // Provider must have been in a module that's no longer available
             return null;
         }
-        AssayProtocolSchema schema = provider.createProtocolSchema(_schema.getUser(), protocol.getContainer(), protocol, getContainer());
+        AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), protocol.getContainer(), protocol, getContainer());
         ContainerFilterable result = schema.createDataTable(false);
         if (result != null)
         {
@@ -711,7 +709,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
     {
         if (_fromTable == null)
         {
-            _fromTable = _dsd.getTableInfo(_schema.getUser(), _schema.getMustCheckPermissions());
+            _fromTable = _dsd.getTableInfo(_userSchema.getUser(), _userSchema.getMustCheckPermissions());
         }
         return _fromTable;
     }
@@ -744,7 +742,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        User user = _schema.getUser();
+        User user = _userSchema.getUser();
         DataSet def = getDatasetDefinition();
         if (!def.canWrite(user))
             return null;

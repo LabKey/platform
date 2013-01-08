@@ -69,7 +69,7 @@ public class WorkbooksTableInfo extends ContainerTable
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
-            return (DeletePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm) || InsertPermission.class.isAssignableFrom(perm)) && _schema.getContainer().hasPermission(user, perm);
+            return (DeletePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm) || InsertPermission.class.isAssignableFrom(perm)) && _userSchema.getContainer().hasPermission(user, perm);
         return false;
     }
 

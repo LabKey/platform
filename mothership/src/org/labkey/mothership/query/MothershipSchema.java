@@ -140,7 +140,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createSoftwareReleasesTable()
     {
-        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoSoftwareRelease(), getContainer());
+        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoSoftwareRelease(), this);
         result.wrapAllColumns(true);
 
         result.getColumn("SVNURL").setWidth("500");
@@ -158,7 +158,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createServerSessionTable()
     {
-        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoServerSession(), getContainer());
+        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoServerSession(), this);
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
 
@@ -215,7 +215,7 @@ public class MothershipSchema extends UserSchema
 
     public TableInfo createServerInstallationTable()
     {
-        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoServerInstallation(), getContainer());
+        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoServerInstallation(), this);
         result.wrapAllColumns(true);
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
@@ -310,7 +310,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createExceptionStackTraceTable()
     {
-        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoExceptionStackTrace(), getContainer());
+        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoExceptionStackTrace(), this);
         result.wrapAllColumns(true);
         result.getColumn("StackTrace").setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -428,7 +428,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createExceptionReportTable()
     {
-        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoExceptionReport(), getContainer());
+        FilteredTable result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoExceptionReport(), this);
         result.wrapAllColumns(true);
         result.getColumn("URL").setDisplayColumnFactory(new DisplayColumnFactory()
         {

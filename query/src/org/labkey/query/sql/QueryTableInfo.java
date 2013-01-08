@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ContainerContext;
 
 import java.util.Collection;
@@ -136,5 +137,11 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
             }
         }
         mapFieldKeyToSiblings = Collections.unmodifiableMap(mapFieldKeyToSiblings);
+    }
+
+    @Override
+    public UserSchema getUserSchema()
+    {
+        return _relation.getSchema() instanceof UserSchema ? (UserSchema)_relation.getSchema() : null;
     }
 }

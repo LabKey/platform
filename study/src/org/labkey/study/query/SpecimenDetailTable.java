@@ -44,13 +44,13 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantVisitTable(_schema, false);
+                return new ParticipantVisitTable(_userSchema, false);
             }
         });
         pvColumn.setIsUnselectable(true);
         addColumn(pvColumn);
 
-        addSpecimenVisitColumn(_schema.getStudy().getTimepointType());
+        addSpecimenVisitColumn(_userSchema.getStudy().getTimepointType());
         addWrapColumn(_rootTable.getColumn("Volume"));
         addSpecimenTypeColumns();
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
@@ -58,7 +58,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("TotalCellCount"));
         addWrapColumn(_rootTable.getColumn("TubeType"));
 
-        ColumnInfo specimenComment = createSpecimenCommentColumn(_schema, true);
+        ColumnInfo specimenComment = createSpecimenCommentColumn(_userSchema, true);
         specimenComment.setName("Comments");
         specimenComment.setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -77,7 +77,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new LocationTable(_schema);
+                return new LocationTable(_userSchema);
             }
         });
         siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -94,7 +94,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new LocationTable(_schema);
+                return new LocationTable(_userSchema);
             }
         });
         addColumn(siteLdmsCodeColumn);
@@ -108,7 +108,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addColumn(new QualityControlFlagColumn(this));
         addColumn(new QualityControlCommentsColumn(this));
 
-        addColumn(createCollectionCohortColumn(_schema, this));
+        addColumn(createCollectionCohortColumn(_userSchema, this));
 
         addWrapColumn(_rootTable.getColumn("VialCount"));
         addWrapColumn(_rootTable.getColumn("LockedInRequestCount"));
@@ -191,7 +191,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             return c;
         }
 
-        return new CollectionCohortColumn(_schema, this);
+        return new CollectionCohortColumn(_userSchema, this);
     }
 
 

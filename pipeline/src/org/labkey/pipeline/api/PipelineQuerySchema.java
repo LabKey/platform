@@ -61,7 +61,7 @@ public class PipelineQuerySchema extends UserSchema
     {
         if (JOB_TABLE_NAME.equalsIgnoreCase(name))
         {
-            FilteredTable table = new FilteredTable(PipelineSchema.getInstance().getTableInfoStatusFiles(), getContainer())
+            FilteredTable table = new FilteredTable<PipelineQuerySchema>(PipelineSchema.getInstance().getTableInfoStatusFiles(), this)
             {
                 @Override
                 public FieldKey getContainerFieldKey()

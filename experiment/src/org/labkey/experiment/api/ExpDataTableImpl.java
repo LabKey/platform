@@ -101,7 +101,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         setDefaultVisibleColumns(defaultCols);
 
         setTitleColumn("Name");
-        ActionURL detailsURL = new ActionURL(ExperimentController.ShowDataAction.class, _schema.getContainer());
+        ActionURL detailsURL = new ActionURL(ExperimentController.ShowDataAction.class, _userSchema.getContainer());
         setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));
 
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
@@ -116,7 +116,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 for (DomainProperty prop : domain.getProperties())
                 {
                     // don't set container on property column so that inherited domain properties work
-                    ColumnInfo projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer(), _schema.getUser(), false);
+                    ColumnInfo projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer(), _userSchema.getUser(), false);
                     addColumn(projectColumn);
                 }
                 setDomain(domain);

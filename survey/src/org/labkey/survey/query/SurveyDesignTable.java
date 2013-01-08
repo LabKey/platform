@@ -42,11 +42,11 @@ import java.util.List;
  * User: klum
  * Date: 12/7/12
  */
-public class SurveyDesignTable extends FilteredTable
+public class SurveyDesignTable extends FilteredTable<SurveyQuerySchema>
 {
-    public SurveyDesignTable(TableInfo table, Container container, User user)
+    public SurveyDesignTable(TableInfo table, SurveyQuerySchema schema)
     {
-        super(table, container, new ContainerFilter.CurrentPlusProjectAndShared(user));
+        super(table, schema, new ContainerFilter.CurrentPlusProjectAndShared(schema.getUser()));
 
         wrapAllColumns(true);
 
@@ -59,7 +59,7 @@ public class SurveyDesignTable extends FilteredTable
         ));
         setDefaultVisibleColumns(defaultColumns);
 
-        ActionURL updateUrl = new ActionURL(SurveyController.SurveyDesignAction.class, container);
+        ActionURL updateUrl = new ActionURL(SurveyController.SurveyDesignAction.class, schema.getContainer());
         setUpdateURL(new DetailsURL(updateUrl, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
     }
 

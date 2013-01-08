@@ -1023,7 +1023,7 @@ public class ListDefinitionImpl implements ListDefinition
     /** NOTE consider using ListSchema.getTable(), unless you have a good reason */
     public TableInfo getTable(User user)
     {
-        ListTable ret = new ListTable(user, this);
+        ListTable ret = new ListTable(new ListSchema(user, getContainer()), this);
         ret.afterConstruct();
         return ret;
     }

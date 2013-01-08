@@ -18,7 +18,6 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -62,7 +61,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         _participantidColumn = addWrapParticipantColumn("PTID");
         addContainerColumn();
 
-        _sequencenumColumn = addSpecimenVisitColumn(_schema.getStudy().getTimepointType());
+        _sequencenumColumn = addSpecimenVisitColumn(_userSchema.getStudy().getTimepointType());
 
         _participantSequenceNumColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                 _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
@@ -70,7 +69,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantVisitTable(_schema, false);
+                return new ParticipantVisitTable(_userSchema, false);
             }
         });
         _participantSequenceNumColumn.setIsUnselectable(true);
@@ -119,7 +118,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             }
         });
 
-        ColumnInfo specimenComment = createSpecimenCommentColumn(_schema, false);
+        ColumnInfo specimenComment = createSpecimenCommentColumn(_userSchema, false);
         specimenComment.setHidden(true);
         specimenComment.setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -156,10 +155,10 @@ public class SpecimenSummaryTable extends BaseStudyTable
     protected ColumnInfo resolveColumn(String name)
     {
         name = name.toLowerCase();
-        if (name.equals("participantid") || name.equals("ptid") || name.equals(StudyService.get().getSubjectColumnName(_schema.getContainer()).toLowerCase()))
+        if (name.equals("participantid") || name.equals("ptid") || name.equals(StudyService.get().getSubjectColumnName(_userSchema.getContainer()).toLowerCase()))
             return _participantidColumn;
 
-        if (name.equals("sequencenum") || name.equals(StudyService.get().getSubjectVisitColumnName(_schema.getContainer()).toLowerCase()))
+        if (name.equals("sequencenum") || name.equals(StudyService.get().getSubjectVisitColumnName(_userSchema.getContainer()).toLowerCase()))
             return _sequencenumColumn;
 
         // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.

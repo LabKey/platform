@@ -25,11 +25,11 @@ import org.labkey.study.StudySchema;
  * User: brittp
  * Created: July 15, 2008 11:13:43 AM
  */
-public class VialRequestTable extends FilteredTable
+public class VialRequestTable extends FilteredTable<StudyQuerySchema>
 {
     public VialRequestTable(final StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), schema.getContainer());
+        super(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), schema);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
             {
             String name = baseColumn.getName();

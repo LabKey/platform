@@ -33,7 +33,7 @@ public class ParticipantGroupMapTable extends BaseStudyTable
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
 
         ColumnInfo groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
-        groupIdColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label"));
+        groupIdColumn.setFk(new QueryForeignKey(_userSchema, StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label"));
         addColumn(groupIdColumn);
         addWrapParticipantColumn("ParticipantId");
         addContainerColumn();

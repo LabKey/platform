@@ -34,22 +34,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class IssuesTable extends FilteredTable
+public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 {
     private static final List<String> DEFAULT_LIST_COLUMNS = Arrays.asList("IssueId", "Type", "Area", "Title",
             "AssignedTo", "Priority", "Status", "Milestone");
 
-    private IssuesQuerySchema _schema;
-
     public IssuesTable(IssuesQuerySchema schema)
     {
-        super(IssuesSchema.getInstance().getTableInfoIssues(), schema.getContainer());
-        _schema = schema;
+        super(IssuesSchema.getInstance().getTableInfoIssues(), schema);
 
         addAllColumns();
 
         setDefaultVisibleColumns(getDefaultColumns());
-        ActionURL base = IssuesController.issueURL(_schema.getContainer(), IssuesController.DetailsAction.class);
+        ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
         setDetailsURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
         setTitleColumn("Title");
     }
@@ -64,7 +61,7 @@ public class IssuesTable extends FilteredTable
     {
         IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
 
-        Map<String, String> customColumnCaptions = IssueManager.getCustomColumnConfiguration(_schema.getContainer()).getColumnCaptions();
+        Map<String, String> customColumnCaptions = IssueManager.getCustomColumnConfiguration(_userSchema.getContainer()).getColumnCaptions();
 
         ColumnInfo issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
         issueIdColumn.setFk(new RowIdForeignKey(issueIdColumn)
@@ -140,7 +137,7 @@ public class IssuesTable extends FilteredTable
     {
         Set<FieldKey> visibleColumns = new LinkedHashSet<FieldKey>();
 
-        Map<String, String> columnCaptions = IssueManager.getCustomColumnConfiguration(_schema.getContainer()).getColumnCaptions();
+        Map<String, String> columnCaptions = IssueManager.getCustomColumnConfiguration(_userSchema.getContainer()).getColumnCaptions();
 
         for (String name : DEFAULT_LIST_COLUMNS)
             visibleColumns.add(FieldKey.fromParts(getCustomCaption(name, columnCaptions)));
