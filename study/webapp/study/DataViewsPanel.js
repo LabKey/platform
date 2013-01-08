@@ -193,6 +193,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         c1 = me.getRoot(a)[me.dataProperty],
                         c2 = me.getRoot(b)[me.dataProperty];
 
+                    // If both are 0 display order than they are considered unintialized
+                    // just return the alphabetical order
+                    if (c1 == 0 && c2 == 0) {
+                        var a1 = me.getRoot(a)[me.property],
+                            a2 = me.getRoot(b)[me.property];
+                        return a1 > a2 ? 1 : (a1 < a2 ? -1 : 0);
+                    }
                     return c1 > c2 ? 1 : (c1 < c2 ? -1 : 0);
                 }
             });
