@@ -246,7 +246,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<Map<String, Object>>();
         int count = _importRowsUsingETL(user, container, di, outputRows, context, extraScriptContext);
-        return context.getErrors().hasErrors() ? null : outputRows;
+
+        if (context.getErrors().hasErrors())
+            return null;
+
+        QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, outputRows);
+
+        return outputRows;
     }
 
 
