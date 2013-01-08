@@ -34,15 +34,13 @@ import org.labkey.api.view.ActionURL;
  * User: jeckels
  * Date: Feb 22, 2007
  */
-public class ContainerTable extends FilteredTable
+public class ContainerTable extends FilteredTable<UserSchema>
 {
-    protected UserSchema _schema;
     @Nullable private ActionURL _url;
 
     public ContainerTable(UserSchema schema)
     {
-        super(CoreSchema.getInstance().getTableInfoContainers(), schema.getContainer());
-        _schema = schema;
+        super(CoreSchema.getInstance().getTableInfoContainers(), schema);
         // Call this after having a chance to set _schema's value. It's invoked in the superclass constructor,
         // but that's too early for this scenario
         applyContainerFilter(getContainerFilter());
@@ -71,7 +69,7 @@ public class ContainerTable extends FilteredTable
         {
            public TableInfo getLookupTableInfo()
            {
-                return new ContainerTable(_schema);
+                return new ContainerTable(_userSchema);
            }
         });
 
@@ -145,8 +143,8 @@ public class ContainerTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
-                String tableName = _schema.getUser().isAdministrator() ? "SiteUsers" : "Users";
-                return QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), "core").getTable(tableName);
+                String tableName = _userSchema.getUser().isAdministrator() ? "SiteUsers" : "Users";
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), "core").getTable(tableName);
             }
         });
 

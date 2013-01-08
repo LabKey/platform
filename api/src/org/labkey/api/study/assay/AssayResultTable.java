@@ -66,25 +66,23 @@ import java.util.Set;
  * User: jeckels
  * Date: Dec 14, 2010
  */
-public class AssayResultTable extends FilteredTable implements UpdateableTableInfo
+public class AssayResultTable extends FilteredTable<AssayProtocolSchema> implements UpdateableTableInfo
 {
-    protected final AssayProtocolSchema _schema;
     protected final ExpProtocol _protocol;
     protected final AssayProvider _provider;
     private final Domain _resultsDomain;
 
     public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
     {
-        super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol()), schema.getDbSchema()), schema.getContainer());
-        _schema = schema;
-        _protocol = _schema.getProtocol();
-        _provider = _schema.getProvider();
+        super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol()), schema.getDbSchema()), schema);
+        _protocol = _userSchema.getProtocol();
+        _provider = _userSchema.getProvider();
 
         _resultsDomain = _provider.getResultsDomain(_protocol);
 
         setDescription("Contains all of the results (and may contain raw data as well) for the " + _protocol.getName() + " assay definition");
         setName(AssayProtocolSchema.DATA_TABLE_NAME);
-        setPublicSchemaName(_schema.getSchemaName());
+        setPublicSchemaName(_userSchema.getSchemaName());
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 
@@ -127,7 +125,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                     col.setName(domainProperty.getName());
                     PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
                     FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
-                    PropertyColumn.copyAttributes(_schema.getUser(), col, pd, schema.getContainer(), _schema.getSchemaPath(), getPublicName(), pkFieldKey);
+                    PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey);
                 }
                 addColumn(col);
 
@@ -187,12 +185,12 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
             });
 
             if (foundTargetStudyCol)
-                specimenIdCol.setFk(new SpecimenForeignKey(_schema, _provider, _protocol));
+                specimenIdCol.setFk(new SpecimenForeignKey(_userSchema, _provider, _protocol));
         }
 
         ColumnInfo dataColumn = getColumn("DataId");
         dataColumn.setLabel("Data");
-        dataColumn.setFk(new ExpSchema(_schema.getUser(), _schema.getContainer()).getDataIdForeignKey());
+        dataColumn.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getDataIdForeignKey());
         dataColumn.setUserEditable(false);
         dataColumn.setShownInUpdateView(false);
         dataColumn.setShownInUpdateView(false);
@@ -207,7 +205,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpRunTable expRunTable = AssayService.get().createRunTable(_protocol, _provider, _schema.getUser(), _schema.getContainer());
+                ExpRunTable expRunTable = AssayService.get().createRunTable(_protocol, _provider, _userSchema.getUser(), _userSchema.getContainer());
                 expRunTable.setContainerFilter(getContainerFilter());
                 return expRunTable;
             }
@@ -250,7 +248,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
             folderCol.setShownInInsertView(false);
             folderCol.setShownInUpdateView(false);
             addColumn(folderCol);
-            ContainerForeignKey.initColumn(folderCol, _schema);
+            ContainerForeignKey.initColumn(folderCol, _userSchema);
         }
 
         setDefaultVisibleColumns(visibleColumns);
@@ -314,7 +312,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    return new AssayResultTable(_schema, false);
+                    return new AssayResultTable(_userSchema, false);
                 }
             };
             fk.setPrefixColumnCaption(false);
@@ -383,13 +381,13 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     {
         return (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm)) &&
                 _provider.isEditableResults(_protocol) &&
-                _schema.getContainer().hasPermission(user, perm);
+                _userSchema.getContainer().hasPermission(user, perm);
     }
 
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new AssayResultUpdateService(_schema, this);
+        return new AssayResultUpdateService(_userSchema, this);
     }
 
     @Override

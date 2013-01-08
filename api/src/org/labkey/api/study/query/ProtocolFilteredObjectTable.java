@@ -15,23 +15,23 @@
  */
 package org.labkey.api.study.query;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.FilteredTable;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.study.assay.AssaySchema;
 /*
  * User: brittp
  * Date: Mar 15, 2009
  * Time: 10:55:45 AM
  */
 
-public class ProtocolFilteredObjectTable extends FilteredTable
+public class ProtocolFilteredObjectTable extends FilteredTable<AssaySchema>
 {
     private String _protocolLsid;
-    public ProtocolFilteredObjectTable(Container container, String protocolLsid)
+    public ProtocolFilteredObjectTable(AssaySchema schema, String protocolLsid)
     {
-        super(OntologyManager.getTinfoObject(), container);
+        super(OntologyManager.getTinfoObject(), schema);
         wrapAllColumns(true);
         _protocolLsid = protocolLsid;
     }

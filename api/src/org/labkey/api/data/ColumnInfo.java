@@ -22,6 +22,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
@@ -1782,5 +1784,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public void setCalculated(boolean calculated)
     {
         _calculated = calculated;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testLabelFromName()
+        {
+            assertEquals("DRB Haplotype 1", labelFromName("DRBHaplotype1"));
+        }
     }
 }

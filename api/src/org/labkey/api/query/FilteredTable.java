@@ -44,7 +44,7 @@ import java.util.Set;
  * A table that filters down to a particular set of values. A typical example
  * would be filtering to only show rows that are part of a particular container.
  */
-public class FilteredTable extends AbstractTableInfo implements ContainerFilterable
+public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableInfo implements ContainerFilterable
 {
     final private SimpleFilter _filter;
     private String _innerAlias = null;
@@ -52,14 +52,14 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     AliasManager _aliasManager = null;
     protected String _publicSchemaName = null;
 
-    private Container _container;
-
     @Nullable // if null, means default
     private ContainerFilter _containerFilter;
 
     private boolean _public = true;
 
-    // CAREFUL: This constructor does not take a container... call one of the other constructors to filter based on container
+    protected SchemaType _userSchema;
+
+    /** CAREFUL: This constructor does not take a schema... call one of the other constructors to filter based on container */
     // TODO: Should be protected?
     public FilteredTable(TableInfo table)
     {
@@ -80,18 +80,18 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         // to _rootTable lazily, allowing overrides.
     }
 
-    public FilteredTable(TableInfo table, Container container)
+    public FilteredTable(TableInfo table, SchemaType userSchema)
     {
-        this(table, container, null);
+        this(table, userSchema, null);
     }
 
-    public FilteredTable(TableInfo table, Container container, ContainerFilter containerFilter)
+    public FilteredTable(TableInfo table, SchemaType userSchema, @Nullable ContainerFilter containerFilter)
     {
         this(table);
+        _userSchema = userSchema;
 
-        if (container == null)
+        if (_userSchema.getContainer() == null)
             throw new IllegalArgumentException("container cannot be null");
-        _container = container;
 
         if (containerFilter != null)
             setContainerFilter(containerFilter);
@@ -515,7 +515,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     public Container getContainer()
     {
-        return _container;
+        return _userSchema == null ? null : _userSchema.getContainer();
     }
 
     public boolean needsContainerClauseAdded()
@@ -554,5 +554,11 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     public String getPublicSchemaName()
     {
         return _publicSchemaName == null ? super.getPublicSchemaName() : _publicSchemaName;
+    }
+
+    @Override
+    public SchemaType getUserSchema()
+    {
+        return _userSchema;
     }
 }

@@ -90,6 +90,9 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     DbSchema getSchema();
 
+    @Nullable
+    UserSchema getUserSchema();
+
     /** getSchema().getSqlDialect() */
     SqlDialect getSqlDialect();
 

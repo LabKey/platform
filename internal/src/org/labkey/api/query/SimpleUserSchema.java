@@ -165,16 +165,14 @@ public class SimpleUserSchema extends UserSchema
         return null;
     }
 
-    public static class SimpleTable extends FilteredTable implements UpdateableTableInfo
+    public static class SimpleTable<SchemaType extends UserSchema> extends FilteredTable<SchemaType> implements UpdateableTableInfo
     {
-        protected UserSchema _userSchema;
         protected ColumnInfo _objectUriCol;
         protected Domain _domain;
 
-        public SimpleTable(UserSchema schema, TableInfo table)
+        public SimpleTable(SchemaType schema, TableInfo table)
         {
-            super(table, schema.getContainer());
-            _userSchema = schema;
+            super(table, schema);
 
             addColumns();
             addTableURLs();
@@ -188,11 +186,6 @@ public class SimpleUserSchema extends UserSchema
                 DetailsURL detailsURL = QueryService.get().urlDefault(getContainer(), QueryAction.detailsQueryRow, this);
                 setDetailsURL(detailsURL);
             }
-        }
-
-        protected UserSchema getUserSchema()
-        {
-            return _userSchema;
         }
 
         public void addColumns()

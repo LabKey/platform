@@ -36,7 +36,7 @@ import java.util.*;
  * User: Karl Lum
  * Date: Jan 21, 2008
  */
-public abstract class PlateBasedAssayRunDataTable extends FilteredTable
+public abstract class PlateBasedAssayRunDataTable extends FilteredTable<AssaySchema>
 {
     public static final String RUN_ID_COLUMN_NAME = "RunId";
 
@@ -46,7 +46,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
 
     public PlateBasedAssayRunDataTable(final AssaySchema schema, final ExpProtocol protocol)
     {
-        super(new ProtocolFilteredObjectTable(schema.getContainer(), protocol.getLSID()), schema.getContainer());
+        super(new ProtocolFilteredObjectTable(schema, protocol.getLSID()), schema);
 
         final AssayProvider provider = AssayService.get().getProvider(protocol);
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();

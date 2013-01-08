@@ -1049,4 +1049,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         // Skip visiting
         return null;
     }
- }
+
+    @Override
+    public UserSchema getUserSchema()
+    {
+        return null;
+    }
+}

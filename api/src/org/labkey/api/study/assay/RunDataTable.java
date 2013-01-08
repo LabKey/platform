@@ -40,13 +40,13 @@ import java.util.Set;
  * Time: 5:35:15 PM
  */
 @Deprecated
-/* package */ class RunDataTable extends FilteredTable
+/* package */ class RunDataTable extends FilteredTable<AssayProtocolSchema>
 {
     private Domain _resultsDomain;
 
     public RunDataTable(final AssayProtocolSchema schema, boolean forUpgrade)
     {
-        super(new ProtocolFilteredObjectTable(schema.getContainer(), schema.getProtocol().getLSID()), schema.getContainer());
+        super(new ProtocolFilteredObjectTable(schema, schema.getProtocol().getLSID()), schema);
         setDescription("Contains all of the results (and may contain raw data as well) for the " + schema.getProtocol().getName() + " assay definition");
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));

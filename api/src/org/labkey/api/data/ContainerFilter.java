@@ -94,8 +94,8 @@ public abstract class ContainerFilter
         return new ContainerClause(schema, containerFilterColumn, this, container);
     }
 
-    /** Create an expression for a WHERE clause */
-    @Deprecated // Use FieldKey version instead.
+    /** Use FieldKey version instead. Create an expression for a WHERE clause */
+    @Deprecated
     public SQLFragment getSQLFragment(DbSchema schema, String containerColumnSQL, Container container)
     {
         return getSQLFragment(schema, new SQLFragment(containerColumnSQL), container);

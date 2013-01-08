@@ -17,12 +17,22 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.query.UserSchema;
 
-public class VirtualTable extends AbstractTableInfo
+public class VirtualTable<SchemaType extends UserSchema> extends AbstractTableInfo
 {
-    public VirtualTable(DbSchema schema)
+    protected final SchemaType _userSchema;
+
+    public VirtualTable(DbSchema schema, @Nullable SchemaType userSchema)
     {
         super(schema);
+        _userSchema = userSchema;
+    }
+
+    public VirtualTable(DbSchema schema)
+    {
+        this(schema, null);
     }
 
     @NotNull
@@ -35,5 +45,11 @@ public class VirtualTable extends AbstractTableInfo
     public boolean isPublic()
     {
         return false;
+    }
+
+    @Override
+    public SchemaType getUserSchema()
+    {
+        return _userSchema;
     }
 }
