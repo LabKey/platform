@@ -39,7 +39,6 @@ import org.labkey.api.settings.AbstractSettingsGroup;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.Portal;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UsersDomainKind;
@@ -72,17 +71,6 @@ public class CoreUpgradeCode implements UpgradeCode
         catch (SQLException e)
         {
             return null;
-        }
-    }
-
-    // invoked by prop-10.20-10.21.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void migrateEmailTemplates(ModuleContext context)
-    {
-        // Change the replacement delimeter character and change to a different PropertyManager node
-        if (!context.isNewInstall())
-        {
-            EmailTemplateService.get().upgradeTo102();
         }
     }
 

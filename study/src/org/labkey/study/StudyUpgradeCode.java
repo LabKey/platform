@@ -53,7 +53,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
 
@@ -73,23 +72,6 @@ import java.util.Map;
 public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
-
-    /* called at 10.20->10.21 */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void materializeDatasets(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            return;
-
-        try
-        {
-            DataSetDefinition.upgradeAll();
-        }
-        catch (SQLException se)
-        {
-            throw UnexpectedException.wrap(se);
-        }
-    }
 
     // called at 10.30->10.31
     @SuppressWarnings({"UnusedDeclaration"})
