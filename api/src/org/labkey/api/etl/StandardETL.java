@@ -203,9 +203,7 @@ public class StandardETL implements DataIteratorBuilder
         //
         for (TranslateHelper pair : unusedCols.values())
         {
-            if (pair.target.isAutoIncrement())
-                continue;
-            if (!pair.target.isNullable() || (null != pair.dp && pair.dp.isRequired()))
+            if (isRequiredForInsert(pair.target, pair.dp))
                 setupError.addGlobalError("Data does not contain required field: " + pair.target.getName());
         }
 
@@ -245,5 +243,13 @@ public class StandardETL implements DataIteratorBuilder
 
         DataIterator last = validate.hasValidators() ? validate : convert;
         return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
+    }
+
+
+    boolean isRequiredForInsert(@NotNull ColumnInfo col, @Nullable DomainProperty dp)
+    {
+        if (col.isAutoIncrement() || col.isVersionColumn())
+            return false;
+        return !col.isNullable() || (null != dp && dp.isRequired());
     }
 }
