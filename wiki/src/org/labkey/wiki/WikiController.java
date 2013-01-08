@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2012 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2013 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
