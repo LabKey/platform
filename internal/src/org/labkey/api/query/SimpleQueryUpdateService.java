@@ -19,7 +19,11 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.etl.DataIteratorUtil;
+import org.labkey.api.etl.LoggingDataIterator;
+import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.SimpleUserSchema.SimpleTable;
@@ -28,6 +32,7 @@ import org.labkey.api.security.User;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * User: kevink
@@ -65,6 +70,45 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         return (SimpleTable)super.getQueryTable();
     }
 
+    public DataIteratorBuilder createImportETL(User user, Container container, final DataIteratorBuilder data, DataIteratorContext context)
+    {
+        DataIteratorBuilder wrap = new DataIteratorBuilder()
+        {
+            @Override
+            public DataIterator getDataIterator(DataIteratorContext context)
+            {
+                DataIterator it = data.getDataIterator(context);
+                ColumnInfo objectUriColumn = getQueryTable().getObjectUriColumn();
+                if (null == objectUriColumn)
+                    return it;
+                Map<String,Integer> colMap = DataIteratorUtil.createColumnNameMap(it);
+                Integer objectUriIndex = colMap.get(objectUriColumn.getName());
+                SimpleTranslator out = new SimpleTranslator(it, context);
+                Callable call = new Callable()
+                {
+                    @Override
+                    public Object call() throws Exception
+                    {
+                        return getQueryTable().createObjectURI();
+                    }
+                };
+                for (int i=1 ; i<it.getColumnCount() ; i++)
+                {
+                    if (null != objectUriIndex && i == objectUriIndex)
+                        out.addCoaleseColumn(objectUriColumn.getName(), i, call);
+                    else
+                        out.addColumn(i);
+                }
+                if (null == objectUriIndex)
+                        out.addColumn(objectUriColumn, call);
+                return LoggingDataIterator.wrap(out);
+            }
+        };
+        return super.createImportETL(user,container,wrap,context);
+    }
+
+
+    // TODO kill DomainUpdateHelper! Should be replaced by ETL
     public static class SimpleDomainUpdateHelper implements DomainUpdateHelper
     {
         SimpleTable _queryTable;
@@ -89,7 +133,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         @Override
         public String createObjectURI()
         {
-            return _queryTable.createPropertyURI();
+            return _queryTable.createObjectURI();
         }
 
         @Override

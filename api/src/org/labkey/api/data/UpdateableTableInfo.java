@@ -18,11 +18,8 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.sql.Connection;
@@ -39,8 +36,8 @@ public interface UpdateableTableInfo
 {
     public enum ObjectUriType
     {
-        schemaColumn,   // copy from a column in the root table
-        generateUrn     // call GUID.makeURN()
+        schemaColumn,       // copy from a column in the root table
+        generateUrn        // call GUID.makeURN()
     }
 
     /*

@@ -377,8 +377,7 @@ public class SimpleUserSchema extends UserSchema
             return SimpleTableDomainKind.getDomainURI(_userSchema.getName(), getName(), getContainer(), _userSchema.getUser());
         }
 
-        // XXX: rename 'createObjectURI'
-        protected String createPropertyURI()
+        public String createObjectURI()
         {
             if (_objectUriCol == null)
                 return null;
