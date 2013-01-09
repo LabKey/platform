@@ -645,6 +645,7 @@ core/src/org/labkey/core/admin/mvIndicators.jsp -text
 core/src/org/labkey/core/admin/newInstallSiteSettings.jsp -text
 core/src/org/labkey/core/admin/properties.jsp -text
 core/src/org/labkey/core/admin/renameFolder.jsp -text
+core/src/org/labkey/core/admin/renameTab.jsp -text
 core/src/org/labkey/core/admin/reorderFolders.jsp -text
 core/src/org/labkey/core/admin/setFolderPermissions.jsp -text
 core/src/org/labkey/core/admin/setInitialFolderSettings.jsp -text

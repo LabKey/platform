@@ -528,6 +528,15 @@ public class AdminController extends SpringActionController
             }
             return url;
         }
+
+        public ActionURL getRenameTabURL(Container c, String pageId, @Nullable URLHelper returnURL)
+        {
+            ActionURL url = new ActionURL(RenameTabAction.class, c);
+            url.addParameter("pageId", pageId);
+            if (null != returnURL)
+                url.addReturnURL(returnURL);
+            return url;
+        }
     }
 
 
@@ -5626,6 +5635,138 @@ public class AdminController extends SpringActionController
             }
 
             return prevPage;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class RenameTabAction extends FormViewAction<RenameTabForm>
+    {
+        public void validateCommand(RenameTabForm form, Errors errors)
+        {
+            if (getContainer().getFolderType() == FolderType.NONE)
+            {
+                errors.reject(ERROR_MSG, "Cannot change tab names in custom folder types.");
+            }
+            else
+            {
+                String name = form.getTabName();
+                if (name == null)
+                {
+                    errors.reject(ERROR_MSG, "A tab name must be specified.");
+                    return;
+                }
+
+                CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(getContainer(), true));
+                Portal.PortalPage pageToChange = pages.get(form.getPageId());
+                if (null == pageToChange)
+                {
+                    errors.reject(ERROR_MSG, "Page cannot be found. Check with your system administrator.");
+                    return;
+                }
+
+                for (Portal.PortalPage page : pages.values())
+                {
+                    if (!page.equals(pageToChange))
+                    {
+                        if (null != page.getCaption() && page.getCaption().equalsIgnoreCase(name))
+                        {
+                            errors.reject(ERROR_MSG, "A tab with the same name already exists in this folder.");
+                            return;
+                        }
+                        if (page.getPageId().equalsIgnoreCase(name))
+                        {
+                            if (null != page.getCaption() || "portal.default".equalsIgnoreCase(name))
+                                errors.reject(ERROR_MSG, "You cannot change a tab's name to another tab's original name even if the original name is not visible.");
+                            else
+                                errors.reject(ERROR_MSG, "A tab with the same name already exists in this folder.");
+                            return;
+                        }
+                    }
+                }
+
+                List<FolderTab> folderTabs = getContainer().getFolderType().getDefaultTabs();
+                for (FolderTab folderTab : folderTabs)
+                {
+                    String folderTabCaption = folderTab.getCaption(getViewContext());
+                    if (!folderTab.getName().equalsIgnoreCase(pageToChange.getPageId()) && null != folderTabCaption && folderTabCaption.equalsIgnoreCase(name))
+                    {
+                        errors.reject(ERROR_MSG, "You cannot change a tab's name to another tab's original name even if the original name is not visible.");
+                        return;
+                    }
+                }
+            }
+        }
+
+        public boolean handlePost(RenameTabForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            String name = form.getTabName();
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<Portal.PortalPage>(Portal.getPages(container));
+            Portal.PortalPage page = pages.get(form.getPageId());
+
+            if (null == page)
+            {
+                errors.reject(ERROR_MSG, "Page cannot be found. Check with your system administrator.");
+                return false;
+            }
+
+            if (StringUtils.isNotEmpty(name))
+            {
+                page.setCaption(form.getTabName());
+
+                // Update the page the caption is saved.
+                Portal.updatePortalPage(container, page);
+            }
+            return true;
+        }
+
+        public ModelAndView getView(RenameTabForm form, boolean reshow, BindException errors) throws Exception
+        {
+            HttpView view = new JspView<RenameTabForm>("/org/labkey/core/admin/renameTab.jsp", form, errors);
+
+            return view;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Rename Tab");
+            return root;
+        }
+
+        public ActionURL getSuccessURL(RenameTabForm form)
+        {
+            if (form.getReturnActionURL() != null && !form.getReturnActionURL().getAction().equals("renameTab"))
+            {
+                return form.getReturnActionURL();
+            }
+
+            return new ActionURL(ProjectController.BeginAction.class, getContainer());
+        }
+    }
+
+    public static class RenameTabForm extends ReturnUrlForm
+    {
+        String _pageId;
+        String _tabName;
+
+        public String getTabName()
+        {
+            return _tabName;
+        }
+
+        public void setTabName(String name)
+        {
+            _tabName = name;
+        }
+
+        public String getPageId()
+        {
+            return _pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            _pageId = pageId;
         }
     }
 }
