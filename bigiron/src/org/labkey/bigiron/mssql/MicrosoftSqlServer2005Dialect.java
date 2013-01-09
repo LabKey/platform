@@ -216,13 +216,15 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     @Override
     public @Nullable ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
-        stmt.execute();
-
-        if (stmt.getMoreResults())
-            return stmt.getResultSet();
-        else
-            return null;
+        return stmt.executeQuery();
+//        stmt.execute();
+//
+//        if (stmt.getMoreResults())
+//            return stmt.getResultSet();
+//        else
+//            return null;
     }
+
 
     @Override
     public boolean requiresStatementMaxRows()
