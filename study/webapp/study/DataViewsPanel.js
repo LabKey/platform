@@ -4,6 +4,47 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/** EXPERIMENTAL : Extend FilterBy to Ext.data.TreeStore **/
+Ext4.override(Ext4.data.TreeStore, {
+
+    // overridden
+    filterBy: function(fn, scope) {
+        var me = this;
+        return me.filterLeavesBy(fn, scope);
+    },
+
+    filterLeavesBy: function(fn, scope) {
+        var me = this,
+            leaves = Ext4.Array.filter(me.tree.flatten(), function(node) { return node.isLeaf(); });
+
+        me.snapshot = me.snapshot || me.getRootNode().copy(null, true);
+
+        return Ext4.Array.filter(leaves, function(n) {
+            var result = fn.call(scope, n);
+            if (!result) {
+                n.remove();
+            }
+            return result;
+        }, scope);
+    },
+
+    clearFilter : function() {
+        var me = this, i, tmp = [];
+
+        if (me.snapshot) {
+
+            for (i=0; i < me.snapshot.childNodes.length; i++) {
+                tmp.push(me.snapshot.childNodes[i].copy(null, true));
+            }
+
+            me.getRootNode().removeAll();
+            me.getRootNode().appendChild(tmp);
+            delete me.snapshot;
+        }
+        return me;
+    }
+});
+
 Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     extend : 'Ext.panel.Panel',
@@ -24,6 +65,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             frame  : false, border : false,
             allowCustomize : true
         });
+
+        /* Experimental -- Set to true to view data as nested tree */
+        this.asTree = false;
 
         // The following default to type 'string'
         var fields = [
@@ -145,21 +189,21 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return items;
     },
 
-    getViewProxy : function(isTree) {
+    getViewProxy : function() {
         return {
             type   : 'ajax',
-            url    : LABKEY.ActionURL.buildURL('study', 'browseData' + (isTree ? 'Tree' : '') + '.api'),
+            url    : LABKEY.ActionURL.buildURL('study', 'browseData' + (this.asTree ? 'Tree' : '') + '.api'),
             extraParams : {
                 // These parameters are required for specific webpart filtering
                 pageId      : this.pageId,
                 index       : this.index,
                 returnUrl   : this.returnUrl
             },
-            reader : isTree ? 'json' : { type : 'json', root : 'data' }
+            reader : this.asTree ? 'json' : { type : 'json', root : 'data' }
         };
     },
 
-    initializeViewStore : function(useGrouping, isTree) {
+    initializeViewStore : function(useGrouping) {
 
         if (this.store)
             return this.store;
@@ -168,7 +212,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             pageSize: 100,
             model   : 'Dataset.Browser.View',
             autoLoad: true,
-            proxy   : this.getViewProxy(isTree),
+            proxy   : this.getViewProxy(),
             listeners : {
                 beforeload : function(){
                     if (this.gridPanel)
@@ -180,9 +224,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         };
 
-        this.store = Ext4.create(isTree ? 'Ext.data.TreeStore' : 'Ext.data.Store', config);
+        this.store = Ext4.create(this.asTree ? 'Ext.data.TreeStore' : 'Ext.data.Store', config);
 
-        if (useGrouping && !isTree) {
+        if (useGrouping && !this.asTree) {
 
             // 15764
             this.store.groupers.add({
@@ -308,10 +352,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.dateRenderer = Ext4.util.Format.dateRenderer(json.dateFormat);
             this.editInfo = json.editInfo;
 
-            /* Experimental -- Set to true to view data as nested tree */
-            var asTree = false;
-
-            this.initGrid(true, json.visibleColumns, asTree);
+            this.initGrid(true, json.visibleColumns);
         };
         
         this.centerPanel.getEl().mask('Initializing...');
@@ -363,7 +404,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         });
     },
 
-    initGrid : function(useGrouping, visibleColumns, asTree) {
+    initGrid : function(useGrouping, visibleColumns) {
 
         /**
          * Enable Grouping by Category
@@ -486,15 +527,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        this.gridPanel = Ext4.create(asTree ? 'Ext.tree.Panel' : 'Ext.grid.Panel', {
+        this.gridPanel = Ext4.create(this.asTree ? 'Ext.tree.Panel' : 'Ext.grid.Panel', {
             id       : 'data-browser-grid-' + this.webpartId,
-            store    : this.initializeViewStore(useGrouping, asTree),
+            store    : this.initializeViewStore(useGrouping),
             tbar     : this.initSearch(),
             border   : false, frame: false,
             layout   : 'fit',
             cls      : 'iScroll', // webkit custom scroll bars
             scroll   : 'vertical',
-            columns  : this.initGridColumns(visibleColumns, asTree),
+            columns  : this.initGridColumns(visibleColumns),
             multiSelect: true,
             region   : 'center',
             viewConfig : {
@@ -538,7 +579,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.centerPanel.add(this.gridPanel);
     },
 
-    initGridColumns : function(visibleColumns, isTree) {
+    initGridColumns : function(visibleColumns) {
 
         var detailsTpl =
                 '<tpl if="detailsUrl">' +
@@ -568,8 +609,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             sortable : false,
             menuDisabled : true,
             renderer : function(view, meta, rec, idx, colIdx, store) {
-                if (!this._inCustomMode())
+                if (!this._inCustomMode()) {
                     meta.style = 'display: none;';  // what a nightmare
+                }
 
                 // an item need an edit info interface to be editable
                 if (!this.editInfo[rec.data.dataType]) {
@@ -580,7 +622,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             hidden   : true,
             scope    : this
         },{
-            xtype    : isTree ? 'treecolumn' : 'templatecolumn',
+            xtype    : this.asTree ? 'treecolumn' : 'templatecolumn',
             text     : 'Name',
             flex     : 1,
             sortable : true,
@@ -704,7 +746,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var filterSearch = function() {
             this.searchVal = searchField.getValue();
             this.hiddenFilter();
-        }
+        };
 
         var filterTask = new Ext4.util.DelayedTask(filterSearch, this);
 
@@ -818,7 +860,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 direction: 'ASC'
             }
         ]);
-        this.store.filterBy(function(rec, id){
+        if (!this.asTree) {
+            this.store.filterBy(function(rec, id){
 
             var answer = true;
             if (rec.data && this.searchVal && this.searchVal != "")
@@ -857,6 +900,18 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
             return answer;
         }, this);
+        }
+        else {
+            this.store.clearFilter();
+            if (this.searchVal && !this.searchVal == "") {
+                this.store.filterBy(function(node) {
+                    if (!(node.data.name.indexOf(this.searchVal) > -1)) {
+                        return false;
+                    }
+                    return true;
+                }, this);
+            }
+        }
     },
 
     isCustomizable : function() {

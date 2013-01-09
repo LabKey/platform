@@ -6892,6 +6892,8 @@ public class StudyController extends BaseStudyController
     @RequiresPermissionClass(ReadPermission.class)
     public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
     {
+        private String dateFormat;
+
         @Override
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
@@ -6958,6 +6960,10 @@ public class StudyController extends BaseStudyController
                         category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
                 }
             }
+
+            dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
+            if (dateFormat == null)
+                dateFormat = DateUtil.getStandardDateFormatString();
 
             return buildTree(views);
         }
@@ -7069,9 +7075,9 @@ public class StudyController extends BaseStudyController
             // process views
             for (DataViewInfo view : groups.get(vc.getRowId()))
             {
-                JSONObject viewJson = new JSONObject();
-                viewJson.put("leaf", true);
+                JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view, dateFormat);
                 viewJson.put("name", view.getName());
+                viewJson.put("leaf", true);
                 viewJson.put("icon", view.getIcon());
                 children.put(viewJson);
             }

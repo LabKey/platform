@@ -60,6 +60,10 @@
     border-bottom: 2px solid #154B76;
 }
 
+.dvc .x4-grid-tree-node-leaf td {
+    padding-left: 0px !important;
+}
+
 .x4-reset .dataset-search .x4-form-text {
     font-size: 18px;
     padding-left: 6px;
