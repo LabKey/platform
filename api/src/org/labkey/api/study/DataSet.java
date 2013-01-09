@@ -128,6 +128,8 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     public void delete(User user);
 
+    public void deleteAllRows(User user);
+
     // constants for dataset types
     public static final String TYPE_STANDARD = "Standard";
     public static final String TYPE_PLACEHOLDER = "Placeholder";
