@@ -781,6 +781,30 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         StudyManager.getInstance().deleteDataset(getStudy(), user, this, true);
     }
 
+
+    @Override
+    public void deleteAllRows(User user)
+    {
+        TableInfo data = getStorageTableInfo();
+        DbScope scope =  StudySchema.getInstance().getSchema().getScope();
+        try
+        {
+            scope.ensureTransaction();
+            Table.delete(data, new SimpleFilter().addWhereClause("1=1", null));
+            StudyManager.dataSetModified(this, user, true);
+            scope.commitTransaction();
+        }
+        catch (SQLException s)
+        {
+            throw new RuntimeSQLException(s);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+    }
+
+
     // The set of allowed extra key lookup types that we can join across.
     private static final EnumSet<PropertyType> LOOKUP_KEY_TYPES = EnumSet.of(
             PropertyType.DATE_TIME,
