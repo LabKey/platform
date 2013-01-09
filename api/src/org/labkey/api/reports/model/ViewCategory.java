@@ -20,12 +20,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.lang.ref.WeakReference;
 
 /**
  * Created by IntelliJ IDEA.
@@ -38,6 +35,20 @@ public class ViewCategory extends Entity
     private int _rowId;
     private String _label;
     private int _displayOrder;
+    private transient WeakReference<ViewCategory> _parent;
+
+    public ViewCategory()
+    {
+        this(null, 0, 0, null);
+    }
+
+    protected ViewCategory(String label, int rowId, int displayOrder, ViewCategory parent)
+    {
+        _label = label;
+        _rowId = rowId;
+        _displayOrder = displayOrder;
+        _parent = new WeakReference<ViewCategory>(parent);
+    }
 
     public boolean isNew()
     {
@@ -87,6 +98,12 @@ public class ViewCategory extends Entity
     public boolean canRead(Container container, User user)
     {
         return container.hasPermission(user, ReadPermission.class);
+    }
+
+    public ViewCategory getParent()
+    {
+        ViewCategory parent = _parent == null ? null : _parent.get();
+        return parent;
     }
 
     public JSONObject toJSON(User currentUser)

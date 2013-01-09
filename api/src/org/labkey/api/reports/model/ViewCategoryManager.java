@@ -17,11 +17,14 @@ package org.labkey.api.reports.model;
 
 import junit.framework.Assert;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -32,6 +35,7 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.TestContext;
 
 import java.beans.PropertyChangeEvent;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -321,6 +325,77 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             category = saveCategory(c, user, category);
         }
         return category;
+    }
+
+    static
+    {
+        ObjectFactory.Registry.register(ViewCategory.class, new ViewCategoryFactory());
+    }
+
+    public static class ViewCategoryFactory implements ObjectFactory<ViewCategory>
+    {
+        @Override
+        public ViewCategory fromMap(Map<String, ?> m)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ViewCategory fromMap(ViewCategory bean, Map<String, ?> m)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Map<String, Object> toMap(ViewCategory bean, @Nullable Map<String, Object> m)
+        {
+            if (null == m)
+                m = new CaseInsensitiveHashMap<Object>();
+
+            m.put("RowId", bean.getRowId());
+            m.put("Label", bean.getLabel());
+            m.put("DisplayOrder", bean.getDisplayOrder());
+            m.put("ContainerId", bean.getContainerId());
+
+            if (null != bean.getParent())
+            {
+                m.put("Parent", toMap(bean.getParent(), null));
+            }
+
+            return m;
+        }
+
+        @Override
+        public ViewCategory handle(ResultSet rs) throws SQLException
+        {
+            ViewCategory vc;
+
+            int parentId = rs.getInt("Parent");
+            ViewCategory parent = ViewCategoryManager.getInstance().getCategory(parentId);
+
+            vc = new ViewCategory(rs.getString("Label"), rs.getInt("RowId"), rs.getInt("DisplayOrder"), parent);
+            vc.setContainerId(rs.getString("Container"));
+
+            return vc;
+        }
+
+        @Override
+        public ArrayList<ViewCategory> handleArrayList(ResultSet rs) throws SQLException
+        {
+            ArrayList<ViewCategory> list = new ArrayList<ViewCategory>();
+            while (rs.next())
+            {
+                list.add(handle(rs));
+            }
+            return list;
+        }
+
+        @Override
+        public ViewCategory[] handleArray(ResultSet rs) throws SQLException
+        {
+            ArrayList<ViewCategory> list = handleArrayList(rs);
+            return list.toArray(new ViewCategory[list.size()]);
+        }
     }
 
     public static class TestCase extends Assert
