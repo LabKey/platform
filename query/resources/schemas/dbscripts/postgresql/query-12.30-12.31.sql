@@ -15,10 +15,10 @@
  */
 
 ALTER TABLE query.ExternalSchema
-    ADD COLUMN SchemaType character varying(50) NOT NULL DEFAULT 'external';
+    ADD COLUMN SchemaType VARCHAR(50) NOT NULL DEFAULT 'external';
 
 ALTER TABLE query.ExternalSchema
-    ADD COLUMN SchemaTemplate character varying(50);
+    ADD COLUMN SchemaTemplate VARCHAR(50);
 
 ALTER TABLE query.ExternalSchema
     RENAME DbSchemaName TO SourceSchemaName;

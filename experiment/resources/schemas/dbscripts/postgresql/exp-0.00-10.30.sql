@@ -1444,8 +1444,8 @@ CREATE INDEX IDX_ConditionalFormat_PropertyId ON exp.ConditionalFormat(PropertyI
 
 /* exp-10.22-10.23.sql */
 
-ALTER TABLE exp.domaindescriptor ADD COLUMN storageTableName character varying(100);
-ALTER TABLE exp.domaindescriptor ADD COLUMN storageSchemaName character varying(100);
+ALTER TABLE exp.domaindescriptor ADD COLUMN storageTableName VARCHAR(100);
+ALTER TABLE exp.domaindescriptor ADD COLUMN storageSchemaName VARCHAR(100);
 
 /* exp-10.23-10.24.sql */
 

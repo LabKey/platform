@@ -15,6 +15,6 @@
  */
 
  ALTER TABLE audit.auditlog
-    ALTER COLUMN key1 TYPE character varying(1000),
-    ALTER COLUMN key2 TYPE character varying(1000),
-    ALTER COLUMN key3 TYPE character varying(1000);
+    ALTER COLUMN key1 TYPE VARCHAR(1000),
+    ALTER COLUMN key2 TYPE VARCHAR(1000),
+    ALTER COLUMN key3 TYPE VARCHAR(1000);

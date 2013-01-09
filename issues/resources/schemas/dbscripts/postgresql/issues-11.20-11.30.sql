@@ -15,7 +15,7 @@
  */
 
 ALTER TABLE issues.Issues
-    ALTER COLUMN Area TYPE character varying(200),
-    ALTER COLUMN Type TYPE character varying(200),
-    ALTER COLUMN Milestone TYPE character varying(200),
-    ALTER COLUMN Resolution TYPE character varying(200);
+    ALTER COLUMN Area TYPE VARCHAR(200),
+    ALTER COLUMN Type TYPE VARCHAR(200),
+    ALTER COLUMN Milestone TYPE VARCHAR(200),
+    ALTER COLUMN Resolution TYPE VARCHAR(200);

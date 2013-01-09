@@ -52,10 +52,10 @@ ALTER TABLE study.Study ADD DescriptionRendererType VARCHAR(50) NOT NULL DEFAULT
 
 /* study-11.26-11.27.sql */
 
-ALTER TABLE study.Study ADD investigator character varying(200);
+ALTER TABLE study.Study ADD Investigator VARCHAR(200);
 
-ALTER TABLE study.Study ADD studyGrant character varying(200);
+ALTER TABLE study.Study ADD StudyGrant VARCHAR(200);
 
 /* study-11.27-11.28.sql */
 
-ALTER TABLE study.study RENAME COLUMN studyGrant TO "Grant";
+ALTER TABLE study.Study RENAME COLUMN studyGrant TO "Grant";

@@ -45,8 +45,8 @@ CREATE INDEX IX_AssayQCFlag_IntKeys ON exp.AssayQCFlag(IntKey1, IntKey2);
 
 /* exp-11.32-11.33.sql */
 
-ALTER TABLE exp.AssayQCFlag ADD COLUMN Key1 character varying(50);
-ALTER TABLE exp.AssayQCFlag ADD COLUMN Key2 character varying(50);
+ALTER TABLE exp.AssayQCFlag ADD COLUMN Key1 VARCHAR(50);
+ALTER TABLE exp.AssayQCFlag ADD COLUMN Key2 VARCHAR(50);
 
 CREATE INDEX IX_AssayQCFlag_Keys ON exp.AssayQCFlag(Key1, Key2);
 
