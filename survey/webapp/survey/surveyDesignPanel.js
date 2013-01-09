@@ -159,6 +159,33 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
     createMainPanel : function() {
 
         var model = Ext4.create('LABKEY.SQVModel', {});
+
+        model.changeQueryStore = function(schema){
+
+            var me = this;
+            me.queryCombo.setDisabled(false);
+            me.queryCombo.clearValue();
+
+            Ext4.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('survey', 'getValidDesignQueries.api'),
+                method  : 'POST',
+                jsonData: {schemaName : schema},
+                success : function(resp){
+
+                    var o = Ext4.decode(resp.responseText);
+
+                    if (o.queries)
+                    {
+                        me.queryStore.loadData(o.queries);
+                        me.queryCombo.fireEvent('dataloaded', me.queryCombo);
+
+                    }
+                },
+                failure : this.onFailure,
+                scope   : this
+            });
+        };
+
         var items = [];
 
         items.push({

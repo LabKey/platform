@@ -48,6 +48,8 @@ import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -64,6 +66,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
@@ -434,7 +437,7 @@ public class SurveyController extends SpringActionController
 
             if (surveyDesign != null)
             {
-                TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
+                TableInfo table = getSurveyAnswersTableInfo(surveyDesign, getContainer());
                 FieldKey pk = table.getAuditRowPk();
 
                 if (table != null && pk != null)
@@ -539,9 +542,9 @@ public class SurveyController extends SpringActionController
         }
     }
 
-    protected TableInfo getSurveyAnswersTableInfo(SurveyDesign survey)
+    protected TableInfo getSurveyAnswersTableInfo(SurveyDesign survey, Container container)
     {
-        Container container = ContainerManager.getForId(survey.getContainerId());
+        //Container container = ContainerManager.getForId(survey.getContainerId());
         if (container != null)
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), container, survey.getSchemaName());
@@ -626,14 +629,13 @@ public class SurveyController extends SpringActionController
 
                 if (surveyDesign != null)
                 {
-                    Container container = ContainerManager.getForId(surveyDesign.getContainerId());
-                    TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
+                    TableInfo table = getSurveyAnswersTableInfo(surveyDesign, getContainer());
                     FieldKey pk = table.getAuditRowPk();
-                    UserSchema schema = QueryService.get().getUserSchema(getUser(), container, surveyDesign.getSchemaName());
+                    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), surveyDesign.getSchemaName());
 
                     if (schema != null)
                     {
-                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, table.getName());
+                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, surveyDesign.getQueryName());
 
                         Object value = survey.getResponsesPk();
                         ColumnInfo col = table.getColumn(pk);
@@ -653,7 +655,7 @@ public class SurveyController extends SpringActionController
                         if (view != null)
                         {
                             ApiQueryResponse queryResponse = new ExtendedApiQueryResponse(view, getViewContext(), false, true,
-                                    schema.getName(), table.getName(), settings.getOffset(), null,
+                                    surveyDesign.getSchemaName(), surveyDesign.getQueryName(), settings.getOffset(), null,
                                     false, false, false);
                             return queryResponse;
                         }
@@ -713,7 +715,7 @@ public class SurveyController extends SpringActionController
 
                     if (surveyDesign != null)
                     {
-                        TableInfo table = getSurveyAnswersTableInfo(surveyDesign);
+                        TableInfo table = getSurveyAnswersTableInfo(surveyDesign, getContainer());
                         FieldKey pk = table.getAuditRowPk();
 
                         if (table != null && pk != null)
@@ -831,6 +833,40 @@ public class SurveyController extends SpringActionController
         public URLHelper getSuccessURL(QueryForm form)
         {
             return _returnURL;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetValidDesignQueries extends ApiAction<QueryForm>
+    {
+        @Override
+        public ApiResponse execute(QueryForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<Map<String, Object>> queries = new ArrayList<Map<String, Object>>();
+
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
+
+            if (schema != null)
+            {
+                for (String tableName : schema.getVisibleTableNames())
+                {
+                    TableInfo table = schema.getTable(tableName);
+
+                    if (table.getUpdateService() != null)
+                    {
+                        Map<String, Object> query = new HashMap<String, Object>();
+
+                        query.put("name", tableName);
+                        query.put("isUserDefined", false);
+
+                        queries.add(query);
+                    }
+                }
+            }
+            response.put("queries", queries);
+
+            return response;
         }
     }
 }
