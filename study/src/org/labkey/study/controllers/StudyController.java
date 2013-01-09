@@ -1313,7 +1313,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(DeleteStudyForm form, BindException errors) throws Exception
         {
-            StudyManager.getInstance().deleteAllStudyData(getContainer(), getUser(), true);
+            StudyManager.getInstance().deleteAllStudyData(getContainer(), getUser());
             return true;
         }
 

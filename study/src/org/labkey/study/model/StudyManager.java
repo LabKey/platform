@@ -2157,12 +2157,7 @@ public class StudyManager
             clearCaches(substudy.getContainer(), unmaterializeDatasets);
     }
 
-    public void deleteAllStudyData(Container c) throws SQLException
-    {
-        deleteAllStudyData(c, null, true);
-    }
-
-    public void deleteAllStudyData(Container c, User user, boolean deleteStudyDesigns) throws SQLException
+    public void deleteAllStudyData(Container c, User user) throws SQLException
     {
         // Cancel any reload timer
         StudyReload.cancelTimer(c);
@@ -2187,10 +2182,7 @@ public class StudyManager
         {
             scope.ensureTransaction();
 
-            if (deleteStudyDesigns)
-                StudyDesignManager.get().deleteStudyDesigns(c, deletedTables);
-            else            //If study design came from another folder, move it back to where it came from
-                StudyDesignManager.get().inactivateStudyDesign(c);
+            StudyDesignManager.get().deleteStudyDesigns(c, deletedTables);
 
             for (DataSetDefinition dsd : dsds)
                 deleteDataset(study, user, dsd, false);
@@ -2298,7 +2290,7 @@ public class StudyManager
         // trust and verify... but only when asserts are on
         //
 
-        assert verifyAllTablesWereDeleted(deletedTables, deleteStudyDesigns);
+        assert verifyAllTablesWereDeleted(deletedTables);
     }
 
     private SQLFragment getStudySnapshotUpdateSql(Container c, String columnName)
@@ -2317,17 +2309,10 @@ public class StudyManager
     }
 
     // TODO: Check that datasets are deleted as well?
-    private boolean verifyAllTablesWereDeleted(Set<TableInfo> deletedTables, boolean deleteStudyDesigns)
+    private boolean verifyAllTablesWereDeleted(Set<TableInfo> deletedTables)
     {
         // Pretend like we deleted from StudyData and StudyDataTemplate tables  TODO: why aren't we deleting from these?
         Set<String> deletedTableNames = new CaseInsensitiveHashSet("studydata", "studydatatemplate");
-
-        // If we're not supposed to delete study designs, then pretend like we did
-        if (!deleteStudyDesigns)
-        {
-            deletedTableNames.add(StudyDesignManager.get().getStudyDesignTable().getName());
-            deletedTableNames.add(StudyDesignManager.get().getStudyVersionTable().getName());
-        }
 
         for (TableInfo t : deletedTables)
         {
