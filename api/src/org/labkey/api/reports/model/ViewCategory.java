@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports.model;
 
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
@@ -154,6 +155,22 @@ public class ViewCategory extends Entity
         json.put("displayValue", displayValue);
 
         return json;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final ViewCategory vc = (ViewCategory) o;
+
+        return vc.getRowId() == _rowId;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return new HashCodeBuilder(23,61).append(super.hashCode()).append(_rowId).toHashCode();
     }
 }
 
