@@ -145,6 +145,15 @@
       <ns:column columnName="AllowReqLocEndpoint">
         <ns:description>Whether to allow Endpoint Lab locations to be Requesting Locations.</ns:description>
       </ns:column>
+      <ns:column columnName="ParticipantAliasDatasetName">
+        <ns:description>Name of the dataset that contains participant alias data, if any.</ns:description>
+      </ns:column>
+      <ns:column columnName="ParticipantAliasSourceColumnName">
+        <ns:description>Name of the column in the selected participant alias dataset that contains the source value.</ns:description>
+      </ns:column>
+      <ns:column columnName="ParticipantAliasColumnName">
+        <ns:description>Name of the column in the selected participant alias dataset that contains the alias value.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">

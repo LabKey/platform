@@ -131,6 +131,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private boolean _allowReqLocSal = true;
     private boolean _allowReqLocEndpoint = true;
 
+    private String _participantAliasDatasetName;
+    private String _participantAliasSourceColumnName;
+    private String _participantAliasColumnName;
+
     public StudyImpl()
     {
     }
@@ -933,6 +937,36 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setLastSpecimenLoad(Date lastSpecimenLoad)
     {
         _lastSpecimenLoad = lastSpecimenLoad;
+    }
+
+    public String getParticipantAliasDatasetName()
+    {
+        return _participantAliasDatasetName;
+    }
+
+    public void setParticipantAliasDatasetName(String participantAliasDatasetName)
+    {
+        _participantAliasDatasetName = participantAliasDatasetName;
+    }
+
+    public String getParticipantAliasSourceColumnName()
+    {
+        return _participantAliasSourceColumnName;
+    }
+
+    public void setParticipantAliasSourceColumnName(String participantAliasSourceColumnName)
+    {
+        _participantAliasSourceColumnName = participantAliasSourceColumnName;
+    }
+
+    public String getParticipantAliasColumnName()
+    {
+        return _participantAliasColumnName;
+    }
+
+    public void setParticipantAliasColumnName(String participantAliasColumnName)
+    {
+        _participantAliasColumnName = participantAliasColumnName;
     }
 
     @Override

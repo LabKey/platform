@@ -76,6 +76,9 @@ public class StudyPropertiesTable extends BaseStudyTable
         addRootColumn("subjectColumnName", false, true);
         addRootColumn("grant", true, true);
         addRootColumn("investigator", true, true);
+        addRootColumn("participantAliasDatasetName", true, true);
+        addRootColumn("participantAliasColumnName", true, true);
+        addRootColumn("participantAliasSourceColumnName", true, true);
         ColumnInfo descriptionColumn = addRootColumn("description", true, true);
         final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, true);
         descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")

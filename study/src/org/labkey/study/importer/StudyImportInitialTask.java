@@ -154,6 +154,14 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetDescription())
                 study.setDescription(studyXml.getStudyDescription().getDescription());
 
+            if (studyXml.isSetParticipantAliasDataset())
+            {
+                StudyDocument.Study.ParticipantAliasDataset participantAliasDataset = studyXml.getParticipantAliasDataset();
+                study.setParticipantAliasDatasetName(participantAliasDataset.getDatasetName());
+                study.setParticipantAliasColumnName(participantAliasDataset.getAliasColumnName());
+                study.setParticipantAliasSourceColumnName(participantAliasDataset.getSourceColumnName());
+            }
+
             if (studyXml.isSetDescriptionRendererType())
                 study.setDescriptionRendererType(studyXml.getDescriptionRendererType());
             // Issue 15789: Carriage returns in protocol description are not round-tripped

@@ -2423,18 +2423,11 @@ public class StudyManager
 
     public long getParticipantCount(Study study)
     {
-        try
-        {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            TableInfo table = _tableInfoParticipant;
-            return Table.executeSingleton(schema,
-                    "SELECT COUNT(ParticipantId) FROM " + table + " WHERE Container = ?",
-                    new Object[]{study.getContainer().getId()}, Long.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        SQLFragment sql = new SQLFragment("SELECT COUNT(ParticipantId) FROM ");
+        sql.append(_tableInfoParticipant, "p");
+        sql.append(" WHERE Container = ?");
+        sql.add(study.getContainer());
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Long.class);
     }
 
     public String[] getParticipantIds(Study study)

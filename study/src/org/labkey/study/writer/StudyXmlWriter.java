@@ -65,6 +65,14 @@ class StudyXmlWriter implements InternalStudyWriter
         studyXml.setAlternateIdDigits(study.getAlternateIdDigits());
         studyXml.setDefaultTimepointDuration(study.getDefaultTimepointDuration());
 
+        if (study.getParticipantAliasDatasetName() != null && study.getParticipantAliasColumnName() != null && study.getParticipantAliasSourceColumnName() != null)
+        {
+            StudyDocument.Study.ParticipantAliasDataset participantAliasDataset = studyXml.addNewParticipantAliasDataset();
+            participantAliasDataset.setDatasetName(study.getParticipantAliasDatasetName());
+            participantAliasDataset.setAliasColumnName(study.getParticipantAliasColumnName());
+            participantAliasDataset.setSourceColumnName(study.getParticipantAliasSourceColumnName());
+        }
+
         // Issue 15789: Carriage returns in protocol description are not round-tripped
         StudyDocument.Study.StudyDescription descriptionXml = studyXml.addNewStudyDescription();
         descriptionXml.setRendererType(study.getDescriptionRendererType());
