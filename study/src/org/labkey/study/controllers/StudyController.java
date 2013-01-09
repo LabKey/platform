@@ -6948,7 +6948,6 @@ public class StudyController extends BaseStudyController
                 defaultCategoryMap.put(it.next(), ++startingDefaultDisplayOrder);
             }
 
-            // This is just to hand down display order -- might not be necessary in tree case
             for (DataViewInfo info : views)
             {
                 ViewCategory category = info.getCategory();
@@ -6965,69 +6964,119 @@ public class StudyController extends BaseStudyController
 
         private JSONObject buildTree(List<DataViewInfo> views)
         {
-            // Construct root node
-            JSONObject root = new JSONObject();
-            root.put("name", ".");
-            root.put("expanded", true);
-            JSONArray rootChildren = new JSONArray();
-
-            // Group views by Category
-            Map<String, List<DataViewInfo>> categories = new HashMap<String, List<DataViewInfo>>();
-
-            // Build Display Order Map
-            TreeSet<DataViewInfo> order = new TreeSet<DataViewInfo>(new Comparator<DataViewInfo>()
+            Comparator<ViewCategory> t = new Comparator<ViewCategory>()
             {
                 @Override
-                public int compare(DataViewInfo o1, DataViewInfo o2)
+                public int compare(ViewCategory o1, ViewCategory o2)
                 {
-                    return ((Integer) o1.getCategory().getDisplayOrder()).compareTo((Integer) o2.getCategory().getDisplayOrder());
+                    return ((Integer) o1.getDisplayOrder()).compareTo((Integer) o2.getDisplayOrder());
                 }
-            });
+            };
 
-            for (DataViewInfo info : views)
+            // Get all categories -- group views by them
+            Map<Integer, List<DataViewInfo>> groups = new HashMap<Integer, List<DataViewInfo>>();
+            Map<Integer, ViewCategory> categories = new HashMap<Integer, ViewCategory>();
+            TreeSet<ViewCategory> order = new TreeSet<ViewCategory>(t);
+
+            for (DataViewInfo view : views)
             {
-                ViewCategory category = info.getCategory();
-                if (null != category)
+                ViewCategory vc = view.getCategory();
+                if (null != vc)
                 {
-                    if (!categories.containsKey(category.getLabel()))
+                    if (!groups.containsKey(vc.getRowId()))
                     {
-                        categories.put(category.getLabel(), new ArrayList<DataViewInfo>());
-                        order.add(info);
+                        groups.put(vc.getRowId(), new ArrayList<DataViewInfo>());
                     }
-                    categories.get(category.getLabel()).add(info);
+                    groups.get(vc.getRowId()).add(view);
+                    categories.put(vc.getRowId(), vc);
+                    order.add(vc);
                 }
             }
 
-            String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
-            if (dateFormat == null)
-                dateFormat = DateUtil.getStandardDateFormatString();
+            // Construct category tree
+            Map<Integer, TreeSet<ViewCategory>> tree = new HashMap<Integer, TreeSet<ViewCategory>>();
 
-            for (DataViewInfo o : order)
+            for (Integer ckey : groups.keySet())
             {
-                String label = o.getCategory().getLabel();
-                JSONArray children = new JSONArray();
-                for (DataViewInfo v : categories.get(label))
+                ViewCategory c = categories.get(ckey);
+
+                if (!tree.containsKey(ckey))
                 {
-                    JSONObject child = DataViewService.get().toJSON(getContainer(), getUser(), v, dateFormat);
-                    child.put("name", v.getName());
-                    child.put("leaf", true);
-                    child.put("icon", v.getIcon());
-                    children.put(child);
+                    tree.put(ckey, new TreeSet<ViewCategory>(t));
                 }
 
+                ViewCategory p = c.getParent();
+                if (null != p)
+                {
+                    if (!tree.containsKey(p.getRowId()))
+                    {
+                        tree.put(p.getRowId(), new TreeSet<ViewCategory>(t));
+                    }
+                    tree.get(p.getRowId()).add(c);
+                }
+            }
+
+            // create output
+
+            // Construct root node
+            JSONObject root = new JSONObject();
+            JSONArray rootChildren = new JSONArray();
+
+            for (ViewCategory vc : order)
+            {
+                // not part of top level order
+                if (null != vc.getParent())
+                    continue;
+
                 JSONObject category = new JSONObject();
-                category.put("name", label);
+                category.put("name", vc.getLabel());
                 category.put("icon", false);
                 category.put("expanded", true);
-                category.put("children", children);
                 category.put("cls", "dvcategory");
+                category.put("children", processChildren(vc, groups, tree));
 
                 rootChildren.put(category);
             }
 
+            root.put("name", ".");
+            root.put("expanded", true);
             root.put("children", rootChildren);
 
             return root;
+        }
+
+        private JSONArray processChildren(ViewCategory vc, Map<Integer, List<DataViewInfo>> groups, Map<Integer, TreeSet<ViewCategory>> tree)
+        {
+            JSONArray children = new JSONArray();
+
+            // process other categories
+            if (tree.get(vc.getRowId()).size() > 0)
+            {
+                // has it's own sub-categories
+                for (ViewCategory v : tree.get(vc.getRowId()))
+                {
+                    JSONObject category = new JSONObject();
+                    category.put("name", v.getLabel());
+                    category.put("icon", false);
+                    category.put("expanded", true);
+                    category.put("cls", "dvcategory");
+                    category.put("children", processChildren(v, groups, tree));
+
+                    children.put(category);
+                }
+            }
+
+            // process views
+            for (DataViewInfo view : groups.get(vc.getRowId()))
+            {
+                JSONObject viewJson = new JSONObject();
+                viewJson.put("leaf", true);
+                viewJson.put("name", view.getName());
+                viewJson.put("icon", view.getIcon());
+                children.put(viewJson);
+            }
+
+            return children;
         }
 
         private List<DataViewProvider.Type> getVisibleDataTypes(BrowseDataForm form)

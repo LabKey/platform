@@ -544,6 +544,7 @@
       <ns:column columnName="Modified"/>
       <ns:column columnName="Label"/>
       <ns:column columnName="DisplayOrder"/>
+      <ns:column columnName="Parent"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="PortalWebParts" tableDbType="TABLE">
