@@ -119,7 +119,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         for (Map.Entry<String, Object> param : setParameters)
         {
             labkey.append(sep);
-            appendParam(labkey, param.getKey(), (String) param.getValue());
+            appendParam(labkey, param.getKey(), String.valueOf(param.getValue()));
             sep = ",";
         }
     }
