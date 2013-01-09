@@ -49,6 +49,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getFilesSiteSettingsURL(boolean upgrade);
     ActionURL getSessionLoggingURL();
     ActionURL getAddTabURL(Container c, URLHelper returnURL);
+    ActionURL getRenameTabURL(Container c, String pageId, URLHelper returnURL);
 
     NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
 }

@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -386,6 +387,8 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
         menu.addChild(new NavTree("Remove", removeURL));
         menu.addChild(moveMenu);
+        ActionURL renameURL = PageFlowUtil.urlProvider(AdminUrls.class).getRenameTabURL(ctx.getContainer(), portalPage.getPageId(), ctx.getActionURL());
+        menu.addChild(new NavTree("Rename", renameURL));
 
         // TODO: Determing permissions and settings links.
 //        menu.addChild(new NavTree("Permissions"));
