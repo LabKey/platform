@@ -1579,6 +1579,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     }
     
 
+    private static Package _java_lang = java.lang.String.class.getPackage();
+
     private void _logStatement(String sql, Exception x)
     {
         long elapsed = System.currentTimeMillis() - _msStart;
@@ -1620,7 +1622,11 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                         value = String.valueOf(o);
                     if (value.length() > 100)
                         value = value.substring(0,100) + ". . .";
-                    logEntry.append("\n    --?[").append(i).append("] ").append(value);
+                    logEntry.append("\n    --[").append(i).append("] ");
+                    logEntry.append(value);
+                    Class c = null==o ? null : o.getClass();
+                    if (null != c && c != String.class && c != Integer.class)
+                        logEntry.append(" :").append(c.getPackage() == _java_lang ? c.getSimpleName() : c.getName());
                 }
                 catch (Exception ex)
                 {
