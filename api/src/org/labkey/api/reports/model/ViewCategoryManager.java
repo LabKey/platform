@@ -30,6 +30,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.TestContext;
@@ -38,6 +40,7 @@ import java.beans.PropertyChangeEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -160,6 +163,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
             // delete the category definition and fire the deleted event
+
+            // the category table has a delete cascade fk rule, so no need to explicitly delete subcategories
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
             Table.execute(CoreSchema.getInstance().getSchema(), sql.getSQL(), category.getRowId());
 
@@ -236,6 +241,17 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         {
             throw new RuntimeSQLException(x);
         }
+    }
+
+    public List<ViewCategory> getSubCategories(ViewCategory category)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("parent"), category.getRowId());
+        filter.addCondition(FieldKey.fromParts("Container"), category.getContainerId());
+
+        TableSelector selector = new TableSelector(getTableInfoCategories(), filter, null);
+        ViewCategory[] categories = selector.getArray(ViewCategory.class);
+
+        return Arrays.asList(categories);
     }
 
     private String getCacheKey(Container c, String label)
@@ -359,7 +375,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
             if (null != bean.getParent())
             {
-                m.put("Parent", toMap(bean.getParent(), null));
+                m.put("Parent", bean.getParent().getRowId());
             }
 
             return m;
@@ -401,6 +417,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     public static class TestCase extends Assert
     {
         private static final String[] labels = {"Demographics", "Exam", "Discharge", "Final Exam"};
+        private static final String[] subLabels = {"-sub1", "-sub2", "-sub3"};
 
         @Test
         public void test() throws Exception
@@ -441,7 +458,19 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 cat.setLabel(label);
                 cat.setDisplayOrder(i++);
 
-                mgr.saveCategory(c, user, cat);
+                cat = mgr.saveCategory(c, user, cat);
+
+                // create sub categories
+                for (String subLabel : subLabels)
+                {
+                    ViewCategory subcat = new ViewCategory();
+
+                    subcat.setLabel(label + subLabel);
+                    subcat.setDisplayOrder(i++);
+                    subcat.setParent(cat);
+
+                    mgr.saveCategory(c, user, subcat);
+                }
             }
 
             // get categories
@@ -452,8 +481,26 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             }
 
             for (String label : labels)
+            {
                 assertTrue(categoryMap.containsKey(label));
 
+                // check for subcategories
+                ViewCategory cat = categoryMap.get(label);
+                for (ViewCategory subCategory : cat.getSubcategories())
+                {
+                    assertTrue(subCategory.getLabel().startsWith(label + "-sub"));
+                    assertTrue(subCategory.getParent().getRowId() == cat.getRowId());
+                }
+            }
+
+            // delete the top level categories, make sure the subcategories get deleted as well
+/*
+            for (String label : labels)
+            {
+                ViewCategory cat = categoryMap.get(label);
+                mgr.deleteCategory(c, user, cat);
+            }
+*/
             for (ViewCategory cat : categoryMap.values())
             {
                 mgr.deleteCategory(c, user, cat);

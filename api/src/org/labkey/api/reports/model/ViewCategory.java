@@ -16,6 +16,7 @@
 package org.labkey.api.reports.model;
 
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
@@ -24,6 +25,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.lang.ref.WeakReference;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -107,6 +109,16 @@ public class ViewCategory extends Entity
         return parent;
     }
 
+    public void setParent(ViewCategory parent)
+    {
+        _parent = new WeakReference<ViewCategory>(parent);
+    }
+
+    public List<ViewCategory> getSubcategories()
+    {
+        return ViewCategoryManager.getInstance().getSubCategories(this);
+    }
+
     public JSONObject toJSON(User currentUser)
     {
         JSONObject o = new JSONObject();
@@ -124,6 +136,13 @@ public class ViewCategory extends Entity
 
         User modifiedBy = UserManager.getUser(getModifiedBy());
         o.put("modifiedBy", createDisplayValue(getModifiedBy(), modifiedBy != null ? modifiedBy.getDisplayName(currentUser) : getModifiedBy()));
+
+        JSONArray subCategories = new JSONArray();
+        for (ViewCategory sc : getSubcategories())
+        {
+            subCategories.put(sc.toJSON(currentUser));
+        }
+        o.put("subCategories", subCategories);
 
         return o;
     }
@@ -144,6 +163,13 @@ public class ViewCategory extends Entity
         if (displayOrder instanceof Integer)
             category.setDisplayOrder((Integer)displayOrder);
 
+        Object parent = info.get("parent");
+        if (parent instanceof Integer)
+        {
+            ViewCategory parentCategory = ViewCategoryManager.getInstance().getCategory((Integer)parent);
+            if (parentCategory != null)
+                category.setParent(parentCategory);
+        }
         return category;
     }
 
