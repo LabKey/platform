@@ -366,6 +366,13 @@ public class StatementUtils
         Integer selectObjectIdIndex = null;
         int countReturnIds = 0;    // TODO: Change to a boolean, selectObjectId?
 
+        if (selectIds && null != objectIdVar)
+        {
+            sqlfSelectIds = new SQLFragment("SELECT ");
+            sqlfSelectIds.append(objectIdVar);
+            selectObjectIdIndex = ++countReturnIds;
+        }
+
         SQLFragment sqlfInsertInto = new SQLFragment();
 
         assert cols.size() == values.size() : cols.size() + " columns and " + values.size() + " values - should match";
@@ -393,26 +400,10 @@ public class StatementUtils
 
             sqlfInsertInto.append(")");
 
-            if (selectIds && (null != autoIncrementColumn || null != objectIdVar))
+            if (selectIds && null != autoIncrementColumn)
             {
-                SQLFragment sqlf = new SQLFragment();
-                String prefix = "SELECT ";
-                if (null != autoIncrementColumn)
-                {
-                    d.appendSelectAutoIncrement(sqlf, table, autoIncrementColumn.getName());
-                    selectAutoIncrement = true;
-                    ++countReturnIds;
-                    prefix = ", ";
-                }
-
-                if (null != objectIdVar)
-                {
-                    sqlf.append(prefix).append(objectIdVar);
-                    selectObjectIdIndex = ++countReturnIds;
-                }
-                sqlf.append(";\n");
-
-                sqlfSelectIds = sqlf;
+                d.appendSelectAutoIncrement(sqlfInsertInto, table, autoIncrementColumn.getName());
+                selectAutoIncrement = true;
             }
         }
         else
@@ -511,8 +502,8 @@ public class StatementUtils
             script.appendStatement(sqlfSelectObject, d);
             script.appendStatement(sqlfDelete, d);
             script.appendStatement(sqlfInsertInto, d);
-            script.appendStatement(sqlfSelectIds, d);
             script.appendStatement(sqlfObjectProperty, d);
+            script.appendStatement(sqlfSelectIds, d);
 
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, updatable.remapSchemaColumns());
         }
