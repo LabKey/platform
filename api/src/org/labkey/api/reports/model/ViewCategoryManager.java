@@ -198,10 +198,17 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             {
                 // check for duplicates
                 SimpleFilter filter = new SimpleFilter("label", category.getLabel());
+                if (category.getParent() != null)
+                    filter.addCondition(FieldKey.fromParts("parent"), category.getParent().getRowId());
 
                 if (getCategories(c, user, filter).length > 0)
-                    throw new IllegalArgumentException("There is already a category in this folder with the name: " + category.getLabel());
-                
+                {
+                    if (category.getParent() != null)
+                        throw new IllegalArgumentException("There is already a subcategory attached to the same parent with the name: " + category.getLabel());
+                    else
+                        throw new IllegalArgumentException("There is already a category in this folder with the name: " + category.getLabel());
+                }
+
                 if (category.getContainerId() == null)
                     category.setContainerId(c.getId());
                 
@@ -417,7 +424,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     public static class TestCase extends Assert
     {
         private static final String[] labels = {"Demographics", "Exam", "Discharge", "Final Exam"};
-        private static final String[] subLabels = {"-sub1", "-sub2", "-sub3"};
+        private static final String[] subLabels = {"sub1", "sub2", "sub3"};
 
         @Test
         public void test() throws Exception
@@ -465,12 +472,31 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 {
                     ViewCategory subcat = new ViewCategory();
 
-                    subcat.setLabel(label + subLabel);
+                    subcat.setLabel(subLabel);
                     subcat.setDisplayOrder(i++);
                     subcat.setParent(cat);
 
                     mgr.saveCategory(c, user, subcat);
                 }
+
+                // verify we don't allow duplicate subcategory names
+                boolean duplicate = false;
+                try {
+
+                    ViewCategory subcat = new ViewCategory();
+
+                    subcat.setLabel(subLabels[0]);
+                    subcat.setDisplayOrder(i++);
+                    subcat.setParent(cat);
+
+                    mgr.saveCategory(c, user, subcat);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    duplicate = true;
+                }
+
+                assertTrue("Duplicate subcategory name was allowed", duplicate);
             }
 
             // get categories
@@ -480,6 +506,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 categoryMap.put(cat.getLabel(), cat);
             }
 
+            List<String> subCategoryNames = Arrays.asList(subLabels);
             for (String label : labels)
             {
                 assertTrue(categoryMap.containsKey(label));
@@ -488,7 +515,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 ViewCategory cat = categoryMap.get(label);
                 for (ViewCategory subCategory : cat.getSubcategories())
                 {
-                    assertTrue(subCategory.getLabel().startsWith(label + "-sub"));
+                    assertTrue(subCategoryNames.contains(subCategory.getLabel()));
                     assertTrue(subCategory.getParent().getRowId() == cat.getRowId());
                 }
             }
