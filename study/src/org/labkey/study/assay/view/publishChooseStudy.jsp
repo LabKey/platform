@@ -31,6 +31,7 @@
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PublishStartAction.PublishBean> me = (JspView<PublishStartAction.PublishBean>) HttpView.currentView();
@@ -48,7 +49,7 @@
     }
 
     ActionURL postURL = urlProvider(AssayUrls.class).getCopyToStudyConfirmURL(getViewContext().getContainer(), bean.getProtocol());
-    Pair<String, String>[] parameters = postURL.getParameters();
+    List<Pair<String, String>> parameters = postURL.getParameters();
     postURL.deleteParameters();
 %>
 
@@ -66,12 +67,12 @@
 <%
     }
 %>
-<form action="<%= postURL.getLocalURIString() %>" method="POST">
+<form action="<%= h(postURL.getLocalURIString()) %>" method="POST">
 <%
     for (Pair<String, String> parameter : parameters)
     {
 %>
-    <input type="hidden" name="<%= parameter.getKey() %>" value="<%= h(parameter.getValue()) %>">
+    <input type="hidden" name="<%= h(parameter.getKey()) %>" value="<%= h(parameter.getValue()) %>">
     <input type="hidden" name="<%= ActionURL.Param.returnUrl %>" value="<%= h(bean.getReturnURL()) %>">
     <input type="hidden" name="containerFilterName" value="<%= h(bean.getContainerFilterName()) %>">
 <%
@@ -79,11 +80,11 @@
     for (Integer id : bean.getIds())
     {
 %>
-    <input type="hidden" name="<%= DataRegion.SELECT_CHECKBOX_NAME %>" value="<%= id %>">
+    <input type="hidden" name="<%= h(DataRegion.SELECT_CHECKBOX_NAME) %>" value="<%= id %>">
 <%
     }
 %>
-<input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%=h(bean.getDataRegionSelectionKey())%>">
+<input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%=h(bean.getDataRegionSelectionKey())%>">
 <table>
     <%
         if (unambiguous)
@@ -104,10 +105,10 @@
     %>
     <tr>
         <td>
-            <span id="targetStudyTitle" style="display:<%= unambiguous ? "none" : "block" %>">Choose target study:</span>
+            <span id="targetStudyTitle" style="display:<%= text(unambiguous ? "none" : "block") %>">Choose target study:</span>
         </td>
         <td>
-            <span id="targetStudyPicker" style="display:<%= unambiguous ? "none" : "block" %>">
+            <span id="targetStudyPicker" style="display:<%= text(unambiguous ? "none" : "block") %>">
                 <select name="targetStudy">
                 <%
 
@@ -117,7 +118,7 @@
                         String path = study.getContainer().getPath();
                         boolean selected = firstStudyContainer != null && firstStudyContainer.getPath().equals(path);
                 %>
-                    <option value="<%= h(study.getContainer().getId()) %>" <%= selected ? "SELECTED" : "" %>><%= h(path)%> (<%= h(study.getLabel()) %>)</option>
+                    <option value="<%= h(study.getContainer().getId()) %>" <%= text(selected ? "SELECTED" : "") %>><%= h(path)%> (<%= h(study.getLabel()) %>)</option>
                 <%
                     }
                 %>

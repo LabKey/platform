@@ -170,18 +170,17 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         Set<Resource> reportFiles = module.getReportFiles();
 
         ArrayList<ReportDescriptor> list = new ArrayList<ReportDescriptor>(reportFiles.size());
-        Resource[] files = reportFiles.toArray(new Resource[0]);
 
         // Keep files that might be Query reports (end in .xml);
         // below we'll remove ones that are associated with R or JS reports
         HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
-        for (Resource file : files)
+        for (Resource file : reportFiles)
         {
             if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
                 possibleQueryReportFiles.put(file.getName(), file);
         }
 
-        for (Resource file : files)
+        for (Resource file : reportFiles)
         {
             if (!DefaultModule.moduleReportFilter.accept(null, file.getName()))
                 continue;
@@ -527,16 +526,6 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         Table.delete(getTable(), filter);
     }
 
-
-    private Report _createReport(Class reportClass) throws Exception
-    {
-        if (Report.class.isAssignableFrom(reportClass))
-        {
-            return (Report)reportClass.newInstance();
-        }
-        throw new IllegalArgumentException("The specified class: " + reportClass.getName() + " does not implement the org.labkey.api.reports.Report interface");
-    }
-
     public int saveReport(ContainerUser context, String key, Report report) throws SQLException
     {
         return _saveReport(context, key, report).getRowId();
@@ -753,8 +742,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         {
             descriptors = getModuleReportDescriptors(module, c, user, key);
 //            descriptors = module.getReportDescriptors(key, c, user);
-            if (null != descriptors)
-                moduleReportDescriptors.addAll(descriptors);
+            moduleReportDescriptors.addAll(descriptors);
         }
 
         List<Report> reports = new ArrayList<Report>();

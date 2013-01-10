@@ -3289,7 +3289,6 @@ study/src/org/labkey/study/view/AssayListWebPartFactory.java -text
 study/src/org/labkey/study/view/AssayResultsWebPartFactory.java -text
 study/src/org/labkey/study/view/AssayRunsWebPartFactory.java -text
 study/src/org/labkey/study/view/BaseStudyPage.java -text
-study/src/org/labkey/study/view/DataHeader.java -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/StudyGWTView.java -text
 study/src/org/labkey/study/view/StudyListQueryView.java -text

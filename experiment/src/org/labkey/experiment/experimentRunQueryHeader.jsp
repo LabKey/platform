@@ -35,7 +35,7 @@
             <input type="hidden" name="<%=h(params.getKey())%>" value="<%=h(params.getValue())%>" />
     <%  }
     } %>
-    Filter by run type: <select name="experimentRunFilter" onchange="form.submit()">
+    <label for="experimentRunFilter">Filter by run type</label>: <select id="experimentRunFilter" name="experimentRunFilter" onchange="form.submit()">
         <% for (ExperimentRunType type : bean.getFilters()) { %>
             <option <% if (type == bean.getSelectedFilter()) { %>selected <% } %> value="<%=h(type.getDescription())%>"><%=h(type.getDescription())%></option>
         <% } %>

@@ -231,7 +231,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
                         public TableInfo getLookupTableInfo()
                         {
                             // Go through the schema so that metadata is overlaid
-                            return _schema.getTable(StudyQuerySchema.QCSTATE_TABLE_NAME);
+                            return _userSchema.getTable(StudyQuerySchema.QCSTATE_TABLE_NAME);
                         }
                     });
 

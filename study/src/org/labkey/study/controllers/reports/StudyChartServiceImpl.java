@@ -97,13 +97,6 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         return datasets;
     }
 
-    public List saveCharts(GWTChart[] charts, Map properties)
-    {
-        List<String> errors = new ArrayList<String>();
-
-        return errors.isEmpty() ? null : errors;
-    }
-
     public String saveChart(GWTChart chart) throws SerializableException
     {
         try
@@ -170,7 +163,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
     private String saveParticipantChart(GWTChart chart, Report report) throws Exception
     {
-        for (Map.Entry<String, String> param : (Set<Map.Entry<String, String>>)chart.getProperties().entrySet())
+        for (Map.Entry<String, String> param : chart.getProperties().entrySet())
         {
             report.getDescriptor().setProperty(param.getKey(), param.getValue());
         }
@@ -245,7 +238,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
             gwtRenderers.add(cr);
         }
-        return gwtRenderers.toArray(new GWTChartRenderer[0]);
+        return gwtRenderers.toArray(new GWTChartRenderer[gwtRenderers.size()]);
     }
 
     private List<GWTChartColumn> createColumnList(Map<String, String> columnMap)

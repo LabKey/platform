@@ -77,6 +77,7 @@ public class WebdavServlet extends HttpServlet
         dispatchUrl.setScheme(request.getScheme());
         dispatchUrl.setHost(request.getServerName());
         dispatchUrl.setPort(request.getServerPort());
+
         ViewContext context = new ViewContext();
         context.setRequest(request);
         context.setResponse(response);

@@ -1006,9 +1006,8 @@ public class ListController extends SpringActionController
 
         private void _renderRecord(String title, String record, PrintWriter out)
         {
-            Pair<String, String>[] params = PageFlowUtil.fromQueryString(record);
             out.write("<tr><td><b>" + title + "</b></td>");
-            for (Pair<String, String> param : params)
+            for (Pair<String, String> param : PageFlowUtil.fromQueryString(record))
             {
                 out.write("<td>" + param.getValue() + "</td>");
             }

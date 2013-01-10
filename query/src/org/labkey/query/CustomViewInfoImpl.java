@@ -23,7 +23,6 @@ import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -195,9 +194,9 @@ public class CustomViewInfoImpl implements CustomViewInfo
         try
         {
             URLHelper src = new URLHelper(_cstmView.getFilter());
-            String[] containerFilterNames = src.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
-            if (containerFilterNames.length > 0)
-                return containerFilterNames[containerFilterNames.length - 1];
+            List<String> containerFilterNames = src.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
+            if (containerFilterNames.size() > 0)
+                return containerFilterNames.get(containerFilterNames.size() - 1);
             return null;
         }
         catch (URISyntaxException use)

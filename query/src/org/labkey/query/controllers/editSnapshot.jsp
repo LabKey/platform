@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -34,7 +35,7 @@
     ViewContext context = HttpView.currentContext();
 
     QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName(), bean.getSnapshotName());
-    Pair<String, String>[] params = context.getActionURL().getParameters();
+    List<Pair<String, String>> params = context.getActionURL().getParameters();
 
     boolean showHistory = BooleanUtils.toBoolean(context.getActionURL().getParameter("showHistory"));
     String historyLabel = showHistory ? "Hide History" : "Show History";

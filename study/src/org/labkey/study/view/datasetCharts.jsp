@@ -51,14 +51,14 @@
     for (Report report : bean.getReports())
     {
         if (columnCount == 0 || (columnCount % columns) == 0)
-            out.print("<tr>");
+            out.print(text("<tr>"));
 %>
 <%
         if (updateAccess)
         {
 %>
             <td><a href="<%=getReportURL(ctx, report, bean).addParameter("action", "delete")%>">
-            <img valign="top" src="<%=contextPath%>/_images/delete.gif" alt="Remove"></a></td>
+            <img valign="top" src="<%=h(contextPath)%>/_images/delete.gif" alt="Remove"></a></td>
 <%
         }
 %>
@@ -66,12 +66,12 @@
 <%
         columnCount++;
         if ((columnCount % columns) == 0)
-            out.print("</tr>");
+            out.print(text("</tr>"));
     }
 
     // close table
     if ((columnCount % columns) != 0)
-        out.print("</tr>");
+        out.print(text("</tr>"));
 %>
 </table>
 
