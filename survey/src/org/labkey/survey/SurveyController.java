@@ -37,7 +37,6 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -48,8 +47,6 @@ import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -64,13 +61,11 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
@@ -479,6 +474,7 @@ public class SurveyController extends SpringActionController
                             {
                                 survey.setSubmittedBy(getUser().getUserId());
                                 survey.setSubmitted(new Date());
+                                survey.setStatus("Submitted");
                             }
 
                             Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());

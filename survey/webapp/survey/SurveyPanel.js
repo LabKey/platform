@@ -351,7 +351,6 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                                     attachment : attachment,
                                     name : question.name,
                                     fieldWidth : 445,
-                                    itemId : 'attachment-field',
                                     xtype : 'attachmentfield'
                                 };
                             }
@@ -883,7 +882,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
     saveSurveyAttachments : function() {
 
-        var fields = Ext4.ComponentQuery.query('#attachment-field', this);
+        // component query by xtype
+        var fields = Ext4.ComponentQuery.query('attachmentfield', this);
 
         if (Ext4.isArray(fields) && fields.length > 0)
         {
