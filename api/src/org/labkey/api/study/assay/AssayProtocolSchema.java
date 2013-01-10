@@ -266,7 +266,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, getContainer());
         fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME,
                 AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
-        String paramName = fakeURL.getParameters()[0].getKey();
+        String paramName = fakeURL.getParameters().get(0).getKey();
 
         Map<String, String> urlParams = new HashMap<String, String>();
         urlParams.put(paramName, "RowId");

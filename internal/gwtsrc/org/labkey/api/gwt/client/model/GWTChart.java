@@ -207,7 +207,7 @@ public class GWTChart implements IsSerializable
         _shared = shared;
     }
 
-    public Map getProperties()
+    public Map<String, String> getProperties()
     {
         return _properties;
     }

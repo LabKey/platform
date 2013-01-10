@@ -90,7 +90,7 @@ public class ResultsQueryView extends AssayBaseQueryView
             returnURL = getViewContext().getActionURL().toString();
         view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
 
-        TableInfo table = view.getTable();
+        view.getTable();
         SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
         if (filter == null)
         {

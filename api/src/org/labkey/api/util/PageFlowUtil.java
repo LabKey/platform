@@ -401,23 +401,22 @@ public class PageFlowUtil
         return s;
     }
 
-    @SuppressWarnings({"unchecked"})
-    static Pair<String, String>[] _emptyPairArray = new Pair[0];   // Can't delare generic array
+    static List<Pair<String, String>> _emptyPairList = Collections.emptyList();
 
-    public static Pair<String, String>[] fromQueryString(String query)
+    public static List<Pair<String, String>> fromQueryString(String query)
     {
         return fromQueryString(query, "UTF-8");
     }
 
-    public static Pair<String, String>[] fromQueryString(String query, String encoding)
+    public static List<Pair<String, String>> fromQueryString(String query, String encoding)
     {
         if (null == query || 0 == query.length())
-            return _emptyPairArray;
+            return _emptyPairList;
 
         if (null == encoding)
             encoding = "UTF-8";
 
-        List<Pair> parameters = new ArrayList<Pair>();
+        List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
         if (query.startsWith("?"))
             query = query.substring(1);
         String[] terms = query.split("&");
@@ -452,16 +451,14 @@ public class PageFlowUtil
             throw new IllegalArgumentException(encoding, x);
         }
 
-        //noinspection unchecked
-        return parameters.toArray(new Pair[parameters.size()]);
+        return parameters;
     }
 
 
     public static Map<String, String> mapFromQueryString(String queryString)
     {
-        Pair<String, String>[] pairs = fromQueryString(queryString);
         Map<String, String> m = new LinkedHashMap<String, String>();
-        for (Pair<String, String> p : pairs)
+        for (Pair<String, String> p : fromQueryString(queryString))
             m.put(p.getKey(), p.getValue());
 
         return m;

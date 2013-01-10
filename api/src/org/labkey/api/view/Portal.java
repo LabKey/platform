@@ -250,8 +250,7 @@ public class Portal
 
         public void setProperties(String query)
         {
-            Pair<String, String>[] props = PageFlowUtil.fromQueryString(query);
-            for (Pair<String, String> prop : props)
+            for (Pair<String, String> prop : PageFlowUtil.fromQueryString(query))
                 setProperty(prop.first, prop.second);
         }
 
@@ -1375,8 +1374,7 @@ public class Portal
 
         public void setProperties(String query)
         {
-            Pair<String, String>[] props = PageFlowUtil.fromQueryString(query);
-            for (Pair<String, String> prop : props)
+            for (Pair<String, String> prop : PageFlowUtil.fromQueryString(query))
                 setProperty(prop.first, prop.second);
         }
 

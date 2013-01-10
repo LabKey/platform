@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 
@@ -346,6 +347,12 @@ public class ActionURL extends URLHelper implements Cloneable
 
     @Override
     public ActionURL addParameters(Pair<String, String>[] parameters)
+    {
+        return (ActionURL)super.addParameters(parameters);
+    }
+
+    @Override
+    public ActionURL addParameters(List<Pair<String, String>> parameters)
     {
         return (ActionURL)super.addParameters(parameters);
     }

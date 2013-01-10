@@ -125,7 +125,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
     }
 
     // todo: remove this overload when we no longer need to pull parameters off the URL
-    private void appendParamList(StringBuilder labkey, Pair<String,String>[] inputParameters)
+    private void appendParamList(StringBuilder labkey, List<Pair<String,String>> inputParameters)
     {
         String sep = "";
         for (Pair<String, String> param : inputParameters)
@@ -143,7 +143,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         labkey.append(toR(value));
     }
 
-    private boolean hasParameters(Map<String, Object> inputParameters, Pair<String, String>[] urlParameters)
+    private boolean hasParameters(Map<String, Object> inputParameters, List<Pair<String, String>> urlParameters)
     {
         // if inputParameters were explicitly passed in then override any url parameters we may have
         if (inputParameters != null)
@@ -154,7 +154,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         // in so that they are not taken off the URL.  Note that if inputParamters is not null but size 0 do not fallback
         //
         if (urlParameters != null)
-           return (urlParameters.length > 0);
+           return (urlParameters.size() > 0);
 
         return false;
     }
@@ -180,7 +180,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         // todo:  remove the fallback to URL parameters off the query string when we explicitly pass in parameters in the
         // render case
         //
-        Pair<String,String>[] urlParameters = url.getParameters();
+        List<Pair<String,String>> urlParameters = url.getParameters();
         if (hasParameters(inputParameters, urlParameters))
         {
             labkey.append("labkey.url.params <- list(");

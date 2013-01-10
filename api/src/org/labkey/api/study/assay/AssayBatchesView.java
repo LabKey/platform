@@ -56,7 +56,7 @@ public class AssayBatchesView extends AbstractAssayView
         ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, context.getContainer());
         fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME,
                 AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
-        String key = fakeURL.getParameters()[0].getKey();
+        String key = fakeURL.getParameters().get(0).getKey();
 
         // Need to make sure that we keep the same container filter after following the link
         ExpExperimentTable tableInfo = (ExpExperimentTable)batchesView.getTable();

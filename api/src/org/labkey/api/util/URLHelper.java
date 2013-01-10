@@ -37,6 +37,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -269,8 +270,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     protected void _parseQuery(String query, String encoding)
     {
-        Pair<String, String>[] pairs = PageFlowUtil.fromQueryString(query, encoding);
-        _parameters = new ArrayList<Pair<String, String>>(Arrays.asList(pairs));
+        _parameters = new ArrayList<Pair<String, String>>(PageFlowUtil.fromQueryString(query, encoding));
     }
 
 
@@ -474,6 +474,11 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     public URLHelper addParameters(Pair<String,String>[] parameters)
     {
+        return addParameters(Arrays.asList(parameters));
+    }
+
+    public URLHelper addParameters(List<Pair<String,String>> parameters)
+    {
         for (Pair<String, String> param : parameters)
             addParameter(param.getKey(), param.getValue());
 
@@ -514,26 +519,26 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-    public Pair<String,String>[] getParameters()
+    public List<Pair<String,String>> getParameters()
     {
         if (null == _parameters)
-            return new Pair[0];
-        return _parameters.<Pair<String, String>>toArray(new Pair[_parameters.size()]);
+            return Collections.emptyList();
+        return Collections.unmodifiableList(_parameters);
     }
 
 
-    public String[] getParameters(String key)
+    public List<String> getParameters(String key)
     {
         if (null == _parameters)
-            return _emptyStringArray;
-        ArrayList<String> keys = new ArrayList<String>();
+            return Collections.emptyList();
+        List<String> keys = new ArrayList<String>();
         for (Pair<String, String> p : _parameters)
         {
             String k = p.first;
             if (key.equals(k))
                 keys.add(p.second);
         }
-        return keys.toArray(new String[keys.size()]);
+        return Collections.unmodifiableList(keys);
     }
 
 

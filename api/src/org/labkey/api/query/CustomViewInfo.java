@@ -27,6 +27,7 @@ import org.labkey.data.xml.queryCustomView.PropertyName;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ public interface CustomViewInfo
     {
         private List<FilterInfo> filter = new ArrayList<FilterInfo>();
         private List<Sort.SortField> sort = new ArrayList<Sort.SortField>();
-        private String[] containerFilterNames = new String[]{};
+        private List<String> containerFilterNames = Collections.emptyList();
         private List<Aggregate> aggregates = new ArrayList<Aggregate>();
 
         public List<FilterInfo> getFilter()
@@ -82,7 +83,7 @@ public interface CustomViewInfo
             return sort;
         }
 
-        public String[] getContainerFilterNames()
+        public List<String> getContainerFilterNames()
         {
             return containerFilterNames;
         }

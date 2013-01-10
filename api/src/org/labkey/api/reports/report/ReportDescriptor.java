@@ -17,8 +17,6 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -62,7 +60,6 @@ import java.util.*;
  */
 public class ReportDescriptor extends Entity implements SecurableResource
 {
-    private static final Logger _log = Logger.getLogger(ReportDescriptor.class);
     public static final String TYPE = "reportDescriptor";
     public static final int FLAG_INHERITABLE = 0x01;
     final static public int FLAG_HIDDEN = 0x02;
@@ -173,7 +170,7 @@ public enum Prop implements ReportProperty
 
     public void setProperties(List<Pair<String,String>> props)
     {
-        init(props.toArray(new Pair[props.size()]));
+        init(props);
     }
 
     public void setProperties(Map<String, Object> props)
@@ -313,7 +310,7 @@ public enum Prop implements ReportProperty
     }
 */
 
-    protected void init(Pair<String, String>[] params)
+    protected void init(List<Pair<String, String>> params)
     {
         _props.remove(Prop.version.name());
         Map<String, Object> m = mapFromQueryString(params);
@@ -390,12 +387,12 @@ public enum Prop implements ReportProperty
         }
         ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(type);
         if (descriptor != null)
-            descriptor.init(props.toArray(new Pair[0]));
+            descriptor.init(props);
 
         return descriptor;
     }
 
-    private Map<String, Object> mapFromQueryString(Pair<String, String>[] pairs)
+    private Map<String, Object> mapFromQueryString(List<Pair<String, String>> pairs)
     {
         Map<String, Object> m = new LinkedHashMap<String, Object>();
         for (Pair<String, String> p : pairs)
@@ -405,7 +402,7 @@ public enum Prop implements ReportProperty
                 final Object o = m.get(p.getKey());
                 if (o instanceof List)
                 {
-                    final List l = (List)o;
+                    final List<String> l = (List<String>)o;
                     if (!l.contains(p.getValue()))
                         l.add(p.getValue());
                 }
@@ -583,7 +580,7 @@ public enum Prop implements ReportProperty
                 props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
             }
 
-            descriptor.init(props.toArray(new Pair[props.size()]));
+            descriptor.init(props);
 
             if (d.getCategory() != null)
             {

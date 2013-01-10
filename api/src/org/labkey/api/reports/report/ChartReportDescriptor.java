@@ -102,11 +102,6 @@ public class ChartReportDescriptor extends ReportDescriptor
         return NumberUtils.toInt(getProperty(Prop.height), 200);
     }
 
-    protected void init(Pair<String, String>[] params)
-    {
-        super.init(params);
-    }
-
     public boolean isArrayType(String prop)
     {
         if (!super.isArrayType(prop))

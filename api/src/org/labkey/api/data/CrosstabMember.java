@@ -72,7 +72,7 @@ public class CrosstabMember
         return AliasManager.makeLegalName("_" + String.valueOf(getValue()), dialect);
     }
 
-    public void setValue(Object value)
+    public void setValue(@Nullable Object value)
     {
         _value = value;
     }
@@ -82,17 +82,18 @@ public class CrosstabMember
         return (null == _caption ? String.valueOf(getValue()) : _caption);
     }
 
-    public void setCaption(String caption)
+    public void setCaption(@Nullable String caption)
     {
         _caption = caption;
     }
 
+    @NotNull
     public FieldKey getDimensionFieldKey()
     {
         return _dimensionFieldKey;
     }
 
-    public void setDimensionFieldKey(FieldKey dimensionFieldKey)
+    public void setDimensionFieldKey(@NotNull FieldKey dimensionFieldKey)
     {
         _dimensionFieldKey = dimensionFieldKey;
     }

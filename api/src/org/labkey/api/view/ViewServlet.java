@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -463,7 +464,8 @@ public class ViewServlet extends HttpServlet
         @Override
         public String[] getParameterValues(String name)
         {
-            return _actionURL.getParameters(name);
+            List<String> parameters = _actionURL.getParameters(name);
+            return parameters.toArray(new String[parameters.size()]);
         }
 
         @Override
@@ -547,25 +549,6 @@ public class ViewServlet extends HttpServlet
             throw new ServletException(x);
         }
     }
-
-
-    public class ViewResponseWrapper extends HttpServletResponseWrapper
-    {
-        String contentType = "text/html";
-
-        ViewResponseWrapper(HttpServletResponse response)
-        {
-            super(response);
-        }
-
-
-        public void setContentType(String s)
-        {
-            contentType = s;
-            super.setContentType(s);
-        }
-    }
-
 
     public void init(ServletConfig config) throws ServletException
     {

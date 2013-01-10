@@ -338,7 +338,7 @@ public abstract class AbstractReport implements Report
     /**
      * Tests whether the specified query view is valid.
      */
-    public final void validateQueryView(ViewContext context, QueryView view) throws ValidationException
+    public final void validateQueryView(QueryView view) throws ValidationException
     {
         if (view != null)
         {

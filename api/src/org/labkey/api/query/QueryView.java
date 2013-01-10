@@ -531,7 +531,7 @@ public class QueryView extends WebPartView<Object>
         return actionButton(label, action, null, null);
     }
 
-    protected ActionButton actionButton(String label, QueryAction action, String parameterToAdd, String parameterValue)
+    protected ActionButton actionButton(String label, QueryAction action, @Nullable String parameterToAdd, @Nullable String parameterValue)
     {
         ActionURL url = urlFor(action);
         if (url == null)
@@ -696,7 +696,6 @@ public class QueryView extends WebPartView<Object>
     /**
      * Show record selectors usually doesn't need to be explicitly set.  If the ButtonBar contains
      * a button that requires selection, the record selectors will be added.
-     * @param showRecordSelectors
      */
     public void setShowRecordSelectors(boolean showRecordSelectors)
     {

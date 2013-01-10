@@ -23,13 +23,8 @@ import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Test;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -40,6 +35,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -96,10 +93,10 @@ public class ReplacedRunFilter
             SimpleFilter filter = new SimpleFilter();
             addCondition(filter, fieldKey);
             filter.applyToURL(helper, dataRegionName);
-            assert helper.getParameters().length == 1;
+            assert helper.getParameters().size() == 1;
 
             // Remove any existing URL filters on the Replaced column
-            String paramName = helper.getParameters()[0].getKey();
+            String paramName = helper.getParameters().get(0).getKey();
             String prefix = paramName.split(SimpleFilter.SEPARATOR_CHAR)[0];
             for (Pair<String, String> entry : url.getParameters())
             {
@@ -148,10 +145,10 @@ public class ReplacedRunFilter
             type.addCondition(typeFilter, fieldKey);
             URLHelper helper = new URLHelper(false);
             typeFilter.applyToURL(helper, view.getDataRegionName());
-            Pair<String, String>[] parameters = helper.getParameters();
-            assert parameters.length == 1;
-            String paramName = parameters[0].getKey();
-            String paramValue = parameters[0].getValue();
+            List<Pair<String, String>> parameters = helper.getParameters();
+            assert parameters.size() == 1;
+            String paramName = parameters.get(0).getKey();
+            String paramValue = parameters.get(0).getValue();
 
             if (url.getParameterMap().containsKey(paramName))
             {
@@ -222,7 +219,7 @@ public class ReplacedRunFilter
             context.checking(new Expectations()
             {{
                 allowing(url).getParameters();
-                will(returnValue(new Pair[0]));
+                will(returnValue(Collections.emptyList()));
                 oneOf(url).replaceParameter("DataRegionName.SomeColumn~isnonblank", null);
                 oneOf(url).replaceParameter("DataRegionName.SomeColumn~eq", "false");
                 oneOf(url).replaceParameter("DataRegionName.SomeColumn~eq", "true");

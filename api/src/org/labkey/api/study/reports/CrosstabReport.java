@@ -22,7 +22,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.Table;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -133,7 +132,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
     public Results generateResults(ViewContext context) throws Exception
     {
         ReportQueryView view = createQueryView(context, getDescriptor());
-        validateQueryView(context, view);
+        validateQueryView(view);
         if (view != null)
         {
             view.getSettings().setMaxRows(Table.ALL_ROWS);

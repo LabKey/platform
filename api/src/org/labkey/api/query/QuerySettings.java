@@ -58,7 +58,6 @@ public class QuerySettings
     private String _selectionKey = null;
 
     private ShowRows _showRows = ShowRows.PAGINATED;
-    private boolean _showHiddenFieldsWhenCustomizing = false;
 
     PropertyValues _filterSort = null;
     private URLHelper _returnURL = null;
@@ -229,7 +228,7 @@ public class QuerySettings
                     if (offset > 0)
                         _offset = offset;
                 }
-                catch (NumberFormatException e) { }
+                catch (NumberFormatException ignored) { }
             }
 
             String maxRowsParam = _getParameter(param(QueryParam.maxRows));
@@ -244,7 +243,7 @@ public class QuerySettings
                     if (_maxRows == Table.NO_ROWS)
                         _showRows = ShowRows.NONE;
                 }
-                catch (NumberFormatException e) { }
+                catch (NumberFormatException ignored) { }
             }
         }
 
@@ -263,7 +262,7 @@ public class QuerySettings
             {
                 setReturnUrl(new URLHelper(returnURL));
             }
-            catch (URISyntaxException _) { }
+            catch (URISyntaxException ignored) { }
         }
 
         String columns = StringUtils.trimToNull(_getParameter(param(QueryParam.columns)));
@@ -528,16 +527,6 @@ public class QuerySettings
     public void setShowRows(ShowRows showRows)
     {
         _showRows = showRows;
-    }
-
-    public boolean isShowHiddenFieldsWhenCustomizing()
-    {
-        return _showHiddenFieldsWhenCustomizing;
-    }
-
-    public void setShowHiddenFieldsWhenCustomizing(boolean showHiddenFieldsWhenCustomizing)
-    {
-        _showHiddenFieldsWhenCustomizing = showHiddenFieldsWhenCustomizing;
     }
 
     /**

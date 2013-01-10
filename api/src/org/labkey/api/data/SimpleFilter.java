@@ -944,8 +944,7 @@ public class SimpleFilter implements Filter
         {
             String colTildeCompare = filterKey.substring(prefix.length());
 
-            String[] params = urlHelp.getParameters(filterKey);
-            for (String param : params)
+            for (String param : urlHelp.getParameters(filterKey))
             {
                 String[] compareInfo = colTildeCompare.split(SEPARATOR_CHAR);
                 CompareType type = null;

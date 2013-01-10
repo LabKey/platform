@@ -161,7 +161,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         ReportDescriptor descriptor = getDescriptor();
         QueryView view = createQueryView(context, descriptor);
-        validateQueryView(context, view);
+        validateQueryView(view);
 
         if (view != null)
         {

@@ -187,10 +187,9 @@ public class Sort
 
     public void addURLSort(URLHelper urlhelp, String regionName)
     {
-        String[] sortParams = urlhelp.getParameters(regionName + SORT_KEY);
         String[] sortKeys;
 
-        for (String sortParam : sortParams)
+        for (String sortParam : urlhelp.getParameters(regionName + SORT_KEY))
         {
             if (null == sortParam) continue;
             sortKeys = sortParam.split(",");

@@ -63,7 +63,7 @@
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
-    Pair<String, String>[] params = ctx.getActionURL().getParameters();
+    List<Pair<String, String>> params = ctx.getActionURL().getParameters();
 
     // Initial view URL uses all parameters
     initialViewURL.addParameters(params);

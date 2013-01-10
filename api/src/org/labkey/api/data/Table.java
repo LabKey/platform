@@ -1618,9 +1618,8 @@ public class Table
         private Map<String, String> _quickMap(String q)
         {
             Map<String, String> m = new HashMap<String, String>();
-            Pair[] pairs = PageFlowUtil.fromQueryString(q);
-            for (Pair p : pairs)
-                m.put((String)p.first, (String)p.second);
+            for (Pair<String, String> p : PageFlowUtil.fromQueryString(q))
+                m.put(p.first, p.second);
             return m;
         }
     }

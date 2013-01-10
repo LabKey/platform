@@ -90,8 +90,6 @@ import java.util.regex.Pattern;
  */
 public class ReportUtil
 {
-    private static final Logger _log = Logger.getLogger(ReportUtil.class);
-
     public static final String FORWARD_URL = "forwardUrl";
 
     public static ActionURL getChartDesignerURL(ViewContext context, ChartDesignerBean bean)

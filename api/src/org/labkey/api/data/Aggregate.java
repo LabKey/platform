@@ -30,6 +30,7 @@ import org.springframework.beans.PropertyValues;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -239,8 +240,7 @@ public class Aggregate
                 if (val.getValue() instanceof String)
                     values.add((String) val.getValue());
                 else
-                    for(String s : (String[])val.getValue())
-                        values.add(s);
+                    Collections.addAll(values, (String[]) val.getValue());
 
                 for(String s : values)
                 {
@@ -269,8 +269,7 @@ public class Aggregate
             }
             else
             {
-                Pair<String, String>[] values = PageFlowUtil.fromQueryString(PageFlowUtil.decode(value));
-                for (Pair<String, String> entry : values)
+                for (Pair<String, String> entry : PageFlowUtil.fromQueryString(PageFlowUtil.decode(value)))
                 {
                     properties.put(entry.getKey().toLowerCase(), entry.getValue());
                 }
@@ -282,9 +281,7 @@ public class Aggregate
             if (properties.containsKey("label"))
                 label = properties.get("label");
 
-            Aggregate a = new Aggregate(fieldKey, type, label);
-
-            return a;
+            return new Aggregate(fieldKey, type, label);
         }
         catch (IllegalArgumentException e)
         {
