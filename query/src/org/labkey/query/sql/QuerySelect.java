@@ -1975,7 +1975,7 @@ groupByLoop:
 
     boolean optimizeOrderBy(@Nullable QuerySelect selectParent, @Nullable QueryRelation childRelation)
     {
-        if (null == selectParent)
+        if (!_inFromClause || null == selectParent)
             return false;
         if (selectParent._optOrderByAbove || null != selectParent._orderBy || null != selectParent._distinct)
             _optOrderByAbove = true;
@@ -1993,7 +1993,7 @@ groupByLoop:
     {
         _generateSelectSQL = true;
 
-        if (null == selectParent || null == childRelation)
+        if (!_inFromClause || null == selectParent || null == childRelation)
             return false;
         if (_distinct != null)
             return false;
