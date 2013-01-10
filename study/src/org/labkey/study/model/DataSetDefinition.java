@@ -2363,7 +2363,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             parts.add(new SQLFragment("'.'"));
             if (!_study.getTimepointType().isVisitBased())
-                parts.add(StudyManager.sequenceNumFromDateSQL("date"));
+            {
+                SQLFragment seq = new SQLFragment();
+                seq.append("CAST((");
+                seq.append(StudyManager.sequenceNumFromDateSQL("date"));
+                seq.append(") AS VARCHAR(36))");
+                parts.add(seq);
+            }
             else
                 parts.add(new SQLFragment("CAST(CAST(sequencenum AS NUMERIC(15,4)) AS VARCHAR)"));
 

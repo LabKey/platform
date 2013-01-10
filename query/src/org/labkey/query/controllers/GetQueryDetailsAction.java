@@ -120,6 +120,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (auditHistoryUrl != null)
             resp.put("auditHistoryUrl", auditHistoryUrl);
 
+        resp.put("title", tinfo.getTitle());
+
         //8649: let the table provide the view data url
         if (schema instanceof UserSchema)
         {
