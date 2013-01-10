@@ -23,7 +23,8 @@ Ext4.define('LABKEY.form.field.AttachmentFile', {
         Ext4.applyIf(config, {
             frame   : false,
             border  : false,
-            hasRemoveButton : true
+            hasRemoveButton : true,
+            readOnly : false
         });
 
         this.callParent([config]);
@@ -123,6 +124,7 @@ Ext4.define('LABKEY.form.field.Attachment', {
             frame   : false,
             border  : false,
             margin  : 10,
+            width   : 800,
             multipleFiles : false            // if this component can support adding more than one attachment
         });
 
@@ -158,13 +160,22 @@ Ext4.define('LABKEY.form.field.Attachment', {
             '</table>&nbsp;'
         );
 
+        var readOnlyAttachmentTpl = new Ext4.XTemplate(
+            '<table class="attachmentDoc" id="attach-{atId}">',
+                '<tpl for=".">',
+                    '<tr><td><img src="{icon}" talt="icon"/></td>',
+                    '<td>&nbsp;<a href="{downloadURL}">{name}</a></td>',
+                '</tpl>',
+            '</table>&nbsp;'
+        );
+
         // dataview for existing attachments
         if (this.attachment)
         {
             items.push({
                 xtype : 'dataview',
                 store : this.attachmentStore,
-                tpl : attachmentTpl,
+                tpl : this.readOnly ? readOnlyAttachmentTpl : attachmentTpl,
                 itemSelector :  'a.removelink',
                 listeners : {
                     itemclick : {fn : this.removeAttachment, scope : this}
@@ -172,17 +183,20 @@ Ext4.define('LABKEY.form.field.Attachment', {
             });
         }
 
-        if (this.multipleFiles)
+        if (!this.readOnly)
         {
-            items.push({
-                xtype : 'box',
-                id : this.id + '-attachFile',
-                html : '<a href="javascript:void(0);"><img src="' + LABKEY.contextPath + '/_images/paperclip.gif">&nbsp;&nbsp;Attach a file</a>'
-            });
-        }
-        else if (!this.attachment)
-        {
-            items.push(this.createFileUploadComponent());
+            if (this.multipleFiles)
+            {
+                items.push({
+                    xtype : 'box',
+                    id : this.id + '-attachFile',
+                    html : '<a href="javascript:void(0);"><img src="' + LABKEY.contextPath + '/_images/paperclip.gif">&nbsp;&nbsp;Attach a file</a>'
+                });
+            }
+            else if (!this.attachment)
+            {
+                items.push(this.createFileUploadComponent());
+            }
         }
 
         this.formPanel = Ext4.create('Ext.form.Panel', {
@@ -197,11 +211,14 @@ Ext4.define('LABKEY.form.field.Attachment', {
 
     removeAttachment : function(cmp, rec, item, idx) {
 
-        this.attachmentStore.removeAt(idx);
+        if (!this.readOnly)
+        {
+            this.attachmentStore.removeAt(idx);
 
-        // if in single file mode, allow the user to add a new file
-        if (!this.multipleFiles)
-            this.onAttachFile();
+            // if in single file mode, allow the user to add a new file
+            if (!this.multipleFiles)
+                this.onAttachFile();
+        }
     },
 
     getFormPanel : function() {
@@ -224,8 +241,8 @@ Ext4.define('LABKEY.form.field.Attachment', {
     },
 
     onAttachFile : function() {
-
-        this.formPanel.add(this.createFileUploadComponent());
+        if (!this.readOnly)
+            this.formPanel.add(this.createFileUploadComponent());
     },
 
     createFileUploadComponent : function() {

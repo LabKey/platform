@@ -51,7 +51,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         }, this);
 
         // add a delayed task for automatically saving the survey responses
-        if (this.isSubmitted == undefined || !this.isSubmitted)
+        if (this.canEdit)
         {
             var autoSaveFn = function(count){
                 // without btn/event arguments so we don't show the success msg
@@ -99,11 +99,12 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         }, this);
 
                         this.getSurveyDesign();
+                        this.setSubmittedByInfo(o);
                     }
                     else
-                        this.onFailure(resp);
+                        this.onFailure(resp, "The survey responses for rowId " + this.rowId + " could not be found and may have been deleted.", true);
                 },
-                failure : this.onFailure,
+                failure : function(resp) { this.onFailure(resp, null, true); },
                 scope   : this
             });
         }
@@ -140,6 +141,11 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         }
         else
             this.hidden = true;
+    },
+
+    setSubmittedByInfo : function(responseConfig) {
+        this.submitted = responseConfig.submitted ? responseConfig.submitted : null;
+        this.submittedBy = responseConfig.submittedBy ? responseConfig.submittedBy : null;
     },
 
     setLabelCaption : function(surveyConfig) {
@@ -344,7 +350,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                                     fieldLabel : question.caption,
                                     attachment : attachment,
                                     name : question.name,
-                                    fieldWidth : 450,
+                                    fieldWidth : 445,
                                     itemId : 'attachment-field',
                                     xtype : 'attachmentfield'
                                 };
@@ -416,20 +422,24 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         Ext4.each(this.getForm().getFields().items, function(field){
 
-            // add a validity listener to each question
-            if (field.submitValue)
-            {
-                this.validStatus[field.getName()] = field.isValid();
-                field.clearInvalid();
-                field.addListener('validitychange', this.fieldValidityChanged, this);
-            }
-
             // add a global change listener for all questions so we can map them to any change handlers specified in the survey
             field.addListener('change', this.questionChangeHandler, this);
 
-            // if this survey has already been submitted, make the field readOnly
-            if (this.isSubmitted)
+            // if the user can not edit this survey (i.e. submitted and non-admin), make the field readOnly
+            if (!this.canEdit)
+            {
                 field.setReadOnly(true);
+            }
+            else
+            {
+                // add a validity listener to each question
+                if (field.submitValue)
+                {
+                    this.validStatus[field.getName()] = field.isValid();
+                    field.clearInvalid();
+                    field.addListener('validitychange', this.fieldValidityChanged, this);
+                }
+            }
 
         }, this);
     },
@@ -468,8 +478,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         if (question.shortCaption)
             config.shortCaption = question.shortCaption;
 
-        // if this survey has already been submitted, make the field readOnly
-        if (this.isSubmitted)
+        // if the user can not edit this survey (i.e. submitted and non-admin), make the field readOnly
+        if (!this.canEdit)
             config.readOnly = true;
 
         return config;
@@ -502,7 +512,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             labelSeparator: '',
             padding: 10,
             allowBlank: false,
-            readOnly: this.isSubmitted,
+            readOnly: !this.canEdit,
             width: 800,
             listeners: {
                 scope: this,
@@ -528,6 +538,18 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     addSurveyEndPanel : function() {
 
         // add a final panel that has the Save/Submit buttons and required field checks
+
+        this.updateSubmittedInfo = Ext4.create('Ext.form.DisplayField', {
+            hideLabel: true,
+            width: 250,
+            style: "text-align: center;",
+            hidden: !this.isSubmitted,
+            value: "<span style='font-style: italic; font-size: 90%'>"
+                    + (this.submitted && this.submittedBy ? "This survey was submitted by " + this.submittedBy + " on " + this.submitted + ".<br/><br/>" : "")
+                    + (this.canEdit ? "You are allowed to make changes to this form because you are a project/site administrator.<br/><br/>" : "")
+                    + "</span>"
+        });
+
         this.saveBtn = Ext4.create('Ext.button.Button', {
             text: 'Save',
             disabled: true,
@@ -569,32 +591,38 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             style: "text-align: center;"
         });
 
-        if (this.isSubmitted == undefined || !this.isSubmitted)
+        // the set of buttons and text on the end survey page changes based on whether or not the survey was submitted
+        // and whether or not the user can edit a submitted survey (i.e. is project/site admin)
+        var items = [{
+            xtype: 'panel',
+            layout: {type: 'vbox', align: 'center'},
+            items: this.canEdit
+                    ? [this.updateSubmittedInfo, this.saveBtn, this.saveDisabledInfo, this.autosaveInfo]
+                    : [this.updateSubmittedInfo]
+        }];
+        if (this.canEdit && !this.isSubmitted)
         {
-            this.sections.push(Ext4.create('Ext.panel.Panel', {
-                title: 'End Survey',
-                layout: {
-                    type: 'hbox',
-                    align: 'top',
-                    pack: 'center'
-                },
-                header: false,
-                border: false,
-                bodyStyle: 'padding-top: 25px;',
-                defaults: { border: false, width: 250 },
-                items: [{
-                    xtype: 'panel',
-                    layout: {type: 'vbox', align: 'center'},
-                    items: [this.saveBtn, this.saveDisabledInfo, this.autosaveInfo]
-                },
-                {xtype: 'label', width: 100, value: null},
-                {
-                    xtype: 'panel',
-                    layout: {type: 'vbox', align: 'center'},
-                    items: [this.submitBtn, this.submitInfo]
-                }]
-            }));
+            items.push({xtype: 'label', width: 100, value: null});
+            items.push({
+                xtype: 'panel',
+                layout: {type: 'vbox', align: 'center'},
+                items: [this.submitBtn, this.submitInfo]
+            });
         }
+
+        this.sections.push(Ext4.create('Ext.panel.Panel', {
+            title: 'End Survey',
+            layout: {
+                type: 'hbox',
+                align: 'top',
+                pack: 'center'
+            },
+            header: false,
+            border: false,
+            bodyStyle: 'padding-top: 25px;',
+            defaults: { border: false, width: 250 },
+            items: items
+        }));
     },
 
     configureSurveyLayout : function(surveyConfig) {
@@ -835,16 +863,22 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         return this.getForm().isDirty();
     },
 
-    onFailure : function(resp) {
+    onFailure : function(resp, message, hidePanel) {
         var error = Ext4.decode(resp.responseText);
         if (error.exception)
-            Ext4.MessageBox.alert('Error', error.exception);
+            message = error.exception;
         else if (error.errorInfo)
-            Ext4.MessageBox.alert('Error', error.errorInfo);
+            message = error.errorInfo;
+
+        if (hidePanel)
+            this.update("<span class='labkey-error'>" + message + "</span>");
         else
-            Ext4.MessageBox.alert('Error', 'An unknown error has ocurred.');
+            Ext4.MessageBox.alert('Error', message != null ? message : 'An unknown error has ocurred.');
 
         this.clearLoadingMask();
+
+        if (this.isSurveyDirty() && this.down('.textfield[itemId=surveyLabel]').isValid())
+            this.toggleSaveBtn(true, false);
     },
 
     saveSurveyAttachments : function() {

@@ -58,9 +58,13 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -453,8 +457,10 @@ public class SurveyController extends SpringActionController
                         tvf.setViewContext(getViewContext());
                         tvf.setTypedValues(form.getResponses(), false);
 
-                        // don't allow saving changes to a submitted survey
-                        if (survey.getSubmitted() != null)
+                        // only allow saving changes to a submitted survey for project and site admin
+                        Container project = getContainer().getProject();
+                        boolean isAdmin = (project != null && project.hasPermission(getUser(), AdminPermission.class)) || getUser().isAdministrator();
+                        if (survey.getSubmitted() != null && !isAdmin)
                         {
                             response.put("errorInfo", "You are not allowed to update a survey that has already been submitted.");
                             response.put("success", false);
@@ -486,13 +492,15 @@ public class SurveyController extends SpringActionController
                                     Object key = row.get(pk.toString());
                                     survey.setResponsesPk(String.valueOf(key));
                                 }
+                                // TODO: add audit log event for saving survey changes
                                 survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
 
                                 response.put("surveyResults", row);
                                 response.put("survey", new JSONObject(survey));
+
+                                dbschema.getScope().commitTransaction();
                             }
                             response.put("success", !row.isEmpty());
-                            dbschema.getScope().commitTransaction();
                         }
                     }
                     finally
@@ -630,34 +638,63 @@ public class SurveyController extends SpringActionController
                 if (surveyDesign != null)
                 {
                     TableInfo table = getSurveyAnswersTableInfo(surveyDesign, getContainer());
-                    FieldKey pk = table.getAuditRowPk();
-                    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), surveyDesign.getSchemaName());
-
-                    if (schema != null)
+                    if (table == null)
                     {
-                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, surveyDesign.getQueryName());
+                        errors.reject(ERROR_MSG, "The survey responses table could not be found and may have been deleted.");
+                        response.put("success", false);
+                    }
+                    else
+                    {
+                        FieldKey pk = table.getAuditRowPk();
+                        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), surveyDesign.getSchemaName());
 
-                        Object value = survey.getResponsesPk();
-                        ColumnInfo col = table.getColumn(pk);
-
-                        if (!value.getClass().equals(col.getJavaClass()))
+                        if (schema != null)
                         {
-                            Class targetType = col.getJavaClass();
-                            Converter converter = ConvertUtils.lookup(targetType);
-                            if(null == converter)
-                                throw new ConversionException("Cannot convert the value for column " + col.getName() + " from a " + value.getClass().toString() + " into a " + targetType.toString());
+                            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, surveyDesign.getQueryName());
 
-                            value = converter.convert(targetType, value);
-                        }
-                        settings.setBaseFilter(new SimpleFilter(pk, value));
-                        QueryView view = schema.createView(getViewContext(), settings, errors);
+                            Object value = survey.getResponsesPk();
+                            if (value == null)
+                            {
+                                errors.reject(ERROR_MSG, "The survey responses primary key could not be found and may have been deleted.");
+                                response.put("success", false);
+                            }
+                            else
+                            {
+                                ColumnInfo col = table.getColumn(pk);
 
-                        if (view != null)
-                        {
-                            ApiQueryResponse queryResponse = new ExtendedApiQueryResponse(view, getViewContext(), false, true,
-                                    surveyDesign.getSchemaName(), surveyDesign.getQueryName(), settings.getOffset(), null,
-                                    false, false, false);
-                            return queryResponse;
+                                if (!value.getClass().equals(col.getJavaClass()))
+                                {
+                                    Class targetType = col.getJavaClass();
+                                    Converter converter = ConvertUtils.lookup(targetType);
+                                    if(null == converter)
+                                        throw new ConversionException("Cannot convert the value for column " + col.getName() + " from a " + value.getClass().toString() + " into a " + targetType.toString());
+
+                                    value = converter.convert(targetType, value);
+                                }
+                                settings.setBaseFilter(new SimpleFilter(pk, value));
+                                QueryView view = schema.createView(getViewContext(), settings, errors);
+
+                                if (view != null)
+                                {
+                                    ApiQueryResponse queryResponse = new ExtendedApiQueryResponse(view, getViewContext(), false, true,
+                                            surveyDesign.getSchemaName(), surveyDesign.getQueryName(), settings.getOffset(), null,
+                                            false, false, false);
+
+                                    // add the submitted and submittedBy information to the response
+                                    Map<String, Object> extraProps = new HashMap<String, Object>();
+                                    if (survey.getSubmitted() != null)
+                                        extraProps.put("submitted", survey.getSubmitted());
+                                    if (survey.getSubmittedBy() != null)
+                                    {
+                                        User submitUser = UserManager.getUser(survey.getSubmittedBy());
+                                        if (submitUser != null)
+                                            extraProps.put("submittedBy", submitUser.getDisplayName(getUser()));
+                                    }
+                                    queryResponse.setExtraReturnProperties(extraProps);
+
+                                    return queryResponse;
+                                }
+                            }
                         }
                     }
                 }

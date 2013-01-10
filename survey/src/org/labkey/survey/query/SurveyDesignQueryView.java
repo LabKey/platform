@@ -21,6 +21,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.survey.SurveyController;
@@ -53,13 +54,16 @@ public class SurveyDesignQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL insertURL = new ActionURL(SurveyController.SurveyDesignAction.class, getContainer());
-        insertURL.addParameter(QueryParam.srcURL, getReturnURL().toString());
+        if (getContainer().hasPermission(getUser(), InsertPermission.class))
+        {
+            ActionURL insertURL = new ActionURL(SurveyController.SurveyDesignAction.class, getContainer());
+            insertURL.addParameter(QueryParam.srcURL, getReturnURL().toString());
 
-        ActionButton insert = new ActionButton(insertURL, "Add New Survey");
-        insert.setActionType(ActionButton.Action.LINK);
+            ActionButton insert = new ActionButton(insertURL, "Add New Survey");
+            insert.setActionType(ActionButton.Action.LINK);
 
-        bar.add(insert);
+            bar.add(insert);
+        }
     }
 
     @Override

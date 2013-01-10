@@ -21,6 +21,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.survey.SurveyController;
@@ -60,7 +61,7 @@ public class SurveyQueryView extends QueryView
         super.populateButtonBar(view, bar);
 
         // add the survey design Id for the given view (passed through via the SurveyQuerySettings
-        if (_surveyDesignId != null)
+        if (_surveyDesignId != null && getContainer().hasPermission(getUser(), InsertPermission.class))
         {
             ActionURL insertURL = new ActionURL(SurveyController.UpdateSurveyAction.class, getContainer());
             insertURL.addParameter("surveyDesignId", _surveyDesignId);

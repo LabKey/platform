@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.survey.SurveyForm" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -70,6 +72,11 @@
         returnURL = bean.getSrcURL().toString();
     }
 
+    // we allow editing for 1) non-submitted surveys 2) submitted surveys if the user is a project or site admin
+    Container project = ctx.getContainer().getProject();
+    boolean isAdmin = (project != null && project.hasPermission(ctx.getUser(), AdminPermission.class)) || ctx.getUser().isAdministrator();
+    boolean canEdit = !submitted || isAdmin;
+
     String renderId = "survey-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 
@@ -93,6 +100,7 @@
             responsesPk     : <%=q(responsesPk)%>,
             surveyLabel     : <%=q(surveyLabel)%>,
             isSubmitted     : <%=submitted%>,
+            canEdit         : <%=canEdit%>,
             autosaveInterval: 60000,
             renderTo        : <%=q(renderId)%>,
             returnURL       : <%=q(returnURL)%>
