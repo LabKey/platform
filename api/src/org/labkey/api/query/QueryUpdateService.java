@@ -15,8 +15,8 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 
@@ -70,12 +70,12 @@ public interface QueryUpdateService
      * implementation should not completely refetch the row data. The caller will use
      * <code>getRows()</code> to refetch if that behavior is necessary.
      * @throws SQLException Thrown if there was an error communicating with the database.
-     * @throws ValidationException Thrown if the data failed one of the validation checks
+     * @throws BatchValidationException Thrown if the data failed one of the validation checks
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
      */
     public List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows,
-            BatchValidationException errors, Map<String, Object> extraScriptContext)
+            BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext)
         throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
@@ -90,9 +90,6 @@ public interface QueryUpdateService
      * implementation should not completely refetch the row data. The caller will use
      * <code>getRows()</code> to refetch if that behavior is necessary.
      * @throws SQLException Thrown if there was an error communicating with the database.
-     * @throws ValidationException Thrown if the data failed one of the validation checks
-     * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
-     * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
      */
     public int importRows(User user, Container container, DataIterator rows,
            BatchValidationException errors, Map<String, Object> extraScriptContext)
@@ -111,12 +108,12 @@ public interface QueryUpdateService
      * completely refetch the row data for this returned map. The caller will use
      * the <code>getRow()</code> method to refetch if that behavior is necessary.
      * @throws InvalidKeyException Thrown if the keys (or old keys) are not valid.
-     * @throws ValidationException Thrown if the data fails one of the validation checks
+     * @throws BatchValidationException Thrown if the data fails one of the validation checks
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
     public List<Map<String,Object>> updateRows(User user, Container container, List<Map<String, Object>> rows,
-                                               List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
+                                               List<Map<String, Object>> oldKeys, @Nullable Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
@@ -126,7 +123,7 @@ public interface QueryUpdateService
      * @param keys The list of primary key values as maps.
      * @return The primary key values passed as the keys parameter.
      * @throws InvalidKeyException Thrown if the primary key values are not valid.
-     * @throws ValidationException Thrown if the data fails one of the validation checks
+     * @throws BatchValidationException Thrown if the data fails one of the validation checks
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
@@ -141,7 +138,6 @@ public interface QueryUpdateService
 
     /**
      * implementations should use this to decide whether to do optional expensive operations upon updates.
-     * @return
      */
     public boolean isBulkLoad();
 }
