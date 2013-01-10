@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -27,6 +28,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.query.QueryServiceImpl;
 
 import java.util.HashMap;
@@ -741,34 +744,53 @@ public abstract class Method
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
-            SQLFragment group = arguments[0];
-            SQLFragment user;
+            SQLFragment groupArg = arguments[0];
+            SQLFragment userArg = arguments.length > 1 ? arguments[1] : null;
 
-            if (arguments.length > 1)
-                user = arguments[1];
+            //If current user, which as of 12.3 is the only documented version of this function
+            if (arguments.length == 1)
+            {
+                //Current UserID gets put in QueryService.getEnvironment() by AuthFilter
+                User user =  UserManager.getUser((Integer) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USERID));
+                Object[] groupIds = ArrayUtils.toObject(user.getGroups());
+                ret.append("(").append(groupArg).append(") IN (").append(StringUtils.join(groupIds, ",")).append(")");
+                return ret;
+            }
+
+            // NOTE: we aren't not verifying principals.type='g'
+            // NOTE: we are not verifying principals.container in (project,site)
+
+            ret.append("(").append(groupArg).append(") IN (");
+            if (schema.getSqlDialect().isPostgreSQL())
+            {
+                ret.append(
+                    "WITH RECURSIVE allmembers(userid, groupid) AS (\n" +
+                    "   SELECT userid, groupid FROM core.members WHERE userid = ").append(userArg).append(
+                    "\nUNION\n" +
+                    "   SELECT a.groupid as userid, m.groupid as groupid FROM allmembers a, core.members m WHERE a.groupid=m.userid\n" +
+                    ")\n" +
+                    "SELECT groupid FROM allmembers"
+                );
+            }
             else
-                user = new UserIdInfo().getSQL(schema, null);
+            {
+                // nested WITH doesn't seem to work on SQL Server
+                // ONLY WORKS 3 LEVELS DEEP!
+                SQLFragment onelevel = new SQLFragment(), twolevel = new SQLFragment(), threelevel = new SQLFragment();
+                onelevel.append("SELECT groupid FROM core.members _M1_ where _M1_.userid=(").append(userArg).append(")");
+                twolevel.append("SELECT groupid FROM core.members _M2_ WHERE _M2_.userid IN (").append(onelevel).append(")");
+                threelevel.append("SELECT groupid FROM core.members _M3_ WHERE _M3_.userid IN (").append(twolevel).append(")");
+                ret.append(onelevel).append(" UNION ").append(twolevel).append(" UNION ").append(threelevel);
+            }
 
-            ret.append("(").append(group).append(") IN (SELECT groupid FROM core.members _M_ where _M_.userid=(").append(user).append(")");
-            ret.append(" UNION SELECT (").append(user).append(")");
+            ret.append(" UNION SELECT (").append(userArg).append(")");
             ret.append(" UNION SELECT ").append(Group.groupGuests);
-            ret.append(" UNION SELECT ").append(Group.groupUsers).append(" WHERE 0 < (").append(user).append(")");
+            ret.append(" UNION SELECT ").append(Group.groupUsers).append(" WHERE 0 < (").append(userArg).append(")");
             ret.append(")");
             return ret;
-            /*
-            NOTE: the recursive version would look something like
 
-            WITH  Groups(principal) AS
-            (
-                SELECT <<userid>> UNION SELECT -2 UNION SELECT -3
-                UNION ALL
-                SELECT groupid
-                FROM core.Members INNER JOIN Groups ON Members.userid=Groups.principal INNER JOIN core.Principals ON Members.GroupId=Principals.userid
-                WHERE Principals.type='g'
-            )
-            SELECT * FROM Groups
-            */
-        }
+            // can't seem to use WITH in a subselect so , so a three level version
+         }
     }
 
 

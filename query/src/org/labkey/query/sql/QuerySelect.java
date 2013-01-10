@@ -1745,7 +1745,17 @@ groupByLoop:
         {
             SqlBuilder b = new SqlBuilder(getDbSchema());
             QExpr expr = getResolvedField();
+
+            // NOTE SqlServer does not like predicates (A=B) in select list, try to help out
+            boolean wrapWithCast = false;
+            if (expr instanceof QMethodCall && expr.getSqlType() == JdbcType.BOOLEAN)
+                wrapWithCast = b.getDialect().isSqlServer();
+
+            if (wrapWithCast)
+                b.append("CASE WHEN (");
             expr.appendSql(b);
+            if (wrapWithCast)
+                b.append(") THEN 1 ELSE 0 END");
             return b;
         }
 
