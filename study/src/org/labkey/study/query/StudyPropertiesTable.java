@@ -76,9 +76,9 @@ public class StudyPropertiesTable extends BaseStudyTable
         addRootColumn("subjectColumnName", false, true);
         addRootColumn("grant", true, true);
         addRootColumn("investigator", true, true);
-        addRootColumn("participantAliasDatasetName", true, true);
-        addRootColumn("participantAliasColumnName", true, true);
-        addRootColumn("participantAliasSourceColumnName", true, true);
+        addRootColumn("participantAliasDatasetId", true, true);
+        addRootColumn("participantAliasProperty", true, true);
+        addRootColumn("participantAliasSourceProperty", true, true);
         ColumnInfo descriptionColumn = addRootColumn("description", true, true);
         final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, true);
         descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")
@@ -124,11 +124,6 @@ public class StudyPropertiesTable extends BaseStudyTable
         }
 
         setDefaultVisibleColumns(_visibleColumns);
-    }
-
-    private ColumnInfo addRootColumn(String columnName)
-    {
-        return addRootColumn(columnName, true, false);
     }
 
     private ColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)

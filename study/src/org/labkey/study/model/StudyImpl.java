@@ -131,9 +131,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private boolean _allowReqLocSal = true;
     private boolean _allowReqLocEndpoint = true;
 
-    private String _participantAliasDatasetName;
-    private String _participantAliasSourceColumnName;
-    private String _participantAliasColumnName;
+    private Integer _participantAliasDatasetId;
+    private String _participantAliasSourceProperty;
+    private String _participantAliasProperty;
 
     public StudyImpl()
     {
@@ -939,34 +939,34 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _lastSpecimenLoad = lastSpecimenLoad;
     }
 
-    public String getParticipantAliasDatasetName()
+    public Integer getParticipantAliasDatasetId()
     {
-        return _participantAliasDatasetName;
+        return _participantAliasDatasetId;
     }
 
-    public void setParticipantAliasDatasetName(String participantAliasDatasetName)
+    public void setParticipantAliasDatasetId(Integer participantAliasDatasetId)
     {
-        _participantAliasDatasetName = participantAliasDatasetName;
+        _participantAliasDatasetId = participantAliasDatasetId;
     }
 
-    public String getParticipantAliasSourceColumnName()
+    public String getParticipantAliasSourceProperty()
     {
-        return _participantAliasSourceColumnName;
+        return _participantAliasSourceProperty;
     }
 
-    public void setParticipantAliasSourceColumnName(String participantAliasSourceColumnName)
+    public void setParticipantAliasSourceProperty(String participantAliasSourceProperty)
     {
-        _participantAliasSourceColumnName = participantAliasSourceColumnName;
+        _participantAliasSourceProperty = participantAliasSourceProperty;
     }
 
-    public String getParticipantAliasColumnName()
+    public String getParticipantAliasProperty()
     {
-        return _participantAliasColumnName;
+        return _participantAliasProperty;
     }
 
-    public void setParticipantAliasColumnName(String participantAliasColumnName)
+    public void setParticipantAliasProperty(String participantAliasProperty)
     {
-        _participantAliasColumnName = participantAliasColumnName;
+        _participantAliasProperty = participantAliasProperty;
     }
 
     @Override

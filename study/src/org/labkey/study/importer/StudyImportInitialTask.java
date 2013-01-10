@@ -17,10 +17,8 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.pipeline.*;
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;
-import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
@@ -75,7 +73,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                     {
                         Thread.sleep(1000 * DELAY_INCREMENT);
                     }
-                    catch (InterruptedException e) {}
+                    catch (InterruptedException ignored) {}
                 }
             }
             
@@ -157,9 +155,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             if (studyXml.isSetParticipantAliasDataset())
             {
                 StudyDocument.Study.ParticipantAliasDataset participantAliasDataset = studyXml.getParticipantAliasDataset();
-                study.setParticipantAliasDatasetName(participantAliasDataset.getDatasetName());
-                study.setParticipantAliasColumnName(participantAliasDataset.getAliasColumnName());
-                study.setParticipantAliasSourceColumnName(participantAliasDataset.getSourceColumnName());
+                study.setParticipantAliasDatasetId(participantAliasDataset.getDatasetId());
+                study.setParticipantAliasProperty(participantAliasDataset.getAliasProperty());
+                study.setParticipantAliasSourceProperty(participantAliasDataset.getSourceProperty());
             }
 
             if (studyXml.isSetDescriptionRendererType())

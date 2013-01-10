@@ -7506,7 +7506,7 @@ public class StudyController extends BaseStudyController
             {
                 schedule.setVisits(manager.getVisits(study, cohort, getUser(), Visit.Order.DISPLAY));
                 schedule.setDatasets(
-                        manager.getDataSetDefinitions(study, cohort, new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}),
+                        manager.getDataSetDefinitions(study, cohort, DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER),
                         DataViewService.get().getViews(getViewContext(), Collections.singletonList(DatasetViewProvider.TYPE)));
 
                 response.put("schedule", schedule.toJSON(getUser()));
