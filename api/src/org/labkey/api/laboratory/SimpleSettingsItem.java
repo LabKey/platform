@@ -17,6 +17,7 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -94,16 +95,25 @@ public class SimpleSettingsItem extends AbstractImportingNavItem implements Sett
 
     public ActionURL getImportUrl(Container c, User u)
     {
+        if (c.isRoot())
+            c = ContainerManager.getSharedContainer();
+
         return c.hasPermission(u, AdminPermission.class) ? PageFlowUtil.urlProvider(LaboratoryUrls.class).getImportUrl(c, u, _schema, _query) : null;
     }
 
     public ActionURL getSearchUrl(Container c, User u)
     {
+        if (c.isRoot())
+            c = ContainerManager.getSharedContainer();
+
         return PageFlowUtil.urlProvider(LaboratoryUrls.class).getSearchUrl(c, _schema, _query);
     }
 
     public ActionURL getBrowseUrl(Container c, User u)
     {
+        if (c.isRoot())
+            c = ContainerManager.getSharedContainer();
+
         return QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
     }
 

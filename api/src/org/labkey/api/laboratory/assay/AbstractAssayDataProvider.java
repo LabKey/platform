@@ -19,16 +19,18 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.laboratory.AbstractDataProvider;
-import org.labkey.api.laboratory.AbstractNavItem;
-import org.labkey.api.laboratory.NavItem;
+import org.labkey.api.ldk.AbstractNavItem;
+import org.labkey.api.ldk.NavItem;
 import org.labkey.api.laboratory.SimpleQueryNavItem;
 import org.labkey.api.laboratory.SingleNavItem;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
@@ -220,7 +222,8 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();
             for (QueryDefinition qd : queries)
             {
-                SimpleQueryNavItem qItem = new SimpleQueryNavItem(this, schema.getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + qd.getName());
+                TableInfo query = qd.getTable(new ArrayList<QueryException>(), true);
+                SimpleQueryNavItem qItem = new SimpleQueryNavItem(this, schema.getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + query.getTitle());
                 qItem.setVisible(nav.isVisible(c, u));
                 qItem.setOwnerKey(nav.getPropertyManagerKey());
                 items.add(qItem);

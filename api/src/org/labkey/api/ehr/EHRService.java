@@ -73,4 +73,6 @@ abstract public class EHRService
     abstract public void setDateFormat(Container c, String format);
 
     abstract public String getDateFormat(Container c);
+
+    abstract public User getEHRUser();
 }

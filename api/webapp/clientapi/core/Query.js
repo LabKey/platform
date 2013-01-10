@@ -1136,6 +1136,7 @@ LABKEY.Query = new function()
          *      <li><b>canEdit:</b> true if the current user can edit this query</li>
          *      <li><b>isMetadataOverrideable:</b> true if the current user may override the query's metadata</li>
          *      <li><b>viewDataUrl:</b> The URL to navigate to for viewing the data returned from this query</li>
+         *      <li><b>title:</b> If a value has been set, this is the label used when displaying this table</li>
          *      <li><b>description:</b> A description for this query (if provided)</li>
          *      <li><b>columns:</b> Information about all columns in this query. This is an array of LABKEY.Query.FieldMetaData objects.</li>
          *      <li><b>defaultView:</b> An array of column information for the columns in the current user's default view of this query.

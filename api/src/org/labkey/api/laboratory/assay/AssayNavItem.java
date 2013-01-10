@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.laboratory.AbstractImportingNavItem;
 import org.labkey.api.laboratory.LaboratoryUrls;
-import org.labkey.api.laboratory.NavItem;
+import org.labkey.api.ldk.NavItem;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;

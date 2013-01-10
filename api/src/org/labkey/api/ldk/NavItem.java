@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.laboratory;
+package org.labkey.api.ldk;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.laboratory.DataProvider;
 import org.labkey.api.security.User;
 
 /**
@@ -31,7 +32,7 @@ import org.labkey.api.security.User;
  */
 public interface NavItem
 {
-    public static final String PROPERTY_CATEGORY = "laboratory.navItem";
+    public static final String PROPERTY_CATEGORY = "ldk.navItem";
 
     public DataProvider getDataProvider();
 
