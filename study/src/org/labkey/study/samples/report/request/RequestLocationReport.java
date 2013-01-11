@@ -26,23 +26,21 @@ import org.labkey.study.SampleManager;
  * User: brittp
  * Created: Jan 14, 2008 1:37:24 PM
  */
-public class RequestEnrollmentSiteReport extends SpecimenTypeVisitReport
+public class RequestLocationReport extends SpecimenTypeVisitReport
 {
-    private int _siteId;
-    private boolean _completedRequestsOnly;
+    private int _locationId;
+    private boolean _completeRequestsOnly;
 
-    public RequestEnrollmentSiteReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters,
-                                       VisitImpl[] visits, int siteId, boolean completedRequestsOnly)
+    public RequestLocationReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, VisitImpl[] visits, int locationId, boolean completeRequestsOnly)
     {
         super(titlePrefix, visits, filter, parameters);
-        _siteId = siteId;
-        _completedRequestsOnly = completedRequestsOnly;
+        _locationId = locationId;
+        _completeRequestsOnly = completeRequestsOnly;
     }
 
     protected String getFilterQueryString(VisitImpl visit, SampleManager.SummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +
-                (_completedRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedByEnrollmentSite :
-                                          SpecimenQueryView.PARAMS.showRequestedByEnrollmentSite) + "=" + _siteId;
+                (_completeRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedBySite : SpecimenQueryView.PARAMS.showRequestedBySite) + "=" + _locationId;
     }
 }

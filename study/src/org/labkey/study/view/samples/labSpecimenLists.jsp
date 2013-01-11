@@ -96,6 +96,7 @@
         <td>
             <table>
                 <%
+                    boolean hasInactiveEmailAddress = false;
                     for (ActorNotificationRecipientSet possibleNotification : bean.getPossibleNotifications())
                     {
                         LocationImpl notifyLocation = possibleNotification.getLocation();
@@ -104,7 +105,9 @@
                                 notifyLocation.getRowId() != location.getRowId())
                             continue;
 
-                        boolean hasEmailAddresses = possibleNotification.getEmailAddresses().length > 0;
+                        boolean hasEmailAddresses = possibleNotification.getAllEmailAddresses().length > 0;
+                        if (hasEmailAddresses)
+                            hasInactiveEmailAddress |= possibleNotification.hasInactiveEmailAddress();
 
                 %>
                 <tr valign="top">
@@ -114,16 +117,27 @@
                                value="<%= location.getRowId() %>,<%= h(possibleNotification.getFormValue()) %>" <%= text(hasEmailAddresses ? "" : "DISABLED") %>>
                     </td>
                     <td valign="middle">
-                        <%= h(possibleNotification.getShortRecipientDescription())%><%= hasEmailAddresses ?
-                            helpPopup("Group Members", possibleNotification.getEmailAddresses("<br>") + "<br>" +
-                                    possibleNotification.getConfigureEmailsLinkHTML(), true) :
-                            " " + possibleNotification.getConfigureEmailsLinkHTML() %>
+                        <%= text(possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses)) %>
                     </td>
                     <td valign="middle">
                         <%= text(notifyLocation != null && notifyLocation.getRowId() == bean.getSampleRequest().getDestinationSiteId() ? "Requesting&nbsp;Location&nbsp;" : "") %>
                         <%= text(notifyLocation != null && notifyLocation.getRowId() == location.getRowId() ? bean.getType().getDisplay() + "&nbsp;Location" : "") %>
                     </td>
                 </tr>
+                <%
+                    }
+                    if (hasInactiveEmailAddress)
+                    {
+                %>
+                    <tr valign="top">
+                        <td valign="middle">
+                            <input type="checkbox"
+                                   name="emailInactiveUsers">
+                        </td>
+                        <td>
+                            Include inactive users<br>
+                        </td>
+                    </tr>
                 <%
                     }
                 %>

@@ -327,9 +327,9 @@ public class SampleManager
 
     public LocationImpl getCurrentLocation(Specimen specimen)
     {
-        Integer siteId = getCurrentLocationId(specimen);
-        if (siteId != null)
-            return StudyManager.getInstance().getLocation(specimen.getContainer(), siteId.intValue());
+        Integer locationId = getCurrentLocationId(specimen);
+        if (locationId != null)
+            return StudyManager.getInstance().getLocation(specimen.getContainer(), locationId.intValue());
         return null;
     }
 
@@ -950,7 +950,7 @@ public class SampleManager
         private boolean _rememberSiteValue;
         private boolean _multiLine;
         private int _displayOrder;
-        private Map<Integer,String> _siteToDefaultValue;
+        private Map<Integer,String> _locationToDefaultValue;
 
         public SpecimenRequestInput(String title, String helpText, int displayOrder, boolean multiLine, boolean required, boolean rememberSiteValue)
         {
@@ -1017,37 +1017,37 @@ public class SampleManager
             if (!isRememberSiteValue())
                 throw new UnsupportedOperationException("Only those inputs set to remember site values can be queried for a site default.");
 
-            if (_siteToDefaultValue != null)
-                return _siteToDefaultValue;
+            if (_locationToDefaultValue != null)
+                return _locationToDefaultValue;
             String defaultObjectLsid = getRequestInputDefaultObjectLsid(container);
             String setItemLsid = ensureOntologyManagerSetItem(container, defaultObjectLsid, getTitle());
-            Map<Integer, String> siteToValue = new HashMap<Integer, String>();
+            Map<Integer, String> locationToValue = new HashMap<Integer, String>();
 
             Map<String, ObjectProperty> defaultValueProperties = OntologyManager.getPropertyObjects(container, setItemLsid);
             if (defaultValueProperties != null)
             {
                 for (Map.Entry<String, ObjectProperty> defaultValue : defaultValueProperties.entrySet())
                 {
-                    String siteIdString = defaultValue.getKey().substring(defaultValue.getKey().lastIndexOf(".") + 1);
-                    int siteId = Integer.parseInt(siteIdString);
-                    siteToValue.put(siteId, defaultValue.getValue().getStringValue());
+                    String locationIdString = defaultValue.getKey().substring(defaultValue.getKey().lastIndexOf(".") + 1);
+                    int locationId = Integer.parseInt(locationIdString);
+                    locationToValue.put(locationId, defaultValue.getValue().getStringValue());
                 }
             }
-            _siteToDefaultValue = siteToValue;
-            return _siteToDefaultValue;
+            _locationToDefaultValue = locationToValue;
+            return _locationToDefaultValue;
         }
 
-        public void setDefaultSiteValue(Container container, int siteId, String value) throws SQLException
+        public void setDefaultSiteValue(Container container, int locationId, String value) throws SQLException
         {
             try {
-                assert siteId > 0 : "Invalid site id: " + siteId;
+                assert locationId > 0 : "Invalid site id: " + locationId;
                 if (!isRememberSiteValue())
                     throw new UnsupportedOperationException("Only those inputs configured to remember site values can set a site default.");
-                _siteToDefaultValue = null;
+                _locationToDefaultValue = null;
                 String parentObjectLsid = getRequestInputDefaultObjectLsid(container);
 
                 String setItemLsid = ensureOntologyManagerSetItem(container, parentObjectLsid, getTitle());
-                String propertyId = parentObjectLsid + "." + siteId;
+                String propertyId = parentObjectLsid + "." + locationId;
                 ObjectProperty defaultValueProperty = new ObjectProperty(setItemLsid, container, propertyId, value);
                 OntologyManager.deleteProperty(setItemLsid, propertyId, container, container);
                 OntologyManager.insertProperties(container, setItemLsid, defaultValueProperty);

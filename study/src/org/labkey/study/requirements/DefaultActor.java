@@ -77,7 +77,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         Integer groupId = getGroupId(location, false);
         if (groupId == null)
             return new User[0];
-        List<Pair<Integer, String>> userIds = SecurityManager.getGroupMemberNamesAndIds(groupId);
+        List<Pair<Integer, String>> userIds = SecurityManager.getGroupMemberNamesAndIds(groupId, true);     // include active and inactive
         User[] users = new User[userIds.size()];
         Iterator<Pair<Integer, String>> idIt = userIds.iterator();
         for (int i = 0; i < users.length; i++)

@@ -44,17 +44,17 @@ public enum SpecimenRequestRequirementType implements RequirementType
                     if (specimens != null && specimens.length > 0)
                     {
                         // get a list of all providing and originating sites:
-                        Set<Integer> originatingSiteIds = new HashSet<Integer>();
+                        Set<Integer> originatingLocationIds = new HashSet<Integer>();
                         for (Specimen specimen : specimens)
                         {
                             LocationImpl originatingLocation = SampleManager.getInstance().getOriginatingLocation(specimen);
                             if (originatingLocation != null)
-                                originatingSiteIds.add(originatingLocation.getRowId());
+                                originatingLocationIds.add(originatingLocation.getRowId());
                         }
-                        for (Integer siteId : originatingSiteIds)
+                        for (Integer locationId : originatingLocationIds)
                         {
                             SampleRequestRequirement requirement = defaultRequirement.createMutable();
-                            requirement.setSiteId(siteId);
+                            requirement.setSiteId(locationId);
                             requirement.setRequestId(owner.getRowId());
                             requirements.add(requirement);
                         }
@@ -71,18 +71,18 @@ public enum SpecimenRequestRequirementType implements RequirementType
                     if (specimens != null && specimens.length > 0)
                     {
                         // get a list of all providing and originating sites:
-                        Set<Integer> providerSiteIds = new HashSet<Integer>();
+                        Set<Integer> providerLocationIds = new HashSet<Integer>();
                         for (Specimen specimen : specimens)
                         {
                             LocationImpl providingLocation = SampleManager.getInstance().getCurrentLocation(specimen);
                             if (providingLocation != null)
-                                providerSiteIds.add(providingLocation.getRowId());
+                                providerLocationIds.add(providingLocation.getRowId());
                         }
-                        for (Integer siteId : providerSiteIds)
+                        for (Integer locationId : providerLocationIds)
                         {
                             SampleRequestRequirement requirement = defaultRequirement.createMutable();
                             requirement.setRequestId(owner.getRowId());
-                            requirement.setSiteId(siteId);
+                            requirement.setSiteId(locationId);
                             requirements.add(requirement);
                         }
                     }

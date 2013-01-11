@@ -38,7 +38,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -934,17 +933,17 @@ public class ReportsController extends BaseStudyController
 
     public static class ExportForm
     {
-        private int siteId = 0;
+        private int locationId = 0;
         private ReportIdentifier reportId;
 
-        public int getSiteId()
+        public int getLocationId()
         {
-            return siteId;
+            return locationId;
         }
 
-        public void setSiteId(int siteId)
+        public void setLocationId(int locationId)
         {
-            this.siteId = siteId;
+            this.locationId = locationId;
         }
 
         public ReportIdentifier getReportId() 
@@ -993,7 +992,7 @@ public class ReportsController extends BaseStudyController
             else
             {
                 report = new ExportExcelReport();
-                report.setSiteId(form.getSiteId());
+                report.setLocationId(form.getLocationId());
             }
 
             User user = getUser();

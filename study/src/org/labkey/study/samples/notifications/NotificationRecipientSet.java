@@ -28,24 +28,53 @@ import javax.mail.Address;
 public class NotificationRecipientSet
 {
     private String[] _addresses;
+    private boolean[] _addressInactiveBits;
+    private int _countInactiveEmailAddresses = 0;
 
     public NotificationRecipientSet(Address[] addresses) throws ValidEmail.InvalidEmailException
     {
         _addresses = new String[addresses.length];
+        _addressInactiveBits = new boolean[addresses.length];   // all false by default
         int i = 0;
         for (Address address : addresses)
             _addresses[i++] = address.toString();
     }
 
-    protected NotificationRecipientSet(String[] addresses)
+    protected NotificationRecipientSet()
     {
-        _addresses = new String[addresses.length];
-        System.arraycopy(addresses, 0, _addresses, 0, addresses.length);
     }
 
-    public String[] getEmailAddresses()
+    public String[] getAllEmailAddresses()
     {
         return _addresses;
+    }
+
+    public String[] getEmailAddresses(boolean includeInactiveUsers)
+    {
+        if (0 == _countInactiveEmailAddresses || includeInactiveUsers)
+            return _addresses;
+        String[] addresses = new String[_addresses.length - _countInactiveEmailAddresses];
+        int k = 0;
+        for (int i = 0; i < _addresses.length; i += 1)
+        {
+            if (!_addressInactiveBits[i])
+            {
+                addresses[k] = _addresses[i];
+                k += 0;
+            }
+        }
+        return addresses;
+    }
+
+    protected void setEmailAddresses(String[] addresses, boolean[] inactiveBits)
+    {
+        _addresses = addresses;
+        assert (addresses.length == inactiveBits.length);
+        _addressInactiveBits = inactiveBits;
+
+        for (boolean inactive : _addressInactiveBits)
+            if (inactive)
+                _countInactiveEmailAddresses += 1;
     }
 
     public String getShortRecipientDescription()
@@ -67,17 +96,27 @@ public class NotificationRecipientSet
         return getShortRecipientDescription();
     }
 
-    public String getEmailAddresses(String separator)
+    public String getEmailAddressesAsString(String separator)
     {
         StringBuilder emailList = new StringBuilder();
+        assert (null != _addresses && null != _addressInactiveBits && _addresses.length == _addressInactiveBits.length);
         boolean first = true;
-        for (String email : getEmailAddresses())
+        for (int i = 0; i < _addresses.length; i += 1)
         {
             if (!first)
                 emailList.append(separator);
-            emailList.append(email);
+            if (_addressInactiveBits[i])
+                emailList.append("<del>");
+            emailList.append(_addresses[i]);
+            if (_addressInactiveBits[i])
+                emailList.append("</del>");
             first = false;
         }
         return emailList.toString();
+    }
+
+    public boolean hasInactiveEmailAddress()
+    {
+        return _countInactiveEmailAddresses > 0;
     }
 }

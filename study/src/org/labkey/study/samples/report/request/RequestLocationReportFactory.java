@@ -34,18 +34,18 @@ import java.util.List;
  * User: brittp
  * Created: Jan 24, 2008 1:38:40 PM
  */
-public class RequestSiteReportFactory extends BaseRequestReportFactory
+public class RequestLocationReportFactory extends BaseRequestReportFactory
 {
-    private Integer _siteId;
+    private Integer _locationId;
 
-    public Integer getSiteId()
+    public Integer getLocationId()
     {
-        return _siteId;
+        return _locationId;
     }
 
-    public void setSiteId(Integer siteId)
+    public void setLocationId(Integer locationId)
     {
-        _siteId = siteId;
+        _locationId = locationId;
     }
 
     public boolean allowsAvailabilityFilter()
@@ -55,15 +55,15 @@ public class RequestSiteReportFactory extends BaseRequestReportFactory
 
     public String getLabel()
     {
-        Location location = _siteId != null ? StudyManager.getInstance().getLocation(getContainer(), _siteId) : null;
+        Location location = _locationId != null ? StudyManager.getInstance().getLocation(getContainer(), _locationId) : null;
         return "By Requesting Location" + (location != null ? ": " + location.getLabel() : "");
     }
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
         LocationImpl[] locations;
-        if (getSiteId() != null)
-            locations = new LocationImpl[] { StudyManager.getInstance().getLocation(getContainer(), getSiteId()) };
+        if (getLocationId() != null)
+            locations = new LocationImpl[] { StudyManager.getInstance().getLocation(getContainer(), getLocationId()) };
         else
             locations = SampleManager.getInstance().getSitesWithRequests(getContainer());
         if (locations == null)
@@ -90,7 +90,7 @@ public class RequestSiteReportFactory extends BaseRequestReportFactory
                     "     )\n" +
                     ")", params);
             addBaseFilters(filter);
-            reports.add(new RequestSiteReport(location.getLabel(), filter, this, visits, location.getRowId(), isCompletedRequestsOnly()));
+            reports.add(new RequestLocationReport(location.getLabel(), filter, this, visits, location.getRowId(), isCompletedRequestsOnly()));
         }
         return reports;
     }
@@ -103,12 +103,12 @@ public class RequestSiteReportFactory extends BaseRequestReportFactory
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         StringBuilder builder = new StringBuilder();
-        builder.append("<select name=\"siteId\">\n" +
+        builder.append("<select name=\"locationId\">\n" +
                 "<option value=\"\">All Requesting Locations</option>\n");
         for (LocationImpl location : SampleManager.getInstance().getSitesWithRequests(getContainer()))
         {
             builder.append("<option value=\"").append(location.getRowId()).append("\"");
-            if (_siteId != null && location.getRowId() == _siteId)
+            if (_locationId != null && location.getRowId() == _locationId)
                 builder.append(" SELECTED");
             builder.append(">");
             builder.append(PageFlowUtil.filter(location.getLabel()));

@@ -96,12 +96,12 @@ for (LocationImpl location : locations)
                 out.print("\n");
             }%>
 
-        siteId_onChange(document.getElementById("siteId"));
+        siteId_onChange(document.getElementById("locationId"));
 
         function siteId_onChange(select)
         {
             var paramsInput = document.getElementById("params");
-            paramsInput.value = "siteId=" + select.value;
+            paramsInput.value = "locationId=" + select.value;
             var labelInput = document.getElementById("label");
             labelInput.value = "Export to worksheet: " + sites[select.value];
         }

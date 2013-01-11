@@ -41,7 +41,7 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
         {
             Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(getContainer());
             Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(getContainer());
-            Map<Integer, NameLabelPair> siteMap = getSiteMap(getContainer());
+            Map<Integer, NameLabelPair> locationMap = getSiteMap(getContainer());
 
             for (ColumnInfo col : getRealTable().getColumns())
             {
@@ -56,15 +56,15 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
                     {
                         int primaryId = NumberUtils.toInt(types[0]);
                         int derivativeId = NumberUtils.toInt(types[1]);
-                        int siteId = NumberUtils.toInt(types[2]);
+                        int locationId = NumberUtils.toInt(types[2]);
 
-                        if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId) && siteMap.containsKey(siteId))
+                        if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId) && locationMap.containsKey(locationId))
                         {
                             wrapPivotColumn(col,
                                     COLUMN_DESCRIPTION_FORMAT,
                                     primaryTypeMap.get(primaryId),
                                     derivativeTypeMap.get(derivativeId),
-                                    siteMap.get(siteId));
+                                    locationMap.get(locationId));
                         }
                     }
                 }

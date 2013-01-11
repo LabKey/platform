@@ -3249,14 +3249,14 @@ study/src/org/labkey/study/samples/report/participant/ParticipantSummaryReportFa
 study/src/org/labkey/study/samples/report/participant/ParticipantTypeReportFactory.java -text
 study/src/org/labkey/study/samples/report/participant/ParticipantVisitReport.java -text
 study/src/org/labkey/study/samples/report/request/BaseRequestReportFactory.java -text
-study/src/org/labkey/study/samples/report/request/RequestEnrollmentSiteReport.java -text
+study/src/org/labkey/study/samples/report/request/RequestEnrollmentLocationReport.java -text
 study/src/org/labkey/study/samples/report/request/RequestEnrollmentSiteReportFactory.java -text
+study/src/org/labkey/study/samples/report/request/RequestLocationReport.java -text
+study/src/org/labkey/study/samples/report/request/RequestLocationReportFactory.java -text
 study/src/org/labkey/study/samples/report/request/RequestParticipantReport.java -text
 study/src/org/labkey/study/samples/report/request/RequestParticipantReportFactory.java -text
 study/src/org/labkey/study/samples/report/request/RequestReport.java -text
 study/src/org/labkey/study/samples/report/request/RequestReportFactory.java -text
-study/src/org/labkey/study/samples/report/request/RequestSiteReport.java -text
-study/src/org/labkey/study/samples/report/request/RequestSiteReportFactory.java -text
 study/src/org/labkey/study/samples/report/specimentype/TypeCohortReport.java -text
 study/src/org/labkey/study/samples/report/specimentype/TypeCohortReportFactory.java -text
 study/src/org/labkey/study/samples/report/specimentype/TypeParticipantReportFactory.java -text

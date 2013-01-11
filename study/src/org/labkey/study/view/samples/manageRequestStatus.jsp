@@ -49,7 +49,7 @@
                         for (SampleRequestStatus status : statuses)
                         {
                     %>
-                    <option value="<%= status.getRowId() %>" <%= bean.getSampleRequest().getStatusId() == status.getRowId() ? "SELECTED" : ""%>>
+                    <option value="<%= status.getRowId() %>" <%= text(bean.getSampleRequest().getStatusId() == status.getRowId() ? "SELECTED" : "") %>>
                         <%= h(status.getLabel()) %>
                     </option>
                     <%
@@ -76,18 +76,26 @@
             <th>Notify</th>
             <td>
                 <%
+                    boolean hasInactiveEmailAddress = false;
                     List<ActorNotificationRecipientSet> possibleNotifications = bean.getPossibleNotifications();
                     for (ActorNotificationRecipientSet possibleNotification : possibleNotifications)
                     {
-                        boolean hasEmailAddresses = possibleNotification.getEmailAddresses().length > 0;
+                        boolean hasEmailAddresses = possibleNotification.getAllEmailAddresses().length > 0;
+                        if (hasEmailAddresses)
+                            hasInactiveEmailAddress |= possibleNotification.hasInactiveEmailAddress();
                 %>
                 <input type="checkbox"
                        name="notificationIdPairs"
-                       value="<%= possibleNotification.getFormValue() %>" <%= hasEmailAddresses ? "" : "DISABLED" %>>
-                <%= h(possibleNotification.getShortRecipientDescription())%><%= hasEmailAddresses ?
-                    helpPopup("Group Members", possibleNotification.getEmailAddresses("<br>") + "<br>" +
-                            possibleNotification.getConfigureEmailsLinkHTML(), true) :
-                    " " + possibleNotification.getConfigureEmailsLinkHTML() %><br>
+                       value="<%= text(possibleNotification.getFormValue()) %>" <%= text(hasEmailAddresses ? "" : "DISABLED") %>>
+                <%= text(possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses)) %><br>
+                <%
+                    }
+                    if (hasInactiveEmailAddress)
+                    {
+                %>
+                    <input type="checkbox"
+                           name="emailInactiveUsers">
+                    Include inactive users<br>
                 <%
                     }
                 %>

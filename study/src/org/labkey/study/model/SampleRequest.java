@@ -39,7 +39,7 @@ public class SampleRequest extends AbstractStudyCachable<SampleRequest> implemen
     private int _modifiedBy;
     private long _modified;
     private String _comments;
-    private Integer _destinationSiteId;
+    private Integer _destinationSiteId;     // This is a locationId, but still needs to martch the column in the table
     private boolean _hidden;
 
     public Object getPrimaryKey()

@@ -76,11 +76,11 @@ DefaultValues['input<%= i %>'] = new Object();
 
 function setDefaults()
 {
-    var siteId = document.getElementById('destinationLocation').value;
+    var locationId = document.getElementById('destinationLocation').value;
     for (var elementId in DefaultValues)
     {
         var elem = document.getElementById(elementId);
-        var value = DefaultValues[elementId][siteId];
+        var value = DefaultValues[elementId][locationId];
         if (value && (!elem.value || elem.value == LastSetValues[elementId]))
         {
             elem.value = value;

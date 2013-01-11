@@ -134,19 +134,27 @@
                         <th>Notify</th>
                         <td>
                             <%
+                                boolean hasInactiveEmailAddress = false;
                                 List<ActorNotificationRecipientSet> possibleNotifications = bean.getPossibleNotifications();
                                 for (ActorNotificationRecipientSet possibleNotification : possibleNotifications)
                                 {
-                                    boolean hasEmailAddresses = possibleNotification.getEmailAddresses().length > 0;
+                                    boolean hasEmailAddresses = possibleNotification.getAllEmailAddresses().length > 0;
+                                    if (hasEmailAddresses)
+                                        hasInactiveEmailAddress |= possibleNotification.hasInactiveEmailAddress();
                             %>
                             <input type="checkbox"
                                    name="notificationIdPairs"
                                    value="<%= text(possibleNotification.getFormValue()) %>" <%= text(hasEmailAddresses ? "" : "DISABLED") %>
                                    <%= text(hasEmailAddresses && bean.isDefaultNotification(possibleNotification) ? "CHECKED" : "") %>>
-                            <%= h(possibleNotification.getShortRecipientDescription())%><%= hasEmailAddresses ?
-                                helpPopup("Group Members", possibleNotification.getEmailAddresses("<br>") + "<br>" +
-                                        possibleNotification.getConfigureEmailsLinkHTML(), true) :
-                                " " + possibleNotification.getConfigureEmailsLinkHTML() %><br>
+                            <%= text(possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses)) %><br>
+                            <%
+                                }
+                                if (hasInactiveEmailAddress)
+                                {
+                            %>
+                                <input type="checkbox"
+                                       name="emailInactiveUsers">
+                                Include inactive users<br>
                             <%
                                 }
                             %>

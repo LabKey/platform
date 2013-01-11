@@ -430,14 +430,14 @@ public class SpecimenUtils
             out.write(">");
             out.write("<option value=''>&lt;Show All&gt;</option>");
             String excludeStr = ctx.getRequest().getParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
-            int siteId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
+            int locationId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
             List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(ctx.getContainer());
             for (LocationImpl location : locations)
             {
                 out.write("<option value=\"");
                 out.write(String.valueOf(location.getRowId()));
                 out.write("\"");
-                if (location.getRowId() == siteId)
+                if (location.getRowId() == locationId)
                     out.write(" SELECTED ");
                 out.write("\">");
                 out.write(PageFlowUtil.filter(location.getDisplayName()));
@@ -469,7 +469,7 @@ public class SpecimenUtils
             event.setEntityId(request.getEntityId());
             DefaultRequestNotification notification = new DefaultRequestNotification(request, Collections.singletonList(new NotificationRecipientSet(notify)),
                     "New Request Created", event, null, null, getViewContext());
-            sendNotification(notification);
+            sendNotification(notification, true);
         }
     }
 
@@ -483,7 +483,7 @@ public class SpecimenUtils
         return siteActors;
     }
 
-    public void sendNotification(DefaultRequestNotification notification) throws Exception
+    public void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers) throws Exception
     {
         RequestNotificationSettings settings =
                 SampleManager.getInstance().getRequestNotificationSettings(getContainer());
@@ -505,7 +505,7 @@ public class SpecimenUtils
         boolean first = true;
         for (NotificationRecipientSet recipient : notification.getRecipients())
         {
-            for (String email : recipient.getEmailAddresses())
+            for (String email : recipient.getEmailAddresses(includeInactiveUsers))
             {
                 if (first)
                 {
@@ -808,8 +808,8 @@ public class SpecimenUtils
                     _providingLocations = new Location[_providingLocationIds.size()];
                     int siteIndex = 0;
 
-                    for (Integer siteId : _providingLocationIds)
-                        _providingLocations[siteIndex++] = StudyManager.getInstance().getLocation(container, siteId.intValue());
+                    for (Integer locationId : _providingLocationIds)
+                        _providingLocations[siteIndex++] = StudyManager.getInstance().getLocation(container, locationId.intValue());
                 }
             }
             return _providingLocations;

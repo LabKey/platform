@@ -55,7 +55,7 @@ import java.util.Arrays;
 public class ExportExcelReport extends RedirectReport
 {
     public static final String TYPE = "Study.exportExcelReport";
-    public static final String SITE_ID = "siteId";
+    public static final String LOCATION_ID = "siteId";
 
     public String getType()
     {
@@ -106,14 +106,14 @@ public class ExportExcelReport extends RedirectReport
 
 
 
-    public void setSiteId(int siteId)
+    public void setLocationId(int locationId)
     {
-        getDescriptor().setProperty(SITE_ID, String.valueOf(siteId));
+        getDescriptor().setProperty(LOCATION_ID, String.valueOf(locationId));
     }
 
-    protected int getSiteId()
+    protected int getLocationId()
     {
-        return NumberUtils.toInt(getDescriptor().getProperty(SITE_ID));
+        return NumberUtils.toInt(getDescriptor().getProperty(LOCATION_ID));
     }
 
 
@@ -130,11 +130,11 @@ public class ExportExcelReport extends RedirectReport
         //
 
         SimpleFilter siteFilter = null;
-        final int siteId = getSiteId();
-        if (siteId != 0)
+        final int locationId = getLocationId();
+        if (locationId != 0)
         {
             siteFilter = new SimpleFilter();
-            siteFilter.addWhereClause(study.getSubjectColumnName() + " IN (SELECT ParticipantId FROM study.Participant WHERE CurrentSiteId=" + siteId + ")", new Object[0]);
+            siteFilter.addWhereClause(study.getSubjectColumnName() + " IN (SELECT ParticipantId FROM study.Participant WHERE CurrentSiteId=" + locationId + ")", new Object[0]);
         }
 
         ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xls);
@@ -174,7 +174,7 @@ public class ExportExcelReport extends RedirectReport
             ResultSet rs = Table.executeQuery(studySchema.getSchema(),
                     "SELECT ParticipantId, COALESCE(Label,CAST(RowId AS VARCHAR(10))) AS Site FROM study.Participant LEFT OUTER JOIN study.Site ON study.Participant.CurrentSiteId = study.Site.RowId\n" +
                     "WHERE study.Participant.container='" + study.getContainer().getId() + "'\n" +
-                    (siteId == 0 ? "" : "AND study.Participant.CurrentSiteId=" + siteId + "\n") +
+                    (locationId == 0 ? "" : "AND study.Participant.CurrentSiteId=" + locationId + "\n") +
                     "ORDER BY 1",
                     null);
 

@@ -18,7 +18,6 @@ package org.labkey.study.samples.notifications;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.Location;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.SampleManager;
@@ -38,9 +37,20 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
 
     public ActorNotificationRecipientSet(SampleRequestActor actor, LocationImpl location)
     {
-        super(init(actor, location));
+        super();
         _actor = actor;
         _location = location;
+
+        User[] users = actor.getMembers(location);
+        String[] addresses = new String[users.length];
+        boolean[] addressInactive = new boolean[users.length];
+        for (int i = 0; i < users.length; i++)
+        {
+            addresses[i] = users[i].getEmail();
+            addressInactive[i] = !users[i].isActive();
+        }
+
+        setEmailAddresses(addresses, addressInactive);
     }
 
     public SampleRequestActor getActor()
@@ -51,15 +61,6 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
     public LocationImpl getLocation()
     {
         return _location;
-    }
-
-    private static String[] init(SampleRequestActor actor, Location location)
-    {
-        User[] users = actor.getMembers(location);
-        String[] addresses = new String[users.length];
-        for (int i = 0; i < users.length; i++)
-            addresses[i] = users[i].getEmail();
-        return addresses;
     }
 
     public String getShortRecipientDescription()
@@ -75,7 +76,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
     {
         StringBuilder emailList = new StringBuilder(getShortRecipientDescription());
         emailList.append(": ");
-        emailList.append(getEmailAddresses(", "));
+        emailList.append(getEmailAddressesAsString(", "));
         return emailList.toString();
     }
 
@@ -88,9 +89,9 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
     {
         String[] ids = formValue.split(",");
         int actorId = Integer.parseInt(ids[0]);
-        int siteId = Integer.parseInt(ids[1]);
+        int locationId = Integer.parseInt(ids[1]);
         SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(container, actorId);
-        LocationImpl location = siteId >= 0 ? StudyManager.getInstance().getLocation(container, siteId) : null;
+        LocationImpl location = locationId >= 0 ? StudyManager.getInstance().getLocation(container, locationId) : null;
         return new ActorNotificationRecipientSet(actor, location);
     }
 
@@ -98,8 +99,19 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
     {
         String configureMembersURL = "showGroupMembers.view?id=" + getActor().getRowId();
         if (getLocation() != null)
-            configureMembersURL += "&siteId=" + getLocation().getRowId();
+            configureMembersURL += "&locationId=" + getLocation().getRowId();
         configureMembersURL += "&returnUrl=" + PageFlowUtil.encode(HttpView.currentContext().getActionURL().getLocalURIString());
         return PageFlowUtil.textLink("Configure Addresses", configureMembersURL);
+    }
+
+    public String getHtmlDescriptionAndLink(boolean hasEmailAddresses)
+    {
+        StringBuilder stringBuilder = new StringBuilder(PageFlowUtil.filter(getShortRecipientDescription()));
+        if (hasEmailAddresses)
+            stringBuilder.append(PageFlowUtil.helpPopup("Group Members", getEmailAddressesAsString("<br>") + "<br>" +
+                    getConfigureEmailsLinkHTML(), true));
+        else
+            stringBuilder.append(" " + getConfigureEmailsLinkHTML());
+        return stringBuilder.toString();
     }
 }

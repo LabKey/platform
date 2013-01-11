@@ -37,7 +37,7 @@ public class SampleRequestRequirement extends DefaultRequirement<SampleRequestRe
     private Integer _requestId;
     private String _ownerEntityId;
     private Integer _actorId;
-    private Integer _siteId;
+    private Integer _siteId;        // This is a locationId, but must match column name in table
     private boolean _complete;
     private String _description;
     private boolean _mutable = true;

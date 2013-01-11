@@ -153,9 +153,9 @@ import org.labkey.study.samples.report.participant.ParticipantSiteReportFactory;
 import org.labkey.study.samples.report.participant.ParticipantSummaryReportFactory;
 import org.labkey.study.samples.report.participant.ParticipantTypeReportFactory;
 import org.labkey.study.samples.report.request.RequestEnrollmentSiteReportFactory;
+import org.labkey.study.samples.report.request.RequestLocationReportFactory;
 import org.labkey.study.samples.report.request.RequestParticipantReportFactory;
 import org.labkey.study.samples.report.request.RequestReportFactory;
-import org.labkey.study.samples.report.request.RequestSiteReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeCohortReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeParticipantReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeSummaryReportFactory;
@@ -1058,17 +1058,17 @@ public class SpecimenController extends BaseStudyController
         {
             if (_providingLocations == null)
             {
-                Set<Integer> siteSet = new HashSet<Integer>();
+                Set<Integer> locationSet = new HashSet<Integer>();
                 for (Specimen specimen : _samples)
                 {
-                    Integer siteId = specimen.getCurrentLocation();
-                    if (siteId != null)
-                        siteSet.add(siteId);
+                    Integer locationId = specimen.getCurrentLocation();
+                    if (locationId != null)
+                        locationSet.add(locationId);
                 }
-                _providingLocations = new Location[siteSet.size()];
+                _providingLocations = new Location[locationSet.size()];
                 int i = 0;
-                for (Integer siteId : siteSet)
-                    _providingLocations[i++] = StudyManager.getInstance().getLocation(getContainer(), siteId);
+                for (Integer locationId : locationSet)
+                    _providingLocations[i++] = StudyManager.getInstance().getLocation(getContainer(), locationId);
             }
             return _providingLocations;
         }
@@ -1261,6 +1261,7 @@ public class SpecimenController extends BaseStudyController
         private String _comments;
         private String _requestDescription;
         private String[] _notificationIdPairs;
+        private boolean  _emailInactiveUsers;
 
         public int getStatus()
         {
@@ -1300,6 +1301,16 @@ public class SpecimenController extends BaseStudyController
         public void setRequestDescription(String requestDescription)
         {
             _requestDescription = requestDescription;
+        }
+
+        public boolean isEmailInactiveUsers()
+        {
+            return _emailInactiveUsers;
+        }
+
+        public void setEmailInactiveUsers(boolean emailInactiveUsers)
+        {
+            _emailInactiveUsers = emailInactiveUsers;
         }
     }
 
@@ -1388,7 +1399,7 @@ public class SpecimenController extends BaseStudyController
                     List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                     DefaultRequestNotification notification = new DefaultRequestNotification(_sampleRequest, recipients,
                             eventSummary, event, form.getComments(), null, getViewContext());
-                    getUtils().sendNotification(notification);
+                    getUtils().sendNotification(notification, form.isEmailInactiveUsers());
                 }
                 catch (ConfigurationException e)
                 {
@@ -2022,6 +2033,7 @@ public class SpecimenController extends BaseStudyController
         private boolean _complete;
         private String _comment;
         private String[] _notificationIdPairs;
+        private boolean _emailInactiveUsers;
 
         public String getComment()
         {
@@ -2051,6 +2063,16 @@ public class SpecimenController extends BaseStudyController
         public void setNotificationIdPairs(String[] notificationIdPairs)
         {
             _notificationIdPairs = notificationIdPairs;
+        }
+
+        public boolean isEmailInactiveUsers()
+        {
+            return _emailInactiveUsers;
+        }
+
+        public void setEmailInactiveUsers(boolean emailInactiveUsers)
+        {
+            _emailInactiveUsers = emailInactiveUsers;
         }
     }
 
@@ -2255,7 +2277,7 @@ public class SpecimenController extends BaseStudyController
                 List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                 DefaultRequestNotification notification = new DefaultRequestNotification(_sampleRequest, recipients,
                         eventSummary, event, form.getComment(), requirement, getViewContext());
-                getUtils().sendNotification(notification);
+                getUtils().sendNotification(notification, form.isEmailInactiveUsers());
             }
             catch (ConfigurationException e)
             {
@@ -2526,6 +2548,7 @@ public class SpecimenController extends BaseStudyController
         private String _comments;
         private String[] _notify;
         private String _listType;
+        private boolean _emailInactiveUsers;
 
         public String getComments()
         {
@@ -2575,6 +2598,16 @@ public class SpecimenController extends BaseStudyController
         public void setListType(String listType)
         {
             _listType = listType;
+        }
+
+        public boolean isEmailInactiveUsers()
+        {
+            return _emailInactiveUsers;
+        }
+
+        public void setEmailInactiveUsers(boolean emailInactiveUsers)
+        {
+            _emailInactiveUsers = emailInactiveUsers;
         }
     }
 
@@ -2782,7 +2815,7 @@ public class SpecimenController extends BaseStudyController
                             }
 
                         };
-                        getUtils().sendNotification(notification);
+                        getUtils().sendNotification(notification, form.isEmailInactiveUsers());
                     }
                     catch (ConfigurationException e)
                     {
@@ -3059,8 +3092,8 @@ public class SpecimenController extends BaseStudyController
         {
             Map<Integer, List<Specimen>> siteIdToSpecimens = getSpecimensBySiteId();
             Set<LocationImpl> locations = new HashSet<LocationImpl>(siteIdToSpecimens.size());
-            for (Integer siteId : siteIdToSpecimens.keySet())
-                locations.add(StudyManager.getInstance().getLocation(_sampleRequest.getContainer(), siteId));
+            for (Integer locationId : siteIdToSpecimens.keySet())
+                locations.add(StudyManager.getInstance().getLocation(_sampleRequest.getContainer(), locationId));
             return locations;
         }
 
@@ -3176,11 +3209,11 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class RequestSiteReportAction extends SpecimenVisitReportAction<RequestSiteReportFactory>
+    public class RequestSiteReportAction extends SpecimenVisitReportAction<RequestLocationReportFactory>
     {
         public RequestSiteReportAction()
         {
-            super(RequestSiteReportFactory.class);
+            super(RequestLocationReportFactory.class);
         }
         // no implementation needed; this action exists only to provide an entry point
         // with request->bean translation for this report type.
@@ -3263,7 +3296,7 @@ public class SpecimenController extends BaseStudyController
                 if (!study.isAncillaryStudy() && !study.isSnapshotStudy())
                 {
                     registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
-                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestSiteReportFactory());
+                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestLocationReportFactory());
                     registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestEnrollmentSiteReportFactory());
                     registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestParticipantReportFactory());
                 }

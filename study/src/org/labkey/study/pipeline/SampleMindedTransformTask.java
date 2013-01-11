@@ -353,16 +353,16 @@ public class SampleMindedTransformTask
         }
 
         String shortName = outputRow.get("siteshortname") == null ? null : outputRow.get("siteshortname").toString();
-        Integer siteId = labIds.get(shortName);
-        if (siteId == null)
+        Integer locationId = labIds.get(shortName);
+        if (locationId == null)
         {
             // We don't have an existing ID to use for this site, so find one that's available
-            siteId = 1;
-            while (labIds.containsValue(siteId))
+            locationId = 1;
+            while (labIds.containsValue(locationId))
             {
-                siteId += 1;
+                locationId += 1;
             }
-            labIds.put(shortName, siteId);
+            labIds.put(shortName, locationId);
         }
 
         String derivative = getNonNullValue(outputRow, "specimentype");
@@ -389,7 +389,7 @@ public class SampleMindedTransformTask
         }
 
         outputRow.put("record_id", rowIndex);
-        outputRow.put("originating_location", siteId);
+        outputRow.put("originating_location", locationId);
         outputRow.put("global_unique_specimen_id", barcode);
         String ptid = removeNonNullValue(outputRow, "participantid");
         outputRow.put("ptid", ptid);

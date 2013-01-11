@@ -542,7 +542,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return filter;
     }
 
-    protected static SimpleFilter addNotPreviouslyRequestedClause(SimpleFilter filter, Container container, int siteId)
+    protected static SimpleFilter addNotPreviouslyRequestedClause(SimpleFilter filter, Container container, int locationId)
     {
         String sql = "SpecimenHash NOT IN (" +
         "SELECT v.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
@@ -550,12 +550,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
                 +  "where r.DestinationSiteId=? AND v.Container=? AND status.SpecimensLocked=?)";
 
-        filter.addWhereClause(sql, new Object[] {siteId, container.getId(), Boolean.TRUE}, FieldKey.fromParts("SpecimenHash"));
+        filter.addWhereClause(sql, new Object[] {locationId, container.getId(), Boolean.TRUE}, FieldKey.fromParts("SpecimenHash"));
 
         return filter;
     }
 
-    protected static SimpleFilter addOnlyPreviouslyRequestedClause(SimpleFilter filter, Container container, int siteId, boolean completedRequestsOnly)
+    protected static SimpleFilter addOnlyPreviouslyRequestedClause(SimpleFilter filter, Container container, int locationId, boolean completedRequestsOnly)
     {
         String sql = "GlobalUniqueId IN ("
                 + "SELECT rs.SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
@@ -565,16 +565,16 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         Object[] params;
         if (completedRequestsOnly)
-            params = new Object[] {siteId, container.getId(), Boolean.TRUE, Boolean.TRUE};
+            params = new Object[] {locationId, container.getId(), Boolean.TRUE, Boolean.TRUE};
         else
-            params = new Object[] {siteId, container.getId(), Boolean.TRUE};
+            params = new Object[] {locationId, container.getId(), Boolean.TRUE};
 
         filter.addWhereClause(sql, params, FieldKey.fromParts("GlobalUniqueId"));
 
         return filter;
     }
 
-    protected static SimpleFilter addPreviouslyRequestedEnrollmentClause(SimpleFilter filter, Container container, int siteId, boolean completedRequestsOnly)
+    protected static SimpleFilter addPreviouslyRequestedEnrollmentClause(SimpleFilter filter, Container container, int locationId, boolean completedRequestsOnly)
     {
         String sql = "GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM study.SpecimenDetail AS Specimen,\n" +
                         "study.SampleRequestSpecimen AS RequestSpecimen,\n" +
@@ -594,7 +594,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                         "     Participant.EnrollmentSiteId ";
 
         Object[] params;
-        if (siteId == -1)
+        if (locationId == -1)
         {
             sql += "IS NULL)";
             if (completedRequestsOnly)
@@ -606,9 +606,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             sql += "= ?)";
             if (completedRequestsOnly)
-                params = new Object[] { Boolean.TRUE, Boolean.TRUE, container.getId(), siteId };
+                params = new Object[] { Boolean.TRUE, Boolean.TRUE, container.getId(), locationId };
             else
-                params = new Object[] { Boolean.TRUE, container.getId(), siteId };
+                params = new Object[] { Boolean.TRUE, container.getId(), locationId };
         }
 
         filter.addWhereClause(sql, params, FieldKey.fromParts("GlobalUniqueId"));

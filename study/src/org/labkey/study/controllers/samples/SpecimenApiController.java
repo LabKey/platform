@@ -160,29 +160,29 @@ public class SpecimenApiController extends BaseStudyController
         return map;
     }
 
-    private Map<String, Object> getLocation(Container container, int siteId)
+    private Map<String, Object> getLocation(Container container, int locationId)
     {
-        LocationImpl location = StudyManager.getInstance().getLocation(container, siteId);
+        LocationImpl location = StudyManager.getInstance().getLocation(container, locationId);
         if (location == null)
             return null;
         return getLocation(location);
     }
 
-    private Map<String, Object> getLocation(LocationImpl site)
+    private Map<String, Object> getLocation(LocationImpl location1)
     {
-        Map<String, Object> location = new HashMap<String, Object>();
-        location.put("endpoint", site.isEndpoint());
-        location.put("entityId", site.getEntityId());
-        location.put("label", site.getLabel());
-        location.put("labUploadCode", site.getLabUploadCode());
-        location.put("labwareLabCode", site.getLabwareLabCode());
-        location.put("ldmsLabCode", site.getLdmsLabCode());
-        location.put("repository", site.isRepository());
-        location.put("rowId", site.getRowId());
-        location.put("SAL", site.isSal());
-        location.put("clinic", site.isClinic());
-        location.put("externalId", site.getExternalId());
-        return location;
+        Map<String, Object> locationMap = new HashMap<String, Object>();
+        locationMap.put("endpoint", location1.isEndpoint());
+        locationMap.put("entityId", location1.getEntityId());
+        locationMap.put("label", location1.getLabel());
+        locationMap.put("labUploadCode", location1.getLabUploadCode());
+        locationMap.put("labwareLabCode", location1.getLabwareLabCode());
+        locationMap.put("ldmsLabCode", location1.getLdmsLabCode());
+        locationMap.put("repository", location1.isRepository());
+        locationMap.put("rowId", location1.getRowId());
+        locationMap.put("SAL", location1.isSal());
+        locationMap.put("clinic", location1.isClinic());
+        locationMap.put("externalId", location1.getExternalId());
+        return locationMap;
     }
 
     private List<Map<String, Object>> getRequestListResponse(ViewContext context, List<SampleRequest> requests) throws SQLException
