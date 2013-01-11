@@ -27,8 +27,10 @@ import org.json.JSONObject;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
+import org.labkey.api.reports.report.ViewCategoryConverter;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.Role;
@@ -125,6 +127,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new SchemaKey.Converter(), SchemaKey.class);
         _register(new FieldKey.Converter(), FieldKey.class);
         _register(new JSONTypeConverter(), JSONObject.class);
+        _register(new ViewCategoryConverter(), ViewCategory.class);
         EnumConverter.registerEnum(DataSet.KeyManagementType.class);
         EnumConverter.registerEnum(TSVWriter.DELIM.class);
         EnumConverter.registerEnum(TSVWriter.QUOTE.class);

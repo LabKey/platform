@@ -17,10 +17,9 @@ package org.labkey.api.reports.model;
 
 import junit.framework.Assert;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -37,7 +36,6 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.TestContext;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -355,69 +353,20 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         ObjectFactory.Registry.register(ViewCategory.class, new ViewCategoryFactory());
     }
 
-    public static class ViewCategoryFactory implements ObjectFactory<ViewCategory>
+    public static class ViewCategoryFactory extends BeanObjectFactory<ViewCategory>
     {
-        @Override
-        public ViewCategory fromMap(Map<String, ?> m)
+        ViewCategoryFactory()
         {
-            throw new UnsupportedOperationException();
+            super(ViewCategory.class);
         }
 
         @Override
-        public ViewCategory fromMap(ViewCategory bean, Map<String, ?> m)
+        protected void fixupMap(Map<String, Object> m, ViewCategory bean)
         {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Map<String, Object> toMap(ViewCategory bean, @Nullable Map<String, Object> m)
-        {
-            if (null == m)
-                m = new CaseInsensitiveHashMap<Object>();
-
-            m.put("RowId", bean.getRowId());
-            m.put("Label", bean.getLabel());
-            m.put("DisplayOrder", bean.getDisplayOrder());
-            m.put("ContainerId", bean.getContainerId());
-
             if (null != bean.getParent())
             {
                 m.put("Parent", bean.getParent().getRowId());
             }
-
-            return m;
-        }
-
-        @Override
-        public ViewCategory handle(ResultSet rs) throws SQLException
-        {
-            ViewCategory vc;
-
-            int parentId = rs.getInt("Parent");
-            ViewCategory parent = ViewCategoryManager.getInstance().getCategory(parentId);
-
-            vc = new ViewCategory(rs.getString("Label"), rs.getInt("RowId"), rs.getInt("DisplayOrder"), parent);
-            vc.setContainerId(rs.getString("Container"));
-
-            return vc;
-        }
-
-        @Override
-        public ArrayList<ViewCategory> handleArrayList(ResultSet rs) throws SQLException
-        {
-            ArrayList<ViewCategory> list = new ArrayList<ViewCategory>();
-            while (rs.next())
-            {
-                list.add(handle(rs));
-            }
-            return list;
-        }
-
-        @Override
-        public ViewCategory[] handleArray(ResultSet rs) throws SQLException
-        {
-            ArrayList<ViewCategory> list = handleArrayList(rs);
-            return list.toArray(new ViewCategory[list.size()]);
         }
     }
 
@@ -521,17 +470,20 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             }
 
             // delete the top level categories, make sure the subcategories get deleted as well
-/*
             for (String label : labels)
             {
                 ViewCategory cat = categoryMap.get(label);
+                for (ViewCategory subCategory : cat.getSubcategories())
+                    mgr.deleteCategory(c, user, subCategory);
+
                 mgr.deleteCategory(c, user, cat);
             }
-*/
+/*
             for (ViewCategory cat : categoryMap.values())
             {
                 mgr.deleteCategory(c, user, cat);
             }
+*/
 
             // make sure all the listeners were invoked correctly
             assertTrue(notifications.isEmpty());
