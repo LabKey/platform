@@ -523,7 +523,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         if (null == _parameters)
             return Collections.emptyList();
-        return Collections.unmodifiableList(_parameters);
+        return Collections.unmodifiableList(new ArrayList<Pair<String, String>>(_parameters));
     }
 
 
