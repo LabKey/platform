@@ -1847,12 +1847,12 @@ public class SecurityManager
         if (groupId == null)
             return Collections.emptyList();
         else
-            return getGroupMemberNamesAndIds(groupId);
+            return getGroupMemberNamesAndIds(groupId, false);
     }
     
 
     // Returns both users and groups, but direct members only (not recursive)
-    public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId)
+    public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId, boolean includeInactive)
     {
         ResultSet rs = null;
 
@@ -1870,13 +1870,21 @@ public class SecurityManager
             }
             else
             {
-                Selector selector = new SqlSelector(
-                        core.getSchema(),
-                        new SQLFragment("SELECT Users.UserId, Users.Name\n" +
-                                "FROM " + core.getTableInfoMembers() + " JOIN " + core.getTableInfoPrincipals() + " Users ON " + core.getTableInfoMembers() + ".UserId = Users.UserId\n" +
-                                "WHERE GroupId = ? AND Active=?\n" +
-                                "ORDER BY Users.Name",
-                        groupId, true));
+                String sql = "SELECT Users.UserId, Users.Name\n" +
+                        "FROM " + core.getTableInfoMembers() + " JOIN " + core.getTableInfoPrincipals() + " Users ON " + core.getTableInfoMembers() + ".UserId = Users.UserId\n" +
+                        "WHERE GroupId = ?";
+                SQLFragment sqlFragment = null;
+                if (includeInactive)
+                {
+                    sql += "\nORDER BY Users.Name";
+                    sqlFragment = new SQLFragment(sql, groupId);
+                }
+                else
+                {
+                    sql += "AND Active=?" + "\nORDER BY Users.Name";
+                    sqlFragment = new SQLFragment(sql, groupId, true);
+                }
+                Selector selector = new SqlSelector(core.getSchema(), sqlFragment);
 
                 selector.forEach(new Selector.ForEachBlock<ResultSet>() {
                     @Override
@@ -1899,7 +1907,7 @@ public class SecurityManager
     // Returns both users and groups, but direct members only (not recursive)
     public static String[] getGroupMemberNames(Integer groupId)
     {
-        List<Pair<Integer, String>> members = getGroupMemberNamesAndIds(groupId);
+        List<Pair<Integer, String>> members = getGroupMemberNamesAndIds(groupId, false);
         String[] names = new String[members.size()];
         int i = 0;
         for (Pair<Integer, String> member : members)
