@@ -130,7 +130,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 {name : 'label'                      },
                 {name : 'modfied',      type : 'string'},
                 {name : 'modifiedBy'                 },
-                {name : 'rowid',        type : 'int' }
+                {name : 'rowid',        type : 'int' },
+                {name : 'subCategories' },
+                {name : 'parent',       type : 'int' }
             ]
         });
 
@@ -251,7 +253,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return this.store;
     },
 
-    initializeCategoriesStore : function(useGrouping) {
+    initializeCategoriesStore : function(categoryid) {
+
+        var extraParams = {
+            // These parameters are required for specific webpart filtering
+            pageId : this.pageId,
+            index  : this.index,
+            parent : categoryid || -1
+        };
 
         var config = {
             pageSize: 100,
@@ -266,11 +275,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     update  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
                     destroy : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api')
                 },
-                extraParams : {
-                    // These parameters are required for specific webpart filtering
-                    pageId : this.pageId,
-                    index  : this.index
-                },
+                extraParams : extraParams,
                 reader : {
                     type : 'json',
                     root : 'categories'
@@ -292,9 +297,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
             }
         };
-
-        if (useGrouping)
-            config["groupField"] = 'category';
 
         return Ext4.create('Ext.data.Store', config);
     },
@@ -1247,11 +1249,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     onManageCategories : function(btn) {
 
         var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
+            pluginId : 'categorycell',
             clicksToEdit: 2
         });
 
         var confirm = false;
         var store = this.initializeCategoriesStore();
+        var winID = Ext4.id();
+        var subwinID = Ext4.id();
 
         var grid = Ext4.create('Ext.grid.Panel', {
             store    : store,
@@ -1312,7 +1317,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     dragText: 'Drag and drop to reorganize'
                 }],
                 listeners : {
-                    drop : function(node, data, model, pos) {
+                    drop : function() {
                         var s = grid.getStore();
                         var display = 1;
                         s.each(function(rec){
@@ -1322,6 +1327,69 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     }
                 }
             },
+            listeners : {
+                select : function(g, rec) {
+                    var w = Ext4.getCmp(winID);
+
+                    if (w && w.isVisible()) {
+                        var box = w.getBox();
+
+                        var sw = Ext4.getCmp(subwinID);
+                        if (sw) {
+                            var s = sw.getComponent(sw.gid).getStore();
+                            s.getProxy().extraParams['parent'] = rec.data.rowid;
+                            s.load();
+                            sw.setParent(rec.data.rowid);
+                            if (!sw.isVisible())
+                                sw.show();
+                        }
+                        else {
+                            var gid = Ext4.id();
+                            Ext4.create('Ext.Window', {
+                                id : subwinID,
+                                width : 250,
+                                height : 300,
+                                x : box.x+box.width, y : box.y,
+                                autoShow : true,
+                                cls : 'data-window',
+                                title : 'Subcategories',
+                                draggable : false,
+                                resizable : false,
+                                closable : true,
+                                floatable : true,
+                                gid : gid,
+                                items : [this.getCategoryGrid(rec.data.rowid, gid)],
+                                listeners : {
+                                    close : function(p) {
+                                        p.destroy();
+                                    }
+                                },
+                                pid : rec.data.rowid,
+                                setParent : function(pid) {
+                                    this.pid = pid;
+                                },
+                                getParentId : function() { return this.pid; },
+                                buttons : [{
+                                    text : 'New Subcategory',
+                                    handler : function(b) {
+                                        var grid = Ext4.getCmp(gid);
+                                        var store = grid.getStore();
+                                        var p = b.up('window').getParentId();
+                                        var r = Ext4.ModelManager.create({
+                                            label        : 'New Subcategory',
+                                            displayOrder : 0,
+                                            parent       : p,
+                                        }, 'Dataset.Browser.Category');
+                                        store.insert(0, r);
+                                        grid.getPlugin('subcategorycell').startEditByPosition({row : 0, column : 0});
+                                    }
+                                }]
+                            });
+                        }
+                    }
+                },
+                scope : this
+            },
             plugins   : [cellEditing],
             selType   : 'rowmodel',
             scope     : this
@@ -1329,18 +1397,20 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var categoryOrderWindow = Ext4.create('Ext.window.Window', {
             title  : 'Manage Categories',
-            width  : 550,
+            id : winID,
+            width  : 400,
             height : 400,
             layout : 'fit',
             cls    : 'data-window',
             modal  : true,
+            draggable : false,
             defaults  : {
                 frame : false
             },
             items   : [grid],
             buttons : [{
                 text    : 'New Category',
-                handler : function(btn) {
+                handler : function() {
                     var r = Ext4.ModelManager.create({
                         label        : 'New Category',
                         displayOrder : 0
@@ -1349,13 +1419,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     cellEditing.startEditByPosition({row : 0, column : 0});
                 }
             },{
-                text    : 'Cancel',
-                handler : function(btn) {
-                    categoryOrderWindow.close();
-                }
-            },{
                 text    : 'Done',
-                handler : function(btn) {
+                handler : function() {
                     grid.getStore().sync();
                     categoryOrderWindow.close();
                 }
@@ -1365,6 +1430,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     if (confirm) {
                         this.onEditSave();
                     }
+                    var sw = Ext4.getCmp(subwinID);
+                    if (sw) {
+                        sw.close();
+                    }
                 },
                 scope : this
             },
@@ -1372,5 +1441,73 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         });
 
         categoryOrderWindow.show();
+    },
+
+    getCategoryGrid : function(categoryid, gridid) {
+
+        var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
+            pluginId : 'subcategorycell',
+            clicksToEdit : 2
+        });
+
+        var store = this.initializeCategoriesStore(categoryid);
+
+        return Ext4.create('Ext.grid.Panel', {
+            id : gridid || Ext.id(),
+            store   : store,
+            columns : [{
+                xtype    : 'templatecolumn',
+                text     : 'Subcategory',
+                flex     : 1,
+                sortable : true,
+                dataIndex: 'label',
+                tpl      : '{label:htmlEncode}',
+                editor   : {
+                    xtype:'textfield',
+                    allowBlank:false
+                }
+            },{
+                xtype    : 'actioncolumn',
+                width    : 50,
+                align    : 'center',
+                sortable : false,
+                items : [{
+                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_41 + '/resources/themes/images/access/qtip/close.gif',
+                    tooltip : 'Delete'
+                }],
+                listeners : {
+                    click : function(col, grid, idx, evt, x, y, z)
+                    {
+                        console.log('click 2!');
+                        var label = store.getAt(idx).data.label;
+                        var id    = store.getAt(idx).data.rowid;
+
+                        Ext4.Msg.show({
+                            title : 'Delete Category',
+                            msg   : 'Please confirm you would like to <b>DELETE</b> \'' + Ext4.htmlEncode(label) + '\' from the set of categories.',
+                            buttons : Ext4.MessageBox.OKCANCEL,
+                            icon    : Ext4.MessageBox.WARNING,
+                            fn      : function(btn){
+                                if (btn == 'ok') {
+                                    store.removeAt(idx);
+                                }
+                            },
+                            scope  : this
+                        });
+                    },
+                    scope : this
+                }
+            }],
+            listeners : {
+                edit : function(editor, e) {
+                    e.grid.getStore().sync();
+                }
+            },
+            mutliSelect : false,
+            cls     : 'iScroll',
+            plugins : [cellEditing],
+            selType : 'rowmodel',
+            scope   : this
+        });
     }
 });

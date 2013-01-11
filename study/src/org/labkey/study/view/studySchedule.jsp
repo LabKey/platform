@@ -17,15 +17,27 @@
 %>
 
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%!
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("Ext4"));
+      resources.add(ClientDependency.fromFilePath("study/DataViewsPanel.css"));
+      resources.add(ClientDependency.fromFilePath("study/StudySchedule.css"));
+      resources.add(ClientDependency.fromFilePath("study/StudyScheduleGrid.js"));
+      return resources;
+  }
+%>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     Container c = me.getViewContext().getContainer();
@@ -46,12 +58,6 @@
     {
 %>
         <div id='study-schedule-<%=webPartIndex%>' class="study-schedule-container"></div>
-        <script type="text/javascript">
-            LABKEY.requiresExt4Sandbox(true);
-            LABKEY.requiresCss("study/StudySchedule.css");
-            LABKEY.requiresScript("study/StudyScheduleGrid.js");
-        </script>
-
         <script type="text/javascript">
             function callRender() {
                 var studySchedulePanel = Ext4.create('LABKEY.ext4.StudyScheduleGrid', {

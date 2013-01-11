@@ -378,7 +378,8 @@ public class CohortFilterFactory
 
     public static boolean parseCohortUrlParameter(ActionURL url, Study study, String dataregion, Config config /* out */)
     {
-        for (Pair<String,String> entry : url.getParameters())
+        List<Pair<String, String>> entries = url.getParameters();
+        for (Pair<String,String> entry : entries)
         {
             FieldKey fieldKey = _matchCohortFilterParameter(study, entry.getKey(), dataregion);
             if (null == fieldKey)

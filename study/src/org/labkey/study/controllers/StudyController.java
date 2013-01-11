@@ -7167,6 +7167,7 @@ public class StudyController extends BaseStudyController
         private String pageId;
         private boolean includeData = true;
         private boolean includeMetadata = true;
+        private int _parent;
         Map<String, Object> _props;
 
         private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets, ViewInfo.DataType.queries};
@@ -7221,6 +7222,16 @@ public class StudyController extends BaseStudyController
             this.includeMetadata = includeMetadata;
         }
 
+        public void setParent(int parent)
+        {
+            _parent = parent;
+        }
+
+        public int getParent()
+        {
+            return _parent;
+        }
+
         @Override
         public void bindProperties(Map<String, Object> props)
         {
@@ -7234,9 +7245,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetCategoriesAction extends ApiAction<Object>
+    public class GetCategoriesAction extends ApiAction<BrowseDataForm>
     {
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> categoryList = new ArrayList<JSONObject>();
@@ -7244,7 +7255,24 @@ public class StudyController extends BaseStudyController
             List<ViewCategory> categoriesWithDisplayOrder = new ArrayList<ViewCategory>();
             List<ViewCategory> categoriesWithoutDisplayOrder = new ArrayList<ViewCategory>();
 
-            for (ViewCategory c : ViewCategoryManager.getInstance().getCategories(getContainer(), getUser()))
+            ViewCategory[] categories;
+            int parent = form.getParent();
+
+            if (parent != 0) {
+                SimpleFilter filter;
+                FieldKey field = FieldKey.fromParts("Parent");
+
+                if (parent > 0)
+                    filter = new SimpleFilter(field, parent);
+                else
+                    filter = new SimpleFilter(field, null, CompareType.ISBLANK);
+                categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser(), filter);
+            }
+            else {
+                categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser());
+            }
+
+            for (ViewCategory c : categories)
             {
                 if (c.getDisplayOrder() != 0)
                     categoriesWithDisplayOrder.add(c);

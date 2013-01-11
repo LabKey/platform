@@ -368,7 +368,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 extraParams : {
                     // These parameters are required for specific webpart filtering
                     pageId : this.pageId,
-                    index  : this.index
+                    index  : this.index || 0
                 },
                 reader : {
                     type : 'json',
