@@ -557,6 +557,8 @@
       <ns:column columnName="Location"/>
       <ns:column columnName="Properties"/>
       <ns:column columnName="Permanent"/>
+      <ns:column columnName="Permission"/>
+      <ns:column columnName="PermissionContainer"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="PortalPages" tableDbType="TABLE">
