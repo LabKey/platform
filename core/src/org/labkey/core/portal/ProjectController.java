@@ -45,7 +45,9 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HeartBeat;
@@ -1423,6 +1425,113 @@ public class ProjectController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SetWebPartPermissionsAction extends ApiAction<WebPartPermissionsForm>
+    {
+        @Override
+        public ApiResponse execute(WebPartPermissionsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
+            if (webPart != null)
+            {
+                Permission permission = RoleManager.getPermission(form.getPermission());
+                Container permissionContainer = ContainerManager.getForPath(form.getContainerPath());
+
+                if(permission == null)
+                {
+                    throw new NotFoundException("Could not resolve the permission " + form.getPermission() +
+                            ". The permission may no longer exist, or may not yet be registered.");
+                }
+
+                if(permissionContainer == null)
+                {
+                    throw new NotFoundException("Could not resolve the container for path: \"" + form.getContainerPath() +
+                            "\". The path may be incorrect or the container may no longer exist.");
+                }
+
+                webPart.setPermission(form.getPermission());
+                webPart.setPermissionContainer(permissionContainer);
+
+                Portal.updatePart(getUser(), webPart);
+
+                resp.put("success", "true");
+                resp.put("webPartId", webPart.getRowId());
+                resp.put("permission", webPart.getPermission());
+                resp.put("permissionContainer", webPart.getPermissionContainer().getId());
+
+                return resp;
+            }
+            else
+                throw new NotFoundException("WebPart not found. Unable to set WebPart permissions.");
+        }
+    }
+
+    public static class WebPartPermissionsForm implements HasViewContext
+    {
+        private String _pageId;
+        private ViewContext _viewContext;
+        private int _webPartId;
+        private String _permission;
+        private String _containerPath;
+
+        public ViewContext getViewContext()
+        {
+            return _viewContext;
+        }
+
+        public void setViewContext(ViewContext viewContext)
+        {
+            _viewContext = viewContext;
+        }
+
+        public String getPageId()
+        {
+            // if a page ID isn't provided, assume that it's the current container's page ID.  This assumption makes
+            // sense as long as there's just one portal page per container.
+            if (_pageId != null)
+                return _pageId;
+            else
+                return getViewContext().getContainer().getId();
+        }
+
+        public void setPageId(String pageId)
+        {
+            _pageId = pageId;
+        }
+
+        public int getWebPartId()
+        {
+            return _webPartId;
+        }
+
+        public void setWebPartId(int webPartId)
+        {
+            _webPartId = webPartId;
+        }
+
+        public String getPermission()
+        {
+            return _permission;
+        }
+
+        public void setPermission(String permission)
+        {
+            _permission = permission;
+        }
+
+        public String getContainerPath()
+        {
+            return _containerPath;
+        }
+
+        public void setContainerPath(String containerPath)
+        {
+            _containerPath = containerPath;
         }
     }
 }
