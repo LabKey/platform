@@ -49,7 +49,18 @@
       <ns:columns>
         <ns:column columnName="RowId"/>
         <ns:column columnName="Container"/>
-        <ns:column columnName="EntityId"/>
+        <ns:column columnName="EntityId">
+          <ns:columnTitle>Entity Id</ns:columnTitle>
+          <ns:inputType>text</ns:inputType>
+          <ns:inputLength>36</ns:inputLength>
+          <ns:isReadOnly>true</ns:isReadOnly>
+          <ns:isHidden>true</ns:isHidden>
+          <ns:fk>
+            <ns:fkTable>object</ns:fkTable>
+            <ns:fkColumnName>ObjectURI</ns:fkColumnName>
+            <ns:fkDbSchema>exp</ns:fkDbSchema>
+          </ns:fk>
+        </ns:column>
         <ns:column columnName="Label"/>
         <ns:column columnName="CreatedBy">
           <ns:fk>

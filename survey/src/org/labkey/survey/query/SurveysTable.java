@@ -15,13 +15,20 @@
  */
 package org.labkey.survey.query;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SimpleQueryUpdateService;
+import org.labkey.api.query.SimpleTableDomainKind;
+import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
@@ -37,13 +44,11 @@ import java.util.List;
  * User: klum
  * Date: 12/7/12
  */
-public class SurveysTable extends FilteredTable<SurveyQuerySchema>
+public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public SurveysTable(TableInfo table, SurveyQuerySchema schema)
     {
-        super(table, schema);
-
-        wrapAllColumns(true);
+        super(schema, table);
 
         List<FieldKey> defaultColumns = new ArrayList<FieldKey>(Arrays.asList(
                 FieldKey.fromParts("Label"),
