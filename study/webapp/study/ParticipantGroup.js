@@ -125,8 +125,6 @@ Ext4.define('Study.window.ParticipantGroup', {
             editable : true,
             mode : 'local',
             anchor : '100%',
-            typeAhead : true,
-            typeAheadDelay : 75,
             minChars : 1,
             autoSelect : false,
             emptyText : Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Category',
@@ -258,7 +256,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             categoryCombo = this.queryById('participantCategory'),
             categoryStore = categoryCombo.getStore();
 
-        if(categoryStore.find('label', categoryCombo.getRawValue()) > -1){
+        if(categoryStore.findExact('label', categoryCombo.getRawValue()) > -1){
             categoryCombo.select(categoryStore.findRecord('label', categoryCombo.getRawValue()));
         }
         if(!label){
