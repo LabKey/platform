@@ -75,6 +75,12 @@
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags(url) %>
 <%= PageFlowUtil.getStandardIncludes(c, user, userAgent, bean.getClientDependencies()) %><%
+if(user.isAdministrator())
+{
+    String webPartPermissionsource = contextPath + "/WebPartPermissionsPanel.js?" + PageFlowUtil.getServerSessionHash();
+    %>
+    <script type="text/javascript" src="<%=text(webPartPermissionsource)%>"></script><%
+}
 if (null != bean.getStyleSheet())
 {
     %>

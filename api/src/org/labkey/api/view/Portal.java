@@ -43,6 +43,8 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -160,6 +162,8 @@ public class Portal
         boolean permanent;
         Map<String, String> propertyMap = new HashMap<String, String>();
         Map<String, Object> extendedProperties = null;
+        String permission;
+        Container permissionContainer;
 
         static
         {
@@ -179,6 +183,8 @@ public class Portal
             name = copyFrom.name;
             location = copyFrom.location;
             permanent = copyFrom.permanent;
+            permission = copyFrom.permission;
+            permissionContainer = copyFrom.permissionContainer;
             setProperties(copyFrom.getProperties());
             this.extendedProperties = copyFrom.extendedProperties;
         }
@@ -298,6 +304,26 @@ public class Portal
         public void setRowId(int rowId)
         {
             this.rowId = rowId;
+        }
+
+        public String getPermission()
+        {
+            return permission;
+        }
+
+        public void setPermission(String permission)
+        {
+            this.permission = permission;
+        }
+
+        public Container getPermissionContainer()
+        {
+            return permissionContainer;
+        }
+
+        public void setPermissionContainer(Container permissionContainer)
+        {
+            this.permissionContainer = permissionContainer;
         }
 
         @Override
@@ -851,7 +877,24 @@ public class Portal
     {
         id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
         String contextPath = context.getContextPath();
-        List<WebPart> parts = getParts(context.getContainer(), id);
+        List<WebPart> parts = new ArrayList<WebPart>();
+
+        for (WebPart part : getParts(context.getContainer(), id))
+        {
+            if (part.getPermission() != null)
+            {
+                Permission permission = RoleManager.getPermission(part.getPermission());
+
+                if (part.getPermissionContainer().getPolicy().hasPermission(context.getUser(), permission.getClass()) ||
+                        context.getUser().isAdministrator())
+                {
+                    parts.add(part);
+                }
+            } else
+            {
+                parts.add(part);
+            }
+        }
 
         // Initialize content for non-default portal pages that are folder tabs
         if (parts.isEmpty() && !StringUtils.equalsIgnoreCase(DEFAULT_PORTAL_PAGE_ID,id))

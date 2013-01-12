@@ -539,8 +539,32 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                         customize.setText("Customize");
                         nMenu.addChild(customize);
                     }
-                    
-                    if(getLocation() != null && getLocation().equals(WebPartFactory.LOCATION_RIGHT))
+
+                    if (getViewContext().getUser().isAdministrator())
+                    {
+                        Portal.WebPart webPart = Portal.getPart(context.getContainer(), getWebPartRowId());
+
+                        if (webPart != null)
+                        {
+                            String permissionString = null;
+                            String containerPathString = null;
+
+                            if (webPart.getPermission() != null)
+                                permissionString = "'" + webPart.getPermission()+ "'";
+
+                            if (webPart.getPermissionContainer() != null)
+                                containerPathString = "'" + webPart.getPermissionContainer().getPath() + "'";
+
+                            nMenu.addChild(new NavTree("Permissions",
+                                    "javascript:Ext4.create('LABKEY.Portal.WebPartPermissionsPanel', {" +
+                                            "webPartId: '" + getWebPartRowId() + "',\n" +
+                                            "permission: " + permissionString + ",\n" +
+                                            "containerPath: " + containerPathString + "\n" +
+                                            "}).show();"));
+                        }
+                    }
+
+                    if (getLocation() != null && getLocation().equals(WebPartFactory.LOCATION_RIGHT))
                     {
                         out.print("</th>\n<th class=\"labkey-wp-title-right\">");
 
