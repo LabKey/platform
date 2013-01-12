@@ -55,8 +55,9 @@ This webpart displays a list of survey instances created by the end user. Select
             standardSubmit: true,
             items : [{
                 xtype: 'combo',
-                width: 350,
+                width: 400,
                 fieldLabel: 'Survey Design',
+                emptyText: 'Select a survey design for this webpart',
                 name: 'surveyDesignId',
                 queryMode: 'local',
                 editable : false,

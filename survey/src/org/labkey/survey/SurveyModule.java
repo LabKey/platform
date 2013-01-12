@@ -18,7 +18,6 @@ package org.labkey.survey;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -35,6 +34,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.survey.SurveyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -48,6 +48,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.survey.model.Survey;
 import org.labkey.survey.model.SurveyDesign;
+import org.labkey.survey.model.SurveyServiceImpl;
 import org.labkey.survey.query.SurveyQuerySchema;
 import org.labkey.survey.query.SurveyQuerySettings;
 import org.labkey.survey.query.SurveyQueryView;
@@ -95,6 +96,8 @@ public class SurveyModule extends DefaultModule
     protected void init()
     {
         addController("survey", SurveyController.class);
+
+        SurveyService.setInstance(new SurveyServiceImpl());
 
         DefaultSchema.registerProvider("survey", new DefaultSchema.SchemaProvider()
         {
