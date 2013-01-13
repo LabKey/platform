@@ -13,26 +13,56 @@
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module-library">
-      <library name="lucene 3.6.0">
+      <library name="lucene 4.0.0">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-core-3.6.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-core-4.0.0.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/lucene-core-3.6.0-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/" />
         </JAVADOC>
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-3.6.0-src.zip!/core/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/core/src/java" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="analyzers 3.6.0">
+      <library name="analyzers 4.0.0">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-3.6.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-common-4.0.0.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-3.6.0-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/" />
         </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/smartcn/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/smartcn/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/kuromoji/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/icu/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/icu/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/morfologik/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/uima/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/morfologik/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/kuromoji/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/common/src/tools/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/uima/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/phonetic/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/phonetic/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/stempel/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/icu/src/tools/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/core/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/stempel/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/kuromoji/src/tools/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/common/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-4.0.0-src.zip!/analysis/kuromoji/src/tools/test" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/lucene-queryparser-4.0.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
