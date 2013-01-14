@@ -65,7 +65,7 @@ public class QueryDataViewProvider implements DataViewProvider
     {
         List<DataViewInfo> dataViews = new ArrayList<DataViewInfo>();
 
-        for (CustomViewInfo view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), null, null))
+        for (CustomViewInfo view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), null, null, false))
         {
             if (view.isHidden())
                 continue;

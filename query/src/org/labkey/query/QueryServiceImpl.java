@@ -389,7 +389,7 @@ public class QueryServiceImpl extends QueryService
         return ret.get(name);
     }
 
-    private Map<String, CustomView> getCustomViewMap(User user, Container container, String schema, String query)
+    private Map<String, CustomView> getCustomViewMap(User user, Container container, String schema, String query, boolean includeInherited)
     {
         // Check for a custom query that matches
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true);
@@ -406,7 +406,7 @@ public class QueryServiceImpl extends QueryService
 
         if (qd != null)
         {
-            return getCustomViewMap(user, container, qd, false);
+            return getCustomViewMap(user, container, qd, includeInherited);
         }
         return Collections.emptyMap();
     }
@@ -430,11 +430,11 @@ public class QueryServiceImpl extends QueryService
 
     public CustomView getCustomView(User user, Container container, String schema, String query, String name)
     {
-        Map<String, CustomView> views = getCustomViewMap(user, container, schema, query);
+        Map<String, CustomView> views = getCustomViewMap(user, container, schema, query, false);
         return views.get(name);
     }
 
-    public List<CustomView> getCustomViews(User user, Container container, @Nullable String schemaName, @Nullable String queryName)
+    public List<CustomView> getCustomViews(User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited)
     {
         if (schemaName == null || queryName == null)
         {
@@ -470,7 +470,7 @@ public class QueryServiceImpl extends QueryService
             return result;
         }
 
-        return new ArrayList<CustomView>(getCustomViewMap(user, container, schemaName, queryName).values());
+        return new ArrayList<CustomView>(getCustomViewMap(user, container, schemaName, queryName, includeInherited).values());
     }
 
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path)

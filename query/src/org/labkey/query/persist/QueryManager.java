@@ -791,7 +791,7 @@ public class QueryManager
 
         //validate views
         Set<String> queryErrors = new HashSet<String>();
-        List<CustomView> views = QueryService.get().getCustomViews(user, container, schema.getSchemaName(), queryName);
+        List<CustomView> views = QueryService.get().getCustomViews(user, container, schema.getSchemaName(), queryName, true);
         for (CustomView v : views)
         {
             validateViewColumns(user, container, v, "columns", v.getColumns(), queryErrors, table);
