@@ -21,21 +21,17 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.ExperimentRunListView;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.ReimportRedirectAction;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayRunType;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.ViewContext;
 
 /**
  * User: brittp
@@ -68,11 +64,6 @@ public class RunListQueryView extends ExperimentRunListView
     public static AssayRunType getDefaultAssayRunFilter(AssayProtocolSchema schema)
     {
         return new AssayRunType(schema.getProtocol(), schema.getContainer());
-    }
-
-    public static QuerySettings getDefaultQuerySettings(UserSchema schema, ViewContext context)
-    {
-        return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayProtocolSchema.RUNS_TABLE_NAME, true);
     }
 
     @Override

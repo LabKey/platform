@@ -1785,13 +1785,4 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         _calculated = calculated;
     }
-
-    public static class TestCase extends Assert
-    {
-        @Test
-        public void testLabelFromName()
-        {
-            assertEquals("DRB Haplotype 1", labelFromName("DRBHaplotype1"));
-        }
-    }
 }
