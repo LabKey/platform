@@ -19,14 +19,12 @@ package org.labkey.study.designer;
 import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -110,8 +108,8 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         {
             GWTStudyDefinition def = DesignerController.getTemplate(getUser(), getContainer());
             //Lock the assays
-            for (int i = 0; i < def.getAssays().size(); i++)
-                ((GWTAssayDefinition) def.getAssays().get(i)).setLocked(true);
+            for (GWTAssayDefinition assayDef : def.getAssays())
+                assayDef.setLocked(true);
             def.setCavdStudyId(0);
             def.setRevision(0);
             def.setStudyName(null);
