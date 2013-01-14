@@ -146,3 +146,6 @@ Ext4.override(Ext4.selection.CheckboxModel, {
         }
     }
 });
+
+// Fixed issue in ext-all-sandbox-debug.js line 105703 that caused exception if a treePanel was collapsed and the
+// underlying treeStore was updated.

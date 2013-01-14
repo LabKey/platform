@@ -105699,8 +105699,8 @@ Ext.define('Ext.view.Table', {
             oldCells, newCells, len, i,
             columns, overItemCls,
             isHovered, row;
-            
-        if (me.rendered) {
+
+        if (me.viewReady) { // changed to me.viewReady from me.rendered as fixed in 4.1.1a
             
             index = me.store.indexOf(record);
             columns = me.headerCt.getGridColumns();
