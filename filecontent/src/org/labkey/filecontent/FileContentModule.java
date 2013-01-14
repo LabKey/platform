@@ -65,7 +65,9 @@ public class FileContentModule extends DefaultModule
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(
                 new FilesWebPart.Factory(WebPartFactory.LOCATION_RIGHT),
-                new FilesWebPart.Factory(WebPartFactory.LOCATION_BODY))); 
+                new FilesWebPart.Factory(WebPartFactory.LOCATION_BODY),
+                new FilesWebPart.Ext4Factory(WebPartFactory.LOCATION_BODY)
+        ));
     }
 
     public boolean hasScripts()

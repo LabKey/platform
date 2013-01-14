@@ -9,6 +9,7 @@
         <script path="File/panel/Applet.js"/>
         <script path="File/panel/TransferApplet.js"/>
         <script path="File/panel/Upload.js"/>
+        <script path="File/panel/Admin.js"/>
     </library>
     <dependencies>
         <dependency path="Ext4"/>

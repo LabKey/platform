@@ -462,6 +462,16 @@ Ext4.define('File.panel.Browser', {
                 scope   : this
             }
         );
+        
+        if(this.disableGeneralAdminSettings === false) {
+            baseItems.push({
+                xtype: 'button',
+                text: 'admin',
+                iconCls: 'iconConfigure',
+                handler: this.showAdminWindow,
+                scope: this
+            });
+        }
 
         if (Ext4.isArray(this.tbarItems)) {
             for (var i=0; i < this.tbarItems.length; i++) {
@@ -701,5 +711,31 @@ Ext4.define('File.panel.Browser', {
 
     onUpload : function() {
         this.getUploadPanel().toggleCollapse();
+    },
+
+    getAdminPanel: function() {
+        return Ext4.create('File.panel.Admin', {
+            width: 800,
+            height: 600,
+            plain: true,
+            border: false
+        });
+    },
+
+    showAdminWindow: function() {
+        if(this.adminWindow) {
+            this.adminWindow.setVisible(true);
+        } else {
+            this.adminWindow = Ext4.create('Ext.window.Window', {
+                cls: 'data-window',
+                title: 'Manage File Browser Configuration',
+                width: 800,
+                height: 600,
+                closeAction: 'hide',
+                layout: 'fit',
+                modal: true,
+                items: [this.getAdminPanel()]
+            }).show();
+        }
     }
 });
