@@ -131,7 +131,7 @@ public class XarReader extends AbstractXarImporter
 
     private void checkValidationErrors(ExperimentArchiveDocument xd, ArrayList<XmlError> errorList) throws XarFormatException
     {
-        StringBuffer errorSB = new StringBuffer();
+        StringBuilder errorSB = new StringBuilder();
 
         boolean bHasDerivedTypeErrorsOnly = true;
         for (XmlError error : errorList)
@@ -381,6 +381,10 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.getFormat(), newProp.getFormat(), key + " format string", diffs);
                     IdentifiableEntity.diff(oldProp.getLabel(), newProp.getLabel(), key + " label", diffs);
                     IdentifiableEntity.diff(oldProp.getName(), newProp.getName(), key + " name", diffs);
+                    IdentifiableEntity.diff(oldProp.isHidden(), newProp.isHidden(), key + " hidden", diffs);
+                    IdentifiableEntity.diff(oldProp.isShownInDetailsView(), newProp.isShownInDetailsView(), key + " hidden", diffs);
+                    IdentifiableEntity.diff(oldProp.isShownInInsertView(), newProp.isShownInInsertView(), key + " hidden", diffs);
+                    IdentifiableEntity.diff(oldProp.isShownInUpdateView(), newProp.isShownInUpdateView(), key + " hidden", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyURI(), newProp.getPropertyURI(), key + " property URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getSearchTerms(), newProp.getPropertyDescriptor().getSearchTerms(), key + " search terms", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getSemanticType(), newProp.getPropertyDescriptor().getSemanticType(), key + " semantic type", diffs);
@@ -542,9 +546,6 @@ public class XarReader extends AbstractXarImporter
                 throw new XarFormatException("This experiment already exists in another folder, " + experiment.getContainer().getPath());
             }
         }
-
-        if (null == experiment)
-            throw new XarFormatException("Experiment insertion failed");
 
         if (null != exp.getContact())
             getRootContext().addSubstitution("ContactId", exp.getContact().getContactId());

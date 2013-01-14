@@ -22,9 +22,9 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.*;
@@ -540,6 +540,9 @@ public class XarExporter
         }
 
         xProp.setHidden(domainProp.isHidden());
+        xProp.setShownInDetailsView(domainProp.isShownInDetailsView());
+        xProp.setShownInInsertView(domainProp.isShownInInsertView());
+        xProp.setShownInUpdateView(domainProp.isShownInUpdateView());
         xProp.setMvEnabled(domainProp.isMvEnabled());
 
         for (IPropertyValidator validator : domainProp.getValidators())
@@ -601,7 +604,7 @@ public class XarExporter
         return properties;
     }
 
-    private void populateData(DataBaseType xData, ExpData data, String role, ExpRun run) throws ExperimentException
+    private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run) throws ExperimentException
     {
         logProgress("Adding data " + data.getLSID());
         xData.setAbout(_relativizedLSIDs.relativize(data));
