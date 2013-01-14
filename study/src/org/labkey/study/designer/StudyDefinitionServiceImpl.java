@@ -233,6 +233,10 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         {
             //Make sure we're a date type study
             study = study.createMutable();
+            if (!study.getDataSets().isEmpty()&& study.getTimepointType() != TimepointType.DATE)
+            {
+                throw new IllegalStateException("Cannot change timepoint type after datasets already exist");
+            }
             study.setTimepointType(TimepointType.DATE);
             StudyManager.getInstance().updateStudy(getUser(), study);
 
