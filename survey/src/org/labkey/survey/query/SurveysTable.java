@@ -67,15 +67,6 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public QueryUpdateService getUpdateService()
-    {
-        TableInfo table = getRealTable();
-        if (table != null && table.getTableType() == DatabaseTableType.TABLE)
-            return new DefaultQueryUpdateService(this, table);
-        return null;
-    }
-
-    @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         return getContainer().hasPermission(user, perm);
