@@ -14,4 +14,7 @@
  * limitations under the License.
  */
 
+-- Also checked in as query-12.30-12.301 since it's safe to rerun.
+-- BE SURE TO CONSOLIDATE QUERY MODULE SCRIPTS STARTING WITH 12.301 for the 13.1 release.
+
 ALTER TABLE query.customview ALTER COLUMN schema TYPE VARCHAR(200);
