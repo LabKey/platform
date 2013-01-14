@@ -69,7 +69,7 @@
         responsesPk = bean.getResponsesPk();
         surveyLabel = bean.getLabel();
         submitted = bean.isSubmitted();
-        returnURL = bean.getSrcURL().toString();
+        returnURL = bean.getSrcURL() != null ? bean.getSrcURL().toString() : null;
     }
 
     // we allow editing for 1) non-submitted surveys 2) submitted surveys if the user is a project or site admin
@@ -77,7 +77,9 @@
     boolean isAdmin = (project != null && project.hasPermission(ctx.getUser(), AdminPermission.class)) || ctx.getUser().isAdministrator();
     boolean canEdit = !submitted || isAdmin;
 
-    String renderId = "survey-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String headerRenderId = "survey-header-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String formRenderId = "survey-form-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String footerRenderId = "survey-footer-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 
 <%
@@ -88,22 +90,26 @@
     else
     {
 %>
-<div id=<%=q(renderId)%>></div>
+<div id=<%=q(headerRenderId)%>></div>
+<div id=<%=q(formRenderId)%>></div>
+<div id=<%=q(footerRenderId)%>></div>
 <script type="text/javascript">
 
     Ext4.onReady(function(){
 
-        var panel = Ext4.create('LABKEY.ext4.SurveyPanel', {
-            rowId           : <%=rowId%>,
+        var panel = Ext4.create('LABKEY.ext4.SurveyDisplayPanel', {
             cls             : 'lk-survey-panel themed-panel',
+            rowId           : <%=rowId%>,
             surveyDesignId  : <%=surveyDesignId%>,
             responsesPk     : <%=q(responsesPk)%>,
             surveyLabel     : <%=q(surveyLabel)%>,
             isSubmitted     : <%=submitted%>,
             canEdit         : <%=canEdit%>,
-            autosaveInterval: 60000,
-            renderTo        : <%=q(renderId)%>,
-            returnURL       : <%=q(returnURL)%>
+            renderTo        : <%=q(formRenderId)%>,
+            headerRenderTo  : <%=q(headerRenderId)%>,
+            footerRenderTo  : <%=q(footerRenderId)%>,
+            returnURL       : <%=q(returnURL)%>,
+            autosaveInterval: 60000
         });
 
     });

@@ -9,6 +9,111 @@ LABKEY.requiresScript("/extWidgets/Ext4Helper.js");
 LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
 LABKEY.requiresScript("/survey/AttachmentField.js");
 
+/*
+ * This is the outer panel that should be used if you want your survey to have a wiki header or footer.
+ * It will create the LABKEY.ext4.SurveyPanel as one of its items.
+ */
+Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
+
+    extend : 'Ext.panel.Panel',
+
+    constructor : function(config){
+
+        Ext4.apply(config, {
+            border: false,
+            bodyStyle : 'background-color: transparent;',
+            autoHeight: true,
+            items: []
+        });
+
+        this.callParent([config]);
+    },
+
+    initComponent : function() {
+
+        // pass through all of the config items that are needed for the SurveyPanel
+        this.surveyFormPanel = Ext4.create('LABKEY.ext4.SurveyPanel', {
+            cls             : this.cls,
+            rowId           : this.rowId,
+            surveyDesignId  : this.surveyDesignId,
+            responsesPk     : this.responsesPk,
+            surveyLabel     : this.surveyLabel,
+            isSubmitted     : this.isSubmitted,
+            canEdit         : this.canEdit,
+            returnURL       : this.returnURL,
+            autosaveInterval: 60000
+        });
+        this.items = [this.surveyFormPanel];
+
+        this.callParent();
+
+        this.configureHeaderAndFooter();
+    },
+
+    configureHeaderAndFooter : function() {
+
+        // if we have a saved surveyDesign, look it up to see if there is a header/footer wiki to add
+        if (this.surveyDesignId)
+        {
+            Ext4.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('survey', 'getSurveyTemplate.api'),
+                method  : 'POST',
+                jsonData: {rowId : this.surveyDesignId},
+                success : function(resp){
+                    var o = Ext4.decode(resp.responseText);
+
+                    if (o.success)
+                    {
+                        var metadata = Ext4.JSON.decode(o.survey.metadata);
+                        if (metadata.survey && metadata.survey.headerWiki)
+                        {
+                            var headerWiki = metadata.survey.headerWiki;
+                            if (!headerWiki.name)
+                            {
+                                //display error message for header wiki name missing
+                                Ext4.get(this.headerRenderTo).update("<span class='labkey-error'>Error: This survey design has a header wiki, but the wiki name is missing from the config.<br/><br/></span>")
+                            }
+                            else
+                            {
+                                new LABKEY.WebPart({
+                               		partName: 'Wiki',
+                                    frame: 'none',
+                               		renderTo: this.headerRenderTo,
+                                    containerPath: headerWiki.containerPath || LABKEY.container.path,
+                               		partConfig: {
+                                           name: headerWiki.name
+                                    }
+                                }).render();
+                            }
+
+                            var footerWiki = metadata.survey.footerWiki;
+                            if (!footerWiki.name)
+                            {
+                                //display error message for footer wiki name missing
+                                Ext4.get(this.footerRenderTo).update("<span class='labkey-error'><br/>Error: This survey design has a footer wiki, but the wiki name is missing from the config.</span>")
+                            }
+                            else
+                            {
+                                new LABKEY.WebPart({
+                               		partName: 'Wiki',
+                                    frame: 'none',
+                               		renderTo: this.footerRenderTo,
+                                    containerPath: footerWiki.containerPath || LABKEY.container.path,
+                               		partConfig: {
+                                           name: footerWiki.name
+                                    }
+                                }).render();
+                            }
+                        }
+                    }
+                },
+                failure : this.onFailure,
+                scope   : this
+            });
+        }
+    }
+});
+
 Ext4.define('LABKEY.ext4.SurveyPanel', {
 
     extend : 'Ext.form.Panel',
@@ -537,7 +642,10 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     addSurveyEndPanel : function() {
 
         // add a final panel that has the Save/Submit buttons and required field checks
-
+console.log(this.submitted);
+console.log(this.submittedBy);
+console.log(this.isSubmitted);
+console.log(this.canEdit);
         this.updateSubmittedInfo = Ext4.create('Ext.form.DisplayField', {
             hideLabel: true,
             width: 250,

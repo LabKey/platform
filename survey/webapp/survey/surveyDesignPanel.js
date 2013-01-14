@@ -590,6 +590,21 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
         });
 
         items.push({
+            title : 'Survey Header/Footer Wiki',
+            html  : '<code style="white-space:pre-wrap;">{"survey":{<br/>' +
+                    '   "headerWiki": {<br/>' +
+                    '      "name": "wiki_name",<br/>' +
+                    '      "containerPath": "/Project/..."<br/>' +
+                    '   },<br/>' +
+                    '   "footerWiki": {<br/>' +
+                    '      "name": "wiki_name",<br/>' +
+                    '      "containerPath": "/Project/..."<br/>' +
+                    '   },<br/>' +
+                    '   ...<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
             title : 'Text Area',
             html  : '<code style="white-space:pre-wrap;">{<br/>' +
                     '    "jsonType": "string",<br/>' +
@@ -638,7 +653,7 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
             frame   : false,
             region  : 'east',
             width   : 300,
-            title   : 'Question Examples',
+            title   : 'Question Metadata Examples',
             collapsible : true,
             collapsed   : true,
             items   : items
