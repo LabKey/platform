@@ -105,7 +105,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         if (displayField == null)
         {
             displayField = _titleColumn;
-            if (displayField == null)
+            if (displayField == null && table != null)
                 displayField = table.getTitleColumn();
         }
         if (displayField == null)
