@@ -74,40 +74,21 @@ Ext4.define('Study.window.ParticipantGroup', {
 
         demoStore.load();
 
-        var categoryStore = Ext4.create('Ext.data.JsonStore', {
+        Ext4.define('categoryModel', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'Label', type : 'string'},
+                {name : 'Type', type : 'string'},
+                {name : 'RowId', type : 'int'}
+            ]
+        });
 
-            proxy: {
-                type : 'ajax',
-                url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
-                method : 'POST',
-                reader: {
-                    type: 'json',
-                    root: 'categories'
-                }
-            },
-            xtype :     'jsonstore',
-            name :      'categoryStore',
-            id :        'categoryStore',
-            root:       'categories',
-            idProperty: 'rowId',
-            baseParams: {
-                categoryType: 'manual'
-            },
-            fields: [
-                {name: 'rowId', type: 'int'},
-                {name: 'label', type: 'string'},
-                {name: 'type', type: 'string'},
-                {name: 'createdBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
-                {name: 'modifiedBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
-                {name: 'shared', type: 'string'},
-                {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString().replace(/,/g,", ");}},
-                {name: 'canEdit', type: 'boolean'},
-                {name: 'canDelete', type: 'boolean'}
-            ],
+        var categoryStore = Ext4.create('Ext.data.Store', {
+            model : 'categoryModel',
+            sorters : {property : 'header', direction : 'ASC'},
             listeners:{
-                load: function(){
-                    var thisStore = this.queryById('participantCategory').getStore();
-                    if(this.category && thisStore.find('rowId', this.category.rowId) > -1){
+                load: function(me){
+                    if(this.category && me.findExact('RowId', this.category.rowId) > -1){
                         categoryCombo.setValue(this.category.rowId);
                     }
                 },
@@ -116,10 +97,26 @@ Ext4.define('Study.window.ParticipantGroup', {
             }
         });
 
+        LABKEY.Query.selectRows({
+            schemaName : 'study',
+            queryName : 'ParticipantCategory',
+            success : function(details){
+                var nonManual = [];
+                for(var i = 0; i < details.rows.length; i++){
+                    if(details.rows[i].Type != "list"){
+                        nonManual.push(details.rows[i]);
+                    }
+                }
+                categoryStore.loadData(nonManual);
+                categoryStore.fireEvent('load', categoryStore);
+            }
+        });
+
         var defaultWidth = 880;
         var categoryCombo = Ext4.create('Ext.form.ComboBox', {
             id : 'participantCategory',
             name : 'participantCategory',
+            queryMode : 'local',
             xtype : 'combo',
             store : categoryStore,
             editable : true,
@@ -133,14 +130,14 @@ Ext4.define('Study.window.ParticipantGroup', {
             grow : true,
             height : 50,
             maxWidth: defaultWidth,
-            valueField : 'rowId',
-            displayField : 'label',
+            valueField : 'RowId',
+            displayField : 'Label',
             triggerAction : 'all',
             listeners : {
                 scope:this,
                 change : function(combo, newValue, oldValue){
                     var shared = false;
-                    var index = categoryStore.find('rowId', newValue);
+                    var index = categoryStore.findExact('RowId', newValue);
                     if(index > -1){
                         shared = categoryStore.getAt(index).data.shared;
                     }
@@ -156,8 +153,6 @@ Ext4.define('Study.window.ParticipantGroup', {
             grow : true,
             border : false
         });
-
-        categoryStore.load();
 
         var simplePanel = Ext4.create('Ext.form.FormPanel', {
             id : 'simplePanel',
@@ -256,8 +251,8 @@ Ext4.define('Study.window.ParticipantGroup', {
             categoryCombo = this.queryById('participantCategory'),
             categoryStore = categoryCombo.getStore();
 
-        if(categoryStore.findExact('label', categoryCombo.getRawValue()) > -1){
-            categoryCombo.select(categoryStore.findRecord('label', categoryCombo.getRawValue()));
+        if(categoryStore.findExact('Label', categoryCombo.getRawValue()) > -1){
+            categoryCombo.select(categoryStore.findRecord('Label', categoryCombo.getRawValue()));
         }
         if(!label){
             Ext4.Msg.alert("Error", this.subject.nounSingular + " Group Label Required");
@@ -308,7 +303,7 @@ Ext4.define('Study.window.ParticipantGroup', {
         }
         if(typeof categoryCombo.getValue() == 'number'){
             categoryId = categoryCombo.getValue();
-            categoryLabel = categoryStore.getAt(categoryStore.find("rowId", categoryId)).data.label;
+            categoryLabel = categoryStore.getAt(categoryStore.findExact("RowId", categoryId)).data.label;
             categoryType = 'manual';
         } else {
             categoryLabel = categoryCombo.getRawValue();
