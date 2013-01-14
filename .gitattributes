@@ -567,6 +567,8 @@ api/src/org/labkey/api/laboratory/assay/AssayNavItem.java -text
 api/src/org/labkey/api/laboratory/assay/AssayParser.java -text
 api/src/org/labkey/api/laboratory/assay/DefaultAssayImportMethod.java -text
 api/src/org/labkey/api/laboratory/assay/DefaultAssayParser.java -text
+api/src/org/labkey/api/laboratory/assay/ImportContext.java -text
+api/src/org/labkey/api/laboratory/assay/ParserErrors.java -text
 api/src/org/labkey/api/laboratory/assay/PivotingAssayParser.java -text
 api/src/org/labkey/api/laboratory/assay/PivotingImportMethod.java -text
 api/src/org/labkey/api/laboratory/assay/SimpleAssayDataProvider.java -text

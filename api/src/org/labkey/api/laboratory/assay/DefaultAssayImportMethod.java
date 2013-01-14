@@ -68,9 +68,9 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         _providerName = providerName;
     }
 
-    public AssayParser getFileParser(Container c, User u, int assayId, JSONObject formData)
+    public AssayParser getFileParser(Container c, User u, int assayId)
     {
-        return new DefaultAssayParser(this, c, u, assayId, formData);
+        return new DefaultAssayParser(this, c, u, assayId);
     }
 
     public String getName()
@@ -290,5 +290,34 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         }
 
         return columns;
+    }
+
+    public static enum SAMPLE_CATEGORY
+    {
+        Blank("Blank"),
+        Control("Control"),
+        NegControl("Neg Control"),
+        PosControl("Pos Control"),
+        Standard("Standard"),
+        Unknown("Unknown");
+
+        private String _label;
+
+        SAMPLE_CATEGORY(String label)
+        {
+            _label = label;
+
+        }
+
+        public static SAMPLE_CATEGORY getEnum(String text)
+        {
+            text = text.replaceAll(" ", "");
+            return SAMPLE_CATEGORY.valueOf(text);
+        }
+
+        public String getLabel()
+        {
+            return _label;
+        }
     }
 }

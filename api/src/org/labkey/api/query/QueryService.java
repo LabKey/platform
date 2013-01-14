@@ -101,7 +101,7 @@ abstract public class QueryService
     abstract public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath);
 
     /** If schema or query is null, return custom views for all schemas/queries */
-    abstract public List<CustomView> getCustomViews(User user, Container container, @Nullable String schema, @Nullable String query);
+    abstract public List<CustomView> getCustomViews(User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
     abstract public CustomView getCustomView(User user, Container container, String schema, String query, String name);
     abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException;
     abstract public void updateCustomViewsAfterRename(@NotNull Container c, @NotNull String schema,

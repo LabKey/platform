@@ -23,7 +23,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -75,4 +74,6 @@ abstract public class EHRService
     abstract public String getDateFormat(Container c);
 
     abstract public User getEHRUser();
+
+    abstract public User getEHRUser(Container c);
 }

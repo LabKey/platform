@@ -49,6 +49,11 @@ public class RunListQueryView extends ExperimentRunListView
     protected final AssayProtocolSchema _schema;
     private final ReplacedRunFilter _replacedRunFilter;
 
+    public RunListQueryView(AssayProtocolSchema schema, QuerySettings settings)
+    {
+        this(schema, settings, getDefaultAssayRunFilter(schema));
+    }
+
     public RunListQueryView(AssayProtocolSchema schema, QuerySettings settings, AssayRunType assayRunFilter)
     {
         super(schema, settings, assayRunFilter);
@@ -60,21 +65,9 @@ public class RunListQueryView extends ExperimentRunListView
         _replacedRunFilter = ReplacedRunFilter.getFromURL(this, REPLACED_FIELD_KEY);
     }
 
-    // Here so that we can use the same schema object for both the QueryView and QuerySettings. This is important
-    // so that TableQueryDefinition.getTable() doesn't think that it's being asked for a table from a different schema
-    private RunListQueryView(AssayProtocolSchema schema, ViewContext context)
+    public static AssayRunType getDefaultAssayRunFilter(AssayProtocolSchema schema)
     {
-        this(schema, getDefaultQuerySettings(schema, context), getDefaultAssayRunFilter(schema.getProtocol(), context));
-    }
-
-    public RunListQueryView(ExpProtocol protocol, ViewContext context)
-    {
-        this(AssayService.get().getProvider(protocol).createProtocolSchema(context.getUser(), context.getContainer(), protocol, null), context);
-    }
-
-    public static AssayRunType getDefaultAssayRunFilter(ExpProtocol protocol, ViewContext context)
-    {
-        return new AssayRunType(protocol, context.getContainer());
+        return new AssayRunType(schema.getProtocol(), schema.getContainer());
     }
 
     public static QuerySettings getDefaultQuerySettings(UserSchema schema, ViewContext context)
@@ -91,6 +84,11 @@ public class RunListQueryView extends ExperimentRunListView
             result.getDataRegion().setNoRowsMessage("No runs to show. To add new runs, use the Import Data button.");
         }
         SimpleFilter filter = (SimpleFilter) result.getRenderContext().getBaseFilter();
+        if (filter == null)
+        {
+            filter = new SimpleFilter();
+            result.getRenderContext().setBaseFilter(filter);
+        }
         _replacedRunFilter.addFilterCondition(filter, REPLACED_FIELD_KEY);
         return result;
     }

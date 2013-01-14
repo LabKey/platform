@@ -50,6 +50,8 @@ abstract public class LaboratoryService
     static private final String URI = "http://cpas.labkey.com/laboratory#";
     static public final String ASSAYRESULT_CONCEPT_URI = URI + "assayResult";
     static public final String SAMPLEDATE_CONCEPT_URI = URI + "sampleDate";
+    static public final String BIRTHDATE_CONCEPT_URI = URI + "birthDate";
+    static public final String DEATHDATE_CONCEPT_URI = URI + "deathDate";
     static public final String PARTICIPANT_CONCEPT_URI = "http://cpas.labkey.com/Study#ParticipantId";
 
     public static LaboratoryService get()

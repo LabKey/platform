@@ -93,7 +93,7 @@ public interface AssayImportMethod
      * Returns the AssayParser used to process data imported through this pathway.
      * @return
      */
-    abstract public AssayParser getFileParser(Container c, User u, int assayId, JSONObject formData);
+    abstract public AssayParser getFileParser(Container c, User u, int assayId);
 
     /**
      * Returns true if this import method supports assay run templates, which allow the user to proactively

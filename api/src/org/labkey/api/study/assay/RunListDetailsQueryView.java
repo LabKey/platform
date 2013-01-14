@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.util.PageFlowUtil;
@@ -42,10 +43,10 @@ public class RunListDetailsQueryView extends RunListQueryView
     private String _detailsIdColumn;
     private String _dataIdColumn;
 
-    public RunListDetailsQueryView(ExpProtocol protocol, ViewContext context, Class<? extends Controller> detailsActionClass,
+    public RunListDetailsQueryView(AssayProtocolSchema schema, QuerySettings settings, Class<? extends Controller> detailsActionClass,
                                    String detailsIdColumn, String dataIdColumn)
     {
-        super(protocol, context);
+        super(schema, settings);
         _detailsActionClass = detailsActionClass;
         _detailsIdColumn = detailsIdColumn;
         _dataIdColumn = dataIdColumn;

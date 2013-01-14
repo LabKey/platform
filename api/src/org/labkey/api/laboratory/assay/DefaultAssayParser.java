@@ -17,6 +17,7 @@ package org.labkey.api.laboratory.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -74,23 +75,21 @@ import java.util.regex.Pattern;
 public class DefaultAssayParser implements AssayParser
 {
     protected boolean _hasHeaders = true;
-    protected JSONObject _jsonData;
     protected ExpProtocol _protocol;
     protected AssayProvider _provider;
     protected Container _container;
     protected User _user;
     protected AssayImportMethod _method;
+    private String HAS_RESULT = "__hasResult__";
 
     private static final Logger _log = Logger.getLogger(AssayParser.class);
 
-    public DefaultAssayParser(AssayImportMethod method, Container c, User u, int assayId, JSONObject formData)
+    public DefaultAssayParser(AssayImportMethod method, Container c, User u, int assayId)
     {
         _method = method;
         _container = c;
         _user = u;
         populateProtocolProvider(assayId);
-
-        _jsonData = formData;
     }
 
     protected TabLoader getTabLoader(String contents) throws IOException
@@ -117,7 +116,7 @@ public class DefaultAssayParser implements AssayParser
         return map;
     }
 
-    public List<Map<String, Object>> parseResultFile(File inputFile, ExpProtocol protocol) throws BatchValidationException
+    public List<Map<String, Object>> parseResultFile(ImportContext context, ExpProtocol protocol) throws BatchValidationException
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain dataDomain = provider.getResultsDomain(protocol);
@@ -126,38 +125,36 @@ public class DefaultAssayParser implements AssayParser
 
         try
         {
-            String sb = readRawFile(inputFile);
+            String sb = readRawFile(context);
             TabLoader loader = getTabLoader(sb);
             configureColumns(propertyNameToDescriptor, loader);
             List<Map<String, Object>> rows = loader.load();
-            rows = processRowsFromFile(rows);
-            performDefaultChecks(rows);
+            rows = processRowsFromFile(rows, context);
+            performDefaultChecks(rows, context);
             return rows;
         }
         catch (IOException e)
         {
-            BatchValidationException ex = new BatchValidationException();
-            ex.addRowError(new ValidationException(e.getMessage()));
-            throw ex;
+            context.getErrors().addError(e.getMessage());
+            throw context.getErrors().getErrors();
         }
     }
 
-    protected List<Map<String, Object>> processRowsFromFile(List<Map<String, Object>> rows) throws BatchValidationException
+    protected List<Map<String, Object>> processRowsFromFile(List<Map<String, Object>> rows, ImportContext context) throws BatchValidationException
     {
         ListIterator<Map<String, Object>> rowsIter = rows.listIterator();
         while (rowsIter.hasNext())
         {
             Map<String, Object> row = rowsIter.next();
-            appendPromotedResultFields(row);
+            appendPromotedResultFields(row, context);
         }
 
         return rows;
     }
 
-    protected void performDefaultChecks(List<Map<String, Object>> rows) throws BatchValidationException
+    protected void performDefaultChecks(List<Map<String, Object>> rows, ImportContext context) throws BatchValidationException
     {
-        BatchValidationException errors = new BatchValidationException();
-
+        ParserErrors errors = context.getErrors();
 
         Domain dataDomain = getProvider().getResultsDomain(getProtocol());
         Map<String, DomainProperty> importMap = dataDomain.createImportMap(false);
@@ -174,7 +171,7 @@ public class DefaultAssayParser implements AssayParser
                     PropertyDescriptor pd = propertyNameToDescriptor.get(name);
                     if (pd.isRequired() && row.get(name) == null)
                     {
-                        errors.addRowError(new ValidationException("Row " + idx + ": missing required field '" + pd.getLabel() + "'"));
+                        errors.addError("Row " + getRowIdx(row, idx) + ": missing required field '" + pd.getLabel() + "'");
                         continue;
                     }
 
@@ -184,22 +181,39 @@ public class DefaultAssayParser implements AssayParser
                     }
                     catch (ConversionException e)
                     {
-                        errors.addRowError(new ValidationException("Row " + idx + ": unable to convert value: '" + row.get(name).toString() + "' to type " + pd.getJdbcType()));
+                        errors.addError("Row " + getRowIdx(row, idx) + ": unable to convert value: '" + row.get(name).toString() + "' to type " + pd.getJdbcType());
                         continue;
                     }
                 }
             }
+
+            String category = "category";
+            if (row.containsKey(category))
+            {
+                String errorMsg = "Row " + idx + ": unknown sample category: " + row.get(category);
+                try
+                {
+                    DefaultAssayImportMethod.SAMPLE_CATEGORY cat = DefaultAssayImportMethod.SAMPLE_CATEGORY.getEnum((String)row.get(category));
+                    if (cat == null)
+                    {
+                        errors.addError(errorMsg);
+                    }
+                }
+                catch (IllegalArgumentException e)
+                {
+                    errors.addError(errorMsg);
+                }
+            }
         }
 
-        if (errors.hasErrors())
-            throw errors;
+        errors.confirmNoErrors();
     }
 
-    protected void appendPromotedResultFields(Map<String, Object> row)
+    protected void appendPromotedResultFields(Map<String, Object> row, ImportContext context)
     {
-        if (_jsonData != null && _jsonData.has("Results"))
+        JSONObject resultData = context.getPromotedResultsFromJson();
+        if (resultData != null)
         {
-            JSONObject resultData = _jsonData.getJSONObject("Results");
             for (String prop : resultData.keySet())
             {
                 if (row.get(prop) == null)
@@ -210,12 +224,13 @@ public class DefaultAssayParser implements AssayParser
 
     /**
      * Reads the raw input file and provides some basic normalization before passing to TabLoader
-     * @param inputFile
      * @return
      */
-    protected String readRawFile(File inputFile) throws BatchValidationException
+    protected String readRawFile(ImportContext context) throws BatchValidationException
     {
         BufferedReader fileReader = null;
+        File inputFile = context.getFile();
+
         try
         {
             StringBuffer sb = new StringBuffer((int)(inputFile.length()));
@@ -236,9 +251,8 @@ public class DefaultAssayParser implements AssayParser
         }
         catch (IOException e)
         {
-            BatchValidationException ex = new BatchValidationException();
-            ex.addRowError(new ValidationException(e.getMessage()));
-            throw ex;
+            context.getErrors().addError(e.getMessage());
+            throw context.getErrors().getErrors();
         }
         finally
         {
@@ -258,20 +272,15 @@ public class DefaultAssayParser implements AssayParser
                 if (!columnName.equals(pd.getName()))
                     column.name = pd.getName();
             }
-//            else
-//            {
-//                _log.info("skipping column: " + column.name);
-//            }
         }
     }
 
     public JSONObject getPreview(JSONObject json, File file, String fileName, ViewContext ctx) throws BatchValidationException
     {
-        BatchValidationException errors = new BatchValidationException();
-
-        List<Map<String, Object>> rows = parseResults(json, file);
+        ImportContext context = new ImportContext(json, file, fileName, ctx);
 
         JSONObject ret = new JSONObject();
+
         JSONArray batches = new JSONArray();
         JSONObject batch = new JSONObject();
         batch.put("properties", json.get("Batch"));
@@ -279,20 +288,18 @@ public class DefaultAssayParser implements AssayParser
         JSONArray runs = new JSONArray();
         JSONObject run = new JSONObject();
         run.put("properties", json.get("Run"));
+
+        List<Map<String, Object>> rows = parseResults(context);
         run.put("results", rows);
         runs.put(run);
+
         batch.put("runs", runs);
 
         batches.put(batch);
         ret.put("batches", batches);
         ret.put("importMethod", _method.getName());
 
-        if (errors.hasErrors())
-        {
-            ValidationException err = new ValidationException("Error parsing rows");
-            errors.addRowError(err);
-            throw errors;
-        }
+        context.getErrors().confirmNoErrors();
 
         return ret;
     }
@@ -300,30 +307,28 @@ public class DefaultAssayParser implements AssayParser
     /**
      * This is the primary method where the JSON and raw results file are parsed to produce a list of row maps
      */
-    protected List<Map<String, Object>> parseResults(JSONObject json, File file) throws BatchValidationException
+    protected List<Map<String, Object>> parseResults(ImportContext context) throws BatchValidationException
     {
         List<Map<String, Object>> rows;
-        if (json.has("ResultRows"))
+        JSONArray resultRows = context.getResultRowsFromJson();
+        if (resultRows != null)
         {
-            JSONArray resultRows = json.getJSONArray("ResultRows");
             rows = resultRows.toMapList();
-            rows = processRowsFromJson(rows, json);
+            rows = processRowsFromJson(rows, context);
         }
         else
         {
-            rows = parseResultFile(file, _protocol);
+            rows = parseResultFile(context, _protocol);
         }
 
-        return processRows(rows, json);
+        return processRows(rows, context);
     }
 
     /**
      * Override this method to provide custom processing of each result row provided as JSON
-     * @param rows
-     * @param json
      * @return
      */
-    protected List<Map<String, Object>> processRowsFromJson(List<Map<String, Object>> rows, JSONObject json)
+    protected List<Map<String, Object>> processRowsFromJson(List<Map<String, Object>> rows, ImportContext context)
     {
         return rows;
     }
@@ -331,18 +336,18 @@ public class DefaultAssayParser implements AssayParser
     /**
      * Override this method to transform rows after the file/json has been processed
      */
-    protected List<Map<String, Object>> processRows(List<Map<String, Object>> rows, JSONObject json) throws BatchValidationException
+    protected List<Map<String, Object>> processRows(List<Map<String, Object>> rows, ImportContext context) throws BatchValidationException
     {
-        validateRows(rows, json);
+        validateRows(rows, context);
         return rows;
     }
 
     /**
      * Provides simple validation of rows based on field properties
      */
-    protected void validateRows(List<Map<String, Object>> rows, JSONObject json) throws BatchValidationException
+    protected void validateRows(List<Map<String, Object>> rows, ImportContext context) throws BatchValidationException
     {
-        BatchValidationException errors = new BatchValidationException();
+        ParserErrors errors = context.getErrors();
 
         Domain resultDomain = _provider.getResultsDomain(_protocol);
         int idx = 0;
@@ -354,15 +359,12 @@ public class DefaultAssayParser implements AssayParser
             {
                 if (dp.isRequired() && (!map.containsKey(dp.getName()) || map.get(dp.getName()) == null))
                 {
-                    errors.addRowError(new ValidationException("Row " + idx + ": Missing required field " + dp.getLabel()));
+                    errors.addError("Row " + getRowIdx(row, idx) + ": Missing required field " + dp.getLabel());
                 }
             }
         }
 
-        if (errors.hasErrors())
-        {
-            throw errors;
-        }
+        errors.confirmNoErrors();
     }
 
     protected void saveTemplate(ViewContext ctx, int templateId, int runId) throws BatchValidationException
@@ -391,30 +393,32 @@ public class DefaultAssayParser implements AssayParser
 
     public Pair<ExpExperiment, ExpRun> saveBatch(JSONObject json, File file, String fileName, ViewContext ctx) throws BatchValidationException
     {
+        ImportContext context = new ImportContext(json, file, fileName, ctx);
+
         try
         {
-            return LaboratoryService.get().saveAssayBatch(parseResults(json, file), json, file, fileName, ctx, _provider, _protocol);
-
+            return LaboratoryService.get().saveAssayBatch(parseResults(context), json, file, fileName, ctx, _provider, _protocol);
         }
         catch (ValidationException e)
         {
-            BatchValidationException ex = new BatchValidationException();
-            ex.addRowError(new ValidationException(e.getMessage()));
-            throw ex;
+            context.getErrors().addError(e.getMessage());
+            throw context.getErrors().getErrors();
         }
     }
 
-    protected boolean mergeTemplateRow(String keyProperty, Map<String, Map<String, Object>> templateRows, Map<String, Object> map, BatchValidationException errors)
+    protected boolean mergeTemplateRow(String keyProperty, Map<String, Map<String, Object>> templateRows, Map<String, Object> map, ImportContext context)
     {
-        return mergeTemplateRow(keyProperty, templateRows, map, errors, false);
+        return mergeTemplateRow(keyProperty, templateRows, map, context, false);
     }
 
-    protected boolean mergeTemplateRow(String keyProperty, Map<String, Map<String, Object>> templateRows, Map<String, Object> map, BatchValidationException errors, boolean ignoreMissing)
+    protected boolean mergeTemplateRow(String keyProperty, Map<String, Map<String, Object>> templateRows, Map<String, Object> map, ImportContext context, boolean ignoreMissing)
     {
         String key = (String)map.get(keyProperty);
         Map<String, Object> templateRow = templateRows.get(key);
         if (templateRow != null)
         {
+            templateRow.put(HAS_RESULT, true);
+
             for (String prop : templateRow.keySet())
             {
                 if (!"rowid".equalsIgnoreCase(prop))
@@ -434,11 +438,24 @@ public class DefaultAssayParser implements AssayParser
         else
         {
             if (!ignoreMissing)
-                errors.addRowError(new ValidationException("Unable to find sample information to match well: " + key));
+                context.getErrors().addError("Unable to find sample information to match well: " + key);
 
             return false;
         }
     }
+
+    protected void ensureTemplateRowsHaveResults(Map<String, Map<String, Object>> templateRows, ImportContext context) throws BatchValidationException
+    {
+        for (String key : templateRows.keySet())
+        {
+            Map<String, Object> row = templateRows.get(key);
+            if (!row.containsKey(HAS_RESULT))
+                context.getErrors().addError("Template row with key " + key + " does not have a result", Level.WARN);
+        }
+
+        context.getErrors().confirmNoErrors();
+    }
+
 
     protected void populateProtocolProvider(int assayId)
     {
@@ -464,39 +481,12 @@ public class DefaultAssayParser implements AssayParser
         _protocol = protocol;
     }
 
-//    protected List<Map<String, Object>> pivotRow(Map<String, Object> map, Set<String> staticFields, Set<String> allowable, String resultFieldName, String pivotFieldName)
-//    {
-//        Map<String, Object> staticValues = new HashMap<String, Object>();
-//        for (String field : staticFields)
-//        {
-//            staticValues.put(field, map.get(field));
-//        }
-//
-//        Map<String, Object> results = new HashMap<String, Object>();
-//        for (String field : allowable)
-//        {
-//            if (map.get(field) != null)
-//            {
-//                results.put(field, map.get(field));
-//            }
-//        }
-//
-//        List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
-//        for (String field : results.keySet())
-//        {
-//            Map<String, Object> row = new HashMap<String, Object>();
-//            row.putAll(staticValues);
-//            row.put(pivotFieldName, field);
-//            row.put(resultFieldName, results.get(field));
-//            newRows.add(row);
-//        }
-//
-//        return newRows;
-//    }
-
-    protected Map<String, Map<String, Object>> getTemplateRowMap(JSONObject json, String keyProperty){
-        Integer templateId = json.getInt("TemplateId");
+    protected Map<String, Map<String, Object>> getTemplateRowMap(ImportContext context, String keyProperty){
+        Integer templateId = context.getTemplateIdFromJson();
         Map<String, Map<String, Object>> ret = new HashMap<String, Map<String, Object>>();
+
+        if (templateId == null)
+            return ret;
 
         TableInfo ti = DbSchema.get("laboratory").getTable("assay_run_templates");
 
@@ -527,5 +517,13 @@ public class DefaultAssayParser implements AssayParser
     public AssayProvider getProvider()
     {
         return _provider;
+    }
+
+    protected Integer getRowIdx(Map<String, Object> map, int rowIdx)
+    {
+        if (map.containsKey("originalRowIdx"))
+            return (Integer)map.get("originalRowIdx");
+        else
+            return rowIdx;
     }
 }

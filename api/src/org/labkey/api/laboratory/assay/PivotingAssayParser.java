@@ -53,14 +53,14 @@ public class PivotingAssayParser extends DefaultAssayParser
 {
     PivotingImportMethod _pivotMethod;
 
-    public PivotingAssayParser(PivotingImportMethod method, Container c, User u, int assayId, JSONObject formData)
+    public PivotingAssayParser(PivotingImportMethod method, Container c, User u, int assayId)
     {
-        super(method, c, u, assayId, formData);
+        super(method, c, u, assayId);
         _pivotMethod = method;
     }
 
     @Override
-    protected String readRawFile(File inputFile) throws BatchValidationException
+    protected String readRawFile(ImportContext context) throws BatchValidationException
     {
         CSVReader csv = null;
         try
@@ -69,7 +69,7 @@ public class PivotingAssayParser extends DefaultAssayParser
             DomainProperty valueCol = _pivotMethod.getValueColumn(_protocol);
             DomainProperty pivotCol = _pivotMethod.getPivotColumn(_protocol);
 
-            csv = new CSVReader(new FileReader(inputFile), '\t');
+            csv = new CSVReader(new FileReader(context.getFile()), '\t');
             String[] line;
             Map<Integer, String> resultCols = null;
             Integer rowIdx = 0;
@@ -77,7 +77,7 @@ public class PivotingAssayParser extends DefaultAssayParser
             {
                 if (rowIdx == 0)
                 {
-                    resultCols = inspectHeader(line);
+                    resultCols = inspectHeader(line, context);
                 }
 
                 List<String> rowBase = new ArrayList<String>();
@@ -127,9 +127,8 @@ public class PivotingAssayParser extends DefaultAssayParser
         }
         catch (IOException e)
         {
-            BatchValidationException ex = new BatchValidationException();
-            ex.addRowError(new ValidationException(e.getMessage()));
-            throw ex;
+            context.getErrors().addError(e.getMessage());
+            throw context.getErrors().getErrors();
         }
         finally
         {
@@ -141,7 +140,7 @@ public class PivotingAssayParser extends DefaultAssayParser
      * Inspects the header line and returns a list of all columns inferred to contain results
      * and other columns are assumed to
      */
-    private Map<Integer, String> inspectHeader(String[] header) throws BatchValidationException
+    private Map<Integer, String> inspectHeader(String[] header, ImportContext context) throws BatchValidationException
     {
         Map<Integer, String> resultMap = new HashMap<Integer, String>();
         Map<String, String> allowable = new CaseInsensitiveHashMap();
@@ -171,7 +170,7 @@ public class PivotingAssayParser extends DefaultAssayParser
             {
                 if (!knownColumns.contains(col))
                 {
-                    normalized = handleUnknownColumn(col, allowable, errors);
+                    normalized = handleUnknownColumn(col, allowable, context);
                 }
             }
 
@@ -187,10 +186,10 @@ public class PivotingAssayParser extends DefaultAssayParser
         return resultMap;
     }
 
-    protected String handleUnknownColumn(String col, Map<String, String> allowable, BatchValidationException errors)
+    protected String handleUnknownColumn(String col, Map<String, String> allowable, ImportContext context)
     {
         //TODO: allow a flag that lets us assume known columns hold results
-        errors.addRowError(new ValidationException("Unknown column: " + col));
+        context.getErrors().addError("Unknown column: " + col);
         return null;
     }
 }

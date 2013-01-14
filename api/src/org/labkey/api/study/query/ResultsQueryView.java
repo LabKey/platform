@@ -83,7 +83,12 @@ public class ResultsQueryView extends AssayBaseQueryView
     public DataView createDataView()
     {
         DataView view = super.createDataView();
-        view.getRenderContext().setBaseSort(new Sort(AssayService.get().getProvider(_protocol).getTableMetadata(_protocol).getResultRowIdFieldKey().toString()));
+        Sort sort = view.getRenderContext().getBaseSort();
+        if (sort == null)
+        {
+            sort = new Sort();
+        }
+        sort.insertSortColumn(AssayService.get().getProvider(_protocol).getTableMetadata(_protocol).getResultRowIdFieldKey(), Sort.SortDirection.ASC);
         view.getDataRegion().addHiddenFormField("rowId", "" + _protocol.getRowId());
         String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
         if (returnURL == null)
