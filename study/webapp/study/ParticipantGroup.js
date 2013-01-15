@@ -99,11 +99,15 @@ Ext4.define('Study.window.ParticipantGroup', {
 
         LABKEY.Query.selectRows({
             schemaName : 'study',
-            queryName : 'ParticipantCategory',
+            queryName : this.panelConfig.subject.nounSingular + 'Category',
             success : function(details){
                 var nonManual = [];
                 for(var i = 0; i < details.rows.length; i++){
-                    if(details.rows[i].Type != "list"){
+                    console.log(this);
+                    if(this.category != "list" && details.rows[i].Type != "list"){
+                        nonManual.push(details.rows[i]);
+                    }
+                    else {
                         nonManual.push(details.rows[i]);
                     }
                 }
