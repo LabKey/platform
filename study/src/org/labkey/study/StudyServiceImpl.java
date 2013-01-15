@@ -241,6 +241,8 @@ public class StudyServiceImpl implements StudyService.Service
 
     public Map<String,Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
     {
+        if (null == lsid)
+            return null;
         Map<String, Object>[] rows = getDatasetRows(u, c, datasetId, Collections.singleton(lsid));
         return rows.length > 0 ? rows[0] : null;
     }
