@@ -1207,6 +1207,8 @@ api/src/org/labkey/api/study/reports/CrosstabReport.java -text
 api/src/org/labkey/api/study/reports/CrosstabReportDescriptor.java -text
 api/src/org/labkey/api/study/reports/CrosstabView.java -text
 api/src/org/labkey/api/survey/SurveyService.java -text
+api/src/org/labkey/api/survey/model/Survey.java -text
+api/src/org/labkey/api/survey/model/SurveyDesign.java -text
 api/src/org/labkey/api/thumbnail/BaseThumbnailAction.java -text
 api/src/org/labkey/api/thumbnail/DynamicThumbnailProvider.java -text
 api/src/org/labkey/api/thumbnail/ImageStreamThumbnailProvider.java -text
