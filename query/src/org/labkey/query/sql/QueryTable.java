@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -86,6 +87,16 @@ public class QueryTable extends QueryRelation
     int getSelectedColumnCount()
     {
         return _selectedColumns.size();
+    }
+
+
+    @Override
+    protected MethodInfo getMethod(String name)
+    {
+        MethodInfo m = _tableInfo.getMethod(name);
+        if (null != m)
+            _generateSelectSQL = Boolean.TRUE; // don't optimize, see getAlias()
+        return m;
     }
 
 
@@ -212,6 +223,15 @@ public class QueryTable extends QueryRelation
     }
 
 
+    @Override
+    public String getAlias()
+    {
+        // TODO : note this doesn't reflect the actual alias when _generateSelectSQL==FALSE
+        // this only seems to affect queries that table methods (see getMethod())
+        return super.getAlias();
+    }
+
+
     public SQLFragment getSql()
     {
         SQLFragment ret = new SQLFragment();
@@ -254,7 +274,8 @@ public class QueryTable extends QueryRelation
             }
         }
 
-        _generateSelectSQL = false;
+        if (null == _generateSelectSQL)
+            _generateSelectSQL = false;
 
         sql.append("SELECT ");
         String comma = "";

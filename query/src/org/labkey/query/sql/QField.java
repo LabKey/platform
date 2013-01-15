@@ -191,8 +191,9 @@ public class QField extends QInternalExpr
             return null;
         }
 
-        return _table.getTableInfo().getMethod(FieldKey.fromString(_name).getName());
+        return _table.getMethod(FieldKey.fromString(_name).getName());
     }
+
 
     public QueryParseException fieldCheck(QNode parent, SqlDialect d)
     {
@@ -208,6 +209,7 @@ public class QField extends QInternalExpr
         }
         return null;
     }
+
 
     @Override
     public boolean isConstant()

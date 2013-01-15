@@ -15,20 +15,19 @@
  */
 package org.labkey.query.sql;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 
@@ -161,6 +160,11 @@ public abstract class QueryRelation
         if (_parent != null && !_inFromClause)
             return _parent.getField(key, expr, referant);
         return new QField(null, key.getName(), expr);
+    }
+
+    protected MethodInfo getMethod(String name)
+    {
+        return null;
     }
 
 
