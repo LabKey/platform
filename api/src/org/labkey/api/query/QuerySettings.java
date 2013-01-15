@@ -109,7 +109,7 @@ public class QuerySettings
     }
 
 
-    private PropertyValues getPropertyValues(ViewContext context)
+    protected PropertyValues getPropertyValues(ViewContext context)
     {
         PropertyValues pvs = context.getBindPropertyValues();
         if (null == pvs)

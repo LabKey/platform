@@ -49,6 +49,7 @@ public class TempQuerySettings extends QuerySettings
     public TempQuerySettings(ViewContext context, String sql, String dataRegionName)
     {
         super(dataRegionName);
+        setSortFilter(getPropertyValues(context));
         _sql = sql;
         _container = context.getContainer();
         setQueryName("sql");

@@ -460,6 +460,7 @@ public class SimpleFilter implements Filter
 
         public MultiValuedFilterClause(FieldKey fieldKey, Collection<?> params)
         {
+            params = new ArrayList<Object>(params); // possibly immutable
             if (params.contains(null)) //params.size() == 0 ||
             {
                 _includeNull = true;
