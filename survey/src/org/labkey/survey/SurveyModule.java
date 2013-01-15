@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -46,12 +47,13 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.survey.model.Survey;
-import org.labkey.survey.model.SurveyDesign;
+import org.labkey.api.survey.model.Survey;
+import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.survey.model.SurveyServiceImpl;
 import org.labkey.survey.query.SurveyQuerySchema;
 import org.labkey.survey.query.SurveyQuerySettings;
 import org.labkey.survey.query.SurveyQueryView;
+import org.labkey.survey.query.SurveyTableDomainKind;
 import org.springframework.validation.BindException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -108,6 +110,8 @@ public class SurveyModule extends DefaultModule
                 return null;
             }
         });
+
+        PropertyService.get().registerDomainKind(new SurveyTableDomainKind());
     }
 
     @Override

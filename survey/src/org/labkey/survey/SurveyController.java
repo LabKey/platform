@@ -66,8 +66,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.survey.model.Survey;
-import org.labkey.survey.model.SurveyDesign;
+import org.labkey.api.survey.model.Survey;
+import org.labkey.api.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -80,7 +80,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class SurveyController extends SpringActionController
 {

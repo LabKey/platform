@@ -71,4 +71,56 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         return getContainer().hasPermission(user, perm);
     }
+
+    @Override
+    public SimpleTableDomainKind getDomainKind()
+    {
+        if (getObjectUriColumn() == null)
+            return null;
+
+        return (SurveyTableDomainKind)PropertyService.get().getDomainKindByName(SurveyTableDomainKind.NAME);
+    }
+
+    @Override
+    public Domain getDomain()
+    {
+        if (getObjectUriColumn() == null)
+            return null;
+
+        if (_domain == null)
+        {
+            String domainURI = getDomainURI();
+            _domain = PropertyService.get().getDomain(SurveyTableDomainKind.getDomainContainer(getContainer()), domainURI);
+        }
+        return _domain;
+    }
+
+    @Override
+    public String getDomainURI()
+    {
+        if (getObjectUriColumn() == null)
+            return null;
+
+        return SurveyTableDomainKind.getDomainURI(getUserSchema().getName(), getName(),
+                SurveyTableDomainKind.getDomainContainer(getContainer()),
+                getUserSchema().getUser());
+    }
+
+    public QueryUpdateService getUpdateService()
+    {
+        TableInfo table = getRealTable();
+        if (table != null)
+        {
+            DefaultQueryUpdateService.DomainUpdateHelper helper = new SimpleQueryUpdateService.SimpleDomainUpdateHelper(this)
+            {
+                @Override
+                public Container getDomainContainer(Container c)
+                {
+                    return SurveyTableDomainKind.getDomainContainer(c);
+                }
+            };
+            return new SimpleQueryUpdateService(this, table, helper);
+        }
+        return null;
+    }
 }

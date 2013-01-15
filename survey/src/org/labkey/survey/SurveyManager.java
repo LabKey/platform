@@ -40,8 +40,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
-import org.labkey.survey.model.Survey;
-import org.labkey.survey.model.SurveyDesign;
+import org.labkey.api.survey.model.Survey;
+import org.labkey.api.survey.model.SurveyDesign;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;

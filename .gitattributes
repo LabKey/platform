@@ -3488,14 +3488,13 @@ survey/src/org/labkey/survey/SurveyManager.java -text
 survey/src/org/labkey/survey/SurveyModule.java -text
 survey/src/org/labkey/survey/SurveyQuestion.java -text
 survey/src/org/labkey/survey/SurveySchema.java -text
-survey/src/org/labkey/survey/model/Survey.java -text
-survey/src/org/labkey/survey/model/SurveyDesign.java -text
 survey/src/org/labkey/survey/model/SurveyServiceImpl.java -text
 survey/src/org/labkey/survey/query/SurveyDesignQueryView.java -text
 survey/src/org/labkey/survey/query/SurveyDesignTable.java -text
 survey/src/org/labkey/survey/query/SurveyQuerySchema.java -text
 survey/src/org/labkey/survey/query/SurveyQuerySettings.java -text
 survey/src/org/labkey/survey/query/SurveyQueryView.java -text
+survey/src/org/labkey/survey/query/SurveyTableDomainKind.java -text
 survey/src/org/labkey/survey/query/SurveysTable.java -text
 survey/src/org/labkey/survey/view/customizeSurveysWebPart.jsp -text
 survey/src/org/labkey/survey/view/surveyDesignWizard.jsp -text
