@@ -18,13 +18,15 @@ package org.labkey.api.webdav;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.webdav.AbstractWebdavResource;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URLHelper;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -39,7 +41,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class WebdavService
 {
     WebdavResolver _resolver = null;
-    WebdavResolver _rootResolver = null;
     CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<Provider>();
 
     final static WebdavService _instance = new WebdavService();
@@ -150,8 +151,6 @@ public class WebdavService
     /*
      * interface for resources that are accessible through http:
      */
-
-    
     public interface Provider
     {
         // currently addChildren is called only for web folders
@@ -173,5 +172,44 @@ public class WebdavService
     public WebdavResolver getRootResolver()
     {
         return ServiceRegistry.get(WebdavResolver.class);
+    }
+
+    public interface WebdavListener
+    {
+        void webdavCreated(WebdavResource resource, Container container, User user);
+
+        void webdavDeleted(WebdavResource resource, Container container, User user);
+    }
+
+    private static final List<WebdavListener> _listeners = new CopyOnWriteArrayList<WebdavListener>();
+
+    public void addWebdavListener(WebdavListener listener)
+    {
+        _listeners.add(listener);
+    }
+
+    private List<WebdavListener> getListeners()
+    {
+        return new ArrayList<WebdavListener>(_listeners);
+    }
+
+    public void fireWebdavCreated(WebdavResource resource, Container container, User user)
+    {
+        List<WebdavListener> list = getListeners();
+
+        for (WebdavListener l : list)
+        {
+            l.webdavCreated(resource, container, user);
+        }
+    }
+
+    public void fireWebdavDeleted(WebdavResource resource, Container container, User user)
+    {
+        List<WebdavListener> list = getListeners();
+
+        for (WebdavListener l : list)
+        {
+            l.webdavDeleted(resource, container, user);
+        }
     }
 }
