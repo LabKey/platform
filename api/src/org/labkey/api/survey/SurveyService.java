@@ -29,8 +29,12 @@ public class SurveyService
     {
         Survey[] getSurveys(Container container, User user);
         Survey getSurvey(Container container, User user, int surveyId);
+        Survey saveSurvey(Container container, User user, Survey survey);
 
         SurveyDesign[] getSurveyDesigns(Container container, User user);
         SurveyDesign getSurveyDesign(Container container, User user, int surveyDesignId);
+
+        SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign surveyDesign);
+        void deleteSurveyDesign(Container c, User user, int surveyDesignId, boolean deleteSurveyInstances);
     }
 }
