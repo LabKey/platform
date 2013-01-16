@@ -15,8 +15,10 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
-import org.w3c.dom.*;
+import org.w3c.dom.CharacterData;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.w3c.tidy.Tidy;
 
 import java.io.ByteArrayInputStream;
@@ -29,7 +31,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,70 +40,24 @@ import java.util.regex.Pattern;
  */
 public class TidyUtil
 {
-    private static final Logger LOG = Logger.getLogger(TidyUtil.class);
     private static final Pattern scriptPattern = Pattern.compile("(<script.*?>)(.*?)(</script>)", Pattern.CASE_INSENSITIVE| Pattern.DOTALL);
-    private static final AtomicInteger _tidyCount = new AtomicInteger();
-
-    private static void increment()
-    {
-        int count = _tidyCount.incrementAndGet();
-
-        if (count > 1)
-            LOG.info("Overlapping tidy instances detected");
-        else if (count < 1)
-            LOG.error("Tidy count is incorrect");
-    }
-
-    private static void decrement()
-    {
-        int count = _tidyCount.decrementAndGet();
-
-        if (count > 0)
-            LOG.info("Overlapping tidy instances detected");
-        else if (count < 0)
-            LOG.error("Tidy count is incorrect");
-    }
 
     public static Document convertHtmlToDocument(final String html, final boolean asXML, final Collection<String> errors)
     {
-        try
-        {
-            increment();
-            Tidy tidy = configureHtmlTidy(asXML);
-            return tidyParseDOM(tidy, html, errors);
-        }
-        finally
-        {
-            decrement();
-        }
+        Tidy tidy = configureHtmlTidy(asXML);
+        return tidyParseDOM(tidy, html, errors);
     }
 
     public static String tidyHTML(final String html, boolean asXML, final Collection<String> errors)
     {
-        try
-        {
-            increment();
-            Tidy tidy = configureHtmlTidy(asXML);
-            return tidyParse(tidy, html, errors);
-        }
-        finally
-        {
-            decrement();
-        }
+        Tidy tidy = configureHtmlTidy(asXML);
+        return tidyParse(tidy, html, errors);
     }
 
     public static String tidyXML(final String xml, final Collection<String> errors)
     {
-        try
-        {
-            increment();
-            Tidy tidy = configureXmlTidy();
-            return tidyParse(tidy, xml, errors);
-        }
-        finally
-        {
-            decrement();
-        }
+        Tidy tidy = configureXmlTidy();
+        return tidyParse(tidy, xml, errors);
     }
 
     // helper for script validation
