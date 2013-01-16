@@ -167,6 +167,7 @@ public class StatementUtils
         Set<String> done = Sets.newCaseInsensitiveHashSet();
 
         String objectIdVar = null;
+        String rowIdVar = null;
         String setKeyword = d.isPostgreSQL() ? "" : "SET ";
 
         //
@@ -196,8 +197,9 @@ public class StatementUtils
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
 
                 objectIdVar = d.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
-
                 useVariables = d.isPostgreSQL();
+                if (!sqlfDeclare.isEmpty())
+                    sqlfDeclare.append(";\n");
                 sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT");
 
                 if (null == c)
@@ -363,15 +365,6 @@ public class StatementUtils
 
         SQLFragment sqlfSelectIds = null;
         boolean selectAutoIncrement = false;
-        Integer selectObjectIdIndex = null;
-        int countReturnIds = 0;    // TODO: Change to a boolean, selectObjectId?
-
-        if (selectIds && null != objectIdVar)
-        {
-            sqlfSelectIds = new SQLFragment("SELECT ");
-            sqlfSelectIds.append(objectIdVar);
-            selectObjectIdIndex = ++countReturnIds;
-        }
 
         SQLFragment sqlfInsertInto = new SQLFragment();
 
@@ -402,8 +395,15 @@ public class StatementUtils
 
             if (selectIds && null != autoIncrementColumn)
             {
-                d.appendSelectAutoIncrement(sqlfInsertInto, table, autoIncrementColumn.getName());
                 selectAutoIncrement = true;
+                if (null != objectIdVar)
+                {
+                    rowIdVar = d.isPostgreSQL() ? "_$rowid$_" : "@_rowid_";
+                    if (!sqlfDeclare.isEmpty())
+                        sqlfDeclare.append(";\n");
+                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT");
+                }
+                d.appendSelectAutoIncrement(sqlfInsertInto, table, autoIncrementColumn.getName(), rowIdVar);
             }
         }
         else
@@ -424,6 +424,21 @@ public class StatementUtils
             sqlfInsertInto.append(" = ");
             appendParameterOrVariable(sqlfInsertInto, d, useVariables, objecturiParameter, parameterToVariable);
         }
+
+
+        if (selectIds && (null != objectIdVar || null != rowIdVar))
+        {
+            sqlfSelectIds = new SQLFragment("SELECT ");
+            comma = "";
+            if (null != rowIdVar)
+            {
+                sqlfSelectIds.append(rowIdVar);
+                comma = ",";
+            }
+            if (null != objectIdVar)
+                sqlfSelectIds.append(comma).append(objectIdVar);
+        }
+
 
         //
         // ObjectProperty
@@ -534,7 +549,7 @@ public class StatementUtils
                 comma = ",";
             }
             fn.append("\n) RETURNS ");
-            if (countReturnIds>0)
+            if (null != sqlfSelectIds)
                 fn.append("SETOF RECORD");
             else
                 fn.append("void");
@@ -543,13 +558,13 @@ public class StatementUtils
             call.append(")");
 
 
-            if (countReturnIds > 0)
+            if (null != sqlfSelectIds)
             {
                 call.insert(0, "SELECT * FROM ");
-                if (countReturnIds == 1)
-                    call.append(" AS x(A int)");
-                else
+                if (null != rowIdVar && null != objectIdVar)
                     call.append(" AS x(A int, B int)");
+                else
+                    call.append(" AS x(A int)");
                 call.append(";");
             }
             else
@@ -604,8 +619,13 @@ public class StatementUtils
 //            }
 //        }
 
-        ret.setSelectRowId(selectAutoIncrement);
-        ret.setObjectIdIndex(selectObjectIdIndex);
+        if (selectIds)
+        {
+            // Why is one of these boolean and the other an index?? I don't know
+            ret.setSelectRowId(selectAutoIncrement);
+            if (null != objectIdVar)
+                ret.setObjectIdIndex(selectAutoIncrement ? 2 : 1);
+        }
 
         return ret;
     }

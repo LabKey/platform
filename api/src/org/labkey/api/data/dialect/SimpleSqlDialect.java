@@ -16,6 +16,7 @@
 package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -165,7 +166,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName)
+    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName, @Nullable String variable)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

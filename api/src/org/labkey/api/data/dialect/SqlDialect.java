@@ -369,7 +369,12 @@ public abstract class SqlDialect
     public abstract void appendStatement(Appendable sql, String statement);
 
     // Note: SQLFragment and StringBuilder both implement Appendable
-    public abstract void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName);
+    public abstract void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName, @Nullable String variable);
+
+    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName)
+    {
+        appendSelectAutoIncrement(sql, table, columnName, null);
+    }
 
     private static final InClauseGenerator GENERATOR = new ParameterMarkerInClauseGenerator();
 
