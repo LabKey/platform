@@ -32,7 +32,9 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -165,11 +167,14 @@ public class SurveyManager
         try {
             scope.ensureTransaction();
 
+            TableInfo table = SurveySchema.getInstance().getSurveysTable();
+            table.setAuditBehavior(AuditBehaviorType.DETAILED);
+
             Survey ret;
             if (survey.isNew())
-                ret = Table.insert(user, SurveySchema.getInstance().getSurveysTable(), survey);
+                ret = Table.insert(user, table, survey);
             else
-                ret = Table.update(user, SurveySchema.getInstance().getSurveysTable(), survey, survey.getRowId());
+                ret = Table.update(user, table, survey, survey.getRowId());
 
             scope.commitTransaction();
             return ret;

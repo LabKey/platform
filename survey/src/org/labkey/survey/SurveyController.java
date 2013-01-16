@@ -45,6 +45,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
@@ -436,6 +437,8 @@ public class SurveyController extends SpringActionController
             if (surveyDesign != null)
             {
                 TableInfo table = getSurveyAnswersTableInfo(surveyDesign, getContainer());
+                table.setAuditBehavior(AuditBehaviorType.DETAILED);
+
                 FieldKey pk = table.getAuditRowPk();
 
                 if (table != null && pk != null)
@@ -486,8 +489,12 @@ public class SurveyController extends SpringActionController
                                     // be updated.
                                     Object key = row.get(pk.toString());
                                     survey.setResponsesPk(String.valueOf(key));
+
+                                    // set the initial status to Draft
+                                    if (!form.isSubmitted())
+                                        survey.setStatus("Draft");
                                 }
-                                // TODO: add audit log event for saving survey changes
+
                                 survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
 
                                 response.put("surveyResults", row);
@@ -675,8 +682,11 @@ public class SurveyController extends SpringActionController
                                             surveyDesign.getSchemaName(), surveyDesign.getQueryName(), settings.getOffset(), null,
                                             false, false, false);
 
-                                    // add the submitted and submittedBy information to the response
+                                    // add some of the survey record information to the response
                                     Map<String, Object> extraProps = new HashMap<String, Object>();
+                                    extraProps.put("rowId", survey.getRowId());
+                                    extraProps.put("label", survey.getLabel());
+                                    extraProps.put("status", survey.getStatus());
                                     if (survey.getSubmitted() != null)
                                         extraProps.put("submitted", survey.getSubmitted());
                                     if (survey.getSubmittedBy() != null)

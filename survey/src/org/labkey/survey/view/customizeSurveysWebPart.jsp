@@ -38,7 +38,7 @@
     Portal.WebPart part = me.getModelBean();
     ViewContext ctx = me.getViewContext();
     Map<String, String> props = part.getPropertyMap();
-    // TODO: support case where previously saved design ID has been deleted
+
     Integer surveyDesignId = props.get("surveyDesignId") != null ? Integer.parseInt(props.get("surveyDesignId")) : null;
     final String divId = "form" + getRequestScopedUID();
 %>
