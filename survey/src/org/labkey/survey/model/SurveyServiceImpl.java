@@ -36,4 +36,22 @@ public class SurveyServiceImpl implements SurveyService.Interface
     {
         return SurveyManager.get().getSurveyDesign(container, user, surveyDesignId);
     }
+
+    @Override
+    public Survey saveSurvey(Container container, User user, Survey survey)
+    {
+        return SurveyManager.get().saveSurvey(container, user, survey);
+    }
+
+    @Override
+    public SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign surveyDesign)
+    {
+        return SurveyManager.get().saveSurveyDesign(container, user, surveyDesign);
+    }
+
+    @Override
+    public void deleteSurveyDesign(Container c, User user, int surveyDesignId, boolean deleteSurveyInstances)
+    {
+        SurveyManager.get().deleteSurveyDesign(c, user, surveyDesignId, deleteSurveyInstances);
+    }
 }

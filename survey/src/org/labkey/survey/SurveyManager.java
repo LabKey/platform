@@ -143,7 +143,10 @@ public class SurveyManager
 
             SurveyDesign ret;
             if (survey.isNew())
+            {
+                survey.beforeInsert(user, container.getId());
                 ret = Table.insert(user, SurveySchema.getInstance().getSurveyDesignsTable(), survey);
+            }
             else
                 ret = Table.update(user, SurveySchema.getInstance().getSurveyDesignsTable(), survey, survey.getRowId());
 
@@ -172,7 +175,10 @@ public class SurveyManager
 
             Survey ret;
             if (survey.isNew())
+            {
+                survey.beforeInsert(user, container.getId());
                 ret = Table.insert(user, table, survey);
+            }
             else
                 ret = Table.update(user, table, survey, survey.getRowId());
 
