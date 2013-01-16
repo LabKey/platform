@@ -2010,6 +2010,7 @@ public class StudyController extends BaseStudyController
         ImportDataSetForm _form = null;
         Study _study = null;
         DataSetDefinition _def = null;
+        boolean isAliasImport = false;
 
         public ImportAction()
         {
@@ -2021,6 +2022,10 @@ public class StudyController extends BaseStudyController
         {
             _form = form;
             _study = getStudy();
+
+            if(getStudy().getParticipantAliasDatasetId() == form.getDatasetId()){
+                super.setImportMessage("This is the Alias Dataset.  You do not need to include information for the date column.");
+            }
             if (null == _study)
                 throw new NotFoundException("Container does not contain a study.");
 
@@ -7878,7 +7883,8 @@ public class StudyController extends BaseStudyController
     public static class ChangeAlternateIdsForm
     {
         private String _prefix = "";
-        private int _numDigits = StudyManager.ALTERNATEID_DEFAULT_NUM_DIGITS;;
+        private int _numDigits = StudyManager.ALTERNATEID_DEFAULT_NUM_DIGITS;
+        private int _aliasDatasetId = -1;
 
         public String getPrefix()
         {
@@ -7898,6 +7904,15 @@ public class StudyController extends BaseStudyController
         public void setNumDigits(int numDigits)
         {
             _numDigits = numDigits;
+        }
+
+        public int getAliasDatasetId()
+        {
+            return _aliasDatasetId;
+        }
+        public void setAliasDatasetId(int aliasDatasetId)
+        {
+            _aliasDatasetId = aliasDatasetId;
         }
     }
 
@@ -7920,6 +7935,64 @@ public class StudyController extends BaseStudyController
                 throw new IllegalStateException("A study does not exist in this folder");
         }
     }
+
+    public static class MapAliasIdsForm
+    {
+        private int _dataSetId;
+        private String _aliasColumn = "";
+        private String _sourceColumn = "";
+
+        public int getDataSetId()
+        {
+            return _dataSetId;
+        }
+
+        public void setDataSetId(int dataSetId)
+        {
+            _dataSetId = dataSetId;
+        }
+
+        public String getAliasColumn()
+        {
+            return _aliasColumn;
+        }
+
+        public void setAliasColumn(String aliasColumn)
+        {
+            _aliasColumn = aliasColumn;
+        }
+
+        public String getSourceColumn()
+        {
+            return _sourceColumn;
+        }
+
+        public void setSourceColumn(String sourceColumn)
+        {
+            _sourceColumn = sourceColumn;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class MapAliasIdsAction extends ApiAction<MapAliasIdsForm>
+    {
+        @Override
+        public ApiResponse execute(MapAliasIdsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            if (study != null)
+            {
+                setAliasMappingProperties(getStudy(), form.getDataSetId(), form.getAliasColumn(), form.getSourceColumn());
+                StudyManager.getInstance().clearAlternateParticipantIds(study);
+                response.put("success", true);
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+    }
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class ExportParticipantTransformsAction extends SimpleViewAction<Object>
@@ -7960,11 +8033,12 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static ChangeAlternateIdsForm getChangeAlternateIdForm(Study study)
+    public static ChangeAlternateIdsForm getChangeAlternateIdForm(StudyImpl study)
     {
         ChangeAlternateIdsForm changeAlternateIdsForm = new ChangeAlternateIdsForm();
         changeAlternateIdsForm.setPrefix(study.getAlternateIdPrefix());
         changeAlternateIdsForm.setNumDigits(study.getAlternateIdDigits());
+        changeAlternateIdsForm.setAliasDatasetId(study.getParticipantAliasDatasetId());
 
         return changeAlternateIdsForm;
     }
@@ -7976,6 +8050,22 @@ public class StudyController extends BaseStudyController
             study = study.createMutable();
             study.setAlternateIdPrefix(prefix);
             study.setAlternateIdDigits(numDigits);
+            StudyManager.getInstance().updateStudy(getUser(), study);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    private void setAliasMappingProperties(StudyImpl study, int dataSetId, String aliasColumn, String sourceColumn)
+    {
+        try
+        {
+            study = study.createMutable();
+            study.setParticipantAliasDatasetId(dataSetId);
+            study.setParticipantAliasProperty(aliasColumn);
+            study.setParticipantAliasSourceProperty(sourceColumn);
             StudyManager.getInstance().updateStudy(getUser(), study);
         }
         catch (SQLException x)

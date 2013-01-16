@@ -43,16 +43,24 @@
     String subjectNounSingular = s.getSubjectNounSingular();
     String subjectNounPlural = s.getSubjectNounPlural();
     String subjectNounColName = s.getSubjectColumnName();
+    int aliasDatasetId = bean.getAliasDatasetId();
     boolean isAdmin = c.hasPermission(getViewContext().getUser(), AdminPermission.class);
     Integer numberOfDigits = bean.getNumDigits() > 0 ? bean.getNumDigits() : 6;
 %>
 <div style="max-width: 1000px">
+<p>You can link <%= PageFlowUtil.filter(subjectNounPlural)%> in this folder with <%= PageFlowUtil.filter(subjectNounPlural)%> from another source.</p>
+<h2>Manage <%= PageFlowUtil.filter(subjectNounSingular)%> IDs</h2>
 <p>Alternate <%= PageFlowUtil.filter(subjectNounSingular) %> IDs allow you to publish a study with all <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %> IDs
     replaced by randomly generated alternate IDs. Alternate IDs are unique and are automatically generated for all <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %>.
     Alternate IDs will not change unless you explicitly request to change them. You may specify a prefix and the number of digits you want for the Alternate IDs.
 </p>
 </div>
 <div id="alternateIdsPanel"></div>
+<h2><%= PageFlowUtil.filter(subjectNounSingular)%> Aliases</h2>
+<p>Each <%= PageFlowUtil.filter(subjectNounSingular)%> in the folder can have more than one alternative ID.  To set up <%= PageFlowUtil.filter(subjectNounSingular)%>
+    linking specify the dataset that contains <%= PageFlowUtil.filter(subjectNounSingular)%> aliases.</p>
+<p>Each alias may have a "source" which should be a short name for the organization that uses the ID.</p>
+<div id="datasetMappingPanel"></div>
 
 <script type="text/javascript">
 
@@ -154,7 +162,164 @@
                     }
                 });
             };
+
+            //Alias mapping components start here
+
+            var aliasDataSetId = <%=aliasDatasetId%>;
+
+            Ext4.define('datasetModel',{
+                extend : 'Ext.data.Model',
+                fields : [
+                    { name : 'Label', type : 'string' },
+                    { name : 'DataSetId', type : 'int'}
+                ]
+            });
+
+            this.dataStore = Ext4.create('Ext.data.Store', {
+                model : 'datasetModel',
+                sorters : {property : 'Label', direction : 'ASC'}
+            });
+//
+            LABKEY.Query.selectRows({
+                schemaName : 'study',
+                queryName : 'Datasets',
+                success : function(details){
+                    this.dataStore.loadData(details.rows);
+                },
+                scope : this
+            });
+
+            var dataCombo = Ext4.create('Ext.form.field.ComboBox',{
+                name : 'datasetCombo',
+                queryMode : 'local',
+                store: this.dataStore,
+                valueField : 'DataSetId',
+                displayField : 'Label',
+                labelWidth : 200,
+                fieldLabel : 'Dataset Containing Aliases',
+                editable: false,
+                listeners : {
+                     select : function(cb){
+                            aliasCombo.clearValue();
+                            sourceCombo.clearValue();
+                            populateOtherBoxes(cb.getRawValue());
+                            aliasCombo.setDisabled(false);
+                            sourceCombo.setDisabled(false);
+
+                     }
+                }
+            });
+
+            var populateOtherBoxes = function(datasetName){
+                    LABKEY.Query.selectRows({
+                        schemaName : 'study',
+                        queryName : datasetName,
+
+                        success : function(details){
+                            this.aliasStore.loadData(details.columnModel);
+                        },
+                        scope : this
+                    });
+            };
+
+            Ext4.define('aliasModel',{
+                extend : 'Ext.data.Model',
+                fields : [
+                    { name : 'header', type : 'string' }
+                ]
+            });
+
+             this.aliasStore = Ext4.create('Ext.data.Store', {
+                model : 'aliasModel',
+                sorters : {property : 'header', direction : 'ASC'}
+            });
+
+            var aliasCombo = Ext4.create('Ext.form.field.ComboBox',{
+                name : 'aliasCombo',
+                queryMode : 'local',
+                store: this.aliasStore,
+                valueField : 'header',
+                displayField : 'header',
+                labelWidth : 200,
+                fieldLabel : 'Alias Column',
+                editable: false,
+                disabled : true
+            });
+
+            var sourceCombo = Ext4.create('Ext.form.field.ComboBox',{
+                name : 'sourceCombo',
+                queryMode : 'local',
+                store: this.aliasStore,
+                valueField : 'header',
+                displayField : 'header',
+                labelWidth : 200,
+                fieldLabel : 'Source Column',
+                editable: false,
+                disabled : true
+            });
+
+            var importButton = Ext4.create('Ext.button.Button', {
+                text : 'Import Aliases',
+                handler : function() {
+                    document.location = LABKEY.ActionURL.buildURL('study', 'import', null, {datasetId : aliasDataSetId});
+                }
+            });
+            var manageButton = Ext4.create('Ext.button.Button', {
+                text : 'Manage Datasets',
+                handler : function(){
+                    document.location = LABKEY.ActionURL.buildURL('study', 'manageTypes');
+                }
+            });
+
+            var changeIdMapping = function(dataSetField, aliasField, sourceField) {
+                var dataSetId = dataSetField.getValue();
+                var aliasColumn = aliasField.getValue();
+                var sourceColumn = sourceField.getValue();
+                Ext4.Ajax.request({
+                    url : LABKEY.ActionURL.buildURL("study", "mapAliasIds"),
+                    method : 'POST',
+
+                    success: function(details){
+                        console.log(details);
+                        displayDoneChangingMessage();
+                        aliasDataSetId = dataSetId;
+
+                    },
+                    failure: function(response, options){
+                        LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:<br>');
+                    },
+                    jsonData : {dataSetId : dataSetId, aliasCol : aliasColumn, sourceCol : sourceColumn},
+                    headers : {'Content-Type' : 'application/json'},
+                    scope: this
+                });
+
+            };
+
+            var saveButton = Ext4.create('Ext.button.Button', {
+                text : 'Save Changes',
+                handler :  function(){changeIdMapping(dataCombo, aliasCombo, sourceCombo);}
+            });
+
+            var mappingPanel = Ext4.create('Ext.form.FormPanel', {
+                renderTo : 'datasetMappingPanel',
+                bodyPadding: 10,
+                bodyStyle: 'background: none',
+                frame: false,
+                border: false,
+                width: 600,
+                buttonAlign : 'left',
+                items: [dataCombo, aliasCombo, sourceCombo],
+                dockedItems : {
+                    xtype : 'toolbar',
+                    background : 'transparent',
+                    dock : 'bottom',
+                    items: [saveButton, importButton, manageButton]
+                 }
+
+            });
         };
+
+
 
         Ext4.onReady(init);
 
