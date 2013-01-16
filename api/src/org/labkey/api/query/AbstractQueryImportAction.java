@@ -153,7 +153,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         if (_target != null)
         {
-            bean.importMessage = _target.getImportMessage();    // Get message from TableInfo
+            if(_target.getImportMessage() != null)
+                bean.importMessage = _target.getImportMessage();    // Get message from TableInfo if available
+            else
+                bean.importMessage = _importMessage;                //Otherwise, get the passed in message
+
             bean.urlExcelTemplates = new ArrayList<Pair<String, String>>();
 
             List<Pair<String, String>> it = _target.getImportTemplates(getViewContext());
