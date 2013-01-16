@@ -55,8 +55,8 @@ public class SequenceNumImportHelper
         _timetype = study.getTimepointType();
         _startDate = study.getStartDate();
         _startDaysSinceEpoch = null==_startDate?0:convertToDaysSinceEpoch(_startDate);
-        if (null != def && def.isDemographicData())
-            _defaultSequenceNum =  VisitImpl.DEMOGRAPHICS_VISIT;
+        if (null != def && (def.isDemographicData() || def.isParticipantAliasDataset()))
+            _defaultSequenceNum = VisitImpl.DEMOGRAPHICS_VISIT;
         else
             _defaultSequenceNum = null;
         for (Map.Entry<String, Double> entry : StudyManager.getInstance().getVisitImportMap(study, true).entrySet())

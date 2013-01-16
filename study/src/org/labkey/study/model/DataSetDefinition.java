@@ -587,6 +587,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return _demographicData;
     }
 
+    public boolean isParticipantAliasDataset()
+    {
+        Integer id = _study.getParticipantAliasDatasetId();
+        return null != id && id.equals(getDataSetId());
+    }
+
     @Override
     public boolean isAssayData()
     {
