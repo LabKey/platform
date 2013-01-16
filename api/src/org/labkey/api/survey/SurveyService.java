@@ -27,11 +27,6 @@ public class SurveyService
 
     public interface Interface
     {
-        /*
-         * Returns a map of survey design IDs to the survey design label
-         */
-        Map<Integer, String> getSurveyDesignMap(Container container);
-
         Survey[] getSurveys(Container container, User user);
         Survey getSurvey(Container container, User user, int surveyId);
 
