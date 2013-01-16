@@ -2575,7 +2575,7 @@ public class StudyManager
         {
             Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, false, true);
 
-            StudyController.ChangeAlternateIdsForm changeAlternateIdsForm = StudyController.getChangeAlternateIdForm(study);
+            StudyController.ChangeAlternateIdsForm changeAlternateIdsForm = StudyController.getChangeAlternateIdForm((StudyImpl) study);
             String prefix = changeAlternateIdsForm.getPrefix();
             if (null == prefix)
                 prefix = "";        // So we don't get the string "null" as the prefix
