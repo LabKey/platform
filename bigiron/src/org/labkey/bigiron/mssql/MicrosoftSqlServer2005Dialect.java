@@ -207,9 +207,12 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
 
 
     @Override
-    public void appendSelectAutoIncrement(Appendable sql, TableInfo tableName, String columnName)
+    public void appendSelectAutoIncrement(Appendable sql, TableInfo tableName, String columnName, @Nullable String variable)
     {
-        appendStatement(sql, "SELECT @@IDENTITY");
+        if (null == variable)
+            appendStatement(sql, "SELECT @@IDENTITY");
+        else
+            appendStatement(sql, "SELECT " + variable + "=@@IDENTITY");
     }
 
 

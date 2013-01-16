@@ -254,11 +254,14 @@ class PostgreSql83Dialect extends SqlDialect
 
 
     @Override
-    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName)
+    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName, @Nullable String variable)
     {
         try
         {
-            sql.append("\nRETURNING ").append(columnName);
+            if (null == variable)
+                sql.append("\nRETURNING ").append(columnName);
+            else
+                sql.append("\nRETURNING ").append(columnName).append(" INTO ").append(variable);
         }
         catch (IOException e)
         {
