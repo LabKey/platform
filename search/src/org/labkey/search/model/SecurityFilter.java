@@ -17,11 +17,11 @@
 package org.labkey.search.model;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.FieldSelector;
-import org.apache.lucene.document.FieldSelectorResult;
+import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.Filter;
+import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.DocIdBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
@@ -33,6 +33,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.util.BitSet;
@@ -47,7 +48,7 @@ import java.util.Set;
 */
 class SecurityFilter extends Filter
 {
-    private static final ContainerFieldSelector CONTAINER_FIELD_SELECTOR = new ContainerFieldSelector();
+    private static final Set<String> SECURITY_FIELDS = PageFlowUtil.set(LuceneSearchServiceImpl.FIELD_NAMES.container.name(), LuceneSearchServiceImpl.FIELD_NAMES.resourceId.name());
 
     private final User user;
     private final HashMap<String, Container> containerIds;
@@ -77,14 +78,20 @@ class SecurityFilter extends Filter
 
 
     @Override
-    public DocIdSet getDocIdSet(IndexReader reader) throws IOException
+    public DocIdSet getDocIdSet(AtomicReaderContext context, Bits acceptDocs) throws IOException
     {
+        IndexReader reader = context.reader();
         int max = reader.maxDoc();
         BitSet bits = new BitSet(max);
 
         for (int i = 0; i < max; i++)
         {
-            Document doc = reader.document(i, CONTAINER_FIELD_SELECTOR);
+            // Must check acceptDocs to filter out documents that are deleted or previously filtered.
+            // This is not really documented, but it looks like null == acceptDocs means accept everything (no deleted/filtered docs).
+            if (null != acceptDocs && !acceptDocs.get(i))
+                continue;
+
+            Document doc = reader.document(i, SECURITY_FIELDS);
 
             String id = doc.get(LuceneSearchServiceImpl.FIELD_NAMES.container.name());
             String resourceId = doc.get(LuceneSearchServiceImpl.FIELD_NAMES.resourceId.name());
@@ -113,19 +120,6 @@ class SecurityFilter extends Filter
         }
 
         return new DocIdBitSet(bits);
-    }
-
-
-    private static class ContainerFieldSelector implements FieldSelector
-    {
-        public FieldSelectorResult accept(String fieldName)
-        {
-            if (LuceneSearchServiceImpl.FIELD_NAMES.container.name().equals(fieldName))
-                return FieldSelectorResult.LOAD;
-            if (LuceneSearchServiceImpl.FIELD_NAMES.resourceId.name().equals(fieldName))
-                return FieldSelectorResult.LOAD;
-            return FieldSelectorResult.NO_LOAD;
-        }
     }
 
 
@@ -192,5 +186,4 @@ class SecurityFilter extends Filter
             return false;
         }
     }
-
 }

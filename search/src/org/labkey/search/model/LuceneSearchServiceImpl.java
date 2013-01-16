@@ -22,9 +22,9 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.MultiFieldQueryParser;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
@@ -102,7 +102,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static final Logger _log = Logger.getLogger(LuceneSearchServiceImpl.class);
     private static final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<SEARCH_PHASE>(SEARCH_PHASE.class, SEARCH_PHASE.values());
 
-    static final Version LUCENE_VERSION = Version.LUCENE_35;
+    static final Version LUCENE_VERSION = Version.LUCENE_40;
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
@@ -1057,7 +1057,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (null == sort)
                     topDocs = searcher.search(query, securityFilter, hitsToRetrieve);
                 else
-                    topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
+                    topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.Type.STRING)));
 
                 iTimer.setPhase(SEARCH_PHASE.processHits);
                 return createSearchResult(offset, hitsToRetrieve, topDocs, searcher);

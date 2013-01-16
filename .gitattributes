@@ -2384,11 +2384,10 @@ query/webapp/reports/xls.gif -text
 search/Search.iml -text
 search/build.xml -text
 search/lib/instructions.txt -text
-search/lib/lucene-3.6.0-src.zip -text
-search/lib/lucene-analyzers-3.6.0-javadoc.jar -text
-search/lib/lucene-analyzers-3.6.0.jar -text
-search/lib/lucene-core-3.6.0-javadoc.jar -text
-search/lib/lucene-core-3.6.0.jar -text
+search/lib/lucene-4.0.0-src.zip -text
+search/lib/lucene-analyzers-common-4.0.0.jar -text
+search/lib/lucene-core-4.0.0.jar -text
+search/lib/lucene-queryparser-4.0.0.jar -text
 search/module.properties -text
 search/resources/schemas/dbscripts/postgresql/obsolete/search-0.00-0.03.sql -text
 search/resources/schemas/dbscripts/postgresql/obsolete/search-0.02-0.03.sql -text

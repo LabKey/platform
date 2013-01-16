@@ -16,9 +16,10 @@
 package org.labkey.search.model;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.analysis.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
+
 
 /**
  * User: adam
@@ -32,7 +33,7 @@ public enum ExternalAnalyzer
         @Override
         Analyzer getAnalyzer()
         {
-            return new SimpleAnalyzer();
+            return new SimpleAnalyzer(LuceneSearchServiceImpl.LUCENE_VERSION);
         }},
     KeywordAnalyzer {
         @Override

@@ -17,12 +17,14 @@
 package org.labkey.search;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
@@ -81,6 +83,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Date;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class SearchController extends SpringActionController
 {
@@ -887,6 +891,38 @@ public class SearchController extends SpringActionController
             return _form.getSearchResultTemplate().appendNavTrail(root, getViewContext(), _scope, _category);
         }
     }
+
+
+    // This is intended to help test search indexing. This action sticks a special runnable in the indexer queue
+    // and then returns when that runnable is executed (or if five minutes goes by without the runnable executing).
+    // The tests can invoke this action to ensure that the indexer has executed all previous indexing tasks. It
+    // does not guarantee that all indexed content has been committed... but that may not be required in practice.
+
+    @RequiresSiteAdmin
+    public class WaitForIndexerAction extends ExportAction
+    {
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            SearchService ss = ServiceRegistry.get(SearchService.class);
+            final CountDownLatch latch = new CountDownLatch(1);
+
+            SearchService.IndexTask task = ss.defaultTask();
+            task.addRunnable(new Runnable() {
+                @Override
+                public void run()
+                {
+                    latch.countDown();
+                }
+            }, SearchService.PRIORITY.item);
+
+            boolean success = latch.await(5, TimeUnit.MINUTES);
+
+            // Return an error if we time out
+            if (!success)
+                response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
 
     public static ActionURL getSearchExternalURL(Container c)
