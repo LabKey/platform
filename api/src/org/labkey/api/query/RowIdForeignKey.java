@@ -33,11 +33,13 @@ import org.labkey.api.util.StringExpression;
 public class RowIdForeignKey extends AbstractForeignKey
 {
     protected ColumnInfo _rowidColumn;
+
     public RowIdForeignKey(ColumnInfo rowidColumn)
     {
-        super(rowidColumn.getParentTable().getName(), rowidColumn.getName());
+        super(rowidColumn.getParentTable().getName(), rowidColumn.getName(), rowidColumn.getParentTable().getPublicSchemaName());
         _rowidColumn = rowidColumn;
     }
+
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         if (displayField == null)

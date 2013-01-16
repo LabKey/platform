@@ -269,7 +269,7 @@ public class SimpleUserSchema extends UserSchema
                     // 9338 and 9051: fixup fks for external schemas that have been renamed
                     // NOTE: This will only fixup fk schema names if they are within the current schema.
                     String lookupSchemaName = fk.getLookupSchemaName();
-                    if (lookupSchemaName.equalsIgnoreCase(_userSchema.getDbSchema().getName()))
+                    if (_userSchema.getDbSchema().getName().equalsIgnoreCase(lookupSchemaName))
                         lookupSchemaName = _userSchema.getName();
 
                     boolean joinWithContainer = false;
