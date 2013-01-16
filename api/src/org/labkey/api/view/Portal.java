@@ -41,6 +41,7 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -751,6 +752,11 @@ public class Portal
             part.index = i + 1;
             part.pageId = pageId;
             part.container = c;
+
+            // Set the permissionContainer to the current container if the permission is set but not the
+            // permissionContainer. This will happen when setting permissions from xml defined folders.
+            if(part.permission != null && part.permissionContainer == null)
+                part.permissionContainer = c;
         }
 
         try
@@ -883,14 +889,25 @@ public class Portal
         {
             if (part.getPermission() != null)
             {
+                Container permissionContainer = part.getPermissionContainer() != null ? part.getPermissionContainer() : context.getContainer();
                 Permission permission = RoleManager.getPermission(part.getPermission());
+                boolean isAdmin = context.getUser().isAdministrator();
+                boolean hasPermission = false;
 
-                if (part.getPermissionContainer().getPolicy().hasPermission(context.getUser(), permission.getClass()) ||
-                        context.getUser().isAdministrator())
+                if (permissionContainer != null && permission != null)
+                {
+                    SecurityPolicy policy = permissionContainer.getPolicy();
+                    hasPermission = policy.hasPermission(context.getUser(), permission.getClass());
+                }
+
+                // If the permissionContainer is null, or the permission is missing, then we only show the webpart if
+                // the user is an admin.
+                if (hasPermission || isAdmin)
                 {
                     parts.add(part);
                 }
-            } else
+            }
+            else
             {
                 parts.add(part);
             }

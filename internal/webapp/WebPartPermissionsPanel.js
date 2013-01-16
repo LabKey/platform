@@ -48,10 +48,6 @@ Ext4.onReady(function(){
                 margin: '0 0 15 0'
             });
 
-            console.log(this.containerPath, this.containerPath == null);
-            console.log((this.containerPath == null || this.containerPath === LABKEY.container.path));
-            console.log(this.permission);
-            
             this.permissionCombo = Ext4.create('Ext.form.field.ComboBox', {
                 store: this.getPermissionStore(),
                 allowBlank: false,

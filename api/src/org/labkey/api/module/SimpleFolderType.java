@@ -196,6 +196,10 @@ public class SimpleFolderType extends MultiPortalFolderType
                 if (reference.getLocation() != null)
                     location = SimpleWebPartFactory.getInternalLocationName(reference.getLocation().toString());
                 Portal.WebPart webPart = factory.createWebPart(location);
+
+                if (reference.getPermission() != null)
+                    webPart.setPermission(reference.getPermission());
+                
                 for (Property prop : reference.getPropertyArray())
                     webPart.setProperty(prop.getName(), prop.getValue());
                 parts.add(webPart);
