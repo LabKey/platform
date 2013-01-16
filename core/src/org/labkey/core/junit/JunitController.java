@@ -33,6 +33,7 @@ import org.labkey.api.action.StatusReportingRunnableAction;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -345,14 +346,25 @@ public class JunitController extends SpringActionController
         {
             Map<String, List<Class>> testCases = JunitManager.getTestCases();
 
-            Map<String, List<String>> values = new HashMap<String, List<String>>();
+            Map<String, List<Map<String, Object>>> values = new HashMap<String, List<Map<String, Object>>>();
             for (String module : testCases.keySet())
             {
-                List<String> tests = new ArrayList<String>();
+                List<Map<String, Object>> tests = new ArrayList<Map<String, Object>>();
                 values.put("Remote " + module, tests);
-                for (Class clazz : testCases.get(module))
+                for (Class<Object> clazz : testCases.get(module))
                 {
-                    tests.add(clazz.getName());
+                    int timeout = TestTimeout.DEFAULT;
+                    // Check if the test has requested a non-standard timeout
+                    TestTimeout testTimeout = clazz.getAnnotation(TestTimeout.class);
+                    if (testTimeout != null)
+                    {
+                        timeout = testTimeout.value();
+                    }
+                    // Send back both the class name and the timeout
+                    Map<String, Object> testClass = new HashMap<String, Object>();
+                    testClass.put("className", clazz.getName());
+                    testClass.put("timeout", timeout);
+                    tests.add(testClass);
                 }
             }
 
