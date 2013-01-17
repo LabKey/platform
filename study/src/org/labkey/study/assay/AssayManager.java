@@ -471,8 +471,8 @@ public class AssayManager implements AssayService.Interface
             String searchTitle = StringUtils.trimToEmpty(name) + " " + StringUtils.trimToEmpty(instrument) + " " + StringUtils.trimToEmpty(provider.getName());
             String body = StringUtils.trimToEmpty(provider.getName()) + " " + StringUtils.trimToEmpty(description) + " " + StringUtils.trimToEmpty(comment) + runKeywords.toString();
             Map<String, Object> m = new HashMap<String, Object>();
-            m.put(SearchService.PROPERTY.displayTitle.toString(), name);
-            m.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+            m.put(SearchService.PROPERTY.title.toString(), name);
+            m.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
             m.put(SearchService.PROPERTY.categories.toString(), StudyManager.assayCategory.getName());
 
             String docId = "assay:" + c.getId() + ":" + protocol.getRowId();

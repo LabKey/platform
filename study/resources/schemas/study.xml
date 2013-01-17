@@ -454,6 +454,7 @@
       <ns:column columnName="AlternateId">
         <ns:description>A randomly generated alternate participant ID. This can be used in place of internal particiapnt IDs when publishing a study.</ns:description>
       </ns:column>
+      <ns:column columnName="LastIndexed"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequestActor" tableDbType="TABLE">

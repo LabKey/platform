@@ -22,15 +22,19 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -38,6 +42,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.data.Filter;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
@@ -58,6 +63,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -481,10 +487,6 @@ public abstract class VisitManager
                 if (null != potentiallyInsertedParticipants)
                 {
                     final ArrayList<String> ptids = new ArrayList<String>(potentiallyInsertedParticipants);
-                    ArrayList<Pair<String,String>> list = new ArrayList<Pair<String, String>>(ptids.size());
-                    for (String ptid : ptids)
-                        list.add(new Pair<String,String>(cid,ptid));
-                    ss.addParticipantIds(list);
                     Runnable r = new Runnable(){ public void run(){
                         StudyManager.indexParticipantView(ss.defaultTask(), _study.getContainer(), ptids);
                     }};
@@ -494,30 +496,10 @@ public abstract class VisitManager
                 {
                     Runnable r = new Runnable() { public void run()
                     {
-                        ResultSet rs = null;
-                        try
-                        {
-                            rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
-                                "SELECT container, participantid FROM study.participant study\n" +
-                                "    WHERE study.container=? AND NOT EXISTS (SELECT participantid FROM search.participantindex search\n" +
-                                "      WHERE search.container=? AND search.participantid=study.participantid)", new Object[]{cid,cid});
-                            ArrayList<Pair<String,String>> list = new ArrayList<Pair<String, String>>();
-                            while (rs.next())
-                                list.add(new Pair<String,String>(rs.getString(1),rs.getString(2)));
-                            ss.addParticipantIds(list);
-                            ArrayList<String> ptids = new ArrayList<String>(list.size());
-                            for (Pair<String,String> p : list)
-                                ptids.add(p.second);
-                            StudyManager.indexParticipantView(ss.defaultTask(), _study.getContainer(), ptids);
-                        }
-                        catch (SQLException x)
-                        {
-                            throw new RuntimeSQLException(x);
-                        }
-                        finally
-                        {
-                            ResultSetUtil.close(rs);
-                        }
+                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), cid);
+                        filter.addCondition(FieldKey.fromParts("LastIndexed"), null, CompareType.ISBLANK);
+                        List<String> ptids = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Collections.singleton("ParticipantId"), filter, null).getArrayList(String.class);
+                        StudyManager.indexParticipantView(ss.defaultTask(), _study.getContainer(), ptids);
                     } };
                     ss.defaultTask().addRunnable(r, SearchService.PRIORITY.group);
                 }

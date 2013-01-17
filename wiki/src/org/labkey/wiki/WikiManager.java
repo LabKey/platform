@@ -721,8 +721,8 @@ public class WikiManager implements WikiService
                 WikiRendererType rendererType = WikiRendererType.valueOf(rs.getString("renderertype"));
 
                 Map<String, Object> props = new HashMap<String, Object>();
-                props.put(SearchService.PROPERTY.displayTitle.toString(), wikiTitle);
-                props.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+                props.put(SearchService.PROPERTY.title.toString(), wikiTitle);
+                props.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
 
                 try
                 {

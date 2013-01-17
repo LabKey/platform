@@ -111,10 +111,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private static ExternalIndexManager _externalIndexManager;
 
-    static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary,
-        url, container, resourceId, uniqueId, navtrail }
+    static enum FIELD_NAMES
+    {
+        @Deprecated displayTitle,  // We no longer store this while indexing, but old documents may still have it.
+        title,                     // Used to be the "search" title (equivalent to keywordsMed), now the display title
 
-    private static enum SEARCH_PHASE {determineParticipantId, createQuery, buildSecurityFilter, search, processHits}
+        body,
+        keywordsLo,       // Low priority keywords: same weighting as body terms
+        keywordsMed,      // Medium priority keywords: weighted twice the body terms... e.g., terms in the title, subject, or other summary
+        keywordsHi,       // High priority keywords: weighted twice the medium keywords... these will dominate the search results, so probably not a good idea
+        uniqueIds,        // Weighted twice the medium keywords, but not analyzed... e.g., unique ids like PTIDs, sample IDs, etc.
+                          // Consider: Medium / Low priority unique ids?  Only difference is that they aren't analyzed.
+
+        summary,
+        url,
+        container,
+        resourceId,
+        uniqueId,
+        navtrail
+    }
+
+    private static enum SEARCH_PHASE {createQuery, buildSecurityFilter, search, processHits}
 
     private void initializeIndex()
     {
@@ -224,7 +241,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(
-            PROPERTY.categories.toString(), PROPERTY.displayTitle.toString(), PROPERTY.searchTitle.toString(),
+            PROPERTY.categories.toString(), PROPERTY.title.toString(), PROPERTY.keywordsLo.toString(),
+            PROPERTY.keywordsMed.toString(), PROPERTY.keywordsHi.toString(), PROPERTY.uniqueIds.toString(),
             PROPERTY.navtrail.toString(), PROPERTY.securableResourceId.toString());
 
     @Override
@@ -268,12 +286,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assert null != categories;
 
             String body = null;
-            String displayTitle = (String)props.get(PROPERTY.displayTitle.toString());
-            String searchTitle = (String)props.get(PROPERTY.searchTitle.toString());
+            String title = (String)props.get(PROPERTY.title.toString());
+
+            String keywordsMed = (String)props.get(PROPERTY.keywordsMed.toString());
 
             // Search title can be null
-            if (null == searchTitle)
-                searchTitle = "";
+            if (null == keywordsMed)
+                keywordsMed = "";
 
             try
             {
@@ -282,7 +301,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (null != customProperties && !customProperties.isEmpty())
                 {
                     for (String value : customProperties.values())
-                        searchTitle += " " + value;
+                        keywordsMed += " " + value;
                 }
             }
             catch (UnauthorizedException ue)
@@ -291,13 +310,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 // case, but skip the custom properties.
             }
 
-            // Fix #11393.  Can't append description to searchTitle in FileSystemResource() because constructor is too
+            // Fix #11393.  Can't append description to keywordMed in FileSystemResource() because constructor is too
             // early to retrieve description.  TODO: Move description into properties, instead of exposing it as a
             // top-level getter.  This is a bigger change, so we'll wait for 11.2.
             String description = r.getDescription();
 
             if (null != description)
-                searchTitle += " " + description;   
+                keywordsMed += " " + description;
 
             String type = r.getContentType();
 
@@ -331,10 +350,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         body = extractor.extract();
                         String extractedTitle = extractor.getTitle();
 
-                        if (StringUtils.isBlank(displayTitle))
-                            displayTitle = extractedTitle;
+                        if (StringUtils.isBlank(title))
+                            title = extractedTitle;
 
-                        searchTitle = searchTitle + " " + extractedTitle;
+                        keywordsMed = keywordsMed + " " + extractedTitle;
                     }
 
                     if (StringUtils.isEmpty(body))
@@ -342,8 +361,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
                     }
 
-                    if (null == displayTitle)
-                        logBadDocument("Null display title", r);
+                    if (null == title)
+                        logBadDocument("Null title", r);
                 }
                 else if (type.startsWith("text/") && !type.contains("xml"))
                 {
@@ -364,9 +383,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     body = handler.toString();
 
                     String extractedTitle = metadata.get(Metadata.TITLE);
-                    if (StringUtils.isBlank(displayTitle))
-                        displayTitle = extractedTitle;
-                    searchTitle = searchTitle + getInterestingMetadataProperties(metadata);
+                    if (StringUtils.isBlank(title))
+                        title = extractedTitle;
+                    keywordsMed = keywordsMed + getInterestingMetadataProperties(metadata);
                 }
 
                 fs.closeInputStream();
@@ -379,19 +398,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (null == url)
                 logBadDocument("Null url", r);
 
-            if (null == displayTitle)
-                logBadDocument("Null display title", r);
+            if (null == title)
+                logBadDocument("Null title", r);
 
             _log.debug("parsed " + url);
 
-            if (StringUtils.isBlank(searchTitle))
-                searchTitle = displayTitle;
+            if (StringUtils.isBlank(keywordsMed))
+                keywordsMed = title;
 
             // Add all container path parts to search keywords
             for (String part : c.getParsedPath())
-                searchTitle = searchTitle + " " + part;
+                keywordsMed = keywordsMed + " " + part;
 
-            String summary = extractSummary(body, displayTitle);
+            String summary = extractSummary(body, title);
             // Split the category string by whitespace, index each without stemming
             String[] categoryArray = categories.split("\\s+");
 
@@ -402,12 +421,29 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             // Index, but don't store
             doc.add(new Field(FIELD_NAMES.body.toString(), body, Field.Store.NO, Field.Index.ANALYZED));
-            doc.add(new Field(FIELD_NAMES.title.toString(), searchTitle, Field.Store.NO, Field.Index.ANALYZED));
+
+            String keywordsLo = (String)props.get(PROPERTY.keywordsLo.toString());
+
+            if (null != keywordsLo)
+                doc.add(new Field(FIELD_NAMES.keywordsLo.toString(), keywordsLo, Field.Store.NO, Field.Index.ANALYZED));
+
+            doc.add(new Field(FIELD_NAMES.keywordsMed.toString(), keywordsMed, Field.Store.NO, Field.Index.ANALYZED));
+
+            String keywordsHi = (String)props.get(PROPERTY.keywordsHi.toString());
+
+            if (null != keywordsHi)
+                doc.add(new Field(FIELD_NAMES.keywordsHi.toString(), keywordsHi, Field.Store.NO, Field.Index.ANALYZED));
+
+            String uniqueIds = (String)props.get(PROPERTY.uniqueIds.toString());
+
+            if (null != uniqueIds)
+                doc.add(new Field(FIELD_NAMES.uniqueIds.toString(), uniqueIds, Field.Store.NO, Field.Index.NOT_ANALYZED));
+
             for (String category : categoryArray)
                 doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
 
             // Store, but don't index
-            doc.add(new Field(FIELD_NAMES.displayTitle.toString(), displayTitle, Field.Store.YES, Field.Index.NO));
+            doc.add(new Field(FIELD_NAMES.title.toString(), title, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.summary.toString(), summary, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.url.toString(), url, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), Field.Store.YES, Field.Index.NOT_ANALYZED));
@@ -416,9 +452,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             if (null != resourceId && !resourceId.equals(r.getContainerId()))
                 doc.add(new Field(FIELD_NAMES.resourceId.toString(), resourceId, Field.Store.YES, Field.Index.NO));
+
             // Index the remaining properties, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())
             {
+                String key = entry.getKey();
+
+                // Skip known properties -- we added them above
+                if (KNOWN_PROPERTIES.contains(key))
+                    continue;
+
                 Object value = entry.getValue();
 
                 if (null != value)
@@ -426,13 +469,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     String stringValue = value.toString().toLowerCase();
 
                     if (stringValue.length() > 0)
-                    {
-                        String key = entry.getKey();
-
-                        // Skip known properties -- we added them above
-                        if (!KNOWN_PROPERTIES.contains(key))
-                            doc.add(new Field(key.toLowerCase(), stringValue, Field.Store.NO, Field.Index.ANALYZED));
-                    }
+                        doc.add(new Field(key.toLowerCase(), stringValue, Field.Store.NO, Field.Index.ANALYZED));
                 }
             }
 
@@ -920,15 +957,22 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
     
 
-    // Always search title and body, but boost title
-    private static final String[] standardFields = new String[]{FIELD_NAMES.title.toString(), FIELD_NAMES.body.toString()};
-    private static final Float[] standardBoosts = new Float[]{2.0f, 1.0f};
+    private static final String[] standardFields;
     private static final Map<String, Float> boosts = new HashMap<String, Float>();
 
     static
     {
-        for (int i = 0; i < standardFields.length; i++)
-            boosts.put(standardFields[i], standardBoosts[i]);
+        Map<FIELD_NAMES, Float> enumMap = new HashMap<FIELD_NAMES, Float>();
+        enumMap.put(FIELD_NAMES.body, 1.0f);
+        enumMap.put(FIELD_NAMES.keywordsLo, 1.0f);
+        enumMap.put(FIELD_NAMES.keywordsMed, 2.0f);
+        enumMap.put(FIELD_NAMES.title, 2.0f);          // TODO: Deprecated... old documents only
+        enumMap.put(FIELD_NAMES.keywordsHi, 4.0f);
+
+        for (Map.Entry<FIELD_NAMES, Float> entry : enumMap.entrySet())
+            boosts.put(entry.getKey().toString(), entry.getValue());
+
+        standardFields = boosts.keySet().toArray(new String[boosts.size()]);
     }
 
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
@@ -937,22 +981,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user,
+                               Container current, SearchScope scope, int offset, int limit) throws IOException
     {
         InvocationTimer<SEARCH_PHASE> iTimer = TIMER.getInvocationTimer();
+
         try
         {
             String sort = null;  // TODO: add sort parameter
             int hitsToRetrieve = offset + limit;
             boolean requireCategories = (null != categories);
-
-            if (!requireCategories)
-            {
-                iTimer.setPhase(SEARCH_PHASE.determineParticipantId);
-                // Boost "subject" results if this is a participant id
-                if (isParticipantId(user, StringUtils.strip(queryString, " +-")))
-                    categories = getCategories("subject");
-            }
 
             iTimer.setPhase(SEARCH_PHASE.createQuery);
 
@@ -1105,15 +1143,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 hit.url = hit.url + (-1 == hit.url.indexOf("?") ? "?" : "&") + docid;
             }
 
-            hit.displayTitle = doc.get(FIELD_NAMES.displayTitle.toString());
+            // Check for displayTitle to support old indexed documents TODO: Remove
+            hit.title = doc.get(FIELD_NAMES.displayTitle.toString());
 
             // No display title, try title
-            if (StringUtils.isBlank(hit.displayTitle))
-                hit.displayTitle = doc.get(FIELD_NAMES.title.toString());
+            if (StringUtils.isBlank(hit.title))
+                hit.title = doc.get(FIELD_NAMES.title.toString());
 
             // No title at all... just use URL
-            if (StringUtils.isBlank(hit.displayTitle))
-                hit.displayTitle = hit.url;
+            if (StringUtils.isBlank(hit.title))
+                hit.title = hit.url;
 
             // UNDONE FIELD_NAMES.navtree
             hit.navtrail = doc.get(FIELD_NAMES.navtrail.toString());

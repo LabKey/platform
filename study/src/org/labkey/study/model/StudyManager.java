@@ -143,6 +143,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -2545,9 +2546,7 @@ public class StudyManager
                 "GroupId IN (SELECT RowId FROM " + tableInfoParticipantGroup + " WHERE CategoryId = ?))",
                 study.getContainer().getId(), study.getContainer().getId(), categoryId);
 
-        SqlSelector selector = new SqlSelector(schema.getScope(), sql);
-
-        return selector.getArray(String.class);
+        return new SqlSelector(schema.getScope(), sql).getArray(String.class);
     }
 
     public static final int ALTERNATEID_DEFAULT_NUM_DIGITS = 6;
@@ -3362,12 +3361,12 @@ public class StudyManager
         Map<String, Object> props = new HashMap<String, Object>();
 
         props.put(SearchService.PROPERTY.categories.toString(), datasetCategory.toString());
-        props.put(SearchService.PROPERTY.displayTitle.toString(), StringUtils.defaultIfEmpty(dsd.getLabel(),dsd.getName()));
+        props.put(SearchService.PROPERTY.title.toString(), StringUtils.defaultIfEmpty(dsd.getLabel(),dsd.getName()));
         String name = dsd.getName();
         String label = StringUtils.equals(dsd.getLabel(),name) ? null : dsd.getLabel();
         String description = dsd.getDescription();
         String searchTitle = StringUtilsLabKey.joinNonBlank(" ", name, label, description);
-        props.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+        props.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
 
         body.append(searchTitle).append("\n");
 
@@ -3395,40 +3394,31 @@ public class StudyManager
         task.addResource(r, SearchService.PRIORITY.item);
     }
 
+    // Index all participants in all studies
     public static void indexParticipantView(final SearchService.IndexTask task)
     {
-        ResultSet rs = null;
-        try
-        {
-            SQLFragment f = new SQLFragment("SELECT DISTINCT container FROM study.participant");
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, false, false);
-            while (rs.next())
+        Selector selector = new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT DISTINCT Container FROM " + StudySchema.getInstance().getTableInfoParticipant());
+        selector.forEach(new Selector.ForEachBlock<String>() {
+            @Override
+            public void exec(String id) throws SQLException
             {
-                final String id = rs.getString(1);
                 final Container c = ContainerManager.getForId(id);
-                if (null == c)
-                    continue;
-                task.addRunnable(new Runnable()
+                if (null != c)
                 {
-                    public void run()
+                    task.addRunnable(new Runnable()
                     {
-                        indexParticipantView(task, c, null);
-                    }
-                }, SearchService.PRIORITY.group);
+                        public void run()
+                        {
+                            indexParticipantView(task, c, null);
+                        }
+                    }, SearchService.PRIORITY.group);
+                }
             }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        }, String.class);
     }
 
 
-    public static void indexParticipantView(final SearchService.IndexTask task, final Container c, List<String> ptids)
+    public static void indexParticipantView(final SearchService.IndexTask task, final Container c, @Nullable List<String> ptids)
     {
         if (null == c)
         {
@@ -3462,56 +3452,50 @@ public class StudyManager
             return;
         }
 
+        final Study study = StudyManager.getInstance().getStudy(c);
+        if (null == study)
+            return;
+        final String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false).toString();
 
-        ResultSet rs = null;
-        try
+        SQLFragment f = new SQLFragment("SELECT Container, ParticipantId FROM " + StudySchema.getInstance().getTableInfoParticipant().getSelectName());
+        String prefix = " WHERE ";
+        f.append(prefix).append(" Container = ?");
+        f.add(c);
+        prefix = " AND ";
+
+        if (null != ptids)
         {
-            Study study = StudyManager.getInstance().getStudy(c);
-            if (null == study)
-                return;
-            String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false).toString();
-
-            SQLFragment f = new SQLFragment("SELECT container, participantid FROM " + StudySchema.getInstance().getTableInfoParticipant());
-            String prefix = " WHERE ";
-            if (null != c)
+            f.append(prefix).append(" ParticipantId IN (");
+            String marker="?";
+            for (String ptid : ptids)
             {
-                f.append(prefix).append(" container = ?");
-                f.add(c);
-                prefix = " AND ";
+                f.append(marker);
+                f.add(ptid);
+                marker = ", ?";
             }
-            if (null != ptids)
-            {
-                f.append(prefix).append(" participantid IN (");
-                String marker="?";
-                for (String ptid : ptids)
-                {
-                    f.append(marker);
-                    f.add(ptid);
-                    marker = ",?";
-                }
-                f.append(")");
-            }
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, false, false);
+            f.append(")");
+        }
 
-            ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);
-            indexURL.setExtraPath(c.getId());
-            ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
-            executeURL.setExtraPath(c.getId());
-            
-            while (rs.next())
+        final ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);
+        indexURL.setExtraPath(c.getId());
+        final ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
+        executeURL.setExtraPath(c.getId());
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), f).forEach(new Selector.ForEachBlock<ResultSet>(){
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
-                String id = rs.getString(2);
+                final String id = rs.getString(2);
                 String displayTitle = "Study " + study.getLabel() + " -- " +
                         StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + id;
-                ActionURL execute = executeURL.clone().addParameter("participantId",String.valueOf(id));
-                Path p = new Path(c.getId(),id);
+                ActionURL execute = executeURL.clone().addParameter("participantId", String.valueOf(id));
+                Path p = new Path(c.getId(), id);
                 String docid = "participant:" + p.toString();
 
-                Map<String,Object> props = new HashMap<String,Object>();
+                Map<String, Object> props = new HashMap<String,Object>();
                 props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
-                props.put(SearchService.PROPERTY.participantId.toString(), id);
-                props.put(SearchService.PROPERTY.displayTitle.toString(), displayTitle);
-                props.put(SearchService.PROPERTY.searchTitle.toString(), id);
+                props.put(SearchService.PROPERTY.title.toString(), displayTitle);
+                props.put(SearchService.PROPERTY.uniqueIds.toString(), id);
                 props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 // need to figure out if all study users can see demographic data or not
@@ -3524,64 +3508,31 @@ public class StudyManager
                             "text/plain",
                             displayTitle.getBytes(),
                             execute, props
-                    );
+                    )
+                    {
+                        @Override
+                        public void setLastIndexed(long ms, long modified)
+                        {
+                            StudySchema ss = StudySchema.getInstance();
+                            new SqlExecutor(ss.getSchema()).execute("UPDATE " + ss.getTableInfoParticipant().getSelectName() +
+                                " SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?", new Timestamp(ms), c, id);
+                        }
+                    };
                     task.addResource(r, SearchService.PRIORITY.item);
                 }
                 else
                 {
                     // ActionResource
-                    ActionURL index = indexURL.clone().addParameter("participantId",id);
+                    ActionURL index = indexURL.clone().addParameter("participantId", id);
                     ActionResource r = new ActionResource(subjectCategory, docid, execute, index, props);
                     task.addResource(r, SearchService.PRIORITY.item);
+                    // If this is ever used then better update LastIndexed
                 }
             }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        catch (Throwable x)
-        {
-            _log.error("Unexpected error", x);
-            if (x instanceof RuntimeException)
-                throw (RuntimeException)x;
-            throw new RuntimeException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
     }
 
     
-    public static void indexParticipants(Container c)
-    {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        if (null == ss)
-            return;
-        
-        ResultSet rs = null;
-        try
-        {
-            SQLFragment f = new SQLFragment("SELECT container, participantid FROM " + StudySchema.getInstance().getTableInfoParticipant());
-            if (null != c)
-            {
-                f.append(" WHERE container = ?");
-                f.add(c);
-            }
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, false, false);
-            ss.addParticipantIds(rs);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-    }
-
     public void registerParticipantView(Module module, Resource ptidView)
     {
         if (_moduleParticipantViews == null)
@@ -3623,7 +3574,6 @@ public class StudyManager
                 }
                 StudyManager.indexDatasets(task, c, null);
                 StudyManager.indexParticipantView(task, c, null);
-                StudyManager.indexParticipants(c);
                 AssayService.get().indexAssays(task, c);
             }
         };

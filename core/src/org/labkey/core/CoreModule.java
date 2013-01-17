@@ -835,8 +835,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Map<String, Object> properties = new HashMap<String, Object>();
 
         assert (null != searchTitle);
-        properties.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
-        properties.put(SearchService.PROPERTY.displayTitle.toString(), displayTitle);
+        properties.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
+        properties.put(SearchService.PROPERTY.title.toString(), displayTitle);
         properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         startURL.setExtraPath(c.getId());

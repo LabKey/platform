@@ -443,7 +443,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
                 setBody(getWikiVersion().getBody());
                 _title = getWikiVersion().getTitle();
                 _type = getWikiVersion().getRendererTypeEnum();
-                _properties.put(SearchService.PROPERTY.displayTitle.toString(), v.getTitle().getSource());
+                _properties.put(SearchService.PROPERTY.title.toString(), v.getTitle().getSource());
             }
         }
 

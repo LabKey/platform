@@ -692,7 +692,7 @@ public class SearchController extends SpringActionController
                     JSONObject o = new JSONObject();
                     String id = StringUtils.isEmpty(hit.docid) ? String.valueOf(i) : hit.docid;
                     o.put("id", id);
-                    o.put("title", hit.displayTitle);
+                    o.put("title", hit.title);
                     o.put("container", hit.container);
                     o.put("url", hit.url);
                     o.put("summary", StringUtils.trimToEmpty(hit.summary));

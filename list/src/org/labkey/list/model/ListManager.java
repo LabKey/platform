@@ -376,7 +376,7 @@ public class ListManager implements SearchService.DocumentProvider
                     String documentId = getDocumentId(list, entityId);
                     Map<String, Object> props = new HashMap<String, Object>();
                     props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-                    props.put(SearchService.PROPERTY.displayTitle.toString(), titleTemplate.eval(map));
+                    props.put(SearchService.PROPERTY.title.toString(), titleTemplate.eval(map));
 
                     String body = bodyTemplate.eval(map);
 
@@ -453,7 +453,7 @@ public class ListManager implements SearchService.DocumentProvider
         String title = list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEntireListTitleTemplate()) ? "List " + list.getName() : list.getEntireListTitleTemplate();
 
         props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-        props.put(SearchService.PROPERTY.displayTitle.toString(), title);
+        props.put(SearchService.PROPERTY.title.toString(), title);
 
         if (!StringUtils.isEmpty(list.getDescription()))
             body.append(list.getDescription()).append("\n");

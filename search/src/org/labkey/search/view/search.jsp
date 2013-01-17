@@ -223,7 +223,7 @@
                 String summary = StringUtils.trimToNull(hit.summary);
                 %>
 
-                <a class="labkey-search-title" href="<%=h(href)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:600px;'><%
+                <a class="labkey-search-title" href="<%=h(href)%>"><%=h(hit.title)%></a><div style='margin-left:10px; width:600px;'><%
 
                 if (null != summary)
                 {
@@ -290,7 +290,7 @@
 
                     for (SearchService.SearchHit hit : result.hits)
                     {
-                        %><table><tr><td><img src="<%=contextPathStr%>/_icons/folder.gif"></td><td><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a></td></tr></table><%
+                        %><table><tr><td><img src="<%=contextPathStr%>/_icons/folder.gif"></td><td><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.title)%></a></td></tr></table><%
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
                         {

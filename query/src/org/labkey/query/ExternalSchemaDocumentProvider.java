@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -116,8 +115,8 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                         Map<String, Object> props = new HashMap<String,Object>();
 
                         props.put(SearchService.PROPERTY.categories.toString(), externalTableCategory.toString());
-                        props.put(SearchService.PROPERTY.displayTitle.toString(), "Table " + schemaName + "." + tableName);
-                        props.put(SearchService.PROPERTY.searchTitle.toString(), schemaName + " " + tableName);
+                        props.put(SearchService.PROPERTY.title.toString(), "Table " + schemaName + "." + tableName);
+                        props.put(SearchService.PROPERTY.keywordsMed.toString(), schemaName + " " + tableName);
 
                         if (!StringUtils.isEmpty(table.getDescription()))
                             body.append(table.getDescription()).append("\n");

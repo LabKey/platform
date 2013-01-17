@@ -21,25 +21,17 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TempTableInfo;
-import org.labkey.api.data.TempTableWriter;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.iterator.CloseableIterator;
-import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.reader.Loader;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Formats;
@@ -47,10 +39,8 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.RateLimiter;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.URLHelper;
@@ -61,13 +51,10 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.view.DefaultSearchResultTemplate;
 
 import javax.servlet.ServletContextEvent;
-import java.io.IOException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -132,7 +119,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         addSearchCategory(navigationCategory);
 
         // Hack to work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
-        // TODO: Remove this once Oracle fixes it; it's claimed to be fixed in 1.7.0_08
+        // TODO: Remove this once Oracle fixes it; it's claimed to be fixed in Java 7 u11 (or perhaps it's u12)
         if (SystemUtils.IS_JAVA_1_7)
         {
             MemTracker.register(new MemTrackerListener()
@@ -175,34 +162,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public void addPathToCrawl(Path path, Date next)
     {
         DavCrawler.getInstance().addPathToCrawl(path, next);
-    }
-
-
-    final Object _ptidsLock = new Object();
-    HashSet<Pair<String,String>> _ptids = new HashSet<Pair<String,String>>();
-
-
-    public void addParticipantIds(ResultSet ptids) throws SQLException
-    {
-        synchronized (_ptidsLock)
-        {
-            while (ptids.next())
-            {
-                Pair<String,String> p = new Pair<String,String>(ptids.getString(1),ptids.getString(2));
-                if (null==p.first || null==p.second)
-                    continue;
-                _ptids.add(p);
-            }
-        }
-    }
-
-
-    public void addParticipantIds(Collection<Pair<String,String>> ptids)
-    {
-        synchronized (_ptidsLock)
-        {
-            _ptids.addAll(ptids);
-        }
     }
 
 
@@ -918,24 +877,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         }
                         i._run.run();
                     }
-
-                    if (_runQueue.isEmpty())
-                    {
-                        HashSet<Pair<String,String>> ptids = null;
-
-                        synchronized (_ptidsLock)
-                        {
-                            if (!_ptids.isEmpty())
-                            {
-                                ptids = _ptids;
-                                _ptids = new HashSet<Pair<String, String>>();
-                            }
-                        }
-
-                        if (null != ptids)
-                            indexPtids(ptids);
-                        //_itemQueue.add(_commitItem);
-                    }
                 }
                 catch (InterruptedException x)
                 {
@@ -1268,103 +1209,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
         return null;
     }
-    
-
-    public boolean isParticipantId(User user, String ptid)
-    {
-        ptid = StringUtils.trim(ptid);
-        if (StringUtils.isEmpty(ptid))
-            return false;
-        ResultSet rs = null;
-        try
-        {
-            rs = Table.executeQuery(getSchema(),
-                "SELECT Container FROM search.ParticipantIndex WHERE ParticipantID=?",
-                new Object[] {ptid});
-            while (rs.next())
-            {
-                String id = rs.getString(1);
-                Container c = ContainerManager.getForId(id);
-                if (null != c && c.hasPermission(user, ReadPermission.class))
-                    return true;
-            }
-            return false;
-        }
-        catch (SQLException x)
-        {
-            _log.error("unexpected error", x);
-            return false;
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-    }
-
-
-    protected void indexPtids(final Set<Pair<String,String>> ptids) throws IOException, SQLException
-    {
-        Loader loader = new Loader() {
-            @Override
-            public ColumnDescriptor[] getColumns() throws IOException
-            {
-                return new ColumnDescriptor[] {
-                    new ColumnDescriptor("Container", String.class),
-                    new ColumnDescriptor("ParticipantID", String.class)
-                };
-            }
-
-            @Override
-            public List<Map<String, Object>> load() throws IOException
-            {
-                RowMapFactory<Object> f = new RowMapFactory<Object>("Container", "ParticipantID");
-                ArrayList<Map<String, Object>> list = new ArrayList<Map<String, Object>>(ptids.size());
-                for (Pair<String,String> p : ptids)
-                {
-                    Map<String, Object> m = f.getRowMap(new Object[] {p.first, p.second});
-                    list.add(m);
-                }
-                return list;
-            }
-
-            @Override
-            public CloseableIterator<Map<String, Object>> iterator()
-            {
-                throw new UnsupportedOperationException(); // TODO: Implement
-            }
-        };
-
-        TempTableWriter ttw = new TempTableWriter(loader);
-        DbSchema search = getSchema();
-        TempTableInfo tinfo = null;
-
-        try
-        {
-            tinfo = ttw.loadTempTable(search);
-            
-            SQLFragment sqlf = new SQLFragment("CREATE INDEX tmp_ix ON " + tinfo.getTempTableName() + "(container,participantid)");
-            if (search.getSqlDialect().isPostgreSQL())
-                sqlf.append("\n;ANALYZE " + tinfo.getTempTableName() + ";");
-            Table.execute(search, sqlf);
-
-            Date now = new Date(System.currentTimeMillis());
-            Table.execute(search,
-                    "UPDATE search.ParticipantIndex SET LastIndexed=? " +
-                    "WHERE EXISTS (SELECT ParticipantId FROM " + tinfo.getTempTableName() + " F WHERE F.Container = search.ParticipantIndex.Container AND F.ParticipantID = search.ParticipantIndex.ParticipantID)",
-                    now);
-            Table.execute(search,
-                    "INSERT INTO search.ParticipantIndex (Container, ParticipantID, LastIndexed) " +
-                    "SELECT F.Container, F.ParticipantID, ? " +
-                    "FROM " + tinfo.getTempTableName() + " F " +
-                    "WHERE NOT EXISTS (SELECT ParticipantID FROM search.ParticipantIndex T WHERE F.Container = T.Container AND F.ParticipantID = T.ParticipantID)",
-                    now);
-        }
-        finally
-        {
-            if (null != tinfo)
-                tinfo.delete();
-        }
-    }
 
 
     protected abstract void index(String id, WebdavResource r, Map preprocessProps);
@@ -1549,10 +1393,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         try
         {
             DbSchema search = getSchema();
-            Table.execute(search,
-                    "DELETE FROM search.ParticipantIndex " +
-                    "WHERE LastIndexed < ?",
-                    new Date(HeartBeat.currentTimeMillis() - 7*24*60*60*1000L));
+
+            // TODO: Maintenance task to remove documents for participants that have been deleted
+
             Table.execute(search, "DELETE FROM search.CrawlResources WHERE parent NOT IN (SELECT id FROM search.CrawlCollections)");
 //            if (search.getSqlDialect().isPostgreSQL())
 //            {

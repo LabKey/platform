@@ -281,7 +281,7 @@ public class RRF_Loader extends Job
 
             Map<String, Object> map = new HashMap<String, Object>();
             map.put(SearchService.PROPERTY.categories.toString(), UmlsController.umlsCategory.toString());
-            map.put(SearchService.PROPERTY.displayTitle.toString(), title);
+            map.put(SearchService.PROPERTY.title.toString(), title);
             if (!links.isEmpty())
             {
                 String nav = NavTree.toJS(links, null, false).toString();

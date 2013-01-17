@@ -18,28 +18,24 @@ package org.labkey.core.search;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.data.Container;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -155,34 +151,30 @@ public class NoopSearchService implements SearchService
     };
 
 
+    @Override
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return null;
     }
 
+    @Override
     public IndexTask defaultTask()
     {
         return _dummyTask;
     }
 
+    @Override
     public IndexTask createTask(String description)
     {
         return _dummyTask;
     }
 
+    @Override
     public void addPathToCrawl(Path path, Date d)
     {
     }
 
-    public void addParticipantIds(Collection<Pair<String,String>> ptids)
-    {
-    }
-
-    public void addParticipantIds(ResultSet ptids) throws SQLException
-    {
-        while (ptids.next()) {}
-    }
-
+    @Override
     public void deleteResource(String identifier)
     {
     }
@@ -192,6 +184,7 @@ public class NoopSearchService implements SearchService
     {
     }
 
+    @Override
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
     {
     }
@@ -225,60 +218,67 @@ public class NoopSearchService implements SearchService
         return null;
     }
 
-    public boolean isParticipantId(User user, String ptid)
-    {
-        return false;
-    }
-
+    @Override
     public void clear()
     {
     }
 
+    @Override
     public void clearLastIndexed()
     {
     }
 
+    @Override
     public List<SearchCategory> getSearchCategories()
     {
         return null;
     }
 
+    @Override
     public void addSearchCategory(SearchCategory category)
     {
 
     }
 
+    @Override
     public List<IndexTask> getTasks()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public boolean isBusy()
     {
         return false;
     }
 
+    @Override
     public void waitForIdle() throws InterruptedException
     {
     }
 
+    @Override
     public void setLastIndexedForPath(Path path, long time, long modified)
     {
     }
 
+    @Override
     public void deleteContainer(String id)
     {
     }
 
+    @Override
     public String escapeTerm(String term)
     {
         return StringUtils.trimToEmpty(term);
     }
 
+    @Override
     public void purgeQueues()
     {
     }
 
+    @Override
     public void start()
     {
     }
@@ -288,6 +288,7 @@ public class NoopSearchService implements SearchService
     {
     }
 
+    @Override
     public void pauseCrawler()
     {
     }
@@ -298,6 +299,7 @@ public class NoopSearchService implements SearchService
         return null;
     }
 
+    @Override
     public boolean isRunning()
     {
         return false;
@@ -320,46 +322,56 @@ public class NoopSearchService implements SearchService
     {
     }
 
+    @Override
     public IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since)
     {
         return null==task?_dummyTask:task;
     }
 
+    @Override
     public IndexTask indexProject(@Nullable IndexTask task, Container project)
     {
         return null==task?_dummyTask:task;
     }
 
+    @Override
     public void indexFull(boolean force)
     {
     }
 
+    @Override
     public void addDocumentProvider(DocumentProvider provider)
     {
     }
 
+    @Override
     public void addDocumentParser(DocumentParser parser)
     {
     }
 
+    @Override
     public void notFound(URLHelper url)
     {
     }
 
+    @Override
     public List<SearchCategory> getCategories(String categories)
     {
         return null;
     }
 
+    @Override
     public void maintenance()
     {
     }
 
+    @Override
     public boolean accept(WebdavResource r)
     {
         return true;
     }
 
+    @Override
     public DbSchema getSchema()
     {
         return null;
