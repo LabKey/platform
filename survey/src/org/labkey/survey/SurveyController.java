@@ -481,28 +481,28 @@ public class SurveyController extends SpringActionController
 
                             Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
 
-                            if (!row.isEmpty())
+                            if (survey.isNew())
                             {
-                                if (survey.isNew())
+                                if (!row.isEmpty())
                                 {
                                     // update the survey instance with the key for the answers so that existing answers can
                                     // be updated.
                                     Object key = row.get(pk.toString());
                                     survey.setResponsesPk(String.valueOf(key));
-
-                                    // set the initial status to Draft
-                                    if (!form.isSubmitted())
-                                        survey.setStatus("Draft");
                                 }
 
-                                survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
-
-                                response.put("surveyResults", row);
-                                response.put("survey", new JSONObject(survey));
-
-                                dbschema.getScope().commitTransaction();
+                                // set the initial status to Draft
+                                if (!form.isSubmitted())
+                                    survey.setStatus("Draft");
                             }
-                            response.put("success", !row.isEmpty());
+
+                            survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
+
+                            response.put("surveyResults", row);
+                            response.put("survey", new JSONObject(survey));
+
+                            dbschema.getScope().commitTransaction();
+                            response.put("success", true);
                         }
                     }
                     finally
@@ -571,6 +571,10 @@ public class SurveyController extends SpringActionController
     {
         TableInfo table = form.getTable();
         Map<String, Object> values = form.getTypedColumns();
+
+        // nothing to update
+        if (values.isEmpty())
+            return Collections.emptyMap();
 
         QueryUpdateService qus = table.getUpdateService();
         if (qus == null)

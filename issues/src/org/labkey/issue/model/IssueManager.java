@@ -807,7 +807,7 @@ public class IssueManager
         if (null == task || null == m)
             return;
         String title = String.valueOf(m.get("title"));
-        m.put(SearchService.PROPERTY.displayTitle.toString(), id + " : " + title);
+        m.put(SearchService.PROPERTY.title.toString(), id + " : " + title);
         m.put("comment",null);
         m.put("_row",null);
         task.addResource(new IssueResource(id, m, comments), SearchService.PRIORITY.item);
