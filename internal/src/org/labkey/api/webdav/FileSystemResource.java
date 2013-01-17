@@ -114,8 +114,8 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         super(path);
         setSearchCategory(SearchService.fileCategory);
-        setSearchProperty(SearchService.PROPERTY.displayTitle, path.getName());
-        setSearchProperty(SearchService.PROPERTY.searchTitle, FileUtil.getSearchTitle(path.getName()));
+        setSearchProperty(SearchService.PROPERTY.title, path.getName());
+        setSearchProperty(SearchService.PROPERTY.keywordsMed, FileUtil.getSearchTitle(path.getName()));
     }
 
     protected FileSystemResource(Path folder, String name)

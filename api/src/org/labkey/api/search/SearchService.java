@@ -51,8 +51,6 @@ public interface SearchService
 {
     static final Logger _log = Logger.getLogger(SearchService.class);
 
-    public static final int DEFAULT_PAGE_SIZE = 20;
-
     public static final SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
     public static final SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
 
@@ -76,11 +74,13 @@ public interface SearchService
 
     enum PROPERTY
     {
-        displayTitle("displayTitle"),
-        searchTitle("searchTitle"),
+        title("title"),
+        keywordsLo("keywordsLo"),
+        keywordsMed("keywordsMed"),
+        keywordsHi("keywordsHi"),
+        uniqueIds("uniqueIds"),
         categories("searchCategories"),
         securableResourceId(SecurableResource.class.getName()),
-        participantId("org.labkey.study#StudySubject"),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()
 
         private final String _propName;
@@ -200,7 +200,7 @@ public interface SearchService
     {
         public String docid;
         public String container;
-        public String displayTitle;
+        public String title;
         public String summary;
         public String url;
         public String navtrail;
@@ -218,12 +218,6 @@ public interface SearchService
     public String escapeTerm(String term);
     
     public List<SearchCategory> getSearchCategories();
-
-    public boolean isParticipantId(User user, String ptid);
-
-    // CONSIDER: async version
-    // public Future<Boolean> isParticipantId(User user);
-
 
     //
     // index
@@ -257,13 +251,6 @@ public interface SearchService
     IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since);
     IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
     void indexFull(boolean force);
-
-    // container, ptid pairs
-    void addParticipantIds(Collection<Pair<String,String>> ptids);
-
-    // container, ptid resultset
-    void addParticipantIds(ResultSet ptids) throws SQLException;
-
 
     /** an indicator that there are a lot of things in the queue */
     boolean isBusy();

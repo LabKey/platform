@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -640,7 +639,7 @@ public class OntologyManager
             for (String uri : uris)
             {
                 params[1] = uri;
-                executor.execute(new SQLFragment(sql, params));
+                executor.execute(sql, params);
             }
         }
         finally
@@ -3609,7 +3608,7 @@ public class OntologyManager
             findMap.put("container", findMap.size());
 
             findMap.put(SearchService.PROPERTY.categories.toString(), findMap.size());
-            findMap.put(SearchService.PROPERTY.displayTitle.toString(), findMap.size());
+            findMap.put(SearchService.PROPERTY.title.toString(), findMap.size());
             findMap.put(SearchService.PROPERTY.securableResourceId.toString(), findMap.size());
         }
 
@@ -3645,7 +3644,7 @@ public class OntologyManager
             {
                 Map<String,Object> m = f.getRowMap(rs);
                 String propertyURI = (String)m.get("propertyUri");
-                m.put(PROPERTY.displayTitle.toString(), propertyURI);
+                m.put(PROPERTY.title.toString(), propertyURI);
 
                 String desc = (String)m.get("description");
                 String label = (String)m.get("label");
