@@ -194,25 +194,30 @@ public class TriggerDataBuilderHelper
         @Override
         public boolean next() throws BatchValidationException
         {
-            boolean ret = getInput().next();
-            if (ret)
+            boolean hasNext = false;
+            try
             {
-                int rowNumber = (Integer)getInput().get(0);
-                Map<String,Object> newRow = getInput().getMap();
-                try
+                hasNext = getInput().next();
+                if (hasNext)
                 {
-                    _target.fireRowTrigger(_c, TableInfo.TriggerType.INSERT, false, rowNumber, newRow, null, _extraContext);
+                    int rowNumber = (Integer)getInput().get(0);
+                    Map<String,Object> newRow = getInput().getMap();
+                    try
+                    {
+                        _target.fireRowTrigger(_c, TableInfo.TriggerType.INSERT, false, rowNumber, newRow, null, _extraContext);
+                    }
+                    catch (ValidationException vex)
+                    {
+                        getErrors().addRowError(vex.fillIn(_target.getPublicSchemaName(), _target.getName(), newRow, rowNumber));
+                    }
                 }
-                catch (ValidationException vex)
-                {
-                    getErrors().addRowError(vex.fillIn(_target.getPublicSchemaName(), _target.getName(), newRow, rowNumber));
-                }
+                return hasNext;
             }
-            else
+            finally
             {
-                _target.fireBatchTrigger(_c, TableInfo.TriggerType.INSERT, false, getErrors(), _extraContext);
+                if (!hasNext)
+                    _target.fireBatchTrigger(_c, TableInfo.TriggerType.INSERT, false, getErrors(), _extraContext);
             }
-            return ret;
         }
     }
 }

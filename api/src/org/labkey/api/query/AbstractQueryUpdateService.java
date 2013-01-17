@@ -179,6 +179,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             out = helper.after(importETL);
 
+        if (hasTableScript)
+        {
+            context.setFailFast(false);
+            context.setMaxRowErrors(Math.max(context.getMaxRowErrors(),1000));
+        }
         int count = _pump(out, outputRows, context);
         return context.getErrors().hasErrors() ? 0 : count;
     }
