@@ -34,9 +34,9 @@ import java.util.Date;
  * User: jeckels
  * Date: 11/7/12
  */
-public class TableUpdaterFileMoveListener implements FileMoveListener
+public class TableUpdaterFileListener implements FileListener
 {
-    private static final Logger LOG = Logger.getLogger(TableUpdaterFileMoveListener.class);
+    private static final Logger LOG = Logger.getLogger(TableUpdaterFileListener.class);
 
     private final TableInfo _table;
     private final String _pathColumn;
@@ -101,7 +101,7 @@ public class TableUpdaterFileMoveListener implements FileMoveListener
         }
     }
 
-    public TableUpdaterFileMoveListener(TableInfo table, String pathColumn, PathGetter pathGetter)
+    public TableUpdaterFileListener(TableInfo table, String pathColumn, PathGetter pathGetter)
     {
         _table = table;
         _pathColumn = pathColumn;
@@ -109,10 +109,15 @@ public class TableUpdaterFileMoveListener implements FileMoveListener
     }
 
     @Override
-    public void fileMoved(@NotNull File srcFile, @NotNull File destFile, @Nullable User user, @Nullable Container container)
+    public void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container)
     {
-        String srcPath = _pathGetter.get(srcFile);
-        String destPath = _pathGetter.get(destFile);
+    }
+
+    @Override
+    public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    {
+        String srcPath = _pathGetter.get(src);
+        String destPath = _pathGetter.get(dest);
 
         DbSchema schema = _table.getSchema();
         SqlDialect dialect = schema.getSqlDialect();
@@ -143,11 +148,11 @@ public class TableUpdaterFileMoveListener implements FileMoveListener
         singleEntrySQL.add(srcPath);
 
         int rows = new SqlExecutor(schema).execute(singleEntrySQL);
-        LOG.info("Updated " + rows + " row in " + _table + " for move from " + srcFile + " to " + destFile);
+        LOG.info("Updated " + rows + " row in " + _table + " for move from " + src + " to " + dest);
 
         // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
         // directory or it doesn't exist), then try to fix up child records
-        if (!destFile.isFile())
+        if (!dest.isFile())
         {
             if (!srcPath.endsWith(_pathGetter.getSeparatorSuffix()))
             {
@@ -166,7 +171,7 @@ public class TableUpdaterFileMoveListener implements FileMoveListener
             childPathsSQL.append(" = 1");
 
             int childRows = new SqlExecutor(schema).execute(childPathsSQL);
-            LOG.info("Updated " + childRows + " child paths in " + _table + " rows for move from " + srcFile + " to " + destFile);
+            LOG.info("Updated " + childRows + " child paths in " + _table + " rows for move from " + src + " to " + dest);
         }
     }
 }

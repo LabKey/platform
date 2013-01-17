@@ -757,7 +757,6 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         String dir;
         String name;
-        String state = message;
         File f = getFile();
         if (f != null)
         {
@@ -796,15 +795,6 @@ public class FileSystemResource extends AbstractWebdavResource
         event.setComment(message);
 
         AuditLogService.get().addEvent(event);
-
-        if ("created".equalsIgnoreCase(state))
-        {
-            WebdavService.get().fireWebdavCreated(this, getContainer(), context.getUser());
-        }
-        else if ("deleted".equalsIgnoreCase(state))
-        {
-            WebdavService.get().fireWebdavDeleted(this, getContainer(), context.getUser());
-        }
 
         //AuditLogService.get().addEvent(context.getUser(), getContainer(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
 /*

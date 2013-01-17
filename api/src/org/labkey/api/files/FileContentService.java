@@ -142,6 +142,7 @@ public interface FileContentService
 
     public void moveFileRoot(File prev, File dest, @Nullable User user, @Nullable Container container);
 
+    public void fireFileCreateEvent(@NotNull File created, @Nullable User user, @Nullable Container container);
     public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
-    public void addFileMoveListener(FileMoveListener listener);
+    public void addFileListener(FileListener listener);
 }

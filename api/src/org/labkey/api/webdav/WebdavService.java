@@ -173,43 +173,4 @@ public class WebdavService
     {
         return ServiceRegistry.get(WebdavResolver.class);
     }
-
-    public interface WebdavListener
-    {
-        void webdavCreated(WebdavResource resource, Container container, User user);
-
-        void webdavDeleted(WebdavResource resource, Container container, User user);
-    }
-
-    private static final List<WebdavListener> _listeners = new CopyOnWriteArrayList<WebdavListener>();
-
-    public void addWebdavListener(WebdavListener listener)
-    {
-        _listeners.add(listener);
-    }
-
-    private List<WebdavListener> getListeners()
-    {
-        return new ArrayList<WebdavListener>(_listeners);
-    }
-
-    public void fireWebdavCreated(WebdavResource resource, Container container, User user)
-    {
-        List<WebdavListener> list = getListeners();
-
-        for (WebdavListener l : list)
-        {
-            l.webdavCreated(resource, container, user);
-        }
-    }
-
-    public void fireWebdavDeleted(WebdavResource resource, Container container, User user)
-    {
-        List<WebdavListener> list = getListeners();
-
-        for (WebdavListener l : list)
-        {
-            l.webdavDeleted(resource, container, user);
-        }
-    }
 }

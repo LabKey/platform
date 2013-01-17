@@ -28,14 +28,22 @@ import java.io.File;
  * User: jeckels
  * Date: 11/7/12
  */
-public interface FileMoveListener
+public interface FileListener
 {
     /**
+     * Called AFTER the file has already been created on disk
+     * @param created newly created resource
+     * @param user if available, the user who initiated the create
+     * @param container if available, the container in which the create was initiated
+     */
+    public void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container);
+
+    /**
      * Called AFTER the file has already been moved on disk
-     * @param srcFile original location of the file
-     * @param destFile new location of the file
+     * @param src
+     * @param dest
      * @param user if available, the user who initiated the move
      * @param container if available, the container in which the move was initiated
      */
-    public void fileMoved(@NotNull File srcFile, @NotNull File destFile, @Nullable User user, @Nullable Container container);
+    public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
 }
