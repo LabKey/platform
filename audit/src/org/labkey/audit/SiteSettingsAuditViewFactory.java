@@ -18,22 +18,26 @@ package org.labkey.audit;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.*;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
-import java.util.List;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.io.Writer;
-import java.io.IOException;
+import java.util.List;
 
 /*
  * User: Dave
@@ -62,6 +66,7 @@ public class SiteSettingsAuditViewFactory extends SimpleAuditViewFactory
     {
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
         view.setSort(new Sort("-Date"));
+        view.setShowDetailsColumn(true);
 
         return view;
     }

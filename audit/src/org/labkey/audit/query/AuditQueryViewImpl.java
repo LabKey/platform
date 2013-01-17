@@ -44,6 +44,9 @@ public class AuditQueryViewImpl extends AuditLogQueryView
     public AuditQueryViewImpl(UserSchema schema, QuerySettings settings, @Nullable SimpleFilter filter)
     {
         super(schema, settings, filter);
+
+        // Turn off the default QueryView details column.
+        setShowDetailsColumn(false);
     }
 
     public void addDisplayColumn(int index, DisplayColumn dc)
@@ -53,9 +56,6 @@ public class AuditQueryViewImpl extends AuditLogQueryView
 
     public DataView createDataView()
     {
-        // Turn off the default QueryView details column.
-        setShowDetailsColumn(false);
-
         DataView view = super.createDataView();
 
         view.getDataRegion().setShadeAlternatingRows(true);
