@@ -21,7 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.files.TableUpdaterFileMoveListener;
+import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.security.User;
 
 import java.io.File;
@@ -30,9 +30,9 @@ import java.io.File;
  * User: jeckels
  * Date: 11/7/12
  */
-public class ExpDataFileMoveListener extends TableUpdaterFileMoveListener
+public class ExpDataFileListener extends TableUpdaterFileListener
 {
-    public ExpDataFileMoveListener()
+    public ExpDataFileListener()
     {
         super(ExperimentService.get().getTinfoData(), "DataFileUrl", Type.uri);
     }

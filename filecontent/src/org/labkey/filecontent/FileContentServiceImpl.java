@@ -35,7 +35,7 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.FileMoveListener;
+import org.labkey.api.files.FileListener;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
@@ -72,7 +72,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     static Logger _log = Logger.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
 
-    private List<FileMoveListener> _fileMoveListeners = new CopyOnWriteArrayList<FileMoveListener>();
+    private List<FileListener> _fileListeners = new CopyOnWriteArrayList<FileListener>();
 
     enum Props {
         root,
@@ -737,21 +737,30 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
+    @Override
+    public void fireFileCreateEvent(@NotNull File created, @Nullable User user, @Nullable Container container)
+    {
+        for (FileListener fileListener : _fileListeners)
+        {
+            fileListener.fileCreated(created, user, container);
+        }
+    }
+
     public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
         // Make sure that we've got the best representation of the file that we can
         src = FileUtil.getAbsoluteCaseSensitiveFile(src);
         dest = FileUtil.getAbsoluteCaseSensitiveFile(dest);
-        for (FileMoveListener fileMoveListener : _fileMoveListeners)
+        for (FileListener fileListener : _fileListeners)
         {
-            fileMoveListener.fileMoved(src, dest, user, container);
+            fileListener.fileMoved(src, dest, user, container);
         }
     }
 
     @Override
-    public void addFileMoveListener(FileMoveListener listener)
+    public void addFileListener(FileListener listener)
     {
-        _fileMoveListeners.add(listener);
+        _fileListeners.add(listener);
     }
 
     public static FileContentServiceImpl getInstance()

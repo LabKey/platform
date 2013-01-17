@@ -36,7 +36,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.TableUpdaterFileMoveListener;
+import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
@@ -222,9 +222,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AuditLogService.get().addAuditViewFactory(ExperimentAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(SampleSetAuditViewFactory.getInstance());
 
-        ServiceRegistry.get(FileContentService.class).addFileMoveListener(new ExpDataFileMoveListener());
-        ServiceRegistry.get(FileContentService.class).addFileMoveListener(new TableUpdaterFileMoveListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileMoveListener.Type.filePath));
-        ServiceRegistry.get(FileContentService.class).addFileMoveListener(new FileLinkFileMoveListener());
+        ServiceRegistry.get(FileContentService.class).addFileListener(new ExpDataFileListener());
+        ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath));
+        ServiceRegistry.get(FileContentService.class).addFileListener(new FileLinkFileListener());
 
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {

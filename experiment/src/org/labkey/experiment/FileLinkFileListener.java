@@ -28,8 +28,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.files.FileMoveListener;
-import org.labkey.api.files.TableUpdaterFileMoveListener;
+import org.labkey.api.files.FileListener;
+import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.security.User;
 
 import java.io.File;
@@ -41,9 +41,14 @@ import java.util.Map;
  * User: jeckels
  * Date: 11/8/12
  */
-public class FileLinkFileMoveListener implements FileMoveListener
+public class FileLinkFileListener implements FileListener
 {
-    private static final Logger LOG = Logger.getLogger(FileLinkFileMoveListener.class);
+    private static final Logger LOG = Logger.getLogger(FileLinkFileListener.class);
+
+    @Override
+    public void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container)
+    {
+    }
 
     @Override
     public void fileMoved(@NotNull File srcFile, @NotNull File destFile, @Nullable User user, @Nullable Container container)
@@ -135,7 +140,7 @@ public class FileLinkFileMoveListener implements FileMoveListener
                     if (column != null)
                     {
                         // Migrate any paths that match this file move
-                        TableUpdaterFileMoveListener updater = new TableUpdaterFileMoveListener(tableInfo, column.getColumnName(), TableUpdaterFileMoveListener.Type.filePath);
+                        TableUpdaterFileListener updater = new TableUpdaterFileListener(tableInfo, column.getColumnName(), TableUpdaterFileListener.Type.filePath);
                         updater.fileMoved(srcFile, destFile, user, container);
                     }
                 }

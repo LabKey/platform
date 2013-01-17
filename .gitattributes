@@ -1106,7 +1106,7 @@ experiment/src/org/labkey/experiment/DataURLRelativizer.java -text
 experiment/src/org/labkey/experiment/DefaultCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/DerivedSamplePropertyHelper.java -text
 experiment/src/org/labkey/experiment/DotGraph.java -text
-experiment/src/org/labkey/experiment/ExpDataFileMoveListener.java -text
+experiment/src/org/labkey/experiment/ExpDataFileListener.java -text
 experiment/src/org/labkey/experiment/ExperimentAuditViewFactory.java -text
 experiment/src/org/labkey/experiment/ExperimentModule.java -text
 experiment/src/org/labkey/experiment/ExperimentRunDetails.jsp -text
@@ -1115,7 +1115,7 @@ experiment/src/org/labkey/experiment/ExperimentRunGraph.java -text
 experiment/src/org/labkey/experiment/ExperimentRunWebPartFactory.java -text
 experiment/src/org/labkey/experiment/ExternalDocsLabelCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/ExternalDocsURLCustomPropertyRenderer.java -text
-experiment/src/org/labkey/experiment/FileLinkFileMoveListener.java -text
+experiment/src/org/labkey/experiment/FileLinkFileListener.java -text
 experiment/src/org/labkey/experiment/LSIDRelativizer.java -text
 experiment/src/org/labkey/experiment/LineageGraphDisplayColumn.java -text
 experiment/src/org/labkey/experiment/MoveRunsBean.java -text
