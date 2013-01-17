@@ -92,7 +92,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
                         return getQueryTable().createObjectURI();
                     }
                 };
-                for (int i=1 ; i<it.getColumnCount() ; i++)
+                for (int i=1 ; i<=it.getColumnCount() ; i++)
                 {
                     if (null != objectUriIndex && i == objectUriIndex)
                         out.addCoaleseColumn(objectUriColumn.getName(), i, call);
