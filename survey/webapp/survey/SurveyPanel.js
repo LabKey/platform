@@ -642,10 +642,6 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     addSurveyEndPanel : function() {
 
         // add a final panel that has the Save/Submit buttons and required field checks
-console.log(this.submitted);
-console.log(this.submittedBy);
-console.log(this.isSubmitted);
-console.log(this.canEdit);
         this.updateSubmittedInfo = Ext4.create('Ext.form.DisplayField', {
             hideLabel: true,
             width: 250,

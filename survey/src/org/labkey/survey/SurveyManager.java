@@ -97,7 +97,7 @@ public class SurveyManager
                 List<Map<String, Object>> columns = new ArrayList<Map<String, Object>>();
                 for (DisplayColumn dc : view.getDisplayColumns())
                 {
-                    if (dc.isQueryColumn())
+                    if (dc.isQueryColumn() && dc.isEditable())
                     {
                         Map<String, Object> metaDataMap = JsonWriter.getMetaData(dc, null, false, true, false);
                         Map<String, Object> trimmedMap = getTrimmedMetaData(metaDataMap);
@@ -118,7 +118,7 @@ public class SurveyManager
 
     public List<String> getKeyMetaDataProps()
     {
-        return Arrays.asList("name", "caption", "shortCaption", "hidden", "jsonType", "inputType", "lookup");
+        return Arrays.asList("name", "caption", "shortCaption", "hidden", "jsonType", "inputType", "lookup", "required");
     }
 
     public Map<String, Object> getTrimmedMetaData(Map<String, Object> origMap)
@@ -131,6 +131,11 @@ public class SurveyManager
             if (origMap.get(property) != null)
                 trimmedMap.put(property, origMap.get(property));
         }
+
+        // issue 16908: we use "required" in the survey metadata instead of "nullable"
+        if (origMap.get("nullable") != null)
+            trimmedMap.put("required", !(Boolean.parseBoolean(origMap.get("nullable").toString())));
+
         return trimmedMap;
     }
 
@@ -297,6 +302,7 @@ public class SurveyManager
             assertTrue("Unexpected property value", trimmedMap.get("hidden").equals(false));
             assertTrue("Unexpected property value", trimmedMap.get("jsonType").equals("string"));
             assertTrue("Unexpected property value", trimmedMap.get("inputType").equals("text"));
+            assertTrue("Unexpected property value", trimmedMap.get("required").equals(true));
         }
     }
 }
