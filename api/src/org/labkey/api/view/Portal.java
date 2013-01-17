@@ -883,9 +883,23 @@ public class Portal
     {
         id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
         String contextPath = context.getContextPath();
-        List<WebPart> parts = new ArrayList<WebPart>();
+        List<WebPart> allParts = getParts(context.getContainer(), id);
+        List<WebPart> visibleParts = new ArrayList<WebPart>();
 
-        for (WebPart part : getParts(context.getContainer(), id))
+        // Initialize content for non-default portal pages that are folder tabs
+        if (allParts.isEmpty() && !StringUtils.equalsIgnoreCase(DEFAULT_PORTAL_PAGE_ID,id))
+        {
+            for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
+            {
+                if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
+                {
+                    folderTab.initializeContent(context.getContainer());
+                    allParts = getParts(context.getContainer(), id);
+                }
+            }
+        }
+
+        for (WebPart part : allParts)
         {
             if (part.getPermission() != null)
             {
@@ -904,29 +918,16 @@ public class Portal
                 // the user is an admin.
                 if (hasPermission || isAdmin)
                 {
-                    parts.add(part);
+                    visibleParts.add(part);
                 }
             }
             else
             {
-                parts.add(part);
+                visibleParts.add(part);
             }
         }
 
-        // Initialize content for non-default portal pages that are folder tabs
-        if (parts.isEmpty() && !StringUtils.equalsIgnoreCase(DEFAULT_PORTAL_PAGE_ID,id))
-        {
-            for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
-            {
-                if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
-                {
-                    folderTab.initializeContent(context.getContainer());
-                    parts = getParts(context.getContainer(), id);
-                }
-            }
-        }
-
-        MultiMap<String, WebPart> locationMap = getPartsByLocation(parts);
+        MultiMap<String, WebPart> locationMap = getPartsByLocation(visibleParts);
         Collection<String> locations = locationMap.keySet();
 
         for (String location : locations)

@@ -81,11 +81,12 @@ Ext4.onReady(function(){
                 listeners: {
                     scope: this,
                     change: function(radioGroup, newValue){
-                        this.folderTree.toggleCollapse();
                         if(newValue.checkPermission === 'other'){
-                            this.otherFolderTextBox.show();
+                            this.otherFolderTextBox.setDisabled(false);
+                            this.folderTree.setDisabled(false);
                         } else {
-                            this.otherFolderTextBox.hide();
+                            this.otherFolderTextBox.setDisabled(true);
+                            this.folderTree.setDisabled(true);
                         }
                     }
                 }
@@ -94,7 +95,7 @@ Ext4.onReady(function(){
             this.otherFolderTextBox = Ext4.create('Ext.form.field.Text', {
                 fieldClass: 'x-form-empty-field',
                 readOnly: true,
-                hidden: (!this.containerPath || this.containerPath === LABKEY.container.path),
+                disabled: (!this.containerPath || this.containerPath === LABKEY.container.path),
                 fieldLabel: 'Folder Path',
                 value: (this.containerPath != null && this.containerPath !== LABKEY.container.path) ? this.containerPath : ''
             });
@@ -137,6 +138,7 @@ Ext4.onReady(function(){
                 store.findRecord('name', 'Administrate').set('type', 'base');
                 store.findRecord('name', 'Read').set('type', 'base');
                 store.findRecord('name', 'Insert').set('type', 'base');
+                store.findRecord('name', 'Update').set('type', 'base');
                 
                 store.group('type');
                 store.sort([{property: 'name', direction : 'ASC'}]);
@@ -191,12 +193,16 @@ Ext4.onReady(function(){
                 height: 150,
                 autoScroll: true,
                 header: false,
-                animate: true,
-                collapsible: true,
-                collapseMode: 'mini',
-                collapsed: (!this.containerPath || this.containerPath === LABKEY.container.path),
+                disabled: (!this.containerPath || this.containerPath === LABKEY.container.path),
                 listeners: {
                     scope: this,
+                    load: function(folderTree){
+                        if(this.containerPath && !this.pathExpanded){
+                            this.pathExpanded = true;
+                            console.log(this.containerPath.split('/'));
+                            this.expandAndSelectFolderPath(this.containerPath);
+                        }
+                    },
                     select: function(tree, node){
                         this.otherFolderTextBox.setValue(node.data.containerPath);
                     }
@@ -204,6 +210,32 @@ Ext4.onReady(function(){
             });
 
             return this.folderTree;
+        },
+
+        expandAndSelectFolderPath: function(path){
+            var nodes = path.split('/');
+
+            if(nodes[0] === ''){
+                nodes.shift();
+            }
+
+            var expand = function(childNodes){
+                if(nodes.length > 0){
+                    for(var i = 0; i < childNodes.length; i++){
+                        if(childNodes[i].data.text === nodes[0]){
+                            nodes.shift();
+                            childNodes[i].expand(false, expand, this);
+                            break;
+                        }
+                    }
+                }
+            };
+
+            var child = this.folderTree.getRootNode().findChild('text', nodes.shift());
+
+            if(child){
+                child.expand(false, expand, this);
+            }
         },
 
         getRequestValues: function(){

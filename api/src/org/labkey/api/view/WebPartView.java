@@ -555,12 +555,13 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                             if (webPart.getPermissionContainer() != null)
                                 containerPathString = "'" + webPart.getPermissionContainer().getPath() + "'";
 
+                            // Wrapped in immediately invoke function expression because of Issue 16953
                             nMenu.addChild(new NavTree("Permissions",
-                                    "javascript:Ext4.create('LABKEY.Portal.WebPartPermissionsPanel', {" +
+                                    "javascript:(function(){Ext4.create('LABKEY.Portal.WebPartPermissionsPanel', {" +
                                             "webPartId: '" + getWebPartRowId() + "',\n" +
                                             "permission: " + permissionString + ",\n" +
                                             "containerPath: " + containerPathString + "\n" +
-                                            "}).show();"));
+                                            "}).show();}())"));
                         }
                     }
 
