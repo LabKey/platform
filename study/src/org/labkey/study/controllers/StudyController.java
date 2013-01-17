@@ -8038,7 +8038,8 @@ public class StudyController extends BaseStudyController
         ChangeAlternateIdsForm changeAlternateIdsForm = new ChangeAlternateIdsForm();
         changeAlternateIdsForm.setPrefix(study.getAlternateIdPrefix());
         changeAlternateIdsForm.setNumDigits(study.getAlternateIdDigits());
-        changeAlternateIdsForm.setAliasDatasetId(study.getParticipantAliasDatasetId());
+        if(study.getParticipantAliasDatasetId() != null)
+            changeAlternateIdsForm.setAliasDatasetId(study.getParticipantAliasDatasetId());
 
         return changeAlternateIdsForm;
     }
