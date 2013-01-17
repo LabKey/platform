@@ -199,7 +199,6 @@ Ext4.onReady(function(){
                     load: function(folderTree){
                         if(this.containerPath && !this.pathExpanded){
                             this.pathExpanded = true;
-                            console.log(this.containerPath.split('/'));
                             this.expandAndSelectFolderPath(this.containerPath);
                         }
                     },
@@ -260,21 +259,16 @@ Ext4.onReady(function(){
                 return;
             }
 
-//            LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync', config.containerPath);
-//            LABKEY.ActionURL.buildURL('project', 'setWebPartPermissions');
-
             Ext4.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('project', 'setWebPartPermissions'),
                 jsonData: requestObj,
                 scope: this,
                 success: function(response){
                     var json = Ext4.JSON.decode(response.responseText);
-                    console.log(json);
                     this.close();
                 },
                 failure: function(response){
                     var json = Ext4.JSON.decode(response.responseText);
-                    console.log(json);
                 }
             });
 
