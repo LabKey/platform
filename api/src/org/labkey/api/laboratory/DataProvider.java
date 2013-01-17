@@ -77,6 +77,12 @@ public interface DataProvider
     public List<NavItem> getReportItems(Container c, User u);
 
     /**
+     * Return the list of ReportItems that will appear in the list of reports
+     * @return
+     */
+    public List<TabbedReportItem> getTabbedReportItems(Container c, User u);
+
+    /**
      * A metadata config object that will be applied to the fields on the run template page
      * @return
      */

@@ -23,10 +23,11 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.laboratory.AbstractDataProvider;
-import org.labkey.api.ldk.AbstractNavItem;
-import org.labkey.api.ldk.NavItem;
+import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.laboratory.SimpleQueryNavItem;
 import org.labkey.api.laboratory.SingleNavItem;
+import org.labkey.api.laboratory.TabbedReportItem;
+import org.labkey.api.ldk.NavItem;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QueryDefinition;
@@ -229,7 +230,34 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                 items.add(qItem);
             }
         }
-        return items;
+        return Collections.unmodifiableList(items);
+    }
+
+    @Override
+    public List<TabbedReportItem> getTabbedReportItems(Container c, User u)
+    {
+        List<TabbedReportItem> items = new ArrayList<TabbedReportItem>();
+        for (ExpProtocol p : getProtocols(c))
+        {
+            AssayNavItem nav = new AssayNavItem(this, p);
+            AssayProtocolSchema schema = getAssayProvider().createProtocolSchema(u, c, p, null);
+            TabbedReportItem item = new TabbedReportItem(this, schema.getSchemaName(), AssayProtocolSchema.DATA_TABLE_NAME, p.getName() + ": Raw Data", _providerName);
+            item.setVisible(nav.isVisible(c, u));
+            item.setOwnerKey(nav.getPropertyManagerKey());
+            items.add(item);
+
+            //for file-based assays, append any associated queries
+            List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();
+            for (QueryDefinition qd : queries)
+            {
+                TableInfo query = qd.getTable(new ArrayList<QueryException>(), true);
+                TabbedReportItem qItem = new TabbedReportItem(this, schema.getSchemaName(), qd.getName(), p.getName() + ": " + query.getTitle(), _providerName);
+                qItem.setVisible(nav.isVisible(c, u));
+                qItem.setOwnerKey(nav.getPropertyManagerKey());
+                items.add(qItem);
+            }
+        }
+        return Collections.unmodifiableList(items);
     }
 
     @NotNull
@@ -268,10 +296,10 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                     }
                 }
 
-                items.add(new SingleNavItem(this, p.getName() + " Runs", totalRuns.toString(), new DetailsURL(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, p)), AbstractNavItem.Category.data.name()));
+                items.add(new SingleNavItem(this, p.getName() + " Runs", totalRuns.toString(), new DetailsURL(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, p)), LaboratoryService.NavItemCategory.data.name()));
             }
         }
 
-        return items;
+        return Collections.unmodifiableList(items);
     }
 }

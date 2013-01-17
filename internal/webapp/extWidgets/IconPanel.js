@@ -11,6 +11,7 @@
     @param (object) [store] The Ext4 store holding the data
     @param (string) [iconField] The field name in the store holding the URL to the icon
     @param (string [labelField] The field holding the value to be used as the label.
+    @param {string} [tooltipField] The field holding the value to be used as a tooltip
     @param (string) [urlField] The field name holding the URL for each icon
     @param (boolean) [showMenu] Controls whether the menu is shown, which allows the user to toggle icon sizes. Hidden in webparts
 
@@ -54,11 +55,13 @@ Ext4.define('LABKEY.ext.IconPanel', {
                     '<table><tr>',
                     '<tpl for=".">',
                         '<td class="thumb-wrap">',
-                        '<div style="width: {thumbWidth};" class="tool-icon thumb-wrap thumb-wrap-{labelPosition}">',
-                            '<tpl if="url"><a href="{url}"></tpl>',
-                            '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" title="{label:htmlEncode}" style="width: {imageSize}px;height: {imageSize}px;" class="thumb-{iconSize}"></div>',
+                        '<div ' +
+                            '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>',
+                            'style="width: {thumbWidth};" class="tool-icon thumb-wrap thumb-wrap-{labelPosition}">',
+                            '<a ' + '<tpl if="url">href="{url}"</tpl>' + '>',
+                            '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" style="width: {imageSize}px;height: {imageSize}px;" class="thumb-{iconSize}"></div>',
                             '<span class="thumb-label-{labelPosition}">{label:htmlEncode}</span>',
-                            '<tpl if="url"></a></tpl>',
+                            '</a>',
                         '</div>',
                         '</td>',
                         '<tpl if="xindex % columns === 0"></tr><tr></tpl>',
@@ -81,6 +84,8 @@ Ext4.define('LABKEY.ext.IconPanel', {
                         item.label = d[panel.labelField];
                     if(panel.urlField)
                         item.url = d[panel.urlField];
+                    if(panel.tooltipField)
+                        item.tooltip = d[panel.tooltipField];
 
                     var multiplier = 1.66;
                     item.imageSize = this.imageSizeMap[this.renderData.iconSize];

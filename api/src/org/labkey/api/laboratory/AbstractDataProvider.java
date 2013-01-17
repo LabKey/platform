@@ -43,4 +43,9 @@ public abstract class AbstractDataProvider implements DataProvider
     {
         return Collections.emptyList();
     }
+
+    public List<TabbedReportItem> getTabbedReportItems(Container c, User u)
+    {
+        return Collections.emptyList();
+    }
 }

@@ -514,7 +514,7 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
 
         //we queue changes from all fields into a single event using buffer
         //this way batch updates of the form only trigger one record update/validation
-        this.mon(panel, 'fieldvaluechange', this.updateRecord, this, {buffer: 50, delay: 10});
+        this.mon(panel, 'fieldvaluechange', this.onFieldValueChange, this, {buffer: 50, delay: 10});
         this.mon(panel, 'add', function(o, c, idx){
             var findMatchingField = function(f) {
                 if (f.isFormField) {
@@ -570,17 +570,27 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         }
     },
 
+    //this is the listener for record update events.  it should update the values of the form, without firing change events on those fields
     onRecordUpdate: function(store, record, operation){
         var form = this.panel.getForm();
         if(form.getRecord() && record == form.getRecord()){
+            //this flag is used to skip the record update events caused by this plugin
+            if (this.ignoreNextUpdateEvent){
+                this.ignoreNextUpdateEvent = null;
+                return;
+            }
+
             form.suspendEvents();
-            this.setValues(record.data);
+            this.setFormValuesFromRecord(record);
             form.resumeEvents();
+
+            form.isValid();
         }
     },
 
     bindRecord: function(record){
         var form = this.panel.getForm();
+        this.ignoreNextUpdateEvent = null;
 
         if(form.getRecord())
             this.unbindRecord();
@@ -593,6 +603,7 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
 
     unbindRecord: function(){
         var form = this.panel.getForm();
+        this.ignoreNextUpdateEvent = null;
 
         if(form.getRecord()){
             form.updateRecord(form.getRecord());
@@ -602,16 +613,18 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         form.reset();
     },
 
-    updateRecord: function(){
+    //this is called after the a field's change event is called
+    //it should update the values in the record, cause an update event to fire on that record, but not re-trigger change events on the fields
+    onFieldValueChange: function(){
         var form = this.panel.getForm();
-        //TODO: combos and other multi-valued fields represent data differently in the store vs the field.
-        // need to reconcile here.  perhaps override getFieldValues()?
-        if(form.getRecord()){
-            form.updateRecord(form.getRecord());
+
+        var record = form.getRecord();
+        if(record){
+            this.updateRecordFromForm();
         }
         else if (this.panel.bindConfig.autoCreateRecordOnChange){
             var values = form.getFieldValues();
-            var record = this.panel.store.model.create();
+            record = this.panel.store.model.create();
             record.set(values); //otherwise record will not be dirty
             record.phantom = true;
             this.panel.store.add(record);
@@ -625,60 +638,65 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
 
     addFieldListener: function(f){
         if(f.hasDatabindListener){
-            console.log('field already has listener');
+            console.warn('field already has listener');
             return;
         }
 
-        this.mon(f, 'check', this.onFieldChange, this);
+        //this.mon(f, 'check', this.onFieldChange, this); //in Ext4, checkboxes should fire change events
         this.mon(f, 'change', this.onFieldChange, this);
 
         var form = f.up('form');
         if(form.getRecord() && this.panel.bindConfig.disableUnlessBound && !this.panel.bindConfig.autoCreateRecordOnChange)
             f.setDisabled(true);
 
-        //TODO: in Ext4.1, we might be able to user override() and callOveridden()
-        f.oldGetErrors = f.getErrors;
-        f.getErrors = function(value){
-            var errors = this.oldGetErrors(value);
-            var record = this.up('form').getForm().getRecord();
+        Ext4.override(f, {
+            getErrors: function(value){
+                var errors = this.callOverridden(arguments);
+                var record = this.up('form').getForm().getRecord();
 
-            if(record){
-                record.validate().each(function(e){
-                    if(e.field == this.name)
-                        errors.push(e.message);
-                }, this);
+                if(record){
+                    record.validate().each(function(e){
+                        if(e.field == this.name)
+                            errors.push(e.message);
+                    }, this);
 
-                if(record.serverErrors && record.serverErrors[f.name]){
-                    errors.push(record.serverErrors[f.name].join("<br>"));
-                    delete record.serverErrors[f.name]; //only use it once
+                    if(record.serverErrors && record.serverErrors[f.name]){
+                        errors.push(record.serverErrors[f.name].join("<br>"));
+                        delete record.serverErrors[f.name]; //only use it once
+                    }
                 }
+
+                errors = Ext4.Array.unique(errors);
+
+                return errors;
             }
+        });
 
-            errors = Ext4.Array.unique(errors);
-
-            return errors;
-        };
         f.hasDatabindListener = true;
     },
 
-    //this is separated so that multiple fields in a single form are filtered into one event per panel
+    //this is separated so that events from multiple fields in a single form are buffered into one event per panel
     onFieldChange: function(field){
         this.panel.fireEvent('fieldvaluechange', field);
     },
 
     //this is used instead of BasicForm's setValues in order to minimize event firing.  updating a field during editing has the
-    //unfortunately consequence of moving the cursor to the end of the text, so we want to avoid this
-    setValues: function(values) {
+    //unfortunate consequence of moving the cursor to the end of the text, so we want to avoid this
+    setFormValuesFromRecord: function(record) {
+        var values = record.data;
         var form = this.panel.getForm();
 
         function setVal(fieldId, val) {
             var field = form.findField(fieldId);
             if (field && field.getValue() !== val) {
                 //TODO: combos and other multi-valued fields represent data differently in the store vs the field.  need to reconcile here
+                field.suspendEvents();
                 field.setValue(val);
+                field.resumeEvents();
                 if (form.trackResetOnLoad) {
                     field.resetOriginalValue();
                 }
+                //field.isValid();
             }
         }
 
@@ -692,5 +710,17 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
             Ext4.iterate(values, setVal);
         }
         return this;
+    },
+
+    // updates the values in the record based on the current state of the form.
+    //TODO: combos and other multi-valued fields represent data differently in the store vs the field.
+    // if we need to converts objects to delimited strings or massage radiogroup values, we could do so here
+    updateRecordFromForm: function(){
+        var form = this.panel.getForm();
+        var record = form.getRecord();
+        if (record){
+            this.ignoreNextUpdateEvent = true;
+            form.updateRecord(record);
+        }
     }
 });

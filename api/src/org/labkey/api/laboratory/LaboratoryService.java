@@ -49,6 +49,7 @@ abstract public class LaboratoryService
 
     static private final String URI = "http://cpas.labkey.com/laboratory#";
     static public final String ASSAYRESULT_CONCEPT_URI = URI + "assayResult";
+    static public final String ASSAYRAWRESULT_CONCEPT_URI = URI + "assayRawResult";
     static public final String SAMPLEDATE_CONCEPT_URI = URI + "sampleDate";
     static public final String BIRTHDATE_CONCEPT_URI = URI + "birthDate";
     static public final String DEATHDATE_CONCEPT_URI = URI + "deathDate";
@@ -84,6 +85,8 @@ abstract public class LaboratoryService
 
     abstract public List<NavItem> getReportItems(Container c, User u);
 
+    abstract public Set<TabbedReportItem> getTabbedReportItems(Container c, User u);
+
     abstract public List<NavItem> getSampleItems(Container c, User u);
 
     abstract public DataProvider getDataProvider(String name);
@@ -99,4 +102,19 @@ abstract public class LaboratoryService
     abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c, User u);
 
     abstract public TableCustomizer getLaboratoryTableCustomizer();
+
+    public static enum NavItemCategory
+    {
+        samples(),
+        misc(),
+        settings(),
+        reports(),
+        tabbedReports(),
+        data();
+
+        NavItemCategory()
+        {
+
+        }
+    }
 }

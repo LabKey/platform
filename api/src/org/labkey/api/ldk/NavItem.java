@@ -51,18 +51,4 @@ public interface NavItem
     public JSONObject toJSON(Container c, User u);
 
     public String getPropertyManagerKey();
-
-    public static enum Category
-    {
-        samples(),
-        misc(),
-        settings(),
-        reports(),
-        data();
-
-        Category()
-        {
-
-        }
-    }
 }

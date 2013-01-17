@@ -552,6 +552,7 @@ api/src/org/labkey/api/jsp/taglib/SimpleTagBase.java -text
 api/src/org/labkey/api/laboratory/AbstractDataProvider.java -text
 api/src/org/labkey/api/laboratory/AbstractImportingNavItem.java -text
 api/src/org/labkey/api/laboratory/DataProvider.java -text
+api/src/org/labkey/api/laboratory/DetailsUrlNavItem.java -text
 api/src/org/labkey/api/laboratory/ImportingNavItem.java -text
 api/src/org/labkey/api/laboratory/LaboratoryService.java -text
 api/src/org/labkey/api/laboratory/LaboratoryUrls.java -text
@@ -561,6 +562,7 @@ api/src/org/labkey/api/laboratory/SimpleNavItem.java -text
 api/src/org/labkey/api/laboratory/SimpleQueryNavItem.java -text
 api/src/org/labkey/api/laboratory/SimpleSettingsItem.java -text
 api/src/org/labkey/api/laboratory/SingleNavItem.java -text
+api/src/org/labkey/api/laboratory/TabbedReportItem.java -text
 api/src/org/labkey/api/laboratory/assay/AbstractAssayDataProvider.java -text
 api/src/org/labkey/api/laboratory/assay/AssayDataProvider.java -text
 api/src/org/labkey/api/laboratory/assay/AssayImportMethod.java -text

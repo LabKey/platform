@@ -19,8 +19,8 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.laboratory.AbstractImportingNavItem;
+import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.laboratory.LaboratoryUrls;
-import org.labkey.api.ldk.NavItem;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
@@ -70,7 +70,7 @@ public class AssayNavItem extends AbstractImportingNavItem
 
     public String getCategory()
     {
-        return NavItem.Category.data.name();
+        return LaboratoryService.NavItemCategory.data.name();
     }
 
     public boolean isImportIntoWorkbooks()

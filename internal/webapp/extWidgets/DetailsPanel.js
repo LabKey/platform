@@ -21,6 +21,8 @@ Ext4.namespace('LABKEY.ext');
 Ext4.define('LABKEY.ext.DetailsPanel', {
     extend: 'Ext.form.Panel',
     alias: 'widget.labkey-detailspanel',
+    DEFAULT_FIELD_WIDTH: 600,
+
     initComponent: function(){
         Ext4.apply(this, {
             bodyStyle: this.bodyStyle || 'padding:5px;',
@@ -83,43 +85,9 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
      * @param rec
      */
     bindRecord: function(rec){
-        var fields = this.store.getFields();
-        var toAdd = [];
-        fields.each(function(field){
-            if (LABKEY.ext.Ext4Helper.shouldShowInDetailsView(field)){
-                var value;
-
-                if(rec.raw && rec.raw[field.name]){
-                    value = rec.raw[field.name].displayValue || rec.get(field.name);
-                    if(value && field.jsonType == 'date'){
-                        var format = 'Y-m-d h:m A'; //NOTE: java date formats do not necessarily match Ext
-                        value = value.format(format);
-                    }
-
-                    if(rec.raw[field.name].url)
-                        value = '<a href="'+rec.raw[field.name].url+'" target="new">'+value+'</a>';
-                }
-                else
-                    value = rec.get(field.name);
-
-                toAdd.push({
-                    fieldLabel: field.label || field.caption || field.name,
-                    xtype: 'displayfield',
-                    fieldCls: 'labkey-display-field',  //enforce line wrapping
-                    width: 600,
-                    value: value
-                });
-
-                //NOTE: because this panel will render multiple rows as multiple forms, we provide a mechanism to append an identifier field
-                if (this.titleField == field.name){
-                    this.setTitle(this.title + ': '+value);
-                }
-            }
-        }, this);
-
         this.boundRecord = rec;
-        this.removeAll();
-        this.add(toAdd);
+
+        this.addFieldsForRecord(rec);
 
         //configure buttons
         var bbar = this.down('toolbar[dock="bottom"]');
@@ -151,6 +119,50 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
 //            });
 //        }
 
+    },
+
+    addFieldsForRecord: function(rec){
+        var toAdd = this.getDetailItems(rec);
+        this.removeAll();
+        this.add(toAdd);
+    },
+
+    getDetailItems: function(rec){
+        var fields = this.store.getFields();
+        var toAdd = [];
+        fields.each(function(field){
+            if (LABKEY.ext.Ext4Helper.shouldShowInDetailsView(field)){
+                var value;
+
+                if(rec.raw && rec.raw[field.name]){
+                    value = rec.raw[field.name].displayValue || rec.get(field.name);
+                    if(value && field.jsonType == 'date'){
+                        var format = 'Y-m-d h:m A'; //NOTE: java date formats do not necessarily match Ext
+                        value = value.format(format);
+                    }
+
+                    if(rec.raw[field.name].url)
+                        value = '<a href="'+rec.raw[field.name].url+'" target="new">'+value+'</a>';
+                }
+                else
+                    value = rec.get(field.name);
+
+                toAdd.push({
+                    fieldLabel: field.label || field.caption || field.name,
+                    xtype: 'displayfield',
+                    fieldCls: 'labkey-display-field',  //enforce line wrapping
+                    width: this.DEFAULT_FIELD_WIDTH,
+                    value: value
+                });
+
+                //NOTE: because this panel will render multiple rows as multiple forms, we provide a mechanism to append an identifier field
+                if (this.titleField == field.name){
+                    this.setTitle(this.title + ': '+value);
+                }
+            }
+        }, this);
+
+        return toAdd;
     },
 
     unbindRecord: function(){
