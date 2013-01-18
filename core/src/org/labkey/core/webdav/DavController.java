@@ -1401,7 +1401,7 @@ public class DavController extends SpringActionController
                     int limitMax = form.getPaging() ? form.getLimit()-1 : resources.size();
 
                     // Support for Indexing
-                    for (int i=form.getStart(); i < resources.size(); i++)
+                    for (int i=Math.max(0,form.getStart()) ; i < resources.size() ; i++)
                     {
                         if (limitCount > limitMax)
                             break;

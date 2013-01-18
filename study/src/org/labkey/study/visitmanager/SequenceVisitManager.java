@@ -232,7 +232,7 @@ public class SequenceVisitManager extends VisitManager
         String sqlUpdateVisitRowId = "UPDATE " + tableParticipantVisit + "\n" +
                 "SET VisitRowId = \n" +
                 " (\n" +
-                " SELECT V.RowId\n" +
+                " SELECT MIN(V.RowId)\n" +
                 " FROM " + tableVisit + " V\n" +
                 " WHERE ParticipantVisit.SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND\n" +
                 "   V.Container=?\n" +

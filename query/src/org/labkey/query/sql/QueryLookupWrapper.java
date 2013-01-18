@@ -232,6 +232,8 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
         SQLFragment sourceFromSql = _source.getFromSql();
+        if (null == sourceFromSql || !_query.getParseErrors().isEmpty())
+            return null;
 
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         SqlBuilder sql = new SqlBuilder(getSchema().getDbSchema());
