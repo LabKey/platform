@@ -24,7 +24,8 @@ Ext4.define('LABKEY.form.field.AttachmentFile', {
             frame   : false,
             border  : false,
             hasRemoveButton : true,
-            readOnly : false
+            allowBlank: true,
+            readOnly : true
         });
 
         this.callParent([config]);
@@ -119,13 +120,14 @@ Ext4.define('LABKEY.form.field.Attachment', {
     ],
 
     constructor : function(config) {
-
         Ext4.applyIf(config, {
             frame   : false,
             border  : false,
             margin  : 10,
             width   : 800,
-            multipleFiles : false            // if this component can support adding more than one attachment
+            allowBlank : true,
+            multipleFiles : false, // if this component can support adding more than one attachment
+            showFirstFile : false  // if allowing multiple, whether or not to show the first file field on init
         });
 
         this.callParent([config]);
@@ -187,6 +189,9 @@ Ext4.define('LABKEY.form.field.Attachment', {
         {
             if (this.multipleFiles)
             {
+                if (this.showFirstFile)
+                    items.push(this.createFileUploadComponent());
+
                 items.push({
                     xtype : 'box',
                     id : this.id + '-attachFile',
@@ -242,7 +247,12 @@ Ext4.define('LABKEY.form.field.Attachment', {
 
     onAttachFile : function() {
         if (!this.readOnly)
-            this.formPanel.add(this.createFileUploadComponent());
+        {
+            // if we are showing multiple, add the new component right before the attach file paperclip
+            var filesArr = Ext4.ComponentQuery.query('attachmentfile');
+            var index = filesArr.length > 0 ? filesArr.length : 0;
+            this.formPanel.insert(index, this.createFileUploadComponent());
+        }
     },
 
     createFileUploadComponent : function() {
@@ -251,7 +261,8 @@ Ext4.define('LABKEY.form.field.Attachment', {
             labelAlign : 'right',
             buttonText : 'Browse',
             width : this.fieldWidth,
-            hasRemoveButton : this.multipleFiles
+            hasRemoveButton : this.multipleFiles,
+            allowBlank : this.allowBlank
         });
         fileField.on('removebuttonclick', function(e, cmp){this.formPanel.remove(cmp);}, this);
 
