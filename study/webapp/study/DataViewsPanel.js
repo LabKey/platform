@@ -1295,11 +1295,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     click : function(col, grid, idx, evt, x, y, z)
                     {
                         var label = store.getAt(idx).data.label;
-                        var id    = store.getAt(idx).data.rowid;
-
-                        var cats = {
-                            categories : [{label : label, rowid: id}]
-                        };
 
                         Ext4.Msg.show({
                             title : 'Delete Category',
