@@ -44,6 +44,8 @@
     String subjectNounPlural = s.getSubjectNounPlural();
     String subjectNounColName = s.getSubjectColumnName();
     int aliasDatasetId = bean.getAliasDatasetId();
+    String aliasColumn = bean.getAliasColumn();
+    String sourceColumn = bean.getSourceColumn();
     boolean isAdmin = c.hasPermission(getViewContext().getUser(), AdminPermission.class);
     Integer numberOfDigits = bean.getNumDigits() > 0 ? bean.getNumDigits() : 6;
 %>
@@ -180,14 +182,6 @@
                 sorters : {property : 'Label', direction : 'ASC'}
             });
 //
-            LABKEY.Query.selectRows({
-                schemaName : 'study',
-                queryName : 'Datasets',
-                success : function(details){
-                    this.dataStore.loadData(details.rows);
-                },
-                scope : this
-            });
 
             var dataCombo = Ext4.create('Ext.form.field.ComboBox',{
                 name : 'datasetCombo',
@@ -206,21 +200,16 @@
                             aliasCombo.setDisabled(false);
                             sourceCombo.setDisabled(false);
 
+                     },
+                     setup : function(cb){
+                         aliasCombo.clearValue();
+                         sourceCombo.clearValue();
+                         populateOtherBoxes(cb.getRawValue(), true);
+                         aliasCombo.setDisabled(false);
+                         sourceCombo.setDisabled(false);
                      }
                 }
             });
-
-            var populateOtherBoxes = function(datasetName){
-                    LABKEY.Query.selectRows({
-                        schemaName : 'study',
-                        queryName : datasetName,
-
-                        success : function(details){
-                            this.aliasStore.loadData(details.columnModel);
-                        },
-                        scope : this
-                    });
-            };
 
             Ext4.define('aliasModel',{
                 extend : 'Ext.data.Model',
@@ -258,6 +247,45 @@
                 disabled : true
             });
 
+            LABKEY.Query.selectRows({
+                schemaName : 'study',
+                queryName : 'Datasets',
+                success : function(details){
+                    this.dataStore.loadData(details.rows);
+                    if(<%=aliasDatasetId%> != -1)
+                    {
+                        dataCombo.select(dataCombo.findRecord('DataSetId', <%=aliasDatasetId%>));
+                        dataCombo.fireEvent('setup', dataCombo);
+                    }
+                },
+                scope : this
+            });
+
+            var populateOtherBoxes = function(datasetName, setup){
+                LABKEY.Query.selectRows({
+                    schemaName : 'study',
+                    queryName : datasetName,
+
+                    success : function(details)
+                    {
+                        this.aliasStore.loadData(details.columnModel);
+                        aliasCombo.fireEvent('dataloaded', aliasCombo);
+                        sourceCombo.fireEvent('dataloaded', sourceCombo);
+                        if(setup){
+                            if('<%=aliasColumn%>' != "")
+                            {
+                                aliasCombo.select(aliasCombo.findRecord('header', '<%=aliasColumn%>'));
+                            }
+                            if('<%=sourceColumn%>' != "")
+                            {
+                                sourceCombo.select(sourceCombo.findRecord('header', '<%=sourceColumn%>'));
+                            }
+                        }
+                    },
+                    scope : this
+                });
+            };
+
             var importButton = Ext4.create('Ext.button.Button', {
                 text : 'Import Aliases',
                 handler : function() {
@@ -288,7 +316,7 @@
                     failure: function(response, options){
                         LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:<br>');
                     },
-                    jsonData : {dataSetId : dataSetId, aliasCol : aliasColumn, sourceCol : sourceColumn},
+                    jsonData : {dataSetId : dataSetId, aliasColumn : aliasColumn, sourceColumn : sourceColumn},
                     headers : {'Content-Type' : 'application/json'},
                     scope: this
                 });
