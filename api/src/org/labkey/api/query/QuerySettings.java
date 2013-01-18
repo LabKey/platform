@@ -263,6 +263,7 @@ public class QuerySettings
                 setReturnUrl(new URLHelper(returnURL));
             }
             catch (URISyntaxException ignored) { }
+            catch (IllegalArgumentException ignored){}
         }
 
         String columns = StringUtils.trimToNull(_getParameter(param(QueryParam.columns)));

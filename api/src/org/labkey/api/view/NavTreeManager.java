@@ -90,7 +90,7 @@ public class NavTreeManager
         Map<String, Set<String>> treeMap = (Map<String, Set<String>>)
                 SessionHelper.getAttribute(viewContext.getRequest(), EXPAND_CONTAINERS_KEY, allocTreeMap);
 
-        Set<String> expandedPaths = treeMap.get(navTreeId);
+        Set<String> expandedPaths = null==treeMap ? null : treeMap.get(navTreeId);
         if (null == expandedPaths)
         {
             expandedPaths = Collections.synchronizedSet(new HashSet<String>());
