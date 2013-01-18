@@ -247,6 +247,7 @@ public class IssueManager
     public static class CustomColumnConfiguration
     {
         public static final String PICK_LIST_NAME = "pickListColumns";
+
         private static String[] _tableColumns = {"type", "area", "priority", "milestone", "resolution", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
         private Map<String, String> _columnCaptions = new CaseInsensitiveHashMap<String>();
         private Map<String, HString> _columnHCaptions = new CaseInsensitiveHashMap<HString>();

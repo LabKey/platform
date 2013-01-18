@@ -17,14 +17,12 @@
 package org.labkey.query.controllers;
 
 import org.labkey.api.security.permissions.EditSharedViewPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
-import org.springframework.web.servlet.ModelAndView;
 
 public class InternalViewForm extends ViewForm
 {
