@@ -40,9 +40,9 @@ import java.util.Collections;
  */
 public abstract class AbstractRole implements Role
 {
-    private String _name;
-    private String _description;
-    private Module _sourceModule;
+    private final String _name;
+    private final String _description;
+    private final Module _sourceModule;
     private final Set<Class<? extends Permission>> _permissions = new HashSet<Class<? extends Permission>>();
     private final Set<UserPrincipal> _excludedPrincipals = new HashSet<UserPrincipal>();
 
