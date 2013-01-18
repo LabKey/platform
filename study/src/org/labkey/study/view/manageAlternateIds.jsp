@@ -168,7 +168,7 @@
             //Alias mapping components start here
 
             var aliasDataSetId = <%=aliasDatasetId%>;
-
+            var previousValue = (aliasDataSetId != -1);
             Ext4.define('datasetModel',{
                 extend : 'Ext.data.Model',
                 fields : [
@@ -252,7 +252,7 @@
                 queryName : 'Datasets',
                 success : function(details){
                     this.dataStore.loadData(details.rows);
-                    if(<%=aliasDatasetId%> != -1)
+                    if(previousValue)
                     {
                         dataCombo.select(dataCombo.findRecord('DataSetId', <%=aliasDatasetId%>));
                         dataCombo.fireEvent('setup', dataCombo);
@@ -288,6 +288,7 @@
 
             var importButton = Ext4.create('Ext.button.Button', {
                 text : 'Import Aliases',
+                disabled : !previousValue,
                 handler : function() {
                     document.location = LABKEY.ActionURL.buildURL('study', 'import', null, {datasetId : aliasDataSetId});
                 }
@@ -299,33 +300,58 @@
                 }
             });
 
-            var changeIdMapping = function(dataSetField, aliasField, sourceField) {
-                var dataSetId = dataSetField.getValue();
-                var aliasColumn = aliasField.getValue();
-                var sourceColumn = sourceField.getValue();
-                Ext4.Ajax.request({
-                    url : LABKEY.ActionURL.buildURL("study", "mapAliasIds"),
-                    method : 'POST',
-
-                    success: function(details){
-                        console.log(details);
-                        displayDoneChangingMessage();
-                        aliasDataSetId = dataSetId;
-
-                    },
-                    failure: function(response, options){
-                        LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:<br>');
-                    },
-                    jsonData : {dataSetId : dataSetId, aliasColumn : aliasColumn, sourceColumn : sourceColumn},
-                    headers : {'Content-Type' : 'application/json'},
-                    scope: this
+            var displayBadFormMessage = function() {
+                Ext4.MessageBox.show({
+                    title: "Incomplete Fields",
+                    msg: "You must provide a Dataset, alias column, and source column.",
+                    buttons: Ext4.MessageBox.OK,
+                    icon: Ext4.MessageBox.INFO
                 });
+            };
+
+            var changeIdMapping = function(dataSetId, aliasColumn, sourceColumn) {
+                if((sourceColumn != null) && (aliasColumn != null)){
+                    Ext4.Ajax.request({
+                        url : LABKEY.ActionURL.buildURL("study", "mapAliasIds"),
+                        method : 'POST',
+
+                        success: function(details){
+                            displayDoneChangingMessage();
+                            aliasDataSetId = dataSetId;
+                            if(dataSetId != -1)
+                                importButton.setDisabled(false);
+
+                        },
+                        failure: function(response, options){
+                            LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:<br>');
+                        },
+                        jsonData : {dataSetId : dataSetId, aliasColumn : aliasColumn, sourceColumn : sourceColumn},
+                        headers : {'Content-Type' : 'application/json'},
+                        scope: this
+                    });
+                }
+                else {
+                        displayBadFormMessage();
+                }
 
             };
 
             var saveButton = Ext4.create('Ext.button.Button', {
                 text : 'Save Changes',
-                handler :  function(){changeIdMapping(dataCombo, aliasCombo, sourceCombo);}
+                handler :  function(){changeIdMapping(dataCombo.getValue(), aliasCombo.getValue(), sourceCombo.getValue());}
+            });
+            var clearButton = Ext4.create('Ext.button.Button', {
+                text : 'Clear Alias Settings',
+                handler :  function(){
+                    changeIdMapping(-1, "", "");
+                    aliasDataSetId = -1;
+                    importButton.setDisabled(true);
+                    dataCombo.setValue(null);
+                    aliasCombo.setValue(null);
+                    aliasCombo.setDisabled(true);
+                    sourceCombo.setValue(null);
+                    sourceCombo.setDisabled(true);
+                }
             });
 
             var mappingPanel = Ext4.create('Ext.form.FormPanel', {
@@ -339,9 +365,10 @@
                 items: [dataCombo, aliasCombo, sourceCombo],
                 dockedItems : {
                     xtype : 'toolbar',
-                    background : 'transparent',
+                    style : 'background: none',
                     dock : 'bottom',
-                    items: [saveButton, importButton, manageButton]
+                    ui : 'footer',
+                    items: [saveButton, clearButton, importButton, manageButton]
                  }
 
             });
