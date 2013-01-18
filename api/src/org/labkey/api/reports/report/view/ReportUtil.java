@@ -407,7 +407,7 @@ public class ReportUtil
 
     public static ViewCategory getDefaultCategory(Container c, String schema, String query)
     {
-        ViewCategory vc;
+        ViewCategory vc = null;
         String category = query;
         if ("study".equalsIgnoreCase(schema) && !StringUtils.isEmpty(query))
         {
@@ -416,11 +416,8 @@ public class ReportUtil
             {
                 DataSet ds = StudyService.get().getDataSet(c, datasetId);
                 if (ds != null) // should this check && !StringUtils.isEmpty(ds.getCategory()))
-                    category = ds.getCategory();
-
-                if (category != null)
                 {
-                    vc = ViewCategoryManager.getInstance().getCategory(c, category);
+                    vc = ds.getViewCategory();
                     if (vc != null)
                         return vc;
                 }

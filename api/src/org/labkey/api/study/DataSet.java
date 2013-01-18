@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -50,6 +51,9 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
     String getFileName();
 
     String getCategory();
+
+    @Nullable
+    ViewCategory getViewCategory();
 
     String getType();
 

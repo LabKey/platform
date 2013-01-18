@@ -449,7 +449,7 @@ public enum Prop implements ReportProperty
         descriptor.setHidden(isHidden());
 
         if (getCategory() != null)
-            descriptor.setCategory(getCategory().getLabel());
+            descriptor.setCategory(ViewCategoryManager.getInstance().encode(getCategory()));
 
         ReportPropertyList props = descriptor.addNewProperties();
         for (Map.Entry<String, Object> entry : _props.entrySet())
@@ -584,7 +584,8 @@ public enum Prop implements ReportProperty
 
             if (d.getCategory() != null)
             {
-                ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
+                String[] parts = ViewCategoryManager.getInstance().decode(d.getCategory());
+                ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, parts);
                 descriptor.setCategory(category);
             }
 
@@ -623,7 +624,8 @@ public enum Prop implements ReportProperty
 
         if (d.getCategory() != null && container != null && user != null)
         {
-            ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
+            String[] parts = ViewCategoryManager.getInstance().decode(d.getCategory());
+            ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, parts);
             setCategory(category);
         }
 

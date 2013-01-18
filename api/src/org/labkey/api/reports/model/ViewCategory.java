@@ -16,6 +16,7 @@
 package org.labkey.api.reports.model;
 
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -42,15 +43,13 @@ public class ViewCategory extends Entity
 
     public ViewCategory()
     {
-        this(null, 0, 0, null);
     }
 
-    protected ViewCategory(String label, int rowId, int displayOrder, ViewCategory parent)
+    protected ViewCategory(String label, @Nullable ViewCategory parent)
     {
         _label = label;
-        _rowId = rowId;
-        _displayOrder = displayOrder;
-        _parent = new WeakReference<ViewCategory>(parent);
+        if (parent != null)
+            _parent = new WeakReference<ViewCategory>(parent);
     }
 
     public boolean isNew()

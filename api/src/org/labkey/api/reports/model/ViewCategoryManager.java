@@ -18,11 +18,11 @@ package org.labkey.api.reports.model;
 import junit.framework.Assert;
 import org.apache.log4j.Logger;
 import org.junit.Test;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -55,6 +55,17 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     private static final Logger _log = Logger.getLogger(ViewCategoryManager.class);
     private static final ViewCategoryManager _instance = new ViewCategoryManager();
     private static final List<ViewCategoryListener> _listeners = new CopyOnWriteArrayList<ViewCategoryListener>();
+
+    private static DatabaseCache<ViewCategory> _viewCategoryCache;
+
+    synchronized DatabaseCache<ViewCategory> getCategoryCache()
+    {
+        if (_viewCategoryCache == null)
+        {
+            _viewCategoryCache = new DatabaseCache<ViewCategory>(CoreSchema.getInstance().getSchema().getScope(), 300, "View Category");
+        }
+        return _viewCategoryCache;
+    }
 
     private ViewCategoryManager()
     {
@@ -94,7 +105,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     {
         try {
             String cacheKey = getCacheKey(rowId);
-            ViewCategory category = (ViewCategory) DbCache.get(getTableInfoCategories(), cacheKey);
+            ViewCategory category = getCategoryCache().get(cacheKey);
 
             if (category != null)
                 return category;
@@ -106,7 +117,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
             if (categories.length == 1)
             {
-                DbCache.put(getTableInfoCategories(), cacheKey, categories[0]);
+                getCategoryCache().put(cacheKey, categories[0]);
                 return categories[0];
             }
             return null;
@@ -117,34 +128,66 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         }
     }
 
-    public ViewCategory getCategory(Container c, String label)
+    /**
+     * looks up a view category by it's path
+     * @param c
+     * @param parts An array representing a path heirarchy. For example ["reports"] would represent a top level
+     *              category named 'reports' whereas ["reports", "R"] would represent a subcategory named 'R' with
+     *              a parent named 'reports'. Current heirarchy depth is limited to one level deep.
+     * @return
+     */
+    public ViewCategory getCategory(Container c, String... parts)
     {
-        try {
-            String cacheKey = getCacheKey(c, label);
-            ViewCategory category = (ViewCategory) DbCache.get(getTableInfoCategories(), cacheKey);
+        if (parts.length > 2)
+            throw new IllegalArgumentException("Only one level of view category is supported at this time");
 
-            if (category != null)
-                return category;
+        String cacheKey = getCacheKey(c, parts);
+        ViewCategory category = getCategoryCache().get(cacheKey);
 
-            SimpleFilter filter = new SimpleFilter("Container", c);
-            filter.addCondition("label", label);
+        if (category != null)
+            return category;
 
-            ViewCategory[] categories = Table.select(getTableInfoCategories(), Table.ALL_COLUMNS, filter, null, ViewCategory.class);
+        ViewCategory parent = null;
+
+        // a subcategory with a parent
+        if (parts.length == 2)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), c);
+            filter.addCondition(FieldKey.fromParts("label"), parts[0]);
+            filter.addClause(new SimpleFilter.SQLClause("parent IS NULL", null));
+
+            TableSelector selector = new TableSelector(getTableInfoCategories(), filter, null);
+            ViewCategory[] categories = selector.getArray(ViewCategory.class);
 
             // should only be one as there is a unique constraint on the db
             assert categories.length <= 1;
 
             if (categories.length == 1)
-            {
-                DbCache.put(getTableInfoCategories(), cacheKey, categories[0]);
-                return categories[0];
-            }
-            return null;
+                parent = categories[0];
+            else
+                // expected a parent but couldn't find one
+                return null;
         }
-        catch (SQLException e)
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), c);
+        filter.addCondition(FieldKey.fromParts("label"), parts[parts.length-1]);
+
+        // a subcategory with a parent
+        if (parent != null)
+            filter.addCondition(FieldKey.fromParts("parent"), parent.getRowId());
+
+        TableSelector selector = new TableSelector(getTableInfoCategories(), filter, null);
+        ViewCategory[] categories = selector.getArray(ViewCategory.class);
+
+        // should only be one as there is a unique constraint on the db
+        assert categories.length <= 1;
+
+        if (categories.length == 1)
         {
-            throw new RuntimeException(e);
+            getCategoryCache().put(cacheKey, categories[0]);
+            return categories[0];
         }
+        return null;
     }
 
     public void deleteCategory(Container c, User user, ViewCategory category)
@@ -166,8 +209,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
             Table.execute(CoreSchema.getInstance().getSchema(), sql.getSQL(), category.getRowId());
 
-            DbCache.remove(getTableInfoCategories(), getCacheKey(category.getRowId()));
-            DbCache.remove(getTableInfoCategories(), getCacheKey(c, category.getLabel()));
+            getCategoryCache().remove(getCacheKey(category.getRowId()));
+            getCategoryCache().remove(getCacheKey(c, category.getLabel()));
         }
         catch (SQLException x)
         {
@@ -206,10 +249,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                     else
                         throw new IllegalArgumentException("There is already a category in this folder with the name: " + category.getLabel());
                 }
+                category.beforeInsert(user, c.getId());
 
-                if (category.getContainerId() == null)
-                    category.setContainerId(c.getId());
-                
                 ret = Table.insert(user, getTableInfoCategories(), category);
                 errors = fireCreatedCategory(user, ret);
             }
@@ -223,8 +264,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
                     ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
 
-                    DbCache.remove(getTableInfoCategories(), getCacheKey(existing.getRowId()));
-                    DbCache.remove(getTableInfoCategories(), getCacheKey(c, existing.getLabel()));
+                    getCategoryCache().remove(getCacheKey(existing.getRowId()));
+                    getCategoryCache().remove(getCacheKey(c, existing.getLabel()));
 
                     errors = fireUpdateCategory(user, ret);
                 }
@@ -257,6 +298,18 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         ViewCategory[] categories = selector.getArray(ViewCategory.class);
 
         return Arrays.asList(categories);
+    }
+
+    private String getCacheKey(Container c, String[] parts)
+    {
+        StringBuilder sb = new StringBuilder("ViewCategory-" + c);
+
+        if (parts != null)
+        {
+            for (String part : parts)
+                sb.append('-').append(parts);
+        }
+        return sb.toString();
     }
 
     private String getCacheKey(Container c, String label)
@@ -332,20 +385,116 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     /**
      * Returns an existing category or creates a new one.
+     * @param parts An array representing a path heirarchy. For example ["reports"] would represent a top level
+     *              category named 'reports' whereas ["reports", "R"] would represent a subcategory named 'R' with
+     *              a parent named 'reports'. Current heirarchy depth is limited to one level deep.
+     * @return
      */
-    public ViewCategory ensureViewCategory(Container c, User user, String label)
+
+    public ViewCategory ensureViewCategory(Container c, User user, String... parts)
     {
-        ViewCategory category = getCategory(c, label);
+        if (parts.length > 2)
+            throw new IllegalArgumentException("Only one level of view category is supported at this time");
+
+        ViewCategory category = getCategory(c, parts);
         if (category == null)
         {
-            category = new ViewCategory();
+            ViewCategory parent = null;
 
-            category.setContainer(c.getId());
-            category.setLabel(label);
-
+            if (parts.length == 2)
+            {
+                parent = getCategory(c, parts[0]);
+                if (parent == null)
+                {
+                    parent = new ViewCategory(parts[0], null);
+                    parent = saveCategory(c, user, parent);
+                }
+            }
+            category = new ViewCategory(parts[parts.length-1], parent);
             category = saveCategory(c, user, category);
         }
         return category;
+    }
+
+    public static final String ENCODED_AMP = "&amp;";
+    /**
+     * Used to encode a view category to a serializable form that can later be decoded by the decode(String)
+     * method and then used in either getCategory or ensureViewCategory.
+     *
+     * Parent child heirarchy is encoded into the string.
+     *
+     * @return encoded String that can be serialized and then decoded using the decode(String) method.
+     */
+    public String encode(ViewCategory category)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        if (category.getParent() != null)
+        {
+            sb.append(category.getParent().getLabel().replaceAll("&", ENCODED_AMP)).append("&");
+        }
+        sb.append(category.getLabel().replaceAll("&", ENCODED_AMP));
+
+        return sb.toString();
+    }
+
+    /**
+     * Used to decode a view category from a serializable form and thenn used in either getCategory or ensureViewCategory.
+     *
+     * Parent child heirarchy is encoded into the string.
+     *
+     * @return String[] that represents the path heirarcy of the category.
+     */
+    public String[] decode(String category)
+    {
+        List<String> names = new ArrayList<String>();
+        String[] originalAmps;
+
+        StringBuffer sb = new StringBuffer();
+        String delim = "";
+        String trailing = "";
+
+        // split on any original but encoded &'s
+        if (category.contains(ENCODED_AMP))
+        {
+            // boundary cases
+            if (category.startsWith(ENCODED_AMP))
+                delim = "&";
+            if (category.endsWith(ENCODED_AMP))
+                trailing = "&";
+
+            originalAmps = category.split(ENCODED_AMP);
+        }
+        else
+            originalAmps = new String[]{category};
+
+        for (String section : originalAmps)
+        {
+            // re-add the original &
+            sb.append(delim);
+            for (int i=0; i < section.length(); i++)
+            {
+                char c = section.charAt(i);
+
+                switch (c)
+                {
+                    case '&' :
+                        // this is the section delimiter
+                        names.add(sb.toString());
+                        sb = new StringBuffer();
+                        break;
+                    default :
+                        sb.append(c);
+                }
+            }
+            delim = "&";
+        }
+        sb.append(trailing);
+
+        if (sb.length() > 0)
+            names.add(sb.toString());
+
+        return names.toArray(new String[names.size()]);
     }
 
     static
@@ -373,7 +522,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     public static class TestCase extends Assert
     {
         private static final String[] labels = {"Demographics", "Exam", "Discharge", "Final Exam"};
-        private static final String[] subLabels = {"sub1", "sub2", "sub3"};
+        private static final String[] subLabels = {"sub1", "sub&2", "sub3&", "sub &label", "sub_label&amp;", "&sub&label&"};
 
         @Test
         public void test() throws Exception
@@ -416,6 +565,13 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
                 cat = mgr.saveCategory(c, user, cat);
 
+                // test serialization encoding and decoding
+                String encoded = mgr.encode(cat);
+                String parts[] = mgr.decode(encoded);
+
+                assertTrue(parts.length == 1);
+                assertEquals(parts[0], cat.getLabel());
+
                 // create sub categories
                 for (String subLabel : subLabels)
                 {
@@ -425,7 +581,15 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                     subcat.setDisplayOrder(i++);
                     subcat.setParent(cat);
 
-                    mgr.saveCategory(c, user, subcat);
+                    subcat = mgr.saveCategory(c, user, subcat);
+
+                    // test serialization encoding and decoding
+                    encoded = mgr.encode(subcat);
+                    parts = mgr.decode(encoded);
+
+                    assertTrue(parts.length == 2);
+                    assertEquals(parts[0], cat.getLabel());
+                    assertEquals(parts[1], subLabel);
                 }
 
                 // verify we don't allow duplicate subcategory names
@@ -484,6 +648,29 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 mgr.deleteCategory(c, user, cat);
             }
 */
+
+            ViewCategory top = mgr.ensureViewCategory(c, user, "top");
+
+            assertNotNull(top);
+            assertTrue(top.getParent() == null);
+            assertTrue(top.getLabel().equals("top"));
+
+            ViewCategory subTop = mgr.ensureViewCategory(c, user, "top", "sub");
+
+            assertNotNull(subTop);
+            assertTrue(subTop.getParent().getLabel().equals("top"));
+            assertTrue(subTop.getLabel().equals("sub"));
+
+            ViewCategory subBottom = mgr.ensureViewCategory(c, user, "bottom", "sub");
+
+            assertNotNull(subBottom);
+            assertTrue(subBottom.getParent().getLabel().equals("bottom"));
+            assertTrue(subBottom.getLabel().equals("sub"));
+
+            mgr.deleteCategory(c, user, top);
+            mgr.deleteCategory(c, user, subTop);
+            mgr.deleteCategory(c, user, subBottom.getParent());
+            mgr.deleteCategory(c, user, subBottom);
 
             // make sure all the listeners were invoked correctly
             assertTrue(notifications.isEmpty());
