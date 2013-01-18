@@ -45,6 +45,15 @@ Ext4.override(Ext4.data.TreeStore, {
     }
 });
 
+/**
+ * This is an extended model used to render the TreeStore. Due to performance
+ * the afterCommit method has been disabled. It is not recommneded you use this model.
+**/
+Ext4.define('Ext.data.FastModel', {
+    extend : 'Ext.data.Model',
+    afterCommit : function(){}
+});
+
 Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     extend : 'Ext.panel.Panel',
@@ -117,7 +126,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // define Models
         Ext4.define('Dataset.Browser.View', {
-            extend : 'Ext.data.Model',
+            extend : this.asTree ? 'Ext.data.FastModel' : 'Ext.data.Model',
             fields : fields
         });
 
