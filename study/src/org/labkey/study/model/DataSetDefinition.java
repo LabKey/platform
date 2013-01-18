@@ -340,6 +340,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
+    @Override
+    public ViewCategory getViewCategory()
+    {
+        if (_categoryId != null)
+            return ViewCategoryManager.getInstance().getCategory(_categoryId);
+
+        return null;
+    }
+
     public int getDataSetId()
     {
         return _dataSetId;

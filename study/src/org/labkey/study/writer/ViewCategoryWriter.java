@@ -56,6 +56,9 @@ public class ViewCategoryWriter implements InternalStudyWriter
 
                 ct.setLabel(category.getLabel());
                 ct.setDisplayOrder(category.getDisplayOrder());
+
+                if (category.getParent() != null)
+                    ct.setParent(category.getParent().getLabel());
             }
             vf.saveXmlBean(FILE_NAME, doc);
         }

@@ -17,6 +17,7 @@ package org.labkey.study.dataset;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.views.DataViewInfo;
@@ -204,9 +205,8 @@ public class DatasetViewProvider implements DataViewProvider
                         // save the category information then the dataset information
                         if (props.containsKey(Property.category.name()))
                         {
-                            String categoryName = String.valueOf(props.get(Property.category.name()));
-                            if (categoryName != null && !categoryName.trim().isEmpty())
-                                category = ViewCategoryManager.getInstance().ensureViewCategory(context.getContainer(), context.getUser(), categoryName);
+                            int categoryId = NumberUtils.toInt(String.valueOf(props.get(Property.category.name())));
+                            category = ViewCategoryManager.getInstance().getCategory(categoryId);
                         }
 
                         boolean dirty = false;

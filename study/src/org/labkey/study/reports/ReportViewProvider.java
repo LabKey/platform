@@ -17,6 +17,7 @@ package org.labkey.study.reports;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -296,9 +297,8 @@ public class ReportViewProvider implements DataViewProvider
                     // save the category information then the dataset information
                     if (props.containsKey(Property.category.name()))
                     {
-                        String categoryName = StringUtils.trimToNull(String.valueOf(props.get(Property.category.name())));
-                        if (categoryName != null)
-                            category = ViewCategoryManager.getInstance().ensureViewCategory(context.getContainer(), context.getUser(), categoryName);
+                        int categoryId = NumberUtils.toInt(String.valueOf(props.get(Property.category.name())));
+                        category = ViewCategoryManager.getInstance().getCategory(categoryId);
                     }
 
                     report.getDescriptor().setCategory(category);

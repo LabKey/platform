@@ -82,9 +82,15 @@ public class ViewCategoryImporter implements InternalStudyImporter
                 {
                     for (CategoryType type : categoryType.getCategoryArray())
                     {
-                        ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(ctx.getContainer(), ctx.getUser(), type.getLabel());
-                        category.setDisplayOrder(type.getDisplayOrder());
+                        String[] parts;
+                        if (type.getParent() != null)
+                            parts = new String[]{type.getParent(), type.getLabel()};
+                        else
+                            parts = new String[]{type.getLabel()};
 
+                        ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(ctx.getContainer(), ctx.getUser(), parts);
+
+                        category.setDisplayOrder(type.getDisplayOrder());
                         ViewCategoryManager.getInstance().saveCategory(ctx.getContainer(), ctx.getUser(), category);
                     }
                 }

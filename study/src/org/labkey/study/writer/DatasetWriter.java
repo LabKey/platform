@@ -34,6 +34,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.model.ReportPropsManager;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.DataSet;
@@ -123,12 +125,20 @@ public class DatasetWriter implements InternalStudyWriter
             if (!def.isShowByDefault())
                 datasetXml.setShowByDefault(false);
 
-            String category = def.getCategory();
+            ViewCategory category = null;
+            if (def.getCategoryId() != null)
+            {
+                category = ViewCategoryManager.getInstance().getCategory(def.getCategoryId());
+            }
+            else if (def.getCategory() != null)
+            {
+                category = ViewCategoryManager.getInstance().ensureViewCategory(ctx.getContainer(), ctx.getUser(), def.getCategory());
+            }
 
             if (null != category)
             {
-                categories.add(category);
-                datasetXml.setCategory(category);
+                categories.add(category.getLabel());
+                datasetXml.setCategory(ViewCategoryManager.getInstance().encode(category));
             }
 
             if (def.isDemographicData())

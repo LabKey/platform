@@ -1387,7 +1387,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                         var r = Ext4.ModelManager.create({
                                             label        : 'New Subcategory',
                                             displayOrder : 0,
-                                            parent       : p,
+                                            parent       : p
                                         }, 'Dataset.Browser.Category');
                                         store.insert(0, r);
                                         grid.getPlugin('subcategorycell').startEditByPosition({row : 0, column : 0});

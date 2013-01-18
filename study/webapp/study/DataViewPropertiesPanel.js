@@ -167,7 +167,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 autoSelect     : false,
                 queryMode      : 'remote',
                 displayField   : 'label',
-                valueField     : 'label',
+                valueField     : 'rowid',
                 emptyText      : 'Uncategorized',
                 listeners      : {
                     render : {fn : function(combo){combo.setRawValue(this.data.category);}, scope : this}

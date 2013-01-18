@@ -502,9 +502,14 @@ public class StudyManager
     {
         if (def.getCategory() != null)
         {
-            ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(def.getContainer(), user, def.getCategory());
+            // the imported category name may be encoded to contain subcategory info
+            String[] parts = ViewCategoryManager.getInstance().decode(def.getCategory());
+            ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(def.getContainer(), user, parts);
             if (category != null)
+            {
                 def.setCategoryId(category.getRowId());
+                def.setCategory(category.getLabel());
+            }
         }
     }
 
