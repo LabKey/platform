@@ -2023,7 +2023,7 @@ public class StudyController extends BaseStudyController
             _form = form;
             _study = getStudy();
 
-            if(getStudy().getParticipantAliasDatasetId() == form.getDatasetId()){
+            if((getStudy().getParticipantAliasDatasetId() != null) && (getStudy().getParticipantAliasDatasetId() == form.getDatasetId())){
                 super.setImportMessage("This is the Alias Dataset.  You do not need to include information for the date column.");
             }
             if (null == _study)
@@ -7885,6 +7885,28 @@ public class StudyController extends BaseStudyController
         private String _prefix = "";
         private int _numDigits = StudyManager.ALTERNATEID_DEFAULT_NUM_DIGITS;
         private int _aliasDatasetId = -1;
+        private String _aliasColumn = "";
+        private String _sourceColumn = "";
+
+        public String getAliasColumn()
+        {
+            return _aliasColumn;
+        }
+
+        public void setAliasColumn(String aliasColumn)
+        {
+            this._aliasColumn = aliasColumn;
+        }
+
+        public String getSourceColumn()
+        {
+            return _sourceColumn;
+        }
+
+        public void setSourceColumn(String sourceColumn)
+        {
+            this._sourceColumn = sourceColumn;
+        }
 
         public String getPrefix()
         {
@@ -8038,8 +8060,11 @@ public class StudyController extends BaseStudyController
         ChangeAlternateIdsForm changeAlternateIdsForm = new ChangeAlternateIdsForm();
         changeAlternateIdsForm.setPrefix(study.getAlternateIdPrefix());
         changeAlternateIdsForm.setNumDigits(study.getAlternateIdDigits());
-        if(study.getParticipantAliasDatasetId() != null)
+        if(study.getParticipantAliasDatasetId() != null){
             changeAlternateIdsForm.setAliasDatasetId(study.getParticipantAliasDatasetId());
+            changeAlternateIdsForm.setAliasColumn(study.getParticipantAliasProperty());
+            changeAlternateIdsForm.setSourceColumn(study.getParticipantAliasSourceProperty());
+        }
 
         return changeAlternateIdsForm;
     }
