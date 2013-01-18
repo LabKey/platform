@@ -1748,7 +1748,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // date
             //
 
-            if (!timetype.isVisitBased() && null == indexVisitDate && isDemographicData())
+            if (!timetype.isVisitBased() && null == indexVisitDate && (isDemographicData() || isParticipantAliasDataset()))
             {
                 final Date start = _study.getStartDate();
                 indexVisitDate = it.addColumn(new ColumnInfo("Date", JdbcType.TIMESTAMP), new Callable(){
