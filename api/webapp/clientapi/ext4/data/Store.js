@@ -66,9 +66,7 @@
  */
 
 Ext4.define('LABKEY.ext4.data.Store', {
-    /**
-     * @lends LABKEY.ext4.data.Store
-     */
+
     extend: 'Ext.data.Store',
 //    alternateClassName: 'LABKEY.ext4.Store',
     alias: 'store.labkeystore',
