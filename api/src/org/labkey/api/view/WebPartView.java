@@ -556,12 +556,15 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                 containerPathString = "'" + webPart.getPermissionContainer().getPath() + "'";
 
                             // Wrapped in immediately invoke function expression because of Issue 16953
-                            nMenu.addChild(new NavTree("Permissions",
+                            NavTree permissionsNav = new NavTree("Permissions",
                                     "javascript:(function(){Ext4.create('LABKEY.Portal.WebPartPermissionsPanel', {" +
                                             "webPartId: '" + getWebPartRowId() + "',\n" +
                                             "permission: " + permissionString + ",\n" +
                                             "containerPath: " + containerPathString + "\n" +
-                                            "}).show();}())"));
+                                            "}).show();}())");
+
+                            permissionsNav.setId("permissions_"+webPart.getRowId());
+                            nMenu.addChild(permissionsNav);
                         }
                     }
 
