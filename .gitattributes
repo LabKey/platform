@@ -1555,7 +1555,6 @@ pipeline/lib/commonj.jar -text
 pipeline/lib/commons-collections-3.2.jar -text
 pipeline/lib/commons-jxpath-1.2.jar -text
 pipeline/lib/commons-lang-2.6.jar -text
-pipeline/lib/commons-pool-1.4.jar -text
 pipeline/lib/concurrent.jar -text
 pipeline/lib/cryptix-asn1.jar -text
 pipeline/lib/cryptix.LICENSE -text
