@@ -25,9 +25,11 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.writer.AbstractContext;
 import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
@@ -35,6 +37,7 @@ import org.labkey.study.xml.StudyDocument;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 /**
  * User: adam
@@ -148,9 +151,29 @@ public class StudyImportContext extends AbstractContext
         if (null != specimens)
         {
             Container c = getContainer();
+            RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
+
+            StudyDocument.Study.Specimens.SpecimenWebPartGroupings specimenWebPartGroupings = specimens.getSpecimenWebPartGroupings();
+            if (null != specimenWebPartGroupings)
+            {
+                StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping[] groupingArray = specimenWebPartGroupings.getGroupingArray();
+                if (null != groupingArray)
+                {
+                    ArrayList<String[]> groupings = new ArrayList<String[]>(2);
+                    for (int i = 0; i < groupingArray.length; i += 1)
+                    {
+                        if (i >= 2)
+                            break;          // Currently only 2 groupings supported
+                        String[] groupBys = groupingArray[i].getGroupByArray();
+                        groupings.add(groupBys);
+                    }
+                    reposSettings.setSpecimenWebPartGroupings(groupings);
+                }
+            }
 
             RepositoryType.Enum repositoryType = specimens.getRepositoryType();
-            StudyController.updateRepositorySettings(c, RepositoryType.STANDARD == repositoryType);
+            reposSettings.setSimple(RepositoryType.STANDARD == repositoryType);
+            SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
 
             StudyImpl study = StudyManager.getInstance().getStudy(c).createMutable();
             if (specimens.isSetAllowReqLocRepository())

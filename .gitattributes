@@ -3394,6 +3394,7 @@ study/src/org/labkey/study/view/samples/manageRequest.jsp -text
 study/src/org/labkey/study/view/samples/manageRequestInputs.jsp -text
 study/src/org/labkey/study/view/samples/manageRequestStatus.jsp -text
 study/src/org/labkey/study/view/samples/manageRequirement.jsp -text
+study/src/org/labkey/study/view/samples/manageSpecimenWebPart.jsp -text
 study/src/org/labkey/study/view/samples/manageStatusOrder.jsp -text
 study/src/org/labkey/study/view/samples/manageStatuses.jsp -text
 study/src/org/labkey/study/view/samples/notification.jsp -text

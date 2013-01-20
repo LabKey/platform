@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SampleManager;
 import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.controllers.BaseStudyController;
@@ -657,6 +658,54 @@ public class SpecimenApiController extends BaseStudyController
             List<Map<String, Object>> additiveTypes = new ArrayList<Map<String, Object>>();
             buildTypeSummary(additiveTypes, summary.getAdditives());
             response.put("additiveTypes", additiveTypes);
+
+            return new ApiResponse()
+            {
+                public Map<String, Object> getProperties()
+                {
+                    return response;
+                }
+            };
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    @ApiVersion(13.1)
+    public class GetSpecimenWebPartGroupsAction extends ApiAction<SampleApiForm>
+    {
+        public ApiResponse execute(SampleApiForm form, BindException errors) throws Exception
+        {
+            // Build a JSON response with up to 2 groupings, each with up to 3 levels
+            // VALUE -->
+            // { "count" : int,
+            //   "label" : string,
+            //   "url" : string,
+            //   "group" : GROUP        [optional]
+            // }
+            // GROUP -->
+            // { "name" : "<column name>",
+            //   "values" : [VALUE, ...]
+            // }
+            // GROUPINGS -- >
+            // { "groupings" : [GROUP, ...]       [could be empty]
+            //
+            Container container = form.getViewContext().getContainer();
+            RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(container);
+            ArrayList<String[]> groupings = settings.getSpecimenWebPartGroupings();
+
+            final Map<String, Object> response = new HashMap<String, Object>();
+
+            SampleManager sampleManager = SampleManager.getInstance();
+            List<Map<String, Object>> groupingsJSON = new ArrayList<Map<String, Object>>();
+            for (String[] grouping: groupings)
+            {
+                if (null != grouping[0])        // Do nothing if no columns were specified
+                {
+                    Map<String, Object> groupingJSON = sampleManager.getGroupedValuesForColumn(getContainer(), grouping);
+                    groupingsJSON.add(groupingJSON);
+                }
+            }
+            response.put("groupings", groupingsJSON);
 
             return new ApiResponse()
             {

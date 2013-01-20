@@ -5489,4 +5489,88 @@ public class SpecimenController extends BaseStudyController
 
         return completions;
     }
+
+    @RequiresPermissionClass(ManageDisplaySettingsPermission.class)
+    public class ManageSpecimenWebPartAction extends SimpleViewAction<SpecimenWebPartForm>
+    {
+        public ModelAndView getView(SpecimenWebPartForm form, BindException errors)
+        {
+            RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
+            ArrayList<String[]> groupings = settings.getSpecimenWebPartGroupings();
+            form.setGrouping1(groupings.get(0));
+            form.setGrouping2(groupings.get(1));
+            form.setColumns(SampleManager.getInstance().getGroupedValueAllowedColumns());
+            return new JspView<SpecimenWebPartForm>("/org/labkey/study/view/samples/manageSpecimenWebPart.jsp", form);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("Configure Specimen Web Part");
+
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SaveSpecimenWebPartSettingsAction extends ApiAction<SpecimenWebPartForm>
+    {
+        @Override
+        public ApiResponse execute(SpecimenWebPartForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Container container = getContainer();
+            StudyImpl study = StudyManager.getInstance().getStudy(container);
+            if (study != null)
+            {
+                RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(container);
+                ArrayList<String[]> groupings = new ArrayList<String[]>(2);
+                groupings.add(form.getGrouping1());
+                groupings.add(form.getGrouping2());
+                settings.setSpecimenWebPartGroupings(groupings);
+                SampleManager.getInstance().saveRepositorySettings(container, settings);
+                response.put("success", true);
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+    }
+
+    public static class SpecimenWebPartForm
+    {
+        private String[] _grouping1;
+        private String[] _grouping2;
+        private String[] _columns;
+
+        public String[] getGrouping1()
+        {
+            return _grouping1;
+        }
+
+        public void setGrouping1(String[] grouping1)
+        {
+            _grouping1 = grouping1;
+        }
+
+        public String[] getGrouping2()
+        {
+            return _grouping2;
+        }
+
+        public void setGrouping2(String[] grouping2)
+        {
+            _grouping2 = grouping2;
+        }
+
+        public String[] getColumns()
+        {
+            return _columns;
+        }
+
+        public void setColumns(String[] columns)
+        {
+            _columns = columns;
+        }
+    }
 }

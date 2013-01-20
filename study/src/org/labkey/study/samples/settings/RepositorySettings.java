@@ -20,6 +20,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.study.model.StudyManager;
 import org.labkey.api.data.Container;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 /*
@@ -32,13 +33,28 @@ public class RepositorySettings
 {
     private static final String KEY_SIMPLE = "Simple";
     private static final String KEY_ENABLE_REQUESTS = "EnableRequests";
+
+    // Columns to group by n the specimen web part: Group1: Group By 1, Then By 2, Then By 3. Same for Group2
+    private static final String makeKeySpecWebPartGroup(Integer grouping, Integer groupBy)
+    {
+        return "SpecWebPart_Group" + grouping.toString() + "." + groupBy.toString();
+    }
+
     private boolean _simple;
     private boolean _enableRequests;
+    private String[][] _specWebPartColumnGroup = new String[2][3];      // 2 groupings; 3 groupBys within each
+
     private Container _container;
 
     public RepositorySettings(Container container)
     {
         _container = container;
+        _specWebPartColumnGroup[0][0] = "PrimaryType";
+        _specWebPartColumnGroup[0][1] = "DerivativeType";
+        _specWebPartColumnGroup[0][2] = "AdditiveType";
+        _specWebPartColumnGroup[1][0] = "DerivativeType";
+        _specWebPartColumnGroup[1][1] = "AdditiveType";
+        _specWebPartColumnGroup[1][2] = "";
     }
 
     public RepositorySettings(Container container, Map<String, String> map)
@@ -48,12 +64,32 @@ public class RepositorySettings
         _simple = null != simple && Boolean.parseBoolean(simple);
         String enableRequests = map.get(KEY_ENABLE_REQUESTS);
         _enableRequests = null == enableRequests ? !_simple : Boolean.parseBoolean(enableRequests);
+
+        String firstGrouping = map.get(makeKeySpecWebPartGroup(0,0));
+        if (null != firstGrouping)
+        {
+            for (int i = 0; i < 2; i += 1)      // Only 2 grouping supported
+            {
+                for (int k = 0; k < 3; k += 1)   // Only 2 groupBys supported
+                {
+                    _specWebPartColumnGroup[i][k] = map.get(makeKeySpecWebPartGroup(i,k));
+                }
+            }
+        }
     }
 
     public void populateMap(Map<String, String> map)
     {
         map.put(KEY_SIMPLE, Boolean.toString(_simple));
         map.put(KEY_ENABLE_REQUESTS, Boolean.toString(_enableRequests));
+
+        for (int i = 0; i < 2; i += 1)      // Only 2 grouping supported
+        {
+            for (int k = 0; k < 3; k += 1)   // Only 2 groupBys supported
+            {
+                map.put(makeKeySpecWebPartGroup(i,k), _specWebPartColumnGroup[i][k]);
+            }
+        }
     }
 
     public boolean isSimple()
@@ -83,6 +119,35 @@ public class RepositorySettings
     {
         assert _simple || enableRequests : "Specimen requests may only be enabled for advanced specimen repository type";
         _enableRequests = enableRequests;
+    }
+
+    public ArrayList<String[]> getSpecimenWebPartGroupings()
+    {
+        // List of groupings
+        //      Each grouping is a list of Strings that name the columns
+        ArrayList<String[]> groupings = new ArrayList<String[]>(2);
+        for (int i = 0; i < 2; i += 1)      // Only 2 grouping supported
+        {
+            String[] grouping = new String[3];
+            for (int k = 0; k < 3; k += 1)   // Only 3 groupBys supported
+            {
+                grouping[k] = _specWebPartColumnGroup[i][k];
+            }
+            groupings.add(grouping);
+        }
+        return groupings;
+    }
+
+    public void setSpecimenWebPartGroupings(ArrayList<String[]> groupings)
+    {
+        for (int i = 0; i < groupings.size() && i < 2; i += 1)      // Only 2 grouping supported
+        {
+            String[] grouping = groupings.get(i);
+            for (int k = 0; k < grouping.length && k < 3; k += 1)   // Only 3 groupBys supported
+            {
+                _specWebPartColumnGroup[i][k] = grouping[k];
+            }
+        }
     }
 
     public static RepositorySettings getDefaultSettings(Container container)

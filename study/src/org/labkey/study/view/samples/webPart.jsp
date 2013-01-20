@@ -37,59 +37,66 @@
 </script>
 <script type="text/javascript">
 
-    function populateTypeSummaryContent(typeList, hidden)
+    function populateGroupingContent(grouping, hidden)
     {
+        var values = grouping.values;
         var innerHTML = '<table width="100%" class="labkey-study-expandable-nav">';
-        for (var i = 0; i < typeList.length; i++)
+        for (var i = 0; i < values.length; i++)
         {
-            var details = typeList[i];
+            var details = values[i];
             innerHTML += '<tr class="labkey-header">';
-            if (details.children)
+            if (details.group)
                 innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/plus.gif"></a></td>';
             else
                 innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=contextPath%>/_.gif"></td>';
 
-            innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' + details.label + '</a></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td</tr>';
-            if (details.children)
-                innerHTML += '<tr style="display:none;"><td></td><td colspan="2">' + populateTypeSummaryContent(details.children, true) + '</td></tr>';
+            var nextByGroup = '';
+            if (details.group)
+                nextByGroup = ' [by ' + details.group.name + ']';
+            innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' +
+                    details.label + '</a><span style="font-size: x-small;"> ' + nextByGroup + '</span></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td</tr>';
+            if (details.group)
+                innerHTML += '<tr style="display:none;"><td></td><td colspan="2">' + populateGroupingContent(details.group, true) + '</td></tr>';
         }
         innerHTML += '</table>';
         return innerHTML;
     }
 
-    function populateTypeSummary(typeList, elementId)
+    function populateGrouping(grouping, elementId)
     {
-        var innerHTML = populateTypeSummaryContent(typeList, false);
+        var groupingName = grouping.name;
+        if (elementId == 'primaryTypes')
+            document.getElementById('groupHeading1').innerHTML = 'Vials by ' + groupingName;
+        else
+            document.getElementById('groupHeading2').innerHTML = 'Vials by ' + groupingName;
+
+        var innerHTML = populateGroupingContent(grouping, false);
         document.getElementById(elementId).innerHTML = innerHTML;
     }
 
-    function handleTypeSummary(allTypes)
+    function handleGroupings(resp)
     {
-        if (allTypes.primaryTypes.length == 0)
+        if (resp.groupings.length == 0)
         {
-            var html = '<i>No specimens found.</i>';
-        <%
-            if (c.hasPermission(user, AdminPermission.class))
-            {
-        %>
-            var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
-            html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
-        <%
-            }
-        %>
+            var html = '<i>No specimen groupings.</i>';
             document.getElementById('specimen-browse-webpart-content').innerHTML = html;
         }
         else
         {
-            populateTypeSummary(allTypes.primaryTypes, 'primaryTypes');
-            populateTypeSummary(allTypes.derivativeTypes, 'derivativeTypes');
+            populateGrouping(resp.groupings[0], 'primaryTypes');
+            if (resp.groupings.length > 1)
+                populateGrouping(resp.groupings[1], 'derivativeTypes');
+            else
+            {
+                document.getElementById('grouping2').innerHTML = '';
+            }
         }
         document.getElementById('specimen-browse-webpart-content').setAttribute('style', 'display: inline');
     }
 
     Ext.onReady(function() {
-        LABKEY.Specimen.getVialTypeSummary({
-            success: handleTypeSummary
+            LABKEY.Specimen.getSpecimenWebPartGroups({
+                success: handleGroupings
         });
     });
 </script>
@@ -236,40 +243,44 @@
 %>
         <!-- end left column --> <!-- right column -->
         <td valign="top" width="55%">
+            <span id="grouping1">
             <table class="labkey-nav-tree" style="width: 100%">
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header" >
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
                             <img src="<%=contextPath%>/_images/minus.gif" alt="" />
-                            <span>Vials by Primary Type</span>
+                            <span id="groupHeading1"></span>
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td style="padding-left:1em;width: 100%;">
-                        <span id="primaryTypes">Loading...</span>
+                        <span id="primaryTypes"></span>
                     </td>
                 </tr>
                 </tbody>
             </table>
+            </span>
+            <span id="grouping2">
             <table class="labkey-nav-tree" style="width: 100%;;margin-top:1em">
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
                             <img src="<%=contextPath%>/_images/plus.gif" alt="" />
-                            <span>Vials by Derivative</span>
+                            <span id="groupHeading2"></span>
                         </a>
                     </td>
                 </tr>
                 <tr style="display:none">
                     <td style="padding-left:1em;width: 100%;">
-                        <span id="derivativeTypes">Loading...</span>
+                        <span id="derivativeTypes"></span>
                     </td>
                 </tr>
                 </tbody>
             </table>
+            </span>
 <%
     if (c.hasPermission(user, AdminPermission.class))
     {

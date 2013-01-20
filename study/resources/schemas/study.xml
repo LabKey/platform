@@ -893,18 +893,38 @@
       <ns:column columnName="PrimaryTypeId">
           <ns:description>The ID of the primary type of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:fk>
+              <ns:fkColumnName>RowId</ns:fkColumnName>
+              <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
+              <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="DerivativeTypeId">
           <ns:description>The ID of the derivative type of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:fk>
+              <ns:fkColumnName>RowId</ns:fkColumnName>
+              <ns:fkTable>SpecimenDerivative</ns:fkTable>
+              <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="AdditiveTypeId">
           <ns:description>The ID of the additive type of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:fk>
+              <ns:fkColumnName>RowId</ns:fkColumnName>
+              <ns:fkTable>SpecimenAdditive</ns:fkTable>
+              <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="originatinglocationid">
           <ns:description>The ID of the originating (collection) location of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:fk>
+              <ns:fkColumnName>RowId</ns:fkColumnName>
+              <ns:fkTable>Site</ns:fkTable>
+              <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="DerivativeTypeId2">
           <ns:description>The ID of the second derivative type of each specimen.</ns:description>
@@ -963,6 +983,11 @@
       <ns:column columnName="CurrentLocation">
           <ns:description>The ID of the current location of the vial.  Current location is determined by the most recent event for each vial, and may be null if the most recent specimen event indicates that the vial has been shipped.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:fk>
+              <ns:fkColumnName>RowId</ns:fkColumnName>
+              <ns:fkTable>Site</ns:fkTable>
+              <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="AtRepository">
           <ns:description>Whether each vial is currently at a repository.</ns:description>
@@ -979,6 +1004,11 @@
       <ns:column columnName="ProcessingLocation">
           <ns:description>The ID of the processing location of each vial.</ns:description>
           <ns:datatype>int</ns:datatype>
+          <ns:fk>
+              <ns:fkColumnName>RowId</ns:fkColumnName>
+              <ns:fkTable>Site</ns:fkTable>
+              <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="FirstProcessedByInitials">
           <ns:description>The value of the ProcessedByInitials from the first recorded event for this vial.</ns:description>

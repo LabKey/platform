@@ -239,6 +239,12 @@
         <td><%= textLink("Manage Display and Behavior",
                 new ActionURL(SpecimenController.ManageDisplaySettingsAction.class, c)) %></td>
     </tr>
+    <tr>
+        <th align="left">Specimen Web Part</th>
+        <td>Configure the specimen groupings in the specimen web part</td>
+        <td><%= textLink("Configure Specimen Groupings",
+                new ActionURL(SpecimenController.ManageSpecimenWebPartAction.class, c)) %></td>
+    </tr>
 <%
         }
         else

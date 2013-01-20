@@ -17,6 +17,7 @@
 package org.labkey.study;
 
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -39,6 +40,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.model.*;
 import org.labkey.study.query.StudyQuerySchema;
@@ -135,6 +137,8 @@ public class SampleManager
                 return StudySchema.getInstance().getTableInfoSampleRequestStatus();
             }
         }, SampleRequestStatus.class);
+
+        initGroupedValueAllowedColumnMap();
     }
 
     public static SampleManager getInstance()
@@ -2730,4 +2734,354 @@ public class SampleManager
         }
 
     }
+
+    private class GroupedValueColumnHelper
+    {
+        private String _viewColumnName;
+        private String _sqlColumnName;
+        private String _urlFilterName;
+        private String _joinColumnName;
+
+        public GroupedValueColumnHelper(String sqlColumnName, String viewColumnName, String urlFilterName, String joinColumnName)
+        {
+            _sqlColumnName = sqlColumnName;
+            _viewColumnName = viewColumnName;
+            _urlFilterName = urlFilterName;
+            _joinColumnName = joinColumnName;
+        }
+
+        public String getViewColumnName()
+        {
+            return _viewColumnName;
+        }
+
+        public String getSqlColumnName()
+        {
+            return _sqlColumnName;
+        }
+
+        public String getUrlFilterName()
+        {
+            return _urlFilterName;
+        }
+
+        public String getJoinColumnName()
+        {
+            return _joinColumnName;
+        }
+
+        public FieldKey getFieldKey()
+        {
+            // constructs FieldKey whether it needs join or not
+            if (null == _joinColumnName)
+                return FieldKey.fromString(_viewColumnName);
+            return FieldKey.fromParts(_sqlColumnName, _joinColumnName);
+        }
+    }
+
+    // Map "ViewColumnName" name to object with sql column name and url filter name
+    private final Map<String, GroupedValueColumnHelper> _groupedValueAllowedColumnMap = new HashMap<String, GroupedValueColumnHelper>();
+
+    private void initGroupedValueAllowedColumnMap()
+    {
+        _groupedValueAllowedColumnMap.put("PrimaryType",            new GroupedValueColumnHelper("PrimaryTypeId", "PrimaryType", "PrimaryType/Description", "PrimaryType"));
+        _groupedValueAllowedColumnMap.put("DerivativeType",         new GroupedValueColumnHelper("DerivativeTypeId", "DerivativeType", "DerivativeType/Description",  "Derivative"));
+        _groupedValueAllowedColumnMap.put("AdditiveType",           new GroupedValueColumnHelper("AdditiveTypeId", "AdditiveType", "AdditiveType/Description",  "Additive"));
+        _groupedValueAllowedColumnMap.put("DerivativeType2",        new GroupedValueColumnHelper("DerivativeTypeId2", "DerivativeType2", "DerivativeType2/Description",  "Derivative"));
+        _groupedValueAllowedColumnMap.put("SubAdditiveDerivative",  new GroupedValueColumnHelper("SubAdditiveDerivative", "SubAdditiveDerivative", "SubAdditiveDerivative", null));
+        _groupedValueAllowedColumnMap.put("Clinic",                 new GroupedValueColumnHelper("originatinglocationid", "Clinic", "Clinic/Label", "Label"));
+        _groupedValueAllowedColumnMap.put("ProcessingLocation",     new GroupedValueColumnHelper("ProcessingLocation", "ProcessingLocation", "ProcessingLocation/Label", "Label"));
+        _groupedValueAllowedColumnMap.put("ProtocolNumber",         new GroupedValueColumnHelper("ProtocolNumber", "ProtocolNumber", "ProtocolNumber", null));
+        _groupedValueAllowedColumnMap.put("TubeType",               new GroupedValueColumnHelper("TubeType", "TubeType", "TubeType", null));
+        _groupedValueAllowedColumnMap.put("SiteName",               new GroupedValueColumnHelper("CurrentLocation", "SiteName", "SiteName/Label", "Label"));
+        _groupedValueAllowedColumnMap.put("Available",              new GroupedValueColumnHelper("Available", "Available", "Available", null));
+        _groupedValueAllowedColumnMap.put("Freezer",                new GroupedValueColumnHelper("Freezer", "Freezer", "Freezer", null));
+        _groupedValueAllowedColumnMap.put("Fr_Container",           new GroupedValueColumnHelper("Fr_Container", "Fr_Container", "Fr_Container", null));
+        _groupedValueAllowedColumnMap.put("Fr_Position",            new GroupedValueColumnHelper("Fr_Position", "Fr_Position", "Fr_Position", null));
+        _groupedValueAllowedColumnMap.put("Fr_Level1",              new GroupedValueColumnHelper("Fr_Level1", "Fr_Level1", "Fr_Level1", null));
+        _groupedValueAllowedColumnMap.put("Fr_Level2",              new GroupedValueColumnHelper("Fr_Level2", "Fr_Level2", "Fr_Level2", null));
+    }
+
+    public Map<String, GroupedValueColumnHelper> getGroupedValueAllowedMap()
+    {
+        return _groupedValueAllowedColumnMap;
+    }
+
+    public String[] getGroupedValueAllowedColumns()
+    {
+        Set<String> keySet = _groupedValueAllowedColumnMap.keySet();
+        String[] allowedColumns = keySet.toArray(new String[keySet.size()]);
+        return allowedColumns;
+    }
+
+    private class GroupedValueFilter
+    {
+        private String _viewColumnName;
+        private String _filterValueName;
+
+        public GroupedValueFilter()
+        {
+        }
+
+        public String getViewColumnName()
+        {
+            return _viewColumnName;
+        }
+
+        public String getFilterValueName()
+        {
+            return _filterValueName;
+        }
+
+        public void setFilterValueName(String filterValueName)
+        {
+            _filterValueName = filterValueName;
+        }
+
+        public void setViewColumnName(String viewColumnName)
+        {
+            _viewColumnName = viewColumnName;
+        }
+    }
+
+    private class GroupedResults
+    {
+        public String viewName;
+        public String urlFilterName;
+        public String labelValue;
+        public long count;
+        public Map<String, GroupedResults> childGroupedResultsMap;
+    }
+
+    public Map<String, Object> getGroupedValuesForColumn(Container container, String[] grouping)
+    {
+        // ColumnName and filter names are "QueryView" names; map them to actual table names before building query
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        if (study == null)
+            return null;
+
+        TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenDetail();
+        String cacheKey = container.getId() + "";
+        for (int i = 0; i < grouping.length; i += 1)
+        {
+            if (!StringUtils.isNotBlank(grouping[i]))
+                break;      // Grouping may have null entries for groupBys that are not chosen to be used
+            cacheKey += "/" + grouping[i];
+        }
+        Map<String, Object> groupedValue = (Map<String, Object>) DbCache.get(tableInfo, cacheKey);
+        if (null != groupedValue)
+            return groupedValue;
+
+        Table.TableResultSet resultSet = null;
+        SQLFragment sql = null;
+        try
+        {
+            QueryService queryService = QueryService.get();
+            List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+            for (int i = 0; i < grouping.length; i += 1)
+            {
+                if (!StringUtils.isNotBlank(grouping[i]))
+                    break;      // Grouping may have null/blank entries for groupBys that are not chosen to be used
+                GroupedValueColumnHelper columnHelper = getGroupedValueAllowedMap().get(grouping[i]);
+                FieldKey fieldKey = columnHelper.getFieldKey();
+                fieldKeys.add(fieldKey);
+            }
+
+            // Basic SQL with joins
+            Map<FieldKey, ColumnInfo> columnMap = queryService.getColumns(tableInfo, fieldKeys);
+
+            // Container filter
+            Filter containerFilter = null;
+            if (study.isAncillaryStudy())
+            {
+                List<String> containerIds = new ArrayList<String>(2);
+                containerIds.add(container.getId());
+                containerIds.add(study.getSourceStudy().getContainer().getId());
+                SimpleFilter.FilterClause inClause = new SimpleFilter.InClause(FieldKey.fromString("Container"), containerIds);
+
+                String[] ptids = StudyManager.getInstance().getParticipantIds(study);
+                List<String> participantIds = new ArrayList<String>(ptids.length);
+                if (ptids == null || ptids.length == 0)
+                    participantIds.add("NULL");
+                else
+                {
+                    for (String ptid : ptids)
+                    {
+                        participantIds.add(ptid);
+                    }
+                }
+                SimpleFilter.FilterClause inClause1 = new SimpleFilter.InClause(FieldKey.fromString("PTID"), participantIds);
+                SimpleFilter.FilterClause andClause = new SimpleFilter.AndClause(inClause, inClause1);
+                containerFilter = new SimpleFilter(andClause);
+            }
+            else
+            {
+                containerFilter = new SimpleFilter(FieldKey.fromString("Container"), container.getId());
+            }
+
+            sql = queryService.getSelectSQL(tableInfo, columnMap.values(), containerFilter, null, -1, 0, false);
+
+            // Insert COUNT
+            String countStr = " COUNT(*) As RowCount,\n";
+            int insertIndex = sql.indexOf("SELECT");
+            sql.insert(insertIndex + 6, countStr);
+
+            sql.append("GROUP BY ");
+            boolean firstGroupBy = true;
+            for (ColumnInfo columnInfo : columnMap.values())
+            {
+                if (!firstGroupBy)
+                    sql.append(", ");
+                firstGroupBy = false;
+                String columnAlias = columnInfo.getAlias();
+                sql.append(columnAlias);
+            }
+
+            sql.append("\nORDER BY ");
+            boolean firstOrderBy = true;
+            for (ColumnInfo columnInfo : columnMap.values())
+            {
+                if (!firstOrderBy)
+                    sql.append(", ");
+                firstOrderBy = false;
+                String columnAlias = columnInfo.getAlias();
+                sql.append(columnAlias);
+            }
+
+            SqlSelector selector = new SqlSelector(tableInfo.getSchema(), sql);
+
+            resultSet = selector.getResultSet();
+            try
+            {
+                if (null != resultSet)
+                {
+                    // The result set is grouped by all levels together, so at the upper levels, we have to group ourselves
+                    // Build a tree of GroupedResultsMaps, one level for each grouping level
+                    //
+                    Map<String, GroupedResults> groupedResultsMap = new HashMap<String, GroupedResults>();
+                    while (resultSet.next())
+                    {
+                        Map<String, Object> rowMap = resultSet.getRowMap();
+                        long count = (Long)rowMap.get("RowCount");
+                        Map<String, GroupedResults> currentGroupedResultsMap = groupedResultsMap;
+
+                        for (int i = 0; i < grouping.length; i += 1)
+                        {
+                            if (!StringUtils.isNotBlank(grouping[i]))
+                                break;      // Grouping may have null entries for groupBys that are not chosen to be used
+
+                            GroupedValueColumnHelper columnHelper = getGroupedValueAllowedMap().get(grouping[i]);
+                            ColumnInfo columnInfo = columnMap.get(columnHelper.getFieldKey());
+                            String labelValue = (String)rowMap.get(columnInfo.getAlias());
+                            GroupedResults groupedResults = currentGroupedResultsMap.get(labelValue);
+                            if (null == groupedResults)
+                            {
+                                groupedResults = new GroupedResults();
+                                groupedResults.viewName = grouping[i];
+                                groupedResults.urlFilterName = columnHelper.getUrlFilterName();
+                                groupedResults.labelValue = labelValue;
+                                groupedResults.childGroupedResultsMap = new HashMap<String, GroupedResults>();
+                                currentGroupedResultsMap.put(labelValue, groupedResults);
+                            }
+                            groupedResults.count += count;
+                            currentGroupedResultsMap = groupedResults.childGroupedResultsMap;
+                        }
+                    }
+
+                    if (!groupedResultsMap.isEmpty())
+                    {
+                        groupedValue = buildGroupedValue(groupedResultsMap, container, new ArrayList<GroupedValueFilter>());
+                    }
+                    else
+                    {
+                        groupedValue = new HashMap<String, Object>(2);
+                        groupedValue.put("name", grouping[0]);
+                        groupedValue.put("values", new ArrayList<Map<String, Object>>());
+                    }
+                }
+            }
+            finally
+            {
+                if (null != resultSet)
+                    resultSet.close();
+            }
+
+
+            DbCache.put(tableInfo, cacheKey, groupedValue, 8 * CacheManager.HOUR);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return groupedValue;
+    }
+
+    private Map<String, Object> buildGroupedValue(Map<String, GroupedResults> groupedResultsMap, Container container, List<GroupedValueFilter> groupedValueFilters)
+    {
+        String viewName = null;
+        ArrayList<Map<String, Object>> groupedValues = new ArrayList<Map<String, Object>>();
+        for (GroupedResults groupedResults : groupedResultsMap.values())
+        {
+            viewName = groupedResults.viewName;             // They are all the same in this collection
+            Map<String, Object> groupedValue = new HashMap<String, Object>(5);
+            groupedValue.put("label", groupedResults.labelValue);
+            groupedValue.put("count", groupedResults.count);
+            groupedValue.put("url", getURL(container, groupedResults.urlFilterName, groupedValueFilters, groupedResults.labelValue));
+            Map<String, GroupedResults> childGroupResultsMap = groupedResults.childGroupedResultsMap;
+            if (null != childGroupResultsMap && !childGroupResultsMap.isEmpty())
+            {
+                GroupedValueFilter groupedValueFilter = new GroupedValueFilter();
+                groupedValueFilter.setViewColumnName(groupedResults.viewName);
+                groupedValueFilter.setFilterValueName(null != groupedValue.get("label") ? groupedValue.get("label").toString() : null);
+                List<GroupedValueFilter> groupedValueFiltersCopy = new ArrayList<GroupedValueFilter>(groupedValueFilters); // Need copy because can't share across members of groupedResultsMap
+                groupedValueFiltersCopy.add(groupedValueFilter);
+                Map<String, Object> nextLevelGroup = buildGroupedValue(childGroupResultsMap, container, groupedValueFiltersCopy);
+                groupedValue.put("group", nextLevelGroup);
+
+            }
+            groupedValues.add(groupedValue);
+        }
+
+        Collections.sort(groupedValues, new Comparator<Map<String, Object>>()
+        {
+            @Override
+            public int compare(Map<String, Object> o, Map<String, Object> o1)
+            {
+                String str = (String)o.get("label");
+                String str1 = (String)o1.get("label");
+                if (null == str)
+                {
+                    if (null == str1)
+                        return 0;
+                    else
+                        return 1;
+                }
+                else if (null == str1)
+                    return -1;
+                return (str.compareTo(str1));
+            }
+        });
+
+        Map<String, Object> groupedValue = new HashMap<String, Object>(2);
+        groupedValue.put("name", viewName);
+        groupedValue.put("values", groupedValues);
+        return groupedValue;
+    }
+
+    private ActionURL getURL(Container container, String groupColumnName, List<GroupedValueFilter> filterNamesAndValues, String label)
+    {
+        ActionURL url = new ActionURL(SpecimenController.SamplesAction.class, container);
+        addFilterParameter(url, groupColumnName, label);
+        for (GroupedValueFilter filterColumnAndValue : filterNamesAndValues)
+            addFilterParameter(url, getGroupedValueAllowedMap().get(filterColumnAndValue.getViewColumnName()).getUrlFilterName(), filterColumnAndValue.getFilterValueName());
+        url.addParameter("showVials", "true");
+        return url;
+    }
+
+    private void addFilterParameter(ActionURL url, String urlColumnName, String label)
+    {
+        url.addParameter("SpecimenDetail." + urlColumnName + "~eq", label);
+    }
+
 }

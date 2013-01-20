@@ -19,9 +19,12 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.writer.StandardSpecimenWriter.QueryInfo;
 import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
+
+import java.util.ArrayList;
 
 /**
  * User: adam
@@ -44,13 +47,23 @@ class SpecimenArchiveWriter implements InternalStudyWriter
 
         StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
-        specimens.setRepositoryType(study.getRepositorySettings().isSimple() ? RepositoryType.STANDARD : RepositoryType.ADVANCED);
+        RepositorySettings repositorySettings = study.getRepositorySettings();
+        specimens.setRepositoryType(repositorySettings.isSimple() ? RepositoryType.STANDARD : RepositoryType.ADVANCED);
         specimens.setDir(DEFAULT_DIRECTORY);
         specimens.setAllowReqLocRepository(study.isAllowReqLocRepository());
         specimens.setAllowReqLocClinic(study.isAllowReqLocClinic());
         specimens.setAllowReqLocSal(study.isAllowReqLocSal());
         specimens.setAllowReqLocEndpoint(study.isAllowReqLocEndpoint());
-
+        ArrayList<String[]> groupings = repositorySettings.getSpecimenWebPartGroupings();
+        if (groupings.size() > 0)
+        {
+            StudyDocument.Study.Specimens.SpecimenWebPartGroupings specimenWebPartGroupings = specimens.addNewSpecimenWebPartGroupings();
+            for (int i = 0; i < 1 /*groupings.size()*/; i += 1)
+            {
+                StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping specimenWebPartGrouping = specimenWebPartGroupings.addNewGrouping();
+                specimenWebPartGrouping.setGroupByArray(groupings.get(i));
+            }
+        }
         String archiveName = vf.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
         VirtualFile zip = vf.createZipArchive(archiveName);
         if (!zip.equals(vf)) // MemoryVirtualFile doesn't add a zip archive, it just returns vf
