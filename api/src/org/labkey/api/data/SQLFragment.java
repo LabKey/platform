@@ -257,6 +257,11 @@ public class SQLFragment implements Appendable, CharSequence
         getStringBuilder().insert(index, str);
     }
 
+    public int indexOf(String str)
+    {
+        return getStringBuilder().indexOf(str);
+    }
+
      // Display query in "English" (display SQL with params substituted)
     // with a little more work could probably be made to be SQL legal
     public String getFilterText()

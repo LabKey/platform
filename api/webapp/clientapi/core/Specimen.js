@@ -222,7 +222,43 @@ LABKEY.Specimen = new function()
                 failure: LABKEY.Utils.getCallbackWrapper(config.failure, this, true)
             });
         },
-        
+
+        // GetSpecimenWebPartGroupsAction
+        /**
+         * Retrieves a specimen request for a given specimen request ID.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {Function} config.success Required. Function called when the
+         *        "getSpecimenWebPartGroups" function executes successfully.  Will be called with a single argument with the following top-level properties:
+         * <ul>
+         *  <li>groupings: [group...]</li>
+         * </ul>
+         * The value of this property is an array of group objects, each with two properties:
+         *  <li>name: the text label of the column.</li>
+         *  <li>values: the value of this property is an array ofobjects with four properties:
+         * <ul>
+         *  <li>label: the text label of the specimen type.</li>
+         *  <li>count: the number of vials of this type.  This count will reflect any parent types as well (see 'children' below).</li>
+         *  <li>url: the URL that can be used to access the list of these vials.</li>
+         *  <li>group: an optional sub-group.</li>
+         * </ul>
+         * @param {Function} [config.failure] Function called when execution of the "getOpenRequests" function fails.
+         * @param {String} [config.containerPath] The container path in which the relevant study is defined.
+         *       If not supplied, the current container path will be used.
+         */
+        getSpecimenWebPartGroups : function(config)
+        {
+            // Unfortunately, we need to reverse our parameter order here- LABKEY.Utils uses inconsistent ordering for its
+            // default callback and callback wrapper functions:
+            if (!config.failure)
+                config.failure = function(error, response) { return LABKEY.Utils.displayAjaxErrorResponse(response, error); };
+
+            sendJsonQueryRequest({
+                url : LABKEY.ActionURL.buildURL("study-samples-api", "getSpecimenWebPartGroups", config.containerPath),
+                success: getSuccessCallbackWrapper(config.success),
+                failure: LABKEY.Utils.getCallbackWrapper(config.failure, this, true)
+            });
+        },
+
         // GetRequestAction
         /**
          * Retrieves a specimen request for a given specimen request ID.
