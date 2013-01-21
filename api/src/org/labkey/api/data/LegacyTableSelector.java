@@ -75,13 +75,13 @@ public class LegacyTableSelector extends LegacySelector<TableSelector, LegacyTab
         return _selector.getResults();
     }
 
-    public Results getResults(boolean scrollable, boolean cache) throws SQLException
+    public Results getResults(boolean cache, boolean scrollable) throws SQLException
     {
-        return _selector.getResults(scrollable, cache);
+        return _selector.getResults(cache, scrollable);
     }
 
-    public Results getResultsAsync(boolean scrollable, boolean cache, HttpServletResponse response) throws SQLException, IOException
+    public Results getResultsAsync(boolean cache, boolean scrollable, HttpServletResponse response) throws SQLException, IOException
     {
-        return _selector.getResultsAsync(scrollable, cache, response);
+        return _selector.getResultsAsync(cache, scrollable, response);
     }
 }

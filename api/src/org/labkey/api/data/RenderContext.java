@@ -419,11 +419,11 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (async)
         {
-             return selector.getResultsAsync(false, getCache(), getViewContext().getResponse());
+             return selector.getResultsAsync(getCache(), false, getViewContext().getResponse());
         }
         else
         {
-            return selector.getResults(false, getCache());
+            return selector.getResults(getCache(), false);
         }
     }
 

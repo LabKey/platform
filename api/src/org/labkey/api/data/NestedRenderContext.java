@@ -222,11 +222,11 @@ public class NestedRenderContext extends RenderContext
         // Force the result set to be cached so that we can do our nesting
         if (async)
         {
-            return selector.getResultsAsync(true, getCache(), getViewContext().getResponse());
+            return selector.getResultsAsync(getCache(), true, getViewContext().getResponse());
         }
         else
         {
-            return selector.getResults(true, getCache());
+            return selector.getResults(getCache(), true);
         }
     }
 }
