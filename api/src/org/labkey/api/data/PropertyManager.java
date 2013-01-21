@@ -94,7 +94,7 @@ public class PropertyManager
     private static final Logger _log = Logger.getLogger(PropertyManager.class);
     private static final PropertySchema prop = PropertySchema.getInstance();
 
-    public static final User SHARED_USER = User.guest;  // Shared properties are saved with user id 0
+    public static final User SHARED_USER = User.guest;  // Shared properties are saved with the guest user (id 0)
 
 
     private PropertyManager()
@@ -127,7 +127,7 @@ public class PropertyManager
     /**
      * This is designed to coalesce up the container hierarchy, returning the first non-null value
      * If a userId is provided, it first traverses containers using that user.  If no value is found,
-     * it then default to all users (ie. 0), then retry all containers
+     * it then default to all users (ie. User.guest), then retry all containers
      *
      * NOTE: this does not test permissions.  Callers should ensure the requested user has the appropriate
      * permissions to read these properties
