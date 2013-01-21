@@ -21,6 +21,9 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -411,49 +414,62 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 keywordsMed = keywordsMed + " " + part;
 
             String summary = extractSummary(body, title);
-            // Split the category string by whitespace, index each without stemming
-            String[] categoryArray = categories.split("\\s+");
 
             Document doc = new Document();
 
-            // Index and store the unique document ID
-            doc.add(new Field(FIELD_NAMES.uniqueId.toString(), r.getDocumentId(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+            // === Index without analyzing, store ===
 
-            // Index, but don't store
-            doc.add(new Field(FIELD_NAMES.body.toString(), body, Field.Store.NO, Field.Index.ANALYZED));
+            doc.add(new Field(FIELD_NAMES.uniqueId.toString(), r.getDocumentId(), StringField.TYPE_STORED));
+            doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), StringField.TYPE_STORED));
+
+            // === Index without analyzing, don't store ===
+
+            // TODO: We're implementing a ghetto analyzer here... we really should create a PerFieldAnalyzerWrapper
+            // that uses Snowball for text fields and a whitespace, lowercase analyzer for fields that contain multiple
+            // terms that we don't want to stem. Custom properites could even specify an analyzer preference. This new
+            // Analyzer should then be used at both index and search time.
+
+            // Split the category string by whitespace, index each without stemming
+            for (String category : categories.split("\\s+"))
+                doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), StringField.TYPE_NOT_STORED));
+
+            String uniqueIds = (String)props.get(PROPERTY.uniqueIds.toString());
+
+            // Split the uniqueIds string by whitespace, index each without stemming
+            if (null != uniqueIds)
+                for (String uniqueId : uniqueIds.split(("\\s+")))
+                    doc.add(new Field(FIELD_NAMES.uniqueIds.toString(), uniqueId.toLowerCase(), StringField.TYPE_NOT_STORED));
+
+            // === Index and analyze, don't store ===
+
+            // TODO: TextField is supposed to have a TextField(String, String) constructor for this (according to Lucene 4.0 migration guide)
+
+            doc.add(new TextField(FIELD_NAMES.body.toString(), body, Field.Store.NO));
 
             String keywordsLo = (String)props.get(PROPERTY.keywordsLo.toString());
 
             if (null != keywordsLo)
-                doc.add(new Field(FIELD_NAMES.keywordsLo.toString(), keywordsLo, Field.Store.NO, Field.Index.ANALYZED));
+                doc.add(new TextField(FIELD_NAMES.keywordsLo.toString(), keywordsLo, Field.Store.NO));
 
-            doc.add(new Field(FIELD_NAMES.keywordsMed.toString(), keywordsMed, Field.Store.NO, Field.Index.ANALYZED));
+            doc.add(new TextField(FIELD_NAMES.keywordsMed.toString(), keywordsMed, Field.Store.NO));
 
             String keywordsHi = (String)props.get(PROPERTY.keywordsHi.toString());
 
             if (null != keywordsHi)
-                doc.add(new Field(FIELD_NAMES.keywordsHi.toString(), keywordsHi, Field.Store.NO, Field.Index.ANALYZED));
+                doc.add(new TextField(FIELD_NAMES.keywordsHi.toString(), keywordsHi, Field.Store.NO));
 
-            String uniqueIds = (String)props.get(PROPERTY.uniqueIds.toString());
+            // === Don't index, store ===
 
-            if (null != uniqueIds)
-                doc.add(new Field(FIELD_NAMES.uniqueIds.toString(), uniqueIds, Field.Store.NO, Field.Index.NOT_ANALYZED));
-
-            for (String category : categoryArray)
-                doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-
-            // Store, but don't index
-            doc.add(new Field(FIELD_NAMES.title.toString(), title, Field.Store.YES, Field.Index.NO));
-            doc.add(new Field(FIELD_NAMES.summary.toString(), summary, Field.Store.YES, Field.Index.NO));
-            doc.add(new Field(FIELD_NAMES.url.toString(), url, Field.Store.YES, Field.Index.NO));
-            doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+            doc.add(new StoredField(FIELD_NAMES.title.toString(), title));
+            doc.add(new StoredField(FIELD_NAMES.summary.toString(), summary));
+            doc.add(new StoredField(FIELD_NAMES.url.toString(), url));
             if (null != props.get(PROPERTY.navtrail.toString()))
-                doc.add(new Field(FIELD_NAMES.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString()), Field.Store.YES, Field.Index.NO));
+                doc.add(new StoredField(FIELD_NAMES.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString())));
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             if (null != resourceId && !resourceId.equals(r.getContainerId()))
-                doc.add(new Field(FIELD_NAMES.resourceId.toString(), resourceId, Field.Store.YES, Field.Index.NO));
+                doc.add(new StoredField(FIELD_NAMES.resourceId.toString(), resourceId));
 
-            // Index the remaining properties, but don't store
+            // === Custom properties: Index and analyze, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())
             {
                 String key = entry.getKey();
@@ -469,7 +485,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     String stringValue = value.toString().toLowerCase();
 
                     if (stringValue.length() > 0)
-                        doc.add(new Field(key.toLowerCase(), stringValue, Field.Store.NO, Field.Index.ANALYZED));
+                        doc.add(new TextField(key.toLowerCase(), stringValue, Field.Store.NO));
                 }
             }
 
