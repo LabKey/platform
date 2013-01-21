@@ -24,6 +24,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -144,6 +145,11 @@ public class SampleManager
     public static SampleManager getInstance()
     {
         return _instance;
+    }
+
+    public boolean isSpecimensEmpty(Container container)
+    {
+        return (_specimenDetailHelper.get(container).length == 0);
     }
 
     public Specimen[] getSpecimens(Container container, String participantId, Double visit)
@@ -2922,7 +2928,8 @@ public class SampleManager
             sql = queryService.getSelectSQL(tableInfo, columnMap.values(), containerFilter, null, -1, 0, false);
 
             // Insert COUNT
-            String countStr = " COUNT(*) As RowCount,\n";
+            String sampleCountName = StudySchema.getInstance().getSqlDialect().makeLegalIdentifier("SampleCount");
+            String countStr = " COUNT(*) As " + sampleCountName + ",\n";
             int insertIndex = sql.indexOf("SELECT");
             sql.insert(insertIndex + 6, countStr);
 
@@ -2962,7 +2969,13 @@ public class SampleManager
                     while (resultSet.next())
                     {
                         Map<String, Object> rowMap = resultSet.getRowMap();
-                        long count = (Long)rowMap.get("RowCount");
+                        long count = 0;
+                        Object countObject = rowMap.get(sampleCountName);
+                        if (countObject instanceof Long)
+                            count = (Long)countObject;
+                        else if (countObject instanceof Integer)
+                            count = (Integer)countObject;
+
                         Map<String, GroupedResults> currentGroupedResultsMap = groupedResultsMap;
 
                         for (int i = 0; i < grouping.length; i += 1)
