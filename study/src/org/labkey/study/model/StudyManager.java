@@ -335,6 +335,8 @@ public class StudyManager
     }
 
 
+    // NOTE: This (largely) deprecated pattern must be used here since some static methods are called early
+    // in the server lifecyle, before the constructor can be called.
     public static synchronized StudyManager getInstance()
     {
         if (_instance == null)

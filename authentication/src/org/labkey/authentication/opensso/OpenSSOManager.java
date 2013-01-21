@@ -29,12 +29,10 @@ import java.util.TreeMap;
 
 public class OpenSSOManager
 {
-    private static OpenSSOManager _instance;
+    private static final OpenSSOManager _instance = new OpenSSOManager();
 
-    public static synchronized OpenSSOManager get()
+    public static OpenSSOManager get()
     {
-        if (_instance == null)
-            _instance = new OpenSSOManager();
         return _instance;
     }
 

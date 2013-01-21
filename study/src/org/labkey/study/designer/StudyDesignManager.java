@@ -84,13 +84,10 @@ public class StudyDesignManager
 {
     private static final String STUDY_DESIGN_TABLE_NAME = "StudyDesign";
     private static final String STUDY_VERSION_TABLE_NAME = "StudyDesignVersion";
-    private static StudyDesignManager _instance;
+    private static final StudyDesignManager _instance = new StudyDesignManager();
 
     public static StudyDesignManager get()
     {
-        if (null == _instance)
-            _instance = new StudyDesignManager();
-
         return _instance;
     }
 

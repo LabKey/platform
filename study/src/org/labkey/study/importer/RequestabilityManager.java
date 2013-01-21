@@ -305,7 +305,7 @@ public class RequestabilityManager
         public abstract ActionURL getDefaultTestURL(Container container);
     }
 
-    private static RequestabilityManager _instance = null;
+    private static final RequestabilityManager _instance = new RequestabilityManager();
 
     private RequestabilityManager()
     {
@@ -609,10 +609,8 @@ public class RequestabilityManager
         }
     }
 
-    public static synchronized RequestabilityManager getInstance()
+    public static RequestabilityManager getInstance()
     {
-        if (_instance == null)
-            _instance = new RequestabilityManager();
         return _instance;
     }
 

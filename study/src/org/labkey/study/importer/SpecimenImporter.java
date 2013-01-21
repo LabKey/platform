@@ -17,6 +17,7 @@
 package org.labkey.study.importer;
 
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -1237,7 +1238,7 @@ public class SpecimenImporter
             }
             finally
             {
-                if (reader != null) try { reader.close(); } catch (IOException e) {}
+                IOUtils.closeQuietly(reader);
             }
         }
     }

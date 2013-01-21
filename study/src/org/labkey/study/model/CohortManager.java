@@ -60,16 +60,14 @@ import java.util.Set;
  */
 public class CohortManager
 {
-    private static CohortManager _instance;
+    private static CohortManager _instance = new CohortManager();
 
     private CohortManager()
     {
     }
 
-    public static synchronized CohortManager getInstance()
+    public static CohortManager getInstance()
     {
-        if (_instance == null)
-            _instance = new CohortManager();
         return _instance;
     }
 
