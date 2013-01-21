@@ -53,7 +53,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 
         // Test caching and scrolling options
         verifyResultSet(tableSelector.getResultSet(false, false), expectedRowCount, expectedComplete);
-        verifyResultSet(tableSelector.getResultSet(true, false), expectedRowCount, expectedComplete);
+        verifyResultSet(tableSelector.getResultSet(false, true), expectedRowCount, expectedComplete);
         verifyResultSet(tableSelector.getResultSet(true, true), expectedRowCount, expectedComplete);
 
         verifyResultSet(tableSelector.getResults(), expectedRowCount, expectedComplete);

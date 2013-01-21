@@ -843,7 +843,7 @@ public class OntologyManager
                     " WHERE DD.DomainId = " + dd.getDomainId() +
                     " AND PD.Container = DD.Container " +
                     " ) ";
-            Table.execute(getExpSchema(), deleteTypePropsSql);
+            new SqlExecutor(getExpSchema()).execute(deleteTypePropsSql);
 
             if (objIdsToDelete.length > 0)
             {
@@ -853,7 +853,7 @@ public class OntologyManager
                         " WHERE ObjectId IN ( " + sqlIN.toString() + " ) " +
                         " AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
                         " WHERE  OP.ObjectId = " + getTinfoObject() + ".ObjectId)";
-                Table.execute(getExpSchema(), deleteObjSql);
+                new SqlExecutor(getExpSchema()).execute(deleteObjSql);
 
                 if (ownerObjIds.length>0)
                 {
@@ -868,7 +868,7 @@ public class OntologyManager
                             " WHERE ObjectId IN ( " + sqlIN.toString() + " ) " +
                             " AND NOT EXISTS (SELECT * FROM " + getTinfoObject() + " SUBO " +
                             " WHERE SUBO.OwnerObjectId = " + getTinfoObject() + ".ObjectId)";
-                    Table.execute(getExpSchema(), deleteOwnerSql);
+                    new SqlExecutor(getExpSchema()).execute(deleteOwnerSql);
                 }
             }
             // whew!
@@ -1542,7 +1542,7 @@ public class OntologyManager
         sqlInsert.add(sortOrder);
         sqlInsert.add(pd.getPropertyId());
         sqlInsert.add(dd.getDomainId());
-        int count = Table.execute(getExpSchema(), sqlInsert);
+        int count = new SqlExecutor(getExpSchema()).execute(sqlInsert);
         // if 0 rows affected, we should do an update to make sure required is correct
         if (count == 0)
         {
@@ -1551,7 +1551,7 @@ public class OntologyManager
             sqlUpdate.add(sortOrder);
             sqlUpdate.add(pd.getPropertyId());
             sqlUpdate.add(dd.getDomainId());
-            Table.execute(getExpSchema(), sqlUpdate);
+            new SqlExecutor(getExpSchema()).execute(sqlUpdate);
         }
         domainPropertiesCache.remove(getCacheKey(dd));
         return pd;
@@ -3629,20 +3629,15 @@ public class OntologyManager
         }
     }
 
-    static private void _indexConcepts(SearchService.IndexTask task)
+    static private void _indexConcepts(final SearchService.IndexTask task)
     {
-        ResultSet rs = null;
-        Container shared = ContainerManager.getSharedContainer();
+        final Container shared = ContainerManager.getSharedContainer();
 
-        try
-        {
-            rs = Table.executeQuery(getExpSchema(),
-                    "SELECT * FROM exp.PropertyDescriptor WHERE Container=? AND rangeuri='xsd:nil'",
-                    new Object[] {shared.getId()}, false); // new Object[] {shared});
-            ConceptMapFactory f = new ConceptMapFactory(rs);
-            while (rs.next())
+        new SqlSelector(getExpSchema(), "SELECT * FROM exp.PropertyDescriptor WHERE Container=? AND rangeuri='xsd:nil'",
+                shared.getId()).forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
+            @Override
+            public void exec(Map<String, Object> m) throws SQLException
             {
-                Map<String,Object> m = f.getRowMap(rs);
                 String propertyURI = (String)m.get("propertyUri");
                 m.put(PROPERTY.title.toString(), propertyURI);
 
@@ -3665,14 +3660,6 @@ public class OntologyManager
                 );
                 task.addResource(r, SearchService.PRIORITY.item);
             }
-        }
-        catch (SQLException sqlx)
-        {
-            throw new RuntimeSQLException(sqlx);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        });
     }
 }

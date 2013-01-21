@@ -40,7 +40,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
 
         // Test caching and scrolling options
         verifyResultSet(sqlSelector.getResultSet(false, false), expectedRowCount, expectedComplete);
-        verifyResultSet(sqlSelector.getResultSet(true, false), expectedRowCount, expectedComplete);
+        verifyResultSet(sqlSelector.getResultSet(false, true), expectedRowCount, expectedComplete);
         verifyResultSet(sqlSelector.getResultSet(true, true), expectedRowCount, expectedComplete);
     }
 

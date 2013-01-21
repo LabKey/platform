@@ -19,6 +19,7 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -44,7 +45,7 @@ public class ContainerUtil
             key = "Container";
 
         String delete = "DELETE FROM " + tinfo + " WHERE " + key + " NOT IN (SELECT EntityId FROM " + tinfoContainers + ")";
-        return Table.execute(tinfo.getSchema(), delete);
+        return new SqlExecutor(tinfo.getSchema()).execute(delete);
     }
 
 

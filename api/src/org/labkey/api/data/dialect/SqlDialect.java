@@ -468,7 +468,7 @@ public abstract class SqlDialect
     // This is not generally usable within a GROUP BY.  Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql);
 
-    public abstract void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn) throws SQLException;
+    public abstract void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn);
 
     public abstract String getMasterDataBaseName();
 
@@ -747,7 +747,7 @@ public abstract class SqlDialect
         String sql = getAnalyzeCommandForTable(table.getSelectName());
         if (sql != null)
         {
-            Table.execute(table.getSchema(), sql);
+            new SqlExecutor(table.getSchema()).execute(sql);
             return true;
         }
         else

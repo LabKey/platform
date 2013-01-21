@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2012 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2013 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,6 +177,37 @@ public class Table
         return new LegacySqlSelector(schema, sql).getArray(c);
     }
 
+    @Deprecated // Use SqlSelector    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
+    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
+            throws SQLException
+    {
+        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(cache);
+    }
+
+    @Deprecated // Use SqlSelector    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
+    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
+    }
+
+    /** Use TableSelector instead */
+    @NotNull
+    @Deprecated
+    public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
+            throws SQLException
+    {
+        TableSelector selector = new TableSelector(table, columnInfosList(table, select), filter, sort);
+        selector.setForDisplay(true);
+
+        return selector.getArray(clss);
+    }
+
+    @Deprecated // Use SqlExecutor
+    public static int execute(DbSchema schema, SQLFragment f) throws SQLException
+    {
+        return new LegacySqlExecutor(schema).execute(f);
+    }
+
     // ================== These methods have been converted to Selector/Executor, but still have callers ==================
 
     // ===== TableSelector methods below =====
@@ -200,7 +231,7 @@ public class Table
     }
 
 
-    // 15 usages
+    // 12 usages
     @Deprecated // Use TableSelector
     public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
@@ -208,7 +239,7 @@ public class Table
     }
 
 
-    // 98 usages
+    // 87 usages
     @NotNull
     @Deprecated // Use TableSelector
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
@@ -226,21 +257,7 @@ public class Table
     }
 
 
-    // 2 usages
-    /** Use TableSelector instead */
-    @NotNull
-    @Deprecated
-    public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
-            throws SQLException
-    {
-        TableSelector selector = new TableSelector(table, columnInfosList(table, select), filter, sort);
-        selector.setForDisplay(true);
-
-        return selector.getArray(clss);
-    }
-
-
-    // 32 usages
+    // 31 usages
     /** Use TableSelector instead */
     @Deprecated
     public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
@@ -265,7 +282,7 @@ public class Table
     }
 
 
-    // 37 usages
+    // 35 usages
     @Deprecated // Use TableSelector
     public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
@@ -305,14 +322,7 @@ public class Table
 
     // ===== SqlExecutor methods below =====
 
-    // 80 usages
-    @Deprecated // Use SqlExecutor
-    public static int execute(DbSchema schema, SQLFragment f) throws SQLException
-    {
-        return new LegacySqlExecutor(schema).execute(f);
-    }
-
-    // 299 usages
+    // 195 usages
     @Deprecated // Use SqlExecutor
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
@@ -364,30 +374,15 @@ public class Table
     @Deprecated // Use SqlSelector
     public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, boolean cache, boolean scrollable) throws SQLException
     {
-        return new LegacySqlSelector(schema, sql).getResultSet(scrollable, cache);
+        return new LegacySqlSelector(schema, sql).getResultSet(cache, scrollable);
     }
 
-    // 2 usages
-    @Deprecated // Use SqlSelector    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
-    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
-    }
-
-    // 1 usage
-    @Deprecated // Use SqlSelector    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
-            throws SQLException
-    {
-        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(false, cache);
-    }
-
-    // 6 usages
+    // 5 usages
     @Deprecated // Use SqlSelector
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, boolean cache)
             throws SQLException
     {
-        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).getResultSet(false, cache);
+        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).getResultSet(cache);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -1033,7 +1028,7 @@ public class Table
         try
         {
             conn = schema.getScope().getConnection();
-            int count = execute(table.getSchema(), updateSQL);
+            int count = new SqlExecutor(table.getSchema()).execute(updateSQL);
 
             // check for concurrency problem
             if (count == 0)
@@ -1191,7 +1186,7 @@ public class Table
         sqlSelectInto.append(sqlSelect);
         sqlSelectInto.append(") _from_");
 
-        Table.execute(tinfo.getSchema(), sqlSelectInto);
+        new SqlExecutor(tinfo.getSchema()).execute(sqlSelectInto);
     }
 
 
@@ -1895,8 +1890,8 @@ public class Table
             new Pump((DataIteratorBuilder)load, dic).run();
 
             assertFalse(dic.getErrors().hasErrors());
-            
-            Table.execute(testTable.getSchema(), "DELETE FROM test.testtable WHERE EntityId = '" + extract.guid + "'");
+
+            new SqlExecutor(testTable.getSchema()).execute("DELETE FROM test.testtable WHERE EntityId = '" + extract.guid + "'");
         }
     }
 }

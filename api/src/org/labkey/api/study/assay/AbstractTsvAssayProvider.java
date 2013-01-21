@@ -155,7 +155,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         addColumnChange.addColumn(objectIdSpec);
         for (String sql : toTable.getSqlDialect().getChangeStatements(addColumnChange))
         {
-            Table.execute(toTable.getSchema(), sql);
+            new SqlExecutor(toTable.getSchema()).execute(sql);
         }
 
         Container container = protocol.getContainer();
@@ -222,7 +222,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 
         ModuleUpgrader.getLogger().info("Migrating data for [" + container.getPath() + "]  '" + protocol.getName() + "'");
         ModuleUpgrader.getLogger().info(insertInto.toString());
-        Table.execute(toTable.getSchema(), insertInto);
+        new SqlExecutor(toTable.getSchema()).execute(insertInto);
 
         for (DataSet dataSet : StudyService.get().getDatasetsForAssayProtocol(protocol))
         {
@@ -232,11 +232,11 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             updateKeysSQL.append(ASSAY_SCHEMA_NAME + "." + toTable.getName());
             updateKeysSQL.append(" WHERE CAST(_key AS INT) = " + OBJECT_ID_UPGRADE + ")");
 
-            int copyFixupCount = Table.execute(toTable.getSchema(), updateKeysSQL);
+            int copyFixupCount = new SqlExecutor(toTable.getSchema()).execute(updateKeysSQL);
 
             SQLFragment updateObjectIdSQL = new SQLFragment("UPDATE " + DATASET_SCHEMA_NAME + "." + dataSetDomain.getStorageTableName());
             updateObjectIdSQL.append(" SET ObjectId = CAST(_key AS INT)");
-            Table.execute(toTable.getSchema(), updateObjectIdSQL);
+            new SqlExecutor(toTable.getSchema()).execute(updateObjectIdSQL);
 
             ModuleUpgrader.getLogger().info("Migrated ObjectId to RowId for " + copyFixupCount + " in " + dataSet.getContainer().getPath() + "." + dataSet.getName());
         }
@@ -246,7 +246,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         removeColumnChange.addColumn(objectIdSpec);
         for (String sql : toTable.getSqlDialect().getChangeStatements(removeColumnChange))
         {
-            Table.execute(toTable.getSchema(), sql);
+            new SqlExecutor(toTable.getSchema()).execute(sql);
         }
 
         // Delete the data from OntologyManager
@@ -258,12 +258,12 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 
         SQLFragment deleteObjectPropertiesSQL = new SQLFragment("DELETE FROM exp.objectproperty WHERE objectid IN ");
         deleteObjectPropertiesSQL.append(objectIdsSQL);
-        Table.execute(toTable.getSchema(), deleteObjectPropertiesSQL);
+        new SqlExecutor(toTable.getSchema()).execute(deleteObjectPropertiesSQL);
         ModuleUpgrader.getLogger().info("Deleted property values from OntologyManager for protocol " + protocol.getName());
 
         SQLFragment deleteObjectsSQL = new SQLFragment("DELETE FROM exp.object WHERE objectid IN ");
         deleteObjectsSQL.append(objectIdsSQL);
-        Table.execute(toTable.getSchema(), deleteObjectsSQL);
+        new SqlExecutor(toTable.getSchema()).execute(deleteObjectsSQL);
         ModuleUpgrader.getLogger().info("Deleted data rows from OntologyManager for protocol " + protocol.getName());
     }
 }

@@ -594,17 +594,17 @@ public class StatementUtils
                 fn.appendStatement(sqlfSelectIds, d);
             }
             fn.append(";\nEND;\n$$ LANGUAGE plpgsql;\n");
-            Table.execute(table.getSchema(), fn);
+            new SqlExecutor(table.getSchema()).execute(fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.onClose(new Runnable() { @Override public void run()
             {
                 try
                 {
-                    Table.execute(ExperimentService.get().getSchema(), drop);
+                    new SqlExecutor(ExperimentService.get().getSchema()).execute(drop);
                 }
-                catch (SQLException x)
+                catch (Exception x)
                 {
-                    Logger.getLogger(Table.class).error("Error dropping temp function.  SQLSTATE:" + x.getSQLState(), x);
+                    Logger.getLogger(Table.class).error("Error dropping temp function.", x);
                 }
             }});
         }

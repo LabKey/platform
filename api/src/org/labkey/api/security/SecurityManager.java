@@ -320,7 +320,7 @@ public class SecurityManager
             Container root = ContainerManager.getRoot();
 
             // missing container
-            Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
+            new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
                     "WHERE Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + ")");
 
             // container is not a project (but should be)
@@ -329,11 +329,11 @@ public class SecurityManager
                     "\tWHERE Parent=? OR Parent IS NULL)", root);
 
             // missing group
-            Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoMembers() + "\n" +
+            new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
                     "WHERE GroupId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
 
             // missing user
-            Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoMembers() + "\n" +
+            new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
                     "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
         }
         catch (SQLException x)

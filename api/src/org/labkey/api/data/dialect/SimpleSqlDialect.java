@@ -415,7 +415,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, Connection conn) throws SQLException
+    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, Connection conn)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

@@ -789,57 +789,54 @@ public class ContainerManager
         if (null != d)
             return d;
 
-        try
+        if (path.equals(Path.rootPath))
         {
-            if (path.equals(Path.rootPath))
+            try
             {
-                try
+                CORE.getSchema().getScope().ensureTransaction();
+
+                synchronized (DATABASE_QUERY_LOCK)
                 {
-                    CORE.getSchema().getScope().ensureTransaction();
+                    // Special case for ROOT.  Never return null -- either database error or corrupt database
+                    Container[] ret = Table.executeQuery(CORE.getSchema(),
+                            "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent IS NULL",
+                            null, Container.class);
 
-                    synchronized (DATABASE_QUERY_LOCK)
-                    {
-                        // Special case for ROOT.  Never return null -- either database error or corrupt database
-                        Container[] ret = Table.executeQuery(CORE.getSchema(),
-                                "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent IS NULL",
-                                null, Container.class);
+                    if (null == ret || ret.length == 0)
+                        throw new RootContainerException("Root container does not exist");
 
-                        if (null == ret || ret.length == 0)
-                            throw new RootContainerException("Root container does not exist");
+                    if (ret.length > 1)
+                        throw new RootContainerException("More than one root container was found");
 
-                        if (ret.length > 1)
-                            throw new RootContainerException("More than one root container was found");
+                    if (null == ret[0])
+                        throw new RootContainerException("Root container is NULL");
 
-                        if (null == ret[0])
-                            throw new RootContainerException("Root container is NULL");
-
-                        _addToCache(ret[0]);
-                        // No database changes to commit, but need to decrement the counter
-                        CORE.getSchema().getScope().commitTransaction();
-                        return ret[0];
-                    }
-                }
-                finally
-                {
-                    CORE.getSchema().getScope().closeConnection();
+                    _addToCache(ret[0]);
+                    // No database changes to commit, but need to decrement the counter
+                    CORE.getSchema().getScope().commitTransaction();
+                    return ret[0];
                 }
             }
-            else
+            catch (SQLException e)
             {
-                Path parent = path.getParent();
-                String name = path.getName();
-                Container dirParent = getForPath(parent);
-
-                if (null == dirParent)
-                    return null;
-
-                Map<String, Container> map = ContainerManager.getChildrenMap(dirParent);
-                return map.get(name);
+                throw new RuntimeSQLException(e);
+            }
+            finally
+            {
+                CORE.getSchema().getScope().closeConnection();
             }
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            Path parent = path.getParent();
+            String name = path.getName();
+            Container dirParent = getForPath(parent);
+
+            if (null == dirParent)
+                return null;
+
+            Map<String, Container> map = ContainerManager.getChildrenMap(dirParent);
+            return map.get(name);
         }
     }
 
@@ -884,7 +881,7 @@ public class ContainerManager
                 }
                 deleteSQL.append(")");
             }
-            Table.execute(CORE.getSchema(), deleteSQL);
+            new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
 
             Set<String> caseInsensitiveAliases = new CaseInsensitiveHashSet(aliases);
 
@@ -896,7 +893,7 @@ public class ContainerManager
                 insertSQL.append(" (Path, ContainerId) VALUES (?, ?)");
                 insertSQL.add(alias);
                 insertSQL.add(container.getId());
-                Table.execute(CORE.getSchema(), insertSQL);
+                new SqlExecutor(CORE.getSchema()).execute(insertSQL);
             }
 
             CORE.getSchema().getScope().commitTransaction();
@@ -1466,15 +1463,14 @@ public class ContainerManager
     // Retrieve entire container hierarchy
     public static MultiMap<Container, Container> getContainerTree()
     {
-        MultiMap<Container, Container> mm = new MultiHashMap<Container, Container>();
+        final MultiMap<Container, Container> mm = new MultiHashMap<Container, Container>();
 
-        ResultSet rs = null;
-        try
-        {
-            // Get all containers and parents
-            rs = Table.executeQuery(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC", null);
+        // Get all containers and parents
+        SqlSelector selector = new SqlSelector(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC");
 
-            while (rs.next())
+        selector.forEach(new Selector.ForEachBlock<ResultSet>() {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String parentId = rs.getString(1);
                 Container parent = (parentId != null ? getForId(parentId) : null);
@@ -1483,20 +1479,12 @@ public class ContainerManager
                 if (null != child)
                     mm.put(parent, child);
             }
+        });
 
-            for (Object key : mm.keySet())
-            {
-                List<Container> siblings = new ArrayList<Container>(mm.get(key));
-                Collections.sort(siblings);
-            }
-        }
-        catch (SQLException x)
+        for (Object key : mm.keySet())
         {
-            LOG.error("getContainerTree: ", x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
+            List<Container> siblings = new ArrayList<Container>(mm.get(key));
+            Collections.sort(siblings);
         }
 
         return mm;
@@ -1816,19 +1804,11 @@ public class ContainerManager
     @Nullable
     private static Container getForPathAlias(String path)
     {
-        try
-        {
-            Container[] ret = Table.executeQuery(CORE.getSchema(),
-                    "SELECT * FROM " + CORE.getTableInfoContainers() + " c, " + CORE.getTableInfoContainerAliases() + " ca WHERE ca.ContainerId = c.EntityId AND LOWER(ca.path) = LOWER(?)",
-                    new Object[]{path}, Container.class);
-            if (null == ret || ret.length == 0)
-                return null;
-            return ret[0];
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Container[] ret = new SqlSelector(CORE.getSchema(),
+                "SELECT * FROM " + CORE.getTableInfoContainers() + " c, " + CORE.getTableInfoContainerAliases() + " ca WHERE ca.ContainerId = c.EntityId AND LOWER(ca.path) = LOWER(?)",
+                path).getArray(Container.class);
+
+        return ret.length == 0 ? null : ret[0];
     }
 
     /**
@@ -2026,7 +2006,7 @@ public class ContainerManager
 
 
         @Test
-        public void testFolderType() throws SQLException
+        public void testFolderType()
         {
             // Test all folder types
             List<FolderType> folderTypes = new ArrayList<FolderType>(ModuleLoader.getInstance().getFolderTypes());

@@ -31,8 +31,6 @@ import org.labkey.api.util.Pair;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.Boolean;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.Date;
@@ -231,7 +229,7 @@ public class ExcelColumn extends RenderColumn
     }
 
 
-    protected void writeCell(Sheet sheet, int column, int row, RenderContext ctx) throws SQLException
+    protected void writeCell(Sheet sheet, int column, int row, RenderContext ctx)
     {
         Object o = _dc.getDisplayValue(ctx);
         ColumnInfo columnInfo = _dc.getColumnInfo();

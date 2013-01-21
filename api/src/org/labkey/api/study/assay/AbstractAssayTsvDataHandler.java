@@ -17,10 +17,32 @@
 package org.labkey.api.study.assay;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.MvFieldWrapper;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.api.AbstractExperimentDataHandler;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.pipeline.PipeRoot;
@@ -30,20 +52,25 @@ import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
-import org.springframework.jdbc.support.SQLExceptionTranslator;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -127,14 +154,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     deleteSQL.append(" WHERE DataId = ?");
                     deleteSQL.add(d.getRowId());
 
-                    try
-                    {
-                        Table.execute(DbSchema.get(domain.getDomainKind().getStorageSchemaName()), deleteSQL);
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new ExperimentException(e);
-                    }
+                    new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName())).execute(deleteSQL);
                 }
             }
         }
@@ -191,7 +211,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     protected ParticipantVisitResolver createResolver(User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Container container)
-            throws SQLException, IOException, ExperimentException
+            throws IOException, ExperimentException
     {
         return AssayService.get().createResolver(user, run, protocol, provider, null);
     }

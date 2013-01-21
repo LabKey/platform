@@ -24,7 +24,6 @@ import org.labkey.api.module.ModuleContext;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -59,7 +58,7 @@ public class SqlScriptExecutor
         _conn = conn;
     }
 
-    public void execute() throws SQLException
+    public void execute()
     {
         for (SqlScriptExecutor.Block block : getBlocks())
             block.execute();
@@ -161,7 +160,7 @@ public class SqlScriptExecutor
             _sql = sql.trim();
         }
 
-        public void execute() throws SQLException
+        public void execute()
         {
             // Null schema allowed for testing
             if (_sql.length() > 0 && null != _schema)
@@ -182,7 +181,7 @@ public class SqlScriptExecutor
         }
 
         @Override
-        public void execute() throws SQLException
+        public void execute()
         {
             super.execute();
 

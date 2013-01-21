@@ -229,7 +229,7 @@ public class ExcelWriter
     public ExcelWriter(DbSchema schema, String query) throws SQLException
     {
         this(ExcelDocumentType.xls);
-        ResultSet rs = Table.executeQuery(schema, new SQLFragment(query), _docType.getMaxRows());
+        ResultSet rs = new SqlSelector(schema, query).setMaxRows(_docType.getMaxRows()).getResultSet();
         setResultSet(rs);
         createColumns(rs.getMetaData());
     }

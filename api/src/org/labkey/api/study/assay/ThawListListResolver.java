@@ -18,8 +18,13 @@ package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -28,12 +33,10 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
-import org.jetbrains.annotations.NotNull;
 
-import java.sql.SQLException;
 import java.util.Date;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -79,64 +82,60 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
             return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), targetStudyContainer);
         }
 
-        try
+        TableSelector selector = new TableSelector(_tableInfo, new SimpleFilter(pkNames.get(0), convertedID), null);
+        Map[] rows = selector.setForDisplay(true).getArray(Map.class);
+
+        assert rows.length <= 1;
+
+        if (rows.length == 0)
         {
-            Map<String, Object>[] rows = Table.selectForDisplay(_tableInfo, Table.ALL_COLUMNS, new SimpleFilter(pkNames.get(0), convertedID), null, Map.class);
-            assert rows.length <= 1;
-            if (rows.length == 0)
-            {
-                return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), targetStudyContainer);
-            }
-            else
-            {
-                String childSpecimenID = rows[0].get("SpecimenID") == null ? null : rows[0].get("SpecimenID").toString();
-                String childParticipantID = rows[0].get("ParticipantID") == null ? null : rows[0].get("ParticipantID").toString();
-
-                Double childVisitID = null;
-                if (rows[0].get("VisitID") instanceof Number)
-                {
-                    childVisitID = ((Number)rows[0].get("VisitID")).doubleValue();
-                }
-                else if (rows[0].get("VisitID") instanceof String)
-                {
-                    try
-                    {
-                        childVisitID = Double.parseDouble((String)rows[0].get("VisitID"));
-                    }
-                    catch (NumberFormatException e) {}
-                }
-
-                Date childDate = null;
-                if (rows[0].get("Date") instanceof Date)
-                {
-                    childDate = (Date)rows[0].get("Date");
-                }
-                else if (rows[0].get("Date") instanceof String)
-                {
-                    try
-                    {
-                        DateUtil.parseDateTime((String)rows[0].get("Date"));
-                    }
-                    catch (ConversionException e) {}
-                }
-
-                Container childTargetStudy = null;
-                if (rows[0].get("TargetStudy") != null)
-                {
-                    Set<Study> studies = StudyService.get().findStudy(rows[0].get("TargetStudy"), null);
-                    if (!studies.isEmpty())
-                    {
-                        Study study = studies.iterator().next();
-                        childTargetStudy = study != null ? study.getContainer() : null;
-                    }
-                }
-
-                return _childResolver.resolve(childSpecimenID, childParticipantID, childVisitID, childDate, childTargetStudy);
-            }
+            return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), targetStudyContainer);
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            String childSpecimenID = rows[0].get("SpecimenID") == null ? null : rows[0].get("SpecimenID").toString();
+            String childParticipantID = rows[0].get("ParticipantID") == null ? null : rows[0].get("ParticipantID").toString();
+
+            Double childVisitID = null;
+            if (rows[0].get("VisitID") instanceof Number)
+            {
+                childVisitID = ((Number)rows[0].get("VisitID")).doubleValue();
+            }
+            else if (rows[0].get("VisitID") instanceof String)
+            {
+                try
+                {
+                    childVisitID = Double.parseDouble((String)rows[0].get("VisitID"));
+                }
+                catch (NumberFormatException e) {}
+            }
+
+            Date childDate = null;
+            if (rows[0].get("Date") instanceof Date)
+            {
+                childDate = (Date)rows[0].get("Date");
+            }
+            else if (rows[0].get("Date") instanceof String)
+            {
+                try
+                {
+                    DateUtil.parseDateTime((String)rows[0].get("Date"));
+                }
+                catch (ConversionException e) {}
+            }
+
+            Container childTargetStudy = null;
+            if (rows[0].get("TargetStudy") != null)
+            {
+                Set<Study> studies = StudyService.get().findStudy(rows[0].get("TargetStudy"), null);
+                if (!studies.isEmpty())
+                {
+                    Study study = studies.iterator().next();
+                    childTargetStudy = study != null ? study.getContainer() : null;
+                }
+            }
+
+            return _childResolver.resolve(childSpecimenID, childParticipantID, childVisitID, childDate, childTargetStudy);
         }
     }
 }

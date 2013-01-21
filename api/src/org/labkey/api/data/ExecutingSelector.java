@@ -106,10 +106,13 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
     @Override
     public Table.TableResultSet getResultSet() throws SQLException
     {
-        return getResultSet(false, true);
+        return getResultSet(true);
     }
 
-    // TODO: Consider getResultSet(boolean cache)... which would necessitate reordering these parameters
+    public Table.TableResultSet getResultSet(boolean cache) throws SQLException
+    {
+        return getResultSet(cache, false);
+    }
 
     /**
      * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
@@ -119,7 +122,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    public Table.TableResultSet getResultSet(boolean scrollable, boolean cache) throws SQLException
+    public Table.TableResultSet getResultSet(boolean cache, boolean scrollable) throws SQLException
     {
         boolean closeResultSet = cache;
         SqlFactory sqlFactory = getSqlFactory(true);

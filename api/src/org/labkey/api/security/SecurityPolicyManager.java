@@ -282,11 +282,11 @@ public class SecurityPolicyManager
             comma = ",";
         }
 
-        Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
-            "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container IN (" +
+        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
+                "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container IN (" +
                 sb.toString() + "))");
-        Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPolicies() + "\n" +
-            "WHERE Container IN (" + sb.toString() + ")");
+        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoPolicies() + "\n" +
+                "WHERE Container IN (" + sb.toString() + ")");
 
         removeAll();
     }

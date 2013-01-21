@@ -68,9 +68,14 @@ abstract class LegacySelector<SELECTOR extends ExecutingSelector<? extends SqlFa
         return _selector.getResultSet();
     }
 
-    public Table.TableResultSet getResultSet(boolean scrollable, boolean cache) throws SQLException
+    public Table.TableResultSet getResultSet(boolean cache) throws SQLException
     {
-        return _selector.getResultSet(scrollable, cache);
+        return _selector.getResultSet(cache, false);
+    }
+
+    public Table.TableResultSet getResultSet(boolean cache, boolean scrollable) throws SQLException
+    {
+        return _selector.getResultSet(cache, scrollable);
     }
 
     public <K> void forEach(Selector.ForEachBlock<K> block, Class<K> clazz) throws SQLException
