@@ -1232,8 +1232,8 @@ public class SpecimenImporter
                     throw new IllegalStateException("Import files are expected to start with a comment indicating table name");
                 fileNameMap.put(line.substring(1).trim().toLowerCase(), vf.getInputStream(fileName));
 
-                if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PERFORMANCE_IMPROVEMENTS));
-                    //IncrementalCreator.generateIncrementalArchive(vf, fileName);
+                if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PERFORMANCE_IMPROVEMENTS))
+                    IncrementalCreator.generateIncrementalArchive(vf, fileName);
             }
             finally
             {

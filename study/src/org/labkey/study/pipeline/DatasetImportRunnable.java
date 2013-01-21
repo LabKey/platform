@@ -23,7 +23,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
@@ -35,9 +34,11 @@ import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class DatasetImportRunnable implements Runnable
 {
@@ -151,7 +152,7 @@ public class DatasetImportRunnable implements Runnable
                 if (useCutoff && loader instanceof TabLoader)
                 {
                     // UNDONE: shouldn't be tied to TabLoader
-                    ((TabLoader)loader).setMapFilter(new Filter<Map<String,Object>>()
+                    ((TabLoader)loader).setMapFilter(new Filter<Map<String, Object>>()
                     {
                         public boolean accept(Map<String, Object> row)
                         {

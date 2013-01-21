@@ -3034,6 +3034,7 @@ study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
 study/src/org/labkey/study/importer/DatasetCohortAssigner.java -text
 study/src/org/labkey/study/importer/DatasetImportUtils.java -text
 study/src/org/labkey/study/importer/DatasetImporter.java -text
+study/src/org/labkey/study/importer/IncrementalCreator.java -text
 study/src/org/labkey/study/importer/InternalStudyImporter.java -text
 study/src/org/labkey/study/importer/LDMSRecord.java -text
 study/src/org/labkey/study/importer/MissingValueImporterFactory.java -text
