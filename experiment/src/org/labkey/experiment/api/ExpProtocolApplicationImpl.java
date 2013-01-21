@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Container;
@@ -227,11 +228,11 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
                 SQLFragment materialSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial());
                 materialSQL.append(commonSQL);
-                Table.execute(ExperimentServiceImpl.get().getSchema(), materialSQL);
+                new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(materialSQL);
 
                 SQLFragment dataSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoData());
                 dataSQL.append(commonSQL);
-                Table.execute(ExperimentServiceImpl.get().getSchema(), dataSQL);
+                new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(dataSQL);
 
                 Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplication(), getRowId());
             }

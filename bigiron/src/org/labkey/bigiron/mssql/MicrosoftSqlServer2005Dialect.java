@@ -635,7 +635,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)*\\s+core\\.executeJavaUpgradeCode\\s*'(.+)'\\s*;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn) throws SQLException
+    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
     {
         SqlScriptExecutor parser = new SqlScriptExecutor(sql, GO_PATTERN, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext, conn);
         parser.execute();

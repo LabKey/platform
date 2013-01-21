@@ -28,6 +28,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -730,20 +731,14 @@ public class ParticipantGroupManager
 
     private void removeGroupParticipants(Container c, User user, ParticipantGroup group, String[] participantsToRemove)
     {
-        try {
-            // remove the mapping from group to participants
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "");
-            SimpleFilter filter = new SimpleFilter().addInClause("ParticipantId", Arrays.asList(participantsToRemove));
-            filter.addCondition("GroupId", group.getRowId());
-            sql.append(filter.getSQLFragment(StudySchema.getInstance().getSchema().getSqlDialect()));
+        // remove the mapping from group to participants
+        SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "");
+        SimpleFilter filter = new SimpleFilter().addInClause("ParticipantId", Arrays.asList(participantsToRemove));
+        filter.addCondition("GroupId", group.getRowId());
+        sql.append(filter.getSQLFragment(StudySchema.getInstance().getSchema().getSqlDialect()));
 
-            Table.execute(StudySchema.getInstance().getSchema(), sql);
-            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(group.getCategoryId()));
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(group.getCategoryId()));
     }
 
 

@@ -32,6 +32,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -787,24 +788,11 @@ class PostgreSql83Dialect extends SqlDialect
     private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.executeJavaUpgradeCode\\s*\\(\\s*'(.+)'\\s*\\)\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn) throws SQLException
+    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
     {
         SqlScriptExecutor executor = new SqlScriptExecutor(sql, null, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext, conn);
 
-        try
-        {
-            executor.execute();
-        }
-        catch (SQLException e)
-        {
-            if ("55000".equals(e.getSQLState()))
-                //noinspection ThrowableInstanceNeverThrown
-                throw new RuntimeException(new ConfigurationException("", "See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12401 " +
-                    "for information about this error and possible work-arounds. Once the configuration problem is fixed, you can restart the server and " +
-                    "the upgrade will continue.", e));
-            else
-                throw e;
-        }
+        executor.execute();
     }
 
     @Override
@@ -1102,7 +1090,7 @@ class PostgreSql83Dialect extends SqlDialect
                         comma = ",";
                     }
                     drop.append(")");
-                    Table.execute(coreSchema, drop);
+                    new SqlExecutor(coreSchema).execute(drop);
                 }
                 rs.close(); rs = null;
             }

@@ -18,6 +18,7 @@ package org.labkey.study.pipeline;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.TempTableWriter;
 import org.labkey.api.data.Table;
@@ -115,25 +116,27 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
             // Merge uploaded data with Study tables
 
-            Table.execute(schema.getSchema(), "INSERT INTO " + schema.getTableInfoParticipant() + " (ParticipantId)\n" +
+            SqlExecutor executor = new SqlExecutor(schema.getSchema());
+
+            executor.execute("INSERT INTO " + schema.getTableInfoParticipant() + " (ParticipantId)\n" +
                     "SELECT " + subjectIdCol + " FROM " + tinfoTemp + " WHERE " + subjectIdCol + " NOT IN (SELECT ParticipantId FROM " + schema.getTableInfoParticipant() + ")");
 
             if (columnMap.containsKey("EnrollmentSiteId"))
             {
-                Table.execute(schema.getSchema(), "UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=study.Site.RowId\n" +
+                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=study.Site.RowId\n" +
                         "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".EnrollmentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
                         "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
             }
             if (columnMap.containsKey("CurrentSiteId"))
             {
-                Table.execute(schema.getSchema(), "UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=study.Site.RowId\n" +
+                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=study.Site.RowId\n" +
                         "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".CurrentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
                         "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
             }
 
             if (columnMap.containsKey("StartDate"))
             {
-                Table.execute(schema.getSchema(), "UPDATE " + schema.getTableInfoParticipant() + " SET StartDate=" + tinfoTemp.toString() + ".StartDate\n" +
+                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET StartDate=" + tinfoTemp.toString() + ".StartDate\n" +
                         "FROM " + tinfoTemp + " \n" +
                         "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
             }

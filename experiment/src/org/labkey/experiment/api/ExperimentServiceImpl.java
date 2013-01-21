@@ -117,6 +117,7 @@ import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -771,7 +772,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 // No current value, so need to insert a new row
                 String sql = "INSERT INTO " + getTinfoActiveMaterialSource() + " (Container, MaterialSourceLSID) " +
                     "VALUES (?, ?)";
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment(sql, container.getId(), materialSourceLSID));
+                new SqlExecutor(getExpSchema()).execute(sql, container.getId(), materialSourceLSID);
             }
         }
         else
@@ -780,13 +781,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 // Current value exists, needs to be deleted
                 String sql = "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE Container = ?";
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment(sql, container.getId()));
+                new SqlExecutor(getExpSchema()).execute(sql, container);
             }
             else
             {
                 // Current value exists, needs to be changed
                 String sql = "UPDATE " + getTinfoActiveMaterialSource() + " SET MaterialSourceLSID = ? WHERE Container = ?";
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment(sql, materialSourceLSID, container.getId()));
+                new SqlExecutor(getExpSchema()).execute(sql, materialSourceLSID, container);
             }
         }
     }
@@ -2180,7 +2181,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             finally
             {
-                if (materialInputRS != null) { try { materialInputRS.close(); } catch (SQLException ignored) {} }
+                ResultSetUtil.close(materialInputRS);
             }
 
             // now hook up data inputs in both directions
@@ -2225,7 +2226,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             finally
             {
-                if (dataInputRS != null ) { try { dataInputRS.close(); } catch (SQLException ignored) {} }
+                ResultSetUtil.close(dataInputRS);
             }
 
             //For run summary view, need to know if other ExperimentRuns
@@ -2259,7 +2260,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
                 finally
                 {
-                    if (materialOutputRS != null) { try { materialOutputRS.close(); } catch (SQLException ignored) {} }
+                    ResultSetUtil.close(materialOutputRS);
                 }
             }
 
@@ -2292,7 +2293,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
                     finally
                     {
-                        if (dataOutputRS != null) { try { dataOutputRS.close(); } catch (SQLException ignored) {} }
+                        ResultSetUtil.close(dataOutputRS);
                     }
                 }
             }
@@ -2373,7 +2374,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Object [] params = new Object[]{parentProtocolLSID, actionSequence};
         ProtocolActionStepDetail[] details = Table.executeQuery(getExpSchema(), cmdSql, params, ProtocolActionStepDetail.class);
-        if (null == details || details.length == 0)
+        if (details.length == 0)
         {
             return null;
         }

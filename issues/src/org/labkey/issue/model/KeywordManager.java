@@ -21,19 +21,15 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.issue.ColumnType;
 
-import java.sql.SQLException;
 import java.util.Collection;
 
 /**
@@ -111,9 +107,9 @@ public class KeywordManager
 
         String selectName = IssuesSchema.getInstance().getTableInfoIssueKeywords().getColumn("Default").getSelectName();
 
-        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(new SQLFragment(
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(
                 "UPDATE " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container = ? AND Type = ? AND Keyword = ?",
-                Boolean.TRUE, c.getId(), type.getOrdinal(), keyword));
+                Boolean.TRUE, c, type.getOrdinal(), keyword);
 
         KEYWORD_CACHE.remove(getCacheKey(c, type));
     }
@@ -124,9 +120,9 @@ public class KeywordManager
     {
         String selectName = IssuesSchema.getInstance().getTableInfoIssueKeywords().getColumn("Default").getSelectName();
 
-        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(new SQLFragment(
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(
                 "UPDATE " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " SET " + selectName + " = ? WHERE Container = ? AND Type = ?",
-                Boolean.FALSE, c.getId(), type.getOrdinal()));
+                Boolean.FALSE, c, type.getOrdinal());
 
         KEYWORD_CACHE.remove(getCacheKey(c, type));
     }
@@ -134,22 +130,15 @@ public class KeywordManager
 
     public static void deleteKeyword(Container c, ColumnType type, String keyword)
     {
-        Collection<Keyword> keywords = null;
+        Collection<Keyword> keywords;
 
         synchronized (KEYWORD_LOCK)
         {
-            try
-            {
-                Table.execute(IssuesSchema.getInstance().getSchema(),
-                        "DELETE FROM " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " WHERE Container = ? AND Type = ? AND Keyword = ?",
-                        c.getId(), type.getOrdinal(), keyword);
-                KEYWORD_CACHE.remove(getCacheKey(c, type));
-                keywords = getKeywords(c, type);
-            }
-            catch (SQLException x)
-            {
-                LOG.error("deleteKeyword", x);
-            }
+            new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(
+                    "DELETE FROM " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " WHERE Container = ? AND Type = ? AND Keyword = ?",
+                    c, type.getOrdinal(), keyword);
+            KEYWORD_CACHE.remove(getCacheKey(c, type));
+            keywords = getKeywords(c, type);
         }
 
         //Check to see if the last keyword of a required field was deleted, if so no longer make the field required.

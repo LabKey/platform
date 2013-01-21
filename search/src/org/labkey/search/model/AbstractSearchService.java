@@ -26,7 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchService;
@@ -51,7 +51,6 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.view.DefaultSearchResultTemplate;
 
 import javax.servlet.ServletContextEvent;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1390,22 +1389,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public void maintenance()
     {
-        try
-        {
-            DbSchema search = getSchema();
+        DbSchema search = getSchema();
 
-            // TODO: Maintenance task to remove documents for participants that have been deleted
+        // TODO: Maintenance task to remove documents for participants that have been deleted
 
-            Table.execute(search, "DELETE FROM search.CrawlResources WHERE parent NOT IN (SELECT id FROM search.CrawlCollections)");
+        new SqlExecutor(search).execute("DELETE FROM search.CrawlResources WHERE parent NOT IN (SELECT id FROM search.CrawlCollections)");
 //            if (search.getSqlDialect().isPostgreSQL())
 //            {
 //                Table.execute(search, "CLUSTER search.CrawlResources");
 //            }
-        }
-        catch (SQLException x)
-        {
-            _log.error("maintenance error", x);
-        }
     }
 
 

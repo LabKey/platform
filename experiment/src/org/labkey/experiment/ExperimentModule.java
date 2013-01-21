@@ -20,7 +20,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
@@ -67,7 +67,6 @@ import org.labkey.experiment.types.TypesController;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -343,10 +342,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     }
 
-    public void indexDeleted() throws SQLException
+    public void indexDeleted()
     {
         // Clear the last indexed time on all materials
-        Table.execute(ExperimentService.get().getSchema(), "UPDATE " + ExperimentService.get().getTinfoMaterial() +
+        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
     }
 }

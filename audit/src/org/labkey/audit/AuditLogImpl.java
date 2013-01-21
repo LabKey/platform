@@ -33,7 +33,7 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -462,7 +462,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                 updateSQL.append("UPDATE " + LogManager.get().getTinfoAuditLog() + " SET lsid = ? WHERE rowid = ?");
                 updateSQL.add(parentLsid);
                 updateSQL.add(event.getRowId());
-                Table.execute(LogManager.get().getSchema(), updateSQL);
+                new SqlExecutor(LogManager.get().getSchema()).execute(updateSQL);
 
                 addEventProperties(parentLsid, domainURI, dataMap);
             }

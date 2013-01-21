@@ -413,6 +413,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addExperimentalFeatureFlag(CreateChildStudyAction.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
+        AdminConsole.addExperimentalFeatureFlag(SpecimenImporter.EXPERIMENTAL_PERFORMANCE_IMPROVEMENTS, "Specimen Load Performance Improvements",
+            "Invokes prototype code at specimen archive load that attempts to determine differences in the specimen events and optimize the import process accordingly", false);
     }
 
 

@@ -22,6 +22,7 @@ import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -84,8 +85,8 @@ public class SavePaths implements DavCrawler.SavePaths
         upd.append(" WHERE " );
         SQLFragment f = pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr);
         upd.append(f);
-        
-        int count = Table.execute(getSearchSchema(), upd);
+
+        int count = new SqlExecutor(getSearchSchema()).execute(upd);
         return count > 0;
     }
 
@@ -188,7 +189,7 @@ public class SavePaths implements DavCrawler.SavePaths
             f.add(nullDate);
             f.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
             f.append(")");
-            int count = Table.execute(getSearchSchema(), f);
+            int count = new SqlExecutor(getSearchSchema()).execute(f);
             return count==1;
         }
         catch (SQLException x)
@@ -351,7 +352,7 @@ public class SavePaths implements DavCrawler.SavePaths
                     comma = ",";
                 }
                 upd.append(")");
-                Table.execute(getSearchSchema(), upd);
+                new SqlExecutor(getSearchSchema()).execute(upd);
             }
             return map;
         }
@@ -424,13 +425,13 @@ public class SavePaths implements DavCrawler.SavePaths
             SQLFragment upd = new SQLFragment(
                     "UPDATE search.CrawlResources SET LastIndexed=?, Modified=CAST(? AS " + datetime + ") WHERE Parent=? AND Name=?",
                     lastIndexed, modified, id, path.getName());
-            int count = Table.execute(getSearchSchema(), upd);
+            int count = new SqlExecutor(getSearchSchema()).execute(upd);
             if (count > 0)
                 return true;
             SQLFragment ins = new SQLFragment(
                     "INSERT INTO search.CrawlResources(Parent,Name,LastIndexed, Modified) VALUES (?,?,?,CAST(? AS " + datetime + "))",
                     id, path.getName(), lastIndexed, modified);
-            count = Table.execute(getSearchSchema(), ins);
+            count = new SqlExecutor(getSearchSchema()).execute(ins);
             return count > 0;
         }
         catch (SQLException x)

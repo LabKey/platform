@@ -26,10 +26,12 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LegacySqlExecutor;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -464,7 +466,7 @@ public abstract class VisitManager
                     datasetParticipantsSQL.append(")");
                 }
 
-                Table.execute(schema, datasetParticipantsSQL);
+                new SqlExecutor(schema).execute(datasetParticipantsSQL);
             }
             
             // If we don't know which participants might have been deleted, or we know and there are some,
@@ -689,7 +691,7 @@ public abstract class VisitManager
                     del.append(")");
                 }
 
-                return Table.execute(schema, del);
+                return new LegacySqlExecutor(schema).execute(del);
             }
             catch (SQLException x)
             {

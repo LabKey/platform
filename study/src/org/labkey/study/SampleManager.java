@@ -525,7 +525,7 @@ public class SampleManager
                     "WHERE study.Specimen.RowId = VialCounts.SpecimenId";
 
 
-    private void updateSpecimenCounts(Container container, User user, Specimen[] specimens) throws SQLException
+    private void updateSpecimenCounts(Container container, User user, Specimen[] specimens)
     {
         SQLFragment updateSql = new SQLFragment(UPDATE_SPECIMEN_COUNT_SQL_PREFIX,
                 Boolean.TRUE, // AvailableVolume
@@ -553,7 +553,7 @@ public class SampleManager
             updateSql.append(")\n");
         }
         updateSql.append(UPDATE_SPECIMEN_COUNT_SQL_SUFFIX);
-        Table.execute(StudySchema.getInstance().getSchema(), updateSql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateSql);
     }
 
     public void updateSpecimenCounts(Container container, User user) throws SQLException
@@ -1732,7 +1732,7 @@ public class SampleManager
     }
 
 
-    public void deleteSamplesForVisit(VisitImpl visit) throws SQLException
+    public void deleteSamplesForVisit(VisitImpl visit)
     {
         TableInfo tinfoSpec = StudySchema.getInstance().getTableInfoSpecimen();
         SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tinfoSpec + " WHERE " + tinfoSpec +
@@ -1757,7 +1757,7 @@ public class SampleManager
         deleteEventSql.append(specimenRowIdSelectSql);
         deleteEventSql.append("))");
 
-        Table.execute(StudySchema.getInstance().getSchema(), deleteEventSql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteEventSql);
 
         SQLFragment deleteVialSql = new SQLFragment("DELETE FROM " +
                 StudySchema.getInstance().getTableInfoVial() +
@@ -1773,12 +1773,12 @@ public class SampleManager
         deleteVialSql.append(specimenRowIdSelectSql);
         deleteVialSql.append("))");
 
-        Table.execute(StudySchema.getInstance().getSchema(), deleteVialSql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteVialSql);
 
         SQLFragment deleteSpecimenSql = new SQLFragment("DELETE ");
         deleteSpecimenSql.append(specimenRowIdSelectSql);
 
-        Table.execute(StudySchema.getInstance().getSchema(), deleteSpecimenSql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteSpecimenSql);
 
         clearCaches(visit.getContainer());
     }

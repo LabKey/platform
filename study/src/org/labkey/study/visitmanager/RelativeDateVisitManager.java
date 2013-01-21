@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -147,7 +148,7 @@ public class RelativeDateVisitManager extends VisitManager
             sqlInsertParticipantVisit.append("WHERE Container = ? AND SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum)\n");
             sqlInsertParticipantVisit.add(getStudy().getContainer());
             sqlInsertParticipantVisit.append("GROUP BY ParticipantId, SequenceNum");
-            Table.execute(schema, sqlInsertParticipantVisit);
+            new SqlExecutor(schema).execute(sqlInsertParticipantVisit);
 
             SQLFragment sqlInsertParticipantVisit2 = new SQLFragment();
             sqlInsertParticipantVisit2.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
@@ -162,7 +163,7 @@ public class RelativeDateVisitManager extends VisitManager
             sqlInsertParticipantVisit2.append("WHERE Container = ? AND Specimen.Ptid=PV.ParticipantId AND Specimen.VisitValue=PV.SequenceNum)\n");
             sqlInsertParticipantVisit2.add(getStudy().getContainer());
             sqlInsertParticipantVisit2.append("GROUP BY Container, Ptid, VisitValue");
-            Table.execute(schema, sqlInsertParticipantVisit2);
+            new SqlExecutor(schema).execute(sqlInsertParticipantVisit2);
             //
             // Delete ParticipantVisit where the participant does not exist anymore
             //

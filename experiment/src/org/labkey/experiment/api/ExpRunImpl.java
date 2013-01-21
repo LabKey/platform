@@ -24,6 +24,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
@@ -385,7 +386,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             sql += "DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + getRowId() + ");\n";
             sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ");\n";
 
-            Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql);
+            new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(sql);
 
             ExpMaterial[] materialsToDelete = ExperimentServiceImpl.get().getExpMaterialsForRun(getRowId());
             for (ExpMaterial expMaterial : materialsToDelete)
@@ -393,7 +394,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 expMaterial.delete(user);
             }
 
-            Table.execute(ExperimentServiceImpl.get().getExpSchema(), "DELETE FROM exp.ProtocolApplication WHERE RunId = " + getRowId());
+            new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute("DELETE FROM exp.ProtocolApplication WHERE RunId = " + getRowId());
 
             ExperimentRunGraph.clearCache(getContainer());
         }

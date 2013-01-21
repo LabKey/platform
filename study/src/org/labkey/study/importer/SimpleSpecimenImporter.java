@@ -26,6 +26,7 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
@@ -324,7 +325,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                 sql.append("UPDATE ").append(table);
                 sql.append(" SET ").append(dbIdCol).append(" = ?").add(id);
                 sql.append(" WHERE ").append(dbRowIdCol).append(" = ?").add(rowId);
-                Table.execute(table.getSchema(), sql);
+                new SqlExecutor(table.getSchema()).execute(sql);
             }
         }
 

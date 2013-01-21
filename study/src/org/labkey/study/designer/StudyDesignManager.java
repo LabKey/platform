@@ -16,27 +16,43 @@
 
 package org.labkey.study.designer;
 
-import gwt.client.org.labkey.study.designer.client.StudyDefinitionService;
+import gwt.client.org.labkey.study.designer.client.model.GWTAssayDefinition;
+import gwt.client.org.labkey.study.designer.client.model.GWTAssayNote;
+import gwt.client.org.labkey.study.designer.client.model.GWTAssaySchedule;
+import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
+import gwt.client.org.labkey.study.designer.client.model.GWTSampleMeasure;
+import gwt.client.org.labkey.study.designer.client.model.GWTSampleType;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
+import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.assay.AssayPublishManager;
-import gwt.client.org.labkey.study.designer.client.model.*;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyImpl;
@@ -48,7 +64,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -293,7 +316,7 @@ public class StudyDesignManager
         deletedTables.add(getStudyDesignTable());
         //Legacy design sourceContainer "remembered" where the study design was created. If deleting sourceContainer make sure don't have orphan rows
         SQLFragment updateContainers = new SQLFragment("UPDATE " + getStudyDesignTable() + " SET sourceContainer=container WHERE sourceContainer=?", c);
-        Table.execute(getSchema(), updateContainers);
+        new SqlExecutor(getSchema()).execute(updateContainers);
     }
 
     public void inactivateStudyDesign(Container c) throws SQLException

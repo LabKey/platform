@@ -201,7 +201,7 @@ public class RRF_Loader extends Job
             }
         }
         Table.batchExecute(_umls, sqlInsert, paramList);
-        Table.execute(_umls, _umls.getSqlDialect().getAnalyzeCommandForTable(ti.toString()));
+        new SqlExecutor(_umls).execute(_umls.getSqlDialect().getAnalyzeCommandForTable(ti.toString()));
     }
 
 

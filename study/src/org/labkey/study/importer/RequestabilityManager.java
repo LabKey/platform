@@ -345,14 +345,7 @@ public class RequestabilityManager
             updateSQL.add(reason);
             updateSQL.add(_container.getId());
             updateSQL.append(getFilterSQL(_container, user, specimens));
-            try
-            {
-                return Table.execute(StudySchema.getInstance().getSchema(), updateSQL);
-            }
-            catch (SQLException e)
-            {
-                throw new InvalidRuleException("Failed to run rule " + getName() + ": " + e.getMessage(), e);
-            }
+            return new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateSQL);
         }
 
         protected SQLFragment getAvailableAssignmentSQL()
@@ -705,14 +698,8 @@ public class RequestabilityManager
             }
             updateSQL.append("Container = ?");
             updateSQL.add(container.getId());
-            try
-            {
-                Table.execute(schema, updateSQL);
-            }
-            catch (SQLException e)
-            {
-                throw new InvalidRuleException("Unable to reset vials to their default requestability state: " + e.getMessage(), e);
-            }
+            new SqlExecutor(schema).execute(updateSQL);
+
             if (logger != null)
                 logger.info("\tReset complete.");
         }

@@ -474,14 +474,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         if (exists(parent, newName))
             throw new AttachmentService.DuplicateFilenameException(newName);
 
-        try
-        {
-            Table.execute(coreTables().getSchema(), sqlRename(parent, oldName, newName));
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        new SqlExecutor(coreTables().getSchema()).execute(sqlRename(parent, oldName, newName));
 
         // rename the file in the filesystem only if an Attachment director and the db rename succeded
         if (null != dir)
@@ -1349,16 +1342,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         @Override
         public void setLastIndexed(long ms, long modified)
         {
-            try
-            {
-            Table.execute(CoreSchema.getInstance().getSchema(), new SQLFragment(
+            new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment(
                     "UPDATE core.Documents SET LastIndexed=? WHERE Parent=? and DocumentName=?",
-                    new Object[]{new Date(ms), _parent.getEntityId(), _name}));
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
+                    new Date(ms), _parent.getEntityId(), _name));
         }
     }
 

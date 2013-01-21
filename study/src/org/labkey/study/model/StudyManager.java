@@ -559,13 +559,13 @@ public class StudyManager
                         colFrag = storageTableInfo.getSqlDialect().getISOFormat(colFrag);
                     updateKeySQL.append(colFrag);
                 }
-                Table.execute(getSchema(), updateKeySQL);
+                new SqlExecutor(getSchema()).execute(updateKeySQL);
 
                 // Now update the LSID column. Note - this needs to be the same as DatasetImportHelper.getURI()
                 SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
                 updateLSIDSQL.append(dataSetDefinition.generateLSIDSQL());
                 // TODO drop PK
-                Table.execute(getSchema(), updateLSIDSQL);
+                new SqlExecutor(getSchema()).execute(updateLSIDSQL);
                 // TODO add PK
             }   
             Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
@@ -1034,7 +1034,7 @@ public class StudyManager
                 sqlf.append(" WHERE d.ParticipantId = pv.ParticipantId AND d.SequenceNum = pv.SequenceNum AND pv.VisitRowId = ? AND pv.Container = ?)");
                 sqlf.add(visit.getRowId());
                 sqlf.add(study.getContainer());
-                int count = Table.execute(schema.getSchema(), sqlf);
+                int count = new SqlExecutor(schema.getSchema()).execute(sqlf);
                 if (count > 0)
                     StudyManager.dataSetModified(def, user, true);
             }
@@ -1490,7 +1490,7 @@ public class StudyManager
             }
             sql.append(")");
 
-            Table.execute(StudySchema.getInstance().getSchema(), sql);
+            new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
 
             //def.deleteFromMaterialized(user, updateLsids);
             //def.insertIntoMaterialized(user, updateLsids);
@@ -2560,89 +2560,74 @@ public class StudyManager
     {
         String [] participantIds = getParticipantIds(study);
 
-        try
-        {
-            for (String participantId : participantIds)
-            {
-                clearAlternateId(study, participantId);
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        for (String participantId : participantIds)
+            clearAlternateId(study, participantId);
     }
 
     public void generateNeededAlternateParticipantIds(Study study)
     {
-        try
+        Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, false, true);
+
+        StudyController.ChangeAlternateIdsForm changeAlternateIdsForm = StudyController.getChangeAlternateIdForm((StudyImpl) study);
+        String prefix = changeAlternateIdsForm.getPrefix();
+        if (null == prefix)
+            prefix = "";        // So we don't get the string "null" as the prefix
+        int numDigits = changeAlternateIdsForm.getNumDigits();
+        if (numDigits < ALTERNATEID_DEFAULT_NUM_DIGITS)
+            numDigits = ALTERNATEID_DEFAULT_NUM_DIGITS;       // Should not happen, but be safe
+
+        HashSet<Integer> usedNumbers = new HashSet<Integer>();
+        for (ParticipantInfo participantInfo : participantInfos.values())
         {
-            Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, false, true);
-
-            StudyController.ChangeAlternateIdsForm changeAlternateIdsForm = StudyController.getChangeAlternateIdForm((StudyImpl) study);
-            String prefix = changeAlternateIdsForm.getPrefix();
-            if (null == prefix)
-                prefix = "";        // So we don't get the string "null" as the prefix
-            int numDigits = changeAlternateIdsForm.getNumDigits();
-            if (numDigits < ALTERNATEID_DEFAULT_NUM_DIGITS)
-                numDigits = ALTERNATEID_DEFAULT_NUM_DIGITS;       // Should not happen, but be safe
-
-            HashSet<Integer> usedNumbers = new HashSet<Integer>();
-            for (ParticipantInfo participantInfo : participantInfos.values())
+            String alternateId = participantInfo.getAlternateId();
+            if (alternateId != null)
             {
-                String alternateId = participantInfo.getAlternateId();
-                if (alternateId != null)
+                try
                 {
-                    try
-                    {
-                        String alternateIdNoPrefix = alternateId.replaceFirst(prefix, "");
-                        int alternateIdInt = Integer.valueOf(alternateIdNoPrefix);
-                        usedNumbers.add(alternateIdInt);
-                    }
-                    catch (NumberFormatException x)
-                    {
-                        // very much unexpected; TODO: ignore?
-                    }
+                    String alternateIdNoPrefix = alternateId.replaceFirst(prefix, "");
+                    int alternateIdInt = Integer.valueOf(alternateIdNoPrefix);
+                    usedNumbers.add(alternateIdInt);
                 }
-            }
-
-            Random random = new Random();
-            int firstRandom = (int)Math.pow(10, (numDigits - 1));
-            int maxRandom = (int)Math.pow(10, numDigits) - firstRandom;
-            Iterator participantMapIter = participantInfos.entrySet().iterator();
-            while (participantMapIter.hasNext())
-            {
-                Map.Entry pair = (Map.Entry)participantMapIter.next();
-                ParticipantInfo participantInfo = (ParticipantInfo)pair.getValue();
-                String alternateId = participantInfo.getAlternateId();
-                if (null == alternateId)
+                catch (NumberFormatException x)
                 {
-                    String participantId = (String)pair.getKey();
-                    int newId = nextRandom(random, usedNumbers, firstRandom, maxRandom);
-                    setAlternateId(study, participantId, prefix + String.valueOf(newId));
+                    // very much unexpected; TODO: ignore?
                 }
             }
         }
-        catch (SQLException x)
+
+        Random random = new Random();
+        int firstRandom = (int)Math.pow(10, (numDigits - 1));
+        int maxRandom = (int)Math.pow(10, numDigits) - firstRandom;
+        Iterator participantMapIter = participantInfos.entrySet().iterator();
+        while (participantMapIter.hasNext())
         {
-            throw new RuntimeSQLException(x);
+            Map.Entry pair = (Map.Entry)participantMapIter.next();
+            ParticipantInfo participantInfo = (ParticipantInfo)pair.getValue();
+            String alternateId = participantInfo.getAlternateId();
+
+            if (null == alternateId)
+            {
+                String participantId = (String)pair.getKey();
+                int newId = nextRandom(random, usedNumbers, firstRandom, maxRandom);
+                setAlternateId(study, participantId, prefix + String.valueOf(newId));
+            }
         }
     }
 
-    private void clearAlternateId(Study study, String participantId) throws SQLException
+    private void clearAlternateId(Study study, String participantId)
     {
         SQLFragment sql = new SQLFragment(String.format(
                 "UPDATE %s SET AlternateId=NULL WHERE Container = ? AND ParticipantId = '%s'", _tableInfoParticipant, participantId),
                 study.getContainer().getId());
-        Table.execute(StudySchema.getInstance().getSchema(), sql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
-    private void setAlternateId(Study study, String participantId, String alternateId) throws SQLException
+    private void setAlternateId(Study study, String participantId, String alternateId)
     {
         SQLFragment sql = new SQLFragment(String.format(
                 "UPDATE %s SET AlternateId='%s' WHERE Container = ? AND ParticipantId = '%s'", _tableInfoParticipant, alternateId, participantId),
                 study.getContainer().getId());
-        Table.execute(StudySchema.getInstance().getSchema(), sql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
     private int nextRandom(Random random, HashSet<Integer> usedNumbers, int firstRandom, int maxRandom)

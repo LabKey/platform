@@ -27,6 +27,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -168,7 +169,7 @@ public class CohortManager
                 SQLFragment ptidVisitSql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
                         " SET CohortId = ? WHERE ParticipantId = ? AND Container = ?", newCohortId, p.getParticipantId(), study.getContainer());
 
-                Table.execute(StudySchema.getInstance().getSchema(), ptidVisitSql);
+                new SqlExecutor(StudySchema.getInstance().getSchema()).execute(ptidVisitSql);
             }
         }
     }

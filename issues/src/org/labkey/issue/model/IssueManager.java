@@ -589,10 +589,10 @@ public class IssueManager
             _issuesSchema.getSchema().getScope().ensureTransaction();
             String deleteComments =
                     "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container NOT IN (SELECT EntityId FROM core.Containers))";
-            int commentsDeleted = Table.execute(_issuesSchema.getSchema(), deleteComments);
+            int commentsDeleted = new SqlExecutor(_issuesSchema.getSchema()).execute(deleteComments);
             String deleteOrphanedComments =
                     "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId NOT IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + ")";
-            commentsDeleted += Table.execute(_issuesSchema.getSchema(), deleteOrphanedComments);
+            commentsDeleted += new SqlExecutor(_issuesSchema.getSchema()).execute(deleteOrphanedComments);
             int issuesDeleted = ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), null);
             _issuesSchema.getSchema().getScope().commitTransaction();

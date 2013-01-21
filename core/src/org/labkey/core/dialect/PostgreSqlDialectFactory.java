@@ -31,7 +31,6 @@ import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
@@ -178,21 +177,14 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
                             "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
                             "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
-            try
-            {
-                SqlDialect dialect = new PostgreSql83Dialect();
-                TestUpgradeCode good = new TestUpgradeCode();
-                dialect.runSql(null, goodSql, good, null, null);
-                assertEquals(4, good.getCounter());
+            SqlDialect dialect = new PostgreSql83Dialect();
+            TestUpgradeCode good = new TestUpgradeCode();
+            dialect.runSql(null, goodSql, good, null, null);
+            assertEquals(4, good.getCounter());
 
-                TestUpgradeCode bad = new TestUpgradeCode();
-                dialect.runSql(null, badSql, bad, null, null);
-                assertEquals(0, bad.getCounter());
-            }
-            catch (SQLException e)
-            {
-                fail("SQL Exception running test: " + e.getMessage());
-            }
+            TestUpgradeCode bad = new TestUpgradeCode();
+            dialect.runSql(null, badSql, bad, null, null);
+            assertEquals(0, bad.getCounter());
         }
     }
 

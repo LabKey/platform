@@ -28,6 +28,7 @@ import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.PkFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -200,7 +201,7 @@ public class CBCAssayController extends SpringActionController
                     sql.add(newSampleId);
                     sql.add(objectId);
 
-                    Table.execute(DbSchema.get(resultDomain.getDomainKind().getStorageSchemaName()), sql);
+                    new SqlExecutor(DbSchema.get(resultDomain.getDomainKind().getStorageSchemaName())).execute(sql);
                 }
 
                 ExperimentService.get().commitTransaction();

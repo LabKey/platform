@@ -574,7 +574,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + table + "\n");
             if (cutoff != null)
                 studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
-            count = Table.execute(StudySchema.getInstance().getSchema(), studyDataFrag);
+            count = new LegacySqlExecutor(StudySchema.getInstance().getSchema()).execute(studyDataFrag);
             StudyManager.dataSetModified(this, user, true);
 
             time.stop();
