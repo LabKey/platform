@@ -67,6 +67,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -652,6 +653,7 @@ public class StorageProvisioner
         ResultSet rs = null;
 
         TreeSet<Path> schemaNames = new TreeSet<Path>();;
+        Map<Path, Set<String>> nonProvisionedTableMap = new TreeMap<Path, Set<String>>();
         TreeSet<Path> provisionedTables = new TreeSet<Path>();
         if (null == domainuri)
         {
@@ -659,7 +661,11 @@ public class StorageProvisioner
             {
                 String schemaName = dk.getStorageSchemaName();
                 if (null != schemaName)
-                    schemaNames.add(new Path(schemaName));
+                {
+                    Path path = new Path(schemaName);
+                    schemaNames.add(path);
+                    nonProvisionedTableMap.put(path, dk.getNonProvisionedTableNames());
+                }
             }
             for (Path schemaName : schemaNames)
             {
@@ -667,7 +673,10 @@ public class StorageProvisioner
                 if (null == schema)
                     continue;
                 for (String name : schema.getTableNames())
-                    provisionedTables.add(schemaName.append(name));
+                {
+                    if (!nonProvisionedTableMap.get(schemaName).contains(name.toLowerCase()))
+                        provisionedTables.add(schemaName.append(name));
+                }
             }
         }
 

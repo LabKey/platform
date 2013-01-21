@@ -113,4 +113,10 @@ abstract public class DomainKind implements Handler<String>
 
     /** ask the domain to clear caches related to this domain */
     abstract public void invalidate(Domain domain);
+
+    /**
+     * Set of hard table names in this schema that are not provision tables
+     * @return
+     */
+    abstract public Set<String> getNonProvisionedTableNames();
 }

@@ -189,4 +189,10 @@ public abstract class AbstractDomainKind extends DomainKind
     {
         return Collections.emptySet();
     }
+
+    @Override
+    public Set<String> getNonProvisionedTableNames()
+    {
+        return Collections.emptySet();
+    }
 }
