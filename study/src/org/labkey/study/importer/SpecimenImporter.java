@@ -33,6 +33,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -65,6 +66,8 @@ import java.util.*;
  */
 public class SpecimenImporter
 {
+    public static final String EXPERIMENTAL_PERFORMANCE_IMPROVEMENTS = "ExperimentalSpecimenLoadPerformanceImprovements";
+
     private final CPUTimer cpuPopulateMaterials = new CPUTimer("populateMaterials");
     private final CPUTimer cpuUpdateSpecimens = new CPUTimer("updateSpecimens");
     private final CPUTimer cpuInsertSpecimens = new CPUTimer("insertSpecimens");
@@ -828,7 +831,6 @@ public class SpecimenImporter
     }
 
     private static void clearConflictingVialColumns(Specimen specimen, Set<String> conflicts)
-            throws SQLException
     {
         SQLFragment sql = new SQLFragment();
         sql.append("UPDATE ").append(StudySchema.getInstance().getTableInfoVial()).append(" SET\n  ");
@@ -856,11 +858,10 @@ public class SpecimenImporter
         sql.add(specimen.getContainer().getId());
         sql.add(specimen.getGlobalUniqueId());
 
-        Table.execute(StudySchema.getInstance().getSchema(), sql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
     private static void clearConflictingSpecimenColumns(Specimen specimen, Set<String> conflicts)
-            throws SQLException
     {
         SQLFragment sql = new SQLFragment();
         sql.append("UPDATE ").append(StudySchema.getInstance().getTableInfoSpecimen()).append(" SET\n  ");
@@ -888,10 +889,10 @@ public class SpecimenImporter
         sql.add(specimen.getContainer().getId());
         sql.add(specimen.getSpecimenId());
 
-        Table.execute(StudySchema.getInstance().getSchema(), sql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
-    private static void updateCommentSpecimenHashes(Container container, Logger logger) throws SQLException
+    private static void updateCommentSpecimenHashes(Container container, Logger logger)
     {
         SQLFragment sql = new SQLFragment();
         TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
@@ -903,11 +904,11 @@ public class SpecimenImporter
         sql.add(container.getId());
         sql.add(container.getId());
         logger.info("Updating hash codes for existing comments...");
-        Table.execute(StudySchema.getInstance().getSchema(), sql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         logger.info("Complete.");
     }
 
-    private static void prepareQCComments(Container container, User user, Logger logger) throws SQLException
+    private static void prepareQCComments(Container container, User user, Logger logger)
     {
         StringBuilder columnList = new StringBuilder();
         columnList.append("VialId");
@@ -940,7 +941,7 @@ public class SpecimenImporter
         deleteClearedVials.add(Boolean.FALSE);
         deleteClearedVials.append("AND GlobalUniqueId NOT IN (").append(conflictedGUIDs).append(");");
         logger.info("Clearing QC flags for vials that no longer have history conflicts...");
-        Table.execute(StudySchema.getInstance().getSchema(), deleteClearedVials);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteClearedVials);
         logger.info("Complete.");
 
 
@@ -961,7 +962,7 @@ public class SpecimenImporter
         insertPlaceholderQCComments.append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?);");
         insertPlaceholderQCComments.add(container.getId());
         logger.info("Setting QC flags for vials that have new history conflicts...");
-        Table.execute(StudySchema.getInstance().getSchema(), insertPlaceholderQCComments);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(insertPlaceholderQCComments);
         logger.info("Complete.");
     }
 
@@ -976,7 +977,7 @@ public class SpecimenImporter
                 "\tWHERE study.Vial.GlobalUniqueId IS NULL AND\n" +
                 "\t\tstudy.SampleRequestSpecimen.Container = ?);", Boolean.TRUE, container.getId());
         logger.info("Marking requested vials that have been orphaned...");
-        Table.execute(StudySchema.getInstance().getSchema(), orphanMarkerSql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(orphanMarkerSql);
         logger.info("Complete.");
 
         // un-mark those global unique IDs that were previously marked as orphaned but are now found in the vial table:
@@ -989,7 +990,7 @@ public class SpecimenImporter
                 "\t\tstudy.SampleRequestSpecimen.Orphaned = ? AND\n" +
                 "\t\tstudy.SampleRequestSpecimen.Container = ?);", Boolean.FALSE, Boolean.TRUE, container.getId());
         logger.info("Marking requested vials that have been de-orphaned...");
-        Table.execute(StudySchema.getInstance().getSchema(), deorphanMarkerSql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deorphanMarkerSql);
         logger.info("Complete.");
 
     }
@@ -1006,7 +1007,7 @@ public class SpecimenImporter
         lockedInRequestSql.add(container.getId());
 
         logger.info("Setting Specimen Locked in Request status...");
-        Table.execute(StudySchema.getInstance().getSchema(), lockedInRequestSql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(lockedInRequestSql);
         logger.info("Complete.");
     }
 
@@ -1021,7 +1022,7 @@ public class SpecimenImporter
         sql.add(container.getId());
         sql.add(container.getId());
         logger.info("Updating processing locations on the specimen table...");
-        Table.execute(StudySchema.getInstance().getSchema(), sql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         logger.info("Complete.");
 
         sql = new SQLFragment("UPDATE study.Specimen SET FirstProcessedByInitials = (\n" +
@@ -1033,7 +1034,7 @@ public class SpecimenImporter
         sql.add(container.getId());
         sql.add(container.getId());
         logger.info("Updating first processed by initials on the specimen table...");
-        Table.execute(StudySchema.getInstance().getSchema(), sql);
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         logger.info("Complete.");
 
     }
@@ -1230,6 +1231,9 @@ public class SpecimenImporter
                 if (!line.startsWith("#"))
                     throw new IllegalStateException("Import files are expected to start with a comment indicating table name");
                 fileNameMap.put(line.substring(1).trim().toLowerCase(), vf.getInputStream(fileName));
+
+                if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PERFORMANCE_IMPROVEMENTS));
+                    //IncrementalCreator.generateIncrementalArchive(vf, fileName);
             }
             finally
             {
@@ -1426,7 +1430,7 @@ public class SpecimenImporter
             SQLFragment insertFragment = new SQLFragment(insertSQL, info.getContainer().getId(), cpasType, createdTimestamp);
             if (DEBUG)
                 logSQLFragment(insertFragment);
-            affected =  executeSQL(info.getSchema(), insertFragment);
+            affected = executeSQL(info.getSchema(), insertFragment);
             if (affected >= 0)
                 info("exp.Material: " + affected + " rows inserted.");
             info("exp.Material: Update complete.");
@@ -2467,7 +2471,7 @@ public class SpecimenImporter
         try
         {
             info("Creating temp table to hold archive data...");
-            SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
+            SqlDialect dialect = schema.getSqlDialect();
             String tableName;
             StringBuilder sql = new StringBuilder();
             int randomizer = (new Random().nextInt(900000000) + 100000000);  // Ensure 9-digit random number
@@ -2481,8 +2485,8 @@ public class SpecimenImporter
                 tableName = dialect.getTempTablePrefix() + "SpecimenUpload" + randomizer;
                 sql.append("CREATE ").append(dialect.getTempTableKeyword()).append(" TABLE ").append(tableName);
             }
-            String strType = schema.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR);
-            sql.append("\n(\n    RowId ").append(schema.getSqlDialect().getUniqueIdentType()).append(", ");
+            String strType = dialect.sqlTypeNameFromSqlType(Types.VARCHAR);
+            sql.append("\n(\n    RowId ").append(dialect.getUniqueIdentType()).append(", ");
             sql.append("Container ").append(strType).append("(300) NOT NULL, ");
             sql.append("LSID ").append(strType).append("(300) NOT NULL, ");
             sql.append("SpecimenHash ").append(strType).append("(300)");
@@ -2530,7 +2534,7 @@ public class SpecimenImporter
             _tableName = _schema.getName() + "." + TABLE;
             dropTable();
 
-            Table.execute(_schema, "CREATE TABLE " + _tableName +
+            new SqlExecutor(_schema).execute("CREATE TABLE " + _tableName +
                     "(Container VARCHAR(255) NOT NULL, id VARCHAR(10), s VARCHAR(32), i INTEGER)");
         }
 
@@ -2665,10 +2669,10 @@ public class SpecimenImporter
     }
 
 
-    private int executeSQL(DbSchema schema, SQLFragment sql) throws SQLException
+    private int executeSQL(DbSchema schema, SQLFragment sql)
     {
         if (DEBUG && _logger != null)
             _logger.debug(sql.toString());
-        return Table.execute(schema, sql);
+        return new SqlExecutor(schema).execute(sql);
     }
 }
