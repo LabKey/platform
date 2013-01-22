@@ -24,6 +24,7 @@ import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.ui.property.ConditionalFormatItem;
 import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.ui.property.DimensionItem;
+import org.labkey.api.gwt.client.ui.property.ExcludeFromShiftingItem;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
 import org.labkey.api.gwt.client.ui.property.MeasureItem;
 import org.labkey.api.gwt.client.ui.property.ProtectedItem;
@@ -175,6 +176,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         propertyPane.addItem(new MeasureItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new DimensionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new ProtectedItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
+        propertyPane.addItem(new ExcludeFromShiftingItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));
         addChangeHandler(propertyPane.getChangeListener());
         
@@ -206,6 +208,6 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     @Override
     protected int getExtraPropertiesHeight()
     {
-        return 280;
+        return 305;
     }
 }

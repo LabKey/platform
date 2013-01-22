@@ -103,6 +103,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setDimension(columnInfo.isDimension());
             gwtColumnInfo.setMeasure(columnInfo.isMeasure());
             gwtColumnInfo.setProtected(columnInfo.isProtected());
+            gwtColumnInfo.setExcludeFromShifting(columnInfo.isExcludeFromShifting());
             gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
             if (columnInfo.getFk() != null)
@@ -203,6 +204,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         if (column.isSetProtected())
                         {
                             gwtColumnInfo.setProtected(column.getProtected());
+                        }
+                        if (column.isSetExcludeFromShifting())
+                        {
+                            gwtColumnInfo.setExcludeFromShifting(column.getExcludeFromShifting());
                         }
                         if (column.isSetIsHidden())
                         {
@@ -482,6 +487,15 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             else if (xmlColumn.isSetProtected())
             {
                 xmlColumn.unsetProtected();
+            }
+
+            if (gwtColumnInfo.isExcludeFromShifting() != rawColumnInfo.isExcludeFromShifting())
+            {
+                xmlColumn.setExcludeFromShifting(gwtColumnInfo.isExcludeFromShifting());
+            }
+            else if (xmlColumn.isSetExcludeFromShifting())
+            {
+                xmlColumn.unsetExcludeFromShifting();
             }
 
             // Set the label

@@ -272,7 +272,7 @@ public class DatasetWriter implements InternalStudyWriter
         Map<ColumnInfo, ExprColumn> exprColumnMap = new HashMap<ColumnInfo, ExprColumn>();
         for (ColumnInfo column : columns)
         {
-            if (column.isDateTimeType())
+            if (column.isDateTimeType() && !column.isExcludeFromShifting())
             {
                 SQLFragment sql = generateSqlForShiftDateCol(c, column);
                 exprColumnMap.put(column, new ExprColumn(ti, column.getName(), sql, column.getJdbcType(), column));

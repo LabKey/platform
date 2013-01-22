@@ -74,6 +74,9 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             displayColumns.add(dc);
             String col = "";
 
+            // column info that includes the XML metadata override properties
+            ColumnInfo queryColumn = getSpecimenQueryColumn(queryTable, column);
+
             // export alternate ID in place of Ptid if set in StudyExportContext
             if (ctx.isAlternateIds() && column.getDbColumnName().equals("Ptid"))
             {
@@ -88,13 +91,13 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 col = (tt.isEvents() ? "se." : "s.") + column.getDbColumnName();
 
                 // add expression to shift the date columns
-                if (ctx.isShiftDates() && column.isDateType())
+                if (ctx.isShiftDates() && column.isDateType() && !queryColumn.isExcludeFromShifting())
                 {
                     col = "{fn timestampadd(SQL_TSI_DAY, -ParticipantLookup.DateOffset, " + col + ")} AS " + column.getDbColumnName();
                 }
 
                 // don't export values for columns set as Protected in the XML metadata override
-                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, getSpecimenQueryColumn(queryTable, column)))
+                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn))
                 {
                     col = "NULL AS " + column.getDbColumnName();
                 }
@@ -105,7 +108,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 col = column.getFkTableAlias() + "." + column.getFkColumn() + " AS " + dc.getDisplayColumn().getAlias();
 
                 // don't export values for columns set as Protected in the XML metadata override
-                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, getSpecimenQueryColumn(queryTable, column)))
+                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn))
                 {
                     col = "NULL AS " + dc.getDisplayColumn().getAlias();
                 }

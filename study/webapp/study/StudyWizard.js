@@ -1167,7 +1167,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.shiftDatesCheckBox = new Ext.form.Checkbox({
             xtype: 'checkbox',
             name: 'shiftDates',
-            fieldLabel: 'Shift All Participant Dates?',
+            fieldLabel: 'Shift Participant Dates?',
             checked: true,
             value: true
         });

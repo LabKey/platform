@@ -824,6 +824,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-12.21-12.22.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.22-12.23.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.23-12.24.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.25-12.26.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-12.30-12.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -959,6 +960,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-12.22-12.23.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.23-12.24.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.24-12.25.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.25-12.26.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-12.30-12.31.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text

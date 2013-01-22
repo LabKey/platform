@@ -225,7 +225,7 @@ public class ListImporter
         RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
                 "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                 "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType", "Protected");
+                "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType", "Protected", "ExcludeFromShifting");
         List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
@@ -268,6 +268,7 @@ public class ListImporter
                 facetingBehaviorType = type.toString();
 
             boolean isProtected = columnXml.isSetProtected() && columnXml.getProtected();
+            boolean isExcludeFromShifting = columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting();
 
             Set<String> importAliases = new LinkedHashSet<String>();
             if (columnXml.isSetImportAliases())
@@ -302,7 +303,8 @@ public class ListImporter
                 dimension,
                 ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
                 facetingBehaviorType,
-                isProtected
+                isProtected,
+                isExcludeFromShifting
             });
 
             importMaps.add(map);

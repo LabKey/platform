@@ -161,6 +161,12 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isProtected();
     }
 
+    @Override
+    public boolean isExcludeFromShifting()
+    {
+        return _pd.isExcludeFromShifting();
+    }
+
     public boolean isMvEnabled()
     {
         return _pd.isMvEnabled();
@@ -276,6 +282,15 @@ public class DomainPropertyImpl implements DomainProperty
         if (!isEdited() && isProtected == isProtected())
             return;
         edit().setProtected(isProtected);
+    }
+
+    @Override
+    public void setExcludeFromShifting(boolean isExcludeFromShifting)
+    {
+        // UNDONE: isExcludeFromShifting() has side-effect due to calling isNumeric()->getSqlTypeInt() which relies on rangeURI which might not be set yet.
+        if (!isEdited() && isExcludeFromShifting == isExcludeFromShifting())
+            return;
+        edit().setExcludeFromShifting(isExcludeFromShifting);
     }
 
     public void setMvEnabled(boolean mv)
