@@ -127,7 +127,6 @@ import org.labkey.study.model.SampleRequestStatus;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.model.SpecimenComment;
-import org.labkey.study.model.SpecimenTypeSummary;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -3800,8 +3799,8 @@ public class SpecimenController extends BaseStudyController
             }
 
             ImportSpecimensBean bean = new ImportSpecimensBean(getContainer(), archives, form.getPath(), form.getFile(), errors);
-            SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
-            if (summary.isVialCountZero())
+            boolean isEmpty = SampleManager.getInstance().isSpecimensEmpty(getContainer());
+            if (isEmpty)
             {
                 bean.setNoSpecimens(true);
             }

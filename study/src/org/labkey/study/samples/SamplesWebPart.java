@@ -18,15 +18,6 @@ package org.labkey.study.samples;
 
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpecimenController;
-import org.labkey.study.model.SpecimenTypeSummary;
-
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.

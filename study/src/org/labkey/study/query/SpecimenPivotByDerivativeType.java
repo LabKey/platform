@@ -17,16 +17,7 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.study.StudyService;
-import org.labkey.study.SampleManager;
-import org.labkey.study.model.SpecimenTypeSummary;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**

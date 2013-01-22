@@ -51,8 +51,8 @@
                 innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=contextPath%>/_.gif"></td>';
 
             var nextByGroup = '';
-            if (details.group)
-                nextByGroup = ' [by ' + details.group.name + ']';
+ //           if (details.group)
+ //               nextByGroup = ' [by ' + details.group.name + ']';
             innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' +
                     details.label + '</a><span style="font-size: x-small;"> ' + nextByGroup + '</span></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td</tr>';
             if (details.group)

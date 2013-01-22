@@ -37,7 +37,6 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.model.SpecimenTypeSummary;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.springframework.validation.BindException;
@@ -64,8 +63,8 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         if (!settings.isSimple())
             return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(container));
 
-        SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(container);
-        if (summary.isVialCountZero())
+        boolean isEmpty = SampleManager.getInstance().isSpecimensEmpty(container);
+        if (isEmpty)
         {
             form.setNoSpecimens(true);
             form.setReplaceOrMerge("replace");
