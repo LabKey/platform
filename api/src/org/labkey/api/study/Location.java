@@ -22,6 +22,8 @@ package org.labkey.api.study;
  */
 public interface Location extends StudyEntity
 {
+    int  getRowId();
+
     Boolean isEndpoint();
 
     Boolean isRepository();
