@@ -43,6 +43,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
@@ -50,6 +51,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.model.SequenceNumImportHelper;
+import org.labkey.study.model.StudyManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -389,7 +391,8 @@ public class SampleMindedTransformTask
         }
 
         outputRow.put("record_id", rowIndex);
-        outputRow.put("originating_location", locationId);
+        outputRow.put("originating_location", locationId);      // specimensdetails
+        outputRow.put("locationid", locationId);                // missing specimen/visit
         outputRow.put("global_unique_specimen_id", barcode);
         String ptid = removeNonNullValue(outputRow, "participantid");
         outputRow.put("ptid", ptid);
@@ -432,7 +435,8 @@ public class SampleMindedTransformTask
             outputRow.put("processing_date", activitySaveDateTime);
         }
         outputRow.put("processed_by_initials", outputRow.get("activityuser"));
-        outputRow.put("comments", activity);
+        if (!outputRow.containsKey("comments"))
+            outputRow.put("comments", activity);
 
         String destinationLocation = getNonNullValue(outputRow, "destination_site");
         if ("".equals(destinationLocation))
@@ -513,7 +517,7 @@ public class SampleMindedTransformTask
                 boolean barcode=false, siteshortname=false;
                 boolean global_unique_specimen_id=false, lab_id=false;
                 int colCount = iterator.getColumnCount();
-                for (int icol=0 ; icol<colCount ; icol++)
+                for (int icol=0 ; icol<=colCount ; icol++)
                 {
                     String name = iterator.getColumnInfo(icol).getName();
                     barcode |= StringUtils.equalsIgnoreCase("barcode", name);
@@ -551,6 +555,8 @@ public class SampleMindedTransformTask
 
             try
             {
+                Location[] locations = StudyManager.getInstance().getSites(study.getContainer());
+
                 SequenceNumImportHelper snih = new SequenceNumImportHelper(study, null);
 
                 List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
@@ -559,6 +565,8 @@ public class SampleMindedTransformTask
                     inputRows.add(di.getMap());
 
                 SampleMindedTransformTask task = new SampleMindedTransformTask(null);
+                for (Location loc : locations)
+                    task._labIds.put(loc.getLabel(),loc.getRowId());
                 task.setValidate(false);
                 List<Map<String, Object>> outputRows = task.transformRows(inputRows);
 
