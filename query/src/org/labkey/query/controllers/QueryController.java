@@ -2501,7 +2501,8 @@ public class QueryController extends SpringActionController
 
             // Issue 12233: add implicit maxRows=100k when using client API
             settings.setShowRows(ShowRows.PAGINATED);
-            if (settings.getMaxRows() > 100000)
+            // Issue 16961
+            if (null == form.getMaxRows() || settings.getMaxRows() > 100000)
                 settings.setMaxRows(100000);
 
             int offset = 0;
