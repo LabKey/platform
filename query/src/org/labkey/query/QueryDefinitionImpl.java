@@ -358,33 +358,37 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public TableInfo getTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
-        // CONSIDER: define UserSchema.equals() ?
-        if (_useCache &&
-                schema.getSchemaPath().equals(getSchema().getSchemaPath()) &&
+        if (_useCache)
+        {
+            // CONSIDER: define UserSchema.equals() ?
+            if (schema.getSchemaPath().equals(getSchema().getSchemaPath()) &&
                 schema.getContainer().equals(getSchema().getContainer()) &&
                 schema.getUser().equals(getSchema().getUser()))
-        {
-            Pair<String,Boolean> key = new Pair<String, Boolean>(getName().toLowerCase(), includeMetadata);
-            TableInfo table = _cache.get(key);
-            if (table == null)
             {
-                table = createTable(schema, errors, includeMetadata);
+                Pair<String,Boolean> key = new Pair<String, Boolean>(getName().toLowerCase(), includeMetadata);
+                TableInfo table = _cache.get(key);
+                if (table == null)
+                {
+                    table = createTable(schema, errors, includeMetadata);
+                    if (table != null)
+                    {
+                        log.debug("Caching table");
+                        _cache.put(key, table);
+                    }
+                }
+
                 if (table != null)
                 {
-                    log.debug("Caching table");
-                    _cache.put(key, table);
+                    log.debug("Returning cached table '" + getName() + "', " + (includeMetadata ? "with" : "without") + " metadata");
+                    return table;
                 }
             }
-
-            if (table != null)
+            else
             {
-                log.debug("Returning cached table '" + getName() + "', " + (includeMetadata ? "with" : "without") + " metadata");
-                return table;
+                log.info("!! Not using cached table: schemas not equal");
             }
         }
 
-        if (_useCache)
-            log.info("!! Not using cached table: schemas not equal");
         return createTable(schema, errors, includeMetadata);
     }
 
