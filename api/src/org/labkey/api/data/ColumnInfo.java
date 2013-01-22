@@ -357,6 +357,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setMvIndicatorColumn(col.isMvIndicatorColumn());
         setFacetingBehaviorType(col.getFacetingBehaviorType());
         setProtected(col.isProtected());
+        setExcludeFromShifting(col.isExcludeFromShifting());
 
         setCrosstabColumnDimension(col.getCrosstabColumnDimension());
         setCrosstabColumnMember(col.getCrosstabColumnMember());
@@ -929,6 +930,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             nullable = xmlCol.getNullable();
         if (xmlCol.isSetProtected())
             isProtected = xmlCol.getProtected();
+        if (xmlCol.isSetExcludeFromShifting())
+            isExcludeFromShifting = xmlCol.getExcludeFromShifting();
         if (xmlCol.isSetConceptURI())
             conceptURI = xmlCol.getConceptURI();
 

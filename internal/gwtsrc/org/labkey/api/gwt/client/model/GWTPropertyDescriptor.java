@@ -66,6 +66,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty dimension = new BooleanProperty();
     private StringProperty facetingBehaviorType = new StringProperty();
     private BooleanProperty isProtected = new BooleanProperty();
+    private BooleanProperty isExcludeFromShifting = new BooleanProperty();
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -118,6 +119,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setURL(s.getURL());
         setFacetingBehaviorType(s.getFacetingBehaviorType());
         setProtected(s.isProtected());
+        setExcludeFromShifting(s.isExcludeFromShifting());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -441,6 +443,21 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.isProtected.setBool(isProtected);
     }
 
+    public boolean isSetExcludeFromShifting()
+    {
+        return isExcludeFromShifting.getBoolean() != null;
+    }
+
+    public boolean isExcludeFromShifting()
+    {
+        return isExcludeFromShifting.booleanValue();
+    }
+
+    public void setExcludeFromShifting(boolean isExcludeFromShifting)
+    {
+        this.isExcludeFromShifting.setBool(isExcludeFromShifting);
+    }
+
     public String debugString()
     {
         return getName() + " " + getLabel() + " " + getRangeURI() + " " + isRequired() + " " + getDescription();
@@ -487,6 +504,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isDimension() != that.isDimension()) return false;
         if (getFacetingBehaviorType() != that.getFacetingBehaviorType()) return false;
         if (isProtected() != that.isProtected()) return false;
+        if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
 
         if (!getPropertyValidators().equals(that.getPropertyValidators())) return false;
         if (!getConditionalFormats().equals(that.getConditionalFormats()))
@@ -530,6 +548,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (measure.getBoolean() != null ? measure.getBoolean().hashCode() : 0);
         result = 31 * result + (facetingBehaviorType.getString() != null ? facetingBehaviorType.getString().hashCode() : 0);
         result = 31 * result + (isProtected.getBoolean() != null ? isProtected.getBoolean().hashCode() : 0);
+        result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
@@ -570,6 +589,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("defaultDisplayValue".equals(prop)) throw new IllegalStateException("defaultDisplayValue cannot be bound.");
         if ("facetingBehaviorType".equals(prop)) return facetingBehaviorType;
         if ("protected".equals(prop)) return isProtected;
+        if ("excludeFromShifting".equals(prop)) return isExcludeFromShifting;
         return null;
     }
 

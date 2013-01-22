@@ -181,6 +181,9 @@ public class TableInfoWriter
 
         if (column.isProtected())
             columnXml.setProtected(true);
+
+        if (column.isExcludeFromShifting())
+            columnXml.setExcludeFromShifting(true);
     }
 
     protected String getConceptURI(ColumnInfo column)

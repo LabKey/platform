@@ -66,6 +66,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
     protected Boolean isProtected = false;
+    protected Boolean isExcludeFromShifting = false;
 
     protected FieldKey crosstabColumnDimension;
     protected CrosstabMember crosstabColumnMember;
@@ -94,6 +95,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.facetingBehaviorType = facetingBehaviorType;
         to.crosstabColumnMember = crosstabColumnMember;
         to.isProtected = isProtected;
+        to.isExcludeFromShifting = isExcludeFromShifting;
     }
 
     public Sort.SortDirection getSortDirection()
@@ -617,5 +619,15 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setProtected(boolean isProtected)
     {
         this.isProtected = isProtected;
+    }
+
+    public boolean isExcludeFromShifting()
+    {
+        return isExcludeFromShifting;
+    }
+
+    public void setExcludeFromShifting(boolean isExcludeFromShifting)
+    {
+        this.isExcludeFromShifting = isExcludeFromShifting;
     }
 }

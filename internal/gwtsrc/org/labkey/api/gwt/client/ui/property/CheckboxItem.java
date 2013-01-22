@@ -64,8 +64,8 @@ public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, Fiel
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
-        boolean changed = !getFieldValue(field) == checkbox.isChecked();
-        setFieldValue(field, checkbox.isChecked());
+        boolean changed = !getFieldValue(field) == checkbox.getValue();
+        setFieldValue(field, checkbox.getValue());
         return changed;
     }
 
@@ -85,11 +85,11 @@ public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, Fiel
 
     public void showPropertyDescriptor(DomainType domain, FieldType field)
     {
-        checkbox.setChecked(getFieldValue(field));
+        checkbox.setValue(getFieldValue(field));
     }
 
     public boolean isChecked()
     {
-        return checkbox.isChecked();
+        return checkbox.getValue();
     }
 }

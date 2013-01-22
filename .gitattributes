@@ -4847,6 +4847,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ConditionalFormatItem.java
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultValueItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DescriptionItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DimensionItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ExcludeFromShiftingItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FacetingBehaviorItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FormatItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ImportAliasesItem.java -text

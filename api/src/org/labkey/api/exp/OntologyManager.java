@@ -2563,6 +2563,7 @@ public class OntologyManager
             }
 
             boolean isProtected = m.get("Protected") != null && ((Boolean)m.get("Protected")).booleanValue();
+            boolean isExcludeFromShifting = m.get("ExcludeFromShifting") != null && ((Boolean)m.get("ExcludeFromShifting")).booleanValue();
 
             PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
             if (null == pt)
@@ -2631,6 +2632,7 @@ public class OntologyManager
             pd.setLookupQuery(lookupQuery);
             pd.setFacetingBehaviorType(facetingBehavior);
             pd.setProtected(isProtected);
+            pd.setExcludeFromShifting(isExcludeFromShifting);
         }
         return pd;
     }

@@ -47,6 +47,7 @@ public interface DomainProperty extends ImportAliasable
     boolean isMeasure();
     boolean isDimension();
     boolean isProtected();
+    boolean isExcludeFromShifting();
 
     void delete();
 
@@ -68,6 +69,7 @@ public interface DomainProperty extends ImportAliasable
     void setMeasure(boolean isMeasure);
     void setDimension(boolean isDimension);
     void setProtected(boolean isProtected);
+    void setExcludeFromShifting(boolean isExcludeFromShifting);
 
     void setImportAliasSet(Set<String> aliases);
     void setURL(String url);

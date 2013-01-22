@@ -216,6 +216,7 @@ public class DomainUtil
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
         gwtProp.setProtected(prop.isProtected());
+        gwtProp.setExcludeFromShifting(prop.isExcludeFromShifting());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
         gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
         StringExpression url = prop.getPropertyDescriptor().getURL();
@@ -550,6 +551,9 @@ public class DomainUtil
 
         if (from.isProtected())
             to.setProtected(from.isProtected());
+
+        if (from.isExcludeFromShifting())
+            to.setExcludeFromShifting(from.isExcludeFromShifting());
     }
 
     @SuppressWarnings("unchecked")
