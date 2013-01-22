@@ -22,15 +22,20 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
+import org.labkey.data.xml.queryCustomView.NamedFiltersType;
+import org.labkey.query.metadata.MetadataServiceImpl;
 import org.labkey.query.persist.LinkedSchemaDef;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -135,7 +140,20 @@ public class LinkedSchema extends ExternalSchema
     protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
     {
         assert !(sourceTable instanceof SchemaTableInfo) : "LinkedSchema only wraps query TableInfos, not SchemaTableInfos";
-        return new LinkedTableInfo(this, sourceTable);
+        LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, sourceTable);
+
+        if (_template != null && _template.isSetMetadata())
+        {
+            TablesType xmlTables = _template.getMetadata().getTables();
+            for (TableType xmlTable : xmlTables.getTableArray())
+            {
+                if (name.equalsIgnoreCase(xmlTable.getTableName()))
+                {
+                    linkedTableInfo.loadFromXML(this, xmlTable, xmlTables.getFiltersArray(), new ArrayList<QueryException>());
+                }
+            }
+        }
+        return linkedTableInfo;
     }
 
 }

@@ -15,10 +15,22 @@
  */
 package org.labkey.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.queryCustomView.FilterType;
+import org.labkey.data.xml.queryCustomView.LocalOrRefFiltersType;
+import org.labkey.data.xml.queryCustomView.NamedFiltersType;
+
+import java.util.Collection;
 
 /**
 * User: kevink
@@ -57,5 +69,63 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     protected void addDomainColumns()
     {
         // LinkedTableInfos only adds columns from the source table and has no Domain columns.
+    }
+
+    private static final NamedFiltersType[] NO_FILTERS = new NamedFiltersType[0];
+
+    @Override
+    protected void loadAllButCustomizerFromXML(QuerySchema schema, TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
+    {
+        filtersArray = filtersArray == null ? NO_FILTERS : filtersArray;
+
+        if (xmlTable.isSetFilters())
+        {
+            LocalOrRefFiltersType xmlFilters = xmlTable.getFilters();
+            if (xmlFilters.isSetRef())
+            {
+                String refId = xmlFilters.getRef();
+                if (!findMatchingFilters(filtersArray, refId))
+                {
+                    errors.add(new QueryException("Could not find filter with id '" + refId + "'"));
+                }
+            }
+
+            addFilters(xmlFilters.getFilterArray());
+        }
+    }
+
+    /** @return true if match was found, false if it's not in the array */
+    private boolean findMatchingFilters(NamedFiltersType[] filtersArray, String refId)
+    {
+        for (NamedFiltersType namedFiltersType : filtersArray)
+        {
+            if (namedFiltersType.getName().equals(refId))
+            {
+                addFilters(namedFiltersType.getFilterArray());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void addFilters(FilterType[] xmlFilters)
+    {
+        for (FilterType xmlFilter : xmlFilters)
+        {
+            SimpleFilter filter = null;
+            for (CompareType compareType : CompareType.values())
+            {
+                if (compareType.getXmlType().equals(xmlFilter.getOperator()))
+                {
+                    filter = new SimpleFilter(FieldKey.fromString(xmlFilter.getColumn()), xmlFilter.getValue(), compareType);
+                    break;
+                }
+            }
+            if (filter == null)
+            {
+                throw new IllegalArgumentException("Unsupported filter type: " + xmlFilter.getOperator());
+            }
+            addCondition(filter);
+        }
     }
 }

@@ -55,6 +55,7 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 import org.labkey.query.design.DgColumn;
 import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.DgTable;
@@ -407,7 +408,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (null != ret)
         {
             TableType xmlTable = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getTableArray(0);
-            ((AbstractTableInfo)ret).loadFromXML(schema, xmlTable, errors);
+            NamedFiltersType[] xmlFilters = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getFiltersArray();
+            ((AbstractTableInfo)ret).loadFromXML(schema, xmlTable, xmlFilters, errors);
 
             if (includeMetadata)
             {

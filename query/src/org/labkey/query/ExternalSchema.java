@@ -68,8 +68,8 @@ public class ExternalSchema extends SimpleUserSchema
         });
     }
 
-    private final AbstractExternalSchemaDef _def;
-    private final TemplateSchemaType _template;
+    protected final AbstractExternalSchemaDef _def;
+    protected final TemplateSchemaType _template;
     private final Map<String, TableType> _metaDataMap;
 
     public static ExternalSchema get(User user, Container container, ExternalSchemaDef def)

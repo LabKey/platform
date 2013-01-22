@@ -109,6 +109,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.sql.ResultSet;
@@ -1135,12 +1136,13 @@ public class QueryServiceImpl extends QueryService
                     String name = resource.getName();
                     if (name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION) && templateName.equalsIgnoreCase(name.substring(0, name.length() - SCHEMA_TEMPLATE_EXTENSION.length())))
                     {
+                        InputStream is = null;
                         try
                         {
-                            TemplateSchemaDocument doc = TemplateSchemaDocument.Factory.parse(resource.getInputStream());
+                            is = resource.getInputStream();
+                            TemplateSchemaDocument doc = TemplateSchemaDocument.Factory.parse(is);
                             XmlBeansUtil.validateXmlDocument(doc, resource.getName());
-                            TemplateSchemaType template = doc.getTemplateSchema();
-                            return template;
+                            return doc.getTemplateSchema();
                         }
                         catch (XmlException e)
                         {
@@ -1153,6 +1155,13 @@ public class QueryServiceImpl extends QueryService
                         catch (IOException e)
                         {
                             _log.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                        }
+                        finally
+                        {
+                            if (is != null)
+                            {
+                                try { is.close(); } catch (IOException ignored) {}
+                            }
                         }
                     }
                 }
