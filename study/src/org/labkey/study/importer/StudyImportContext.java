@@ -172,7 +172,9 @@ public class StudyImportContext extends AbstractContext
             }
 
             RepositoryType.Enum repositoryType = specimens.getRepositoryType();
-            reposSettings.setSimple(RepositoryType.STANDARD == repositoryType);
+            boolean simple = (RepositoryType.STANDARD == repositoryType);
+            reposSettings.setSimple(simple);
+            reposSettings.setEnableRequests(!simple);
             SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
 
             StudyImpl study = StudyManager.getInstance().getStudy(c).createMutable();
