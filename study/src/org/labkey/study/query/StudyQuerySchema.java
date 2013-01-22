@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
@@ -436,6 +437,47 @@ public class StudyQuerySchema extends UserSchema
             }
         }
         
+        return null;
+    }
+
+    // Null if there's no alias dataset configured, otherwise a "skinny" table with just Participant, Source, and Alias,
+    // in that order but having the configured names.
+    @Nullable public TableInfo getParticipantAliasesTable()
+    {
+        StudyImpl study = getStudy();
+
+        if (null != study)
+        {
+            Integer id = study.getParticipantAliasDatasetId();
+
+            if (null != id)
+            {
+                DataSetDefinition def = study.getDataSet(id);
+
+                if (null != def)
+                {
+                    DataSetTableImpl datasetTable = new DataSetTableImpl(this, def);
+
+                    String aliasName = study.getParticipantAliasProperty();
+                    String sourceName = study.getParticipantAliasSourceProperty();
+
+                    ColumnInfo aliasColumn = datasetTable.getColumn(aliasName);
+                    ColumnInfo sourceColumn = datasetTable.getColumn(sourceName);
+
+                    if (null != aliasColumn && null != sourceColumn)
+                    {
+                        FilteredTable aliasTable = new FilteredTable<StudyQuerySchema>(datasetTable, this);
+
+                        aliasTable.addWrapColumn(datasetTable.getColumn(study.getSubjectColumnName()));
+                        aliasTable.addWrapColumn(aliasColumn);
+                        aliasTable.addWrapColumn(sourceColumn);
+
+                        return aliasTable;
+                    }
+                }
+            }
+        }
+
         return null;
     }
 

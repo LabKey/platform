@@ -3284,6 +3284,23 @@ public class StudyManager
         }
     }
 
+
+    // Return a source->alias map for the specified participant
+    public Map<String, String> getAliases(StudyImpl study, String ptid)
+    {
+        @Nullable final TableInfo aliasTable = new StudyQuerySchema(study, User.getSearchUser(), true).getParticipantAliasesTable();
+
+        if (null == aliasTable)
+            return Collections.emptyMap();
+
+        List<ColumnInfo> columns = aliasTable.getColumns();
+        SimpleFilter filter = new SimpleFilter(columns.get(0).getFieldKey(), ptid);
+
+        // Return source -> alias map
+        return new TableSelector(aliasTable, Arrays.asList(columns.get(2), columns.get(1)), filter, null).getValueMap();
+    }
+
+
     public void reindex(Container c)
     {
         _enumerateDocuments(null, c);
@@ -3444,7 +3461,7 @@ public class StudyManager
             return;
         }
 
-        final Study study = StudyManager.getInstance().getStudy(c);
+        final StudyImpl study = StudyManager.getInstance().getStudy(c);
         if (null == study)
             return;
         final String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false).toString();
@@ -3477,17 +3494,25 @@ public class StudyManager
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
-                final String id = rs.getString(2);
+                final String ptid = rs.getString(2);
                 String displayTitle = "Study " + study.getLabel() + " -- " +
-                        StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + id;
-                ActionURL execute = executeURL.clone().addParameter("participantId", String.valueOf(id));
-                Path p = new Path(c.getId(), id);
+                        StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + ptid;
+                ActionURL execute = executeURL.clone().addParameter("participantId", String.valueOf(ptid));
+                Path p = new Path(c.getId(), ptid);
                 String docid = "participant:" + p.toString();
+
+                String uniqueIds = ptid;
+
+                // Add all participant alias as high priority uniqueIds
+                Map<String, String> aliasMap = StudyManager.getInstance().getAliases(study, ptid);
+
+                if (!aliasMap.isEmpty())
+                    uniqueIds = uniqueIds + " " + StringUtils.join(aliasMap.values(), " ");
 
                 Map<String, Object> props = new HashMap<String,Object>();
                 props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
                 props.put(SearchService.PROPERTY.title.toString(), displayTitle);
-                props.put(SearchService.PROPERTY.uniqueIds.toString(), id);
+                props.put(SearchService.PROPERTY.uniqueIds.toString(), uniqueIds);
                 props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 // need to figure out if all study users can see demographic data or not
@@ -3507,7 +3532,7 @@ public class StudyManager
                         {
                             StudySchema ss = StudySchema.getInstance();
                             new SqlExecutor(ss.getSchema()).execute("UPDATE " + ss.getTableInfoParticipant().getSelectName() +
-                                " SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?", new Timestamp(ms), c, id);
+                                " SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?", new Timestamp(ms), c, ptid);
                         }
                     };
                     task.addResource(r, SearchService.PRIORITY.item);
@@ -3515,7 +3540,7 @@ public class StudyManager
                 else
                 {
                     // ActionResource
-                    ActionURL index = indexURL.clone().addParameter("participantId", id);
+                    ActionURL index = indexURL.clone().addParameter("participantId", ptid);
                     ActionResource r = new ActionResource(subjectCategory, docid, execute, index, props);
                     task.addResource(r, SearchService.PRIORITY.item);
                     // If this is ever used then better update LastIndexed
