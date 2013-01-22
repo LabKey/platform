@@ -118,13 +118,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         @Deprecated displayTitle,  // We no longer store this while indexing, but old documents may still have it.
         title,                     // Used to be the "search" title (equivalent to keywordsMed), now the display title
-
         body,
-        keywordsLo,       // Low priority keywords: same weighting as body terms
-        keywordsMed,      // Medium priority keywords: weighted twice the body terms... e.g., terms in the title, subject, or other summary
-        keywordsHi,       // High priority keywords: weighted twice the medium keywords... these will dominate the search results, so probably not a good idea
-        uniqueIds,        // Weighted twice the medium keywords, but not analyzed... e.g., unique ids like PTIDs, sample IDs, etc.
-                          // Consider: Medium / Low priority unique ids?  Only difference is that they aren't analyzed.
+
+        // Use keywords for english language terms that should be analyzed (stemmed)
+
+        keywordsLo,       // Same weighting as body terms... perhaps use this for folder path parts?
+        keywordsMed,      // Weighted twice the body terms... e.g., terms in the title, subject, or other summary
+        keywordsHi,       // Weighted twice the medium keywords... these terms will dominate the search results, so probably not a good idea
+
+        // Use identifiers for terms that should NOT be stemmed, like identifiers and folder names. These are case-insensitive.
+
+        identifiersLo,    // Same weighting as body terms
+        identifiersMed,   // Weighted twice the lo identifiers
+        identifiersHi,    // Weighted twice the medium identifiers (e.g., unique ids like PTIDs, sample IDs, etc.)... be careful, these will dominate the search results (e.g., unique ids like PTIDs, sample IDs, etc.)
 
         summary,
         url,
@@ -245,7 +251,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(
             PROPERTY.categories.toString(), PROPERTY.title.toString(), PROPERTY.keywordsLo.toString(),
-            PROPERTY.keywordsMed.toString(), PROPERTY.keywordsHi.toString(), PROPERTY.uniqueIds.toString(),
+            PROPERTY.keywordsMed.toString(), PROPERTY.keywordsHi.toString(), PROPERTY.indentifiersHi.toString(),
             PROPERTY.navtrail.toString(), PROPERTY.securableResourceId.toString());
 
     @Override
@@ -433,12 +439,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             for (String category : categories.split("\\s+"))
                 doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), StringField.TYPE_NOT_STORED));
 
-            String uniqueIds = (String)props.get(PROPERTY.uniqueIds.toString());
+            String uniqueIds = (String)props.get(PROPERTY.indentifiersHi.toString());
 
             // Split the uniqueIds string by whitespace, index each without stemming
             if (null != uniqueIds)
                 for (String uniqueId : uniqueIds.split(("\\s+")))
-                    doc.add(new Field(FIELD_NAMES.uniqueIds.toString(), uniqueId.toLowerCase(), StringField.TYPE_NOT_STORED));
+                    doc.add(new Field(FIELD_NAMES.identifiersHi.toString(), uniqueId.toLowerCase(), StringField.TYPE_NOT_STORED));
 
             // === Index and analyze, don't store ===
 
@@ -981,9 +987,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         Map<FIELD_NAMES, Float> enumMap = new HashMap<FIELD_NAMES, Float>();
         enumMap.put(FIELD_NAMES.body, 1.0f);
         enumMap.put(FIELD_NAMES.keywordsLo, 1.0f);
-        enumMap.put(FIELD_NAMES.keywordsMed, 2.0f);
+        enumMap.put(FIELD_NAMES.identifiersLo, 1.0f);
+
         enumMap.put(FIELD_NAMES.title, 2.0f);          // TODO: Deprecated... old documents only
+        enumMap.put(FIELD_NAMES.keywordsMed, 2.0f);
+        enumMap.put(FIELD_NAMES.identifiersMed, 2.0f);
+
         enumMap.put(FIELD_NAMES.keywordsHi, 4.0f);
+        enumMap.put(FIELD_NAMES.identifiersHi, 4.0f);
 
         for (Map.Entry<FIELD_NAMES, Float> entry : enumMap.entrySet())
             boosts.put(entry.getKey().toString(), entry.getValue());

@@ -3512,7 +3512,7 @@ public class StudyManager
                 Map<String, Object> props = new HashMap<String,Object>();
                 props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
                 props.put(SearchService.PROPERTY.title.toString(), displayTitle);
-                props.put(SearchService.PROPERTY.uniqueIds.toString(), uniqueIds);
+                props.put(SearchService.PROPERTY.indentifiersHi.toString(), uniqueIds);
                 props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 // need to figure out if all study users can see demographic data or not
