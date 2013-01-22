@@ -18,13 +18,17 @@ package org.labkey.api.search;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -37,9 +41,13 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
@@ -78,7 +86,9 @@ public interface SearchService
         keywordsLo("keywordsLo"),
         keywordsMed("keywordsMed"),
         keywordsHi("keywordsHi"),
-        uniqueIds("uniqueIds"),
+        indentifiersLo("indentifiersLo"),
+        indentifiersMed("indentifiersMed"),
+        indentifiersHi("indentifiersHi"),
         categories("searchCategories"),
         securableResourceId(SecurableResource.class.getName()),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()
