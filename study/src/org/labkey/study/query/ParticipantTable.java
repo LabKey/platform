@@ -16,21 +16,29 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedDisplayColumn;
+import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.TitleForeignKey;
-import org.labkey.api.study.Study;
+import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
@@ -38,18 +46,30 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+
+import java.util.Set;
 
 public class ParticipantTable extends FilteredTable<StudyQuerySchema>
 {
+    public static final String ALIASES_COLUMN_NAME = "Aliases";
+    private static final String LINKED_IDS_COLUMN_NAME = "LinkedIDs";
+    private StudyImpl _study;
+
+    private Set<String> _participantAliasSources;
+
+    private static final String ALIAS_INNER_QUERY_ALIAS = "X";
+
     public ParticipantTable(StudyQuerySchema schema, boolean hideDataSets)
     {
         super(StudySchema.getInstance().getTableInfoParticipant(), schema);
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
 
-        Study study = StudyManager.getInstance().getStudy(schema.getContainer());
+        _study = StudyManager.getInstance().getStudy(schema.getContainer());
         ColumnInfo rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
         rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, "participantId", getContainerContext()));
         addColumn(rowIdColumn);
@@ -107,7 +127,7 @@ public class ParticipantTable extends FilteredTable<StudyQuerySchema>
             initialCohortColumn = new NullColumnInfo(this, "InitialCohort", JdbcType.INTEGER);
             initialCohortColumn.setHidden(true);
         }
-        else if (null != study && study.isAdvancedCohorts())
+        else if (null != _study && _study.isAdvancedCohorts())
         {
             initialCohortColumn = new AliasedColumn(this, "InitialCohort", _rootTable.getColumn("InitialCohortId"));
         }
@@ -136,6 +156,73 @@ public class ParticipantTable extends FilteredTable<StudyQuerySchema>
             ColumnInfo categoryColumn = new ParticipantCategoryColumn(category, this);
             addColumn(categoryColumn);
         }
+
+        addAliasesColumn();
+    }
+
+    private void addAliasesColumn()
+    {
+        if (_study != null && _study.getParticipantAliasDatasetId() != null)
+        {
+            DataSetDefinition dataSet = _study.getDataSet(_study.getParticipantAliasDatasetId());
+            User user = getUserSchema().getUser();
+            if (dataSet != null && dataSet.canRead(user))
+            {
+                // Get the table and the two admin-configured columns
+                final DataSetDefinition.DatasetSchemaTableInfo datasetTable = dataSet.getTableInfo(user, true);
+                final ColumnInfo aliasColumn = datasetTable.getColumn(_study.getParticipantAliasProperty());
+                final ColumnInfo sourceColumn = datasetTable.getColumn(_study.getParticipantAliasSourceProperty());
+
+                if (aliasColumn != null && sourceColumn != null)
+                {
+                    // Make the SQL that will be used to build the concatenated aliases value
+                    SQLFragment concatSQL = new SQLFragment("SELECT DISTINCT ");
+                    concatSQL.append(aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
+                    concatSQL.append(" FROM ");
+                    concatSQL.append(datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));
+                    concatSQL.append(" WHERE ");
+                    concatSQL.append(ALIAS_INNER_QUERY_ALIAS);
+                    concatSQL.append(".ParticipantID = ");
+                    concatSQL.append(ExprColumn.STR_TABLE_ALIAS);
+                    concatSQL.append(".ParticipantID ORDER BY ");
+                    concatSQL.append(aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
+
+                    ExprColumn aliasesColumn = new ExprColumn(this, ALIASES_COLUMN_NAME, getSqlDialect().getSelectConcat(concatSQL, MultiValuedRenderContext.VALUE_DELIMETER), JdbcType.VARCHAR);
+                    aliasesColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+                    {
+                        @Override
+                        public DisplayColumn createRenderer(ColumnInfo colInfo)
+                        {
+                            // Use a multi valued implementation so that we get nice formatting
+                            return new MultiValuedDisplayColumn(new DataColumn(colInfo, false));
+                        }
+                    });
+                    addColumn(aliasesColumn);
+
+                    // Add a separate column that pivots out the individual aliases based on source
+                    ColumnInfo linkedIDsColumn = wrapColumn(LINKED_IDS_COLUMN_NAME, getRealTable().getColumn("ParticipantID"));
+                    linkedIDsColumn.setFk(new PivotedAliasForeignKey(datasetTable, sourceColumn, aliasColumn));
+                    linkedIDsColumn.setIsUnselectable(true);
+                    addColumn(linkedIDsColumn);
+                }
+            }
+        }
+    }
+
+    /** Get all of the different sources that are in current use. Source names are case insensitive */
+    private Set<String> getParticipantAliasSources(TableInfo datasetTable, ColumnInfo sourceColumn)
+    {
+        if (_participantAliasSources == null)
+        {
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT ");
+            sql.append(sourceColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
+            sql.append(" FROM ");
+            sql.append(datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));
+            // Use a case-insensitive set because want separate columns for each source, and column names are case
+            // insensitive. When selecting out the values for each source via SQL, we do a case insensitive comparison.
+            _participantAliasSources = new CaseInsensitiveTreeSet(new SqlSelector(datasetTable.getSchema(), sql).getCollection(String.class));
+        }
+        return _participantAliasSources;
     }
 
     public ActionURL getBaseDetailsURL()
@@ -188,5 +275,73 @@ public class ParticipantTable extends FilteredTable<StudyQuerySchema>
         if ("CurrentSiteId".equalsIgnoreCase(name))
             return getColumn("CurrentLocationId");
         return super.resolveColumn(name);
+    }
+
+    /**
+     * A custom FK that pivots out aliases into separate columns per source.
+     * We don't expose the lookup target as a separate query.
+     */
+    private class PivotedAliasForeignKey extends AbstractForeignKey
+    {
+        private final TableInfo _datasetTable;
+        private final ColumnInfo _sourceColumn;
+        private final ColumnInfo _aliasColumn;
+
+        public PivotedAliasForeignKey(TableInfo datasetTable, ColumnInfo sourceColumn, ColumnInfo aliasColumn)
+        {
+            super("PivotedParticipantAliases", null, StudyQuerySchema.SCHEMA_NAME);
+            _datasetTable = datasetTable;
+            _sourceColumn = sourceColumn;
+            _aliasColumn = aliasColumn;
+            setPublic(false);
+        }
+
+        public ColumnInfo createLookupColumn(final ColumnInfo parent, String displayField)
+        {
+            if (displayField == null)
+                return null;
+            for (final String source : getParticipantAliasSources(_datasetTable, _sourceColumn))
+            {
+                if (displayField.equalsIgnoreCase(source))
+                {
+                    // There should be zero or one one value per participant/source combination, so we could either use MIN/MAX
+                    SQLFragment sql = new SQLFragment("(SELECT MAX(");
+                    sql.append(_aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
+                    sql.append(") FROM ");
+                    sql.append(_datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));
+                    // Do a LOWER on the source column in case there are multiple casings stored as values
+                    sql.append(" WHERE LOWER(");
+                    sql.append(_sourceColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
+                    sql.append(") = ? AND ");
+                    sql.add(source.toLowerCase());
+                    sql.append(ALIAS_INNER_QUERY_ALIAS);
+                    sql.append(".ParticipantID = ");
+                    sql.append(ExprColumn.STR_TABLE_ALIAS);
+                    sql.append(".ParticipantID)");
+
+                    return new ExprColumn(parent.getParentTable(), source, sql, JdbcType.VARCHAR, parent);
+                }
+            }
+            return null;
+        }
+
+        public StringExpression getURL(ColumnInfo parent)
+        {
+            return null;
+        }
+
+        public TableInfo getLookupTableInfo()
+        {
+            // Create a simple virtual table so that we can expose one column per alias source
+            VirtualTable result = new VirtualTable(getSchema());
+            for (String source : getParticipantAliasSources(_datasetTable, _sourceColumn))
+            {
+                ColumnInfo column = new ColumnInfo(source);
+                column.setParentTable(result);
+                column.setSqlTypeName(JdbcType.VARCHAR.toString());
+                result.safeAddColumn(column);
+            }
+            return result;
+        }
     }
 }

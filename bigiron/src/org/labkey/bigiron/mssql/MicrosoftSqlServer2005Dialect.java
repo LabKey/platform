@@ -408,7 +408,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getSelectConcat(SQLFragment selectSql)
+    public SQLFragment getSelectConcat(SQLFragment selectSql, String delimeter)
     {
         String sql = selectSql.getSQL().toUpperCase();
 
@@ -453,7 +453,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         }
         ret.insert(fromIndex, "AS NVARCHAR) AS [text()] ");
         int selectIndex = sql.indexOf("SELECT");
-        ret.insert(selectIndex + "SELECT".length(), "',' + CAST(");
+        ret.insert(selectIndex + "SELECT".length(), "'" + delimeter + "' + CAST(");
         ret.insert(0, "SUBSTRING ((");
         // We want all the characters, so use a ridiculously long value to ensure that we don't truncate
         ret.append(" FOR XML PATH ('')), 2, 2147483647)");

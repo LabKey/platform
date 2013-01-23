@@ -450,6 +450,12 @@ function renderFormPanel(data, editable){
     handledFields['Grant'] = true;
     items.push(getConfig('Description'));
     handledFields['Description'] = true;
+
+    // Don't show these fields, they have a special UI for editing them
+    handledFields['ParticipantAliasDatasetId'] = true;
+    handledFields['ParticipantAliasSourceProperty'] = true;
+    handledFields['ParticipantAliasProperty'] = true;
+
     if(editableFormPanel){
         items.push(renderTypeCombo);
     }

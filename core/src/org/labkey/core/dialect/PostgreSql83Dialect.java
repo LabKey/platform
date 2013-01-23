@@ -435,11 +435,13 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getSelectConcat(SQLFragment selectSql)
+    public SQLFragment getSelectConcat(SQLFragment selectSql, String delimeter)
     {
         SQLFragment result = new SQLFragment("array_to_string(array(");
         result.append(selectSql);
-        result.append("), ',')");
+        result.append("), '");
+        result.append(delimeter);
+        result.append("')");
 
         return result;
     }
