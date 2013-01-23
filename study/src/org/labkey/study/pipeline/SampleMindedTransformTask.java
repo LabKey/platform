@@ -29,6 +29,10 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
@@ -61,6 +65,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -391,12 +397,13 @@ public class SampleMindedTransformTask
         }
 
         outputRow.put("record_id", rowIndex);
-        outputRow.put("originating_location", locationId);      // specimensdetails
+        outputRow.put("originating_location", locationId);      // specimensevent
         outputRow.put("locationid", locationId);                // missing specimen/visit
         outputRow.put("global_unique_specimen_id", barcode);
         String ptid = removeNonNullValue(outputRow, "participantid");
         outputRow.put("ptid", ptid);
-        outputRow.put("tube_type", outputRow.get("vesseldomaintype"));
+        outputRow.put("tube_type", outputRow.get("vesseldomaintype"));  // specimenevent
+        outputRow.put("tubetype", outputRow.get("vesseldomaintype"));   // missing specimen
         // Fix up the visit number
         String visit = removeNonNullValue(outputRow, "visitname");
         if (visit.toLowerCase().startsWith("visit"))
@@ -480,6 +487,33 @@ public class SampleMindedTransformTask
     }
 
 
+
+    /* for missing visit, missing specimen, we use the existing lookup values */
+    void loadLookupsFromDb(Container c)
+    {
+        DbSchema study = DbSchema.get("study");
+        StudyManager sm = StudyManager.getInstance();
+        for (Location l : sm.getSites(c))
+            _labIds.put(l.getLabel(), l.getRowId());
+        (new SqlSelector(study,"SELECT primaryType, rowId FROM study.specimenprimarytype WHERE container=?", c)).forEach(new Selector.ForEachBlock<ResultSet>(){
+            @Override
+            public void exec(ResultSet rs) throws SQLException
+            {
+                _primaryIds.put(rs.getString(1), rs.getInt(2));
+            }
+        });
+        (new SqlSelector(study,"SELECT derivative, rowId FROM study.specimenderivative WHERE container=?", c)).forEach(new Selector.ForEachBlock<ResultSet>(){
+            @Override
+            public void exec(ResultSet rs) throws SQLException
+            {
+                _derivativeIds.put(rs.getString(1), rs.getInt(2));
+            }
+        });
+    }
+
+
+
+
     /**
      * This lets us re-use a lot of the column mapping stuff we do for sample minded specimen import.  In particular
      * the missing visit/specimen has similar column mappings.
@@ -539,7 +573,6 @@ public class SampleMindedTransformTask
         }
     }
 
-
     static class _DataIterator extends ListofMapsDataIterator
     {
         static DataIterator create(DataIterator source, DataIteratorContext context, Study study, TableInfo target) throws BatchValidationException
@@ -555,7 +588,6 @@ public class SampleMindedTransformTask
 
             try
             {
-                Location[] locations = StudyManager.getInstance().getSites(study.getContainer());
 
                 SequenceNumImportHelper snih = new SequenceNumImportHelper(study, null);
 
@@ -565,8 +597,8 @@ public class SampleMindedTransformTask
                     inputRows.add(di.getMap());
 
                 SampleMindedTransformTask task = new SampleMindedTransformTask(null);
-                for (Location loc : locations)
-                    task._labIds.put(loc.getLabel(),loc.getRowId());
+                task.loadLookupsFromDb(study.getContainer());
+
                 task.setValidate(false);
                 List<Map<String, Object>> outputRows = task.transformRows(inputRows);
 
