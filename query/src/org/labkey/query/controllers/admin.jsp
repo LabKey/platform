@@ -136,8 +136,8 @@ else
 <h2>Linked Schemas</h2>
 <p>
     Linked schemas can be created by refrencing an existing LabKey schema in the current or different folder.
-    The linked schema may expose some or all of the tables in the original schema.  The linked tables
-    may be filtered such that only a subset of the rows are available in the linked schema.
+    The linked schema may expose some or all of the tables from the original schema.  The linked tables
+    may be filtered such that only a subset of the rows are available.
 </p>
 <%
     List<LinkedSchemaDef> linkedSchemas = Arrays.asList(QueryManager.get().getLinkedSchemaDefs(c));

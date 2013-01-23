@@ -136,6 +136,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -143,6 +144,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class QueryController extends SpringActionController
@@ -232,14 +234,14 @@ public class QueryController extends SpringActionController
             return new ActionURL(NewQueryAction.class, c);
         }
 
-        public ActionURL urlUpdateExternalSchema(Container c, ExternalSchemaDef def)
+        public ActionURL urlUpdateExternalSchema(Container c, AbstractExternalSchemaDef def)
         {
             ActionURL url = new ActionURL(QueryController.EditExternalSchemaAction.class, c);
             url.addParameter("externalSchemaId", Integer.toString(def.getExternalSchemaId()));
             return url;
         }
 
-        public ActionURL urlDeleteExternalSchema(Container c, ExternalSchemaDef def)
+        public ActionURL urlDeleteExternalSchema(Container c, AbstractExternalSchemaDef def)
         {
             ActionURL url = new ActionURL(QueryController.DeleteExternalSchemaAction.class, c);
             url.addParameter("externalSchemaId", Integer.toString(def.getExternalSchemaId()));
@@ -3248,7 +3250,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("linkedSchema"));
-            return new JspView<LinkedSchemaBean>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
+            return new JspView<LinkedSchemaBean>(QueryController.class, "externalSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
 
@@ -3429,7 +3431,7 @@ public class QueryController extends SpringActionController
             LinkedSchemaDef def = getDef(form, reshow, errors);
 
             setHelpTopic(new HelpTopic("linkedSchemas"));
-            return new JspView<LinkedSchemaBean>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
+            return new JspView<LinkedSchemaBean>(QueryController.class, "externalSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
         }
     }
 
@@ -3503,12 +3505,56 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static class DataSourceInfo
+    {
+        public String sourceName;
+        public String displayName;
+        public boolean editable;
+
+        public DataSourceInfo(DbScope scope)
+        {
+            this(scope.getDataSourceName(), scope.getDisplayName(), scope.getSqlDialect().isEditable());
+        }
+
+        public DataSourceInfo(Container c)
+        {
+            this(c.getId(), c.getName(), false);
+        }
+
+        public DataSourceInfo(String sourceName, String displayName, boolean editable)
+        {
+            this.sourceName = sourceName;
+            this.displayName = displayName;
+            this.editable = editable;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            DataSourceInfo that = (DataSourceInfo) o;
+            if (sourceName != null ? !sourceName.equals(that.sourceName) : that.sourceName != null) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return sourceName != null ? sourceName.hashCode() : 0;
+        }
+    }
+
     public static abstract class BaseExternalSchemaBean<T extends AbstractExternalSchemaDef>
     {
         protected final Container _c;
         protected final T _def;
         protected final boolean _insert;
         protected final Map<String, String> _help = new HashMap<String, String>();
+
+        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemas = new LinkedHashMap<DataSourceInfo, Collection<String>>();
+        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemasIncludingSystem = new LinkedHashMap<DataSourceInfo, Collection<String>>();
 
         public BaseExternalSchemaBean(Container c, T def, boolean insert)
         {
@@ -3521,6 +3567,25 @@ public class QueryController extends SpringActionController
             for (ColumnInfo ci : ti.getColumns())
                 if (null != ci.getDescription())
                     _help.put(ci.getName(), ci.getDescription());
+
+            initSources();
+        }
+
+        protected abstract void initSources();
+
+        public abstract DataSourceInfo getInitialSource();
+
+        public Collection<DataSourceInfo> getSources()
+        {
+            return _sourcesAndSchemas.keySet();
+        }
+
+        public Collection<String> getSchemaNames(DataSourceInfo source, boolean includeSystem)
+        {
+            if (includeSystem)
+                return _sourcesAndSchemasIncludingSystem.get(source);
+            else
+                return _sourcesAndSchemas.get(source);
         }
 
         public T getSchemaDef()
@@ -3538,10 +3603,16 @@ public class QueryController extends SpringActionController
             return new ActionURL(AdminAction.class, _c);
         }
 
+        public ActionURL getDeleteURL()
+        {
+            return new QueryUrlsImpl().urlDeleteExternalSchema(_c, _def);
+        }
+
         public String getHelpHTML(String fieldName)
         {
             return _help.get(fieldName);
         }
+
     }
 
     public static class LinkedSchemaBean extends BaseExternalSchemaBean<LinkedSchemaDef>
@@ -3551,22 +3622,71 @@ public class QueryController extends SpringActionController
             super(c, def, insert);
         }
 
-        public ActionURL getDeleteURL()
+        public DataSourceInfo getInitialSource()
         {
-            return new ActionURL(DeleteLinkedSchemaAction.class, _c).addParameter("externalSchemaId", _def.getExternalSchemaId());
+            LinkedSchemaDef def = getSchemaDef();
+            Container sourceContainer = def.lookupSourceContainer();
+            if (sourceContainer == null)
+                sourceContainer = def.lookupContainer();
+            if (sourceContainer == null)
+                sourceContainer = _c;
+            return new DataSourceInfo(sourceContainer);
         }
+
+        protected void initSources()
+        {
+            User user = HttpView.currentContext().getUser();
+            MultiMap<Container, Container> containerTree = ContainerManager.getContainerTree(_c.getProject());
+            Set<Container> adminContainers = ContainerManager.getContainerSet(containerTree, user, AdminPermission.class);
+
+            SortedSet<Container> sortedContainers = new TreeSet<Container>(new Comparator<Container>() {
+                    public int compare(Container o1, Container o2)
+                    {
+                        return o1.getPath().compareTo(o2.getPath());
+                    }
+            });
+            sortedContainers.addAll(adminContainers);
+
+            for (Container c : adminContainers)
+            {
+                Collection<String> schemaNames = new LinkedList<String>();
+                //Collection<String> schemaNamesIncludingSystem = new LinkedList<String>();
+
+                DefaultSchema defaultSchema = DefaultSchema.get(user, c);
+                Set<SchemaKey> userSchemas = defaultSchema.getUserSchemaPaths();
+                for (SchemaKey key : userSchemas)
+                {
+                    schemaNames.add(key.toString());
+                }
+
+                DataSourceInfo source = new DataSourceInfo(c);
+                _sourcesAndSchemas.put(source, schemaNames);
+                _sourcesAndSchemasIncludingSystem.put(source, schemaNames);
+            }
+        }
+
     }
 
     public static class ExternalSchemaBean extends BaseExternalSchemaBean<ExternalSchemaDef>
     {
-        private final Map<DbScope, Collection<String>> _scopesAndSchemas = new LinkedHashMap<DbScope, Collection<String>>();
-        private final Map<DbScope, Collection<String>> _scopesAndSchemasIncludingSystem = new LinkedHashMap<DbScope, Collection<String>>();
-
         public ExternalSchemaBean(Container c, ExternalSchemaDef def, boolean insert)
         {
             super(c, def, insert);
-            Collection<DbScope> scopes = DbScope.getDbScopes();
+        }
 
+        @Override
+        public DataSourceInfo getInitialSource()
+        {
+            ExternalSchemaDef def = getSchemaDef();
+            DbScope scope = def.lookupDbScope();
+            if (scope == null)
+                scope = DbScope.getLabkeyScope();
+            return new DataSourceInfo(scope);
+        }
+
+        protected void initSources()
+        {
+            Collection<DbScope> scopes = DbScope.getDbScopes();
             for (DbScope scope : scopes)
             {
                 Connection con = null;
@@ -3601,8 +3721,9 @@ public class QueryController extends SpringActionController
                         schemaNames.add(schemaName);
                     }
 
-                    _scopesAndSchemas.put(scope, schemaNames);
-                    _scopesAndSchemasIncludingSystem.put(scope, schemaNamesIncludingSystem);
+                    DataSourceInfo source = new DataSourceInfo(scope);
+                    _sourcesAndSchemas.put(source, schemaNames);
+                    _sourcesAndSchemasIncludingSystem.put(source, schemaNamesIncludingSystem);
                 }
                 catch (SQLException e)
                 {
@@ -3627,23 +3748,6 @@ public class QueryController extends SpringActionController
             }
         }
 
-        public Collection<DbScope> getScopes()
-        {
-            return _scopesAndSchemas.keySet();
-        }
-
-        public Collection<String> getSchemaNames(DbScope scope, boolean includeSystem)
-        {
-            if (includeSystem)
-                return _scopesAndSchemasIncludingSystem.get(scope);
-            else
-                return _scopesAndSchemas.get(scope);
-        }
-
-        public ActionURL getDeleteURL()
-        {
-            return new QueryUrlsImpl().urlDeleteExternalSchema(_c, _def);
-        }
     }
 
 
@@ -3680,26 +3784,36 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(GetTablesForm form, BindException errors) throws Exception
         {
             List<Map<String, Object>> rows = new LinkedList<Map<String, Object>>();
+            List<String> tableNames = new ArrayList<String>();
 
-            DbScope scope = DbScope.getDbScope(form.getDataSource());
-
-            if (null != scope && null != form.getSchemaName())
+            if (null != form.getSchemaName())
             {
-                DbSchema schema = scope.getSchema(form.getSchemaName());
-
-                if (null != schema)
+                DbScope scope = DbScope.getDbScope(form.getDataSource());
+                if (null != scope)
                 {
-                    List<String> tableNames = new ArrayList<String>(schema.getTableNames());
-
-                    Collections.sort(tableNames);
-
-                    for (String tableName : tableNames)
+                    DbSchema schema = scope.getSchema(form.getSchemaName());
+                    if (null != schema)
+                        tableNames.addAll(schema.getTableNames());
+                }
+                else
+                {
+                    Container c = ContainerManager.getForId(form.getDataSource());
+                    if (null != c)
                     {
-                        Map<String, Object> row = new LinkedHashMap<String, Object>();
-                        row.put("table", tableName);
-                        rows.add(row);
+                        UserSchema schema = QueryService.get().getUserSchema(getUser(), c, form.getSchemaName());
+                        if (null != schema)
+                            tableNames.addAll(schema.getTableAndQueryNames(true));
                     }
                 }
+            }
+
+            Collections.sort(tableNames);
+
+            for (String tableName : tableNames)
+            {
+                Map<String, Object> row = new LinkedHashMap<String, Object>();
+                row.put("table", tableName);
+                rows.add(row);
             }
 
             Map<String, Object> properties = new HashMap<String, Object>();

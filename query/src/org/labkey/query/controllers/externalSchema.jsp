@@ -20,25 +20,19 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="org.labkey.query.controllers.QueryController.BaseExternalSchemaBean" %>
+<%@ page import="org.labkey.query.controllers.QueryController.DataSourceInfo" %>
 <%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
+<%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef" %>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    QueryController.ExternalSchemaBean bean = (QueryController.ExternalSchemaBean)HttpView.currentModel();
-    ExternalSchemaDef def = bean.getSchemaDef();
-    DbScope initialScope = null;
+    BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
+    AbstractExternalSchemaDef def = bean.getSchemaDef();
+    DataSourceInfo initialSource = bean.getInitialSource();
 
-    try
-    {
-        initialScope = DbScope.getDbScope(def.getDataSource());
-    }
-    catch (Exception e)
-    {
-    }
-
-    if (null == initialScope)
-    {
-        initialScope = DbScope.getLabkeyScope();
-    }
+    boolean isExternal = def instanceof ExternalSchemaDef;
 %>
 <style type="text/css">
     .systemSchemaStyleClass{padding-right:5px !important}
@@ -49,54 +43,30 @@
 <div id="form"></div>
 
 <script type="text/javascript">
-    // TODO: js encode strings
-
     Ext.QuickTips.init();
 
-    var dataSources = [
 <%
     int coreIndex = 0;
     int i = 0;
-    String sep = "";
 
-    for (DbScope scope : bean.getScopes())
+    JSONArray dataSourcesJson = new JSONArray();
+    Collection<DataSourceInfo> sources = bean.getSources();
+    for (DataSourceInfo source : sources)
     {
-        out.print(sep);
-        out.print("        [");
-        out.print("'" + scope.getDataSourceName() + "', ");
-        out.print("'" + scope.getDisplayName() + "', ");
-        out.print(scope.getSqlDialect().isEditable() + ", [");
+        JSONArray sourceJson = new JSONArray();
+        sourceJson.put(source.sourceName);
+        sourceJson.put(source.displayName);
+        sourceJson.put(source.editable);
+        sourceJson.put(bean.getSchemaNames(source, false));
+        sourceJson.put(bean.getSchemaNames(source, true));
+        dataSourcesJson.put(sourceJson);
 
-        String sep2 = "";
-
-        for (String schemaName : bean.getSchemaNames(scope, false))
-        {
-            out.print(sep2);
-            out.print("'" + schemaName + "'");
-            sep2 = ",";
-        }
-
-        out.print("], [");
-
-        sep2 = "";
-
-        for (String schemaName : bean.getSchemaNames(scope, true))
-        {
-            out.print(sep2);
-            out.print("'" + schemaName + "'");
-            sep2 = ",";
-        }
-
-        out.print("]]");
-
-        if (scope == initialScope)
+        if (source == initialSource)
             coreIndex = i;
-
-        sep = ",\n";
         i++;
     }
 %>
-    ];
+    var dataSources = <%=text(dataSourcesJson.toString())%>;
 
 var store = new Ext.data.SimpleStore({
     fields:['value', 'name', 'editable', 'schemas', 'schemasWithSystem'],
@@ -105,16 +75,19 @@ var store = new Ext.data.SimpleStore({
 
 var schemaIndex = 3;
 
+var schemaType = new Ext.form.Hidden({name:'schemaType', value:<%=q(isExternal ? ExternalSchemaDef.SchemaType.external.name() : ExternalSchemaDef.SchemaType.linked.name())%>});
 // Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
-var dataSourceCombo = new Ext.form.ComboBox({fieldLabel:'Data Source', mode:'local', store:store, valueField:'value', displayField:'name', hiddenName:'dataSource', editable:false, triggerAction:'all', helpPopup:{title:'Data Source', html:'<%=bean.getHelpHTML("DataSource")%>'}, value:dataSources[<%=coreIndex%>][0]});
+var dataSourceCombo = new Ext.form.ComboBox({fieldLabel:'Data Source', mode:'local', store:store, valueField:'value', displayField:'name', hiddenName:'dataSource', editable:false, triggerAction:'all', helpPopup:{title:'Data Source', html:<%=PageFlowUtil.qh(bean.getHelpHTML("DataSource"))%>}, value:dataSources[<%=coreIndex%>][0]});
 var includeLabel = new Ext.form.Label({text:'Show System Schemas', align:"middle", padding:"4"});
 var includeSystemCheckBox = new LABKEY.ext.Checkbox({name:'includeSystem', id:'myincludeSystem', boxLabel:'Show System Schemas'});
 // Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out).
-var sourceSchemaCombo = new Ext.form.ComboBox({name:'sourceSchemaName', fieldLabel:'Source Schema Name', store:dataSources[<%=coreIndex%>][3], editable:true, triggerAction:'all', allowBlank:false, helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("SourceSchemaName")%>'}, value:<%=q(def.getSourceSchemaName())%>});
-var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:'<%=bean.getHelpHTML("UserSchemaName")%>'}, value:<%=q(def.getUserSchemaName())%>});
-var editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', helpPopup:{title:'Editable', html:'<%=bean.getHelpHTML("Editable")%>'}});
-var indexableCheckBox = new LABKEY.ext.Checkbox({name:'indexable', /*id:'myeditable',*/ fieldLabel:'Index Schema Meta Data', helpPopup:{title:'Index Schema Meta Data', html:'<%=bean.getHelpHTML("Indexable")%>'}, checked:<%=def.isIndexable()%>});
-var metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', width:800, height:400, resizable:true, autoCreate:{tag:"textarea", style:"font-family:'Courier'", autocomplete:"off", wrap:"off"}, helpPopup:{title:'Meta Data', html:'<%=bean.getHelpHTML("MetaData")%>'}, value:<%=PageFlowUtil.jsString(def.getMetaData())%>});
+var sourceSchemaCombo = new Ext.form.ComboBox({name:'sourceSchemaName', fieldLabel:'Source Schema Name', store:dataSources[<%=coreIndex%>][3], editable:true, triggerAction:'all', allowBlank:false, helpPopup:{title:'Database Schema Name', html:<%=PageFlowUtil.qh(bean.getHelpHTML("SourceSchemaName"))%>}, value:<%=q(def.getSourceSchemaName())%>});
+var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:<%=PageFlowUtil.qh(bean.getHelpHTML("UserSchemaName"))%>}, value:<%=q(def.getUserSchemaName())%>});
+<% if (isExternal) { %>
+var editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', helpPopup:{title:'Editable', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Editable"))%>}});
+var indexableCheckBox = new LABKEY.ext.Checkbox({name:'indexable', /*id:'myeditable',*/ fieldLabel:'Index Schema Meta Data', helpPopup:{title:'Index Schema Meta Data', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Indexable"))%>}, checked:<%=((ExternalSchemaDef)def).isIndexable()%>});
+<% } %>
+var metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', width:800, height:400, resizable:true, autoCreate:{tag:"textarea", style:"font-family:'Courier'", autocomplete:"off", wrap:"off"}, helpPopup:{title:'Meta Data', html:<%=PageFlowUtil.qh(bean.getHelpHTML("MetaData"))%>}, value:<%=PageFlowUtil.jsString(def.getMetaData())%>});
 var tableText = new Ext.form.TextField({name:'tables', hidden:true});
 
 // create the data store
@@ -131,12 +104,12 @@ var selModel = new Ext.grid.CheckboxSelectionModel();
 selModel.addListener('rowselect', updateTableTitle);
 selModel.addListener('rowdeselect', updateTableTitle);
 
-var initialTables = '<%=def.getTables()%>';
+var initialTables = <%=PageFlowUtil.jsString(def.getTables())%>;
 
 // create the table grid
 var grid = new Ext.grid.GridPanel({
     fieldLabel:'Tables',
-    helpPopup:{title:'Tables', html:'<%=bean.getHelpHTML("Tables")%>'},
+    helpPopup:{title:'Tables', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Tables"))%>},
     title:'&nbsp;',
     store: tableStore,
     columns: [
@@ -159,7 +132,7 @@ var DatabaseSchemaNamePanel = Ext.extend(Ext.Panel, {
         this.layoutConfig = {columns:2};
         this.items = [sourceSchemaCombo, includeSystemCheckBox];
         this.border = false;
-        this.helpPopup = {title:'Source Schema Name', html:'<%=bean.getHelpHTML("SourceSchemaName")%>'};
+        this.helpPopup = {title:'Source Schema Name', html:<%=PageFlowUtil.qh(bean.getHelpHTML("SourceSchemaName"))%>};
         this.defaults = {cellCls:'systemSchemaStyleClass'};
         DatabaseSchemaNamePanel.superclass.initComponent.apply(this, arguments);
     }
@@ -171,16 +144,25 @@ var f = new LABKEY.ext.FormPanel({
     border:false,
     standardSubmit:true,
     items:[
+        schemaType,
         dataSourceCombo,
         new DatabaseSchemaNamePanel(),
         userSchemaText,
+        <% if (isExternal) { %>
         editableCheckBox,
         indexableCheckBox,
+        <% } %>
         grid,
         metaDataTextArea,
         tableText
     ],
-    buttons:[{text:'<%=(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:submit}, <%=bean.isInsert() ? "" : "{text:'Delete', handler:function() {document.location = " + q(bean.getDeleteURL().toString()) + "}}, "%>{text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
+    buttons:[
+        {text:'<%=text(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:submit},
+        <% if (!bean.isInsert()) { %>
+        {text:'Delete', handler:function() {document.location = <%=q(bean.getDeleteURL().toString())%>;}},
+        <% } %>
+        {text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}
+    ],
     buttonAlign:'left'
 });
 
@@ -193,7 +175,9 @@ Ext.onReady(function()
     sourceSchemaCombo.on('select', sourceSchemaCombo_onSelect);
     grid.on('expand', updateTableTitle);
     grid.on('collapse', updateTableTitle);
-    initEditable(<%=def.isEditable()%>, <%=initialScope.getSqlDialect().isEditable()%>);
+    <% if (isExternal) { %>
+    initEditable(<%=((ExternalSchemaDef)def).isEditable()%>, <%=initialSource.editable%>);
+    <% } %>
     loadTables();
 });
 
@@ -216,18 +200,25 @@ function includeSystemCheckBox_onCheck()
 // Default to schema name = database schema name, editable false, editable disabled for non-editable scopes, meta data blank
 function sourceSchemaCombo_onSelect()
 {
-    userSchemaText.setValue(sourceSchemaCombo.getValue());
+    var schemaName = sourceSchemaCombo.getValue();
     var dataSourceIndex = store.find("value", dataSourceCombo.getValue());
+    <% if (isExternal) { %>
+    userSchemaText.setValue(schemaName);
     initEditable(false, dataSources[dataSourceIndex][2]);
+    <% } else { %>
+    userSchemaText.setValue("");
+    <% } %>
     metaDataTextArea.setValue("");
     loadTables();
 }
 
+<% if (isExternal) { %>
 function initEditable(value, enabled)
 {
     editableCheckBox.setValue(value);
     editableCheckBox.setDisabled(!enabled);
 }
+<% } %>
 
 function loadTables()
 {

@@ -18,6 +18,7 @@ package org.labkey.query.persist;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 
 public class ExternalSchemaDef extends AbstractExternalSchemaDef
 {
@@ -42,6 +43,18 @@ public class ExternalSchemaDef extends AbstractExternalSchemaDef
     public String getDbSchemaName()
     {
         return getSourceSchemaName();
+    }
+
+    public DbScope lookupDbScope()
+    {
+        try
+        {
+            return DbScope.getDbScope(getDataSource());
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
     }
 
     public boolean isEditable()
