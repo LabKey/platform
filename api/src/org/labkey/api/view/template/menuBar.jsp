@@ -45,10 +45,10 @@
     NavTree homeLink;
 
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
-    if (!laf.isShowMenuBar())
-        return;
     boolean folderMenu = folderMode.isShowInMenu();
-    String menuBarClass = "labkey-main-menu";
+    boolean customMenusEnabled = laf.isMenuUIEnabled();
+    folderMode.isShowInMenu();
+
     if (null == c || null == c.getProject() || c.getProject().equals(ContainerManager.getHomeContainer()))
         homeLink = new NavTree(laf.getShortName() + " Home", AppProps.getInstance().getHomePageActionURL());
     else
@@ -76,24 +76,41 @@
         }
         if (folderMenu)
         {%>
-        new LABKEY.HoverPopup({hoverElem:"menuBarFolder", webPartName:"Folders"});<%
+            new LABKEY.HoverPopup({hoverElem:"menuBarFolder", webPartName:"Folders"});<%
         }%>
     });
 </script>
-<table id="menubar"><tr>
-    <td colspan=2 class="<%=menuBarClass%>"><span class="normal"><%
-        if (folderMenu)
+<div id="menubar" class="labkey-main-menu">
+<%
+    if(customMenusEnabled || folderMenu || menus.size() > 0)
+    {
+%>
+    <ul>
+<%
+        // Show the folder menu OR the current project link, but not both.
+        if(folderMenu)
         {
-            %><a href="#" id="menuBarFolder" class="labkey-header" style="position:relative;padding-right:1em"><span><img src="<%=currentContext.getContextPath()%>/<%=PageFlowUtil.extJsRoot()%>/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders"></span></a><%
+%>
+            <li id="menuBarFolder" class="labkey-main-menu-item">
+                <a href="#" style="position:relative;padding-right:1em">
+                    <img src="<%=text(currentContext.getContextPath())%>/<%=PageFlowUtil.extJsRoot()%>/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders">
+                </a>
+            </li>
+<%
         }
-        boolean seenAtLeastOne = false;
-        if (menus.size() > 0)
+        else if(customMenusEnabled)
         {
-            if (!folderMenu) //Make sure you can always get back to project home
-            {
-                seenAtLeastOne = true;
-                %><a href="<%=h(homeLink.getHref())%>"><%=h(homeLink.getText())%></a><%
-            }
+%>
+            <li class="labkey-main-menu-project-link">
+                <a class="labkey-main-menu-link" href="<%=h(homeLink.getHref())%>">
+                    <%=h(homeLink.getText())%>
+                </a>
+            </li>
+<%
+        }
+
+        if(menus.size() > 0)
+        {
             for (Portal.WebPart part : menus)
             {
                 String menuCaption = part.getName();
@@ -113,15 +130,18 @@
                 {
                     //Use the part name...
                 }
-
-                seenAtLeastOne = true;
-                %><a id="<%=h(menuName)%>$Header" class="labkey-header" style="vertical-align:bottom;padding-right:1em;position:relative;z-index:1001;" href="#"><span><%=h(menuCaption)%></span></a><%
+%>
+                <li id="<%=h(menuName)%>$Header" class="labkey-main-menu-item">
+                    <a class="labkey-main-menu-link" href="#">
+                        <%=h(menuCaption)%>
+                    </a>
+                </li>
+<%
             }
         }
-        if (!seenAtLeastOne)
-        {
-            out.print("<img src='" + currentContext.getContextPath() + "/_.gif'>");
-        }
-        %></span></td>
-    </tr>
-</table>
+%>
+        </ul>
+<%
+    }
+%>
+</div>

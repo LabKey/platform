@@ -130,7 +130,7 @@ if (bean.showHeader() != PageConfig.TrueFalse.False)
                 <!-- /HEADER -->
             </td>
         </tr><%
-    if (null != me.getView("topmenu") && laf.isShowMenuBar())
+    if (null != me.getView("topmenu"))
     {%>
         <tr id="topmenu" class="labkey-header-panel">
             <td colspan=3>

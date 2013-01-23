@@ -130,7 +130,7 @@ Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
         this.extPopup.show();
         this.extPopup.constrain = false;
         this.extPopup.alignTo(this.extElem, "tl-bl");
-        this.extPopup.setXY([Math.max(0 - this.extPopup.getBorderWidth('t'), this.extPopup.getX() - 20), this.extPopup.getY()- this.extPopup.getBorderWidth('t')]);
+        this.extPopup.setXY([Math.max(0 - this.extPopup.getBorderWidth('t'), this.extPopup.getX() - 1), this.extPopup.getY()- this.extPopup.getBorderWidth('t')]);
         this.extPopup.enableShadow(true);
         LABKEY.HoverPopup._visiblePopup = this;        
     },
