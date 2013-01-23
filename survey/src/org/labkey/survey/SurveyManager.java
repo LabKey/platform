@@ -23,7 +23,9 @@ import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
@@ -31,6 +33,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -205,9 +208,13 @@ public class SurveyManager
         return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter("rowId", surveyId), null).getObject(SurveyDesign.class);
     }
 
-    public SurveyDesign[] getSurveyDesigns(Container container)
+    public SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter)
     {
-        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter(FieldKey.fromParts("container"), container), null).getArray(SurveyDesign.class);
+        DbSchema schema = SurveySchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(SurveySchema.getInstance().getSurveyDesignsTable(), "sd");
+        sql.append(" WHERE ");
+        sql.append(filter.getSQLFragment(schema, FieldKey.fromParts("container"), container));
+        return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
     }
 
     public Survey getSurvey(Container container, User user, int rowId)

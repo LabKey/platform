@@ -579,7 +579,7 @@ public class SurveyController extends SpringActionController
         Map<String, Object> values = form.getTypedColumns();
 
         // nothing to update
-        if (values.isEmpty())
+        if (!insert && values.isEmpty())
             return Collections.emptyMap();
 
         QueryUpdateService qus = table.getUpdateService();

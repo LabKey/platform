@@ -19,6 +19,7 @@ package org.labkey.survey;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
@@ -126,7 +127,7 @@ public class SurveyModule extends DefaultModule
     {
         Collection<String> results = new ArrayList<String>();
 
-        SurveyDesign[] surveyDesigns = SurveyManager.get().getSurveyDesigns(c);
+        SurveyDesign[] surveyDesigns = SurveyManager.get().getSurveyDesigns(c, ContainerFilter.CURRENT);
         if(surveyDesigns.length > 0)
         {
             results.add(StringUtilsLabKey.pluralize(surveyDesigns.length, " survey design"));
