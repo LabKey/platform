@@ -1532,7 +1532,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    public void setFk(ForeignKey fk)
+    public void setFk(@Nullable ForeignKey fk)
     {
         checkLocked();
         this.fk = fk;
