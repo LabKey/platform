@@ -26,7 +26,7 @@ var renderStats = function(){
 
 var CD4PointLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Point({size: 5}),
-	name: 'Really Long Name That Gets Truncated',
+	name: 'Really Long Name That Gets Wrapped',
 	aes: {
 		y: function(row){return row.study_LabResults_CD4.value},
 		hoverText: function(row){return row.study_LabResults_ParticipantId.value + ' CD4, Day ' + row.Days.value + ", " + row.study_LabResults_CD4.value;}
@@ -35,7 +35,7 @@ var CD4PointLayer = new LABKEY.vis.Layer({
 
 var CD4PathLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Path({size: 3, opacity: .2}),
-	name: 'Really Long Name That Gets Truncated',
+	name: 'Really Long Name That Gets Wrapped',
 	aes: {
 		y: function(row){return row.study_LabResults_CD4.value}
 	}
