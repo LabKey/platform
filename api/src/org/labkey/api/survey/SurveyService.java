@@ -1,6 +1,7 @@
 package org.labkey.api.survey;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
@@ -31,7 +32,7 @@ public class SurveyService
         Survey getSurvey(Container container, User user, int surveyId);
         Survey saveSurvey(Container container, User user, Survey survey);
 
-        SurveyDesign[] getSurveyDesigns(Container container, User user);
+        SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter);
         SurveyDesign getSurveyDesign(Container container, User user, int surveyDesignId);
 
         SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign surveyDesign);
