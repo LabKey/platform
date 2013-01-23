@@ -162,8 +162,6 @@ public class StudyImportContext extends AbstractContext
                     ArrayList<String[]> groupings = new ArrayList<String[]>(2);
                     for (int i = 0; i < groupingArray.length; i += 1)
                     {
-                        if (i >= 2)
-                            break;          // Currently only 2 groupings supported
                         String[] groupBys = groupingArray[i].getGroupByArray();
                         groupings.add(groupBys);
                     }

@@ -49,12 +49,7 @@ public class RepositorySettings
     public RepositorySettings(Container container)
     {
         _container = container;
-        _specWebPartColumnGroup[0][0] = "PrimaryType";
-        _specWebPartColumnGroup[0][1] = "DerivativeType";
-        _specWebPartColumnGroup[0][2] = "AdditiveType";
-        _specWebPartColumnGroup[1][0] = "DerivativeType";
-        _specWebPartColumnGroup[1][1] = "AdditiveType";
-        _specWebPartColumnGroup[1][2] = "";
+        setSpecimenWebPartGroupingDefaults();
     }
 
     public RepositorySettings(Container container, Map<String, String> map)
@@ -73,6 +68,8 @@ public class RepositorySettings
                 for (int k = 0; k < 3; k += 1)   // Only 2 groupBys supported
                 {
                     _specWebPartColumnGroup[i][k] = map.get(makeKeySpecWebPartGroup(i,k));
+                    if (null == _specWebPartColumnGroup[i][k])
+                        _specWebPartColumnGroup[i][k] = "";
                 }
             }
         }
@@ -87,7 +84,8 @@ public class RepositorySettings
         {
             for (int k = 0; k < 3; k += 1)   // Only 2 groupBys supported
             {
-                map.put(makeKeySpecWebPartGroup(i,k), _specWebPartColumnGroup[i][k]);
+                map.put(makeKeySpecWebPartGroup(i,k),
+                        (null != _specWebPartColumnGroup[i][k]) ? _specWebPartColumnGroup[i][k] : "");
             }
         }
     }
@@ -131,7 +129,7 @@ public class RepositorySettings
             String[] grouping = new String[3];
             for (int k = 0; k < 3; k += 1)   // Only 3 groupBys supported
             {
-                grouping[k] = _specWebPartColumnGroup[i][k];
+                grouping[k] = (null != _specWebPartColumnGroup[i][k]) ? _specWebPartColumnGroup[i][k] : "";
             }
             groupings.add(grouping);
         }
@@ -140,14 +138,25 @@ public class RepositorySettings
 
     public void setSpecimenWebPartGroupings(ArrayList<String[]> groupings)
     {
-        for (int i = 0; i < groupings.size() && i < 2; i += 1)      // Only 2 grouping supported
+        setSpecimenWebPartGroupingDefaults();
+        for (int i = 0; i < groupings.size() && i < 2; i += 1)      // Only 2 groupings supported
         {
             String[] grouping = groupings.get(i);
             for (int k = 0; k < grouping.length && k < 3; k += 1)   // Only 3 groupBys supported
             {
-                _specWebPartColumnGroup[i][k] = grouping[k];
+                _specWebPartColumnGroup[i][k] = (null != grouping[k]) ? grouping[k] : "";
             }
         }
+    }
+
+    private void setSpecimenWebPartGroupingDefaults()
+    {
+        _specWebPartColumnGroup[0][0] = "PrimaryType";
+        _specWebPartColumnGroup[0][1] = "DerivativeType";
+        _specWebPartColumnGroup[0][2] = "AdditiveType";
+        _specWebPartColumnGroup[1][0] = "DerivativeType";
+        _specWebPartColumnGroup[1][1] = "AdditiveType";
+        _specWebPartColumnGroup[1][2] = "";
     }
 
     public static RepositorySettings getDefaultSettings(Container container)
