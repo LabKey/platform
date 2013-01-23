@@ -344,19 +344,6 @@ td.labkey-site-nav-panel
     border-right: 1px solid #<%= webpart %>;
 }
 
-td.labkey-main-menu
-{
-    background-color: #<%= link %>;
-    border-color: none;
-}
-
-td.labkey-main-menu a.selected
-{
-    background-color:#<%= second %>;
-    color:#<%= text %>;
-    border-bottom-color:#<%= second %>;
-}
-
 .labkey-webpart-menu
 {
     background-color:#<%= second %>;
@@ -710,4 +697,22 @@ li.labkey-app-bar-tab-active {
 
 li.labkey-app-bar-tab-inactive:hover {
     background-color: #<%= primary %>;
+}
+
+.labkey-main-menu
+{
+    background-color: #<%= link %>;
+}
+
+
+.labkey-main-menu-item:hover,
+.labkey-main-menu-item.selected
+{
+    background-color: #<%= second %>;
+}
+
+.labkey-main-menu-item:hover a,
+.labkey-main-menu-item.selected a.labkey-main-menu-link
+{
+    color: #<%= text %>;
 }

@@ -1608,7 +1608,10 @@ td.labkey-main-menu {
     display: none;
     position: absolute;
 	top: 5;
-    border: 1px solid #aaa;
+    border-top: none;
+    border-right: 1px solid #aaa;
+    border-bottom: 1px solid #aaa;
+    border-left: 1px solid #aaa;
     margin: 3px;
     background-color:$secondary-bg-color;
     padding: 5px 15px;
