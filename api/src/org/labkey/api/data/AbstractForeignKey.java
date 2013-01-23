@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 
@@ -50,7 +51,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         this(tableName, columnName, null);
     }
 
-    protected AbstractForeignKey(String tableName, String columnName, String schemaName)
+    protected AbstractForeignKey(String tableName, @Nullable String columnName, @Nullable String schemaName)
     {
         _tableName = tableName;
         _columnName = columnName;

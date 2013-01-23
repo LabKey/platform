@@ -145,7 +145,7 @@ public class MultiValuedLookupColumn extends LookupColumn
 
                 // TODO: Always order by value
 
-                strJoin.append(dialect.getSelectConcat(select));
+                strJoin.append(dialect.getSelectConcat(select, ","));
             }
 
             strJoin.append(" AS ");

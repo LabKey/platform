@@ -189,7 +189,7 @@ public class AssayQCFlagColumn extends ExprColumn
         innerSQL.append(ExperimentService.get().getTinfoAssayQCFlag(), "qcf");
         innerSQL.append(" WHERE qcf.RunId = " + STR_TABLE_ALIAS + ".RowId ORDER BY qcf.FlagType, qcf.Enabled, qcf.RowId");
 
-        return sqlDialect.getSelectConcat(innerSQL);
+        return sqlDialect.getSelectConcat(innerSQL, ",");
     }
 
     public static class TestCase extends Assert
