@@ -15,11 +15,17 @@
  */
 package org.labkey.query;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
@@ -44,6 +50,12 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        // Don't need to filter here, let the underlying table handle it
+    }
+
+    @Override
     protected void addTableURLs()
     {
         // Disallow all table URLs
@@ -63,6 +75,18 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
         // Remove FK and URL. LinkedTableInfo doesn't include FKs or URLs.
         wrap.setFk(null);
         wrap.setURL(LINK_DISABLER);
+    }
+
+    @Override
+    public ColumnInfo wrapColumn(ColumnInfo col)
+    {
+        if ("Container".equalsIgnoreCase(col.getName()) || "Folder".equalsIgnoreCase("Folder"))
+        {
+            // Remap the container column to be the the target instead
+            col = new ExprColumn(col.getParentTable(), col.getName(), new SQLFragment("'" + getContainer().getEntityId() + "'"), JdbcType.VARCHAR);
+            col.copyAttributesFrom(col);
+        }
+        return super.wrapColumn(col);
     }
 
     @Override
@@ -115,9 +139,25 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
             SimpleFilter filter = null;
             for (CompareType compareType : CompareType.values())
             {
-                if (compareType.getXmlType().equals(xmlFilter.getOperator()))
+                if (compareType.getUrlKeys().contains(xmlFilter.getOperator().toString()))
                 {
-                    filter = new SimpleFilter(FieldKey.fromString(xmlFilter.getColumn()), xmlFilter.getValue(), compareType);
+                    Object value = xmlFilter.getValue();
+                    FieldKey fieldKey = FieldKey.fromString(xmlFilter.getColumn());
+                    // If we can resolve the column, try converting the value type
+                    ColumnInfo col = getColumn(fieldKey);
+                    if (col != null)
+                    {
+                        try
+                        {
+                            filter = new SimpleFilter(fieldKey, ConvertUtils.convert((String)value, col.getJavaObjectClass()), compareType);
+                        }
+                        catch (ConversionException ignored) { /* Fall through to try as a string */ }
+                    }
+                    else
+                    {
+                        // Just treat it as a string and hope the database can do any conversion required
+                        filter = new SimpleFilter(fieldKey, value, compareType);
+                    }
                     break;
                 }
             }

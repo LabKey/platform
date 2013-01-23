@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SchemaTableInfo;
@@ -32,7 +33,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
-import org.labkey.query.metadata.MetadataServiceImpl;
 import org.labkey.query.persist.LinkedSchemaDef;
 
 import java.util.ArrayList;
@@ -140,20 +140,61 @@ public class LinkedSchema extends ExternalSchema
     protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
     {
         assert !(sourceTable instanceof SchemaTableInfo) : "LinkedSchema only wraps query TableInfos, not SchemaTableInfos";
-        LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, sourceTable);
 
+        TableType xmlTable = null;
+        NamedFiltersType[] xmlFilters = null;
         if (_template != null && _template.isSetMetadata())
         {
             TablesType xmlTables = _template.getMetadata().getTables();
-            for (TableType xmlTable : xmlTables.getTableArray())
+            xmlFilters = xmlTables.getFiltersArray();
+            for (TableType potentialXMLTable : xmlTables.getTableArray())
             {
-                if (name.equalsIgnoreCase(xmlTable.getTableName()))
+                if (name.equalsIgnoreCase(potentialXMLTable.getTableName()))
                 {
-                    linkedTableInfo.loadFromXML(this, xmlTable, xmlTables.getFiltersArray(), new ArrayList<QueryException>());
+                    xmlTable = potentialXMLTable;
+                    break;
                 }
             }
         }
+
+        QueryDefinition queryDef = createQueryDef(name, sourceTable, xmlTable);
+
+        TableInfo tableInfo = queryDef.getTable(new ArrayList<QueryException>(), true);
+        LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo);
+
+        linkedTableInfo.loadFromXML(this, xmlTable, xmlFilters, new ArrayList<QueryException>());
+
         return linkedTableInfo;
+    }
+
+    /** Build up LabKey SQL that targets the desired container and appends any WHERE clauses (but not URL-style filters) */
+    private QueryDefinition createQueryDef(String name, TableInfo sourceTable, @Nullable TableType xmlTable)
+    {
+        QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), this, name);
+        StringBuilder sql = new StringBuilder("SELECT * FROM ");
+        sql.append("\"");
+        sql.append(_sourceSchema.getContainer().getPath());
+        sql.append("\".");
+        sql.append(_sourceSchema.getSchemaPath().toSQLString());
+        sql.append(".\"");
+        sql.append(sourceTable.getName());
+        sql.append("\"\n");
+
+        if (xmlTable != null && xmlTable.isSetFilters())
+        {
+            String separator = " WHERE ";
+            for (String whereClause : xmlTable.getFilters().getWhereArray())
+            {
+                sql.append(separator);
+                separator = " AND ";
+                sql.append("(");
+                sql.append(whereClause);
+                sql.append(")");
+            }
+        }
+
+        queryDef.setSql(sql.toString());
+        return queryDef;
     }
 
 }
