@@ -56,7 +56,7 @@
             renderTo        : <%=q(renderId)%>,
             schemaName      : <%=q(form.getSchemaName())%>,
             queryName       : <%=q(form.getQueryName())%>,
-            returnURL       : <%=q(form.getSrcURL().toString())%>
+            returnUrl       : <%=q(form.getSrcURL().toString())%>
         });
 
         var _resize = function(w,h) {

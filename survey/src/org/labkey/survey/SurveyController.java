@@ -21,6 +21,7 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -300,8 +301,13 @@ public class SurveyController extends SpringActionController
 
             try {
                 // try to validate the metadata
-                JsonParser parser = new JsonParser();
-                parser.parse(form.getMetadata());
+                String metadata = StringUtils.trimToNull(form.getMetadata());
+
+                if (metadata != null)
+                {
+                    JsonParser parser = new JsonParser();
+                    parser.parse(metadata);
+                }
             }
             catch (JsonSyntaxException e)
             {

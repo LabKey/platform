@@ -72,15 +72,25 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
             formBind: true,
             handler : function(btn) {
                 var form = this.formPanel.getForm();
+                var surveyQuestions = this.codeMirror.getValue();
 
-                if (form.isValid()) {
+                if (surveyQuestions == null || surveyQuestions.length == 0) {
+
+                    Ext4.Msg.show({
+                         title: "Error",
+                         msg: 'Survey questions cannot be empty.',
+                         buttons: Ext4.MessageBox.OK,
+                         icon: Ext4.MessageBox.ERROR
+                    });
+                }
+                else if (form.isValid()) {
 
                     var values = form.getValues();
 
                     // hack: since we are not able to update the CodeMirror input field via selenium, we reshow the
                     // textarea and enter the value there, so check to see if the metadata textarea has a value first
                     var metadata = Ext4.get(this.metadataId).dom.value;
-                    values.metadata = metadata != null && metadata.length > 0 ? metadata :this.codeMirror.getValue();
+                    values.metadata = metadata != null && metadata.length > 0 ? metadata : surveyQuestions;
 
                     Ext4.Ajax.request({
                         url     : LABKEY.ActionURL.buildURL('survey', 'saveSurveyTemplate.api'),
