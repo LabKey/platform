@@ -19,34 +19,28 @@
 <%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="org.labkey.query.controllers.QueryController.BaseExternalSchemaBean" %>
+<%@ page import="org.labkey.query.controllers.QueryController.DataSourceInfo" %>
 <%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    QueryController.ExternalSchemaBean bean = (QueryController.ExternalSchemaBean)HttpView.currentModel();
-    ExternalSchemaDef def = bean.getSchemaDef();
-    DbScope initialScope = null;
+    BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
+    AbstractExternalSchemaDef def = bean.getSchemaDef();
+    QueryController.DataSourceInfo initialSource = bean.getInitialSource();
 
-    try
-    {
-        initialScope = DbScope.getDbScope(def.getDataSource());
-    }
-    catch (Exception e)
-    {
-    }
-
-    if (null == initialScope)
-    {
-        initialScope = DbScope.getLabkeyScope();
-    }
 %>
 <labkey:errors/>
 This page is not yet implemented.
 <table>
 <%
-    for (DbScope scope : bean.getScopes())
+    Collection<QueryController.DataSourceInfo> sources = bean.getSources();
+    for (DataSourceInfo source : sources)
     { %>
-        <tr><td colspan="2"><%=h(scope.getDisplayName())%></td></tr><%
-        for (String schemaName : bean.getSchemaNames(scope, false))
+        <tr><td colspan="2"><%=h(source.sourceName)%></td></tr><%
+        Collection<String> schemaNames = bean.getSchemaNames(source, false);
+        for (String schemaName : schemaNames)
         { %>
             <tr><td><%=h(schemaName)%></td><td><input value="<%=h(schemaName)%>"/></td></tr><%        
         }
