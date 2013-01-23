@@ -26,12 +26,13 @@ public class LocationTable extends BaseStudyTable
 {
     static public ForeignKey fkFor(StudyQuerySchema schema)
     {
-        return new QueryForeignKey(schema, "Site", "RowId", "Label");
+        return new QueryForeignKey(schema, "Location", "RowId", "Label");
     }
 
     public LocationTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSite());
+        setName("Location");
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
