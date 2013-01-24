@@ -30,6 +30,7 @@ public class SurveyDesign extends Entity
 {
     private int _rowId;
     private String _label;
+    private String _description;
     private String _queryName;
     private String _schemaName;
     private String _metadata;
@@ -57,6 +58,16 @@ public class SurveyDesign extends Entity
     public void setLabel(String label)
     {
         _label = label;
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
     }
 
     public String getQueryName()
