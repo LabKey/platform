@@ -3487,7 +3487,9 @@ survey/Survey.iml -text
 survey/build.xml -text
 survey/module.properties -text
 survey/resources/schemas/dbscripts/postgresql/survey-0.00-0.01.sql -text
+survey/resources/schemas/dbscripts/postgresql/survey-12.30-12.31.sql -text
 survey/resources/schemas/dbscripts/sqlserver/survey-0.00-0.01.sql -text
+survey/resources/schemas/dbscripts/sqlserver/survey-12.30-12.31.sql -text
 survey/resources/schemas/survey.xml -text
 survey/src/org/labkey/survey/SurveyContainerListener.java -text
 survey/src/org/labkey/survey/SurveyController.java -text

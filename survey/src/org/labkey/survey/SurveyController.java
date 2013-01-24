@@ -165,7 +165,7 @@ public class SurveyController extends SpringActionController
                     SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
                     if (surveyDesign != null)
                     {
-                        _title = (form.isSubmitted() ? "Review " : "Update ") + surveyDesign.getLabel();
+                        _title = (form.isSubmitted() ? "Review: " : "Update: ") + surveyDesign.getLabel();
                     }
                 }
             }
@@ -179,7 +179,7 @@ public class SurveyController extends SpringActionController
                 else
                 {
                     form.setRowId(null); // no rowId for newly created surveys
-                    _title = "Create " + surveyDesign.getLabel();
+                    _title = "Create: " + surveyDesign.getLabel();
                 }
             }
 
@@ -223,6 +223,7 @@ public class SurveyController extends SpringActionController
     {
         private int _rowId;
         private String _label;
+        private String _description;
         private String _metadata;
         private String _schemaName;
         private String _queryName;
@@ -246,6 +247,16 @@ public class SurveyController extends SpringActionController
         public void setLabel(String label)
         {
             _label = label;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
         }
 
         public String getMetadata()
@@ -376,15 +387,20 @@ public class SurveyController extends SpringActionController
         if (form.getRowId() != 0)
             survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getRowId());
 
-        if (form.getLabel() != null)
-            survey.setLabel(form.getLabel());
-        survey.setContainerId(getContainer().getId());
-        if (form.getSchemaName() != null)
-            survey.setSchemaName(form.getSchemaName());
-        if (form.getQueryName() != null)
-            survey.setQueryName(form.getQueryName());
-        if (form.getMetadata() != null)
-            survey.setMetadata(form.getMetadata());
+        if (survey != null)
+        {
+            if (form.getLabel() != null)
+                survey.setLabel(form.getLabel());
+            if (form.getDescription() != null)
+                survey.setDescription(form.getDescription());
+            survey.setContainerId(getContainer().getId());
+            if (form.getSchemaName() != null)
+                survey.setSchemaName(form.getSchemaName());
+            if (form.getQueryName() != null)
+                survey.setQueryName(form.getQueryName());
+            if (form.getMetadata() != null)
+                survey.setMetadata(form.getMetadata());
+        }
 
         return survey;
     }
@@ -395,13 +411,16 @@ public class SurveyController extends SpringActionController
         if (form.getRowId() != null)
             survey = SurveyManager.get().getSurvey(getContainer(), getUser(), form.getRowId());
 
-        if (form.getLabel() != null)
-            survey.setLabel(form.getLabel());
-        survey.setContainerId(getContainer().getId());
-        if (form.getStatus() != null)
-            survey.setStatus(form.getStatus());
-        if (form.getSurveyDesignId() != null)
-            survey.setSurveyDesignId(form.getSurveyDesignId());
+        if (survey != null)
+        {
+            if (form.getLabel() != null)
+                survey.setLabel(form.getLabel());
+            survey.setContainerId(getContainer().getId());
+            if (form.getStatus() != null)
+                survey.setStatus(form.getStatus());
+            if (form.getSurveyDesignId() != null)
+                survey.setSurveyDesignId(form.getSurveyDesignId());
+        }
 
         return survey;
     }
@@ -413,16 +432,18 @@ public class SurveyController extends SpringActionController
         public ApiResponse execute(SurveyDesignForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
+            SurveyDesign survey = getSurveyDesign(form);
 
-            if (form.getRowId() != 0)
+            if (survey != null)
             {
-                SurveyDesign survey = getSurveyDesign(form);
-
                 response.put("survey", new JSONObject(survey));
                 response.put("success", true);
             }
             else
+            {
+                errors.reject(ERROR_MSG, "No survey design found for the following rowId: " + form.getRowId());
                 response.put("success", false);
+            }
 
             return response;
         }
@@ -643,7 +664,7 @@ public class SurveyController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             Survey survey = getSurvey(form);
 
-            if (!survey.isNew())
+            if (survey != null && !survey.isNew())
             {
                 SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), survey.getSurveyDesignId());
 

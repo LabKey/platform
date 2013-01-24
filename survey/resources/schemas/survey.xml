@@ -23,6 +23,7 @@
         <ns:column columnName="RowId"/>
         <ns:column columnName="Container"/>
         <ns:column columnName="Label"/>
+        <ns:column columnName="Description"/>
         <ns:column columnName="CreatedBy">
           <ns:fk>
             <ns:fkColumnName>UserId</ns:fkColumnName>
