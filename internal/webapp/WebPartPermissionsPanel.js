@@ -16,8 +16,7 @@ Ext4.onReady(function(){
                 width: 500,
                 layout: 'fit',
                 closeAction: 'destroy',
-                title: 'Permissions',
-                containerPath: LABKEY.container.path
+                title: 'Permissions'
             });
             this.callParent([config]);
         },
@@ -238,13 +237,12 @@ Ext4.onReady(function(){
         },
 
         getRequestValues: function(){
-            var containerPath;
+            var containerPath = null; // Null is used for current container.
 
             if(this.folderRadioGroup.getValue().checkPermission === 'other'){
                 containerPath = this.otherFolderTextBox.getValue();
-            } else {
-                containerPath = LABKEY.container.path
             }
+
             return {
                 permission: this.permissionCombo.getValue(),
                 containerPath: containerPath,
@@ -255,7 +253,7 @@ Ext4.onReady(function(){
         handleSave: function(){
             var requestObj = this.getRequestValues();
 
-            if(requestObj.containerPath == null || requestObj.permission == null){
+            if(requestObj.permission == null){
                 return;
             }
 
@@ -276,11 +274,16 @@ Ext4.onReady(function(){
         },
 
         replaceHREF: function(perm, path){
+            // Only wrap in quotes if not null
+            if(path != null){
+                path = "'" + path + "'";
+            }
+
             var query = Ext4.query('#permissions_'+this.webPartId),
                 href =  "javascript:(function(){Ext4.create('LABKEY.Portal.WebPartPermissionsPanel', {" +
                         "webPartId: '" + this.webPartId + "'," +
                         "permission: '" + perm + "'," +
-                        "containerPath: '" + path + "'" +
+                        "containerPath: " + path +
                         "}).show();}())";
 
             if(query.length > 0){

@@ -752,11 +752,6 @@ public class Portal
             part.index = i + 1;
             part.pageId = pageId;
             part.container = c;
-
-            // Set the permissionContainer to the current container if the permission is set but not the
-            // permissionContainer. This will happen when setting permissions from xml defined folders.
-            if(part.permission != null && part.permissionContainer == null)
-                part.permissionContainer = c;
         }
 
         try
