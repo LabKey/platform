@@ -149,6 +149,8 @@ public class JsonWriter
         props.put("protected", cinfo != null && cinfo.isProtected());
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
 
+        props.put("conceptURI", cinfo == null ? null : cinfo.getConceptURI());
+
         ColumnInfo displayField = dc.getDisplayColumnInfo();
         if (displayField != null && displayField != cinfo)
         {
