@@ -148,19 +148,25 @@ public class TableInfoWriter
             TableInfo tinfo = fk.getLookupTableInfo();
             if (tinfo != null)
             {
-                ColumnType.Fk fkXml = columnXml.addNewFk();
-
-                Container fkContainer = fk.getLookupContainer();
-
-                // Null means current container... which means don't set anything in the XML
-                if (null != fkContainer)
+                // Make sure public Name and SchemaName aren't null before adding the FK
+                String tinfoPublicName = tinfo.getPublicName();
+                String tinfoPublicSchemaName = tinfo.getPublicSchemaName();
+                if (null != tinfoPublicName && null != tinfoPublicSchemaName)
                 {
-                    fkXml.setFkFolderPath(fkContainer.getPath());
-                }
+                    ColumnType.Fk fkXml = columnXml.addNewFk();
 
-                fkXml.setFkDbSchema(tinfo.getPublicSchemaName());
-                fkXml.setFkTable(tinfo.getPublicName());
-                fkXml.setFkColumnName(fk.getLookupColumnName());
+                    Container fkContainer = fk.getLookupContainer();
+
+                    // Null means current container... which means don't set anything in the XML
+                    if (null != fkContainer)
+                    {
+                        fkXml.setFkFolderPath(fkContainer.getPath());
+                    }
+
+                    fkXml.setFkDbSchema(tinfoPublicSchemaName);
+                    fkXml.setFkTable(tinfoPublicName);
+                    fkXml.setFkColumnName(fk.getLookupColumnName());
+                }
             }
         }
 
