@@ -78,6 +78,7 @@
     String contextPath = request.getContextPath();
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
     StudyManager.ParticipantViewConfig bean = me.getModelBean();
+    Map<String, String> aliasMap = bean.getAliases();
 
     ChartDesignerBean chartBean = new ChartDesignerBean();
 
@@ -183,6 +184,22 @@
     boolean updateAccess = study.getContainer().hasPermission(user, UpdatePermission.class);
 
     int totalSeqKeyCount = 0;
+%>
+
+<%
+   if(!aliasMap.isEmpty()){
+       %>
+        <h3>Alises:</h3>
+        <%
+        StringBuilder builder = new StringBuilder();
+        for(Map.Entry<String, String> entry : aliasMap.entrySet()){
+            builder.append(entry.getKey() + ": " + entry.getValue() + ", ");
+        }
+        String aliasString = builder.toString().substring(0, builder.toString().length()-2);
+        %>
+        <p><%=aliasString%></p>
+<%
+   }
 %>
 <script>
     var tableReady = false;

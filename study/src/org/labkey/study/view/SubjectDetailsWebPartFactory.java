@@ -24,6 +24,7 @@ import org.labkey.study.model.StudyManager;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -138,11 +139,17 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
         if (participant == null)
             return new HtmlView(filter(subjectNoun) + " \"" + filter(participantId) + "\" does not exist in study \"" + study.getLabel() + "\".");
 
+
         StudyManager.ParticipantViewConfig config = new StudyManager.ParticipantViewConfig()
         {
+            private Map<String, String> aliases = StudyManager.getInstance().getAliases(StudyManager.getInstance().getStudy(container), participantId);
             public String getParticipantId()
             {
                 return participantId;
+            }
+
+            public Map<String, String> getAliases(){
+                return aliases;
             }
 
             public int getDatasetId()

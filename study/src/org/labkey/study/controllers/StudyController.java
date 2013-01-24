@@ -5491,10 +5491,20 @@ public class StudyController extends BaseStudyController
         private int reportId;
         private String _qcState;
         private String _redirectUrl;
+        private Map<String, String> aliases;
 
         public String getParticipantId(){return participantId;}
 
-        public void setParticipantId(String participantId){this.participantId = participantId;}
+        public void setParticipantId(String participantId)
+        {
+            this.participantId = participantId;
+            aliases = StudyManager.getInstance().getAliases(StudyManager.getInstance().getStudy(getContainer()), participantId);
+        }
+
+        public Map<String, String> getAliases()
+        {
+            return aliases;
+        }
 
         public int getDatasetId(){return datasetId;}
         public void setDatasetId(int datasetId){this.datasetId = datasetId;}
