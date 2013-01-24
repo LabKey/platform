@@ -1362,6 +1362,7 @@ public class LoginController extends SpringActionController
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setHelpTopic(new HelpTopic("passwordReset"));
 
             if (null != _finishView)
                 return _finishView;
