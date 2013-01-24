@@ -31,6 +31,7 @@ public enum QueryParam
 
     defaultTab,
 
+    allowHeaderLock,
     dataRegionName,
     srcURL,
     containerFilterName,

@@ -1603,6 +1603,10 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(isShowPagination());
         rgn.setShowPaginationCount(isShowPaginationCount());
 
+        // Allow region to specify header lock, optionally override
+        if (false != rgn.getAllowHeaderLock())
+            rgn.setAllowHeaderLock(getSettings().getAllowHeaderLock());
+
         rgn.setTable(getTable());
 
         if (isShowConfiguredButtons())

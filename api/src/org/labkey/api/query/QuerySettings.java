@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +53,7 @@ public class QuerySettings
     private boolean _allowChooseQuery = false;
     private boolean _allowChooseView = true;
     private boolean _allowCustomizeView = true;
+    private boolean _allowHeaderLock = true;
     private boolean _ignoreUserFilter;
     private int _maxRows = 100;
     private long _offset = 0;
@@ -286,6 +288,10 @@ public class QuerySettings
             setSelectionKey(selectionKey);
 
         _parseQueryParameters(_filterSort);
+
+        String allowHeaderLock = StringUtils.trimToNull(_getParameter(param(QueryParam.allowHeaderLock)));
+        if (null != allowHeaderLock)
+            setAllowHeaderLock(BooleanUtils.toBoolean(allowHeaderLock));
     }
 
 
@@ -397,6 +403,16 @@ public class QuerySettings
     public boolean getAllowChooseView()
     {
         return _allowChooseView;
+    }
+
+    public void setAllowHeaderLock(boolean b)
+    {
+        _allowHeaderLock = b;
+    }
+
+    public boolean getAllowHeaderLock()
+    {
+        return _allowHeaderLock;
     }
 
     /**

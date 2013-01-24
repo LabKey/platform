@@ -90,11 +90,10 @@ public abstract class AbstractDataRegion extends DisplayElement
         return _settings;
     }
 
-    // Not meant to be set from outside for now
-//    public void setAllowHeaderLock(boolean allow)
-//    {
-//        _allowHeaderLock = allow;
-//    }
+    public void setAllowHeaderLock(boolean allow)
+    {
+        _allowHeaderLock = allow;
+    }
 
     public boolean getAllowHeaderLock()
     {
