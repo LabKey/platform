@@ -100,6 +100,11 @@ public class PageWriterFactory implements FolderWriterFactory
                 webpartXml.setLocation(webPart.getLocation());
                 webpartXml.setPermanent(webPart.isPermanent());
 
+                if(webPart.getPermission() != null)
+                    webpartXml.setPermission(webPart.getPermission());
+                if(webPart.getPermissionContainer() != null)
+                    webpartXml.setPermissionContainer(webPart.getPermissionContainer().getId());
+
                 if (webPart.getPropertyMap().size() > 0)
                 {
                     WebPartFactory factory = Portal.getPortalPart(webPart.getName());

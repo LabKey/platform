@@ -1440,18 +1440,24 @@ public class ProjectController extends SpringActionController
             if (webPart != null)
             {
                 Permission permission = RoleManager.getPermission(form.getPermission());
-                Container permissionContainer = ContainerManager.getForPath(form.getContainerPath());
+                Container permissionContainer = null;
+                
+                if(form.getContainerPath() != null)
+                {
+                    permissionContainer = ContainerManager.getForPath(form.getContainerPath());
+
+                    // Only throw NotFoundException if the user actively set the container to something else.
+                    if(permissionContainer == null)
+                    {
+                        throw new NotFoundException("Could not resolve the folder for path: \"" + form.getContainerPath() +
+                                "\". The path may be incorrect or the folder may no longer exist.");
+                    }
+                }
 
                 if(permission == null)
                 {
                     throw new NotFoundException("Could not resolve the permission " + form.getPermission() +
                             ". The permission may no longer exist, or may not yet be registered.");
-                }
-
-                if(permissionContainer == null)
-                {
-                    throw new NotFoundException("Could not resolve the container for path: \"" + form.getContainerPath() +
-                            "\". The path may be incorrect or the container may no longer exist.");
                 }
 
                 webPart.setPermission(form.getPermission());
@@ -1462,7 +1468,7 @@ public class ProjectController extends SpringActionController
                 resp.put("success", "true");
                 resp.put("webPartId", webPart.getRowId());
                 resp.put("permission", webPart.getPermission());
-                resp.put("permissionContainer", webPart.getPermissionContainer().getId());
+                resp.put("permissionContainer", webPart.getPermissionContainer() != null ?  webPart.getPermissionContainer().getId() : null);
 
                 return resp;
             }

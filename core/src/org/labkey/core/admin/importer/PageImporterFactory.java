@@ -22,6 +22,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
@@ -141,6 +142,15 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                         webPart.setIndex(webpartXml.getIndex());
                         webPart.setLocation(webpartXml.getLocation());
                         webPart.setPermanent(webpartXml.getPermanent());
+                        webPart.setPermission(webpartXml.getPermission());
+
+                        if(webpartXml.getPermissionContainer() != null)
+                        {
+                            Container permissionContainer = ContainerManager.getForId(webpartXml.getPermissionContainer());
+                            if(permissionContainer != null)
+                                webPart.setPermissionContainer(permissionContainer);
+                        }
+                        
                         if (null != webpartXml.getProperties())
                         {
                             PagesDocument.Pages.Page.Webpart.Properties.Property[] properyXmls = webpartXml.getProperties().getPropertyArray();
