@@ -3221,6 +3221,8 @@ public class StudyManager
         String getRedirectUrl();
 
         QCStateSet getQCStateSet();
+
+        Map<String, String> getAliases();
     }
 
     public WebPartView<ParticipantViewConfig> getParticipantView(Container container, ParticipantViewConfig config)
