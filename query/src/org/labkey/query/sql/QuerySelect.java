@@ -1205,9 +1205,6 @@ groupByLoop:
         SqlDialect dialect = getSqlDialect();
         SqlBuilder sql = new SqlBuilder(getDbSchema());
 
-        if (asFromSql)
-            sql.append("(");
-
         if (null != _distinct)
             markAllSelected(_distinct);
 
@@ -1342,7 +1339,11 @@ groupByLoop:
             return null;
 
         if (asFromSql)
+        {
+            // NOTE inserting the "(" earlier blows up limitRows()
+            sql.insert(0,"(");
             sql.append(") ").append(getAlias());
+        }
 
         if (!AppProps.getInstance().isDevMode() || _inFromClause || null == sql)
             return sql;
