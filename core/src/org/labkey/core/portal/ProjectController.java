@@ -974,7 +974,7 @@ public class ProjectController extends SpringActionController
             if (null == _webPart)
             {
                 if (errors.hasErrors())
-                    return new JspView<Object>("/org/labkey/portal/customizeErrors.jsp", null, errors);
+                    return new JspView<Object>("/org/labkey/core/portal/customizeErrors.jsp", null, errors);
                 else
                     return HttpView.redirect(returnUrl);
             }
