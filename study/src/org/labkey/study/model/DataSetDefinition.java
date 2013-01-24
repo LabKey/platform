@@ -2452,6 +2452,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 if (null != uriMap.put(uniq, key))
                     noDeleteMap.put(uniq,key);
 
+                if (uniq.contains(("'")))
+                    uniq = uniq.replaceAll("'","''");
                 sbIn.append(sep).append("'").append(uniq).append("'");
                 sep = ", ";
                 count++;
@@ -2493,6 +2495,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             sep = "";
             for (String s : deleteSet)
             {
+                if (s.contains(("'")))
+                    s = s.replaceAll("'","''");
                 sbDelete.append(sep).append("'").append(s).append("'");
                 sep = ", ";
             }
