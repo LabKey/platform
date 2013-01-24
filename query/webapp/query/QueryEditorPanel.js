@@ -787,6 +787,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             errorType    : 'json',
             allowChooseQuery : false,
             allowChooseView  : false,
+            allowHeaderLock  : false,
             frame     : 'none',
             title     : '',
             masking   : false,

@@ -740,6 +740,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     @Override
     public void fireFileCreateEvent(@NotNull File created, @Nullable User user, @Nullable Container container)
     {
+        created = FileUtil.getAbsoluteCaseSensitiveFile(created);
         for (FileListener fileListener : _fileListeners)
         {
             fileListener.fileCreated(created, user, container);
