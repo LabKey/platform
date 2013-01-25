@@ -438,7 +438,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
 
     public ColumnInfo addWrapColumn(ColumnInfo column)
     {
-        assert column.getParentTable() == getRealTable();
+        assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
         ColumnInfo ret = new AliasedColumn(this, column.getName(), column);
         // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
         // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table

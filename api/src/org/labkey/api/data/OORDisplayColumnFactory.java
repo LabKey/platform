@@ -38,7 +38,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
     /** @return the merged value/indicator OOR ColumnInfo */
     public static ColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn)
     {
-        return addOORColumns(table, numberColumn, oorIndicatorColumn, numberColumn.getName());
+        return addOORColumns(table, numberColumn, oorIndicatorColumn, numberColumn.getLabel());
     }
 
     /** @return the merged value/indicator OOR ColumnInfo */
