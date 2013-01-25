@@ -26,7 +26,7 @@ public class ExcludeFromShiftingItem<DomainType extends GWTDomain<FieldType>, Fi
     protected String getHelpBody()
     {
         return "Participant date columns with this property checked will not be shifted on export/publication when "
-            + "the \"Shift Participant Dates\" options is selected.";
+            + "the \"Shift Participant Dates\" option is selected.";
     }
 
     protected boolean getFieldValue(FieldType field)
