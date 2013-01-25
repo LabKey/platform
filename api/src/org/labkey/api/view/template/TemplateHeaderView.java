@@ -16,13 +16,13 @@
 
 package org.labkey.api.view.template;
 
+import org.apache.commons.lang3.JavaVersion;
+import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
@@ -125,15 +125,11 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                 }
             }
 
-            Commented out because server no longer starts with Java 1.5
-
-            //FIX: 9666
-            //show admins warning about Java 1.5 deprecation
-            if (null != user && user.isAdministrator() && System.getProperty("java.version").startsWith("1.5."))
-            {
-                _warningMessages.add("Support for Java 1.5 has been deprecated. Please upgrade your Java runtime to 1.6 or later.");
-            }
     */
+
+            // Warn about Java 6 support
+            if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_7))
+                _warningMessages.add("LabKey Server no longer supports Java 6. Please upgrade your runtime to Java 7.");
 
             //FIX: 9683
             //show admins warning about inadequate heap size (<= 256Mb)
@@ -148,24 +144,11 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                         + ".");
             }
 
-            String serverInfo = ModuleLoader.getServletContext().getServerInfo();
+            String dialectWarning = DbScope.getLabkeyScope().getSqlDialect().getAdminWarningMessage();
 
-            if (serverInfo.startsWith("Apache Tomcat/"))
-            {
-                String[] versionParts = serverInfo.substring(14).split("\\.");
-                int majorVersion = Integer.valueOf(versionParts[0]);
-
-                if (majorVersion < 6)
-                    _warningMessages.add("Tomcat 5.5 is no longer supported. Please upgrade your Tomcat installation to 6.0.");
-            }
-
-            SqlDialect coreDialect = DbScope.getLabkeyScope().getSqlDialect();
-
-            // Warn for SQL Server 2005 or 2008 (non-R2)
-            if (coreDialect.isSqlServer() && coreDialect.getDatabaseVersion() < 105)
-            {
-                _warningMessages.add(coreDialect.getProductName() + " " + coreDialect.getProductVersion() + " is no longer supported. Please upgrade to " + coreDialect.getProductName() + " 2012.");
-            }
+            // Warn if running on a deprecated database version
+            if (null != dialectWarning)
+                _warningMessages.add(dialectWarning);
         }
 
         if (AppProps.getInstance().isDevMode())

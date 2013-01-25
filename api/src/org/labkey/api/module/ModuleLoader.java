@@ -242,6 +242,8 @@ public class ModuleLoader implements Filter
 
         verifyJavaVersion();
 
+        verifyTomcatVersion();
+
         rollErrorLogFile(_log);
 
         // make sure ConvertHelper is initialized
@@ -532,7 +534,21 @@ public class ModuleLoader implements Filter
     private void verifyJavaVersion() throws ServletException
     {
         if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_6))
-            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ".  LabKey Server requires Java 1.6 or 1.7.");
+            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 7.");
+    }
+
+    private void verifyTomcatVersion()
+    {
+        String serverInfo = ModuleLoader.getServletContext().getServerInfo();
+
+        if (serverInfo.startsWith("Apache Tomcat/"))
+        {
+            String[] versionParts = serverInfo.substring(14).split("\\.");
+            int majorVersion = Integer.valueOf(versionParts[0]);
+
+            if (majorVersion < 6)
+                throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 6.");
+        }
     }
 
     private void removeAPIFiles(Set<File> unclaimedFiles, File webappRoot) throws IOException

@@ -1116,6 +1116,11 @@ public abstract class SqlDialect
         }
     }
 
+    public @Nullable String getAdminWarningMessage()
+    {
+        return null;
+    }
+
     public abstract List<String> getChangeStatements(TableChange change);
     public abstract void initializeConnection(Connection conn) throws SQLException;
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
