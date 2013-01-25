@@ -202,6 +202,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                                 target : checkboxField.getEl(),
                                 html : 'Share this ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) +' category with all users'
                             });
+                           this.addClass('share-group-rendered'); // Test marker class
                         }
 
                     }
