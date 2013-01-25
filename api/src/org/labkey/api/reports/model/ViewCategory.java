@@ -143,6 +143,8 @@ public class ViewCategory extends Entity
         }
         o.put("subCategories", subCategories);
 
+        o.put("parent", null != getParent() ? getParent().getRowId() : -1);
+
         return o;
     }
 
