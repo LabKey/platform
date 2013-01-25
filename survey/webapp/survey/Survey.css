@@ -1,0 +1,6 @@
+
+li.labkey-side-bar-title:hover
+{
+    text-decoration: underline;
+    cursor: pointer;
+}

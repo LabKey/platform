@@ -8,6 +8,7 @@ LABKEY.requiresExt4ClientAPI();
 LABKEY.requiresScript("/extWidgets/Ext4Helper.js");
 LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
 LABKEY.requiresScript("/survey/AttachmentField.js");
+LABKEY.requiresCss("/survey/Survey.css");
 
 /*
  * This is the outer panel that should be used if you want your survey to have a wiki header or footer.
@@ -33,6 +34,7 @@ Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
 
         // pass through all of the config items that are needed for the SurveyPanel
         this.surveyFormPanel = Ext4.create('LABKEY.ext4.SurveyPanel', {
+            itemId          : 'SurveyFormPanel', // used by sidebar section click function
             cls             : this.cls,
             rowId           : this.rowId,
             surveyDesignId  : this.surveyDesignId,
@@ -199,8 +201,13 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         // save the raw row and process the entries so we can initialize the form
                         this.rowMap = o.rows[0];
                         Ext4.Object.each(this.rowMap, function(key, value){
+                            var val = value.value;
 
-                            this.initialResponses[key] = value.value;
+                            // make sure to parse dates accordingly, as they come in as strings but datefield.setValue doesn't like that
+                            if (Ext4.Date.parse(value.value, "Y/m/d H:i:s", true))
+                                val = Ext4.Date.parse(value.value, "Y/m/d H:i:s", true);
+
+                            this.initialResponses[key] = val;
                         }, this);
 
                         this.getSurveyDesign();
@@ -738,6 +745,17 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         {
             this.width += 250;
 
+            // define function to be called on click of a sidebar section title
+            window.surveySidebarSectionClick = function(step){
+                // need to use component query to get back at the surveyFormPanel object
+                var panels = Ext4.ComponentQuery.query('#SurveyFormPanel');
+                if (panels.length == 1)
+                {
+                    panels[0].currentStep = step;
+                    panels[0].updateStep();
+                }
+            };
+
             this.sideBar = Ext4.create('Ext.panel.Panel', {
                 name: 'sidebar',
                 width: 250,
@@ -753,7 +771,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         '</tpl>',
 
                         '<tpl if="values.currentStep == false">',
-                        '<li>{value}</li>',
+                        '<li onclick="surveySidebarSectionClick({step});" class="labkey-side-bar-title">{value}</li>',
                         '</tpl>',
 
                     '</tpl>',
@@ -802,7 +820,11 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         var steps = [];
         for (var i = 0; i < this.sections.length; i++)
         {
-            steps.push({value: this.sections[i].title, currentStep: i == this.currentStep});
+            steps.push({
+                value: this.sections[i].title,
+                step: i,
+                currentStep: i == this.currentStep
+            });
         }
         return steps;
     },

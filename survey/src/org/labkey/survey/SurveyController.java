@@ -464,6 +464,12 @@ public class SurveyController extends SpringActionController
             if (surveyDesign != null)
             {
                 TableInfo table = getSurveyAnswersTableInfo(surveyDesign, getContainer());
+                if (table == null)
+                {
+                    response.put("errorInfo", "Table " + surveyDesign.getSchemaName() + "." + surveyDesign.getQueryName() + " could not be found in this container.");
+                    response.put("success", false);
+                    return response;
+                }
                 table.setAuditBehavior(AuditBehaviorType.DETAILED);
 
                 FieldKey pk = table.getAuditRowPk();
