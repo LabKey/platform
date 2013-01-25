@@ -85,6 +85,7 @@ class PostgreSql83Dialect extends SqlDialect
 
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<String, Integer>();
     private InClauseGenerator _inClauseGenerator = null;
+    private boolean _arraySortFunctionExists = false;
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
@@ -101,6 +102,12 @@ class PostgreSql83Dialect extends SqlDialect
     PostgreSql83Dialect(boolean standardConformingStrings)
     {
         _standardConformingStrings = standardConformingStrings;
+    }
+
+    @Override
+    public String getAdminWarningMessage()
+    {
+        return "LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + ". " + PostgreSqlDialectFactory.RECOMMENDED;
     }
 
     @Override
@@ -206,7 +213,7 @@ class PostgreSql83Dialect extends SqlDialect
     @Override
     public String getProductName()
     {
-        return "PostgreSQL";
+        return PostgreSqlDialectFactory.PRODUCT_NAME;
     }
 
     @Override
@@ -446,22 +453,31 @@ class PostgreSql83Dialect extends SqlDialect
         return result;
     }
 
+    // Custom aggregate function needed for PostgreSQL 8.3 only
+    protected String getArrayAggregateFunctionName()
+    {
+        return "core.array_accum";
+    }
+
     @Override
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
     {
+        // Sort function might not exist in external datasource; skip that syntax if not
+        boolean useSortFunction = sorted && _arraySortFunctionExists;
+
         SQLFragment result = new SQLFragment("array_to_string(");
-        if (sorted)
+        if (useSortFunction)
         {
-            result.append("core.sort(");
+            result.append("core.sort(");   // TODO: Switch PostgreSQL 9.0 to use ORDER BY option inside array aggregate instead of this function
         }
-        result.append("core.array_accum(");
+        result.append(getArrayAggregateFunctionName()).append("(");
         if (distinct)
         {
             result.append("DISTINCT ");
         }
         result.append(sql);
         result.append(")");
-        if (sorted)
+        if (useSortFunction)
         {
             result.append(")");
         }
@@ -681,9 +697,9 @@ class PostgreSql83Dialect extends SqlDialect
         initializeUserDefinedTypes(scope);
         initializeInClauseGenerator(scope);
         determineSettings(scope);
+        determineIfArraySortFunctionExists(scope);
         super.prepareNewDbScope(scope);
     }
-
 
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
     // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
@@ -747,6 +763,14 @@ class PostgreSql83Dialect extends SqlDialect
                 _standardConformingStrings = "on".equalsIgnoreCase(rs.getString(1));
             }
         });
+    }
+
+
+    // Does this datasource include our sort array function?  The LabKey datasource should always have it, but external datasources might not
+    private void determineIfArraySortFunctionExists(DbScope scope)
+    {
+        Selector selector = new SqlSelector(scope, "SELECT * FROM pg_catalog.pg_namespace n INNER JOIN pg_catalog.pg_proc p ON pronamespace = n.oid WHERE nspname = 'core' AND proname = 'sort'");
+        _arraySortFunctionExists = selector.exists();
     }
 
 

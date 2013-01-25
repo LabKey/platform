@@ -64,7 +64,7 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for Microsoft SQL Server
-public class MicrosoftSqlServer2005Dialect extends SqlDialect
+public class MicrosoftSqlServerNew2008R2Dialect extends SqlDialect
 {
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -83,10 +83,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
             "restrict, return, revert, revoke, right, rollback, rowcount, rowguidcol, rule, save, schema, select, " +
             "session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, " +
             "top, tran, transaction, trigger, truncate, tsequal, union, unique, unpivot, update, updatetext, use, user, " +
-            "values, varying, view, waitfor, when, where, while, with, writetext" +
-
-            // SQL Server 2005 only
-            ", dump, load"
+            "values, varying, view, waitfor, when, where, while, with, writetext"
         ));
     }
 
@@ -392,7 +389,44 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     @Override
     public boolean supportsGroupConcat()
     {
-        return false;
+        return true;
+    }
+
+    // Uses custom CLR aggregate function defined in group_concat_install.sql
+    @Override
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
+    {
+        // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
+        // blowing up. TODO: Don't pass sub-selects into group_contact.
+        if (StringUtils.containsIgnoreCase(sql.getSQL(), "SELECT"))
+            return new SQLFragment("'NOT SUPPORTED'");
+
+        SQLFragment result = new SQLFragment("core.GROUP_CONCAT_D");
+
+        if (sorted)
+        {
+            result.append("S");
+        }
+
+        result.append("(");
+
+        if (distinct)
+        {
+            result.append("DISTINCT ");
+        }
+
+        result.append(sql);
+        result.append(", ");
+        result.append(delimiterSQL);
+
+        if (sorted)
+        {
+            result.append(", 1");
+        }
+
+        result.append(")");
+
+        return result;
     }
 
     @Override
@@ -459,12 +493,6 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         ret.append(" FOR XML PATH ('')), 2, 2147483647)");
 
         return ret;
-    }
-
-    @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
-    {
-        throw new UnsupportedOperationException("GroupConcat aggregate function is not supported on SQL Server 2005");
     }
 
     @Override

@@ -44,11 +44,6 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
 {
     private static final Logger _log = Logger.getLogger(PostgreSqlDialectFactory.class);
 
-    private String getProductName()
-    {
-        return "PostgreSQL";
-    }
-
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
@@ -58,12 +53,13 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             return null;
     }
 
-    private final String _recommended = getProductName() + " 9.2 is the recommended version.";
+    final static String PRODUCT_NAME = "PostgreSQL";
+    final static String RECOMMENDED = PRODUCT_NAME + " 9.2 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
-        if (!getProductName().equals(dataBaseProductName))
+        if (!PRODUCT_NAME.equals(dataBaseProductName))
             return null;
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
@@ -81,14 +77,14 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     {
         int version = versionNumber.getVersionInt();
 
-        // Version 8.3 or greater is allowed...
+        // Version 8.3 or greater is allowed (for now)...
         if (version >= 83)
         {
             if (83 == version)
             {
-                // ...but warn for anything less than 8.3.7
-                if (logWarnings && versionNumber.getRevisionAsInt() < 7)
-                    _log.warn("LabKey Server has known issues with " + getProductName() + " version " + databaseProductVersion + ". " + _recommended);
+                // PostgreSQL 8.3 is deprecated; support will be removed in LabKey Server 13.2
+                if (logWarnings)
+                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
                 return new PostgreSql83Dialect();
             }
@@ -108,13 +104,13 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             if (version > 92)
             {
                 if (logWarnings)
-                    _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + _recommended);
+                    _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
                 return new PostgreSql92Dialect();
             }
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.  You must upgrade your database server installation; " + _recommended);
+        throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
     }
 
 

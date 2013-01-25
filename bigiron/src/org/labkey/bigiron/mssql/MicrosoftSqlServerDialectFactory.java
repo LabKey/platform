@@ -53,9 +53,9 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
         if ("net.sourceforge.jtds.jdbc.Driver".equals(driverClassName))
-            return new MicrosoftSqlServer2005Dialect();
+            return new MicrosoftSqlServerNew2008R2Dialect();
         else if ("com.microsoft.sqlserver.jdbc.SQLServerDriver".equals(driverClassName))
-            return new MicrosoftSqlServer2005Dialect();
+            return new MicrosoftSqlServerNew2008R2Dialect();
         else
             return null;
     }
@@ -84,23 +84,14 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     {
         // Good resource for past & current SQL Server version numbers: http://www.sqlteam.com/article/sql-server-versions
 
-        if (version >= 90)
+        // As of 13.1, we support only 2008 R2 and 2012
+        if (version >= 105)
         {
-            // Strong wanring for SQL Server 2005 or 2008 (non-R2)... but still allow it (for now)
-            if (version < 105 && logWarnings)
-                _log.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
-
             if (version >= 110)
                 return new MicrosoftSqlServer2012Dialect();
 
             if (version >= 105)
-                return new MicrosoftSqlServer2008R2Dialect();
-
-            if (version >= 100)
-                return new MicrosoftSqlServer2008Dialect();
-
-            if (version >= 90)
-                return new MicrosoftSqlServer2005Dialect();
+                return new MicrosoftSqlServerNew2008R2Dialect();
         }
 
         throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
@@ -115,7 +106,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        return PageFlowUtil.set(new MicrosoftSqlServer2005Dialect(), new MicrosoftSqlServer2008Dialect(), new MicrosoftSqlServer2008R2Dialect());
+        return PageFlowUtil.set(new MicrosoftSqlServerNew2008R2Dialect(), new MicrosoftSqlServer2012Dialect());
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
@@ -127,17 +118,11 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
             badProductName("SQL Server", 1.0, 12.0, "");
             badProductName("sqlserver", 1.0, 12.0, "");
 
-            // < 9.0 should result in bad version error
-            badVersion("Microsoft SQL Server", 0.0, 8.9, null);
-
-            // >= 9.0 and < 10.0 should result in MicrosoftSqlServer2005Dialect
-            good("Microsoft SQL Server", 9.0, 9.9, "", MicrosoftSqlServer2005Dialect.class);
-
-            // >= 10.0 and < 10.5 should result in MicrosoftSqlServer2008Dialect
-            good("Microsoft SQL Server", 10.0, 10.4, "", MicrosoftSqlServer2008Dialect.class);
+            // < 10.5 should result in bad version error
+            badVersion("Microsoft SQL Server", 0.0, 10.4, null);
 
             // >= 10.5 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
-            good("Microsoft SQL Server", 10.5, 10.9, "", MicrosoftSqlServer2008R2Dialect.class);
+            good("Microsoft SQL Server", 10.5, 10.9, "", MicrosoftSqlServerNew2008R2Dialect.class);
 
             // >= 11.0 should result in MicrosoftSqlServer2012Dialect
             good("Microsoft SQL Server", 11.0, 12.0, "", MicrosoftSqlServer2012Dialect.class);
@@ -173,7 +158,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
                     "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
 
-            SqlDialect dialect = new MicrosoftSqlServer2005Dialect();
+            SqlDialect dialect = new MicrosoftSqlServerNew2008R2Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
             assertEquals(10, good.getCounter());
@@ -194,7 +179,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    return new MicrosoftSqlServer2005Dialect();
+                    return new MicrosoftSqlServerNew2008R2Dialect();
                 }
 
                 @NotNull
