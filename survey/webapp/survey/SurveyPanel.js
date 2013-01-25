@@ -605,7 +605,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     addSurveyStartPanel : function() {
 
         // add an initial panel that has the survey label text field
-        var title = 'Begin Survey';
+        var title = 'Start';
         var items = [];
 
         if (this.surveyLayout == 'card')
@@ -721,7 +721,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         }
 
         this.sections.push(Ext4.create('Ext.panel.Panel', {
-            title: 'End Survey',
+            title: 'Finish',
             layout: {
                 type: 'hbox',
                 align: 'top',
