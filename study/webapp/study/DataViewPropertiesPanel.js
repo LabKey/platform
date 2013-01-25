@@ -35,26 +35,32 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         this.disableShared = config.disableShared;
 
         // define data models
-        Ext4.define('Dataset.Browser.Category', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'created',      type : 'string'},
-                {name : 'createdBy'                  },
-                {name : 'displayOrder', type : 'int' },
-                {name : 'label'                      },
-                {name : 'modfied',      type : 'string'},
-                {name : 'modifiedBy'                 },
-                {name : 'rowid',        type : 'int' }
-            ]
-        });
+        if (!Ext4.ModelManager.isRegistered('Dataset.Browser.Category')) {
+            Ext4.define('Dataset.Browser.Category', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'created',      type : 'string'},
+                    {name : 'createdBy'                  },
+                    {name : 'displayOrder', type : 'int' },
+                    {name : 'label'                      },
+                    {name : 'modfied',      type : 'string'},
+                    {name : 'modifiedBy'                 },
+                    {name : 'rowid',        type : 'int' },
+                    {name : 'subCategories' },
+                    {name : 'parent',       type : 'int' }
+                ]
+            });
+        }
 
-        Ext4.define('LABKEY.data.User', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'userId',       type : 'int'},
-                {name : 'displayName'               }
-            ]
-        });
+        if (!Ext4.ModelManager.isRegistered('LABKEY.data.User')) {
+            Ext4.define('LABKEY.data.User', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'userId',       type : 'int'},
+                    {name : 'displayName'               }
+                ]
+            });
+        }
 
         this.callParent([config]);
     },
@@ -161,7 +167,6 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 name        : 'category',
                 store       : this.initializeCategoriesStore(),
                 typeAhead   : true,
-                hideTrigger : true,
                 typeAheadDelay : 75,
                 minChars       : 1,
                 autoSelect     : false,
@@ -172,11 +177,18 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 listeners      : {
                     render : {fn : function(combo){combo.setRawValue(this.data.category);}, scope : this}
                 },
-                listConfig : {
-                    getInnerTpl : function(dfield) {
-                        return '{' + dfield + ':htmlEncode}' ; // 15202
-                    }
-                }
+                tpl : new Ext4.XTemplate(
+                    '<ul><tpl for=".">',
+                        '<li role="option" class="x4-boundlist-item">',
+                            '<tpl if="parent &gt; -1">',
+                                '<span style="padding-left: 20px;">{label:htmlEncode}</span>',
+                            '</tpl>',
+                            '<tpl if="parent &lt; 0">',
+                                '<span>{label:htmlEncode}</span>',
+                            '</tpl>',
+                        '</li>',
+                    '</tpl></ul>'
+                )
             });
         }
 
@@ -378,22 +390,52 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                     type : 'json',
                     root : 'categories',
                     allowSingle : false
-                },
-                listeners : {
-                    exception : function(p, response, operations, eOpts)
-                    {
-                    }
                 }
             },
+            inRawLoad : false,
             listeners : {
-                load : function(s, recs, success, operation, ops) {
-                    s.sort('displayOrder', 'ASC');
+                load : function(s, recs) {
+
+                    if (!s.inRawLoad) {
+                        s.inRawLoad = true;
+                        var parents = {}, keys = [],
+                            newRecs = [], labels = [], r, d, p, u;
+
+                        for (r=0; r < recs.length; r++) {
+                            if (recs[r].get('parent') == -1) {
+                                parents[recs[r].get('rowid')] = {record : recs[r], subs : []};
+                                keys.push(recs[r].get('rowid'));
+                            }
+                        }
+
+                        for (r=0; r < recs.length; r++) {
+                            if (recs[r].get('parent') >= 0) {
+                                parents[recs[r].get('parent')].subs.push(recs[r]);
+                            }
+                        }
+
+                        for (p=0; p < keys.length; p++) {
+                            d = parents[keys[p]].record.data;
+                            newRecs.push(d);
+                            labels.push(parents[keys[p]].record.get('label'));
+                            for (u=0; u < parents[keys[p]].subs.length; u++) {
+                                d = parents[keys[p]].subs[u].data;
+                                newRecs.push(d);
+                                labels.push(parents[keys[p]].subs[u].get('label'));
+                            }
+                        }
+
+                        s.loadData(newRecs);
+                    }
+
+                    s.inRawLoad = false;
                 }
             }
         };
 
-        if (useGrouping)
+        if (useGrouping) {
             config["groupField"] = 'category';
+        }
 
         return Ext4.create('Ext.data.Store', config);
     }

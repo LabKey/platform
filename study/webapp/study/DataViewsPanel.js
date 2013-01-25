@@ -293,11 +293,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     type : 'json',
                     root : 'categories',
                     allowSingle : false
-                },
-                listeners : {
-                    exception : function(p, response, operations, eOpts)
-                    {
-                    }
                 }
             },
             listeners : {
@@ -1168,7 +1163,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var editInfo = this.editInfo[record.data.dataType] || {};
         var formItems = [];
 
-        /* Record 'id' is required*/
+        /* Record 'id' is required */
         var editable = true;
         if (record.data.id == undefined || record.data.id == "")
         {
@@ -1482,7 +1477,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 listeners : {
                     click : function(col, grid, idx, evt, x, y, z)
                     {
-                        console.log('click 2!');
                         var label = store.getAt(idx).data.label;
                         var id    = store.getAt(idx).data.rowid;
 
