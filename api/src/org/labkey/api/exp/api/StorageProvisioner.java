@@ -48,6 +48,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
@@ -988,6 +989,7 @@ public class StorageProvisioner
         }
     }
 
+    @TestTimeout(120)
     public static class TestCase extends Assert
     {
         Container container = JunitUtil.getTestContainer();
