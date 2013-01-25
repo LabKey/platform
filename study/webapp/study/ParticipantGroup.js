@@ -12,6 +12,10 @@ Ext4.define('Study.window.ParticipantGroup', {
         Ext4.QuickTips.init();
         this.panelConfig = config;
         this.addEvents('aftersave', 'closewindow');
+        if(config.category) {
+            config.type = config.category.type;
+            config.shared = config.category.shared;
+        }
 
         Ext4.applyIf(config, {
             hideDataRegion : false,
@@ -20,7 +24,9 @@ Ext4.define('Study.window.ParticipantGroup', {
             canShare : true,
             dataRegionName : 'demoDataRegion',
             width : 950,
-            height : config.hideDataRegion ? 325 : 500
+            height : config.hideDataRegion ? 325 : 500,
+            type : config.type || 'manual',
+            shared : config.shared || false
         });
 
         Ext4.apply(config, {
@@ -103,17 +109,15 @@ Ext4.define('Study.window.ParticipantGroup', {
             success : function(details){
                 var nonManual = [];
                 for(var i = 0; i < details.rows.length; i++){
-                    console.log(this);
                     if(this.category != "list" && details.rows[i].Type != "list"){
-                        nonManual.push(details.rows[i]);
-                    }
-                    else {
                         nonManual.push(details.rows[i]);
                     }
                 }
                 categoryStore.loadData(nonManual);
                 categoryStore.fireEvent('load', categoryStore);
-            }
+            },
+            scope : this
+
         });
 
         var defaultWidth = 880;
@@ -145,7 +149,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                     if(index > -1){
                         shared = categoryStore.getAt(index).data.shared;
                     }
-                    simplePanel.queryById('sharedBox').setValue(shared);
+                    //simplePanel.queryById('sharedBox').setValue(shared);
 
                 }
             }
@@ -188,6 +192,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                     name : 'sharedBox',
                     id : 'sharedBox',
                     boxLabel : 'Share Category?',
+                    checked : this.shared,
                     disabled : !this.canEdit,
                     listeners : {
                         scope : this,
@@ -197,7 +202,6 @@ Ext4.define('Study.window.ParticipantGroup', {
                                 target : checkboxField.getEl(),
                                 html : 'Share this ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) +' category with all users'
                             });
-                           this.addClass('share-group-rendered');
                         }
 
                     }
@@ -237,7 +241,6 @@ Ext4.define('Study.window.ParticipantGroup', {
         this.callParent(arguments);
         //This class exists for testing purposes (e.g. ReportTest)
         this.cls = "doneLoadingTestMarker";
-
         if(this.hideDataRegion){
             this.on('donewithbuttons', function(){this.height = simplePanel.el.dom.scrollHeight;});
         }
@@ -331,7 +334,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             participantIds : ptids,
             categoryLabel : categoryLabel,
             categoryType : categoryType,
-            categoryShared : this.down('panel').getForm().getFieldValues()['sharedBox']
+            categoryShared : Ext4.getCmp('sharedBox').getValue()
         }
 
         if(categoryId !== null && categoryId != undefined){
@@ -340,7 +343,6 @@ Ext4.define('Study.window.ParticipantGroup', {
         if(this.groupRowId !== null && this.groupRowId != undefined) {
             groupData.rowId = this.groupRowId;
         }
-
         return groupData;
     },
 

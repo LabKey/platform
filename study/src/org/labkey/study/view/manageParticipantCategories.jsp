@@ -198,6 +198,7 @@
 
         var grid = Ext4.create('Ext.grid.Panel', {
             store: participantStore,
+            id : 'participantCategoriesGrid',
             cls: 'participantCategoriesGrid',
             width : 855,
             columns: [
