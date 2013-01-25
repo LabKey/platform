@@ -175,6 +175,17 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     /**
+     * Creates a JavaScript string literal of an HTML escaped value.
+     *
+     * Ext, for example, will use the 'id' config parameter as an attribute value in an XTemplate.
+     * The string value is inserted directly into the dom and so should be HTML encoded.
+     */
+    protected String qh(String str)
+    {
+        return PageFlowUtil.qh(str);
+    }
+
+    /**
      * URL encode a string.
      */
     public String u(String str)
