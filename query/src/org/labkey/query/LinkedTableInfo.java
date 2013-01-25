@@ -25,10 +25,13 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.data.xml.TableType;
@@ -59,12 +62,17 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     protected void addTableURLs()
     {
         // Disallow all table URLs
-        setGridURL(LINK_DISABLER);
-        setDetailsURL(LINK_DISABLER);
         setImportURL(LINK_DISABLER);
         setInsertURL(LINK_DISABLER);
         setUpdateURL(LINK_DISABLER);
         setDeleteURL(LINK_DISABLER);
+
+        // Always use generic query details and grid page
+        DetailsURL detailsURL = QueryService.get().urlDefault(getContainer(), QueryAction.detailsQueryRow, this);
+        setDetailsURL(detailsURL);
+
+        DetailsURL gridURL = QueryService.get().urlDefault(getContainer(), QueryAction.executeQuery, this);
+        setGridURL(gridURL);
     }
 
     @Override
@@ -80,7 +88,7 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public ColumnInfo wrapColumn(ColumnInfo col)
     {
-        if ("Container".equalsIgnoreCase(col.getName()) || "Folder".equalsIgnoreCase("Folder"))
+        if ("Container".equalsIgnoreCase(col.getName()) || "Folder".equalsIgnoreCase(col.getName()))
         {
             // Remap the container column to be the the target instead
             col = new ExprColumn(col.getParentTable(), col.getName(), new SQLFragment("'" + getContainer().getEntityId() + "'"), JdbcType.VARCHAR);
