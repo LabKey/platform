@@ -29,6 +29,22 @@ Ext4.define('File.panel.Admin', {
     initComponent : function() {
         this.items = this.getItems();
 
+        var submitButton = {
+            xtype: 'button',
+            text: 'submit',
+            handler: this.onSubmit,
+            scope: this
+        };
+
+        var cancelButton = {
+            xtype: 'button',
+            text: 'cancel',
+            handler: this.onCancel,
+            scope: this
+        };
+
+
+        this.buttons = [submitButton, cancelButton];
         this.callParent();
     },
 
@@ -49,13 +65,16 @@ Ext4.define('File.panel.Admin', {
     },
 
     getFilePropertiesPanel: function(){
-        return {
-            title: 'File Properties',
-            items: []
-        };
+        return Ext4.create('File.panel.FileProperties', {
+            border: false,
+            padding: 10,
+            fileConfig: this.pipelineFileProperties.fileConfig,
+            additionalPropertiesType: this.additionalPropertiesType
+        });
     },
 
     getToolBarPanel: function(){
+        console.log(this.pipelineFileProperties.tbarActions)
         return {
             title: 'Toolbar and Grid Settings',
             items: []
@@ -63,10 +82,53 @@ Ext4.define('File.panel.Admin', {
     },
 
     getGeneralSettingsPanel: function(){
-        return {
-            title: 'General Settings',
-            items: []
-        };
+        if(!this.generalSettingsPanel){
+            var descriptionText = {
+                html: '<span class="labkey-strong">Configure General Settings</span>' +
+                        '<br />' +
+                        'Set the default File UI preferences for this folder.',
+                border: false,
+                height: 55,
+                autoScroll:true
+            };
+
+            var showUploadCheckBox = Ext4.create('Ext.form.field.Checkbox', {
+                boxLabel: 'Show the file upload panel by default.',
+                width: '100%',
+                margin: '0 0 0 10',
+                checked: this.pipelineFileProperties.expandFileUpload,
+                listeners: {
+                    scope: this,
+                    change: function(checkbox, newValue){
+                        this.expandFileUpload = newValue;
+                    }
+                },
+                name: 'showUpload'
+            });
+
+            this.generalSettingsPanel = Ext4.create('Ext.panel.Panel', {
+                title: 'General Settings',
+                border: false,
+                padding: 10,
+                items: [descriptionText, showUploadCheckBox]
+            });
+        }
+
+        return this.generalSettingsPanel;
+    },
+
+    onCancel: function(){
+        this.fireEvent('close');
+    },
+
+    onSubmit: function(){
+        var updateURL = LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath);
+        // TODO: Actually submit new settings.
+    },
+
+    onEditFileProperties: function(){
+        // TODO: Save new settings and navigate to ecit properties page.
+        
     }
 
 });

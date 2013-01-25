@@ -713,12 +713,19 @@ Ext4.define('File.panel.Browser', {
         this.getUploadPanel().toggleCollapse();
     },
 
-    getAdminPanel: function() {
+    getAdminPanel: function(pipelineFileProperties) {
         return Ext4.create('File.panel.Admin', {
             width: 800,
             height: 600,
             plain: true,
-            border: false
+            border: false,
+            pipelineFileProperties: pipelineFileProperties.config,
+            listeners: {
+                scope: this,
+                close: function(){
+                    this.adminWindow.close();
+                }
+            }
         });
     },
 
@@ -726,16 +733,24 @@ Ext4.define('File.panel.Browser', {
         if(this.adminWindow) {
             this.adminWindow.setVisible(true);
         } else {
-            this.adminWindow = Ext4.create('Ext.window.Window', {
-                cls: 'data-window',
-                title: 'Manage File Browser Configuration',
-                width: 800,
-                height: 600,
-                closeAction: 'hide',
-                layout: 'fit',
-                modal: true,
-                items: [this.getAdminPanel()]
-            }).show();
+            Ext4.Ajax.request({
+                scope: this,
+                url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath),
+                success: function(response){
+                    var json = Ext4.JSON.decode(response.responseText);
+                    this.adminWindow = Ext4.create('Ext.window.Window', {
+                        cls: 'data-window',
+                        title: 'Manage File Browser Configuration',
+                        width: 800,
+                        height: 600,
+                        closeAction: 'hide',
+                        layout: 'fit',
+                        modal: true,
+                        items: [this.getAdminPanel(json)]
+                    }).show();
+                },
+                failure: function(){}
+            });
         }
     }
 });
