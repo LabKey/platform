@@ -114,7 +114,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private static ExternalIndexManager _externalIndexManager;
 
-    static enum FIELD_NAMES
+    static enum FIELD_NAME
     {
         @Deprecated displayTitle,  // We no longer store this while indexing, but old documents may still have it.
         title,                     // Used to be the "search" title (equivalent to keywordsMed), now the display title
@@ -122,13 +122,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         // Use keywords for english language terms that should be analyzed (stemmed)
 
-        keywordsLo,       // Same weighting as body terms... perhaps use this for folder path parts?
+        keywordsLo,       // Same weighting as body terms
         keywordsMed,      // Weighted twice the body terms... e.g., terms in the title, subject, or other summary
         keywordsHi,       // Weighted twice the medium keywords... these terms will dominate the search results, so probably not a good idea
 
         // Use identifiers for terms that should NOT be stemmed, like identifiers and folder names. These are case-insensitive.
 
-        identifiersLo,    // Same weighting as body terms
+        identifiersLo,    // Same weighting as body terms... perhaps use this for folder path parts?
         identifiersMed,   // Weighted twice the lo identifiers
         identifiersHi,    // Weighted twice the medium identifiers (e.g., unique ids like PTIDs, sample IDs, etc.)... be careful, these will dominate the search results (e.g., unique ids like PTIDs, sample IDs, etc.)
 
@@ -415,9 +415,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (StringUtils.isBlank(keywordsMed))
                 keywordsMed = title;
 
-            // Add all container path parts to search keywords
-            for (String part : c.getParsedPath())
-                keywordsMed = keywordsMed + " " + part;
+            // Add all container path parts as low-priority keywords... see #9362
+            String identifiersLo = StringUtils.join(c.getParsedPath(), " ");
 
             String summary = extractSummary(body, title);
 
@@ -425,8 +424,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             // === Index without analyzing, store ===
 
-            doc.add(new Field(FIELD_NAMES.uniqueId.toString(), r.getDocumentId(), StringField.TYPE_STORED));
-            doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), StringField.TYPE_STORED));
+            doc.add(new Field(FIELD_NAME.uniqueId.toString(), r.getDocumentId(), StringField.TYPE_STORED));
+            doc.add(new Field(FIELD_NAME.container.toString(), r.getContainerId(), StringField.TYPE_STORED));
 
             // === Index without analyzing, don't store ===
 
@@ -439,41 +438,28 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             for (String category : categories.split("\\s+"))
                 doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), StringField.TYPE_NOT_STORED));
 
-            String uniqueIds = (String)props.get(PROPERTY.indentifiersHi.toString());
-
-            // Split the uniqueIds string by whitespace, index each without stemming
-            if (null != uniqueIds)
-                for (String uniqueId : uniqueIds.split(("\\s+")))
-                    doc.add(new Field(FIELD_NAMES.identifiersHi.toString(), uniqueId.toLowerCase(), StringField.TYPE_NOT_STORED));
+            addIdentifiers(doc, props, PROPERTY.indentifiersLo, FIELD_NAME.identifiersLo, identifiersLo);
+            addIdentifiers(doc, props, PROPERTY.indentifiersMed, FIELD_NAME.identifiersMed, null);
+            addIdentifiers(doc, props, PROPERTY.indentifiersHi, FIELD_NAME.identifiersHi, null);
 
             // === Index and analyze, don't store ===
 
-            // TODO: TextField is supposed to have a TextField(String, String) constructor for this (according to Lucene 4.0 migration guide)
+            doc.add(new TextField(FIELD_NAME.body.toString(), body, Field.Store.NO));
 
-            doc.add(new TextField(FIELD_NAMES.body.toString(), body, Field.Store.NO));
-
-            String keywordsLo = (String)props.get(PROPERTY.keywordsLo.toString());
-
-            if (null != keywordsLo)
-                doc.add(new TextField(FIELD_NAMES.keywordsLo.toString(), keywordsLo, Field.Store.NO));
-
-            doc.add(new TextField(FIELD_NAMES.keywordsMed.toString(), keywordsMed, Field.Store.NO));
-
-            String keywordsHi = (String)props.get(PROPERTY.keywordsHi.toString());
-
-            if (null != keywordsHi)
-                doc.add(new TextField(FIELD_NAMES.keywordsHi.toString(), keywordsHi, Field.Store.NO));
+            addKeywords(doc, props, PROPERTY.keywordsLo, FIELD_NAME.keywordsLo, null);
+            addKeywords(doc, props, PROPERTY.keywordsMed, FIELD_NAME.keywordsMed, keywordsMed);
+            addKeywords(doc, props, PROPERTY.keywordsHi, FIELD_NAME.keywordsHi, null);
 
             // === Don't index, store ===
 
-            doc.add(new StoredField(FIELD_NAMES.title.toString(), title));
-            doc.add(new StoredField(FIELD_NAMES.summary.toString(), summary));
-            doc.add(new StoredField(FIELD_NAMES.url.toString(), url));
+            doc.add(new StoredField(FIELD_NAME.title.toString(), title));
+            doc.add(new StoredField(FIELD_NAME.summary.toString(), summary));
+            doc.add(new StoredField(FIELD_NAME.url.toString(), url));
             if (null != props.get(PROPERTY.navtrail.toString()))
-                doc.add(new StoredField(FIELD_NAMES.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString())));
+                doc.add(new StoredField(FIELD_NAME.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString())));
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             if (null != resourceId && !resourceId.equals(r.getContainerId()))
-                doc.add(new StoredField(FIELD_NAMES.resourceId.toString(), resourceId));
+                doc.add(new StoredField(FIELD_NAME.resourceId.toString(), resourceId));
 
             // === Custom properties: Index and analyze, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())
@@ -625,6 +611,28 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         return null;
+    }
+
+
+    private void addIdentifiers(Document doc, Map<String, ?> props, PROPERTY property, FIELD_NAME fieldName, @Nullable String standardIdentifiers)
+    {
+        String documentIdentifiers = (String)props.get(property.toString());
+        String identifiers = (null == standardIdentifiers ? "" : standardIdentifiers + " ") + (null == documentIdentifiers ? "" : documentIdentifiers);
+
+        // Split the identifiers string by whitespace, index each without stemming
+        if (!identifiers.isEmpty())
+            for (String identifier : identifiers.split(("\\s+")))
+                doc.add(new Field(fieldName.toString(), identifier.toLowerCase(), StringField.TYPE_NOT_STORED));
+    }
+
+
+    private void addKeywords(Document doc, Map<String, ?> props, PROPERTY property, FIELD_NAME fieldName, @Nullable String standardKeywords)
+    {
+        String documentKeywords = (String)props.get(property.toString());
+        String keywords = (null == standardKeywords ? "" : standardKeywords + " ") + (null == documentKeywords ? "" : documentKeywords);
+
+        if (!keywords.isEmpty())
+            doc.add(new TextField(fieldName.toString(), keywords, Field.Store.NO));
     }
 
 
@@ -873,7 +881,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     protected void deleteDocumentsForPrefix(String prefix)
     {
-        Term term = new Term(FIELD_NAMES.uniqueId.toString(), prefix + "*");
+        Term term = new Term(FIELD_NAME.uniqueId.toString(), prefix + "*");
         Query query = new WildcardQuery(term);
 
         try
@@ -926,7 +934,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            Query query = new TermQuery(new Term(FIELD_NAMES.container.toString(), id));
+            Query query = new TermQuery(new Term(FIELD_NAME.container.toString(), id));
 
             // Run the query before delete, but only if Log4J debug level is set
             if (_log.isDebugEnabled())
@@ -965,7 +973,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            TermQuery query = new TermQuery(new Term(FIELD_NAMES.uniqueId.toString(), id));
+            TermQuery query = new TermQuery(new Term(FIELD_NAME.uniqueId.toString(), id));
             TopDocs topDocs = searcher.search(query, null, 1);
             SearchResult result = createSearchResult(0, 1, topDocs, searcher);
             if (result.hits.size() != 1)
@@ -984,19 +992,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     static
     {
-        Map<FIELD_NAMES, Float> enumMap = new HashMap<FIELD_NAMES, Float>();
-        enumMap.put(FIELD_NAMES.body, 1.0f);
-        enumMap.put(FIELD_NAMES.keywordsLo, 1.0f);
-        enumMap.put(FIELD_NAMES.identifiersLo, 1.0f);
+        Map<FIELD_NAME, Float> enumMap = new HashMap<FIELD_NAME, Float>();
+        enumMap.put(FIELD_NAME.body, 1.0f);
+        enumMap.put(FIELD_NAME.keywordsLo, 1.0f);
+        enumMap.put(FIELD_NAME.identifiersLo, 1.0f);
 
-        enumMap.put(FIELD_NAMES.title, 2.0f);          // TODO: Deprecated... old documents only
-        enumMap.put(FIELD_NAMES.keywordsMed, 2.0f);
-        enumMap.put(FIELD_NAMES.identifiersMed, 2.0f);
+        enumMap.put(FIELD_NAME.title, 2.0f);          // TODO: Deprecated... old documents only
+        enumMap.put(FIELD_NAME.keywordsMed, 2.0f);
+        enumMap.put(FIELD_NAME.identifiersMed, 2.0f);
 
-        enumMap.put(FIELD_NAMES.keywordsHi, 4.0f);
-        enumMap.put(FIELD_NAMES.identifiersHi, 4.0f);
+        enumMap.put(FIELD_NAME.keywordsHi, 4.0f);
+        enumMap.put(FIELD_NAME.identifiersHi, 4.0f);
 
-        for (Map.Entry<FIELD_NAMES, Float> entry : enumMap.entrySet())
+        for (Map.Entry<FIELD_NAME, Float> entry : enumMap.entrySet())
             boosts.put(entry.getKey().toString(), entry.getValue());
 
         standardFields = boosts.keySet().toArray(new String[boosts.size()]);
@@ -1152,10 +1160,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Document doc = searcher.doc(scoreDoc.doc);
 
             SearchHit hit = new SearchHit();
-            hit.container = doc.get(FIELD_NAMES.container.toString());
-            hit.docid = doc.get(FIELD_NAMES.uniqueId.toString());
-            hit.summary = doc.get(FIELD_NAMES.summary.toString());
-            hit.url = doc.get(FIELD_NAMES.url.toString());
+            hit.container = doc.get(FIELD_NAME.container.toString());
+            hit.docid = doc.get(FIELD_NAME.uniqueId.toString());
+            hit.summary = doc.get(FIELD_NAME.summary.toString());
+            hit.url = doc.get(FIELD_NAME.url.toString());
 
             // BUG patch see 10734 : Bad URLs for files in search results
             // this is only a partial fix, need to rebuild index
@@ -1171,18 +1179,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
 
             // Check for displayTitle to support old indexed documents TODO: Remove
-            hit.title = doc.get(FIELD_NAMES.displayTitle.toString());
+            hit.title = doc.get(FIELD_NAME.displayTitle.toString());
 
             // No display title, try title
             if (StringUtils.isBlank(hit.title))
-                hit.title = doc.get(FIELD_NAMES.title.toString());
+                hit.title = doc.get(FIELD_NAME.title.toString());
 
             // No title at all... just use URL
             if (StringUtils.isBlank(hit.title))
                 hit.title = hit.url;
 
             // UNDONE FIELD_NAMES.navtree
-            hit.navtrail = doc.get(FIELD_NAMES.navtrail.toString());
+            hit.navtrail = doc.get(FIELD_NAME.navtrail.toString());
             ret.add(hit);
         }
 

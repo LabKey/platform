@@ -48,7 +48,7 @@ import java.util.Set;
 */
 class SecurityFilter extends Filter
 {
-    private static final Set<String> SECURITY_FIELDS = PageFlowUtil.set(LuceneSearchServiceImpl.FIELD_NAMES.container.name(), LuceneSearchServiceImpl.FIELD_NAMES.resourceId.name());
+    private static final Set<String> SECURITY_FIELDS = PageFlowUtil.set(LuceneSearchServiceImpl.FIELD_NAME.container.name(), LuceneSearchServiceImpl.FIELD_NAME.resourceId.name());
 
     private final User user;
     private final HashMap<String, Container> containerIds;
@@ -93,8 +93,8 @@ class SecurityFilter extends Filter
 
             Document doc = reader.document(i, SECURITY_FIELDS);
 
-            String id = doc.get(LuceneSearchServiceImpl.FIELD_NAMES.container.name());
-            String resourceId = doc.get(LuceneSearchServiceImpl.FIELD_NAMES.resourceId.name());
+            String id = doc.get(LuceneSearchServiceImpl.FIELD_NAME.container.name());
+            String resourceId = doc.get(LuceneSearchServiceImpl.FIELD_NAME.resourceId.name());
 
             if (null == id || !containerIds.containsKey(id))
                 continue;

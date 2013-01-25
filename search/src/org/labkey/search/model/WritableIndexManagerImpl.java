@@ -122,7 +122,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             synchronized (_writerLock)
             {
                 IndexWriter iw = getIndexWriter();
-                iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAMES.uniqueId.toString(), id));
+                iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAME.uniqueId.toString(), id));
             }
         }
         catch (Throwable e)

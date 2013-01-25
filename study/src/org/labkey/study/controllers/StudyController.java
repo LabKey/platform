@@ -5498,7 +5498,7 @@ public class StudyController extends BaseStudyController
         public void setParticipantId(String participantId)
         {
             this.participantId = participantId;
-            aliases = StudyManager.getInstance().getAliases(StudyManager.getInstance().getStudy(getContainer()), participantId);
+            aliases = StudyManager.getInstance().getAliasMap(StudyManager.getInstance().getStudy(getContainer()), getUser(), participantId);
         }
 
         public Map<String, String> getAliases()

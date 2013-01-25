@@ -799,8 +799,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         Container p = c.getProject();
         assert null != p;
-        String displayTitle;
-        String searchTitle;
+        String title;
+        String keywords;
         String body;
 
         // UNDONE: generalize to other folder types
@@ -808,8 +808,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         if (null != study)
         {
-            displayTitle = study.getSearchDisplayTitle();
-            searchTitle = study.getSearchKeywords();
+            title = study.getSearchDisplayTitle();
+            keywords = study.getSearchKeywords();
             body = study.getSearchBody();
         }
         else
@@ -826,17 +826,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             String name = c.isWorkbook() ? c.getTitle() : c.getName();
 
             String description = StringUtils.trimToEmpty(c.getDescription());
-            displayTitle = type + " -- " + name;
-            searchTitle = name + " " + description + " " + type;
+            title = type + " -- " + name;
+            keywords = name + " " + description + " " + type;
             body = type + " " + name + (c.isProject() ? "" : " in Project " + p.getName());
             body += "\n" + description;
         }
 
         Map<String, Object> properties = new HashMap<String, Object>();
 
-        assert (null != searchTitle);
-        properties.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
-        properties.put(SearchService.PROPERTY.title.toString(), displayTitle);
+        assert (null != keywords);
+        properties.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
+        properties.put(SearchService.PROPERTY.title.toString(), title);
         properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         startURL.setExtraPath(c.getId());
@@ -854,6 +854,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public void indexDeleted() throws SQLException
     {
-        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute("UPDATE core.Documents SET lastIndexed=NULL");
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute("UPDATE core.Documents SET LastIndexed = NULL");
     }
 }

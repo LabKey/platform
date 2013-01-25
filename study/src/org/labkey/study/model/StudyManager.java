@@ -3288,9 +3288,9 @@ public class StudyManager
 
 
     // Return a source->alias map for the specified participant
-    public Map<String, String> getAliases(StudyImpl study, String ptid)
+    public Map<String, String> getAliasMap(StudyImpl study, User user, String ptid)
     {
-        @Nullable final TableInfo aliasTable = new StudyQuerySchema(study, User.getSearchUser(), true).getParticipantAliasesTable();
+        @Nullable final TableInfo aliasTable = new StudyQuerySchema(study, user, true).getParticipantAliasesTable();
 
         if (null == aliasTable)
             return Collections.emptyMap();
@@ -3506,7 +3506,7 @@ public class StudyManager
                 String uniqueIds = ptid;
 
                 // Add all participant alias as high priority uniqueIds
-                Map<String, String> aliasMap = StudyManager.getInstance().getAliases(study, ptid);
+                Map<String, String> aliasMap = StudyManager.getInstance().getAliasMap(study, User.getSearchUser(), ptid);
 
                 if (!aliasMap.isEmpty())
                     uniqueIds = uniqueIds + " " + StringUtils.join(aliasMap.values(), " ");

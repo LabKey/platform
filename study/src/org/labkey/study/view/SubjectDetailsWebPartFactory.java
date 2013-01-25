@@ -16,6 +16,7 @@
 package org.labkey.study.view;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.view.*;
 import org.labkey.study.StudyModule;
 import org.labkey.study.model.QCStateSet;
@@ -116,13 +117,14 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
         {
             // fall through; the default of -1 is fine.
         }
-        WebPartView view = createView(portalCtx.getContainer(), participantId, sourceDatasetId, currentUrl, dataType, encodedQCState);
+        WebPartView view = createView(portalCtx.getContainer(), portalCtx.getUser(), participantId, sourceDatasetId, currentUrl, dataType, encodedQCState);
         view.setFrame(WebPartView.FrameType.PORTAL);
         view.setTitle(StudyService.get().getSubjectNounSingular(portalCtx.getContainer()) + " " + (participantId != null ? participantId : "unknown"));
         return view;
     }
 
     private WebPartView createView(final Container container,
+                                   final User user,
                                    final String participantId,
                                    final int sourceDatasetId,
                                    final String currentUrl,
@@ -142,13 +144,15 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
 
         StudyManager.ParticipantViewConfig config = new StudyManager.ParticipantViewConfig()
         {
-            private Map<String, String> aliases = StudyManager.getInstance().getAliases(StudyManager.getInstance().getStudy(container), participantId);
+            private Map<String, String> aliases = StudyManager.getInstance().getAliasMap(StudyManager.getInstance().getStudy(container), user, participantId);
+
             public String getParticipantId()
             {
                 return participantId;
             }
 
-            public Map<String, String> getAliases(){
+            public Map<String, String> getAliases()
+            {
                 return aliases;
             }
 
