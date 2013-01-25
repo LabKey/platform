@@ -23,6 +23,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -1170,10 +1171,11 @@ public class QueryServiceImpl extends QueryService
 
     /**
      * Get list of available schema template XML files for the Container's active modules.
+     * @returns Map of template name -> (template name, template xml)
      */
-    public Collection<TemplateSchemaType> getSchemaTemplates(Container c)
+    public Map<String, TemplateSchemaType> getSchemaTemplates(Container c)
     {
-        Set<TemplateSchemaType> ret = new HashSet<TemplateSchemaType>();
+        Map<String, TemplateSchemaType> ret = new HashMap<String, TemplateSchemaType>();
         for (Module module : c.getActiveModules())
         {
             Resource schemasDir = module.getModuleResource(QueryService.MODULE_SCHEMAS_DIRECTORY);
@@ -1184,6 +1186,7 @@ public class QueryServiceImpl extends QueryService
                     String name = resource.getName();
                     if (name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
                     {
+                        name = name.substring(0, name.length() - QueryService.SCHEMA_TEMPLATE_EXTENSION.length());
                         InputStream is = null;
                         try
                         {
@@ -1191,7 +1194,7 @@ public class QueryServiceImpl extends QueryService
                             TemplateSchemaDocument doc = TemplateSchemaDocument.Factory.parse(is);
                             XmlBeansUtil.validateXmlDocument(doc, resource.getName());
                             TemplateSchemaType template = doc.getTemplateSchema();
-                            ret.add(template);
+                            ret.put(name, template);
                         }
                         catch (XmlException e)
                         {
@@ -1215,6 +1218,20 @@ public class QueryServiceImpl extends QueryService
         }
 
         return ret;
+    }
+
+    public JSONObject schemaTemplateJson(String name, TemplateSchemaType template)
+    {
+        JSONObject templateJson = new JSONObject();
+        templateJson.put("name", name);
+        templateJson.put("sourceSchemaName", template.getSourceSchemaName());
+
+        String[] tables = new String[0];
+        if (template.isSetTables())
+            tables = template.getTables().getTableNameArray();
+        templateJson.put("tables", tables);
+        templateJson.put("metadata", template.getMetadata());
+        return templateJson;
     }
 
     @Override

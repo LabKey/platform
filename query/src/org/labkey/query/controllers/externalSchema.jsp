@@ -16,18 +16,21 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="org.labkey.data.xml.externalSchema.TemplateSchemaType" %>
 <%@ page import="org.labkey.query.controllers.QueryController.BaseExternalSchemaBean" %>
 <%@ page import="org.labkey.query.controllers.QueryController.DataSourceInfo" %>
-<%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
 <%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef" %>
-<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef.SchemaType" %>
+<%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
+    Container c = getViewContext().getContainer();
     BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
     AbstractExternalSchemaDef def = bean.getSchemaDef();
     DataSourceInfo initialSource = bean.getInitialSource();
@@ -61,60 +64,136 @@
         sourceJson.put(bean.getSchemaNames(source, true));
         dataSourcesJson.put(sourceJson);
 
-        if (source == initialSource)
+        if (source.sourceName.equals(initialSource.sourceName))
             coreIndex = i;
         i++;
     }
-%>
-    var dataSources = <%=text(dataSourcesJson.toString())%>;
 
-var store = new Ext.data.SimpleStore({
+    String initialTemplateName = bean.getSchemaDef().getSchemaTemplate();
+    if (initialTemplateName == null)
+        initialTemplateName = "[none]";
+    TemplateSchemaType initialTemplate = bean.getSchemaDef().lookupTemplate(c);
+%>
+var dataSources = <%=text(dataSourcesJson.toString())%>;
+var initialDataSourceIndex = <%=coreIndex%>;
+
+var dataSourceStore = new Ext.data.SimpleStore({
     fields:['value', 'name', 'editable', 'schemas', 'schemasWithSystem'],
     data:dataSources
 });
 
-var schemaIndex = 3;
-
-var schemaType = new Ext.form.Hidden({name:'schemaType', value:<%=q(isExternal ? ExternalSchemaDef.SchemaType.external.name() : ExternalSchemaDef.SchemaType.linked.name())%>});
-// Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
-var dataSourceCombo = new Ext.form.ComboBox({fieldLabel:'Data Source', mode:'local', store:store, valueField:'value', displayField:'name', hiddenName:'dataSource', editable:false, triggerAction:'all', helpPopup:{title:'Data Source', html:<%=PageFlowUtil.qh(bean.getHelpHTML("DataSource"))%>}, value:dataSources[<%=coreIndex%>][0]});
-var includeLabel = new Ext.form.Label({text:'Show System Schemas', align:"middle", padding:"4"});
-var includeSystemCheckBox = new LABKEY.ext.Checkbox({name:'includeSystem', id:'myincludeSystem', boxLabel:'Show System Schemas'});
-// Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out).
-var sourceSchemaCombo = new Ext.form.ComboBox({name:'sourceSchemaName', fieldLabel:'Source Schema Name', store:dataSources[<%=coreIndex%>][3], editable:true, triggerAction:'all', allowBlank:false, helpPopup:{title:'Database Schema Name', html:<%=PageFlowUtil.qh(bean.getHelpHTML("SourceSchemaName"))%>}, value:<%=q(def.getSourceSchemaName())%>});
-var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:<%=PageFlowUtil.qh(bean.getHelpHTML("UserSchemaName"))%>}, value:<%=q(def.getUserSchemaName())%>});
-<% if (isExternal) { %>
-var editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', helpPopup:{title:'Editable', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Editable"))%>}});
-var indexableCheckBox = new LABKEY.ext.Checkbox({name:'indexable', /*id:'myeditable',*/ fieldLabel:'Index Schema Meta Data', helpPopup:{title:'Index Schema Meta Data', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Indexable"))%>}, checked:<%=((ExternalSchemaDef)def).isIndexable()%>});
-<% } %>
-var metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', width:800, height:400, resizable:true, autoCreate:{tag:"textarea", style:"font-family:'Courier'", autocomplete:"off", wrap:"off"}, helpPopup:{title:'Meta Data', html:<%=PageFlowUtil.qh(bean.getHelpHTML("MetaData"))%>}, value:<%=PageFlowUtil.jsString(def.getMetaData())%>});
-var tableText = new Ext.form.TextField({name:'tables', hidden:true});
-
-// create the data store
-var tableStore = new Ext.data.JsonStore({
+// create the tables data store
+var tablesStore = new Ext.data.JsonStore({
     url: 'getTables.api',
     autoDestroy: true,
-    storeId: 'tables',
+    storeId: 'tablesStore',
     idProperty: 'table',
     root: 'rows',
     fields: ['table']
 });
 
+// create the templates data store
+var templatesStore = new Ext.data.JsonStore({
+    url: 'schemaTemplates.api',
+    autoDestroy: true,
+    storeId: 'templatesStore',
+    idProperty: 'name',
+    root: 'templates',
+    fields: ['name', 'sourceSchemaName', 'tables', 'metadata'],
+    listeners: {
+        load: templatesLoaded
+    }
+});
+
+var schemaType = <%=q(isExternal ? SchemaType.external.name() : SchemaType.linked.name())%>;
+var external = <%=isExternal%>;
+
+var schemaIndex = 3;
+
+var schemaType = new Ext.form.Hidden({name:'schemaType', value:schemaType});
+var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:<%=PageFlowUtil.qh(bean.getHelpHTML("UserSchemaName"))%>}, value:<%=q(def.getUserSchemaName())%>});
+
+// Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
+var dataSourceCombo = new Ext.form.ComboBox({
+    fieldLabel:external ? 'Data Source' : 'Source Container',
+    mode:'local',
+    store:dataSourceStore,
+    valueField:'value',
+    displayField:'name',
+    hiddenName:'dataSource',
+    editable:false,
+    triggerAction:'all',
+    helpPopup:{title:'Data Source', html:<%=PageFlowUtil.qh(bean.getHelpHTML("DataSource"))%>},
+    value:dataSources[initialDataSourceIndex][0]
+});
+
+var templateComboBox = new LABKEY.ext.ComboBox({
+    name:'schemaTemplate',
+    fieldLabel:'Schema Template',
+    store: templatesStore,
+    valueField:'name',
+    displayField:'name',
+    hidden:external,
+    helpPopup:{title:'Schema Template', html:<%=PageFlowUtil.qh(bean.getHelpHTML("SchemaTemplate"))%>},
+    value: <%=q(initialTemplateName)%>
+});
+
+var includeLabel = new Ext.form.Label({text:'Show System Schemas', align:"middle", padding:"4"});
+var includeSystemCheckBox = new LABKEY.ext.Checkbox({
+    name:'includeSystem',
+    id:'myincludeSystem',
+    boxLabel:'Show System Schemas',
+    disabled:<%=initialTemplate != null%>
+});
+
+// Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out).
+var sourceSchemaCombo = new Ext.form.ComboBox({
+    name:'sourceSchemaName',
+    fieldLabel:external ? 'Database Schema Name' : 'LabKey Schema Name',
+    store:dataSources[initialDataSourceIndex][3],
+    editable:true,
+    triggerAction:'all',
+    helpPopup:{title:'Source Schema Name',
+    html:<%=PageFlowUtil.qh(bean.getHelpHTML("SourceSchemaName"))%>},
+    value:<%=q(initialTemplate == null ? def.getSourceSchemaName() : initialTemplate.getSourceSchemaName())%>,
+    disabled:<%=initialTemplate != null%>,
+    tpl: '<tpl for="."><div class="x-combo-list-item">{field1:htmlEncode}</div></tpl>'
+});
+
+if (external)
+{
+    var editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', helpPopup:{title:'Editable', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Editable"))%>}});
+    var indexableCheckBox = new LABKEY.ext.Checkbox({name:'indexable', /*id:'myeditable',*/ fieldLabel:'Index Schema Meta Data', helpPopup:{title:'Index Schema Meta Data', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Indexable"))%>}, checked:<%=def.isIndexable()%>});
+}
+
+var metaDataTextArea = new Ext.form.TextArea({
+    name:'metaData',
+    fieldLabel:'Meta Data',
+    width:800, height:400,
+    resizable:true,
+    autoCreate:{tag:"textarea", style:"font-family:'Courier'", autocomplete:"off", wrap:"off"},
+    helpPopup:{title:'Meta Data', html:<%=PageFlowUtil.qh(bean.getHelpHTML("MetaData"))%>},
+    value:<%=q(initialTemplate == null ? def.getMetaData() : (initialTemplate.getMetadata() == null ? "" : initialTemplate.getMetadata().toString()))%>,
+    disabled:<%=initialTemplate != null%>
+});
+
+var tableText = new Ext.form.TextField({name:'tables', hidden:true});
+
 var selModel = new Ext.grid.CheckboxSelectionModel();
 selModel.addListener('rowselect', updateTableTitle);
 selModel.addListener('rowdeselect', updateTableTitle);
 
-var initialTables = <%=PageFlowUtil.jsString(def.getTables())%>;
+var initialTables = <%=PageFlowUtil.jsString(initialTemplate == null ? def.getTables() : (initialTemplate.getTables() == null ? "*" : StringUtils.join(initialTemplate.getTables().getTableNameArray(), ",")))%>;
 
 // create the table grid
 var grid = new Ext.grid.GridPanel({
     fieldLabel:'Tables',
     helpPopup:{title:'Tables', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Tables"))%>},
     title:'&nbsp;',
-    store: tableStore,
+    store: tablesStore,
     columns: [
         selModel,
-        {id:'table', width: 160, sortable: false, dataIndex: 'table'}
+        {id: 'table', header: "Table", width: 160, sortable: false, dataIndex: 'table', renderer: 'htmlEncode'}
     ],
     stripeRows: true,
     collapsed: true,
@@ -122,12 +201,13 @@ var grid = new Ext.grid.GridPanel({
     autoExpandColumn: 'table',
     autoHeight: true,
     width: 600,
-    selModel: selModel
+    selModel: selModel,
+    disabled: <%=initialTemplate != null%>
 });
 
 var DatabaseSchemaNamePanel = Ext.extend(Ext.Panel, {
     initComponent: function() {
-        this.fieldLabel = 'Database Schema Name';
+        this.fieldLabel = external ? 'Database Schema Name' : 'LabKey Schema Name';
         this.layout = 'table';
         this.layoutConfig = {columns:2};
         this.items = [sourceSchemaCombo, includeSystemCheckBox];
@@ -145,9 +225,12 @@ var f = new LABKEY.ext.FormPanel({
     standardSubmit:true,
     items:[
         schemaType,
-        dataSourceCombo,
-        new DatabaseSchemaNamePanel(),
         userSchemaText,
+        dataSourceCombo,
+        <% if (!isExternal) { %>
+        templateComboBox,
+        <% } %>
+        new DatabaseSchemaNamePanel(),
         <% if (isExternal) { %>
         editableCheckBox,
         indexableCheckBox,
@@ -175,17 +258,26 @@ Ext.onReady(function()
     sourceSchemaCombo.on('select', sourceSchemaCombo_onSelect);
     grid.on('expand', updateTableTitle);
     grid.on('collapse', updateTableTitle);
-    <% if (isExternal) { %>
-    initEditable(<%=((ExternalSchemaDef)def).isEditable()%>, <%=initialSource.editable%>);
-    <% } %>
+    if (external)
+    {
+        initEditable(<%=def.isEditable()%>, <%=initialSource.editable%>);
+    }
+    else
+    {
+        templateComboBox.on('select', templateComboBox_onSelect);
+        templatesStore.load();
+    }
     loadTables();
 });
 
 // Populate the "Database Schema Name" combo box with new data source's schemas
 function dataSourceCombo_onSelect()
 {
-    userSchemaText.setValue("");
-    var dataSourceIndex = store.find("value", dataSourceCombo.getValue());
+    var dataSourceIndex = dataSourceStore.find("value", dataSourceCombo.getValue());
+
+    templateComboBox.store.load();
+    templateComboBox_onSelect();
+
     sourceSchemaCombo.store.loadData(dataSources[dataSourceIndex][schemaIndex]);
     sourceSchemaCombo.setValue("");
     sourceSchemaCombo_onSelect();  // reset all fields that depend on database schema name
@@ -201,24 +293,62 @@ function includeSystemCheckBox_onCheck()
 function sourceSchemaCombo_onSelect()
 {
     var schemaName = sourceSchemaCombo.getValue();
-    var dataSourceIndex = store.find("value", dataSourceCombo.getValue());
-    <% if (isExternal) { %>
-    userSchemaText.setValue(schemaName);
-    initEditable(false, dataSources[dataSourceIndex][2]);
-    <% } else { %>
-    userSchemaText.setValue("");
-    <% } %>
+    var dataSourceIndex = dataSourceStore.find("value", dataSourceCombo.getValue());
+    if (external) {
+        if (userSchemaText.getValue() == "")
+            userSchemaText.setValue(schemaName);
+        initEditable(false, dataSources[dataSourceIndex][2]);
+    } else {
+        if (userSchemaText.getValue() == "") {
+            // Add prefix to name if the source container is the current container
+            if (dataSources[dataSourceIndex][0] == LABKEY.container.id) {
+                schemaName = "Linked" + schemaName[0].toUpperCase() + schemaName.substring(1);
+            }
+            userSchemaText.setValue(schemaName);
+        }
+        templatesStore.load();
+    }
     metaDataTextArea.setValue("");
     loadTables();
 }
 
-<% if (isExternal) { %>
+function templateComboBox_onSelect()
+{
+    var templateName = templateComboBox.getValue();
+    var templateRecord = templateName ? templateComboBox.store.getById(templateName) : undefined;
+    if (templateRecord)
+    {
+        sourceSchemaCombo.setValue(templateRecord.get("sourceSchemaName"));
+        sourceSchemaCombo.setDisabled(true);
+
+        selectTables(templateRecord.get("tables"));
+        grid.setDisabled(true);
+
+        metaDataTextArea.setValue(templateRecord.get("metadata"));
+        metaDataTextArea.setDisabled(true);
+    }
+    else
+    {
+        sourceSchemaCombo.setValue("");
+        sourceSchemaCombo.setDisabled(false);
+
+        tablesStore.removeAll();
+        grid.selModel.clearSelections();
+        grid.setDisabled(false);
+
+        metaDataTextArea.setValue("");
+        metaDataTextArea.setDisabled(false);
+    }
+}
+
 function initEditable(value, enabled)
 {
-    editableCheckBox.setValue(value);
-    editableCheckBox.setDisabled(!enabled);
+    if (external)
+    {
+        editableCheckBox.setValue(value);
+        editableCheckBox.setDisabled(!enabled);
+    }
 }
-<% } %>
 
 function loadTables()
 {
@@ -226,7 +356,7 @@ function loadTables()
     var schemaName = sourceSchemaCombo.getValue();
 
     // dataSource and/or schemaName could be empty, but action handles this
-    tableStore.load({
+    tablesStore.load({
         params: {dataSource: dataSource, schemaName: schemaName},
         callback: tablesLoaded
     });
@@ -234,40 +364,80 @@ function loadTables()
 
 function tablesLoaded()
 {
-    if ('*' == initialTables)
+    selectTables(initialTables);
+    updateTableTitle();
+}
+
+function selectTables(tableNames)
+{
+    if ('*' == tableNames || tableNames == null)
     {
         grid.selModel.selectAll();
     }
     else
     {
-        var tableNames = initialTables.split(',');
+        if (Ext.isString(tableNames))
+            tableNames = tableNames.split(',');
+
         var recordArray = [];
 
         for (var i = 0; i < tableNames.length; i++)
-            recordArray.push(tableStore.getById(tableNames[i]));
+            recordArray.push(tablesStore.getById(tableNames[i]));
 
         grid.selModel.selectRecords(recordArray);
         initialTables = '*';
     }
+}
 
-    updateTableTitle();
+function templatesLoaded(store, records, options)
+{
+    // insert a null record to make clearing the templateComboBox easier.
+    // Copied from Store.js onLoad
+    var data = {
+        name: "[none]",
+        sourceSchemaName: "",
+        tables: [],
+        metadata: ""
+    };
+
+    var recordConstructor = Ext.data.Record.create(templateComboBox.store.reader.meta.fields);
+    var record = new recordConstructor(data, -1);
+
+    templateComboBox.store.insert(0, record);
 }
 
 function submit()
 {
-    if (grid.selModel.getCount() == tableStore.getCount())
+    var templateName = templateComboBox.getValue();
+    var templateRecord = templateName ? templateComboBox.store.getById(templateName) : undefined;
+    if (!templateRecord)
     {
-        tableText.setValue('*');
-    }
-    else
-    {
-        var value = '';
-        var sep = '';
-        grid.selModel.each(function(record) {
+        // if "[none]" is selected, clear the form value
+        templateComboBox.setValue(null);
+
+        if (grid.selModel.getCount() == tablesStore.getCount())
+        {
+            tableText.setValue('*');
+        }
+        else
+        {
+            var value = '';
+            var sep = '';
+            grid.selModel.each(function(record) {
                 value = value + sep + record.get('table');
                 sep = ',';
             });
-        tableText.setValue(value);
+            tableText.setValue(value);
+        }
+
+    }
+    else
+    {
+        sourceSchemaCombo.setValue(null);
+        sourceSchemaCombo.setDisabled(false);
+        metaDataTextArea.setValue(null);
+        metaDataTextArea.setDisabled(false);
+        tableText.setValue(null);
     }
 
     f.getForm().submit();
@@ -280,7 +450,7 @@ function updateTableTitle()
 
     if (sourceSchemaCombo.getValue() != '')
     {
-        if (selectedCount == tableStore.getCount())
+        if (selectedCount == tablesStore.getCount())
         {
             title = "All (" + selectedCount + ") tables";
         }

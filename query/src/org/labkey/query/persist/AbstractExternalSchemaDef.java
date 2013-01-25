@@ -156,6 +156,10 @@ public abstract class AbstractExternalSchemaDef extends Entity
         return QueryServiceImpl.get().getSchemaTemplate(c, _schemaTemplate);
     }
 
+    public abstract boolean isEditable();
+
+    public abstract boolean isIndexable();
+
     @Override
     public boolean equals(Object o)
     {

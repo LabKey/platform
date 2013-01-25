@@ -73,7 +73,6 @@
                 <ns:description>Name of the schema as referred to from within LabKey Server.</ns:description>
             </ns:column>
             <ns:column columnName="SourceSchemaName">
-                <ns:nullable>false</ns:nullable>
                 <ns:columnTitle>Source Schema Name</ns:columnTitle>
                 <ns:description>The name of the physical schema in the underlying database.</ns:description>
             </ns:column>

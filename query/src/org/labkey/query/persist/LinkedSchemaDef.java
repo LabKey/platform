@@ -35,6 +35,18 @@ public class LinkedSchemaDef extends AbstractExternalSchemaDef
         }
     }
 
+    @Override
+    public boolean isEditable()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isIndexable()
+    {
+        return false;
+    }
+
     // Source container id is an alias for data source.
     public String getSourceContainerId()
     {

@@ -80,11 +80,19 @@ else
         <%
     } %>
 
-    <table>
+    <table class='labkey-data-region labkey-show-borders'>
+        <tr>
+            <td class='labkey-column-header' style='min-width:80px;'>Name</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Data Source</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Source Database Schema</td>
+            <td class='labkey-column-header' colspan="<%=isAdmin ? 5 : 3%>">&nbsp;</td>
+        </tr>
     <%
 
+    int i = 0;
     for (ExternalSchemaDef def : defs)
     {
+        i++;
         ActionURL urlEdit = urls.urlUpdateExternalSchema(c, def);
         ActionURL urlView = urls.urlSchemaBrowser(c, def.getUserSchemaName());
         ActionURL urlReload = urlEdit.clone();
@@ -92,25 +100,27 @@ else
         ActionURL urlDelete = urls.urlDeleteExternalSchema(c, def);
 
     %>
-
-        <tr>
-            <td><%=h(def.getUserSchemaName())%></td><%
+        <tr class='<%=text(i % 2 == 0 ? "labkey-row" : "labkey-alternate-row")%>'>
+            <td><%=h(def.getUserSchemaName())%></td>
+            <td><%=h(def.getDataSource())%></td>
+            <td><%=h(def.getSourceSchemaName())%></td><%
                 if (null != DbScope.getDbScope(def.getDataSource()))
                 {
             %>
-            <td><labkey:link text="view schema" href="<%=h(urlView)%>" /></td>
-            <% if (isAdmin) {%><td><labkey:link text="edit definition" href="<%=h(urlEdit)%>" /></td><%}%>
-            <td><labkey:link text="reload" href="<%=h(urlReload)%>" /></td>
-            <% if (isAdmin) {%><td><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%><%
+            <td class="labkey-noborder"><labkey:link text="view schema" href="<%=h(urlView)%>" /></td>
+            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="edit" href="<%=h(urlEdit)%>" /></td><%}%>
+            <td class="labkey-noborder"><labkey:link text="reload" href="<%=h(urlReload)%>" /></td>
+            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
+            <td class="labkey-noborder">&nbsp;</td><%
                 }
                 else
                 {
             %>
-            <td>&nbsp;</td>
-            <% if (isAdmin) {%><td>&nbsp;</td><%}%>
-            <td>&nbsp;</td>
-            <% if (isAdmin) {%><td><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
-            <td><div class="labkey-error">Not available: can't connect to <%=h(def.getDataSource())%></div></td>
+            <td class="labkey-noborder">&nbsp;</td>
+            <% if (isAdmin) {%><td class="labkey-noborder">&nbsp;</td><%}%>
+            <td class="labkey-noborder">&nbsp;</td>
+            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
+            <td class="labkey-noborder"><div class="labkey-error">Not available: can't connect to <%=h(def.getDataSource())%></div></td>
             <%
                 }
             %>
@@ -155,21 +165,34 @@ else
         }
     }); %>
 
-        <table>
+    <table class='labkey-data-region labkey-show-borders'>
+        <tr>
+            <td class='labkey-column-header' style='min-width:80px;'>Name</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Schema Template</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Source Container</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Source LabKey Schema</td>
+            <td class='labkey-column-header' colspan="<%=isAdmin ? 5 : 3%>">&nbsp;</td>
+        </tr>
     <%
 
+    int i = 0;
     for (LinkedSchemaDef linkedSchema : linkedSchemas)
     {
+        i++;
         ActionURL urlView = urls.urlSchemaBrowser(c, linkedSchema.getUserSchemaName());
         ActionURL urlEdit = new ActionURL(QueryController.EditLinkedSchemaAction.class, c).addParameter("externalSchemaId", Integer.toString(linkedSchema.getExternalSchemaId()));
         ActionURL urlDelete = new ActionURL(QueryController.DeleteLinkedSchemaAction.class, c).addParameter("externalSchemaId", Integer.toString(linkedSchema.getExternalSchemaId()));
-    %>
 
-        <tr>
+        Container sourceContainer = linkedSchema.lookupSourceContainer();
+    %>
+        <tr class='<%=text(i % 2 == 0 ? "labkey-row" : "labkey-alternate-row")%>'>
             <td><%=h(linkedSchema.getUserSchemaName())%></td>
-            <td><labkey:link text="view schema" href="<%=h(urlView)%>" /></td>
-            <% if (isAdmin) {%><td><labkey:link text="edit definition" href="<%=h(urlEdit)%>" /></td><%}%>
-            <% if (isAdmin) {%><td><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
+            <td><%=h(linkedSchema.getSchemaTemplate())%></td>
+            <td><%=h(sourceContainer != null ? sourceContainer.getPath() : linkedSchema.getSourceContainerId())%></td>
+            <td><%=h(linkedSchema.getSourceSchemaName())%></td>
+            <td class="labkey-noborder"><labkey:link text="view schema" href="<%=h(urlView)%>" /></td>
+            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="edit" href="<%=h(urlEdit)%>" /></td><%}%>
+            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
         </tr><%
     } %>
     </table><%

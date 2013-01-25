@@ -91,9 +91,11 @@ import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.TableWriter;
 import org.labkey.query.TableXML;
@@ -3624,13 +3626,19 @@ public class QueryController extends SpringActionController
 
         public DataSourceInfo getInitialSource()
         {
+            Container sourceContainer = getInitialContainer();
+            return new DataSourceInfo(sourceContainer);
+        }
+
+        private @NotNull Container getInitialContainer()
+        {
             LinkedSchemaDef def = getSchemaDef();
             Container sourceContainer = def.lookupSourceContainer();
             if (sourceContainer == null)
                 sourceContainer = def.lookupContainer();
             if (sourceContainer == null)
                 sourceContainer = _c;
-            return new DataSourceInfo(sourceContainer);
+            return sourceContainer;
         }
 
         protected void initSources()
@@ -3647,7 +3655,10 @@ public class QueryController extends SpringActionController
             });
             sortedContainers.addAll(adminContainers);
 
-            for (Container c : adminContainers)
+            // Add initial container if it isn't in the project tree
+            sortedContainers.add(getInitialContainer());
+
+            for (Container c : sortedContainers)
             {
                 Collection<String> schemaNames = new LinkedList<String>();
                 //Collection<String> schemaNamesIncludingSystem = new LinkedList<String>();
@@ -3823,6 +3834,64 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    public static class SchemaTemplateForm
+    {
+        private String _name;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class SchemaTemplateAction extends ApiAction<SchemaTemplateForm>
+    {
+        @Override
+        public ApiResponse execute(SchemaTemplateForm form, BindException errors) throws Exception
+        {
+            String name = form.getName();
+            if (name == null)
+                throw new IllegalArgumentException("name required");
+
+            Container c = getContainer();
+            TemplateSchemaType template = QueryServiceImpl.get().getSchemaTemplate(c, name);
+            if (template == null)
+                throw new NotFoundException("template not found");
+
+            JSONObject templateJson = QueryServiceImpl.get().schemaTemplateJson(name, template);
+
+            return new ApiSimpleResponse("template", templateJson);
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class SchemaTemplatesAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            QueryServiceImpl svc = QueryServiceImpl.get();
+            Map<String, TemplateSchemaType> templates = svc.getSchemaTemplates(c);
+
+            JSONArray ret = new JSONArray();
+            for (String key : templates.keySet())
+            {
+                TemplateSchemaType template = templates.get(key);
+                JSONObject templateJson = svc.schemaTemplateJson(key, template);
+                ret.put(templateJson);
+            }
+
+            return new ApiSimpleResponse("templates", ret);
+        }
+    }
 
 
 
