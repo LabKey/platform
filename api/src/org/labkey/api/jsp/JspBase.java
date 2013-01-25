@@ -195,9 +195,16 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
 
     // Returns " checked" (if true) or "" (false)
-    public String checked(boolean checked)
+    public _HtmlString checked(boolean checked)
     {
-        return checked ? " checked" : "";
+        return new _HtmlString(checked ? " checked" : "");
+    }
+
+
+    // Returns " selected" (if true) or "" (false)
+    public _HtmlString selected(boolean selected)
+    {
+        return new _HtmlString(selected ? " selected" : "");
     }
 
 
