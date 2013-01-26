@@ -1248,6 +1248,7 @@ api/src/org/labkey/api/util/GUID.java -text
 api/src/org/labkey/api/util/GuidString.java -text
 api/src/org/labkey/api/util/HString.java -text
 api/src/org/labkey/api/util/HStringBuilder.java -text
+api/src/org/labkey/api/util/HTMLContentExtractor.java -text
 api/src/org/labkey/api/util/HeartBeat.java -text
 api/src/org/labkey/api/util/HelpTopic.java -text
 api/src/org/labkey/api/util/HideConfigurationDetails.java -text
