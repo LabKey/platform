@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -53,6 +54,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HTMLContentExtractor;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -87,7 +89,9 @@ import java.util.Set;
  */
 public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 {
+    private static final Logger LOG = Logger.getLogger(StudyImpl.class);
     private static final String DOMAIN_URI_PREFIX = "Study";
+
     public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX, true);
 
     private String _label;
@@ -813,7 +817,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
-    static CaseInsensitiveHashSet _skipProperties = new CaseInsensitiveHashSet();
+    private static final CaseInsensitiveHashSet _skipProperties = new CaseInsensitiveHashSet();
     static
     {
         _skipProperties.addAll("lsid","timepointtype","description","descriptionrenderertype","SubjectNounPlural","SubjectColumnName","container");
@@ -855,9 +859,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             ResultSetUtil.close(rs);
         }
 
-        // NOTE: we're mixing html and text here... Do we have Html->Text conversion?
-        appendKeyword(sb, getDescriptionHtml());
-        appendKeyword(sb, getContainer().getName());
+        appendKeyword(sb, getLabel());
 
         return sb.toString();
     }
@@ -877,7 +879,18 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
         appendKeyword(sb, getLabel());
         appendKeyword(sb, getInvestigator());
-        appendKeyword(sb, getDescription());
+
+        // Render and parse description
+        String descriptionHtml = getDescriptionHtml();
+
+        try
+        {
+            appendKeyword(sb, new HTMLContentExtractor.GenericHTMLExtractor(descriptionHtml).extract());
+        }
+        catch (IOException e)
+        {
+            LOG.error("Can't extract text from study description", e);
+        }
 
         for (DataSetDefinition dataset : getDataSets())
         {

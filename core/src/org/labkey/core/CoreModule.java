@@ -823,18 +823,21 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             else
                 type = "Folder";
 
-            String name = c.isWorkbook() ? c.getTitle() : c.getName();
+            String containerTitle = c.getTitle();
 
             String description = StringUtils.trimToEmpty(c.getDescription());
-            title = type + " -- " + name;
-            keywords = name + " " + description + " " + type;
-            body = type + " " + name + (c.isProject() ? "" : " in Project " + p.getName());
+            title = type + " -- " + containerTitle;
+            keywords = description + " " + type;
+            body = type + " " + containerTitle + (c.isProject() ? "" : " in Project " + p.getName());
             body += "\n" + description;
         }
+
+        String identifiers = c.getName();
 
         Map<String, Object> properties = new HashMap<String, Object>();
 
         assert (null != keywords);
+        properties.put(SearchService.PROPERTY.indentifiersMed.toString(), identifiers);
         properties.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
         properties.put(SearchService.PROPERTY.title.toString(), title);
         properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
