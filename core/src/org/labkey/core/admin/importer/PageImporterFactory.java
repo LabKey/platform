@@ -144,9 +144,9 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                         webPart.setPermanent(webpartXml.getPermanent());
                         webPart.setPermission(webpartXml.getPermission());
 
-                        if(webpartXml.getPermissionContainer() != null)
+                        if(webpartXml.getPermissionContainerPath() != null)
                         {
-                            Container permissionContainer = ContainerManager.getForId(webpartXml.getPermissionContainer());
+                            Container permissionContainer = ContainerManager.getForPath(webpartXml.getPermissionContainerPath());
                             if(permissionContainer != null)
                                 webPart.setPermissionContainer(permissionContainer);
                         }

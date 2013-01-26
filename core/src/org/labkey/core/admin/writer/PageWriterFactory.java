@@ -103,7 +103,7 @@ public class PageWriterFactory implements FolderWriterFactory
                 if(webPart.getPermission() != null)
                     webpartXml.setPermission(webPart.getPermission());
                 if(webPart.getPermissionContainer() != null)
-                    webpartXml.setPermissionContainer(webPart.getPermissionContainer().getId());
+                    webpartXml.setPermissionContainerPath(webPart.getPermissionContainer().getPath());
 
                 if (webPart.getPropertyMap().size() > 0)
                 {
