@@ -211,16 +211,14 @@ public class DataViewService
             o.put("icon", info.getIcon());
 
         ViewCategory vc = info.getCategory();
-        if (vc != null)
+        if (vc == null)
         {
-            o.put("category", vc.getLabel());
-            o.put("categoryDisplayOrder", vc.getDisplayOrder());
+            // create a default view category
+            vc = new ViewCategory();
+            vc.setLabel("Uncategorized");
+            vc.setDisplayOrder(DEFAULT_CATEGORY_DISPLAY_ORDER);
         }
-        else
-        {
-            o.put("category", "Uncategorized");
-            o.put("categoryDisplayOrder", DEFAULT_CATEGORY_DISPLAY_ORDER);
-        }
+        o.put("category", vc.toJSON(user));
 
         o.put("visible", info.isVisible());
         o.put("shared", info.isShared());
