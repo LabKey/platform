@@ -1073,13 +1073,12 @@ public class DbScope
 
 
     // Test that a transaction in one scope doesn't affect other scopes. Start a transaction in the labkeyScope
-    // and the SELECT 10 rows from a random table in a random schema in every other datasource.
+    // and then SELECT 10 rows from a random table in a random schema in every other datasource.
     public static class MultiScopeTransactionTestCase extends Assert
     {
         @Test
         public void test() throws SQLException
         {
-            DbScope labkeyScope = DbScope.getLabkeyScope();
             List<TableInfo> tablesToTest = new LinkedList<TableInfo>();
 
             for (DbScope scope : DbScope.getDbScopes())
@@ -1121,7 +1120,7 @@ public class DbScope
                     {
                         TableInfo table = schema.getTable(name);
 
-                        if (null == name)
+                        if (null == table)
                             _log.error("Table is null: " + schema.getName() + "." + name);
 
                         if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
@@ -1140,6 +1139,8 @@ public class DbScope
                         conn.close();
                 }
             }
+
+            DbScope labkeyScope = DbScope.getLabkeyScope();
 
             try
             {

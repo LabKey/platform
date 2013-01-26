@@ -388,14 +388,38 @@ public class DbSchema
 
     public static class TestCase extends Assert
     {
-        // Ask each module for the schemas to test, then compare XML vs. meta data
+        // Compare schema XML vs. meta data for all module schemas
         @Test
-        public void testKnownSchemas() throws Exception
+        public void testSchemaXML() throws Exception
         {
             Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
 
             for (DbSchema schema : schemas)
                 testSchemaXml(schema);
+        }
+
+
+        // Do a simple select from every table in every module schema. This ends up invoking validation code
+        // in Table that checks PKs and columns, further validating the schema XML file.
+        @Test
+        public void testTableSelect() throws Exception
+        {
+            Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
+
+            for (DbSchema schema : schemas)
+            {
+                for (String tableName : schema.getTableNames())
+                {
+                    TableInfo table = schema.getTable(tableName);
+
+                    if (table.getTableType() == DatabaseTableType.NOT_IN_DB)
+                        continue;
+
+                    TableSelector selector = new TableSelector(table);
+                    selector.setMaxRows(10);
+                    selector.getCollection(Map.class);
+                }
+            }
         }
 
 
