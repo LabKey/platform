@@ -35,8 +35,7 @@ Ext4.define('File.panel.FileProperties', {
     getItems: function(){
         var items = [];
         items.push({html: '<p>Define additional properties to be collected with each file:</p>'});
-        var radioGroup = {
-            xtype: 'radiogroup',
+        this.fileConfigRadioGroup = Ext4.create('Ext.form.RadioGroup',{
             columns: 1,
             margin: '0 0 0 25',
             vertical: true,
@@ -55,24 +54,25 @@ Ext4.define('File.panel.FileProperties', {
                 {
                     boxLabel: 'Use Default (none)',
                     name: 'fileConfig',
-                    inputValue: 'default',
+                    inputValue: 'useDefault',
                     width: 250,
                     checked: (this.fileConfig == 'useDefault' || this.fileConfig == null)
                 }, {
                     boxLabel: 'Use Same Settings as Parent',
-                    name: 'fileConfig', inputValue: 'parent',
+                    name: 'fileConfig',
+                    inputValue: 'useParent',
                     width: 250,
                     checked: this.fileConfig == 'useParent'
                 }, {
                     boxLabel: 'Use Custom File Properties',
                     name: 'fileConfig',
-                    inputValue: 'custom',
+                    inputValue: 'useCustom',
                     width: 250,
                     checked: this.fileConfig == 'useCustom'
                 }
             ]
-        };
-        items.push(radioGroup);
+        });
+        items.push(this.fileConfigRadioGroup);
 
         this.editPropertiesButton = Ext4.create('Ext.button.Button', {
             text: 'edit properties',
@@ -124,6 +124,10 @@ Ext4.define('File.panel.FileProperties', {
                 {text: 'Type', dataIndex: 'rangeURI', flex: 1}
             ]
         }
+    },
+
+    getFileConfig: function(){
+        return this.fileConfigRadioGroup.getValue().fileConfig;
     }
 
 });

@@ -65,16 +65,20 @@ Ext4.define('File.panel.Admin', {
     },
 
     getFilePropertiesPanel: function(){
-        return Ext4.create('File.panel.FileProperties', {
+        this.filePropertiesPanel = Ext4.create('File.panel.FileProperties', {
             border: false,
             padding: 10,
             fileConfig: this.pipelineFileProperties.fileConfig,
             additionalPropertiesType: this.additionalPropertiesType
         });
+
+        this.filePropertiesPanel.on('editfileproperties', this.onEditFileProperties, this);
+
+        return this.filePropertiesPanel;
     },
 
     getToolBarPanel: function(){
-        console.log(this.pipelineFileProperties.tbarActions)
+        console.log(this.pipelineFileProperties.tbarActions);
         return {
             title: 'Toolbar and Grid Settings',
             items: []
@@ -92,25 +96,19 @@ Ext4.define('File.panel.Admin', {
                 autoScroll:true
             };
 
-            var showUploadCheckBox = Ext4.create('Ext.form.field.Checkbox', {
+            this.showUploadCheckBox = Ext4.create('Ext.form.field.Checkbox', {
                 boxLabel: 'Show the file upload panel by default.',
                 width: '100%',
                 margin: '0 0 0 10',
                 checked: this.pipelineFileProperties.expandFileUpload,
-                listeners: {
-                    scope: this,
-                    change: function(checkbox, newValue){
-                        this.expandFileUpload = newValue;
-                    }
-                },
                 name: 'showUpload'
-            });
+            }); 
 
             this.generalSettingsPanel = Ext4.create('Ext.panel.Panel', {
                 title: 'General Settings',
                 border: false,
                 padding: 10,
-                items: [descriptionText, showUploadCheckBox]
+                items: [descriptionText, this.showUploadCheckBox]
             });
         }
 
@@ -121,14 +119,43 @@ Ext4.define('File.panel.Admin', {
         this.fireEvent('close');
     },
 
-    onSubmit: function(){
+    onSubmit: function(button, event, handler){
         var updateURL = LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath);
-        // TODO: Actually submit new settings.
+        var postData = {
+            expandFileUpload: this.showUploadCheckBox.getValue(),
+            fileConfig: this.filePropertiesPanel.getFileConfig()/*,
+            gridConfig: this.toolBarPanel.getGridConfig(),
+            tbarActions: this.toolBarPanel.getTbarConfig(),
+            actions: this.actionsPanel.getActionConfigs()*/
+        };
+
+        if(!handler){
+            handler = function(){
+                console.log("Save successful");
+                this.fireEvent('success');
+                this.fireEvent('close');
+            }
+        }
+
+        Ext4.Ajax.request({
+            url: updateURL,
+            method: 'POST',
+            scope: this,
+            success: handler,
+            failure: function(){
+                console.log('Failure saving files webpart settings.');
+                this.fireEvent('failure');
+            },
+            jsonData: postData
+        });
     },
 
     onEditFileProperties: function(){
         // TODO: Save new settings and navigate to ecit properties page.
+        var handler = function(){
+            window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', this.containerPath, {'returnURL':window.location});
+        };
         
+        this.onSubmit(null, null, handler);
     }
-
 });
