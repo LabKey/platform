@@ -860,6 +860,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
 
         appendKeyword(sb, getLabel());
+        appendKeyword(sb, getInvestigator());
 
         return sb.toString();
     }
