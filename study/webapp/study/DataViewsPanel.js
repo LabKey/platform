@@ -4,44 +4,172 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/** EXPERIMENTAL : Extend FilterBy to Ext.data.TreeStore **/
-Ext4.override(Ext4.data.TreeStore, {
+// http://www.sencha.com/forum/showthread.php?184010-TreeStore-filtering
+Ext4.define('TreeFilter', {
+    extend: 'Ext.AbstractPlugin',
+    alias: 'plugin.jsltreefilter',
 
-    // overridden
-    filterBy: function(fn, scope) {
+    collapseOnClear: true,       // collapse all nodes when clearing/resetting the filter
+    allowParentFolders: false,   // allow nodes not designated as 'leaf' (and their child items) to  be matched by the filter
+
+    init: function (tree) {
         var me = this;
-        return me.filterLeavesBy(fn, scope);
+        me.tree = tree;
+
+        tree.filter = Ext4.Function.bind(me.filter, me);
+        tree.clearFilter = Ext4.Function.bind(me.clearFilter, me);
     },
 
-    filterLeavesBy: function(fn, scope) {
+    filter: function (value, property, re) {
         var me = this,
-            leaves = Ext4.Array.filter(me.tree.flatten(), function(node) { return node.isLeaf(); });
+            tree = me.tree,
+            matches = [],                        // array of nodes matching the search criteria
+            root = tree.getRootNode(),           // root node of the tree
+            _property = property || 'text',      // property is optional - will be set to the 'text' propert of the  treeStore record by default
+            _re = re || new RegExp(value, "ig"), // the regExp could be modified to allow for case-sensitive, starts  with, etc.
+            visibleNodes = [],                   // array of nodes matching the search criteria + each parent non-leaf  node up to root
+            viewNode;
 
-        me.snapshot = me.snapshot || me.getRootNode().copy(null, true);
+        if (Ext4.isEmpty(value)) {               // if the search field is empty
+            me.clearFilter();
+            return;
+        }
 
-        return Ext4.Array.filter(leaves, function(n) {
-            var result = fn.call(scope, n);
-            if (!result) {
-                n.remove();
+        tree.expandAll();                       // expand all nodes for the the following iterative routines
+
+        // iterate over all nodes in the tree in order to evalute them against the search criteria
+        root.cascadeBy(function (node) {
+            if (node.get(_property).match(_re)) {  // if the node matches the search criteria and is a leaf (could be  modified to searh non-leaf nodes)
+                matches.push(node);                // add the node to the matches array
             }
-            return result;
-        }, scope);
+        });
+
+        if (me.allowParentFolders === false) {     // if me.allowParentFolders is false (default) then remove any  non-leaf nodes from the regex match
+            Ext4.each(matches, function (match) {
+                if (match && !match.isLeaf()) { Ext4.Array.remove(matches, match); }
+            });
+        }
+
+        Ext4.each(matches, function (item, i, arr) {   // loop through all matching leaf nodes
+            root.cascadeBy(function (node) {           // find each parent node containing the node from the matches array
+                if (node.contains(item)) {
+                    visibleNodes.push(node);           // if it's an ancestor of the evaluated node add it to the visibleNodes  array
+                }
+            });
+            if (me.allowParentFolders === true &&  !item.isLeaf()) { // if me.allowParentFolders is true and the item is  a non-leaf item
+                item.cascadeBy(function (node) {                     // iterate over its children and set them as visible
+                    visibleNodes.push(node)
+                });
+            }
+            visibleNodes.push(item);   // also add the evaluated node itself to the visibleNodes array
+        });
+
+        root.cascadeBy(function (node) {                            // finally loop to hide/show each node
+            viewNode = Ext.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
+            if (viewNode) {                                         // the first one is undefined ? escape it with a conditional
+                viewNode.setVisibilityMode(Ext4.Element.DISPLAY);   // set the visibility mode of the dom node to display (vs offsets)
+                viewNode.setVisible(Ext4.Array.contains(visibleNodes, node));
+            }
+        });
     },
 
-    clearFilter : function() {
-        var me = this, i, tmp = [];
+    clearFilter: function () {
+        var me = this,
+            tree = this.tree,
+            root = tree.getRootNode();
 
-        if (me.snapshot) {
-
-            for (i=0; i < me.snapshot.childNodes.length; i++) {
-                tmp.push(me.snapshot.childNodes[i].copy(null, true));
+        if (me.collapseOnClear) { tree.collapseAll(); }             // collapse the tree nodes
+        root.cascadeBy(function (node) {                            // final loop to hide/show each node
+            var viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
+            if (viewNode) {                                          // the first one is undefined ? escape it with a conditional and show  all nodes
+                viewNode.show();
             }
+        });
+    }
+});
 
-            me.getRootNode().removeAll();
-            me.getRootNode().appendChild(tmp);
-            delete me.snapshot;
-        }
-        return me;
+Ext4.define('Ext.tree.DataViewsColumn', {
+    extend: 'Ext.grid.column.Column',
+    alias: 'widget.dataviewscolumn',
+
+    tdCls: Ext4.baseCSSPrefix + 'grid-cell-treecolumn',
+
+    initComponent: function() {
+        var origRenderer = this.renderer || this.defaultRenderer,
+            origScope    = this.scope || window;
+
+        this.renderer = function(value, metaData, record, rowIdx, colIdx, store, view) {
+            var buf   = [],
+                format = Ext4.String.format,
+                depth = record.getDepth(),
+                treePrefix  = Ext4.baseCSSPrefix + 'tree-',
+                elbowPrefix = treePrefix + 'elbow-',
+                expanderCls = treePrefix + 'expander',
+                imgText     = '<img src="{1}" class="{0}" />',
+                checkboxText= '<input type="button" role="checkbox" class="{0}" {1} />',
+                formattedValue = origRenderer.apply(origScope, arguments),
+                href = record.get('href'),
+                target = record.get('hrefTarget'),
+                cls = record.get('cls');
+
+            while (record) {
+                if (!record.isRoot() || (record.isRoot() && view.rootVisible)) {
+                    if (record.getDepth() === depth) {
+                        buf.unshift(format(imgText,
+                            treePrefix + 'icon ' +
+                            treePrefix + 'icon' + (record.get('icon') ? '-inline ' : (record.isLeaf() ? '-leaf ' : '-parent ')) +
+                            (record.get('iconCls') || ''),
+                            record.get('icon') || Ext4.BLANK_IMAGE_URL
+                        ));
+                        if (record.get('checked') !== null) {
+                            buf.unshift(format(
+                                checkboxText,
+                                (treePrefix + 'checkbox') + (record.get('checked') ? ' ' + treePrefix + 'checkbox-checked' : ''),
+                                record.get('checked') ? 'aria-checked="true"' : ''
+                            ));
+                            if (record.get('checked')) {
+                                metaData.tdCls += (' ' + treePrefix + 'checked');
+                            }
+                        }
+                        if (record.isLast()) {
+                            if (record.isExpandable()) {
+                                buf.unshift(format(imgText, (elbowPrefix + 'end-plus ' + expanderCls), Ext4.BLANK_IMAGE_URL));
+                            } else {
+                                buf.unshift(format(imgText, (elbowPrefix + 'end'), Ext4.BLANK_IMAGE_URL));
+                            }
+
+                        } else {
+                            if (record.isExpandable()) {
+                                buf.unshift(format(imgText, (elbowPrefix + 'plus ' + expanderCls), Ext4.BLANK_IMAGE_URL));
+                            } else {
+                                buf.unshift(format(imgText, (treePrefix + 'elbow'), Ext4.BLANK_IMAGE_URL));
+                            }
+                        }
+                    } else {
+                        if (record.isLast() || record.getDepth() === 0) {
+                            buf.unshift(format(imgText, (elbowPrefix + 'empty'), Ext4.BLANK_IMAGE_URL));
+                        } else if (record.getDepth() !== 0) {
+                            buf.unshift(format(imgText, (elbowPrefix + 'line'), Ext4.BLANK_IMAGE_URL));
+                        }
+                    }
+                }
+                record = record.parentNode;
+            }
+            if (href) {
+                buf.push('<a href="', href, '" target="', target, '">', formattedValue, '</a>');
+            } else {
+                buf.push('<span>',formattedValue,'</span>');
+            }
+            if (cls) {
+                metaData.tdCls += ' ' + cls;
+            }
+            return buf.join('');
+        };
+        this.callParent(arguments);
+    },
+
+    defaultRenderer: function(value) {
+        return value;
     }
 });
 
@@ -82,7 +210,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var fields = [
             {name : 'id'},
             {name : 'category'},
-            {name : 'categoryDisplayOrder', type : 'int'},
             {name : 'created',              type : 'date'},
             {name : 'createdBy'},
             {name : 'createdByUserId',      type : 'int'},
@@ -120,9 +247,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'detailsUrl'},
             {name : 'thumbnail'},
             {name : 'thumbnailType'},
+            {name : 'href', mapping : 'detailsUrl'},
             {name : 'allowCustomThumbnail'},
             {name : 'status'}
         ];
+
+        if (!this.asTree) {
+            fields.push({name : 'categoryDisplayOrder', mapping : 'category.displayOrder', type : 'int'});
+            fields.push({name : 'categorylabel',        mapping : 'category.label'});
+        }
 
         // define Models
         Ext4.define('Dataset.Browser.View', {
@@ -235,13 +368,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         };
 
+        if (this.asTree) {
+            config.sortRoot = 'displayOrder';
+        }
+
         this.store = Ext4.create(this.asTree ? 'Ext.data.TreeStore' : 'Ext.data.Store', config);
 
         if (useGrouping && !this.asTree) {
 
             // 15764
             this.store.groupers.add({
-                property : 'category',
+                property : 'categorylabel',
                 dataProperty : 'categoryDisplayOrder',
                 sorterFn : function(a, b) {
                     var me = this,
@@ -360,7 +497,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
             this.initGrid(true, json.visibleColumns);
         };
-        
+
         this.centerPanel.getEl().mask('Initializing...');
         this.getConfiguration(handler, this);
     },
@@ -372,11 +509,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var handler = function(json){
             this.centerPanel.getEl().unmask();
-            this.gridPanel.on('reconfigure', function() {
-                if (this._height)
-                    this.setHeight(this._height);
-            }, this, {single: true});
-            this.gridPanel.reconfigure(this.gridPanel.getStore(), this.initGridColumns(json.visibleColumns));
+            if (!this.asTree) {
+                this.gridPanel.on('reconfigure', function() {
+                    if (this._height)
+                        this.setHeight(this._height);
+                }, this, {single: true});
+                this.gridPanel.reconfigure(this.gridPanel.getStore(), this.initGridColumns(json.visibleColumns));
+            }
+            else {
+                this._height = parseInt(json.webpart.height);
+                this.setHeight(this._height);
+            }
             this.store.load();
         };
 
@@ -533,6 +676,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
+        var plugins = [];
+        if (this.asTree) {
+            plugins.push(Ext4.create('TreeFilter', { collapseOnClear : false }));
+        }
+
         this.gridPanel = Ext4.create(this.asTree ? 'Ext.tree.Panel' : 'Ext.grid.Panel', {
             id       : 'data-browser-grid-' + this.webpartId,
             store    : this.initializeViewStore(useGrouping),
@@ -576,6 +724,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
             /* Tree Configurations */
             rootVisible : false,
+            plugins : plugins,
 
             scope     : this
         });
@@ -614,7 +763,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             width    : 40,
             sortable : false,
             menuDisabled : true,
-            renderer : function(view, meta, rec, idx, colIdx, store) {
+            renderer : function(view, meta, rec) {
                 if (!this._inCustomMode()) {
                     meta.style = 'display: none;';  // what a nightmare
                 }
@@ -625,10 +774,21 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
                 return '<span height="16px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
             },
+            listeners : {
+                beforehide : function(c) {
+                    if (this.asTree)
+                        this.gridPanel.getView().refresh();
+                },
+                beforeshow : function(c) {
+                    if (this.asTree)
+                        this.gridPanel.getView().refresh();
+                },
+                scope : this
+            },
             hidden   : true,
             scope    : this
         },{
-            xtype    : this.asTree ? 'treecolumn' : 'templatecolumn',
+            xtype    : this.asTree ? 'dataviewscolumn' : 'templatecolumn',
             text     : 'Name',
             flex     : 1,
             sortable : true,
@@ -642,7 +802,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             text     : 'Category',
             flex     : 1,
             sortable : true,
-            dataIndex: 'category',
+            dataIndex: 'categorylabel',
             renderer : Ext4.util.Format.htmlEncode,
             hidden   : true
         });
@@ -826,7 +986,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return customPanel;
     },
 
-    onViewLoad : function(s, recs, success, operation, ops) {
+    onViewLoad : function(s, recs) {
         if (this.gridPanel)
             this.gridPanel.setLoading(false);
 
@@ -858,64 +1018,62 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
      */
     hiddenFilter : function() {
 
-        this.store.clearFilter();
-        var _custom = this._inCustomMode();
-        this.store.sort([
-            {
-                property : 'name',
-                direction: 'ASC'
-            }
-        ]);
         if (!this.asTree) {
+
+            this.store.clearFilter();
+            var _custom = this._inCustomMode();
+
+            this.store.sort([
+                {
+                    property : 'name',
+                    direction: 'ASC'
+                }
+            ]);
+
             this.store.filterBy(function(rec, id){
 
-            var answer = true;
-            if (rec.data && this.searchVal && this.searchVal != "")
-            {
-                var t = new RegExp(Ext4.escapeRe(this.searchVal), 'i');
-                var s = '';
-                if (rec.data.name)
-                    s += rec.data.name;
-                if (rec.data.category)
-                    s += rec.data.category;
-                if (rec.data.type)
-                    s += rec.data.type;
-                if (rec.data.modified)
-                    s += rec.data.modified;
-                if (rec.data.authorDisplayName)
-                    s += rec.data.authorDisplayName;
-                if (rec.data.status)
-                    s += rec.data.status;
-                answer = t.test(s);
-            }
+                var answer = true;
+                if (rec.data && this.searchVal && this.searchVal != "")
+                {
+                    var t = new RegExp(Ext4.escapeRe(this.searchVal), 'i');
+                    var s = '';
+                    if (rec.data.name)
+                        s += rec.data.name;
+                    if (rec.data.categorylabel)
+                        s += rec.data.categorylabel;
+                    if (rec.data.type)
+                        s += rec.data.type;
+                    if (rec.data.modified)
+                        s += rec.data.modified;
+                    if (rec.data.authorDisplayName)
+                        s += rec.data.authorDisplayName;
+                    if (rec.data.status)
+                        s += rec.data.status;
+                    answer = t.test(s);
+                }
 
-            // the show mine checkbox will match if the current user is either the author or the creator
-            if (rec.data && answer && this.searchMine)
-            {
-                if ((rec.data.authorUserId != LABKEY.user.id) && (rec.data.createdByUserId != LABKEY.user.id))
+                // the show mine checkbox will match if the current user is either the author or the creator
+                if (rec.data && answer && this.searchMine)
+                {
+                    if ((rec.data.authorUserId != LABKEY.user.id) && (rec.data.createdByUserId != LABKEY.user.id))
+                        return false;
+                }
+
+                // custom mode will show hidden
+                if (_custom)
+                    return answer;
+
+                // otherwise never show hidden records
+                if (!rec.data.visible)
                     return false;
-            }
 
-            // custom mode will show hidden
-            if (_custom)
                 return answer;
-
-            // otherwise never show hidden records
-            if (!rec.data.visible)
-                return false;
-
-            return answer;
-        }, this);
+            }, this);
         }
         else {
-            this.store.clearFilter();
+            this.gridPanel.clearFilter();
             if (this.searchVal && !this.searchVal == "") {
-                this.store.filterBy(function(node) {
-                    if (!(node.data.name.indexOf(this.searchVal) > -1)) {
-                        return false;
-                    }
-                    return true;
-                }, this);
+                this.gridPanel.filter(this.searchVal, 'name');
             }
         }
     },
@@ -1106,7 +1264,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 text     : 'Save',
                 formBind : true,
                 handler  : function() {
-                    var form = formPanel.getForm(); // this.up('form')
+                    var form = formPanel.getForm();
                     if (form.isValid())
                     {
                         this.north.getEl().mask('Saving...');
@@ -1207,8 +1365,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     if (form.isValid())
                     {
                         editWindow.getEl().mask("Saving...");
+                        if (!form.getValues().category) {
+                            // In order to clear the category
+                            form.setValues({category: 0});
+                        }
                         form.submit({
-                            url : LABKEY.ActionURL.buildURL('study', 'editView'),
+                            url : LABKEY.ActionURL.buildURL('study', 'editView.api'),
                             method : 'POST',
                             success : function(){
                                 this.onEditSave();
@@ -1261,6 +1423,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var store = this.initializeCategoriesStore();
         var winID = Ext4.id();
         var subwinID = Ext4.id();
+
+        // Z-Index Manager
+        var zix = new Ext4.ZIndexManager(this);
 
         var grid = Ext4.create('Ext.grid.Panel', {
             store    : store,
@@ -1344,7 +1509,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         }
                         else {
                             var gid = Ext4.id();
-                            Ext4.create('Ext.Window', {
+                            var win = Ext4.create('Ext.Window', {
                                 id : subwinID,
                                 width : 250,
                                 height : 300,
@@ -1384,6 +1549,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                     }
                                 }]
                             });
+                            zix.register(win);
                         }
                     }
                 },
@@ -1434,11 +1600,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         sw.close();
                     }
                 },
+
                 scope : this
             },
             scope     : this
         });
 
+        zix.register(categoryOrderWindow);
         categoryOrderWindow.show();
     },
 

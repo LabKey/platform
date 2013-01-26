@@ -27,7 +27,9 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 {name : 'label'                      },
                 {name : 'modfied',      type : 'date'},
                 {name : 'modifiedBy'                 },
-                {name : 'rowid',        type : 'int' }
+                {name : 'rowid',        type : 'int' },
+                {name : 'subCategories' },
+                {name : 'parent',       type : 'int' }
             ]
         });
 
@@ -346,7 +348,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             {name : 'description',  mapping : 'dataset.description'},
             {name : 'entityId',     mapping : 'dataset.entityId'},
             {name : 'modified',     mapping : 'dataset.modified'},
-            {name : 'refreshDate',  mapping : 'dataset.refreshDate',type : 'string'},
+            {name : 'refreshDate',  mapping : 'dataset.refreshDate',type : 'date'},
             {name : 'visible',      mapping : 'dataset.visible',    type : 'boolean'}
         ];
 
@@ -1134,6 +1136,10 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                     var form = btn.up('form').getForm();
                     if (form.isValid())
                     {
+                        if (!form.getValues().category) {
+                            // In order to clear the category
+                            form.setValues({category: 0});
+                        }
                         Ext4.Ajax.request({
                             url     : LABKEY.ActionURL.buildURL('study', 'editView.api'),
                             method  : 'POST',

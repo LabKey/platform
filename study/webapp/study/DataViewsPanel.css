@@ -56,8 +56,12 @@
 }
 
 .dvc .dvcategory div.x4-grid-cell-inner {
-    font: bold 13px 'Verdana, Arial, Helvetica, sans serif';
+    font: bold 11px Verdana, Arial, Helvetica, sans serif;
     border-bottom: 2px solid #154B76;
+}
+
+.dvc .dvcategory div.x4-grid-cell-inner span {
+    vertical-align: -3px;
 }
 
 .dvc .x4-grid-tree-node-leaf td {

@@ -161,6 +161,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
 
         if (this.visibleFields['category']) {
 
+            console.log(this.data);
             formItems.push({
                 xtype       : 'combo',
                 fieldLabel  : 'Category',
@@ -175,7 +176,20 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 valueField     : 'rowid',
                 emptyText      : 'Uncategorized',
                 listeners      : {
-                    render : {fn : function(combo){combo.setRawValue(this.data.category);}, scope : this}
+                    render : function(combo){
+
+                        // The record must be set from the store in order to save correctly
+                        combo.getStore().on('load', function(s) {
+                            if (this.data && this.data.category) {
+                                var rec = s.findExact('rowid', this.data.category.rowid);
+                                if (rec >= 0) {
+                                    combo.setValue(s.getAt(rec));
+                                }
+                            }
+                        }, this, {single: true});
+
+                    },
+                    scope : this
                 },
                 tpl : new Ext4.XTemplate(
                     '<ul><tpl for=".">',
