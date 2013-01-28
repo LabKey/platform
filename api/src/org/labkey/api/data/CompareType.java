@@ -787,6 +787,19 @@ public enum CompareType
             sb.append(_comparison.getSql());
         }
 
+        protected boolean isNull(Object value)
+        {
+            if (value == null)
+            {
+                return true;
+            }
+            if (value instanceof Parameter.TypedValue)
+            {
+                value = ((Parameter.TypedValue)value)._value;
+            }
+            return value == null || (value instanceof String && ((String)value).length() == 0);
+        }
+
         protected void appendColumnName(StringBuilder sb, ColumnNameFormatter formatter)
         {
             sb.append(formatter.format(_fieldKey));
@@ -1302,7 +1315,7 @@ public enum CompareType
             if (isUrlClause())
             {
                 Object value = convertParamValue(colInfo, getParamVals()[0]);
-                if (null == value || (value instanceof String && ((String)value).length() == 0))
+                if (isNull(value))
                 {
                     // Flip to treat this as an IS NULL comparison request
                     return ISBLANK.createFilterClause(_fieldKey, null).toSQLFragment(columnMap, dialect);
@@ -1326,7 +1339,7 @@ public enum CompareType
             ColumnInfo colInfo = columnMap.get(_fieldKey);
             assert getParamVals().length == 1;
             Object convertedValue = convertParamValue(colInfo, getParamVals()[0]);
-            if (isUrlClause() && convertedValue == null || (convertedValue instanceof Parameter.TypedValue && ((Parameter.TypedValue)convertedValue)._value == null))
+            if (isUrlClause() && isNull(convertedValue))
             {
                 // Flip to treat this as an IS NOT NULL comparison request
                 return NONBLANK.createFilterClause(_fieldKey, null).toSQLFragment(columnMap, dialect);

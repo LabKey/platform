@@ -378,7 +378,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public String getDefaultHeaderStyle()
     {
-        return "text-align:" + (getTextAlign() != null ? getTextAlign() : "left") + ";";
+        return "";
     }
 
     public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException, SQLException
