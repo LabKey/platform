@@ -290,7 +290,10 @@ public class AssayManager implements AssayService.Interface
             Container container = iter.next();
             boolean hasPermission = container.hasPermission(user, InsertPermission.class);
             boolean hasPipeline = PipelineService.get().hasValidPipelineRoot(container);
-            if (!hasPermission || !hasPipeline)
+            // Issue 16948: Don't show peer or parent containers in the drop down. Users should navigate to them directly
+            // if they want to upload there
+            boolean isCurrentOrDescendant = container.equals(currentContainer) || container.isDescendant(currentContainer);
+            if (!hasPermission || !hasPipeline || !isCurrentOrDescendant)
             {
                 iter.remove();
             }

@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.core.admin.AdminController.ResetFaviconAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetLogoAction" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
+<%@ page import="org.labkey.core.CoreController" %>
+<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -52,7 +54,7 @@
     <td>
         <% if (null != bean.customLogo)
         { %>
-            Currently using a custom logo. <%=textLink("reset logo to default", ResetLogoAction.class)%>
+            Currently using a custom logo. <%=textLink("view logo", TemplateResourceHandler.LOGO.getURL(c).toString()) %> <%=textLink("reset logo to default", ResetLogoAction.class)%>
         <% } else { %>
             Currently using the default logo.
         <% } %>
@@ -68,7 +70,7 @@
     <td>
         <% if (null != bean.customFavIcon)
         { %>
-            Currently using a custom favorite icon. <%=textLink("reset favorite icon to default", ResetFaviconAction.class)%>
+            Currently using a custom favorite icon. <%=textLink("view icon", TemplateResourceHandler.FAVICON.getURL(c).toString()) %> <%=textLink("reset favorite icon to default", ResetFaviconAction.class)%>
         <% } else { %>
             Currently using the default favorite icon.
         <% } %>
@@ -84,7 +86,7 @@
     <td>
         <% if (null != bean.customStylesheet)
         { %>
-            Currently using a custom stylesheet. <%=textLink("delete custom stylesheet", DeleteCustomStylesheetAction.class)%>
+            Currently using a custom stylesheet. <%=textLink("view CSS", CoreController.CustomStylesheetAction.class) %> <%=textLink("delete custom stylesheet", DeleteCustomStylesheetAction.class)%>
         <% } else { %>
             No custom stylesheet.
         <% } %>
