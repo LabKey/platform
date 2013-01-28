@@ -111,6 +111,9 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueManager.CustomColumn;
+import org.labkey.issue.model.IssueManager.EntryTypeNames;
+import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
 import org.labkey.issue.model.KeywordManager;
 import org.labkey.issue.model.KeywordManager.Keyword;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -246,7 +249,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private IssueManager.CustomColumnConfiguration getCustomColumnConfiguration() throws SQLException, ServletException
+    private CustomColumnConfiguration getCustomColumnConfiguration()
     {
         return IssueManager.getCustomColumnConfiguration(getContainer());
     }
@@ -291,7 +294,7 @@ public class IssuesController extends SpringActionController
 
         public ModelAndView getView(ListForm form, BindException errors) throws Exception
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
 
             // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
             // reference Email, which is no longer displayed.
@@ -311,7 +314,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             return root.addChild(names.pluralName.getSource() + " List", getURL());
         }
 
@@ -369,7 +372,7 @@ public class IssuesController extends SpringActionController
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
 
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             if (null == _issue)
             {
                 throw new NotFoundException("Unable to find " + names.singularName.getSource() + " " + form.getIssueId());
@@ -455,7 +458,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             return new ListAction(getViewContext()).appendNavTrail(root).addChild(names.singularName.getSource() + " Details");
         }
     }
@@ -506,7 +509,7 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage(getContainer(), getUser());
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
 
-            IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
+            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
             page.setAction(InsertAction.class);
             page.setIssue(_issue);
@@ -604,7 +607,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName.getSource());
         }
     }
@@ -619,13 +622,13 @@ public class IssuesController extends SpringActionController
         ColumnType.MILESTONE.setDefaultValue(issue, defaults);
         ColumnType.PRIORITY.setDefaultValue(issue, defaults);
 
-        IssueManager.CustomColumnConfiguration config = IssueManager.getCustomColumnConfiguration(getContainer());
+        CustomColumnConfiguration config = getCustomColumnConfiguration();
 
         // For each of the string configurable columns,
         // only set the default if the column is currently configured as a pick list
         for (ColumnType stringColumn : ColumnType.getCustomStringColumns())
         {
-            if (config.getPickListColumns().contains(stringColumn.getColumnName()))
+            if (config.hasPickList(stringColumn.getColumnName()))
             {
                 stringColumn.setDefaultValue(issue, defaults);
             }
@@ -834,7 +837,7 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<IssuePage>("/org/labkey/issue/updateView.jsp", page);
 
-            IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
+            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
             page.setAction(UpdateAction.class);
             page.setIssue(_issue);
@@ -856,7 +859,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private Set<String> getEditableFields(Class<? extends Controller> action, IssueManager.CustomColumnConfiguration ccc)
+    private Set<String> getEditableFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
     {
         final Set<String> editable = new HashSet<String>(20);
 
@@ -870,12 +873,12 @@ public class IssuesController extends SpringActionController
         editable.add("attachments");
 
         // Add all the enabled custom fields
-        for (String columnName : ccc.getColumnHCaptions().keySet())
+        for (CustomColumn cc : ccc.getCustomColumns())
         {
-            ColumnType type = ColumnType.forName(columnName);
+            ColumnType type = ColumnType.forName(cc.getName());
 
             if (null != type && type.isCustom())
-                editable.add(columnName);
+                editable.add(cc.getName());
         }
 
         editable.add("notifyList");
@@ -927,7 +930,7 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
 
-            IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
+            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
             page.setAction(ResolveAction.class);
             page.setIssue(_issue);
@@ -943,7 +946,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Resolve " + names.singularName.getSource());
         }
     }
@@ -970,7 +973,7 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
 
-            IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
+            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
             page.setAction(CloseAction.class);
             page.setIssue(_issue);
@@ -986,7 +989,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Close " + names.singularName.getSource());
         }
     }
@@ -1015,7 +1018,7 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
 
-            IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
+            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
             page.setAction(ReopenAction.class);
             page.setIssue(_issue);
@@ -1032,28 +1035,24 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName.getSource());
         }
     }
 
-    private void validateStringFields (IssuesForm form, Errors errors)
+    private void validateStringFields(IssuesForm form, Errors errors)
     {
         final Map<String, String> fields = form.getStrings();
-        final IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
-        Map<String, HString> columnCaptions = ccc.getColumnHCaptions();
+        final CustomColumnConfiguration ccc = getCustomColumnConfiguration();
         String lengthError = " cannot be longer than " + MAX_STRING_FIELD_LENGTH + " characters.";
 
-        if (fields.containsKey("string1") && fields.get("string1").length() > MAX_STRING_FIELD_LENGTH)
-            errors.reject(ERROR_MSG, columnCaptions.get("string1").toString() + lengthError);
-        if (fields.containsKey("string2") && fields.get("string2").length() > MAX_STRING_FIELD_LENGTH)
-            errors.reject(ERROR_MSG, columnCaptions.get("string2").toString() + lengthError);
-        if (fields.containsKey("string3") && fields.get("string3").length() > MAX_STRING_FIELD_LENGTH)
-            errors.reject(ERROR_MSG, columnCaptions.get("string3").toString() + lengthError);
-        if (fields.containsKey("string4") && fields.get("string4").length() > MAX_STRING_FIELD_LENGTH)
-            errors.reject(ERROR_MSG, columnCaptions.get("string4").toString() + lengthError);
-        if (fields.containsKey("string5") && fields.get("string5").length() > MAX_STRING_FIELD_LENGTH)
-            errors.reject(ERROR_MSG, columnCaptions.get("string5").toString() + lengthError);
+        for (int i = 1; i <= 5; i++)
+        {
+            String name = "string" + i;
+
+            if (fields.containsKey(name) && fields.get(name).length() > MAX_STRING_FIELD_LENGTH)
+                errors.reject(ERROR_MSG, ccc.getCaption(name) + lengthError);
+        }
     }
     
     private void validateRequiredFields(IssuesForm form, Errors errors)
@@ -1116,16 +1115,20 @@ public class IssuesController extends SpringActionController
             {
                 if (StringUtils.isEmpty(value))
                 {
-                    final IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
+                    final CustomColumnConfiguration ccc = getCustomColumnConfiguration();
                     String name = null;
-                    if (ccc.getColumnHCaptions().containsKey(columnName))
-                        name = ccc.getColumnHCaptions().get(columnName).getSource();
+
+                    if (ccc.shouldDisplay(columnName))
+                    {
+                        name = ccc.getCaption(columnName);
+                    }
                     else
                     {
                         ColumnInfo column = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
                         if (column != null)
                             name = column.getName();
                     }
+
                     String display = name == null ? columnName : name;
                     errors.rejectValue(columnName, "NullError", new Object[] {display}, display + " is required.");
                 }
@@ -1355,7 +1358,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             return (new ListAction(getViewContext())).appendNavTrail(root).addChild(names.pluralName.getSource() + " Admin Page", getUrl());
         }
 
@@ -1578,7 +1581,7 @@ public class IssuesController extends SpringActionController
         {
             checkPickLists(form, errors);
             
-            IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext().getExtendedProperties());
+            CustomColumnConfiguration ccc = new CustomColumnConfiguration(getViewContext());
             String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution"};
             Map<String, String> captions = ccc.getColumnCaptions(); //All of the custom captions
             for (String column : defaultCols)
@@ -1645,8 +1648,9 @@ public class IssuesController extends SpringActionController
             {
                 newRequiredFields.add(required.toLowerCase());
             }
-            Set<String> newPickLists = new IssueManager.CustomColumnConfiguration(getViewContext().getExtendedProperties()).getPickListColumns();
-            Set<String> oldPickLists = IssueManager.getCustomColumnConfiguration(getContainer()).getPickListColumns();
+
+            CustomColumnConfiguration newColumnConfiguration = new CustomColumnConfiguration(getViewContext());
+            CustomColumnConfiguration oldColumnConfiguration = getCustomColumnConfiguration();
 
             for (HString required : form.getRequiredFields())
             {
@@ -1661,7 +1665,7 @@ public class IssuesController extends SpringActionController
                 {
                     String name = type.getColumnName();
 
-                    if (newPickLists.contains(name) && !oldPickLists.contains(name))
+                    if (newColumnConfiguration.hasPickList(name) && !oldColumnConfiguration.hasPickList(name))
                         newRequiredFields.remove(new HString(name));
                 }
             }
@@ -1671,7 +1675,7 @@ public class IssuesController extends SpringActionController
 
         public boolean handlePost(ConfigureIssuesForm form, BindException errors)
         {
-            IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
+            EntryTypeNames names = new EntryTypeNames();
 
             names.singularName = form.getEntrySingularName();
             names.pluralName = form.getEntryPluralName();
@@ -1680,8 +1684,8 @@ public class IssuesController extends SpringActionController
             IssueManager.saveAssignedToGroup(getContainer(), _group);
             IssueManager.saveCommentSortDirection(getContainer(), _direction);
 
-            IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext().getExtendedProperties());
-            IssueManager.saveCustomColumnConfiguration(getContainer(), ccc);
+            CustomColumnConfiguration nccc = new CustomColumnConfiguration(getViewContext());
+            IssueManager.saveCustomColumnConfiguration(getContainer(), nccc);
 
             IssueManager.setRequiredIssueFields(getContainer(), form.getRequiredFields());
             return true;
@@ -2220,7 +2224,7 @@ public class IssuesController extends SpringActionController
     //
     public static class AdminView extends JspView<AdminBean>
     {
-        public AdminView(Container c, IssueManager.CustomColumnConfiguration ccc, BindException errors)
+        public AdminView(Container c, CustomColumnConfiguration ccc, BindException errors)
         {
             super("/org/labkey/issue/admin.jsp", null, errors);
 
@@ -2238,7 +2242,10 @@ public class IssuesController extends SpringActionController
 
             Set<String> columnNames = new LinkedHashSet<String>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
-            columnNames.addAll(IssueManager.getCustomColumnConfiguration(c).getColumnHCaptions().keySet());
+
+            for (CustomColumn cc : IssueManager.getCustomColumnConfiguration(c).getCustomColumns())
+                columnNames.add(cc.getName());
+
             List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[columnNames.size()]));
 
             AdminBean bean = new AdminBean(cols, IssueManager.getRequiredIssueFields(c), IssueManager.getEntryTypeNames(c));
@@ -2257,15 +2264,15 @@ public class IssuesController extends SpringActionController
     {
         private List<ColumnInfo> _columns;
         private String _requiredFields;
-        private IssueManager.EntryTypeNames _entryTypeNames;
+        private EntryTypeNames _entryTypeNames;
 
-        public IssueManager.CustomColumnConfiguration ccc;
+        public CustomColumnConfiguration ccc;
         public KeywordAdminView keywordView;
-        public IssueManager.EntryTypeNames entryTypeNames;
+        public EntryTypeNames entryTypeNames;
         public Group assignedToGroup;
         public Sort.SortDirection commentSort;
 
-        public AdminBean(List<ColumnInfo> columns, String requiredFields, IssueManager.EntryTypeNames typeNames)
+        public AdminBean(List<ColumnInfo> columns, String requiredFields, EntryTypeNames typeNames)
         {
             _columns = columns;
             _requiredFields = requiredFields;
@@ -2274,7 +2281,7 @@ public class IssuesController extends SpringActionController
 
         public List<ColumnInfo> getColumns(){return _columns;}
         public String getRequiredFields(){return _requiredFields;}
-        public IssueManager.EntryTypeNames getEntryTypeNames() {return _entryTypeNames;}
+        public EntryTypeNames getEntryTypeNames() {return _entryTypeNames;}
     }
 
 
@@ -2284,9 +2291,9 @@ public class IssuesController extends SpringActionController
     {
         private Container _c;
         private List<KeywordPicker> _keywordPickers = new LinkedList<KeywordPicker>();
-        public IssueManager.CustomColumnConfiguration _ccc;
+        public CustomColumnConfiguration _ccc;
 
-        public KeywordAdminView(Container c, IssueManager.CustomColumnConfiguration ccc)
+        public KeywordAdminView(Container c, CustomColumnConfiguration ccc)
         {
             super("/org/labkey/issue/keywordAdmin.jsp");
             setModelBean(_keywordPickers);
@@ -2298,13 +2305,13 @@ public class IssuesController extends SpringActionController
         {
             String columnName = type.getColumnName();
 
-            if (type.isCustomString() && !_ccc.getPickListColumns().contains(columnName))
+            if (type.isCustomString() && !_ccc.hasPickList(columnName))
                 return;
 
-            HString caption = _ccc.getColumnHCaptions().get(type.getColumnName());
+            String caption = _ccc.getCaption(type.getColumnName());
 
             if (caption == null)
-                caption = new HString(StringUtils.capitalize(type.getColumnName()), false);
+                caption = StringUtils.capitalize(type.getColumnName());
 
             _keywordPickers.add(new KeywordPicker(_c, caption, type));
         }
@@ -2313,11 +2320,11 @@ public class IssuesController extends SpringActionController
 
     public static class KeywordPicker
     {
-        public HString name;
+        public String name;
         public ColumnType type;
         public Collection<Keyword> keywords;
 
-        KeywordPicker(Container c, HString name, ColumnType type)
+        KeywordPicker(Container c, String name, ColumnType type)
         {
             this.name = name;
             this.type = type;

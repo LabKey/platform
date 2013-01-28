@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
@@ -68,7 +67,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public double getVersion()
     {
-        return 12.30;
+        return 12.31;
     }
 
     protected void init()
@@ -181,7 +180,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public void indexDeleted() throws SQLException
     {
-        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(new SQLFragment(
-                "UPDATE issues.issues SET lastIndexed=NULL"));
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute("UPDATE issues.issues SET lastIndexed=NULL");
     }
 }

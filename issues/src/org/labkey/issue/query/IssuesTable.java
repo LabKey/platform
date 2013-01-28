@@ -20,18 +20,26 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueManager.CustomColumn;
+import org.labkey.issue.model.IssueManager.EntryTypeNames;
+import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class IssuesTable extends FilteredTable<IssuesQuerySchema>
@@ -51,17 +59,16 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         setTitleColumn("Title");
     }
 
-    private String getCustomCaption(String realName, Map<String, String> customCaptions)
+    private String getCustomCaption(String realName, CustomColumnConfiguration ccc)
     {
-        String result = customCaptions.get(realName);
-        return result == null ? realName : result;
+        String caption = ccc.getCaption(realName);
+        return caption == null ? realName : caption;
     }
 
     private void addAllColumns()
     {
-        IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-
-        Map<String, String> customColumnCaptions = IssueManager.getCustomColumnConfiguration(_userSchema.getContainer()).getColumnCaptions();
+        EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+        CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
 
         ColumnInfo issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
         issueIdColumn.setFk(new RowIdForeignKey(issueIdColumn)
@@ -82,8 +89,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         folder.setHidden(true);
         addColumn(folder);
 
-        addColumn(new AliasedColumn(this, getCustomCaption("Type", customColumnCaptions), _rootTable.getColumn("Type")));
-        addColumn(new AliasedColumn(this, getCustomCaption("Area", customColumnCaptions), _rootTable.getColumn("Area")));
+        addColumn(new AliasedColumn(this, getCustomCaption("Type", ccc), _rootTable.getColumn("Type")));
+        addColumn(new AliasedColumn(this, getCustomCaption("Area", ccc), _rootTable.getColumn("Area")));
         addWrapColumn(_rootTable.getColumn("Title"));
         ColumnInfo assignedTo = wrapColumn("AssignedTo", _rootTable.getColumn("AssignedTo"));
         assignedTo.setFk(new UserIdForeignKey());
@@ -95,9 +102,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
             }
         });
         addColumn(assignedTo);
-        addColumn(new AliasedColumn(this, getCustomCaption("Priority", customColumnCaptions), _rootTable.getColumn("Priority")));
+        addColumn(new AliasedColumn(this, getCustomCaption("Priority", ccc), _rootTable.getColumn("Priority")));
         addWrapColumn(_rootTable.getColumn("Status"));
-        addColumn(new AliasedColumn(this, getCustomCaption("Milestone", customColumnCaptions), _rootTable.getColumn("Milestone")));
+        addColumn(new AliasedColumn(this, getCustomCaption("Milestone", ccc), _rootTable.getColumn("Milestone")));
 
         addWrapColumn(_rootTable.getColumn("BuildFound"));
         ColumnInfo modifiedBy = wrapColumn(_rootTable.getColumn("ModifiedBy"));
@@ -112,20 +119,21 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         UserIdForeignKey.initColumn(resolvedBy);
         addColumn(resolvedBy);
         addWrapColumn(_rootTable.getColumn("Resolved"));
-        addColumn(new AliasedColumn(this, getCustomCaption("Resolution", customColumnCaptions), _rootTable.getColumn("Resolution")));
+        addColumn(new AliasedColumn(this, getCustomCaption("Resolution", ccc), _rootTable.getColumn("Resolution")));
         addWrapColumn(_rootTable.getColumn("Duplicate"));
         ColumnInfo closedBy = wrapColumn(_rootTable.getColumn("ClosedBy"));
         UserIdForeignKey.initColumn(closedBy);
         addColumn(closedBy);
         addWrapColumn(_rootTable.getColumn("Closed"));
         addWrapColumn(_rootTable.getColumn("NotifyList"));
+
         // add any custom columns
-        for (Map.Entry<String, String> cce : customColumnCaptions.entrySet())
+        for (CustomColumn cc : ccc.getCustomColumns())
         {
-            ColumnInfo realColumn = getRealTable().getColumn(cce.getKey());
+            ColumnInfo realColumn = getRealTable().getColumn(cc.getName());
             if (realColumn != null)
             {
-                ColumnInfo column = new AliasedColumn(this, cce.getValue(), realColumn);
+                ColumnInfo column = new AliasedColumn(this, cc.getCaption(), realColumn);
                 if (getColumn(column.getName()) == null)
                     addColumn(column);
             }
@@ -137,13 +145,13 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
     {
         Set<FieldKey> visibleColumns = new LinkedHashSet<FieldKey>();
 
-        Map<String, String> columnCaptions = IssueManager.getCustomColumnConfiguration(_userSchema.getContainer()).getColumnCaptions();
+        CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
 
         for (String name : DEFAULT_LIST_COLUMNS)
-            visibleColumns.add(FieldKey.fromParts(getCustomCaption(name, columnCaptions)));
+            visibleColumns.add(FieldKey.fromParts(getCustomCaption(name, ccc)));
 
-        for (String columnName : columnCaptions.values())
-            visibleColumns.add(FieldKey.fromParts(columnName));
+        for (CustomColumn column : ccc.getCustomColumns())
+            visibleColumns.add(FieldKey.fromParts(column.getCaption()));
 
         return new ArrayList<FieldKey>(visibleColumns);
     }

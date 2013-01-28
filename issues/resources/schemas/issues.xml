@@ -293,4 +293,13 @@
             <ns:column columnName="EmailOption"/>
         </ns:columns>
     </ns:table>
+    <ns:table tableName="CustomColumns" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="Name"/>
+            <ns:column columnName="Caption"/>
+            <ns:column columnName="PickList"/>
+            <ns:column columnName="Permission"/>
+        </ns:columns>
+    </ns:table>
 </ns:tables>

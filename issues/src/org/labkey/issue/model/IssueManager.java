@@ -25,12 +25,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -41,8 +42,10 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
@@ -80,7 +83,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -124,6 +126,7 @@ public class IssueManager
     private static final String PROP_ASSIGNED_TO_GROUP = "issueAssignedToGroup";
 
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
+    public static final String PICK_LIST_NAME = "pickListColumns";
 
     private IssueManager()
     {
@@ -222,90 +225,206 @@ public class IssueManager
     }
 
 
-    private static final String CUSTOM_COLUMN_CONFIGURATION = "IssuesCaptions";
-
     public static CustomColumnConfiguration getCustomColumnConfiguration(Container c)
     {
-        Map<String, String> map = PropertyManager.getProperties(c, CUSTOM_COLUMN_CONFIGURATION);
-
-        return new CustomColumnConfiguration(map);
+        return ColumnConfigurationCache.get(c);
     }
 
 
+    public static class CustomColumn
+    {
+        private Container _container;
+        private String _name;
+        private String _caption;
+        private boolean _pickList;
+        private Class<? extends Permission> _permissionClass;
+
+        // Used via reflection by data access layer
+        @SuppressWarnings({"UnusedDeclaration"})
+        public CustomColumn()
+        {
+        }
+
+        public CustomColumn(Container container, String name, String caption, boolean pickList, Class<? extends Permission> permissionClass)
+        {
+            setContainer(container);
+            setName(name);
+            setCaption(caption);
+            setPickList(pickList);
+            setPermission(permissionClass);
+        }
+
+        public Container getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(Container container)
+        {
+            _container = container;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            assert name.equals(name.toLowerCase());
+            _name = name;
+        }
+
+        public String getCaption()
+        {
+            return _caption;
+        }
+
+        public void setCaption(String caption)
+        {
+            _caption = caption;
+        }
+
+        public boolean isPickList()
+        {
+            return _pickList;
+        }
+
+        public void setPickList(boolean pickList)
+        {
+            _pickList = pickList;
+        }
+
+        public Class<? extends Permission> getPermission()
+        {
+            return _permissionClass;
+        }
+
+        public void setPermission(Class<? extends Permission> permissionClass)
+        {
+            _permissionClass = permissionClass;
+        }
+    }
+
+
+    static class CustomColumnMap extends HashMap<String, CustomColumn>
+    {
+    }
+
+
+    // Delete all old rows and insert the new rows; we don't bother detecting changes becasue this should be rare.
     public static void saveCustomColumnConfiguration(Container c, CustomColumnConfiguration ccc)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(c, CUSTOM_COLUMN_CONFIGURATION, true);
+        TableInfo table = IssuesSchema.getInstance().getTableInfoCustomColumns();
+        Filter filter = new SimpleFilter(new FieldKey(null, "Container"), c);
+        DbScope scope = table.getSchema().getScope();
 
-        map.clear();
-        map.putAll(ccc.getColumnCaptions());
-        map.put(CustomColumnConfiguration.PICK_LIST_NAME, StringUtils.join(ccc.getPickListColumns().iterator(), ","));
+        try
+        {
+            scope.ensureTransaction();
 
-        PropertyManager.saveProperties(map);
+            ColumnConfigurationCache.uncache(c);
+            Table.delete(table, filter);
+
+            for (CustomColumn cc : ccc.getCustomColumns())
+                Table.insert(null, table, cc);
+
+            scope.commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
     }
 
 
     public static class CustomColumnConfiguration
     {
-        public static final String PICK_LIST_NAME = "pickListColumns";
+        private static final String[] _columnNames = {"type", "area", "priority", "milestone", "resolution", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
 
-        private static String[] _tableColumns = {"type", "area", "priority", "milestone", "resolution", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
-        private Map<String, String> _columnCaptions = new CaseInsensitiveHashMap<String>();
-        private Map<String, HString> _columnHCaptions = new CaseInsensitiveHashMap<HString>();
-        private Set<String> _pickListColumns = new HashSet<String>();
+        private final CustomColumnMap _map;
 
-        public CustomColumnConfiguration(@NotNull Map<String, ?> map)
+        // Values are being loaded from the database
+        public CustomColumnConfiguration(@NotNull CustomColumnMap map)
         {
-            setColumnCaptions(map);
-            setPickListColumns(map);
+            _map = map;
         }
 
-        private void setColumnCaptions(Map<String, ?> map)
+        // Valued are being posted from the admin page
+        public CustomColumnConfiguration(ViewContext context)
         {
-            for (String tableColumn : _tableColumns)
+            Container c = context.getContainer();
+            Map<String, Object> map = context.getExtendedProperties();
+
+            // Could be null, a single String, or List<String>
+            Object value = map.get(PICK_LIST_NAME);
+
+            Set<String> pickListColumnNames;
+
+            if (null == value)
+                pickListColumnNames = Collections.emptySet();
+            else if (value instanceof String)
+                pickListColumnNames = Collections.singleton((String)value);
+            else
+                pickListColumnNames = new HashSet<String>((List<String>)value);
+
+            _map = new CustomColumnMap();
+
+            for (String columnName : _columnNames)
             {
-                String caption = (String)map.get(tableColumn);
+                String caption = (String)map.get(columnName);
 
                 if (!StringUtils.isEmpty(caption))
                 {
-                    _columnCaptions.put(tableColumn, caption);
-                    _columnHCaptions.put(tableColumn, new HString(caption, true));
+                    CustomColumn cc = new CustomColumn(c, columnName, caption, pickListColumnNames.contains(columnName), ReadPermission.class);
+                    _map.put(columnName, cc);
                 }
             }
         }
 
-        @Deprecated
+        public CustomColumn getCustomColumn(String name)
+        {
+            return _map.get(name);
+        }
+
+        public Collection<CustomColumn> getCustomColumns()
+        {
+            return _map.values();
+        }
+
+        // TODO: Should take a User and check permissions
+        public boolean shouldDisplay(String name)
+        {
+            return _map.containsKey(name);
+        }
+
+        public boolean hasPickList(String name)
+        {
+            CustomColumn cc = getCustomColumn(name);
+
+            return null != cc && cc.isPickList();
+        }
+
+        public @Nullable String getCaption(String name)
+        {
+            CustomColumn cc = getCustomColumn(name);
+
+            return null != cc ? cc.getCaption() : null;
+        }
+
+        // TODO: If we need this, then pre-compute it
         public Map<String, String> getColumnCaptions()
         {
-            return _columnCaptions;
-        }
+            Map<String, String> map = new HashMap<String, String>();
 
-        public Map<String, HString> getColumnHCaptions()
-        {
-            return _columnHCaptions;
-        }
+            for (CustomColumn cc : _map.values())
+                map.put(cc.getName(), cc.getCaption());
 
-        private void setPickListColumns(Map<String, ?> map)
-        {
-            Object pickListColumnNames = map.get(PICK_LIST_NAME);
-
-            if (null == pickListColumnNames)
-                return;
-
-            List<String> columns;
-
-            if (pickListColumnNames instanceof String)
-                columns = Arrays.asList(((String) pickListColumnNames).split(","));
-            else
-                columns = (List<String>)pickListColumnNames;  // This is the "post values from admin page" case
-
-            for (String column : columns)
-                if (null != _columnCaptions.get(column))
-                    _pickListColumns.add(column);
-        }
-
-        public Set<String> getPickListColumns()  // TODO: Set<ColumnType>?
-        {
-            return _pickListColumns;
+            return map;
         }
     }
 
@@ -553,7 +672,7 @@ public class IssueManager
         if (c != null)
             ASSIGNED_TO_CACHE.remove(getCacheKey(c));
         else
-            ASSIGNED_TO_CACHE.removeUsingPrefix(getCacheKey(null));
+            ASSIGNED_TO_CACHE.clear();
     }
 
     public static void purgeContainer(Container c)
@@ -566,6 +685,7 @@ public class IssueManager
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
+            ContainerUtil.purgeTable(_issuesSchema.getTableInfoCustomColumns(), c, null);
 
             _issuesSchema.getSchema().getScope().commitTransaction();
         }
@@ -611,7 +731,7 @@ public class IssueManager
     {
         Map<String, String> map = PropertyManager.getProperties(container, ISSUES_PREF_MAP);
         String requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
-        return null == requiredFields ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFields;
+        return null == requiredFields ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFields.toLowerCase();
     }
 
 

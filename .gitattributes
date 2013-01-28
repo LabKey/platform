@@ -1325,6 +1325,7 @@ filecontent/webapp/ToolbarReorderer.js -text
 issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-11.20-11.30.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-12.30-12.31.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-1.00.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-10.10.sql -text
@@ -1349,6 +1350,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-9.30-10.10.sql -te
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-9.30-9.31.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-11.20-11.30.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-12.30-12.31.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.81.sql -text
@@ -1392,6 +1394,7 @@ issues/src/org/labkey/issue/extjs4.jsp -text
 issues/src/org/labkey/issue/issuesCustomize.jsp -text
 issues/src/org/labkey/issue/keywordAdmin.jsp -text
 issues/src/org/labkey/issue/list.jsp -text
+issues/src/org/labkey/issue/model/ColumnConfigurationCache.java -text
 issues/src/org/labkey/issue/model/Issue.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
 issues/src/org/labkey/issue/model/KeywordManager.java -text

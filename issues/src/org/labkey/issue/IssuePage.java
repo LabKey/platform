@@ -32,6 +32,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController.DownloadAction;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
 import org.labkey.issue.model.KeywordManager;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -58,9 +59,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private final User _user;
     private Issue _issue;
     private Issue _prevIssue;
-    private List<Issue> _issueList = Collections.emptyList();
     private Set<String> _issueIds = Collections.emptySet();
-    private IssueManager.CustomColumnConfiguration _ccc;
+    private CustomColumnConfiguration _ccc;
     private Set<String> _editable = Collections.emptySet();
     private String _callbackURL;
     private BindException _errors;
@@ -117,22 +117,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _issueIds = issueIds;
     }
 
-    public List<Issue> getIssueList()
-    {
-        return _issueList;
-    }
-
-    public void setIssueList(List<Issue> issueList)
-    {
-        _issueList = issueList;
-    }
-
-    public IssueManager.CustomColumnConfiguration getCustomColumnConfiguration()
-    {
-        return _ccc;
-    }
-
-    public void setCustomColumnConfiguration(IssueManager.CustomColumnConfiguration ccc)
+    public void setCustomColumnConfiguration(CustomColumnConfiguration ccc)
     {
         _ccc = ccc;
     }
@@ -220,7 +205,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String writeCustomColumn(ColumnType type, int tabIndex) throws IOException
     {
-        if (_ccc.getColumnHCaptions().get(type.getColumnName()) != null)
+        if (_ccc.shouldDisplay(type.getColumnName()))
         {
             String tableColumnName = type.getColumnName();
             final StringBuilder sb = new StringBuilder();
@@ -230,7 +215,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             sb.append("</td><td>");
 
             // If custom column has pick list, then show select with keywords, otherwise input box
-            if (_ccc.getPickListColumns().contains(type.getColumnName()))
+            if (_ccc.hasPickList(type.getColumnName()))
                 sb.append(writeSelect(type, tabIndex));
             else if (type.isCustomInteger())
                 sb.append(writeIntegerInput(type, tabIndex));
@@ -381,8 +366,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         ColumnInfo col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
         String name = null;
 
-        if (_ccc.getColumnHCaptions().containsKey(columnName))
-            name = _ccc.getColumnHCaptions().get(columnName).getSource();
+        if (_ccc.shouldDisplay(columnName))
+            name = _ccc.getCaption(columnName);
         else if (col != null)
             name = col.getLabel();
 

@@ -21,9 +21,9 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     WikiController.CustomizeWikiPartView me = (WikiController.CustomizeWikiPartView) HttpView.currentView();
@@ -201,7 +201,7 @@ function restoreDefaultPage()
                     selected = "selected";
                 }
                 out.write("\n");
-                %><option <%=selected%> value="<%=c.getId()%>"><%=h(c.getPath())%></option><%
+                %><option <%=selected%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option><%
             }
         %></select>
         <%=textLink("Reset to Folder Default Page", "javascript:restoreDefaultPage();")%>
@@ -229,11 +229,11 @@ function restoreDefaultPage()
                     //if there's a "default" page and no other page has been selected as default, select it.
                     if (name.equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)
                     {%>
-                        <option selected value="<%=h(name)%>"><%=h(name) + " (" + h(title) + ")"%></option>
+                        <option selected value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
                     <%}
                     else
                     {%>
-                        <option <%=name.equals(webPart.getPropertyMap().get("name")) ? "selected" : "" %> value="<%=h(name)%>"><%=h(name) + " (" + h(title) + ")"%></option>
+                        <option<%=selected(name.equals(webPart.getPropertyMap().get("name")))%> value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
                     <%}
                 }
             }%>

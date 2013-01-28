@@ -19,9 +19,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
@@ -39,7 +39,7 @@
         Enter the title for the Wiki Table of Contents web part.
         </td>
         <td>
-        <input name="title" type="text" value="<%=title == null ? "Pages" : h(title) %>">
+        <input name="title" type="text" value="<%=h(title == null ? "Pages" : title)%>">
         </td>
      </tr>
     <tr>
@@ -53,11 +53,11 @@
             {
                 if (c.equals(currentContainer) && webPart.getPropertyMap().get("webPartContainer") == null)
                 {%>
-                    <option selected value="<%=c.getId()%>"><%=h(c.getPath())%></option>
+                    <option selected value="<%=text(c.getId())%>"><%=h(c.getPath())%></option>
                 <%}
                 else
                 {%>
-                    <option <%=c.getId().equals(webPart.getPropertyMap().get("webPartContainer")) ? "selected" : "" %> value="<%=c.getId()%>"><%=h(c.getPath())%></option>
+                    <option<%=selected(c.getId().equals(webPart.getPropertyMap().get("webPartContainer")))%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option>
                 <%}
             }
             %>

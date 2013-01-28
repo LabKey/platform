@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
-<%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.issue.ColumnType" %>
@@ -31,19 +30,17 @@
 <%@ page import="org.labkey.issue.IssuesController.ConfigureIssuesAction" %>
 <%@ page import="org.labkey.issue.IssuesController.ConfigureIssuesForm" %>
 <%@ page import="org.labkey.issue.IssuesController.ListAction" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.model.IssueManager.CustomColumn" %>
 <%@ page import="org.labkey.issue.model.IssueManager.CustomColumnConfiguration" %>
 <%@ page import="org.labkey.issue.model.KeywordManager" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminBean> me = (HttpView<AdminBean>) HttpView.currentView();
     AdminBean bean = me.getModelBean();
     CustomColumnConfiguration ccc = bean.ccc;
-    Set<String> pickListColumns = ccc.getPickListColumns();
-    Map<String, HString> captions = ccc.getColumnHCaptions();
     Container c = me.getViewContext().getContainer();
 %>
 <br>
@@ -64,7 +61,7 @@
             <tr><td colspan=2>Select fields to be required when entering or updating <%=h(bean.getEntryTypeNames().getIndefiniteSingularArticle())%> <%=h(bean.getEntryTypeNames().singularName)%>:</td></tr>
             <tr><td colspan=2>&nbsp;</td></tr>
             <tr>
-                <td><input type="checkbox" name="requiredFields" <%=text(isRequired("comment", bean.getRequiredFields()) ? "checked " : "")%>value="comment">Comments (new issues only)</td><%
+                <td><input type="checkbox" name="requiredFields"<%=checked(isRequired("comment", bean.getRequiredFields()))%>value="comment">Comments (new issues only)</td><%
             List<ColumnInfo> columns = bean.getColumns();
             for (int i = 0; i < columns.size(); i++)
             {
@@ -77,7 +74,7 @@
 
                 }
         %>
-                <td><input type="checkbox" name="requiredFields" <%=text(isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : "")%><%=text(isPickList(ccc, info) && !hasKeywords(c, info) ? "disabled " : "")%>value="<%=h(info.getName())%>"><%=getCaption(ccc, info)%></td><%
+                <td><input type="checkbox" name="requiredFields"<%=checked(isRequired(info.getName(), bean.getRequiredFields()))%><%=disabled(isPickList(ccc, info) && !hasKeywords(c, info))%> value="<%=h(info.getName())%>"><%=h(getCaption(ccc, info))%></td><%
 
                 if (!startNewRow)
                 {
@@ -94,18 +91,18 @@
         <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
         <tr><td colspan=2>Enter captions below to use custom fields in this <%=h(bean.entryTypeNames.pluralName)%> list:</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
-        <tr><td>Type</td><td><input name="type" value="<%=h(captions.get("type"))%>" size=20></td></tr>
-        <tr><td>Area</td><td><input name="area" value="<%=h(captions.get("area"))%>" size=20></td></tr>
-        <tr><td>Priority</td><td><input name="priority" value="<%=h(captions.get("priority"))%>" size=20></td></tr>
-        <tr><td>Milestone</td><td><input name="milestone" value="<%=h(captions.get("milestone"))%>" size=20></td></tr>
-        <tr><td>Resolution</td><td><input name="resolution" value="<%=h(captions.get("resolution"))%>" size=20></td></tr>
-        <tr><td>Integer1</td><td><input name="int1" value="<%=h(captions.get("int1"))%>" size=20></td></tr>
-        <tr><td>Integer2</td><td><input name="int2" value="<%=h(captions.get("int2"))%>" size=20></td></tr>
-        <tr><td>String1</td><td><input name="string1" value="<%=h(captions.get("string1"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string1" <%=text(pickListColumns.contains("string1") ? "checked" : "")%>>Use pick list for this field</td></tr>
-        <tr><td>String2</td><td><input name="string2" value="<%=h(captions.get("string2"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string2" <%=text(pickListColumns.contains("string2") ? "checked" : "")%>>Use pick list for this field</td></tr>
-        <tr><td>String3</td><td><input name="string3" value="<%=h(captions.get("string3"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string3" <%=text(pickListColumns.contains("string3") ? "checked" : "")%>>Use pick list for this field</td></tr>
-        <tr><td>String4</td><td><input name="string4" value="<%=h(captions.get("string4"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string4" <%=text(pickListColumns.contains("string4") ? "checked" : "")%>>Use pick list for this field</td></tr>
-        <tr><td>String5</td><td><input name="string5" value="<%=h(captions.get("string5"))%>" size=20><input type="checkbox" name="<%=text(CustomColumnConfiguration.PICK_LIST_NAME)%>" value="string5" <%=text(pickListColumns.contains("string5") ? "checked" : "")%>>Use pick list for this field</td></tr>
+        <tr><td>Type</td><td><input name="type" value="<%=h(ccc.getCaption("type"))%>" size=20></td></tr>
+        <tr><td>Area</td><td><input name="area" value="<%=h(ccc.getCaption("area"))%>" size=20></td></tr>
+        <tr><td>Priority</td><td><input name="priority" value="<%=h(ccc.getCaption("priority"))%>" size=20></td></tr>
+        <tr><td>Milestone</td><td><input name="milestone" value="<%=h(ccc.getCaption("milestone"))%>" size=20></td></tr>
+        <tr><td>Resolution</td><td><input name="resolution" value="<%=h(ccc.getCaption("resolution"))%>" size=20></td></tr>
+        <tr><td>Integer1</td><td><input name="int1" value="<%=h(ccc.getCaption("int1"))%>" size=20></td></tr>
+        <tr><td>Integer2</td><td><input name="int2" value="<%=h(ccc.getCaption("int2"))%>" size=20></td></tr>
+        <tr><td>String1</td><td><input name="string1" value="<%=h(ccc.getCaption("string1"))%>" size=20><input type="checkbox" name="<%=text(IssueManager.PICK_LIST_NAME)%>" value="string1"<%=checked(ccc.hasPickList("string1"))%>>Use pick list for this field</td></tr>
+        <tr><td>String2</td><td><input name="string2" value="<%=h(ccc.getCaption("string2"))%>" size=20><input type="checkbox" name="<%=text(IssueManager.PICK_LIST_NAME)%>" value="string2"<%=checked(ccc.hasPickList("string2"))%>>Use pick list for this field</td></tr>
+        <tr><td>String3</td><td><input name="string3" value="<%=h(ccc.getCaption("string3"))%>" size=20><input type="checkbox" name="<%=text(IssueManager.PICK_LIST_NAME)%>" value="string3"<%=checked(ccc.hasPickList("string3"))%>>Use pick list for this field</td></tr>
+        <tr><td>String4</td><td><input name="string4" value="<%=h(ccc.getCaption("string4"))%>" size=20><input type="checkbox" name="<%=text(IssueManager.PICK_LIST_NAME)%>" value="string4"<%=checked(ccc.hasPickList("string4"))%>>Use pick list for this field</td></tr>
+        <tr><td>String5</td><td><input name="string5" value="<%=h(ccc.getCaption("string5"))%>" size=20><input type="checkbox" name="<%=text(IssueManager.PICK_LIST_NAME)%>" value="string5"<%=checked(ccc.hasPickList("string5"))%>>Use pick list for this field</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
         </table>
     </td>
@@ -142,16 +139,16 @@
                         <tr><td colspan="2">Populate the assigned to list from:</td></tr>
                         <tr>
                             <td>
-                                <input onchange="assignedToGroup.disabled=true;" type="radio" name="assignedToMethod" value="ProjectUsers"<%=text(null == bean.assignedToGroup ? " checked" : "")%> />
+                                <input onchange="assignedToGroup.disabled=true;" type="radio" name="assignedToMethod" value="ProjectUsers"<%=checked(null == bean.assignedToGroup)%> />
                             </td>
                             <td>All Project Users</td>
                         </tr>
                         <tr>
                             <td>
-                                <input onchange="assignedToGroup.disabled=false;" type="radio" name="assignedToMethod" value="Group" <%=text(null != bean.assignedToGroup ? " checked" : "")%> />
+                                <input onchange="assignedToGroup.disabled=false;" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> />
                             </td>
                             <td>Specific Group
-                                <select<%=text(Boolean.valueOf(null == bean.assignedToGroup) ? " disabled=\"disabled\"" : "")%> name="assignedToGroup"><%
+                                <select<%=disabled(null == bean.assignedToGroup)%> name="assignedToGroup"><%
                                     for (Group group : SecurityManager.getGroups(c.getProject(), true))
                                     {
                                         if (!group.isGuests())
@@ -186,13 +183,14 @@
         return false;
     }
 
-    public HString getCaption(CustomColumnConfiguration ccc, ColumnInfo col) throws java.sql.SQLException
+    public String getCaption(CustomColumnConfiguration ccc, ColumnInfo col)
     {
-        if (ccc.getColumnHCaptions().containsKey(col.getName()))
-        {
-            return ccc.getColumnHCaptions().get(col.getName());
-        }
-        return new HString(col.getLabel(), true);
+        CustomColumn cc = ccc.getCustomColumn(col.getName());
+
+        if (null != cc)
+            return cc.getCaption();
+
+        return col.getLabel();
     }
 
     public boolean hasKeywords(Container c, ColumnInfo col)
@@ -206,7 +204,7 @@
     {
         String name = col.getColumnName();
 
-        if (ccc.getPickListColumns().contains(name.toLowerCase()))
+        if (ccc.hasPickList(name.toLowerCase()))
         {
             //If the column actually is a pick list return true.
             return true;
