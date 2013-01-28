@@ -208,6 +208,13 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
 
+    // Returns " disabled" (if true) or "" (false)
+    public _HtmlString disabled(boolean disabled)
+    {
+        return new _HtmlString(disabled ? " disabled" : "");
+    }
+
+
     // Obfuscate the passed in text if this user is in "demo" mode in this container
     public String id(String id)
     {

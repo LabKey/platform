@@ -74,4 +74,8 @@ public class IssuesSchema
         return getSchema().getTable("Issues");
     }
 
+    public TableInfo getTableInfoCustomColumns()
+    {
+        return getSchema().getTable("CustomColumns");
+    }
 }

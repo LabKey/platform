@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.PkMetaDataReader;
-import org.labkey.api.query.QueryException;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;

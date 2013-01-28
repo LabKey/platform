@@ -269,6 +269,8 @@ public class Parameter
     }
 
     
+    // TODO: Switching to BeanUtils 1.8 (which has two-way converters) should let us clean this up significantly by
+    // delegating most of the binding to our converters
     public static Object getValueToBind(@Nullable Object value, @Nullable JdbcType type) throws SQLException
     {
         if (value instanceof Callable)
@@ -332,6 +334,8 @@ public class Parameter
             return ((Role)value).getUniqueName();
         else if (value instanceof GUID)
             return value.toString();
+        else if (value instanceof Class)
+            return (((Class) value).getName());
 
         return value;
     }
