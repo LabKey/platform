@@ -12,9 +12,9 @@ CREATE TABLE issues.CustomColumns
 
 INSERT INTO issues.CustomColumns
     SELECT ObjectId AS Container, LOWER(Name), Value AS Caption,
-        IIF(CHARINDEX
+        CASE WHEN CHARINDEX
         (
             Name, (SELECT Value FROM prop.PropertyEntries pl WHERE Category = 'IssuesCaptions'
              AND Name = 'pickListColumns' AND pe.ObjectId = pl.ObjectId)
-        ) > 0, 1, 0) AS PickList, 'org.labkey.api.security.permissions.ReadPermission' AS Permission
+        ) > 0 THEN 1 ELSE 0 END AS PickList, 'org.labkey.api.security.permissions.ReadPermission' AS Permission
     FROM prop.PropertyEntries pe WHERE Category = 'IssuesCaptions' AND Name <> 'pickListColumns';
