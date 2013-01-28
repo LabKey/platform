@@ -975,6 +975,9 @@ public class DataRegion extends AbstractDataRegion
             dataRegionJSON.put("view", QueryService.get().getCustomViewProperties(ctx.getView(), ctx.getViewContext().getUser()));
         }
 
+        // 17021: Faceted Filtering does not respect container path.
+        dataRegionJSON.put("containerPath", ctx.getContainerPath());
+
         //permissions
         JSONObject permissionJSON = new JSONObject();
         TableInfo table = getTable();
