@@ -30,6 +30,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
@@ -386,6 +387,7 @@ public class DbSchema
         return "DbSchema " + getName();
     }
 
+    @TestTimeout(120)
     public static class TestCase extends Assert
     {
         // Compare schema XML vs. meta data for all module schemas
