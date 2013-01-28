@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -78,11 +78,12 @@ Ext4.define('File.panel.Admin', {
     },
 
     getToolBarPanel: function(){
-        console.log(this.pipelineFileProperties.tbarActions);
-        return {
-            title: 'Toolbar and Grid Settings',
-            items: []
-        };
+        this.toolBarPanel = Ext4.create('File.panel.ToolbarPanel', {
+            title : 'Toolbar and Grid Settings',
+            tbarActions : this.pipelineFileProperties.tbarActions,
+            gridConfigs : this.pipelineFileProperties.gridConfig
+        });
+        return this.toolBarPanel;
     },
 
     getGeneralSettingsPanel: function(){
@@ -102,7 +103,7 @@ Ext4.define('File.panel.Admin', {
                 margin: '0 0 0 10',
                 checked: this.pipelineFileProperties.expandFileUpload,
                 name: 'showUpload'
-            }); 
+            });
 
             this.generalSettingsPanel = Ext4.create('Ext.panel.Panel', {
                 title: 'General Settings',
@@ -123,10 +124,10 @@ Ext4.define('File.panel.Admin', {
         var updateURL = LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath);
         var postData = {
             expandFileUpload: this.showUploadCheckBox.getValue(),
-            fileConfig: this.filePropertiesPanel.getFileConfig()/*,
-            gridConfig: this.toolBarPanel.getGridConfig(),
-            tbarActions: this.toolBarPanel.getTbarConfig(),
-            actions: this.actionsPanel.getActionConfigs()*/
+            fileConfig: this.filePropertiesPanel.getFileConfig(),
+            gridConfig: this.toolBarPanel.getGridConfigs(),
+            tbarActions: this.toolBarPanel.getTbarActions()
+            //actions: this.actionsPanel.getActionConfigs()
         };
 
         if(!handler){
