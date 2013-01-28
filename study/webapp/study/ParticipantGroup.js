@@ -103,13 +103,29 @@ Ext4.define('Study.window.ParticipantGroup', {
             }
         });
 
+        var setOfCategories = {};
+        LABKEY.Query.selectRows({
+           schemaName : 'study',
+            queryName : this.panelConfig.subject.nounSingular + 'Group',
+            success : function(details){
+                console.log(details);
+                for(var i = 0; i < details.rows.length; i++){
+                    setOfCategories[details.rows[i].CategoryId] = true;
+                }
+            }
+        });
+
+        zzz=setOfCategories;
+
         LABKEY.Query.selectRows({
             schemaName : 'study',
             queryName : this.panelConfig.subject.nounSingular + 'Category',
             success : function(details){
                 var nonManual = [];
+                console.log(details.rows);
                 for(var i = 0; i < details.rows.length; i++){
-                    if(this.category != "list" && details.rows[i].Type != "list"){
+                    console.log(setOfCategories);
+                    if(this.category != "list" && details.rows[i].Type != "list" && (details.rows[i].RowId in setOfCategories)){
                         nonManual.push(details.rows[i]);
                     }
                 }
