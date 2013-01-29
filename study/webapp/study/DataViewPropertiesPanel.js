@@ -161,7 +161,6 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
 
         if (this.visibleFields['category']) {
 
-            console.log(this.data);
             formItems.push({
                 xtype       : 'combo',
                 fieldLabel  : 'Category',

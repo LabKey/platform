@@ -175,7 +175,7 @@ Ext4.define('Ext.tree.DataViewsColumn', {
 
 /**
  * This is an extended model used to render the TreeStore. Due to performance
- * the afterCommit method has been disabled. It is not recommneded you use this model.
+ * the afterCommit method has been disabled. It is not recommended you use this model.
 **/
 Ext4.define('Ext.data.FastModel', {
     extend : 'Ext.data.Model',
@@ -260,6 +260,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // define Models
         Ext4.define('Dataset.Browser.View', {
             extend : this.asTree ? 'Ext.data.FastModel' : 'Ext.data.Model',
+            idProperty : 'fakeid', // do not use the 'id' property, rather just make something up which Ext will then generate
             fields : fields
         });
 
@@ -986,7 +987,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return customPanel;
     },
 
-    onViewLoad : function(s, recs) {
+    onViewLoad : function() {
         if (this.gridPanel)
             this.gridPanel.setLoading(false);
 
