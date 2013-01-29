@@ -57,6 +57,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.visualization.TimeChartReport;
@@ -83,6 +84,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -2494,5 +2496,36 @@ public class QueryView extends WebPartView<Object>
         {
             return popupMenu.getNavTree();
         }
+    }
+
+    @Override
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.addAll(super.getClientDependencies());
+
+        ButtonBarConfig cfg = _buttonBarConfig;
+        if (cfg == null)
+        {
+            TableInfo ti = _table;
+            if (ti == null)
+            {
+                List<QueryException> errors = new ArrayList<QueryException>();
+                ti = _queryDef.getTable(errors, true);
+            }
+
+            if (ti != null)
+                cfg = ti.getButtonBarConfig();
+        }
+
+        if (cfg != null)
+        {
+            for (String script : cfg.getScriptIncludes())
+            {
+                resources.add(ClientDependency.fromFilePath(script));
+            }
+        }
+
+        return resources;
     }
 }

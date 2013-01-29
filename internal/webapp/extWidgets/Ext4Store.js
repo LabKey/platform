@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2011-2012 LabKey Corporation
  *
@@ -584,7 +585,7 @@ Ext4.define('LABKEY.ext4.Store', {
         this.loadError = loadError;
 
         //TODO: is this the right behavior?
-        if(response && response.status === 200){
+        if(response && (response.status === 200 || response.status == 0)){
             return;
         }
 

@@ -18,7 +18,7 @@ package org.labkey.api.laboratory.assay;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.laboratory.AbstractImportingNavItem;
+import org.labkey.api.laboratory.AbstractQueryNavItem;
 import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.laboratory.LaboratoryUrls;
 import org.labkey.api.security.User;
@@ -34,7 +34,7 @@ import org.labkey.api.view.ActionURL;
  * Date: 10/1/12
  * Time: 8:46 AM
  */
-public class AssayNavItem extends AbstractImportingNavItem
+public class AssayNavItem extends AbstractQueryNavItem
 {
     AssayDataProvider _ad;
     AssayProvider _ap;
@@ -73,7 +73,7 @@ public class AssayNavItem extends AbstractImportingNavItem
         return LaboratoryService.NavItemCategory.data.name();
     }
 
-    public boolean isImportIntoWorkbooks()
+    public boolean isImportIntoWorkbooks(Container c, User u)
     {
         return true;
     }

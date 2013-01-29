@@ -32,10 +32,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.data.xml.TableType;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,10 +46,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-public class QueryWebPart extends WebPartView
+public class QueryWebPart extends VBox
 {
     private ViewContext _context;
     private Map<String, String> _properties;
@@ -144,7 +148,11 @@ public class QueryWebPart extends WebPartView
 
             if (title == null)
             {
-                if (_settings.getQueryName() != null)
+                if (td != null)
+                {
+                    title = td.getTitle();
+                }
+                else if (_settings.getQueryName() != null)
                 {
                     title = _settings.getQueryName();
                 }
@@ -165,6 +173,8 @@ public class QueryWebPart extends WebPartView
             setTitleHref(url);
 
         setTitle(title);
+
+        addViews();
     }
 
     public User getUser()
@@ -231,8 +241,7 @@ public class QueryWebPart extends WebPartView
         jsonOut.write(errorResponse);
     }
 
-    @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void addViews()
     {
         HttpView view = null;
 
@@ -240,11 +249,11 @@ public class QueryWebPart extends WebPartView
         {
             if (_schemaName == null)
             {
-                out.write("Schema name is not set.");
+                view = new HtmlView("Schema name is not set.");
             }
             else
             {
-                out.write("Schema '" + PageFlowUtil.filter(_schemaName) + "' does not exist.");
+                view = new HtmlView("Schema '" + PageFlowUtil.filter(_schemaName) + "' does not exist.");
             }
         }
 
@@ -336,7 +345,7 @@ public class QueryWebPart extends WebPartView
 
         if (view != null)
         {
-            include(view);
+            _views.add(view);
             return;
         }
 
@@ -351,7 +360,7 @@ public class QueryWebPart extends WebPartView
                 view = new ChooseQueryView(_schema, null, null);
             }
 
-            include(view, out);
+            _views.add(view);
         }
     }
 }

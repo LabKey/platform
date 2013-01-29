@@ -15,13 +15,24 @@
  */
 package org.labkey.api.laboratory;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.ldk.NavItem;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
+
 /**
  * Created with IntelliJ IDEA.
  * User: bimber
- * Date: 10/7/12
- * Time: 10:14 AM
+ * Date: 11/21/12
+ * Time: 5:07 PM
  */
-public interface SettingsNavItem extends QueryNavItem
+public interface QueryNavItem extends NavItem
 {
+    public ActionURL getImportUrl(Container c, User u);
 
+    public ActionURL getSearchUrl(Container c, User u);
+
+    public ActionURL getBrowseUrl(Container c, User u);
+
+    public boolean isImportIntoWorkbooks(Container c, User u);
 }

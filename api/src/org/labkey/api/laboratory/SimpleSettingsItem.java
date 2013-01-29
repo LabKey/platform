@@ -31,7 +31,7 @@ import org.labkey.api.view.ActionURL;
  * Date: 10/1/12
  * Time: 1:40 PM
  */
-public class SimpleSettingsItem extends AbstractImportingNavItem implements SettingsNavItem
+public class SimpleSettingsItem extends AbstractQueryNavItem implements SettingsNavItem
 {
     String _schema;
     String _query;
@@ -83,7 +83,7 @@ public class SimpleSettingsItem extends AbstractImportingNavItem implements Sett
         return _category;
     }
 
-    public boolean isImportIntoWorkbooks()
+    public boolean isImportIntoWorkbooks(Container c, User u)
     {
         return false;
     }

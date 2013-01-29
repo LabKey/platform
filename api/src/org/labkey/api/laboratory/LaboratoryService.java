@@ -89,6 +89,8 @@ abstract public class LaboratoryService
 
     abstract public List<NavItem> getSampleItems(Container c, User u);
 
+    abstract public List<NavItem> getMiscItems(Container c, User u);
+
     abstract public DataProvider getDataProvider(String name);
 
     abstract public List<NavItem> getDataItems(Container c, User u);

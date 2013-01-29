@@ -48,4 +48,9 @@ public abstract class AbstractDataProvider implements DataProvider
     {
         return Collections.emptyList();
     }
+
+    public List<NavItem> getMiscItems(Container c, User u)
+    {
+        return Collections.emptyList();
+    }
 }

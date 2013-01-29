@@ -112,64 +112,69 @@ public class IlluminaFastqParser
         FastqReader reader = null;
         int _parsedReads;
 
-        for (File f : _files)
+        try
         {
-            try
+            for (File f : _files)
             {
-                _logger.info("Beginning to parse file: " + f.getName());
-                File targetDir = _destinationDir == null ? f.getParentFile() : _destinationDir;
-
-                _parsedReads = 0;
-
-                reader = new FastqReader(f);
-                FastqWriter writer;
-                while(reader.hasNext())
+                try
                 {
-                    FastqRecord fq = reader.next();
-                    String header = fq.getReadHeader();
-                    IlluminaReadHeader parsedHeader = new IlluminaReadHeader(header);
-                    int sampleIdx = parsedHeader.getSampleNum();
-                    int pairNumber = parsedHeader.getPairNumber();
+                    _logger.info("Beginning to parse file: " + f.getName());
+                    File targetDir = _destinationDir == null ? f.getParentFile() : _destinationDir;
 
-                    writer = getWriter(sampleIdx, targetDir, pairNumber);
-                    if(writer != null)
+                    _parsedReads = 0;
+
+                    reader = new FastqReader(f);
+                    FastqWriter writer;
+                    while(reader.hasNext())
                     {
-                        writer.write(fq);
+                        FastqRecord fq = reader.next();
+                        String header = fq.getReadHeader();
+                        IlluminaReadHeader parsedHeader = new IlluminaReadHeader(header);
+                        int sampleIdx = parsedHeader.getSampleNum();
+                        int pairNumber = parsedHeader.getPairNumber();
 
-                        _parsedReads++;
-                        updateCount(sampleIdx, pairNumber);
+                        writer = getWriter(sampleIdx, targetDir, pairNumber);
+                        if(writer != null)
+                        {
+                            writer.write(fq);
 
-                        if (0 == _parsedReads % 25000)
-                            logReadsProgress(_parsedReads);
+                            _parsedReads++;
+                            updateCount(sampleIdx, pairNumber);
+
+                            if (0 == _parsedReads % 25000)
+                                logReadsProgress(_parsedReads);
+                        }
                     }
-                }
 
-                if (0 != _parsedReads % 25000)
-                    logReadsProgress(_parsedReads);
+                    if (0 != _parsedReads % 25000)
+                        logReadsProgress(_parsedReads);
 
-                _logger.info("Finished parsing file: " + f.getName());
-                reader.close();
-                reader = null;
-            }
-            catch (Exception e)
-            {
-                for (Pair<Object, Integer> key :_fileMap.keySet())
-                {
-                    _fileMap.get(key).getValue().close();
-                }
-
-                throw new PipelineJobException(e);
-            }
-            finally
-            {
-                if (reader != null)
+                    _logger.info("Finished parsing file: " + f.getName());
                     reader.close();
-
-                for (Pair<File, FastqWriter> pair : _fileMap.values())
-                {
-                    if (pair.second != null)
-                        pair.second.close();
+                    reader = null;
                 }
+                catch (Exception e)
+                {
+                    for (Pair<Object, Integer> key :_fileMap.keySet())
+                    {
+                        _fileMap.get(key).getValue().close();
+                    }
+
+                    throw new PipelineJobException(e);
+                }
+                finally
+                {
+                    if (reader != null)
+                        reader.close();
+                }
+            }
+        }
+        finally
+        {
+            for (Pair<File, FastqWriter> pair : _fileMap.values())
+            {
+                if (pair.second != null)
+                    pair.second.close();
             }
         }
 

@@ -119,7 +119,7 @@ public class ButtonBar extends DisplayElement
         if (!shouldRender(ctx))
             return;
 
-        renderIncludes(out);
+        //note: script includes are now handled by QueryView.getClientDependencies(), rather than rendered here
 
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
@@ -141,36 +141,6 @@ public class ButtonBar extends DisplayElement
             }
         }
         out.write("</div>");
-    }
-
-    private void renderIncludes(Writer out) throws IOException
-    {
-        if (_configs != null && !_configs.isEmpty() && !_renderedIncludes)
-        {
-            Set<String> allScriptIncludes = new HashSet<String>();
-            for (ButtonBarConfig config : _configs)
-            {
-                String[] scriptIncludes = config.getScriptIncludes();
-                if (scriptIncludes != null && scriptIncludes.length > 0)
-                {
-                    Collections.addAll(allScriptIncludes, scriptIncludes);
-                }
-            }
-
-            if (allScriptIncludes.size() > 0)
-            {
-                out.write("<script type=\"text/javascript\">\n");
-                for (String script : allScriptIncludes)
-                {
-                    out.write("LABKEY.requiresScript('");
-                    out.write(script);
-                    out.write("');\n");
-                }
-                out.write("</script>");
-            }
-
-            _renderedIncludes = true;
-        }
     }
 
     /**
