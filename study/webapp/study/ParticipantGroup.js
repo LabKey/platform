@@ -91,7 +91,7 @@ Ext4.define('Study.window.ParticipantGroup', {
 
         var categoryStore = Ext4.create('Ext.data.Store', {
             model : 'categoryModel',
-            sorters : {property : 'header', direction : 'ASC'},
+            sorters : {property : 'Label', direction : 'ASC'},
             listeners:{
                 load: function(me){
                     if(this.category && me.findExact('RowId', this.category.rowId) > -1){
@@ -100,19 +100,19 @@ Ext4.define('Study.window.ParticipantGroup', {
                 },
                 scope: this
 
-            }
+            },
         });
-
-        var setOfCategories = {};
-        LABKEY.Query.selectRows({
-           schemaName : 'study',
-            queryName : this.panelConfig.subject.nounSingular + 'Group',
-            success : function(details){
-                for(var i = 0; i < details.rows.length; i++){
-                    setOfCategories[details.rows[i].CategoryId] = true;
-                }
-            }
-        });
+        //This is here in case we ever want to look at which groups are actually being used.  We currently do not.
+//        var setOfCategories = {};
+//        LABKEY.Query.selectRows({
+//           schemaName : 'study',
+//            queryName : this.panelConfig.subject.nounSingular + 'Group',
+//            success : function(details){
+//                for(var i = 0; i < details.rows.length; i++){
+//                    setOfCategories[details.rows[i].CategoryId] = true;
+//                }
+//            }
+//        });
 
         LABKEY.Query.selectRows({
             schemaName : 'study',
@@ -120,7 +120,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             success : function(details){
                 var nonManual = [];
                 for(var i = 0; i < details.rows.length; i++){
-                    if(this.category != "list" && details.rows[i].Type != "list" && (details.rows[i].RowId in setOfCategories)){
+                    if(details.rows[i].Type === "manual"){
                         nonManual.push(details.rows[i]);
                     }
                 }
