@@ -253,11 +253,16 @@ Ext.onReady(function()
 {
     f.render('form');
     new Ext.Resizable(metaDataTextArea.el, {handles:'se', wrap:true});
+
     dataSourceCombo.on('select', dataSourceCombo_onSelect);
+
     includeSystemCheckBox.on('check', includeSystemCheckBox_onCheck);
+
     sourceSchemaCombo.on('select', sourceSchemaCombo_onSelect);
+
     grid.on('expand', updateTableTitle);
     grid.on('collapse', updateTableTitle);
+
     if (external)
     {
         initEditable(<%=def.isEditable()%>, <%=initialSource.editable%>);
@@ -265,6 +270,9 @@ Ext.onReady(function()
     else
     {
         templateComboBox.on('select', templateComboBox_onSelect);
+
+        var sourceContainerId = dataSourceCombo.getValue();
+        templatesStore.proxy.setUrl(LABKEY.ActionURL.buildURL("query", "schemaTemplates.api", sourceContainerId));
         templatesStore.load();
     }
     loadTables();
@@ -301,11 +309,13 @@ function sourceSchemaCombo_onSelect()
     } else {
         if (userSchemaText.getValue() == "") {
             // Add prefix to name if the source container is the current container
-            if (dataSources[dataSourceIndex][0] == LABKEY.container.id) {
+            if (schemaName.length > 0 && dataSources[dataSourceIndex][0] == LABKEY.container.id) {
                 schemaName = "Linked" + schemaName[0].toUpperCase() + schemaName.substring(1);
             }
             userSchemaText.setValue(schemaName);
         }
+        var sourceContainerId = dataSourceCombo.getValue();
+        templatesStore.proxy.setUrl(LABKEY.ActionURL.buildURL("query", "schemaTemplates.api", sourceContainerId));
         templatesStore.load();
     }
     metaDataTextArea.setValue("");

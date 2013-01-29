@@ -19,6 +19,8 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -74,7 +76,12 @@ public abstract class AbstractExternalSchemaForm<T extends AbstractExternalSchem
         }
         else
         {
-            TemplateSchemaType template = bean.lookupTemplate(getContainer());
+            Container templateContainer = getContainer();
+            String dataSource = bean.getDataSource();
+            if (dataSource != null)
+                templateContainer = ContainerManager.getForId(dataSource);
+
+            TemplateSchemaType template = bean.lookupTemplate(templateContainer);
             if (template == null)
                 errors.reject(SpringActionController.ERROR_MSG, "Template '" + bean.getSchemaTemplate() + "' not found in container");
 
