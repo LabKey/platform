@@ -9,6 +9,7 @@ LABKEY.requiresCss("study/DataViewsPanel.css");
 Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     extend : 'Ext.panel.Panel',
+    alias: 'widget.labkey-genericchartpanel',
 
 //    requires : [
 //        'LABKEY.vis.DeveloperOptionsPanel',
@@ -38,7 +39,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                 if (!this.initialColumnList)
                 {
-                    params = {
+                    var params = {
                         schemaName  : this.schemaName,
                         queryName   : this.queryName,
                         viewName    : this.viewName,
