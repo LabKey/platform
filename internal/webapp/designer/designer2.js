@@ -1441,7 +1441,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                         return fieldMeta.data.caption;
                                     return Ext.util.Format.htmlEncode(fieldMeta.data.name);
                                 }
-                                return Ext.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error>(not found)</span>";
+                                return Ext.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
                             }
                         }
                     ),
@@ -1702,19 +1702,23 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     validate : function () {
-        for (var i = 0; i < this.filterStore.getCount(); i++)
+        OUTER_LOOP: for (var i = 0; i < this.filterStore.getCount(); i++)
         {
             var filterRecord = this.filterStore.getAt(i);
 
             var fieldKey = filterRecord.data.fieldKey;
             if (!fieldKey) {
-                alert("fieldKey required for filter");
+                if (confirm("A fieldKey is required for each filter.\nContinue to save custom view with invalid filter?")) {
+                    continue;
+                }
                 return false;
             }
 
             var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
             if (!fieldMetaRecord) {
-                alert("field not found for fieldKey '" + fieldKey + "'");
+                if (confirm("Field not found for fieldKey '" + fieldKey + "'.\nContinue to save custom view with invalid filter?")) {
+                    continue;
+                }
                 return false;
             }
 
@@ -1727,13 +1731,19 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 {
                     var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterOp);
                     if (!filterType) {
-                        alert("filter type '" + filterOp + "' isn't recognized");
+                        if (confirm("Filter operator '" + filterOp + "' isn't recognized.\nContinue to save custom view with invalid filter?")) {
+                            continue OUTER_LOOP;
+                        }
                         return false;
                     }
 
                     var value = filterType.validate(items[j].value, jsonType, fieldKey);
-                    if (value == undefined)
+                    if (value == undefined) {
+                        if (confirm("Continue to save custom view with invalid filter?")) {
+                            continue OUTER_LOOP;
+                        }
                         return false;
+                    }
                 }
             }
         }
