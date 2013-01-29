@@ -99,8 +99,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                     }
                 },
                 scope: this
-
-            },
+            }
         });
 
         LABKEY.Query.selectRows({
