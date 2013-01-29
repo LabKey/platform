@@ -20,6 +20,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
+import org.labkey.api.survey.model.SurveyListener;
 
 import java.util.Map;
 
@@ -52,5 +53,7 @@ public class SurveyService
 
         SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign surveyDesign);
         void deleteSurveyDesign(Container c, User user, int surveyDesignId, boolean deleteSurveyInstances);
+
+        void addSurveyListener(SurveyListener listener);
     }
 }
