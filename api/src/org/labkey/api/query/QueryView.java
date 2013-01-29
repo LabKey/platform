@@ -2518,7 +2518,7 @@ public class QueryView extends WebPartView<Object>
                 cfg = ti.getButtonBarConfig();
         }
 
-        if (cfg != null)
+        if (cfg != null && cfg.getScriptIncludes() != null)
         {
             for (String script : cfg.getScriptIncludes())
             {
