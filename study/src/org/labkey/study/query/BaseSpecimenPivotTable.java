@@ -327,4 +327,14 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         else
             return label;
     }
+
+    /** Note we cache these pivot tables, so we can't go calling setContainerFilter() so
+     * return false==supportsContainerFilter()
+     * @return false
+     */
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return false;
+    }
 }
