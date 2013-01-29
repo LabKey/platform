@@ -154,15 +154,6 @@ public class NavTreeMenu extends WebPartView implements Collapsible
 
         String link = nav.getHref() == null ? null : nav.getHref();
         String onClickScript = (null != nav.getScript()) ? PageFlowUtil.filter(nav.getScript()) : null;
-        if(null == onClickScript && null != link)
-        {
-            if ((link.indexOf("http://") == 0) || (link.indexOf("https://") == 0))
-                // open in a new window if link is to an external site
-                // this works poorly in firefox
-                onClickScript = "window.open('" + PageFlowUtil.filter(link) + "', '_new'); return false;";
-            else
-                onClickScript = "window.location='" + PageFlowUtil.filter(link) + "'; return false;";
-        }
         boolean selected = _highlightSelection && null != link && matchPath(link, currentUrl, pattern);
         if (level == 0 && null != nav.getText())
             level = 1;
@@ -216,7 +207,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 if (null != nav.getTarget())
                     out.print(" target=\"" + nav.getTarget() + "\"");
                 else if ((link.indexOf("http://") == 0) || (link.indexOf("https://") == 0))
-                    out.print(" target=\"_new\"");
+                    out.print(" target=\"_blank\"");
 
                 if (selected)
                 {

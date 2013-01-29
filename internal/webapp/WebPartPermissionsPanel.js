@@ -11,6 +11,9 @@ Ext4.onReady(function(){
         extend: 'Ext.window.Window',
 
         constructor: function(config){
+
+            config.containerPath = Ext4.htmlDecode(config.containerPath);
+
             Ext4.applyIf(config, {
                 modal: true,
                 width: 500,
@@ -217,22 +220,25 @@ Ext4.onReady(function(){
                 nodes.shift();
             }
 
-            var expand = function(childNodes){
+            var expandNode = function(childNodes){
                 if(nodes.length > 0){
                     for(var i = 0; i < childNodes.length; i++){
-                        if(childNodes[i].data.text === nodes[0]){
+                        if(nodes[0] === Ext4.htmlDecode(childNodes[i].data.text)){
                             nodes.shift();
-                            childNodes[i].expand(false, expand, this);
+                            childNodes[i].expand(false, expandNode, this);
                             break;
                         }
                     }
                 }
             };
 
-            var child = this.folderTree.getRootNode().findChild('text', nodes.shift());
+            var child = this.folderTree.getRootNode().findChildBy(function(node){
+                return nodes[0] === Ext4.htmlDecode(node.data.text);
+            }, this);
 
             if(child){
-                child.expand(false, expand, this);
+                nodes.shift();
+                child.expand(false, expandNode, this);
             }
         },
 
@@ -276,7 +282,7 @@ Ext4.onReady(function(){
         replaceHREF: function(perm, path){
             // Only wrap in quotes if not null
             if(path != null){
-                path = "'" + path + "'";
+                path = "'" + Ext4.htmlEncode(path) + "'";
             }
 
             var query = Ext4.query('#permissions_'+this.webPartId),

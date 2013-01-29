@@ -553,7 +553,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                 permissionString = "'" + webPart.getPermission()+ "'";
 
                             if (webPart.getPermissionContainer() != null)
-                                containerPathString = "'" + webPart.getPermissionContainer().getPath() + "'";
+                                containerPathString = PageFlowUtil.qh(webPart.getPermissionContainer().getPath());
 
                             // Wrapped in immediately invoke function expression because of Issue 16953
                             NavTree permissionsNav = new NavTree("Permissions",

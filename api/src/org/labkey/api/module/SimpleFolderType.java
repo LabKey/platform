@@ -23,6 +23,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
@@ -187,6 +190,21 @@ public class SimpleFolderType extends MultiPortalFolderType
     public static List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references)
     {
         List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
+        HashMap<String, Permission> permissionsMap = new HashMap<String, Permission>();
+
+        // permissionsMap maps the permissions name (not necessarily unique) to the permission class. We use this so
+        // users can specify the name of a permission instead of the fully qualified class name (the unique name).
+        // When setting the permission we check this HashMap first, otherwise we check permission unique names.
+        for (Role role : RoleManager.getAllRoles())
+        {
+            for(Class<? extends Permission> permClass : role.getPermissions())
+            {
+                Permission perm = RoleManager.getPermission(permClass);
+                if(!permissionsMap.containsKey(perm.getName()))
+                    permissionsMap.put(perm.getName(), perm);
+            }
+        }
+
         for (WebPartDocument.WebPart reference : references)
         {
             WebPartFactory factory = Portal.getPortalPart(reference.getName());
@@ -198,7 +216,12 @@ public class SimpleFolderType extends MultiPortalFolderType
                 Portal.WebPart webPart = factory.createWebPart(location);
 
                 if (reference.getPermission() != null)
-                    webPart.setPermission(reference.getPermission());
+                {
+                    if (permissionsMap.containsKey(reference.getPermission()))
+                        webPart.setPermission(permissionsMap.get(reference.getPermission()).getUniqueName());
+                    else if (RoleManager.getPermission(reference.getPermission()) != null)
+                        webPart.setPermission(reference.getPermission());
+                }
                 
                 for (Property prop : reference.getPropertyArray())
                     webPart.setProperty(prop.getName(), prop.getValue());
