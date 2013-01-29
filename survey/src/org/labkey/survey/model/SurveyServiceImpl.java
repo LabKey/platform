@@ -21,6 +21,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.survey.SurveyService;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
+import org.labkey.api.survey.model.SurveyListener;
 import org.labkey.survey.SurveyManager;
 
 /**
@@ -69,5 +70,11 @@ public class SurveyServiceImpl implements SurveyService.Interface
     public void deleteSurveyDesign(Container c, User user, int surveyDesignId, boolean deleteSurveyInstances)
     {
         SurveyManager.get().deleteSurveyDesign(c, user, surveyDesignId, deleteSurveyInstances);
+    }
+
+    @Override
+    public void addSurveyListener(SurveyListener listener)
+    {
+        SurveyManager.addSurveyListener(listener);
     }
 }

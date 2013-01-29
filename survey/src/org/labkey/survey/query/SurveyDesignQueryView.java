@@ -69,7 +69,7 @@ public class SurveyDesignQueryView extends QueryView
     @Override
     public ActionButton createDeleteButton()
     {
-        ActionURL url = new ActionURL(SurveyController.DeleteSurveysAction.class, getContainer());
+        ActionURL url = new ActionURL(SurveyController.DeleteSurveyDesignsAction.class, getContainer());
         url.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
 
         ActionButton btnDelete = new ActionButton(url, "Delete");

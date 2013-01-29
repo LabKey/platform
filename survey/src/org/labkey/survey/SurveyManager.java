@@ -43,10 +43,13 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
+import org.labkey.api.survey.model.SurveyListener;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
@@ -57,10 +60,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SurveyManager
 {
     private static final SurveyManager _instance = new SurveyManager();
+    private static final List<SurveyListener> _surveyListeners = new CopyOnWriteArrayList<SurveyListener>();
 
     private SurveyManager()
     {
@@ -70,6 +75,16 @@ public class SurveyManager
     public static SurveyManager get()
     {
         return _instance;
+    }
+
+    public static void addSurveyListener(SurveyListener listener)
+    {
+        _surveyListeners.add(listener);
+    }
+
+    public static void removeDesignListener(SurveyListener listener)
+    {
+        _surveyListeners.remove(listener);
     }
 
     @Nullable
@@ -174,6 +189,7 @@ public class SurveyManager
     public Survey saveSurvey(Container container, User user, Survey survey)
     {
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
+        List<Throwable> errors;
 
         try {
             scope.ensureTransaction();
@@ -186,9 +202,22 @@ public class SurveyManager
             {
                 survey.beforeInsert(user, container.getId());
                 ret = Table.insert(user, table, survey);
+                errors = fireCreatedSurvey(container, user, ret);
             }
             else
+            {
                 ret = Table.update(user, table, survey, survey.getRowId());
+                errors = fireUpdateSurvey(container, user, ret);
+            }
+
+            if (!errors.isEmpty())
+            {
+                Throwable first = errors.get(0);
+                if (first instanceof RuntimeException)
+                    throw (RuntimeException)first;
+                else
+                    throw new RuntimeException(first);
+            }
 
             scope.commitTransaction();
             return ret;
@@ -220,7 +249,6 @@ public class SurveyManager
     public Survey getSurvey(Container container, User user, int rowId)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromParts("container"), container);
         filter.addCondition(FieldKey.fromParts("rowId"), rowId);
         return new TableSelector(SurveySchema.getInstance().getSurveysTable(), filter, null).getObject(Survey.class);
     }
@@ -249,10 +277,10 @@ public class SurveyManager
      * Deletes a specified survey design
      * @param c
      * @param user
-     * @param surveyId
+     * @param surveyDesignId
      * @param deleteSurveyInstances - true to delete survey instances of this design
      */
-    public void deleteSurveyDesign(Container c, User user, int surveyId, boolean deleteSurveyInstances)
+    public void deleteSurveyDesign(Container c, User user, int surveyDesignId, boolean deleteSurveyInstances)
     {
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
@@ -264,12 +292,21 @@ public class SurveyManager
 
             if (deleteSurveyInstances)
             {
-                SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
-                deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE SurveyDesignId = ?").add(surveyId);
-                executor.execute(deleteSurveysSql);
+                // no listeners, do the quick delete
+                if (_surveyListeners.isEmpty())
+                {
+                    SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
+                    deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE SurveyDesignId = ?").add(surveyDesignId);
+                    executor.execute(deleteSurveysSql);
+                }
+                else
+                {
+                    for (Survey survey : getSurveys(c, user, surveyDesignId))
+                        deleteSurvey(c, user, survey.getRowId());
+                }
             }
             SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
-            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE RowId = ?").add(surveyId);
+            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE RowId = ?").add(surveyDesignId);
             executor.execute(deleteSurveyDesignsSql);
 
             scope.commitTransaction();
@@ -282,6 +319,104 @@ public class SurveyManager
         {
             scope.closeConnection();
         }
+    }
+
+    public Survey[] getSurveys(Container c, User user, int surveyDesignId)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("surveyDesignId"), surveyDesignId);
+
+        return new TableSelector(SurveySchema.getInstance().getSurveysTable(), filter, null).getArray(Survey.class);
+    }
+
+    public void deleteSurvey(Container c, User user, int surveyId)
+    {
+        DbScope scope = SurveySchema.getInstance().getSchema().getScope();
+        List<Throwable> errors;
+
+        try {
+            scope.ensureTransaction();
+
+            Survey survey = getSurvey(c, user, surveyId);
+
+            if (survey != null)
+            {
+                TableInfo table = SurveySchema.getInstance().getSurveysTable();
+
+
+                Table.delete(table, surveyId);
+                errors = fireDeleteSurvey(c, user, survey);
+
+                if (!errors.isEmpty())
+                {
+                    Throwable first = errors.get(0);
+                    if (first instanceof RuntimeException)
+                        throw (RuntimeException)first;
+                    else
+                        throw new RuntimeException(first);
+                }
+            }
+            scope.commitTransaction();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+    }
+
+    private static List<Throwable> fireDeleteSurvey(Container c, User user, Survey survey)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (SurveyListener l : _surveyListeners)
+        {
+            try {
+                l.surveyDeleted(c, user, survey);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
+    private static List<Throwable> fireUpdateSurvey(Container c, User user, Survey survey)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (SurveyListener l : _surveyListeners)
+        {
+            try {
+                l.surveyUpdated(c, user, survey);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
+    private static List<Throwable> fireCreatedSurvey(Container c, User user, Survey survey)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (SurveyListener l : _surveyListeners)
+        {
+            try {
+                l.surveyCreated(c, user, survey);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
     }
 
     public static class TestCase extends Assert

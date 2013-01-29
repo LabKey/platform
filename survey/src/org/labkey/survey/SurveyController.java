@@ -889,6 +889,54 @@ public class SurveyController extends SpringActionController
             try {
                 scope.ensureTransaction();
 
+                for (String survey : DataRegionSelection.getSelected(getViewContext(), true))
+                {
+                    int rowId = NumberUtils.toInt(survey);
+                    SurveyManager.get().deleteSurvey(getContainer(), getUser(), rowId);
+                }
+                scope.commitTransaction();
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(QueryForm form)
+        {
+            return _returnURL;
+        }
+    }
+
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteSurveyDesignsAction extends FormHandlerAction<QueryForm>
+    {
+        private ActionURL _returnURL;
+
+        @Override
+        public void validateCommand(QueryForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        {
+            String returnURL = (String)this.getProperty(QueryParam.srcURL);
+            if (returnURL != null)
+                _returnURL = new ActionURL(returnURL);
+
+            DbScope scope = SurveySchema.getInstance().getSchema().getScope();
+
+            try {
+                scope.ensureTransaction();
+
                 for (String surveyDesign : DataRegionSelection.getSelected(getViewContext(), true))
                 {
                     int rowId = NumberUtils.toInt(surveyDesign);

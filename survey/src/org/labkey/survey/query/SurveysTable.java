@@ -64,6 +64,9 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         ActionURL updateUrl = new ActionURL(SurveyController.UpdateSurveyAction.class, schema.getContainer());
         setUpdateURL(new DetailsURL(updateUrl, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
+
+        ActionURL deleteRowsURL = new ActionURL(SurveyController.DeleteSurveysAction.class, schema.getContainer());
+        setDeleteURL(new DetailsURL(deleteRowsURL, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
     }
 
     @Override
