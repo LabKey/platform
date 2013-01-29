@@ -235,12 +235,7 @@ Ext4.define('File.panel.ToolbarPanel', {
                     return '<img src = "'+path+'" />';
                 }},
                 {header : 'Text', dataIndex : 'text', width : 200}
-            ],
-            listeners : {
-                afterrender : function(){
-                    console.log(optionsPanel.getHeight());
-                }
-            }
+            ]
         });
 
         var gridPanel = Ext4.create('Ext.grid.Panel', {

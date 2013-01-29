@@ -102,29 +102,18 @@ Ext4.define('Study.window.ParticipantGroup', {
 
             },
         });
-        //This is here in case we ever want to look at which groups are actually being used.  We currently do not.
-//        var setOfCategories = {};
-//        LABKEY.Query.selectRows({
-//           schemaName : 'study',
-//            queryName : this.panelConfig.subject.nounSingular + 'Group',
-//            success : function(details){
-//                for(var i = 0; i < details.rows.length; i++){
-//                    setOfCategories[details.rows[i].CategoryId] = true;
-//                }
-//            }
-//        });
 
         LABKEY.Query.selectRows({
             schemaName : 'study',
             queryName : this.panelConfig.subject.nounSingular + 'Category',
             success : function(details){
-                var nonManual = [];
+                var manualCategories = [];
                 for(var i = 0; i < details.rows.length; i++){
                     if(details.rows[i].Type === "manual"){
-                        nonManual.push(details.rows[i]);
+                        manualCategories.push(details.rows[i]);
                     }
                 }
-                categoryStore.loadData(nonManual);
+                categoryStore.loadData(manualCategories);
                 categoryStore.fireEvent('load', categoryStore);
             },
             scope : this
