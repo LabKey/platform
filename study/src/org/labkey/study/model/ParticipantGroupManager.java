@@ -275,8 +275,11 @@ public class ParticipantGroupManager
                     {
                         ActionURL url = baseURL.clone();
                         url = grp.addURLFilter(url, container, dataRegionName);
-                        NavTree child = item.addChild(grp.getLabel(), url);
+
+                        NavTree child = new NavTree(grp.getLabel(), url);
                         child.setSelected(selected.contains(grp));
+
+                        item.addChild(child);
                     }
                     button.addMenuItem(item);
                     if (cls.isShared())

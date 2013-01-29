@@ -16,19 +16,22 @@
 package org.labkey.study.controllers;
 
 import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -37,7 +40,10 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
@@ -350,6 +356,61 @@ public class ParticipantGroupController extends BaseStudyController
             resp.put("success", true);
 
             return resp;
+        }
+    }
+
+    @RequiresPermissionClass(DeletePermission.class)
+    /**
+     * A little confusing to have two actions to delete categories. This is a temporary measure to allow categories to be
+     * deleted through the schema browser query views, until we can implement a UI to handle management of categories
+     * and groups.
+     */
+    public class DeleteParticipantCategories extends FormHandlerAction<QueryForm>
+    {
+        private ActionURL _returnURL;
+
+        @Override
+        public void validateCommand(QueryForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        {
+            String returnURL = (String)this.getProperty(QueryParam.srcURL);
+            if (returnURL != null)
+                _returnURL = new ActionURL(returnURL);
+
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+            try {
+                scope.ensureTransaction();
+
+                for (String survey : DataRegionSelection.getSelected(getViewContext(), true))
+                {
+                    int rowId = NumberUtils.toInt(survey);
+                    ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), rowId);
+
+                    if (category != null)
+                        ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), category);
+                }
+                scope.commitTransaction();
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(QueryForm form)
+        {
+            return _returnURL;
         }
     }
 
@@ -987,6 +1048,62 @@ public class ParticipantGroupController extends BaseStudyController
             ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getRowId());
             ParticipantGroupManager.getInstance().deleteParticipantGroup(getContainer(), getUser(), group);
             return resp;
+        }
+    }
+
+    @RequiresPermissionClass(DeletePermission.class)
+    /**
+     * A little confusing to have two actions to delete groups. This is a temporary measure to allow groups to be
+     * deleted through the schema browser query views, until we can implement a UI to handle management of categories
+     * and groups.
+     */
+    public class DeleteParticipantGroups extends FormHandlerAction<QueryForm>
+    {
+        private ActionURL _returnURL;
+
+        @Override
+        public void validateCommand(QueryForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        {
+            String returnURL = (String)this.getProperty(QueryParam.srcURL);
+            if (returnURL != null)
+                _returnURL = new ActionURL(returnURL);
+
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+            try {
+                scope.ensureTransaction();
+
+                for (String survey : DataRegionSelection.getSelected(getViewContext(), true))
+                {
+                    int rowId = NumberUtils.toInt(survey);
+
+                    ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), rowId);
+                    if (group != null)
+                        ParticipantGroupManager.getInstance().deleteParticipantGroup(getContainer(), getUser(), group);
+                }
+                scope.commitTransaction();
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(QueryForm form)
+        {
+            return _returnURL;
         }
     }
 

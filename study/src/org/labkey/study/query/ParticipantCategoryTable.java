@@ -16,12 +16,25 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.ParticipantGroupController;
+
+import java.util.Collections;
 
 /**
  * User: brittp
@@ -53,5 +66,26 @@ public class ParticipantCategoryTable extends BaseStudyTable
             }
         });
         addColumn(createdBy);
+
+        ActionURL deleteRowsURL = new ActionURL(ParticipantGroupController.DeleteParticipantCategories.class, schema.getContainer());
+        setDeleteURL(new DetailsURL(deleteRowsURL, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
+    }
+
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        if (perm.equals(DeletePermission.class))
+            return getContainer().hasPermission(user, perm);
+        else
+            return false;
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        TableInfo table = getRealTable();
+        if (table != null && table.getTableType() == DatabaseTableType.TABLE)
+            return new DefaultQueryUpdateService(this, table);
+        return null;
     }
 }
