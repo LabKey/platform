@@ -76,9 +76,19 @@ public class LinkedSchema extends ExternalSchema
         if (sourceSchema == null)
             return null;
 
-        Map<String, TableType> metaDataMap = new CaseInsensitiveHashMap<TableType>();
+        TablesType tablesType = parseTablesType(def, template);
 
-        return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, sourceSchema.getTableNames(), Collections.<String>emptySet());
+        NamedFiltersType[] namedFilters = null;
+        TableType[] tableTypes = null;
+        if (tablesType != null)
+        {
+            namedFilters = tablesType.getFiltersArray();
+            tableTypes = tablesType.getTableArray();
+        }
+
+        Map<String, TableType> metaDataMap = getMetaDataMap(tableTypes);
+
+        return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, sourceSchema.getTableNames(), Collections.<String>emptySet());
     }
 
     private static UserSchema getSourceSchema(LinkedSchemaDef def, TemplateSchemaType template, User user)
@@ -94,9 +104,11 @@ public class LinkedSchema extends ExternalSchema
     }
 
     private LinkedSchema(User user, Container container, LinkedSchemaDef def, TemplateSchemaType template, UserSchema sourceSchema,
-                         Map<String, TableType> metaDataMap, Collection<String> availableTables, Collection<String> hiddenTables)
+                         Map<String, TableType> metaDataMap,
+                         NamedFiltersType[] namedFilters,
+                         Collection<String> availableTables, Collection<String> hiddenTables)
     {
-        super(user, container, def, template, sourceSchema.getDbSchema(), metaDataMap, availableTables, hiddenTables);
+        super(user, container, def, template, sourceSchema.getDbSchema(), metaDataMap, namedFilters, availableTables, hiddenTables);
 
         _sourceSchema = sourceSchema;
     }
@@ -141,28 +153,13 @@ public class LinkedSchema extends ExternalSchema
     {
         assert !(sourceTable instanceof SchemaTableInfo) : "LinkedSchema only wraps query TableInfos, not SchemaTableInfos";
 
-        TableType xmlTable = null;
-        NamedFiltersType[] xmlFilters = null;
-        if (_template != null && _template.isSetMetadata())
-        {
-            TablesType xmlTables = _template.getMetadata().getTables();
-            xmlFilters = xmlTables.getFiltersArray();
-            for (TableType potentialXMLTable : xmlTables.getTableArray())
-            {
-                if (name.equalsIgnoreCase(potentialXMLTable.getTableName()))
-                {
-                    xmlTable = potentialXMLTable;
-                    break;
-                }
-            }
-        }
-
-        QueryDefinition queryDef = createQueryDef(name, sourceTable, xmlTable);
+        TableType metaData = getXbTable(name);
+        QueryDefinition queryDef = createQueryDef(name, sourceTable, metaData);
 
         TableInfo tableInfo = queryDef.getTable(new ArrayList<QueryException>(), true);
         LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo);
 
-        linkedTableInfo.loadFromXML(this, xmlTable, xmlFilters, new ArrayList<QueryException>());
+        linkedTableInfo.loadFromXML(this, metaData, _namedFilters, new ArrayList<QueryException>());
 
         return linkedTableInfo;
     }

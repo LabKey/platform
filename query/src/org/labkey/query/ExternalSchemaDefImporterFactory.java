@@ -22,6 +22,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
@@ -126,7 +127,12 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
 
                 form = new LinkedSchemaForm();
                 form.setTypedValue("schematype", "linked");
-                form.setTypedValue("dataSource", schemaXml.getSourceContainer());
+                String containerPath = schemaXml.getSourceContainer();
+                Container container = ContainerManager.getForPath(containerPath);
+                if (container == null)
+                    container = ContainerManager.getForId(containerPath);
+                if (container != null)
+                    form.setTypedValue("dataSource", container.getId());
             }
             else
                 throw new ImportException("Unable to get an instance of external or linked schema from " + relativePath);

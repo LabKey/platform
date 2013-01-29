@@ -32,7 +32,9 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
+import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 import org.labkey.query.data.ExternalSchemaTable;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -70,26 +72,35 @@ public class ExternalSchema extends SimpleUserSchema
 
     protected final AbstractExternalSchemaDef _def;
     protected final TemplateSchemaType _template;
-    private final Map<String, TableType> _metaDataMap;
+    protected final Map<String, TableType> _metaDataMap;
+    protected final NamedFiltersType[] _namedFilters;
 
     public static ExternalSchema get(User user, Container container, ExternalSchemaDef def)
     {
         TemplateSchemaType template = def.lookupTemplate(container);
-        TableType[] tableTypes = parseTableTypes(def, template);
-        Map<String, TableType> metaDataMap = new CaseInsensitiveHashMap<TableType>();
+        TablesType tablesType = parseTablesType(def, template);
 
-        for (TableType tt : tableTypes)
-            metaDataMap.put(tt.getTableName(), tt);
+        NamedFiltersType[] namedFilters = null;
+        TableType[] tableTypes = null;
+        if (tablesType != null)
+        {
+            namedFilters = tablesType.getFiltersArray();
+            tableTypes = tablesType.getTableArray();
+        }
 
         DbSchema schema = getDbSchema(def, template);
+
+        Map<String, TableType> metaDataMap = getMetaDataMap(tableTypes);
         Collection<String> availableTables = getAvailableTables(def, template, schema, metaDataMap);
         Collection<String> hiddenTables = getHiddenTables(tableTypes);
 
-        return new ExternalSchema(user, container, def, template, schema, metaDataMap, availableTables, hiddenTables);
+        return new ExternalSchema(user, container, def, template, schema, metaDataMap, namedFilters, availableTables, hiddenTables);
     }
 
     protected ExternalSchema(User user, Container container, AbstractExternalSchemaDef def, TemplateSchemaType template, DbSchema schema,
-        Map<String, TableType> metaDataMap, Collection<String> availableTables, Collection<String> hiddenTables)
+                             Map<String, TableType> metaDataMap,
+                             NamedFiltersType[] namedFilters,
+                             Collection<String> availableTables, Collection<String> hiddenTables)
     {
         super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.",
                 user, container, schema, availableTables, hiddenTables);
@@ -97,6 +108,7 @@ public class ExternalSchema extends SimpleUserSchema
         _def = def;
         _template = template;
         _metaDataMap = metaDataMap;
+        _namedFilters = namedFilters;
     }
 
     private static DbSchema getDbSchema(ExternalSchemaDef def, TemplateSchemaType template)
@@ -109,10 +121,11 @@ public class ExternalSchema extends SimpleUserSchema
         return scope.getSchema(sourceSchemaName);
     }
 
-    private static @NotNull TableType[] parseTableTypes(ExternalSchemaDef def, TemplateSchemaType template)
+    @Nullable
+    protected static TablesType parseTablesType(AbstractExternalSchemaDef def, TemplateSchemaType template)
     {
         if (template != null && template.getMetadata() != null)
-            return template.getMetadata().getTables().getTableArray();
+            return template.getMetadata().getTables();
 
         String metadata = def.getMetaData();
         if (metadata != null)
@@ -122,7 +135,7 @@ public class ExternalSchema extends SimpleUserSchema
                 TablesDocument doc = TablesDocument.Factory.parse(metadata);
 
                 if (doc.getTables() != null)
-                    return doc.getTables().getTableArray();
+                    return doc.getTables();
             }
             catch (XmlException e)
             {
@@ -130,7 +143,7 @@ public class ExternalSchema extends SimpleUserSchema
             }
         }
 
-        return new TableType[0];
+        return null;
     }
 
     private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, TemplateSchemaType template, @Nullable DbSchema schema, Map<String, TableType> metaDataMap)
@@ -198,11 +211,25 @@ public class ExternalSchema extends SimpleUserSchema
     {
         Set<String> hidden = new HashSet<String>();
 
-        for (TableType tt : tableTypes)
-            if (tt.getHidden())
-                hidden.add(tt.getTableName());
+        if (tableTypes != null)
+        {
+            for (TableType tt : tableTypes)
+                if (tt.getHidden())
+                    hidden.add(tt.getTableName());
+        }
 
         return hidden;
+    }
+
+    protected static @NotNull Map<String, TableType> getMetaDataMap(TableType[] tableTypes)
+    {
+        Map<String, TableType> metaDataMap = new CaseInsensitiveHashMap<TableType>();
+        if (tableTypes != null)
+        {
+            for (TableType tt : tableTypes)
+                metaDataMap.put(tt.getTableName(), tt);
+        }
+        return metaDataMap;
     }
 
     public static void uncache(ExternalSchemaDef def)
@@ -227,7 +254,7 @@ public class ExternalSchema extends SimpleUserSchema
         return ret;
     }
 
-    private TableType getXbTable(String name)
+    protected TableType getXbTable(String name)
     {
         return _metaDataMap.get(name);
     }

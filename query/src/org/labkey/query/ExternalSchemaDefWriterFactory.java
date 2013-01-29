@@ -100,9 +100,8 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
                 LinkedSchemaDocument defDoc = LinkedSchemaDocument.Factory.newInstance();
                 LinkedSchemaType defXml = defDoc.addNewLinkedSchema();
 
-                // XXX: Should serialize container path or container id?
                 Container sourceContainer = def.lookupSourceContainer();
-                defXml.setSourceContainer(sourceContainer.getId());
+                defXml.setSourceContainer(sourceContainer.getPath());
 
                 addCommonProperties(defXml, def);
 

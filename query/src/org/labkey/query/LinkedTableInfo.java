@@ -40,6 +40,7 @@ import org.labkey.data.xml.queryCustomView.LocalOrRefFiltersType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
 * User: kevink
@@ -71,7 +72,7 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
         DetailsURL detailsURL = QueryService.get().urlDefault(getContainer(), QueryAction.detailsQueryRow, this);
         setDetailsURL(detailsURL);
 
-        DetailsURL gridURL = QueryService.get().urlDefault(getContainer(), QueryAction.executeQuery, this);
+        DetailsURL gridURL = QueryService.get().urlDefault(getContainer(), QueryAction.executeQuery, getPublicSchemaName(), getPublicName(), Collections.<String, Object>emptyMap());
         setGridURL(gridURL);
     }
 
