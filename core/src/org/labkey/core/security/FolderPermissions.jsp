@@ -159,7 +159,11 @@ Ext4.onReady(function(){
 
     editor.on('afterlayout', function() {
         var tPanel = editor.getTabPanel();
-        tPanel.add({contentEl:'impersonateFrame', title:'Impersonate', autoHeight:true, deferredRender:false});
+        var contentId = 'impersonateFrame';
+        var contentEl = Ext4.get(contentId);
+        if (contentEl) {
+            tPanel.add({contentEl:contentId, title:'Impersonate', autoHeight:true, deferredRender:false});
+        }
         for (var v=0; v < viewTabs.length; v++)
         {
             tPanel.add(viewTabs[v]);

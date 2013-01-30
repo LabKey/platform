@@ -127,7 +127,7 @@ Ext4.define('Security.panel.PermissionEditor', {
         var items = [this.getPolicyEditor()];
 
         // Not shown at root level since a root group is a site group
-        if (LABKEY.Security.currentUser.isSystemAdmin && !this.isSiteRoot) {
+        if ((this.isSiteAdmin || this.isProjectAdmin) && !this.isSiteRoot) {
             items.push(this.getGroupTabConfig(this.securityCache.projectId, true));
         }
 
@@ -147,8 +147,8 @@ Ext4.define('Security.panel.PermissionEditor', {
             itemId : 'permissions',
             cache  : this.securityCache,
             border : false,
-            isSiteAdmin    : LABKEY.Security.currentUser.isSystemAdmin,
-            isProjectAdmin : LABKEY.Security.currentUser.isAdmin,
+            isSiteAdmin    : this.isSiteAdmin,
+            isProjectAdmin : this.isProjectAdmin,
             canInherit : this.canInherit,
             resourceId : LABKEY.container.id,
             doneURL    : this.doneURL,
