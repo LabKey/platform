@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.portal.ProjectUrls;
@@ -145,11 +146,14 @@ public class StudyFolderTabs
         }
 
         @Override
-        public String getCaption(ViewContext viewContext)
+        public String getCaption(@Nullable ViewContext viewContext)
         {
-            Study study = StudyService.get().getStudy(viewContext.getContainer());
-            if (null == study)
+            if (null != super.getCaption(viewContext))
                 return super.getCaption(viewContext);
+
+            Study study = (null != viewContext) ? StudyService.get().getStudy(viewContext.getContainer()) : null;
+            if (null == study)
+                return null;
             else
                 return study.getSubjectNounPlural();
         }

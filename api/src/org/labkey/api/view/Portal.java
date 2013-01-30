@@ -641,6 +641,8 @@ public class Portal
                 try
                 {
                     find.setIndex(tab.getDefaultIndex());
+                    if (null != tab.getCaption(null))
+                        find.setCaption(tab.getCaption(null));
                     Table.update(null, getTableInfoPortalPages(), find, new Object[] {find.getContainer(), find.getPageId()});
                 }
                 catch (SQLException x)

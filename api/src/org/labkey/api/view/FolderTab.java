@@ -43,7 +43,7 @@ public abstract class FolderTab
 //    public static final String LOCATION = "tab";
 
     private final String _name;
-    private final String _caption;
+    private String _caption;
     private boolean _isDefaultTab = false;
     protected Set<String> _legacyNames = new HashSet<String>();
     protected int _defaultIndex = -1;
@@ -203,9 +203,14 @@ public abstract class FolderTab
         return _name;
     }
 
-    public String getCaption(ViewContext viewContext)
+    public String getCaption(@Nullable ViewContext viewContext)
     {
         return _caption;
+    }
+
+    protected void setCaption(String caption)
+    {
+        _caption = caption;
     }
 
     public Set<String> getLegacyNames()
