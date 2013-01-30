@@ -5075,7 +5075,6 @@ internal/webapp/_images/defaultlogo.png -text
 internal/webapp/_images/defaultlogosmall.gif -text
 internal/webapp/_images/delete.gif -text
 internal/webapp/_images/delete.png -text
-internal/webapp/_images/diabetes_bc.svg -text
 internal/webapp/_images/dot.gif -text
 internal/webapp/_images/downarrow.gif -text
 internal/webapp/_images/downarrow_disabled.gif -text
@@ -5145,7 +5144,6 @@ internal/webapp/_images/partupg.gif -text
 internal/webapp/_images/partupg.png -text
 internal/webapp/_images/pencil.png -text
 internal/webapp/_images/pencil2.png -text
-internal/webapp/_images/pie.png -text
 internal/webapp/_images/plus.gif -text
 internal/webapp/_images/plus_minus.png -text
 internal/webapp/_images/private.gif -text
