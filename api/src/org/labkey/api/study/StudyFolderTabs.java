@@ -148,12 +148,9 @@ public class StudyFolderTabs
         @Override
         public String getCaption(@Nullable ViewContext viewContext)
         {
-            if (null != super.getCaption(viewContext))
-                return super.getCaption(viewContext);
-
             Study study = (null != viewContext) ? StudyService.get().getStudy(viewContext.getContainer()) : null;
             if (null == study)
-                return null;
+                return super.getCaption(viewContext);
             else
                 return study.getSubjectNounPlural();
         }

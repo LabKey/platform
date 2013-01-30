@@ -678,9 +678,10 @@ public class Portal
         p.setIndex(index);
         p.setType("portal");
 
-        if (null != tab)
+        if (null != tab && resetIndexes)
         {
-            // TODO get any additional configuration info here???
+            if (null != tab.getCaption(null))
+                p.setCaption(tab.getCaption(null));
         }
 
         try
