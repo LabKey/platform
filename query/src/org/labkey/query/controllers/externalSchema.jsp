@@ -70,8 +70,6 @@
     }
 
     String initialTemplateName = bean.getSchemaDef().getSchemaTemplate();
-    if (initialTemplateName == null)
-        initialTemplateName = "[none]";
     TemplateSchemaType initialTemplate = bean.getSchemaDef().lookupTemplate(c);
 %>
 var dataSources = <%=text(dataSourcesJson.toString())%>;
@@ -94,7 +92,7 @@ var tablesStore = new Ext.data.JsonStore({
 
 // create the templates data store
 var templatesStore = new Ext.data.JsonStore({
-    url: 'schemaTemplates.api',
+    autoload: false,
     autoDestroy: true,
     storeId: 'templatesStore',
     idProperty: 'name',
@@ -131,6 +129,10 @@ var templateComboBox = new LABKEY.ext.ComboBox({
     name:'schemaTemplate',
     fieldLabel:'Schema Template',
     store: templatesStore,
+    mode: 'local',
+    triggerAction: 'all',
+    editable: false,
+    autoSelect: true,
     valueField:'name',
     displayField:'name',
     hidden:external,
@@ -272,8 +274,7 @@ Ext.onReady(function()
         templateComboBox.on('select', templateComboBox_onSelect);
 
         var sourceContainerId = dataSourceCombo.getValue();
-        templatesStore.proxy.setUrl(LABKEY.ActionURL.buildURL("query", "schemaTemplates.api", sourceContainerId));
-        templatesStore.load();
+        loadSchemaTemplateStore(sourceContainerId, templatesStore);
     }
     loadTables();
 });
@@ -283,7 +284,6 @@ function dataSourceCombo_onSelect()
 {
     var dataSourceIndex = dataSourceStore.find("value", dataSourceCombo.getValue());
 
-    templateComboBox.store.load();
     templateComboBox_onSelect();
 
     sourceSchemaCombo.store.loadData(dataSources[dataSourceIndex][schemaIndex]);
@@ -315,8 +315,7 @@ function sourceSchemaCombo_onSelect()
             userSchemaText.setValue(schemaName);
         }
         var sourceContainerId = dataSourceCombo.getValue();
-        templatesStore.proxy.setUrl(LABKEY.ActionURL.buildURL("query", "schemaTemplates.api", sourceContainerId));
-        templatesStore.load();
+        loadSchemaTemplateStore(sourceContainerId, templatesStore);
     }
     metaDataTextArea.setValue("");
     loadTables();
@@ -414,6 +413,7 @@ function templatesLoaded(store, records, options)
     var record = new recordConstructor(data, -1);
 
     templateComboBox.store.insert(0, record);
+    templateComboBox.setValue('[none]');
 }
 
 function submit()
@@ -482,4 +482,17 @@ function updateTableTitle()
 
     grid.setTitle(title);
 }
+
+function loadSchemaTemplateStore(sourceContainerId, schemaTemplateStore)
+{
+    Ext.Ajax.request({
+        url: LABKEY.ActionURL.buildURL("query", "schemaTemplates.api", sourceContainerId),
+        success: function(response){
+            console.log('loading data');
+            schemaTemplateStore.loadData(Ext.util.JSON.decode(response.responseText));
+        },
+        failure: function(){}
+    });
+}
+
 </script>
