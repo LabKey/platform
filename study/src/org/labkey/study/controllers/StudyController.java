@@ -6997,7 +6997,7 @@ public class StudyController extends BaseStudyController
             // Get all categories -- group views by them
             Map<Integer, List<DataViewInfo>> groups = new HashMap<Integer, List<DataViewInfo>>();
             Map<Integer, ViewCategory> categories = new HashMap<Integer, ViewCategory>();
-            TreeSet<ViewCategory> order = new TreeSet<ViewCategory>(t);
+            Map<Integer, ViewCategory> topCategories = new HashMap<Integer, ViewCategory>();
 
             for (DataViewInfo view : views)
             {
@@ -7010,9 +7010,15 @@ public class StudyController extends BaseStudyController
                     }
                     groups.get(vc.getRowId()).add(view);
                     categories.put(vc.getRowId(), vc);
-                    order.add(vc);
+                    if (null == vc.getParent())
+                    {
+                        topCategories.put(vc.getRowId(), vc);
+                    }
                 }
             }
+
+            List<ViewCategory> order = new ArrayList<ViewCategory>(topCategories.values());
+            Collections.sort(order);
 
             // Construct category tree
             Map<Integer, TreeSet<ViewCategory>> tree = new HashMap<Integer, TreeSet<ViewCategory>>();

@@ -111,6 +111,10 @@ div.data-views-tip-panel
     box-shadow: rgb(220, 220, 220) 4px 5px 5px;
 }
 
+div.hide-tip {
+    display: none !important;
+}
+
 div.data-views-tip-content table
 {
     width: 100%;

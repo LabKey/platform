@@ -557,20 +557,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     initGrid : function(useGrouping, visibleColumns) {
 
         /**
-         * Enable Grouping by Category
-         */
-        var groupingFeature = Ext4.create('Ext4.grid.feature.Grouping', {
-            groupHeaderTpl : '&nbsp;{name}' // &nbsp; allows '+/-' to show up
-        });
-
-        /**
          * Tooltip Template
          */
         var tipTpl = new Ext4.XTemplate('<tpl>' +
                 '<div class="data-views-tip-content">' +
                 '<table cellpadding="20" cellspacing="100">' +
-                '<tpl if="data.category != undefined && data.category.length">' +
-                '<tr><td>Source:</td><td>{[fm.htmlEncode(values.data.category)]}</td></tr>' +
+                '<tpl if="data.category != undefined && (data.category.length || data.category.label)">' +
+                '<tr><td>Source:</td><td>{[this.renderCategory(values.data.category)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.createdBy != undefined && data.createdBy.length">' +
                 '<tr><td>Created By:</td><td>{[fm.htmlEncode(values.data.createdBy)]}</td></tr>' +
@@ -596,86 +589,67 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<div class="thumbnail"><img src="{data.thumbnail}"/></div>' +
                 '</div>' +
                 '</tpl>',
-        {
-            renderDate : function(data) {
-                return this.initialConfig.dateRenderer(data);
-            }
-        }, {dateRenderer : this.dateRenderer});
-
-        this._tipID = Ext4.id();
-        var _tipID = this._tipID;
-
-        function getTipPanel()
-        {
-            var tipPanel = Ext4.create('Ext.panel.Panel', {
-                id     : _tipID,
-                layout : 'fit',
-                border : false, frame : false,
-                height : '100%',
-                cls    : 'tip-panel',
-                tpl    : tipTpl,
-                renderTipRecord : function(rec){
-                    tipPanel.update(rec);
-                }
-            });
-
-            return tipPanel;
-        }
-
-        function initToolTip(view)
-        {
-            var _w = 500;
-            var _h = 325;
-            var _active;
-
-            function renderToolTip(tip)
-            {
-                if (_active)
-                    tip.setTitle(_active.get('name'));
-                var content = Ext4.getCmp(_tipID);
-                if (content)
                 {
-                    content.renderTipRecord(_active);
-                }
-            }
+                    renderCategory : function(cat) {
+                        return Ext4.htmlEncode(Ext4.isString(cat) ? cat : cat.label);
+                    },
+                    renderDate : function(data) {
+                        return this.initialConfig.dateRenderer(data);
+                    }
+                }, {dateRenderer : this.dateRenderer});
 
-            function loadRecord(t) {
-                var r = view.getRecord(t.triggerElement.parentNode);
-                if (r) _active = r;
-                else {
-                    /* This usually occurs when mousing over grouping headers */
-                    _active = null;
-                    return false;
-                }
-                return true;
-            }
-
+        /**
+         * Initializes the tooltip at grid panel render
+         */
+        var initToolTip = function(view)
+        {
             view.tip = Ext4.create('Ext.tip.ToolTip', {
                 target   : view.el,
                 delegate : '.x4-name-column-cell',
                 trackMouse: false,
-                width    : _w,
-                height   : _h,
+                width    : 500,
+                height   : 325,
                 html     : null,
                 autoHide : true,
                 anchorToTarget : true,
                 anchorOffset : 100,
-                showDelay: 1000,
+                showDelay: 850,
                 cls      : 'data-views-tip-panel',
-                defaults : { border: false, frame: false},
-                items    : [getTipPanel()],
+                defaults : { border: false, frame: false },
+                items    : [{
+                    xtype  : 'panel',
+                    layout : 'fit',
+                    border : false, frame : false,
+                    height : '100%',
+                    cls    : 'tip-panel',
+                    tpl    : tipTpl
+                }],
                 listeners: {
                     // Change content dynamically depending on which element triggered the show.
                     beforeshow: function(tip) {
-                        var loaded = loadRecord(tip);
-                        renderToolTip(tip);
-                        return loaded; // return false to not show tip
+                        var rec = this.getRecord(tip.triggerElement.parentNode);
+
+                        if (!rec || (rec.childNodes && rec.childNodes.length > 0)) {
+                            tip.addCls('hide-tip');
+                        }
+                        else if (rec) {
+                            tip.removeCls('hide-tip');
+                            tip.setTitle(rec.get('name'));
+                            tip.down('panel').update(rec);
+                        }
                     },
-                    scope : this
+                    scope : view
                 },
                 scope : this
             });
-        }
+        };
+
+        /**
+         * Enable Grouping by Category
+         */
+        var groupingFeature = Ext4.create('Ext4.grid.feature.Grouping', {
+            groupHeaderTpl : '&nbsp;{name}' // &nbsp; allows '+/-' to show up
+        });
 
         var plugins = [];
         if (this.asTree) {
@@ -704,7 +678,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             selType   : 'rowmodel',
             features  : [groupingFeature],
             listeners : {
-                itemclick : function(view, record, item, index, e, opts) {
+                itemclick : function(view, record, item, index, e) {
                     // TODO: Need a better way to determine the clicked item
                     var cls = e.target.className;
                     if (cls.search(/edit-views-link/i) >= 0)
@@ -1465,6 +1439,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             fn      : function(btn){
                                 if (btn == 'ok') {
                                     store.removeAt(idx);
+                                    store.sync();
                                 }
                             },
                             scope  : this
@@ -1647,7 +1622,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     click : function(col, grid, idx, evt, x, y, z)
                     {
                         var label = store.getAt(idx).data.label;
-                        var id    = store.getAt(idx).data.rowid;
 
                         Ext4.Msg.show({
                             title : 'Delete Category',
@@ -1657,6 +1631,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             fn      : function(btn){
                                 if (btn == 'ok') {
                                     store.removeAt(idx);
+                                    store.sync();
                                 }
                             },
                             scope  : this
