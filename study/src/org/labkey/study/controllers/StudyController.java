@@ -6990,14 +6990,17 @@ public class StudyController extends BaseStudyController
                 @Override
                 public int compare(ViewCategory o1, ViewCategory o2)
                 {
-                    return ((Integer) o1.getDisplayOrder()).compareTo((Integer) o2.getDisplayOrder());
+                    int order = ((Integer) o1.getDisplayOrder()).compareTo(o2.getDisplayOrder());
+                    if (order == 0)
+                        return ((Integer) o1.getRowId()).compareTo(o2.getRowId());
+                    return order;
                 }
             };
 
             // Get all categories -- group views by them
             Map<Integer, List<DataViewInfo>> groups = new HashMap<Integer, List<DataViewInfo>>();
             Map<Integer, ViewCategory> categories = new HashMap<Integer, ViewCategory>();
-            Map<Integer, ViewCategory> topCategories = new HashMap<Integer, ViewCategory>();
+            TreeSet<ViewCategory> order = new TreeSet<ViewCategory>(t);
 
             for (DataViewInfo view : views)
             {
@@ -7012,13 +7015,10 @@ public class StudyController extends BaseStudyController
                     categories.put(vc.getRowId(), vc);
                     if (null == vc.getParent())
                     {
-                        topCategories.put(vc.getRowId(), vc);
+                        order.add(vc);
                     }
                 }
             }
-
-            List<ViewCategory> order = new ArrayList<ViewCategory>(topCategories.values());
-            Collections.sort(order);
 
             // Construct category tree
             Map<Integer, TreeSet<ViewCategory>> tree = new HashMap<Integer, TreeSet<ViewCategory>>();
@@ -7051,10 +7051,6 @@ public class StudyController extends BaseStudyController
 
             for (ViewCategory vc : order)
             {
-                // not part of top level order
-                if (null != vc.getParent())
-                    continue;
-
                 JSONObject category = new JSONObject();
                 category.put("name", vc.getLabel());
                 category.put("icon", false);
