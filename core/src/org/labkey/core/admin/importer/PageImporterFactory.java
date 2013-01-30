@@ -67,8 +67,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
         _FolderTab(String pageId, int index, String caption)
         {
             super(pageId, caption);
-            if (null == caption)
-                setCaption(null);
+            setCaption(caption);        // Overwrite what parent knows with what we imported or null
 
             _defaultIndex = index;
         }
