@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin.importer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
@@ -63,9 +64,12 @@ public class PageImporterFactory extends AbstractFolderImportFactory
 
     private static class _FolderTab extends FolderTab
     {
-        _FolderTab(String pageId, int index)
+        _FolderTab(String pageId, int index, String caption)
         {
-            super(pageId);
+            super(pageId, caption);
+            if (null == caption)
+                setCaption(null);
+
             _defaultIndex = index;
         }
         @Override
@@ -130,7 +134,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                         pageId = Portal.DEFAULT_PORTAL_PAGE_ID;       // TODO: seems to cause problem with new container tab and import/export features. Check this.
                     }
 */
-                    FolderTab tab = new _FolderTab(pageXml.getName(), pageXml.getIndex());
+                    FolderTab tab = new _FolderTab(pageXml.getName(), pageXml.getIndex(), StringUtils.trimToNull(pageXml.getCaption()));
                     tabs.add(tab);
 
                     PagesDocument.Pages.Page.Webpart[] webpartXmls = pageXml.getWebpartArray();

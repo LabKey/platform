@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin.writer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
@@ -78,6 +79,8 @@ public class PageWriterFactory implements FolderWriterFactory
                     pageXml.setName(tab.getPageId());
                     pageXml.setPropertyString(tab.getProperties());     // For custom tab
                     pageXml.setHidden(tab.isHidden());
+                    if (null != StringUtils.trimToNull(tab.getCaption()))
+                        pageXml.setCaption(tab.getCaption());
 
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
                     List<WebPart> portalPageParts = Portal.getParts(ctx.getContainer(), tab.getPageId());
