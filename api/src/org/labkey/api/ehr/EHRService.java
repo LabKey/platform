@@ -53,9 +53,9 @@ abstract public class EHRService
 
     abstract public List<Resource> getExtraTriggerScripts(Container c);
 
-    abstract public void registerTableCustomizer(Module owner, TableCustomizer customizer);
+    abstract public void registerTableCustomizer(Module owner, Class<? extends TableCustomizer> customizer);
 
-    abstract public void registerTableCustomizer(Module owner, TableCustomizer customizer, String schema, String query);
+    abstract public void registerTableCustomizer(Module owner, Class<? extends TableCustomizer> customizer, String schema, String query);
 
     abstract public List<TableCustomizer> getCustomizers(Container c, String schema, String query);
 
