@@ -174,6 +174,9 @@ public class SurveyModule extends DefaultModule
 
             BindException errors = new NullSafeBindException(this, "form");
             UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SurveyQuerySchema.SCHEMA_NAME);
+            if (schema == null)
+                return new HtmlView("Survey Designs", "The 'survey' schema is not enabled for this folder.");
+
             QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, SurveyQuerySchema.SURVEY_DESIGN_TABLE_NAME);
             settings.setReturnUrl(context.getActionURL().clone());
 
@@ -207,7 +210,7 @@ public class SurveyModule extends DefaultModule
             String designIdStr = props.get("surveyDesignId");
             SurveyDesign surveyDesign;
             if (null == designIdStr)
-                return new HtmlView("Surveys", "There is no survey design selected to be displayed in this webpart");
+                return new HtmlView("Surveys", "There is no survey design selected to be displayed in this webpart.");
             else
             {
                 surveyDesign = SurveyManager.get().getSurveyDesign(context.getContainer(), context.getUser(), Integer.parseInt(designIdStr));

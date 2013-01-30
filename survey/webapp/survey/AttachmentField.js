@@ -262,7 +262,8 @@ Ext4.define('LABKEY.form.field.Attachment', {
             buttonText : 'Browse',
             width : this.fieldWidth,
             hasRemoveButton : this.multipleFiles,
-            allowBlank : this.allowBlank
+            allowBlank : this.allowBlank,
+            name : 'attachmentfile' + (Ext4.ComponentQuery.query('attachmentfile').length) // for selenium testing
         });
         fileField.on('removebuttonclick', function(e, cmp){this.formPanel.remove(cmp);}, this);
 
