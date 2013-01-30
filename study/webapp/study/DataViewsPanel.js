@@ -648,7 +648,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
          * Enable Grouping by Category
          */
         var groupingFeature = Ext4.create('Ext4.grid.feature.Grouping', {
-            groupHeaderTpl : '&nbsp;{name}' // &nbsp; allows '+/-' to show up
+            groupHeaderTpl : '&nbsp;{name}', // &nbsp; allows '+/-' to show up
+            enableGroupingMenu : false
         });
 
         var plugins = [];
@@ -769,6 +770,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             sortable : true,
             dataIndex: 'name',
             minWidth : 200,
+            menuDisabled : true,
+            sortable : false,
             tdCls    : 'x4-name-column-cell',
             tpl      :  nameTpl,
             scope    : this
@@ -777,6 +780,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             text     : 'Category',
             flex     : 1,
             sortable : true,
+            menuDisabled : true,
+            sortable : false,
             dataIndex: 'categorylabel',
             renderer : Ext4.util.Format.htmlEncode,
             hidden   : true
@@ -791,6 +796,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 sortable : true,
                 dataIndex: 'type',
                 tdCls    : 'type-column',
+                menuDisabled : true,
+                sortable : false,
                 tpl      : '<tpl>{type}</tpl>',
                 scope    : this
             });
@@ -805,6 +812,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 sortable : true,
                 dataIndex: 'detailsUrl',
                 tdCls    : 'type-column',
+                menuDisabled : true,
+                sortable : false,
                 tpl      : detailsTpl,
                 scope    : this
             });
@@ -816,6 +825,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                  width    : 120,
                  sortable : true,
                  dataIndex: 'refreshDate',
+                 menuDisabled : true,
+                 sortable : false,
                  renderer : this.dateRenderer,
                  scope    : this
              });
@@ -842,6 +853,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 width    : 60,
                 sortable : true,
                 tdCls    : 'type-column',
+                menuDisabled : true,
+                sortable : false,
                 dataIndex: 'status',
                 tpl      : statusTpl
             });
@@ -854,6 +867,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 width    : 100,
                 sortable : true,
                 renderer : this.dateRenderer,
+                menuDisabled : true,
+                sortable : false,
                 dataIndex: 'modified'
             });
         }
@@ -865,6 +880,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 width    : 100,
                 sortable : false,
                 dataIndex: 'authorDisplayName',
+                menuDisabled : true,
+                sortable : false,
                 scope    : this
             });
         }
@@ -875,7 +892,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 header   : 'Access',
                 width    : 100,
                 sortable : false,
-                dataIndex: 'access'
+                dataIndex: 'access',
+                sortable : false,
+                menuDisabled : true
             });
         }
 
@@ -1196,7 +1215,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             items : [namePanel,
             {
                 xtype      : 'checkboxgroup',
-                fieldLabel : 'Types (All Users)',
+                fieldLabel : 'View Types',
                 colspan    : 1,
                 columns    : 1,
                 flex       : 0.75,
@@ -1205,7 +1224,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 items      : cbItems
             },{
                 xtype      : 'checkboxgroup',
-                fieldLabel : 'Columns (All Users)',
+                fieldLabel : 'Visible Columns',
                 columns    : 2,
                 flex       : 1,
                 maxWidth   : 300,
