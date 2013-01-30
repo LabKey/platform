@@ -216,8 +216,8 @@ Ext4.define('File.panel.ToolbarPanel', {
             overflowY : 'scroll',
             collapsible : true,
             collapsed : true,
-            width : 615,
-            height: 350,
+            width : '100%',
+            height: 325,
             padding : '10 5 10 5',
             store : this.optionsStore,
             viewConfig: {
@@ -227,14 +227,14 @@ Ext4.define('File.panel.ToolbarPanel', {
                 }
             },
             columns :  [
-                {header : 'Shown', dataIndex : 'shown', xtype : 'checkcolumn', width : 100},
-                {header : 'Hide Text', dataIndex : 'hideText', xtype : 'checkcolumn', width : 100},
-                {header : 'Hide Icon', dataIndex : 'hideIcon', xtype : 'checkcolumn', width : 100},
-                {header : 'Icon', width : 100, dataIndex: 'icon', renderer : function(value){
+                {header : 'Shown', dataIndex : 'shown', xtype : 'checkcolumn', flex : 1},
+                {header : 'Hide Text', dataIndex : 'hideText', xtype : 'checkcolumn', flex : 1},
+                {header : 'Hide Icon', dataIndex : 'hideIcon', xtype : 'checkcolumn', flex : 1},
+                {header : 'Icon', dataIndex: 'icon', flex : 1, renderer : function(value){
                     var path = '/labkey/_images/' + value;
                     return '<img src = "'+path+'" />';
                 }},
-                {header : 'Text', dataIndex : 'text', width : 200}
+                {header : 'Text', dataIndex : 'text', flex : 2}
             ]
         });
 
@@ -242,7 +242,7 @@ Ext4.define('File.panel.ToolbarPanel', {
             title : 'Grid Settings',
             collapsible : true,
             collapsed : true,
-            width : 615,
+            width : '100%',
             overflowY : 'scroll',
             padding : '10 5 10 5',
             store : this.columnsStore,
@@ -253,9 +253,9 @@ Ext4.define('File.panel.ToolbarPanel', {
                 }
             },
             columns :  [
-                {header : 'Hidden', dataIndex : 'hidden', xtype : 'checkcolumn', width : 200},
-                {header : 'Sortable', dataIndex : 'sortable', xtype : 'checkcolumn', width : 200},
-                {header : 'Text', dataIndex : 'text', width : 200}
+                {header : 'Hidden', dataIndex : 'hidden', xtype : 'checkcolumn', flex : 1},
+                {header : 'Sortable', dataIndex : 'sortable', xtype : 'checkcolumn', flex : 1},
+                {header : 'Text', dataIndex : 'text', flex : 1}
             ]
         });
 
