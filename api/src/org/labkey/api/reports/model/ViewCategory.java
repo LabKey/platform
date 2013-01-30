@@ -34,7 +34,7 @@ import java.util.List;
  * Date: Oct 12, 2011
  * Time: 7:23:43 PM
  */
-public class ViewCategory extends Entity
+public class ViewCategory extends Entity implements Comparable
 {
     private int _rowId;
     private String _label;
@@ -198,6 +198,16 @@ public class ViewCategory extends Entity
     public int hashCode()
     {
         return new HashCodeBuilder(23,61).append(super.hashCode()).append(_rowId).toHashCode();
+    }
+
+    @Override
+    public int compareTo(Object o)
+    {
+        if (o == null || getClass() != o.getClass()) return -1;
+
+        final ViewCategory vc = (ViewCategory) o;
+
+        return ((Integer) getDisplayOrder()).compareTo(vc.getDisplayOrder());
     }
 }
 
