@@ -4812,7 +4812,7 @@ public class QueryController extends SpringActionController
                         + "' was not found within the folder '" + getViewContext().getContainer().getPath() + "'");
 
             QueryDefinition querydef = QueryService.get().createQueryDefForTable(schema, form.getQueryName());
-            if (null == querydef)
+            if (null == querydef || querydef.getTable(null, true) == null)
                 throw new NotFoundException("The query '" + form.getQueryName() + "' was not found within the '"
                         + form.getSchemaName() + "' schema in the container '"
                         + getViewContext().getContainer().getPath() + "'!");
