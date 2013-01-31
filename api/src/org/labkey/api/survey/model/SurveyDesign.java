@@ -15,8 +15,9 @@
  */
 package org.labkey.api.survey.model;
 
-import org.labkey.api.data.Container;
+import org.json.JSONObject;
 import org.labkey.api.data.Entity;
+import org.labkey.api.security.User;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -98,5 +99,16 @@ public class SurveyDesign extends Entity
     public void setMetadata(String metadata)
     {
         _metadata = metadata;
+    }
+
+    public JSONObject toJSON(User currentUser, boolean stringifyMetadata)
+    {
+        JSONObject o = new JSONObject(this);
+
+        // gets around the problem where the metadata is not properly stringified
+        if (stringifyMetadata)
+            o.put("metadata", new JSONObject(getMetadata()).toString());
+
+        return o;
     }
 }
