@@ -23,6 +23,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiQueryResponse;
@@ -228,6 +230,7 @@ public class SurveyController extends SpringActionController
         private String _schemaName;
         private String _queryName;
         private ReturnURLString _srcURL;
+        private boolean _stringifyMetadata;
 
         public int getRowId()
         {
@@ -298,6 +301,16 @@ public class SurveyController extends SpringActionController
         {
             _srcURL = srcURL;
         }
+
+        public boolean isStringifyMetadata()
+        {
+            return _stringifyMetadata;
+        }
+
+        public void setStringifyMetadata(boolean stringifyMetadata)
+        {
+            _stringifyMetadata = stringifyMetadata;
+        }
     }
 
     @RequiresPermissionClass(InsertPermission.class)
@@ -318,6 +331,9 @@ public class SurveyController extends SpringActionController
                 {
                     JsonParser parser = new JsonParser();
                     parser.parse(metadata);
+
+                    // if the json is valid, validate that it meets a minimal survey shape
+                    errorInfo = validateSurveyMetadata(metadata);
                 }
             }
             catch (JsonSyntaxException e)
@@ -379,6 +395,59 @@ public class SurveyController extends SpringActionController
             }
             return errors;
         }
+
+        private JSONObject validateSurveyMetadata(String metadata)
+        {
+            JSONObject errors = null;
+
+            try {
+                JSONObject o = new JSONObject(metadata);
+                StringBuilder sb = new StringBuilder();
+
+                if (o.has("survey"))
+                {
+                    JSONObject jsonSurvey = o.getJSONObject("survey");
+                    if (jsonSurvey.has("sections"))
+                    {
+                        JSONArray jsonSections = jsonSurvey.getJSONArray("sections");
+
+                        if (jsonSections.length() == 0)
+                            sb.append("The sections JSON array cannot be empty");
+
+                        for (int i=0; i < jsonSections.length(); i++)
+                        {
+                            JSONObject section = jsonSections.getJSONObject(i);
+
+                            if (!section.containsKey("title"))
+                                sb.append("Each section must contain a property named : 'title'\n");
+
+                            else if (section.has("questions"))
+                            {
+                                section.getJSONArray("questions");
+                            }
+                            else
+                                sb.append("Each section must contain a JSON array named : 'questions'\n");
+                        }
+                    }
+                    else
+                        sb.append("The survey object must contain a JSON array named : 'sections'");
+                }
+                else
+                    sb.append("Survey metadata must have a top level property named : 'survey'");
+
+                if (sb.length() > 0)
+                {
+                    errors = new JSONObject();
+                    errors.put("message", sb.toString());
+                }
+            }
+            catch (JSONException e)
+            {
+                errors = new JSONObject();
+                errors.put("message", e.getMessage());
+            }
+            return errors;
+        }
     }
 
     private SurveyDesign getSurveyDesign(SurveyDesignForm form)
@@ -436,7 +505,7 @@ public class SurveyController extends SpringActionController
 
             if (survey != null)
             {
-                response.put("survey", new JSONObject(survey));
+                response.put("survey", survey.toJSON(getUser(), form.isStringifyMetadata()));
                 response.put("success", true);
             }
             else

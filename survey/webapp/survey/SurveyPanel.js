@@ -60,7 +60,7 @@ Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
             Ext4.Ajax.request({
                 url     : LABKEY.ActionURL.buildURL('survey', 'getSurveyTemplate.api'),
                 method  : 'POST',
-                jsonData: {rowId : this.surveyDesignId},
+                jsonData: {rowId : this.surveyDesignId, stringifyMetadata : true},
                 success : function(resp){
                     var o = Ext4.decode(resp.responseText);
 
@@ -232,7 +232,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             Ext4.Ajax.request({
                 url     : LABKEY.ActionURL.buildURL('survey', 'getSurveyTemplate.api'),
                 method  : 'POST',
-                jsonData: {rowId : this.surveyDesignId},
+                jsonData: {rowId : this.surveyDesignId, stringifyMetadata : true},
                 success : function(resp){
                     var o = Ext4.decode(resp.responseText);
 
