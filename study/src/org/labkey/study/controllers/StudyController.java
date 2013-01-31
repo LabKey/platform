@@ -7275,7 +7275,10 @@ public class StudyController extends BaseStudyController
             ViewCategory[] categories;
             int parent = form.getParent();
 
-            if (parent != 0) {
+            if (parent == 0) {
+                categories = new ViewCategory[0];
+            }
+            else if (parent != 0) {
                 SimpleFilter filter;
                 FieldKey field = FieldKey.fromParts("Parent");
 
@@ -7378,10 +7381,15 @@ public class StudyController extends BaseStudyController
                 response.put("success", true);
                 return response;
             }
+            catch (Exception e) {
+                response.put("success", false);
+                response.put("message", e.getMessage());
+            }
             finally
             {
                 scope.closeConnection();
             }
+            return response;
         }
     }
 

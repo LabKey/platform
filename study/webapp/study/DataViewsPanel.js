@@ -406,8 +406,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             // These parameters are required for specific webpart filtering
             pageId : this.pageId,
             index  : this.index,
-            parent : categoryid || -1
+            parent : categoryid
         };
+
+        if (extraParams.parent == undefined) {
+            extraParams.parent = -1;
+        }
 
         var config = {
             pageSize: 100,
@@ -496,7 +500,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.dateRenderer = Ext4.util.Format.dateRenderer(json.dateFormat);
             this.editInfo = json.editInfo;
 
-            this.initGrid(true, json.visibleColumns);
+            this.initGrid(!this.asTree, json.visibleColumns);
         };
 
         this.centerPanel.getEl().mask('Initializing...');
@@ -519,7 +523,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
             else {
                 this._height = parseInt(json.webpart.height);
+                this.centerPanel.removeAll(true);
                 this.setHeight(this._height);
+                this.initGrid(!this.asTree, json.visibleColumns);
             }
             this.store.load();
         };
@@ -1458,7 +1464,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             fn      : function(btn){
                                 if (btn == 'ok') {
                                     store.removeAt(idx);
-                                    store.sync();
+                                    store.sync({
+                                        success : function() {
+                                            store.load();
+                                        }
+                                    });
                                 }
                             },
                             scope  : this
@@ -1487,6 +1497,26 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
             },
             listeners : {
+                edit : function(editor, e) {
+                    e.grid.getStore().sync({
+                        success : function() {
+                            e.grid.getStore().load();
+                        },
+                        failure : function(batch, opts) {
+                            if (batch.operations && batch.operations.length > 0) {
+                                if (!batch.operations[0].request.scope.reader.jsonData.success) {
+                                    var mb = Ext4.Msg.alert('Category Management', batch.operations[0].request.scope.reader.jsonData.message);
+                                    zix.register(mb);
+                                }
+                            }
+                            else {
+                                Ext4.Msg.alert('Category Managment', 'Failed to save updates.');
+                                zix.register(mb);
+                            }
+                            e.grid.getStore().load();
+                        }
+                    });
+                },
                 select : function(g, rec) {
                     var w = Ext4.getCmp(winID);
 
@@ -1517,7 +1547,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                 closable : true,
                                 floatable : true,
                                 gid : gid,
-                                items : [this.getCategoryGrid(rec.data.rowid, gid)],
+                                items : [this.getCategoryGrid(rec.data.rowid, gid, zix)],
                                 listeners : {
                                     close : function(p) {
                                         p.destroy();
@@ -1605,7 +1635,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         categoryOrderWindow.show();
     },
 
-    getCategoryGrid : function(categoryid, gridid) {
+    getCategoryGrid : function(categoryid, gridid, indexManager) {
 
         var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
             pluginId : 'subcategorycell',
@@ -1650,7 +1680,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             fn      : function(btn){
                                 if (btn == 'ok') {
                                     store.removeAt(idx);
-                                    store.sync();
+                                    store.sync({
+                                        success : function() {
+                                            store.load();
+                                        }
+                                    });
                                 }
                             },
                             scope  : this
@@ -1661,7 +1695,24 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }],
             listeners : {
                 edit : function(editor, e) {
-                    e.grid.getStore().sync();
+                    e.grid.getStore().sync({
+                        success : function() {
+                            e.grid.getStore().load();
+                        },
+                        failure : function(batch, opts) {
+                            if (batch.operations && batch.operations.length > 0) {
+                                if (!batch.operations[0].request.scope.reader.jsonData.success) {
+                                    var mb = Ext4.Msg.alert('Category Management', batch.operations[0].request.scope.reader.jsonData.message);
+                                    indexManager.register(mb);
+                                }
+                            }
+                            else {
+                                Ext4.Msg.alert('Category Managment', 'Failed to save updates.');
+                                indexManager.register(mb);
+                            }
+                            e.grid.getStore().load();
+                        }
+                    });
                 }
             },
             mutliSelect : false,
