@@ -52,6 +52,7 @@ Ext4.onReady(function(){
 
             this.permissionCombo = Ext4.create('Ext.form.field.ComboBox', {
                 store: this.getPermissionStore(),
+                name: 'permission',
                 allowBlank: false,
                 valueField: 'uniqueName',
                 value: this.permission,
@@ -96,6 +97,7 @@ Ext4.onReady(function(){
 
             this.otherFolderTextBox = Ext4.create('Ext.form.field.Text', {
                 fieldClass: 'x-form-empty-field',
+                name: 'permissionContainer',
                 readOnly: true,
                 disabled: (!this.containerPath || this.containerPath === LABKEY.container.path),
                 fieldLabel: 'Folder Path',
