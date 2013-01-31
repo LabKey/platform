@@ -261,12 +261,12 @@ public class ExternalSchema extends SimpleUserSchema
 
     public boolean areTablesEditable()
     {
-        return _def instanceof ExternalSchemaDef && ((ExternalSchemaDef)_def).isEditable();
+        return _def instanceof ExternalSchemaDef && _def.isEditable();
     }
 
     public boolean shouldIndexMetaData()
     {
-        return _def instanceof ExternalSchemaDef && ((ExternalSchemaDef)_def).isIndexable();
+        return _def instanceof ExternalSchemaDef && _def.isIndexable();
     }
 
     @Override

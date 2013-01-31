@@ -32,6 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
+import org.labkey.data.xml.queryCustomView.LocalOrRefFiltersType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 import org.labkey.query.persist.LinkedSchemaDef;
 
@@ -95,12 +96,26 @@ public class LinkedSchema extends ExternalSchema
     {
         SchemaKey sourceSchemaName = SchemaKey.fromString(template != null ? template.getSourceSchemaName() : def.getSourceSchemaName());
 
-        Container sourceContainer = def.lookupSourceContainer();
+        final Container sourceContainer = def.lookupSourceContainer();
         if (sourceContainer == null || sourceSchemaName == null)
             return null;
 
-        UserSchema sourceSchema = QueryService.get().getUserSchema(user, sourceContainer, sourceSchemaName);
-        return sourceSchema;
+        User sourceSchemaUser = user;
+        // We may want to be a little more locked down than this, but this gives the user read access to the source
+        // container, even if they don't normally have access
+//        User sourceSchemaUser = new LimitedUser(user, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false)
+//        {
+//            @Override
+//            public Set<Role> getContextualRoles(SecurityPolicy policy)
+//            {
+//                if (policy.getContainerId().equals(sourceContainer.getId()))
+//                {
+//                    return super.getContextualRoles(policy);
+//                }
+//                return Collections.emptySet();
+//            }
+//        };
+        return QueryService.get().getUserSchema(sourceSchemaUser, sourceContainer, sourceSchemaName);
     }
 
     private LinkedSchema(User user, Container container, LinkedSchemaDef def, TemplateSchemaType template, UserSchema sourceSchema,
@@ -157,6 +172,11 @@ public class LinkedSchema extends ExternalSchema
         QueryDefinition queryDef = createQueryDef(name, sourceTable, metaData);
 
         TableInfo tableInfo = queryDef.getTable(new ArrayList<QueryException>(), true);
+        if (tableInfo == null)
+        {
+            return null;
+        }
+
         LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo);
 
         linkedTableInfo.loadFromXML(this, metaData, _namedFilters, new ArrayList<QueryException>());
@@ -167,7 +187,7 @@ public class LinkedSchema extends ExternalSchema
     /** Build up LabKey SQL that targets the desired container and appends any WHERE clauses (but not URL-style filters) */
     private QueryDefinition createQueryDef(String name, TableInfo sourceTable, @Nullable TableType xmlTable)
     {
-        QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), this, name);
+        QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), _sourceSchema, name);
         StringBuilder sql = new StringBuilder("SELECT * FROM ");
         sql.append("\"");
         sql.append(_sourceSchema.getContainer().getPath());
@@ -180,7 +200,29 @@ public class LinkedSchema extends ExternalSchema
         if (xmlTable != null && xmlTable.isSetFilters())
         {
             String separator = " WHERE ";
-            for (String whereClause : xmlTable.getFilters().getWhereArray())
+
+            LocalOrRefFiltersType filters = xmlTable.getFilters();
+            if (filters.isSetRef())
+            {
+                // Add the WHERE from the referenced, shared filter
+                for (NamedFiltersType namedFiltersType : _namedFilters)
+                {
+                    if (namedFiltersType.getName().equals(filters.getRef()))
+                    {
+                        for (String whereClause : namedFiltersType.getWhereArray())
+                        {
+                            sql.append(separator);
+                            separator = " AND ";
+                            sql.append("(");
+                            sql.append(whereClause);
+                            sql.append(")");
+                        }
+                    }
+                }
+            }
+
+            // Add the filters that are specific to this table
+            for (String whereClause : filters.getWhereArray())
             {
                 sql.append(separator);
                 separator = " AND ";
