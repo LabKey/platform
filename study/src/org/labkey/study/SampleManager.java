@@ -17,6 +17,7 @@
 package org.labkey.study;
 
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.collections15.comparators.ComparableComparator;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -2789,23 +2790,23 @@ public class SampleManager
     private final Map<String, GroupedValueColumnHelper> _groupedValueAllowedColumnMap = new HashMap<String, GroupedValueColumnHelper>();
 
     private void initGroupedValueAllowedColumnMap()
-    {
-        _groupedValueAllowedColumnMap.put("PrimaryType",            new GroupedValueColumnHelper("PrimaryTypeId", "PrimaryType", "PrimaryType/Description", "PrimaryType"));
-        _groupedValueAllowedColumnMap.put("DerivativeType",         new GroupedValueColumnHelper("DerivativeTypeId", "DerivativeType", "DerivativeType/Description",  "Derivative"));
-        _groupedValueAllowedColumnMap.put("AdditiveType",           new GroupedValueColumnHelper("AdditiveTypeId", "AdditiveType", "AdditiveType/Description",  "Additive"));
-        _groupedValueAllowedColumnMap.put("DerivativeType2",        new GroupedValueColumnHelper("DerivativeTypeId2", "DerivativeType2", "DerivativeType2/Description",  "Derivative"));
-        _groupedValueAllowedColumnMap.put("SubAdditiveDerivative",  new GroupedValueColumnHelper("SubAdditiveDerivative", "SubAdditiveDerivative", "SubAdditiveDerivative", null));
+    {                                                                                       //    sqlColumnName    viewColumnName   urlFilterName          joinColumnName
+        _groupedValueAllowedColumnMap.put("Primary Type",           new GroupedValueColumnHelper("PrimaryTypeId", "PrimaryType", "PrimaryType/Description", "PrimaryType"));
+        _groupedValueAllowedColumnMap.put("Derivative Type",        new GroupedValueColumnHelper("DerivativeTypeId", "DerivativeType", "DerivativeType/Description",  "Derivative"));
+        _groupedValueAllowedColumnMap.put("Additive Type",          new GroupedValueColumnHelper("AdditiveTypeId", "AdditiveType", "AdditiveType/Description",  "Additive"));
+        _groupedValueAllowedColumnMap.put("Derivative Type2",       new GroupedValueColumnHelper("DerivativeTypeId2", "DerivativeType2", "DerivativeType2/Description",  "Derivative"));
+        _groupedValueAllowedColumnMap.put("Sub Additive Derivative",new GroupedValueColumnHelper("SubAdditiveDerivative", "SubAdditiveDerivative", "SubAdditiveDerivative", null));
         _groupedValueAllowedColumnMap.put("Clinic",                 new GroupedValueColumnHelper("originatinglocationid", "Clinic", "Clinic/Label", "Label"));
-        _groupedValueAllowedColumnMap.put("ProcessingLocation",     new GroupedValueColumnHelper("ProcessingLocation", "ProcessingLocation", "ProcessingLocation/Label", "Label"));
-        _groupedValueAllowedColumnMap.put("ProtocolNumber",         new GroupedValueColumnHelper("ProtocolNumber", "ProtocolNumber", "ProtocolNumber", null));
-        _groupedValueAllowedColumnMap.put("TubeType",               new GroupedValueColumnHelper("TubeType", "TubeType", "TubeType", null));
-        _groupedValueAllowedColumnMap.put("SiteName",               new GroupedValueColumnHelper("CurrentLocation", "SiteName", "SiteName/Label", "Label"));
+        _groupedValueAllowedColumnMap.put("Processing Location",    new GroupedValueColumnHelper("ProcessingLocation", "ProcessingLocation", "ProcessingLocation/Label", "Label"));
+        _groupedValueAllowedColumnMap.put("Protocol Number",        new GroupedValueColumnHelper("ProtocolNumber", "ProtocolNumber", "ProtocolNumber", null));
+        _groupedValueAllowedColumnMap.put("Tube Type",              new GroupedValueColumnHelper("TubeType", "TubeType", "TubeType", null));
+        _groupedValueAllowedColumnMap.put("Site Name",              new GroupedValueColumnHelper("CurrentLocation", "SiteName", "SiteName/Label", "Label"));
         _groupedValueAllowedColumnMap.put("Available",              new GroupedValueColumnHelper("Available", "Available", "Available", null));
         _groupedValueAllowedColumnMap.put("Freezer",                new GroupedValueColumnHelper("Freezer", "Freezer", "Freezer", null));
-        _groupedValueAllowedColumnMap.put("Fr_Container",           new GroupedValueColumnHelper("Fr_Container", "Fr_Container", "Fr_Container", null));
-        _groupedValueAllowedColumnMap.put("Fr_Position",            new GroupedValueColumnHelper("Fr_Position", "Fr_Position", "Fr_Position", null));
-        _groupedValueAllowedColumnMap.put("Fr_Level1",              new GroupedValueColumnHelper("Fr_Level1", "Fr_Level1", "Fr_Level1", null));
-        _groupedValueAllowedColumnMap.put("Fr_Level2",              new GroupedValueColumnHelper("Fr_Level2", "Fr_Level2", "Fr_Level2", null));
+        _groupedValueAllowedColumnMap.put("Fr Container",           new GroupedValueColumnHelper("Fr_Container", "Fr_Container", "Fr_Container", null));
+        _groupedValueAllowedColumnMap.put("Fr Position",            new GroupedValueColumnHelper("Fr_Position", "Fr_Position", "Fr_Position", null));
+        _groupedValueAllowedColumnMap.put("Fr Level1",              new GroupedValueColumnHelper("Fr_Level1", "Fr_Level1", "Fr_Level1", null));
+        _groupedValueAllowedColumnMap.put("Fr Level2",              new GroupedValueColumnHelper("Fr_Level2", "Fr_Level2", "Fr_Level2", null));
     }
 
     public Map<String, GroupedValueColumnHelper> getGroupedValueAllowedMap()
@@ -2817,6 +2818,7 @@ public class SampleManager
     {
         Set<String> keySet = _groupedValueAllowedColumnMap.keySet();
         String[] allowedColumns = keySet.toArray(new String[keySet.size()]);
+        Arrays.sort(allowedColumns, new ComparableComparator<String>());
         return allowedColumns;
     }
 

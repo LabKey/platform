@@ -15,6 +15,7 @@
  */
 package org.labkey.study.controllers.samples;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.action.*;
@@ -699,7 +700,7 @@ public class SpecimenApiController extends BaseStudyController
             List<Map<String, Object>> groupingsJSON = new ArrayList<Map<String, Object>>();
             for (String[] grouping: groupings)
             {
-                if (null != grouping[0])        // Do nothing if no columns were specified
+                if (null != StringUtils.trimToNull(grouping[0]))        // Do nothing if no columns were specified
                 {
                     Map<String, Object> groupingJSON = sampleManager.getGroupedValuesForColumn(getContainer(), grouping);
                     groupingsJSON.add(groupingJSON);

@@ -151,11 +151,11 @@ public class RepositorySettings
 
     private void setSpecimenWebPartGroupingDefaults()
     {
-        _specWebPartColumnGroup[0][0] = "PrimaryType";
-        _specWebPartColumnGroup[0][1] = "DerivativeType";
-        _specWebPartColumnGroup[0][2] = "AdditiveType";
-        _specWebPartColumnGroup[1][0] = "DerivativeType";
-        _specWebPartColumnGroup[1][1] = "AdditiveType";
+        _specWebPartColumnGroup[0][0] = "Primary Type";
+        _specWebPartColumnGroup[0][1] = "Derivative Type";
+        _specWebPartColumnGroup[0][2] = "Additive Type";
+        _specWebPartColumnGroup[1][0] = "Derivative Type";
+        _specWebPartColumnGroup[1][1] = "Additive Type";
         _specWebPartColumnGroup[1][2] = "";
     }
 
