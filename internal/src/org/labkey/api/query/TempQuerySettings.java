@@ -17,13 +17,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.util.GUID;
 import org.labkey.api.view.ViewContext;
-
-import javax.servlet.http.HttpSession;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,7 +42,7 @@ public class TempQuerySettings extends QuerySettings
 
     public TempQuerySettings(ViewContext context, String sql, String dataRegionName)
     {
-        super(dataRegionName);
+        super(context, dataRegionName);
         setSortFilter(getPropertyValues(context));
         _sql = sql;
         _container = context.getContainer();
