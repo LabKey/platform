@@ -223,7 +223,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                     studyCtx.setParticipants(getGroupParticipants(_form, studyCtx));
                 else if (null != _form.getSpecimens())
                 {
-                    studyCtx.setParticipants(getRequestParticipants(_form));
+                    studyCtx.setParticipants(getSpecimenParticipants(_form));
                     studyCtx.setSpecimens(Arrays.asList(_form.getSpecimens()));
                 }
 
@@ -520,7 +520,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
         return Collections.emptyList();
     }
 
-    private List<String> getRequestParticipants(ChildStudyDefinition form)
+    private List<String> getSpecimenParticipants(ChildStudyDefinition form)
     {
         Set<String> ptids = new HashSet<String>();
 

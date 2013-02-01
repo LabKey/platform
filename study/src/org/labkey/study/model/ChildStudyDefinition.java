@@ -43,7 +43,9 @@ public class ChildStudyDefinition
     private boolean _publish;
 
     private Integer _requestId;  // RowId of a specimen request
+    private String[] _specimenIds = null;  // List of globally unique specimen IDs
     private Specimen[] _specimens = null;
+    private String _investigator;
 
     public String getName()
     {
@@ -211,6 +213,9 @@ public class ChildStudyDefinition
         _specimenRefresh = specimenRefresh;
     }
 
+    // Callers can post either a specimen request id OR an array of SpecimenIds; either will cause us to resovle
+    // to a Specimen[] which is set back on the form and used to drive the child study creation process.
+
     public Integer getRequestId()
     {
         return _requestId;
@@ -221,6 +226,16 @@ public class ChildStudyDefinition
         _requestId = requestId;
     }
 
+    public String[] getSpecimenIds()
+    {
+        return _specimenIds;
+    }
+
+    public void setSpecimenIds(String[] specimenIds)
+    {
+        _specimenIds = specimenIds;
+    }
+
     public Specimen[] getSpecimens()
     {
         return _specimens;
@@ -229,5 +244,15 @@ public class ChildStudyDefinition
     public void setSpecimens(Specimen[] specimens)
     {
         _specimens = specimens;
+    }
+
+    public String getInvestigator()
+    {
+        return _investigator;
+    }
+
+    public void setInvestigator(String investigator)
+    {
+        _investigator = investigator;
     }
 }

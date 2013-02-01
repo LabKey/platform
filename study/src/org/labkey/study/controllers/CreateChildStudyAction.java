@@ -15,6 +15,7 @@
  */
 package org.labkey.study.controllers;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
@@ -45,6 +46,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -57,6 +59,7 @@ import java.util.List;
 @RequiresPermissionClass(AdminPermission.class)
 public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefinition>
 {
+    private static final Logger LOG = Logger.getLogger(CreateChildStudyAction.class);
     public static final String CREATE_SPECIMEN_STUDY = "CreateSpecimenStudy";
 
     private Container _dstContainer;
@@ -138,25 +141,47 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
             throw new IllegalArgumentException(sb.toString());
         }
 
-        if (null != form.getRequestId())
+        if (null != form.getRequestId() || null != form.getSpecimenIds())
         {
             // TODO: Hack! We want specimen studies to be published for now... wizard should post this
             form.setPublish(true);
             form.setIncludeSpecimens(true);
-            SampleRequest request = SampleManager.getInstance().getRequest(sourceContainer, form.getRequestId());
+            SampleManager sm = SampleManager.getInstance();
 
-            if (null == request)
+            if (null != form.getRequestId())
             {
-                errors.reject(SpringActionController.ERROR_MSG, "Unable to locate specimen request with id " + form.getRequestId());
+                SampleRequest request = sm.getRequest(sourceContainer, form.getRequestId());
+
+                if (null == request)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Unable to locate specimen request with id " + form.getRequestId());
+                }
+                else
+                {
+                    Specimen[] specimens = request.getSpecimens();
+
+                    if (0 == specimens.length)
+                        errors.reject(SpringActionController.ERROR_MSG, "Specimen request is empty");
+                    else
+                        form.setSpecimens(specimens);
+                }
             }
             else
             {
-                Specimen[] specimens = request.getSpecimens();
+                String[] specimenIds = form.getSpecimenIds();
+                ArrayList<Specimen> list = new ArrayList<Specimen>(specimenIds.length);
 
-                if (0 == specimens.length)
-                    errors.reject(SpringActionController.ERROR_MSG, "Specimen request is empty");
-                else
-                    form.setSpecimens(specimens);
+                for (String specimenId : specimenIds)
+                {
+                    Specimen specimen = sm.getSpecimen(sourceContainer, specimenId);
+
+                    if (null == specimen)
+                        LOG.error("Specimen ID " + specimenId + " not found!!");
+                    else
+                        list.add(specimen);
+                }
+
+                form.setSpecimens(list.toArray(new Specimen[list.size()]));
             }
         }
     }
@@ -190,6 +215,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         study.setAlternateIdPrefix(_sourceStudy.getAlternateIdPrefix());
         study.setAlternateIdDigits(_sourceStudy.getAlternateIdDigits());
         study.setDescription(form.getDescription());
+        study.setInvestigator(form.getInvestigator());
 
         StudyManager.getInstance().createStudy(getViewContext().getUser(), study);
 
