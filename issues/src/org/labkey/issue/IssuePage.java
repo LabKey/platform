@@ -205,7 +205,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String writeCustomColumn(ColumnType type, int tabIndex) throws IOException
     {
-        if (_ccc.shouldDisplay(type.getColumnName()))
+        if (_ccc.shouldDisplay(_user, type.getColumnName()))
         {
             String tableColumnName = type.getColumnName();
             final StringBuilder sb = new StringBuilder();
@@ -366,7 +366,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         ColumnInfo col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
         String name = null;
 
-        if (_ccc.shouldDisplay(columnName))
+        if (_ccc.shouldDisplay(_user, columnName))
             name = _ccc.getCaption(columnName);
         else if (col != null)
             name = col.getLabel();

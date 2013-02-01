@@ -53,6 +53,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserDisplayNameComparator;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
@@ -90,6 +92,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -304,6 +307,11 @@ public class IssueManager
         {
             _permissionClass = permissionClass;
         }
+
+        public boolean hasPermission(User user)
+        {
+            return _container.hasPermission(user, _permissionClass);
+        }
     }
 
 
@@ -323,7 +331,6 @@ public class IssueManager
         {
             scope.ensureTransaction();
 
-            ColumnConfigurationCache.uncache(c);
             Table.delete(table, filter);
 
             for (CustomColumn cc : ccc.getCustomColumns())
@@ -338,6 +345,7 @@ public class IssueManager
         finally
         {
             scope.closeConnection();
+            ColumnConfigurationCache.uncache(c);
         }
     }
 
@@ -361,16 +369,28 @@ public class IssueManager
             Map<String, Object> map = context.getExtendedProperties();
 
             // Could be null, a single String, or List<String>
-            Object value = map.get(PICK_LIST_NAME);
+            Object pickList = map.get(PICK_LIST_NAME);
 
             Set<String> pickListColumnNames;
 
-            if (null == value)
+            if (null == pickList)
                 pickListColumnNames = Collections.emptySet();
-            else if (value instanceof String)
-                pickListColumnNames = Collections.singleton((String)value);
+            else if (pickList instanceof String)
+                pickListColumnNames = Collections.singleton((String)pickList);
             else
-                pickListColumnNames = new HashSet<String>((List<String>)value);
+                pickListColumnNames = new HashSet<String>((List<String>)pickList);
+
+            List<String> perms = context.getList("permissions");
+            // Should have one for each string column (not int columns yet)
+            assert perms.size() == 5;
+            Map<String, Class<? extends Permission>> permMap = new HashMap<String, Class<? extends Permission>>();
+
+            for (int i = 0; i < 5; i++)
+            {
+                String simplePerm = perms.get(i);
+                Class<? extends Permission> perm = "admin".equals(simplePerm) ? AdminPermission.class : "insert".equals(simplePerm) ? InsertPermission.class : ReadPermission.class;
+                permMap.put("string" + (i + 1), perm);
+            }
 
             _map = new CustomColumnMap();
 
@@ -380,7 +400,8 @@ public class IssueManager
 
                 if (!StringUtils.isEmpty(caption))
                 {
-                    CustomColumn cc = new CustomColumn(c, columnName, caption, pickListColumnNames.contains(columnName), ReadPermission.class);
+                    Class<? extends Permission> perm = permMap.get(columnName);
+                    CustomColumn cc = new CustomColumn(c, columnName, caption, pickListColumnNames.contains(columnName), null != perm ? perm : ReadPermission.class);
                     _map.put(columnName, cc);
                 }
             }
@@ -391,15 +412,34 @@ public class IssueManager
             return _map.get(name);
         }
 
+        @Deprecated
         public Collection<CustomColumn> getCustomColumns()
         {
             return _map.values();
         }
 
-        // TODO: Should take a User and check permissions
+        public Collection<CustomColumn> getCustomColumns(User user)
+        {
+            List<CustomColumn> list = new LinkedList<CustomColumn>();
+
+            for (CustomColumn customColumn : _map.values())
+                if (customColumn.hasPermission(user))
+                    list.add(customColumn);
+
+            return list;
+        }
+
+        @Deprecated
         public boolean shouldDisplay(String name)
         {
             return _map.containsKey(name);
+        }
+
+        public boolean shouldDisplay(User user, String name)
+        {
+            CustomColumn cc = getCustomColumn(name);
+
+            return null != cc && cc.getContainer().hasPermission(user, cc.getPermission());
         }
 
         public boolean hasPickList(String name)

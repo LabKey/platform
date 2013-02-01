@@ -128,7 +128,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         addWrapColumn(_rootTable.getColumn("NotifyList"));
 
         // add any custom columns
-        for (CustomColumn cc : ccc.getCustomColumns())
+        for (CustomColumn cc : ccc.getCustomColumns(_userSchema.getUser()))
         {
             ColumnInfo realColumn = getRealTable().getColumn(cc.getName());
             if (realColumn != null)
@@ -150,7 +150,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         for (String name : DEFAULT_LIST_COLUMNS)
             visibleColumns.add(FieldKey.fromParts(getCustomCaption(name, ccc)));
 
-        for (CustomColumn column : ccc.getCustomColumns())
+        for (CustomColumn column : ccc.getCustomColumns(_userSchema.getUser()))
             visibleColumns.add(FieldKey.fromParts(column.getCaption()));
 
         return new ArrayList<FieldKey>(visibleColumns);

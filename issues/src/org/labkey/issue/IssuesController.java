@@ -255,13 +255,6 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @Deprecated
-    private Map<String, String> getColumnCaptions() throws SQLException, ServletException
-    {
-        return getCustomColumnConfiguration().getColumnCaptions();
-    }
-
-
     public static ActionURL getListURL(Container c)
     {
         ActionURL url = new ActionURL(ListAction.class, c);
@@ -560,7 +553,7 @@ public class IssuesController extends SpringActionController
                 Issue orig = new Issue();
                 orig.open(getContainer(), getUser());
 
-                changeSummary = createChangeSummary(_issue, orig, null, user, form.getAction(), form.getComment(), getColumnCaptions(), getUser());
+                changeSummary = createChangeSummary(_issue, orig, null, user, form.getAction(), form.getComment(), getCustomColumnConfiguration(), getUser());
                 IssueManager.saveIssue(user, c, _issue);
                 AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
                 scope.commitTransaction();
@@ -695,7 +688,7 @@ public class IssuesController extends SpringActionController
                 // convert from email addresses & display names to userids before we hit the database
                 issue.parseNotifyList(issue.getNotifyList());
 
-                changeSummary = createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnCaptions(), getUser());
+                changeSummary = createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getCustomColumnConfiguration(), getUser());
                 IssueManager.saveIssue(user, c, issue);
                 AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
 
@@ -1118,6 +1111,7 @@ public class IssuesController extends SpringActionController
                     final CustomColumnConfiguration ccc = getCustomColumnConfiguration();
                     String name = null;
 
+                    // TODO: Not sure what to do here
                     if (ccc.shouldDisplay(columnName))
                     {
                         name = ccc.getCaption(columnName);
@@ -1583,6 +1577,7 @@ public class IssuesController extends SpringActionController
             
             CustomColumnConfiguration ccc = new CustomColumnConfiguration(getViewContext());
             String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution"};
+
             Map<String, String> captions = ccc.getColumnCaptions(); //All of the custom captions
             for (String column : defaultCols)
             {
@@ -2036,11 +2031,10 @@ public class IssuesController extends SpringActionController
             jsonIssue.remove("lastComment");
             jsonIssue.remove("class");
 
-            Map<String,String> captions = getColumnCaptions();
-            for (Map.Entry<String,String> e : captions.entrySet())
+            for (CustomColumn cc : getCustomColumnConfiguration().getCustomColumns(user))
             {
-                jsonIssue.remove(e.getKey());
-                jsonIssue.put(e.getValue(), wrapper.get(e.getKey()));
+                jsonIssue.remove(cc.getName());
+                jsonIssue.put(cc.getCaption(), wrapper.get(cc.getName()));
             }
 
             JSONArray comments = new JSONArray();
@@ -2138,7 +2132,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    static ChangeSummary createChangeSummary(Issue issue, Issue previous, Issue duplicateOf, User user, Class<? extends Controller> action, String comment, Map<String, String> customColumns, User currentUser)
+    static ChangeSummary createChangeSummary(Issue issue, Issue previous, Issue duplicateOf, User user, Class<? extends Controller> action, String comment, CustomColumnConfiguration ccc, User currentUser)
     {
         StringBuilder sbHTMLChanges = new StringBuilder();
         StringBuilder sbTextChanges = new StringBuilder();
@@ -2180,13 +2174,13 @@ public class IssuesController extends SpringActionController
             _appendChange(sbHTMLChanges, sbTextChanges, "Priority", String.valueOf(previous.getPriority()), String.valueOf(issue.getPriority()), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), newIssue);
 
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", String.valueOf(previous.getInt1()), String.valueOf(issue.getInt1()), customColumns, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", String.valueOf(previous.getInt2()), String.valueOf(issue.getInt2()), customColumns, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string1", previous.getString1(), issue.getString1(), customColumns, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string2", previous.getString2(), issue.getString2(), customColumns, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string3", previous.getString3(), issue.getString3(), customColumns, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string4", previous.getString4(), issue.getString4(), customColumns, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string5", previous.getString5(), issue.getString5(), customColumns, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", String.valueOf(previous.getInt1()), String.valueOf(issue.getInt1()), ccc, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", String.valueOf(previous.getInt2()), String.valueOf(issue.getInt2()), ccc, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string1", previous.getString1(), issue.getString1(), ccc, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string2", previous.getString2(), issue.getString2(), ccc, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string3", previous.getString3(), issue.getString3(), ccc, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string4", previous.getString4(), issue.getString4(), ccc, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string5", previous.getString5(), issue.getString5(), ccc, newIssue);
 
             sbHTMLChanges.append("</table>\n");
         }
@@ -2210,12 +2204,13 @@ public class IssuesController extends SpringActionController
         return new ChangeSummary(issue.addComment(user, formattedComment.toString()), sbTextChanges.toString(), summary);
     }
 
-    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String field, String from, String to, Map<String, String> columnCaptions, boolean newIssue)
+    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String field, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
     {
-        String caption = columnCaptions.get(field);
+        CustomColumn cc = ccc.getCustomColumn(field);
 
-        if (null != caption)
-            _appendChange(sbHtml, sbText, caption, from, to, newIssue);
+        // Record only fields with read permissions
+        if (null != cc && cc.getPermission().equals(ReadPermission.class))
+            _appendChange(sbHtml, sbText, cc.getCaption(), from, to, newIssue);
     }
 
 
@@ -2369,6 +2364,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
+
     public static class EmailPrefsForm
     {
         private Integer[] _emailPreference = new Integer[0];
@@ -2394,6 +2390,7 @@ public class IssuesController extends SpringActionController
             _issueId = issueId;
         }
     }
+
 
     public static class AdminForm
     {
@@ -2424,6 +2421,7 @@ public class IssuesController extends SpringActionController
             this.keyword = keyword;
         }
     }
+
 
     public static class IssuesForm extends BeanViewForm<Issue>
     {
