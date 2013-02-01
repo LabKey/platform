@@ -137,7 +137,7 @@ public class SurveyController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) // readpermissions because this action can be used to see the read-only view of a submitted request
     public class UpdateSurveyAction extends SimpleViewAction<SurveyForm>
     {
         private String _title = null;
