@@ -103,7 +103,32 @@ Ext4.define('File.panel.ToolbarPanel', {
     constructor : function(config){
         Ext4.QuickTips.init();
         Ext4.applyIf(config, {
-           title : 'Toolbar and Grid Settings'
+           title : 'Toolbar and Grid Settings',
+            tbarActions :
+                    [
+                        {id : 'folderTreeToggle', hideText : true, hideIcon : false},
+                        {id : 'parentFolder', hideText : true, hideIcon : false},
+                        {id : 'createDirectory', hideText : true, hideIcon : false},
+                        {id : 'download', hideText : true, hideIcon : false},
+                        {id : 'deletePath', hideText : true, hideIcon : false},
+                        {id : 'importData', hideText : false, hideIcon : false},
+                        {id : 'customize', hideText : false, hideIcon : false}
+                    ],
+            gridConfigs : {
+                columns : [
+                    {id : 1},
+                    {id : 2},
+                    {id : 3, sortable : true},
+                    {id : 4, sortable : true},
+                    {id : 5, sortable : true},
+                    {id : 6, sortable : true},
+                    {id : 7, sortable : true},
+                    {id : 8, sortable : true},
+                    {id : 9, sortable : true, hidden : true},
+                    {id : 10, sortable : true, hidden : true}
+                ]
+            }
+
         });
         Ext4.apply(config, {
             xtype : 'panel',
@@ -166,12 +191,13 @@ Ext4.define('File.panel.ToolbarPanel', {
 
         var processedData = [];
         for(var i = 0; i < this.tbarActions.length; i++){
-            processedData[i] = baseDataArray[this.tbarActions[i].id];
-            processedData[i].hideIcon = this.tbarActions[i].hideIcon;
-            processedData[i].hideText = this.tbarActions[i].hideText;
-            processedData[i].shown = true;
-            processedData[i].id = this.tbarActions[i].id;
-            processedData[i].used = true;
+            var tbarAction = baseDataArray[this.tbarActions[i].id];
+            tbarAction.hideIcon = this.tbarActions[i].hideIcon;
+            tbarAction.hideText = this.tbarActions[i].hideText;
+            tbarAction.shown = true;
+            tbarAction.id = this.tbarActions[i].id;
+            tbarAction.used = true;
+            processedData.push(tbarAction);
         }
         for(var remainingItem in baseDataArray){
 
@@ -197,12 +223,13 @@ Ext4.define('File.panel.ToolbarPanel', {
             reverseBaseColumnData[baseColumnData[i]] = i+1;
         }
 
-        for(var i = 0; i < this.gridConfigs.columns.length-1; i++){
-            columnData[i] = {};
-            columnData[i].text = baseColumnData[this.gridConfigs.columns[i+1].id-1];
-            columnData[i].id = reverseBaseColumnData[columnData[i].text];
-            this.gridConfigs.columns[i+1].hidden ? columnData[i].hidden = true : columnData[i].hidden = false;
-            this.gridConfigs.columns[i+1].sortable ? columnData[i].sortable = true : columnData[i].sortable = false;
+        for(var i = 1; i < this.gridConfigs.columns.length; i++){
+            var column = {};
+            column.text = baseColumnData[this.gridConfigs.columns[i].id-2];
+            column.id = reverseBaseColumnData[column.text];
+            this.gridConfigs.columns[i].hidden ? column.hidden = true : column.hidden = false;
+            this.gridConfigs.columns[i].sortable ? column.sortable = true : column.sortable = false;
+            columnData.push(column);
         }
 
         this.columnsStore = Ext4.create('Ext.data.Store', {
