@@ -21,6 +21,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.api.data.Container;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 /*
@@ -43,6 +44,7 @@ public class RepositorySettings
     private boolean _simple;
     private boolean _enableRequests;
     private String[][] _specWebPartColumnGroup = new String[2][3];      // 2 groupings; 3 groupBys within each
+    private Map<String, String> _mapOldNamesToNewNames = new HashMap<String, String>();     // TODO: needed for any studies saved between 1/20/2013 and 2/1/2013
 
     private Container _container;
 
@@ -67,7 +69,10 @@ public class RepositorySettings
             {
                 for (int k = 0; k < 3; k += 1)   // Only 2 groupBys supported
                 {
-                    _specWebPartColumnGroup[i][k] = map.get(makeKeySpecWebPartGroup(i,k));
+                    String group = map.get(makeKeySpecWebPartGroup(i,k));
+                    if (_mapOldNamesToNewNames.containsKey(group))
+                        group = _mapOldNamesToNewNames.get(group);
+                    _specWebPartColumnGroup[i][k] = group;
                     if (null == _specWebPartColumnGroup[i][k])
                         _specWebPartColumnGroup[i][k] = "";
                 }
@@ -144,7 +149,10 @@ public class RepositorySettings
             String[] grouping = groupings.get(i);
             for (int k = 0; k < grouping.length && k < 3; k += 1)   // Only 3 groupBys supported
             {
-                _specWebPartColumnGroup[i][k] = (null != grouping[k]) ? grouping[k] : "";
+                String group = (null != grouping[k]) ? grouping[k] : "";
+                if (_mapOldNamesToNewNames.containsKey(group))
+                    group = _mapOldNamesToNewNames.get(group);
+                _specWebPartColumnGroup[i][k] = group;
             }
         }
     }
@@ -157,6 +165,20 @@ public class RepositorySettings
         _specWebPartColumnGroup[1][0] = "Derivative Type";
         _specWebPartColumnGroup[1][1] = "Additive Type";
         _specWebPartColumnGroup[1][2] = "";
+
+        _mapOldNamesToNewNames.put("PrimaryType", "Primary Type");
+        _mapOldNamesToNewNames.put("DerivativeType", "Derivative Type");
+        _mapOldNamesToNewNames.put("AdditiveType", "Additive Type");
+        _mapOldNamesToNewNames.put("DerivativeType2", "Derivative Type2");
+        _mapOldNamesToNewNames.put("SubAdditiveDerivative", "Sub Additive Derivative");
+        _mapOldNamesToNewNames.put("ProcessingLocation", "Processing Location");
+        _mapOldNamesToNewNames.put("ProtocolNumber", "Protocol Number");
+        _mapOldNamesToNewNames.put("TubeType", "Tube Type");
+        _mapOldNamesToNewNames.put("SiteName", "Site Name");
+        _mapOldNamesToNewNames.put("Fr_Container", "Fr Container");
+        _mapOldNamesToNewNames.put("Fr_Position", "Fr Position");
+        _mapOldNamesToNewNames.put("Fr_Level1", "Fr Level1");
+        _mapOldNamesToNewNames.put("Fr_Level2", "Fr Level2");
     }
 
     public static RepositorySettings getDefaultSettings(Container container)
