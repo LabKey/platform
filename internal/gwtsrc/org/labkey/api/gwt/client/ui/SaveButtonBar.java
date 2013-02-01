@@ -79,10 +79,15 @@ public class SaveButtonBar extends HorizontalPanel
 
     public void setAllowSave(boolean dirty)
     {
+        // For unknown reasons, GWT ignores the button click if an already-enabled button is re-enabled
+        // during its click handling. Specifically, this happens if the dirty state is set as part of a blur handler
+        // when a form element is losing focus because a user is clicking on the save or cancel buttons
         if (saveButton.isEnabled() != dirty)
             saveButton.setEnabled(dirty);
-        cancelButton.setEnabled(true);
-        finishButton.setEnabled(true);
+        if (!cancelButton.isEnabled())
+            cancelButton.setEnabled(true);
+        if (!finishButton.isEnabled())
+            finishButton.setEnabled(true);
     }
 
 }
