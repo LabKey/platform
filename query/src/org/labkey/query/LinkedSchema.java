@@ -24,6 +24,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -171,7 +172,12 @@ public class LinkedSchema extends ExternalSchema
         TableType metaData = getXbTable(name);
         QueryDefinition queryDef = createQueryDef(name, sourceTable, metaData);
 
-        TableInfo tableInfo = queryDef.getTable(new ArrayList<QueryException>(), true);
+        ArrayList<QueryException> errors = new ArrayList<QueryException>();
+        TableInfo tableInfo = queryDef.getTable(errors, true);
+        if (!errors.isEmpty())
+        {
+            throw errors.get(0);
+        }
         if (tableInfo == null)
         {
             return null;
@@ -179,7 +185,7 @@ public class LinkedSchema extends ExternalSchema
 
         LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo);
 
-        linkedTableInfo.loadFromXML(this, metaData, _namedFilters, new ArrayList<QueryException>());
+        linkedTableInfo.loadFromXML(this, metaData, _namedFilters, errors);
 
         return linkedTableInfo;
     }

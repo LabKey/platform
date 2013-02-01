@@ -123,10 +123,16 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     for (int i = 0; i < queryNames.size() && addedQueryCount < MAX_TABLES_TO_LIST; i++)
                     {
                         String qname = queryNames.get(i);
-                        TableInfo tinfo = uschema.getTable(qname);
-                        if (null == tinfo)
-                            continue;
-                        addQueryToList(schemaPath, qname, tinfo.getDescription(), builtIn);
+                        TableInfo tinfo = null;
+                        try
+                        {
+                            // Try to get the TableInfo so we can send back its description
+                            tinfo = uschema.getTable(qname);
+                        }
+                        catch (QueryException ignored) {}
+
+                        // If there's an error, still include the table in the tree
+                        addQueryToList(schemaPath, qname, tinfo == null ? null : tinfo.getDescription(), builtIn);
                         addedQueryCount++;
                     }
 
