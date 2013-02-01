@@ -7184,7 +7184,7 @@ public class StudyController extends BaseStudyController
         private String pageId;
         private boolean includeData = true;
         private boolean includeMetadata = true;
-        private int _parent;
+        private int _parent = -2;
         Map<String, Object> _props;
 
         private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets, ViewInfo.DataType.queries};
@@ -7275,10 +7275,18 @@ public class StudyController extends BaseStudyController
             ViewCategory[] categories;
             int parent = form.getParent();
 
-            if (parent == 0) {
+            // Default, no parent specifically requested
+            if (parent == -2 || parent < 0)
+            {
+                categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser());
+            }
+            else if (parent == 0)
+            {
+                // parent filter on non-existent category
                 categories = new ViewCategory[0];
             }
-            else if (parent != 0) {
+            else
+            {
                 SimpleFilter filter;
                 FieldKey field = FieldKey.fromParts("Parent");
 
@@ -7287,9 +7295,6 @@ public class StudyController extends BaseStudyController
                 else
                     filter = new SimpleFilter(field, null, CompareType.ISBLANK);
                 categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser(), filter);
-            }
-            else {
-                categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser());
             }
 
             for (ViewCategory c : categories)

@@ -156,9 +156,9 @@ Ext4.define('Ext.tree.DataViewsColumn', {
                 record = record.parentNode;
             }
             if (href) {
-                buf.push('<a href="', href, '" target="', target, '">', formattedValue, '</a>');
+                buf.push('<a href="', href, '" target="', target, '">', Ext4.htmlEncode(formattedValue), '</a>');
             } else {
-                buf.push('<span>',formattedValue,'</span>');
+                buf.push('<span>',Ext4.htmlEncode(formattedValue),'</span>');
             }
             if (cls) {
                 metaData.tdCls += ' ' + cls;
