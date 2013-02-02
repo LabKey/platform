@@ -3463,6 +3463,7 @@ study/src/org/labkey/study/writer/ViewCategoryWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
 study/webapp/WEB-INF/study/studyContext.xml -text
+study/webapp/dataviews.lib.xml -text
 study/webapp/sampleRequest.js -text
 study/webapp/study/DataViewPropertiesPanel.js -text
 study/webapp/study/DataViewsPanel.css -text

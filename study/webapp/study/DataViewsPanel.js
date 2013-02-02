@@ -20,12 +20,12 @@ Ext4.define('TreeFilter', {
         tree.clearFilter = Ext4.Function.bind(me.clearFilter, me);
     },
 
-    filter: function (value, property, re) {
+    filter: function (value, propArray, re) {
         var me = this,
             tree = me.tree,
             matches = [],                        // array of nodes matching the search criteria
             root = tree.getRootNode(),           // root node of the tree
-            _property = property || 'text',      // property is optional - will be set to the 'text' propert of the  treeStore record by default
+            _propArray = propArray || ['text'],   // propArray is optional - will be set to the ['text'] property of the TreeStore record by default
             _re = re || new RegExp(value, "ig"), // the regExp could be modified to allow for case-sensitive, starts  with, etc.
             visibleNodes = [],                   // array of nodes matching the search criteria + each parent non-leaf  node up to root
             viewNode;
@@ -39,8 +39,13 @@ Ext4.define('TreeFilter', {
 
         // iterate over all nodes in the tree in order to evalute them against the search criteria
         root.cascadeBy(function (node) {
-            if (node.get(_property).match(_re)) {  // if the node matches the search criteria and is a leaf (could be  modified to searh non-leaf nodes)
-                matches.push(node);                // add the node to the matches array
+            for (var p=0; p < _propArray.length; p++) {
+                if (node.get(_propArray[p]) &&
+                    node.get(_propArray[p]).match &&
+                    node.get(_propArray[p]).match(_re)) {  // if the node matches the search criteria and is a leaf (could be  modified to searh non-leaf nodes)
+                        matches.push(node);                // add the node to the matches array
+                        return;
+                }
             }
         });
 
@@ -65,7 +70,7 @@ Ext4.define('TreeFilter', {
         });
 
         root.cascadeBy(function (node) {                            // finally loop to hide/show each node
-            viewNode = Ext.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
+            viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
             if (viewNode) {                                         // the first one is undefined ? escape it with a conditional
                 viewNode.setVisibilityMode(Ext4.Element.DISPLAY);   // set the visibility mode of the dom node to display (vs offsets)
                 viewNode.setVisible(Ext4.Array.contains(visibleNodes, node));
@@ -203,9 +208,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             allowCustomize : true
         });
 
-        /* Experimental -- Set to true to view data as nested tree */
-        this.asTree = false;
-
         // The following default to type 'string'
         var fields = [
             {name : 'id'},
@@ -217,14 +219,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 convert : function(v, record){
                     if (record.raw && record.raw.author)
                         return record.raw.author.userId;
-                    else return 0;
+                    return 0;
                 }
             },
             {name : 'authorDisplayName',
                 convert : function(v, record){
                     if (record.raw && record.raw.author)
                         return record.raw.author.displayName;
-                    else return '';
+                    return '';
                 }
             },
             {name : 'container'},
@@ -252,14 +254,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'status'}
         ];
 
-        if (!this.asTree) {
-            fields.push({name : 'categoryDisplayOrder', mapping : 'category.displayOrder', type : 'int'});
-            fields.push({name : 'categorylabel',        mapping : 'category.label'});
-        }
-
         // define Models
         Ext4.define('Dataset.Browser.View', {
-            extend : this.asTree ? 'Ext.data.FastModel' : 'Ext.data.Model',
+            extend : 'Ext.data.FastModel',
             idProperty : 'fakeid', // do not use the 'id' property, rather just make something up which Ext will then generate
             fields : fields
         });
@@ -313,6 +310,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // secondary display panels
         this.customPanel = this.initCustomization();
 
+        xx = this;
         this.callParent();
     },
 
@@ -337,18 +335,18 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     getViewProxy : function() {
         return {
             type   : 'ajax',
-            url    : LABKEY.ActionURL.buildURL('study', 'browseData' + (this.asTree ? 'Tree' : '') + '.api'),
+            url    : LABKEY.ActionURL.buildURL('study', 'browseDataTree.api'),
             extraParams : {
                 // These parameters are required for specific webpart filtering
                 pageId      : this.pageId,
                 index       : this.index,
                 returnUrl   : this.returnUrl
             },
-            reader : this.asTree ? 'json' : { type : 'json', root : 'data' }
+            reader : 'json'
         };
     },
 
-    initializeViewStore : function(useGrouping) {
+    initializeViewStore : function() {
 
         if (this.store)
             return this.store;
@@ -366,37 +364,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 load : {fn : this.onViewLoad, scope: this},
                 scope: this
             },
+            sortRoot : 'displayOrder',
             scope : this
         };
 
-        if (this.asTree) {
-            config.sortRoot = 'displayOrder';
-        }
-
-        this.store = Ext4.create(this.asTree ? 'Ext.data.TreeStore' : 'Ext.data.Store', config);
-
-        if (useGrouping && !this.asTree) {
-
-            // 15764
-            this.store.groupers.add({
-                property : 'categorylabel',
-                dataProperty : 'categoryDisplayOrder',
-                sorterFn : function(a, b) {
-                    var me = this,
-                        c1 = me.getRoot(a)[me.dataProperty],
-                        c2 = me.getRoot(b)[me.dataProperty];
-
-                    // If both are 0 display order than they are considered unintialized
-                    // just return the alphabetical order
-                    if (c1 == 0 && c2 == 0) {
-                        var a1 = me.getRoot(a)[me.property],
-                            a2 = me.getRoot(b)[me.property];
-                        return a1 > a2 ? 1 : (a1 < a2 ? -1 : 0);
-                    }
-                    return c1 > c2 ? 1 : (c1 < c2 ? -1 : 0);
-                }
-            });
-        }
+        this.store = Ext4.create('Ext.data.TreeStore', config);
         return this.store;
     },
 
@@ -427,18 +399,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     destroy : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api')
                 },
                 extraParams : extraParams,
-                reader : {
-                    type : 'json',
-                    root : 'categories'
-                },
-                writer: {
-                    type : 'json',
-                    root : 'categories',
-                    allowSingle : false
-                }
+                reader : { type : 'json', root : 'categories' },
+                writer : { type : 'json', root : 'categories', allowSingle : false }
             },
             listeners : {
-                load : function(s, recs, success, operation, ops) {
+                load : function(s) {
                     s.sort('displayOrder', 'ASC');
                 }
             }
@@ -449,7 +414,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     initializeUserStore : function() {
 
-        var config = {
+        return Ext4.create('Ext.data.Store', {
             model   : 'LABKEY.data.User',
             autoLoad: true,
             proxy   : {
@@ -460,9 +425,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     root : 'users'
                 }
             }
-        };
+        });
 
-        return Ext4.create('Ext.data.Store', config);
     },
 
     initCenterPanel : function() {
@@ -475,13 +439,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.centerPanel.on('render', this.configureGrid, this);
 
-        return Ext4.create('Ext.panel.Panel', {
+        return {
+            xtype  : 'panel',
             border : false, frame : false,
             layout : 'fit',
             flex   : 4,
             region : 'center',
             items  : [this.centerPanel]
-        });
+        };
     },
 
     /**
@@ -489,7 +454,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
      */
     configureGrid : function() {
 
-        var handler = function(json){
+        var handler = function(json) {
             this.centerPanel.getEl().unmask();
 
             if (json.webpart) {
@@ -500,7 +465,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.dateRenderer = Ext4.util.Format.dateRenderer(json.dateFormat);
             this.editInfo = json.editInfo;
 
-            this.initGrid(!this.asTree, json.visibleColumns);
+            this.initGrid(json.visibleColumns);
         };
 
         this.centerPanel.getEl().mask('Initializing...');
@@ -514,19 +479,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var handler = function(json){
             this.centerPanel.getEl().unmask();
-            if (!this.asTree) {
-                this.gridPanel.on('reconfigure', function() {
-                    if (this._height)
-                        this.setHeight(this._height);
-                }, this, {single: true});
-                this.gridPanel.reconfigure(this.gridPanel.getStore(), this.initGridColumns(json.visibleColumns));
-            }
-            else {
-                this._height = parseInt(json.webpart.height);
-                this.centerPanel.removeAll(true);
-                this.setHeight(this._height);
-                this.initGrid(!this.asTree, json.visibleColumns);
-            }
+            this._height = parseInt(json.webpart.height);
+            this.centerPanel.removeAll(true);
+            this.setHeight(this._height);
+            this.initGrid(json.visibleColumns);
             this.store.load();
         };
 
@@ -560,7 +516,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         });
     },
 
-    initGrid : function(useGrouping, visibleColumns) {
+    initGrid : function(visibleColumns) {
 
         /**
          * Tooltip Template
@@ -650,22 +606,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         };
 
-        /**
-         * Enable Grouping by Category
-         */
-        var groupingFeature = Ext4.create('Ext4.grid.feature.Grouping', {
-            groupHeaderTpl : '&nbsp;{name}', // &nbsp; allows '+/-' to show up
-            enableGroupingMenu : false
-        });
-
-        var plugins = [];
-        if (this.asTree) {
-            plugins.push(Ext4.create('TreeFilter', { collapseOnClear : false }));
-        }
-
-        this.gridPanel = Ext4.create(this.asTree ? 'Ext.tree.Panel' : 'Ext.grid.Panel', {
+        this.gridPanel = Ext4.create('Ext.tree.Panel', {
             id       : 'data-browser-grid-' + this.webpartId,
-            store    : this.initializeViewStore(useGrouping),
+            store    : this.initializeViewStore(),
             tbar     : this.initSearch(),
             border   : false, frame: false,
             layout   : 'fit',
@@ -683,7 +626,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 emptyText : '0 Matching Results'
             },
             selType   : 'rowmodel',
-            features  : [groupingFeature],
             listeners : {
                 itemclick : function(view, record, item, index, e) {
                     // TODO: Need a better way to determine the clicked item
@@ -706,12 +648,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
             /* Tree Configurations */
             rootVisible : false,
-            plugins : plugins,
-
+            plugins : [ Ext4.create('TreeFilter', { collapseOnClear : false, allowParentFolders: true }) ],
             scope     : this
         });
-
-        this.gridPanel.getStore().on('groupchange', this.onGroupChange, this);
 
         this.centerPanel.add(this.gridPanel);
     },
@@ -758,22 +697,19 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             },
             listeners : {
                 beforehide : function(c) {
-                    if (this.asTree)
-                        this.gridPanel.getView().refresh();
+                    this.gridPanel.getView().refresh();
                 },
                 beforeshow : function(c) {
-                    if (this.asTree)
-                        this.gridPanel.getView().refresh();
+                    this.gridPanel.getView().refresh();
                 },
                 scope : this
             },
             hidden   : true,
             scope    : this
         },{
-            xtype    : this.asTree ? 'dataviewscolumn' : 'templatecolumn',
+            xtype    : 'dataviewscolumn',
             text     : 'Name',
             flex     : 1,
-            sortable : true,
             dataIndex: 'name',
             minWidth : 200,
             menuDisabled : true,
@@ -785,7 +721,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             id       : 'category-column-' + this.webpartId,
             text     : 'Category',
             flex     : 1,
-            sortable : true,
             menuDisabled : true,
             sortable : false,
             dataIndex: 'categorylabel',
@@ -799,7 +734,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 xtype    : 'templatecolumn',
                 text     : 'Type',
                 width    : 75,
-                sortable : true,
                 dataIndex: 'type',
                 tdCls    : 'type-column',
                 menuDisabled : true,
@@ -815,7 +749,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 xtype    : 'templatecolumn',
                 text     : 'Details',
                 width    : 60,
-                sortable : true,
                 dataIndex: 'detailsUrl',
                 tdCls    : 'type-column',
                 menuDisabled : true,
@@ -829,7 +762,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
              _columns.push({
                  text     : 'Data Cut Date',
                  width    : 120,
-                 sortable : true,
                  dataIndex: 'refreshDate',
                  menuDisabled : true,
                  sortable : false,
@@ -857,7 +789,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 xtype    : 'templatecolumn',
                 text     : 'Status',
                 width    : 60,
-                sortable : true,
                 tdCls    : 'type-column',
                 menuDisabled : true,
                 sortable : false,
@@ -871,7 +802,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             _columns.push({
                 text     : 'Modified',
                 width    : 100,
-                sortable : true,
                 renderer : this.dateRenderer,
                 menuDisabled : true,
                 sortable : false,
@@ -884,7 +814,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             _columns.push({
                 text     : 'Author',
                 width    : 100,
-                sortable : false,
                 dataIndex: 'authorDisplayName',
                 menuDisabled : true,
                 sortable : false,
@@ -897,7 +826,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             _columns.push({
                 header   : 'Access',
                 width    : 100,
-                sortable : false,
                 dataIndex: 'access',
                 sortable : false,
                 menuDisabled : true
@@ -931,7 +859,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         });
 
-        // hahaha
         this.mineField = Ext4.create('Ext.form.field.Checkbox', {
             boxLabel        : '<span data-qtip="Check to show only views that have either been created by me or that list me as the author.">&nbsp;Mine</span>',
             boxLabelAlign   : 'before',
@@ -993,88 +920,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.hiddenFilter();
     },
 
-    onGroupChange : function(store, groupers) {
-
-        // 13878: Reverting to default in data browser -- make sure category column is visible if it is not being grouped by
-        if (groupers.items && groupers.items.length == 1) {
-
-            var catColumn = Ext4.getCmp('category-column-' + this.webpartId);
-
-            if (catColumn) {
-                if (groupers.items[0].property == catColumn.dataIndex) {
-                    catColumn.hide();
-                }
-                else {
-                    if (!catColumn.isVisible())
-                        catColumn.show();
-                }
-            }
-
-        }
-    },
-
     /**
      * Aggregates the filters applied by search and by custom mode.
      */
     hiddenFilter : function() {
-
-        if (!this.asTree) {
-
-            this.store.clearFilter();
-            var _custom = this._inCustomMode();
-
-            this.store.sort([
-                {
-                    property : 'name',
-                    direction: 'ASC'
-                }
-            ]);
-
-            this.store.filterBy(function(rec, id){
-
-                var answer = true;
-                if (rec.data && this.searchVal && this.searchVal != "")
-                {
-                    var t = new RegExp(Ext4.escapeRe(this.searchVal), 'i');
-                    var s = '';
-                    if (rec.data.name)
-                        s += rec.data.name;
-                    if (rec.data.categorylabel)
-                        s += rec.data.categorylabel;
-                    if (rec.data.type)
-                        s += rec.data.type;
-                    if (rec.data.modified)
-                        s += rec.data.modified;
-                    if (rec.data.authorDisplayName)
-                        s += rec.data.authorDisplayName;
-                    if (rec.data.status)
-                        s += rec.data.status;
-                    answer = t.test(s);
-                }
-
-                // the show mine checkbox will match if the current user is either the author or the creator
-                if (rec.data && answer && this.searchMine)
-                {
-                    if ((rec.data.authorUserId != LABKEY.user.id) && (rec.data.createdByUserId != LABKEY.user.id))
-                        return false;
-                }
-
-                // custom mode will show hidden
-                if (_custom)
-                    return answer;
-
-                // otherwise never show hidden records
-                if (!rec.data.visible)
-                    return false;
-
-                return answer;
-            }, this);
-        }
-        else {
-            this.gridPanel.clearFilter();
-            if (this.searchVal && !this.searchVal == "") {
-                this.gridPanel.filter(this.searchVal, 'name');
-            }
+        this.gridPanel.clearFilter();
+        if (this.searchVal && !this.searchVal == "") {
+            this.gridPanel.filter(this.searchVal, ['name', 'status', 'type', 'authorDisplayName']);
         }
     },
 
@@ -1146,8 +998,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }
 
         var cbItems = [],
-                cbColumns = [],
-                sizeItems = [];
+            cbColumns = [],
+            sizeItems = [];
 
         var heights = {
             450 : 'small',
@@ -1155,18 +1007,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             1000 : 'large'
         };
 
-        if (data.types)
-        {
+        if (data.types) {
             for (var type in data.types) {
-                if(data.types.hasOwnProperty(type))
-                {
+                if(data.types.hasOwnProperty(type)) {
                     cbItems.push({boxLabel : type, name : type, checked : data.types[type], width: 150, uncheckedValue : '0'});
                 }
             }
         }
 
-        if (data.visibleColumns)
-        {
+        if (data.visibleColumns) {
             for (var col in data.visibleColumns) {
                 var prop = data.visibleColumns[col];
                 cbColumns.push({boxLabel : col, name : col, checked : prop.checked, uncheckedValue : '0', width: 115, maxWidth: 150, handler : function(){this.updateConfig = true;}, scope : this});
@@ -1427,6 +1276,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // Z-Index Manager
         var zix = new Ext4.ZIndexManager(this);
 
+        zz = store;
         var grid = Ext4.create('Ext.grid.Panel', {
             store    : store,
             border   : false, frame: false,
@@ -1452,7 +1302,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     tooltip : 'Delete'
                 }],
                 listeners : {
-                    click : function(col, grid, idx, evt, x, y, z)
+                    click : function(col, grid, idx)
                     {
                         var label = store.getAt(idx).data.label;
 
@@ -1489,8 +1339,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     drop : function() {
                         var s = grid.getStore();
                         var display = 1;
+                        console.log('changing order');
                         s.each(function(rec){
                             rec.set('displayOrder', display);
+                            rec.setDirty();
                             display++;
                         }, this);
                     }
@@ -1611,9 +1463,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             },{
                 text    : 'Done',
                 handler : function() {
-                    grid.getStore().sync();
+                    grid.getStore().sync({
+                        success : function() {
+                            this.gridPanel.getStore().load();
+                        },
+                        scope : this
+                    });
                     categoryOrderWindow.close();
-                }
+                },
+                scope : this
             }],
             listeners : {
                 beforeclose : function() {
@@ -1645,7 +1503,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var store = this.initializeCategoriesStore(categoryid);
 
         return Ext4.create('Ext.grid.Panel', {
-            id : gridid || Ext.id(),
+            id : gridid || Ext4.id(),
             store   : store,
             columns : [{
                 xtype    : 'templatecolumn',

@@ -7276,7 +7276,7 @@ public class StudyController extends BaseStudyController
             int parent = form.getParent();
 
             // Default, no parent specifically requested
-            if (parent == -2 || parent < 0)
+            if (parent == -2)
             {
                 categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser());
             }

@@ -28,10 +28,7 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
-      resources.add(ClientDependency.fromFilePath("Ext4"));
-      resources.add(ClientDependency.fromFilePath("study/DataViewsPanel.css"));
-      resources.add(ClientDependency.fromFilePath("study/DataViewsPanel.js"));
-      resources.add(ClientDependency.fromFilePath("study/DataViewPropertiesPanel.js"));
+      resources.add(ClientDependency.fromFilePath("dataviews"));
       return resources;
   }
 %>
@@ -40,29 +37,30 @@
     User u = me.getViewContext().getUser();
     int webPartId = me.getModelBean().getRowId();
 %>
-<div>
-    <div id='dataset-browsing-<%=me.getModelBean().getIndex()%>' class="dvc"></div>
-</div>
+<div id='dataset-browsing-<%=me.getModelBean().getIndex()%>' class="dvc"></div>
 <script type="text/javascript">
 
-    function init()
-    {
-        var dvp = Ext4.create('LABKEY.ext4.DataViewsPanel', {
-            id          : 'data-views-panel-<%= webPartId %>',
-            renderTo    : 'dataset-browsing-<%= me.getModelBean().getIndex() %>',
-            pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
-            index       : <%= me.getModelBean().getIndex() %>,
-            webpartId   : <%= webPartId %>,
-            returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
-            allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>
+    (function() {
+
+        Ext4.onReady(function() {
+            var dvp = Ext4.create('LABKEY.ext4.DataViewsPanel', {
+                id          : 'data-views-panel-<%= webPartId %>',
+                renderTo    : 'dataset-browsing-<%= me.getModelBean().getIndex() %>',
+                pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
+                index       : <%= me.getModelBean().getIndex() %>,
+                webpartId   : <%= webPartId %>,
+                returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
+                allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>
+            });
+
+            var resize = function() {
+                if (dvp && dvp.doLayout) { dvp.doLayout(); }
+            };
+
+            Ext4.EventManager.onWindowResize(resize);
         });
 
-        var resize = function() {
-            if (dvp && dvp.doLayout) { dvp.doLayout(); }
-        };
-
-        Ext4.EventManager.onWindowResize(resize);
-    }
+    })();
 
     /**
      * Called by Server to handle cusomization actions. NOTE: The panel must be set to allow customization
@@ -70,15 +68,12 @@
      */
     function customizeDataViews(webpartId, pageId, index) {
 
-        function initPanel() {
-            // eew, should find better way to access global scope
+        var initPanel = function() {
             var panel = Ext4.getCmp('data-views-panel-' + webpartId);
 
             if (panel) { panel.customize(); }
-        }
+        };
 
         Ext4.onReady(initPanel);
     }
-
-    Ext4.onReady(init);
 </script>
