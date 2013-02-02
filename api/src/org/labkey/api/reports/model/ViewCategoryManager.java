@@ -27,6 +27,7 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -175,6 +176,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         // a subcategory with a parent
         if (parent != null)
             filter.addCondition(FieldKey.fromParts("parent"), parent.getRowId());
+        else
+            filter.addClause(new SimpleFilter.SQLClause("parent IS NULL", null));
 
         TableSelector selector = new TableSelector(getTableInfoCategories(), filter, null);
         ViewCategory[] categories = selector.getArray(ViewCategory.class);
@@ -203,11 +206,13 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             if (category == null)
                 throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
-            // delete the category definition and fire the deleted event
-
-            // the category table has a delete cascade fk rule, so no need to explicitly delete subcategories
+            // delete the category definition (plus any subcategories) and fire the deleted event
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
-            Table.execute(CoreSchema.getInstance().getSchema(), sql.getSQL(), category.getRowId());
+            sql.append(" OR Parent = ?");
+            sql.addAll(new Object[]{category.getRowId(), category.getRowId()});
+
+            SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());
+            executor.execute(sql);
 
             getCategoryCache().remove(getCacheKey(category.getRowId()));
             getCategoryCache().remove(getCacheKey(c, category.getLabel()));
@@ -637,17 +642,9 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             for (String label : labels)
             {
                 ViewCategory cat = categoryMap.get(label);
-                for (ViewCategory subCategory : cat.getSubcategories())
-                    mgr.deleteCategory(c, user, subCategory);
 
                 mgr.deleteCategory(c, user, cat);
             }
-/*
-            for (ViewCategory cat : categoryMap.values())
-            {
-                mgr.deleteCategory(c, user, cat);
-            }
-*/
 
             ViewCategory top = mgr.ensureViewCategory(c, user, "top");
 
@@ -656,6 +653,9 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             assertTrue(top.getLabel().equals("top"));
 
             ViewCategory subTop = mgr.ensureViewCategory(c, user, "top", "sub");
+            // issue : 17123
+            mgr.ensureViewCategory(c, user, "top", "top");
+            mgr.ensureViewCategory(c, user, "top");
 
             assertNotNull(subTop);
             assertTrue(subTop.getParent().getLabel().equals("top"));
@@ -668,9 +668,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             assertTrue(subBottom.getLabel().equals("sub"));
 
             mgr.deleteCategory(c, user, top);
-            mgr.deleteCategory(c, user, subTop);
             mgr.deleteCategory(c, user, subBottom.getParent());
-            mgr.deleteCategory(c, user, subBottom);
 
             // make sure all the listeners were invoked correctly
             assertTrue(notifications.isEmpty());
