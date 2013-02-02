@@ -185,6 +185,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                                     combo.setValue(s.getAt(rec));
                                 }
                             }
+                            combo.addClass('category-loaded-marker');
                         }, this, {single: true});
 
                     },
