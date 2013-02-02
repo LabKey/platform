@@ -502,16 +502,22 @@ public class StudyManager
      */
     private void ensureViewCategory(User user, DataSetDefinition def)
     {
-        if (def.getCategory() != null)
+        ViewCategory category = null;
+
+        if (def.getCategoryId() != null)
+            category = ViewCategoryManager.getInstance().getCategory(def.getCategoryId());
+
+        if (category == null && def.getCategory() != null)
         {
             // the imported category name may be encoded to contain subcategory info
             String[] parts = ViewCategoryManager.getInstance().decode(def.getCategory());
-            ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(def.getContainer(), user, parts);
-            if (category != null)
-            {
-                def.setCategoryId(category.getRowId());
-                def.setCategory(category.getLabel());
-            }
+            category = ViewCategoryManager.getInstance().ensureViewCategory(def.getContainer(), user, parts);
+        }
+
+        if (category != null)
+        {
+            def.setCategoryId(category.getRowId());
+            def.setCategory(category.getLabel());
         }
     }
 
