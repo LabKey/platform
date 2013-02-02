@@ -2160,6 +2160,10 @@ public class IssuesController extends SpringActionController
         {
             // Keep track of whether this issue is new
             boolean newIssue = previous.getIssueId() == 0;
+            String prevInt1StringVal = previous.getInt1() == null ? "" : String.valueOf(previous.getInt1());
+            String prevInt2StringVal = previous.getInt2() == null ? "" : String.valueOf(previous.getInt2());
+            String pevPriStringVal = previous.getPriority() == null ? "" : String.valueOf(previous.getPriority());
+
             // issueChanges is not defined yet, but it leaves things flexible
             sbHTMLChanges.append("<table class=issues-Changes>");
             _appendChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), newIssue);
@@ -2171,11 +2175,11 @@ public class IssuesController extends SpringActionController
                     newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", String.valueOf(previous.getPriority()), String.valueOf(issue.getPriority()), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", pevPriStringVal, String.valueOf(issue.getPriority()), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), newIssue);
 
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", String.valueOf(previous.getInt1()), String.valueOf(issue.getInt1()), ccc, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", String.valueOf(previous.getInt2()), String.valueOf(issue.getInt2()), ccc, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", prevInt1StringVal, String.valueOf(issue.getInt1()), ccc, newIssue);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", prevInt2StringVal, String.valueOf(issue.getInt2()), ccc, newIssue);
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string1", previous.getString1(), issue.getString1(), ccc, newIssue);
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string2", previous.getString2(), issue.getString2(), ccc, newIssue);
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string3", previous.getString3(), issue.getString3(), ccc, newIssue);

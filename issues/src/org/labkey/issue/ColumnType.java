@@ -113,7 +113,10 @@ public enum ColumnType
         @Override
         public String getValue(Issue issue)
         {
-            return String.valueOf(issue.getPriority());
+            if(issue.getPriority() != null)
+                return String.valueOf(issue.getPriority());
+            else
+                return null;
         }
 
         @Override
