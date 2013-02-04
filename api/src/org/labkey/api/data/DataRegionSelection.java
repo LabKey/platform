@@ -177,6 +177,7 @@ public class DataRegionSelection
         }
     }
 
+
     /**
      * Removes all selection state from the session for RenderContext.getSelectionKey().
      */
@@ -186,6 +187,7 @@ public class DataRegionSelection
                 ctx.getContainer().getPath(), ctx.getCurrentRegion().getSelectionKey());
     }
 
+
     /**
      * Removes all selection state from the session for the given key. If key is null, the request parameter DATA_REGION_SELECTION_KEY is used.
      */
@@ -193,9 +195,11 @@ public class DataRegionSelection
     {
         if (key == null)
             key = getSelectionKeyFromRequest(context);
-        clearAll(context.getRequest().getSession(false),
+        if (key != null)
+            clearAll(context.getRequest().getSession(false),
                 context.getContainer().getPath(), key);
     }
+
 
     /**
      * Removes all selection state from the session for the key given by request parameter DATA_REGION_SELECTION_KEY.
@@ -204,6 +208,7 @@ public class DataRegionSelection
     {
         clearAll(context, null);
     }
+
 
     public static int selectAll(ViewContext context, String key, String schemaName, String queryName, String viewName, String sortFilter)
             throws SQLException, IOException
