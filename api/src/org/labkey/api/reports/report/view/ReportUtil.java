@@ -407,8 +407,7 @@ public class ReportUtil
 
     public static ViewCategory getDefaultCategory(Container c, String schema, String query)
     {
-        ViewCategory vc = null;
-        String category = query;
+        ViewCategory vc;
         if ("study".equalsIgnoreCase(schema) && !StringUtils.isEmpty(query))
         {
             int datasetId = StudyService.get().getDatasetId(c, query);
@@ -423,11 +422,9 @@ public class ReportUtil
                 }
             }
         }
-        category = StringUtils.defaultIfEmpty(category, "Uncategorized");
 
         vc = new ViewCategory();
-
-        vc.setLabel(category);
+        vc.setLabel("Uncategorized");
         vc.setDisplayOrder(DEFAULT_CATEGORY_DISPLAY_ORDER);
 
         return vc;
