@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -82,6 +83,13 @@ public class LinkedSchema extends ExternalSchema
         if (sourceSchema == null)
             return null;
 
+        final Set<String> tableNames = sourceSchema.getTableNames();
+        TableSource tableSource = new TableSource()
+        {
+            public Collection<String> getTableNames()         { return tableNames; }
+            public boolean isTableAvailable(String tableName) { return tableNames.contains(tableName); }
+        };
+
         TablesType tablesType = parseTablesType(def, template);
 
         NamedFiltersType[] namedFilters = null;
@@ -93,8 +101,10 @@ public class LinkedSchema extends ExternalSchema
         }
 
         Map<String, TableType> metaDataMap = getMetaDataMap(tableTypes);
+        Collection<String> availableTables = getAvailableTables(def, template, tableSource, metaDataMap);
+        Collection<String> hiddenTables = getHiddenTables(tableTypes);
 
-        return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, sourceSchema.getTableNames(), Collections.<String>emptySet());
+        return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, availableTables, hiddenTables);
     }
 
     private static UserSchema getSourceSchema(LinkedSchemaDef def, TemplateSchemaType template, Container sourceContainer, User user)

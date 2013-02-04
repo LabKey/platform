@@ -70,6 +70,13 @@ public class ExternalSchema extends SimpleUserSchema
         });
     }
 
+    // Adaptor for DbSchema and UserSchema.
+    protected interface TableSource
+    {
+        public Collection<String> getTableNames();
+        public boolean isTableAvailable(String tableName);
+    }
+
     protected final AbstractExternalSchemaDef _def;
     protected final TemplateSchemaType _template;
     protected final Map<String, TableType> _metaDataMap;
@@ -88,10 +95,15 @@ public class ExternalSchema extends SimpleUserSchema
             tableTypes = tablesType.getTableArray();
         }
 
-        DbSchema schema = getDbSchema(def, template);
+        final DbSchema schema = getDbSchema(def, template);
+        TableSource tableSource = new TableSource()
+        {
+            public Collection<String> getTableNames()         { return schema.getTableNames(); }
+            public boolean isTableAvailable(String tableName) { return schema.getTable(tableName) != null; }
+        };
 
         Map<String, TableType> metaDataMap = getMetaDataMap(tableTypes);
-        Collection<String> availableTables = getAvailableTables(def, template, schema, metaDataMap);
+        Collection<String> availableTables = getAvailableTables(def, template, tableSource, metaDataMap);
         Collection<String> hiddenTables = getHiddenTables(tableTypes);
 
         return new ExternalSchema(user, container, def, template, schema, metaDataMap, namedFilters, availableTables, hiddenTables);
@@ -146,9 +158,9 @@ public class ExternalSchema extends SimpleUserSchema
         return null;
     }
 
-    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, TemplateSchemaType template, @Nullable DbSchema schema, Map<String, TableType> metaDataMap)
+    protected static @NotNull Collection<String> getAvailableTables(AbstractExternalSchemaDef def, TemplateSchemaType template, @Nullable TableSource tableSource, Map<String, TableType> metaDataMap)
     {
-        Collection<String> tableNames = getAvailableTables(def, template, schema);
+        Collection<String> tableNames = getAvailableTables(def, template, tableSource);
 
         if (tableNames.isEmpty() || metaDataMap.isEmpty())
             return tableNames;
@@ -165,9 +177,9 @@ public class ExternalSchema extends SimpleUserSchema
         return xmlTableNames;
     }
 
-    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, TemplateSchemaType template, @Nullable DbSchema schema)
+    private static @NotNull Collection<String> getAvailableTables(AbstractExternalSchemaDef def, TemplateSchemaType template, @Nullable TableSource tableSource)
     {
-        if (null == schema)
+        if (null == tableSource)
             return Collections.emptySet();
 
         Set<String> allowed = null;
@@ -180,7 +192,7 @@ public class ExternalSchema extends SimpleUserSchema
                 if (tableNames != null)
                 {
                     if (tableNames.length == 1 && tableNames[0].equals("*"))
-                        return schema.getTableNames();
+                        return tableSource.getTableNames();
                     else
                         allowed = new HashSet<String>(Arrays.asList(tableNames));
                 }
@@ -190,7 +202,7 @@ public class ExternalSchema extends SimpleUserSchema
         {
             String allowedTableNames = def.getTables();
             if ("*".equals(allowedTableNames))
-                return schema.getTableNames();
+                return tableSource.getTableNames();
             else
                 allowed = new CsvSet(allowedTableNames);
         }
@@ -201,13 +213,13 @@ public class ExternalSchema extends SimpleUserSchema
         // Some tables in the "allowed" list may no longer exist, so check each table in the schema.  #13002
         Set<String> available = new HashSet<String>(allowed.size());
         for (String name : allowed)
-            if (null != schema.getTable(name))
+            if (tableSource.isTableAvailable(name))
                 available.add(name);
 
         return available;
     }
 
-    private static @NotNull Collection<String> getHiddenTables(TableType[] tableTypes)
+    protected static @NotNull Collection<String> getHiddenTables(TableType[] tableTypes)
     {
         Set<String> hidden = new HashSet<String>();
 
