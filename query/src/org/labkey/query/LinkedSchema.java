@@ -73,8 +73,12 @@ public class LinkedSchema extends ExternalSchema
 
     public static LinkedSchema get(User user, Container container, LinkedSchemaDef def)
     {
-        TemplateSchemaType template = def.lookupTemplate(container);
-        UserSchema sourceSchema = getSourceSchema(def, template, user);
+        Container sourceContainer = def.lookupSourceContainer();
+        if (sourceContainer == null)
+            return null;
+
+        TemplateSchemaType template = def.lookupTemplate(sourceContainer);
+        UserSchema sourceSchema = getSourceSchema(def, template, sourceContainer, user);
         if (sourceSchema == null)
             return null;
 
@@ -93,13 +97,9 @@ public class LinkedSchema extends ExternalSchema
         return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, sourceSchema.getTableNames(), Collections.<String>emptySet());
     }
 
-    private static UserSchema getSourceSchema(LinkedSchemaDef def, TemplateSchemaType template, User user)
+    private static UserSchema getSourceSchema(LinkedSchemaDef def, TemplateSchemaType template, Container sourceContainer, User user)
     {
         SchemaKey sourceSchemaName = SchemaKey.fromString(template != null ? template.getSourceSchemaName() : def.getSourceSchemaName());
-
-        final Container sourceContainer = def.lookupSourceContainer();
-        if (sourceContainer == null || sourceSchemaName == null)
-            return null;
 
         User sourceSchemaUser = user;
         // We may want to be a little more locked down than this, but this gives the user read access to the source

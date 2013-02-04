@@ -69,7 +69,7 @@ public abstract class AbstractExternalSchemaDef extends Entity
     public String _metaData;
     // The data source name for external schemas, the source container id for linked schemas.
     public String _dataSource;
-    public String _tables = "*";
+    public String _tables;
 
     // If defined in a module, the name of the schema definition otherwise null.
     private String _schemaTemplate;
@@ -148,12 +148,12 @@ public abstract class AbstractExternalSchemaDef extends Entity
         _schemaTemplate = schemaTemplate;
     }
 
-    public TemplateSchemaType lookupTemplate(Container c)
+    public TemplateSchemaType lookupTemplate(Container sourceContainer)
     {
         if (_schemaTemplate == null)
             return null;
 
-        return QueryServiceImpl.get().getSchemaTemplate(c, _schemaTemplate);
+        return QueryServiceImpl.get().getSchemaTemplate(sourceContainer, _schemaTemplate);
     }
 
     public abstract boolean isEditable();

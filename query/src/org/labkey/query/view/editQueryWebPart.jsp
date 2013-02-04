@@ -30,6 +30,7 @@
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.CustomView" %>
+<%@ page import="org.labkey.api.query.SchemaKey" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -43,10 +44,10 @@
     Map<String, Map<String, List<String>>> schemaTableNames = new CaseInsensitiveHashMap<Map<String, List<String>>>();
     DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
 
-    for (String name : defSchema.getUserSchemaNames())
+    for (SchemaKey schemaKey : defSchema.getUserSchemaPaths())
     {
-        schemaOptions.put(name, name);
-        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), name);
+        schemaOptions.put(schemaKey.toString(), schemaKey.toString());
+        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaKey);
         Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<List<String>>();
 
         for (String tableName : new TreeSet<String>(schema.getTableAndQueryNames(true)))
@@ -77,7 +78,7 @@
             tableNames.put(tableName, viewNames);
         }
 
-        schemaTableNames.put(name, tableNames);
+        schemaTableNames.put(schemaKey.toString(), tableNames);
     }
 
     Map<String, String> pm = getWebPart().getPropertyMap();

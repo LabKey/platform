@@ -23,6 +23,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
@@ -105,9 +106,10 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			{
 				DefaultSchema folderSchema = DefaultSchema.get(null, _c);
 				ArrayList<String> names = new ArrayList<String>();
-				Set<String> s = folderSchema.getUserSchemaNames();
-				if (null != s)
-					names.addAll(s);
+				Set<SchemaKey> keys = folderSchema.getUserSchemaPaths();
+				if (null != keys)
+                    for (SchemaKey key : keys)
+                        names.add(key.toString());
 				_schemaNames = names;
 			}
 			return _schemaNames;

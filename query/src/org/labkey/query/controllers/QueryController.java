@@ -3251,7 +3251,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("linkedSchema"));
-            return new JspView<LinkedSchemaBean>(QueryController.class, "externalSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
+            return new JspView<LinkedSchemaBean>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
 
@@ -3432,7 +3432,7 @@ public class QueryController extends SpringActionController
             LinkedSchemaDef def = getDef(form, reshow, errors);
 
             setHelpTopic(new HelpTopic("linkedSchemas"));
-            return new JspView<LinkedSchemaBean>(QueryController.class, "externalSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
+            return new JspView<LinkedSchemaBean>(QueryController.class, "linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
         }
     }
 
@@ -3888,7 +3888,10 @@ public class QueryController extends SpringActionController
                 ret.put(templateJson);
             }
 
-            return new ApiSimpleResponse("templates", ret);
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("templates", ret);
+            resp.put("success", true);
+            return resp;
         }
     }
 
@@ -4547,11 +4550,11 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(GetSchemasForm form, BindException errors) throws Exception
         {
+            final Container container = getViewContext().getContainer();
+            final User user = getViewContext().getUser();
+
             if (getRequestedApiVersion() >= 9.3)
             {
-                final Container container = getViewContext().getContainer();
-                final User user = getViewContext().getUser();
-
                 SimpleSchemaTreeVisitor visitor = new SimpleSchemaTreeVisitor<Void, JSONObject>()
                 {
                     @Override
@@ -4594,8 +4597,9 @@ public class QueryController extends SpringActionController
                 return resp;
             }
             else
-                return new ApiSimpleResponse("schemas", DefaultSchema.get(getViewContext().getUser(),
-                        getViewContext().getContainer()).getUserSchemaNames());
+            {
+                return new ApiSimpleResponse("schemas", DefaultSchema.get(user, container).getUserSchemaPaths());
+            }
         }
     }
 

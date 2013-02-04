@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
@@ -63,17 +64,17 @@ public class CustomViewWriter extends BaseFolderWriter
         // TODO: Export views from external schemas as well?
         DefaultSchema folderSchema = DefaultSchema.get(user, c);
 
-        Set<String> userSchemaNames = folderSchema.getUserSchemaNames();
+        Set<SchemaKey> userSchemaPaths = folderSchema.getUserSchemaPaths();
 
-        for (String schemaName : userSchemaNames)
+        for (SchemaKey schemaKey : userSchemaPaths)
         {
-            UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
+            UserSchema schema = QueryService.get().getUserSchema(user, c, schemaKey);
 
             List<String> tableAndQueryNames = schema.getTableAndQueryNames(false);
 
             for (String tableName : tableAndQueryNames)
             {
-                List<CustomView> customViews = QueryService.get().getCustomViews(null, c, schemaName, tableName, false);
+                List<CustomView> customViews = QueryService.get().getCustomViews(null, c, schemaKey.toString(), tableName, false);
 
                 for (CustomView customView : customViews)
                 {

@@ -1087,14 +1087,17 @@ public class QueryServiceImpl extends QueryService
 
         for (LinkedSchemaDef def : defs)
         {
+            Container sourceContainer = def.lookupSourceContainer();
             try
             {
                 UserSchema schema = LinkedSchema.get(user, c, def);
-                ret.put(def.getUserSchemaName(), schema);
+                if (schema != null)
+                    ret.put(def.getUserSchemaName(), schema);
+                else
+                    Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + sourceContainer != null ? sourceContainer.getName() : "<unknown container>");
             }
             catch (Exception e)
             {
-                Container sourceContainer = def.lookupSourceContainer();
                 Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + sourceContainer != null ? sourceContainer.getName() : "<unknown container>", e);
             }
         }
