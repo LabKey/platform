@@ -622,6 +622,9 @@ Ext4.define('LABKEY.ext4.Store', {
             //the error object for 1 row:
             if(Ext4.isDefined(error.rowNumber)){
                 var record = this.getAt(error.rowNumber);
+                if (!record)
+                    return;
+
                 record.serverErrors = {};
 
                 Ext4.each(error.errors, function(e){

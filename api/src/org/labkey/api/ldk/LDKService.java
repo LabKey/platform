@@ -15,11 +15,7 @@
  */
 package org.labkey.api.ldk;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.TableCustomizer;
-
-import java.util.Collection;
-import java.util.Set;
 
 /**
  * Created with IntelliJ IDEA.
@@ -45,4 +41,5 @@ abstract public class LDKService
 
     abstract public TableCustomizer getBuiltInColumnsCustomizer();
 
+    abstract public TableCustomizer getColumnsOrderCustomizer();
 }

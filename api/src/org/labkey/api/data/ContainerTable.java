@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
@@ -29,6 +30,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
+
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -148,10 +151,40 @@ public class ContainerTable extends FilteredTable<UserSchema>
             }
         });
 
-        getColumn("Name").setURL(webURLExp);
-        getColumn("Title").setURL(webURLExp);
-        getColumn("DisplayName").setURL(webURLExp);
-        getColumn("IdPrefixedName").setURL(webURLExp);
+        //NOTE: the string expression used above for the URL will not automatically include the correct field keys
+        //since it doesnt inherit from FieldKeyStringExpression.  see DisplayColumn.addQueryFieldKeys
+        //therefore we make sure the ID col is included below
+        DisplayColumnFactory dcf = new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(final ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo){
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
+                    {
+                        super.addQueryFieldKeys(keys);
+                        keys.add(FieldKey.fromString("ID"));
+                    }
+                };
+            }
+        };
+
+        ColumnInfo name = getColumn("Name");
+        name.setURL(webURLExp);
+        name.setDisplayColumnFactory(dcf);
+
+        ColumnInfo title = getColumn("Title");
+        title.setURL(webURLExp);
+        title.setDisplayColumnFactory(dcf);
+
+        ColumnInfo displayName = getColumn("DisplayName");
+        displayName.setURL(webURLExp);
+        displayName.setDisplayColumnFactory(dcf);
+
+        ColumnInfo idPrefixed = getColumn("IdPrefixedName");
+        idPrefixed.setURL(webURLExp);
+        idPrefixed.setDisplayColumnFactory(dcf);
 
         setTitleColumn("DisplayName");
     }
