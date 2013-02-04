@@ -53,9 +53,9 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
         if ("net.sourceforge.jtds.jdbc.Driver".equals(driverClassName))
-            return new MicrosoftSqlServerNew2008R2Dialect();
+            return new MicrosoftSqlServer2008R2Dialect();
         else if ("com.microsoft.sqlserver.jdbc.SQLServerDriver".equals(driverClassName))
-            return new MicrosoftSqlServerNew2008R2Dialect();
+            return new MicrosoftSqlServer2008R2Dialect();
         else
             return null;
     }
@@ -91,7 +91,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
                 return new MicrosoftSqlServer2012Dialect();
 
             if (version >= 105)
-                return new MicrosoftSqlServerNew2008R2Dialect();
+                return new MicrosoftSqlServer2008R2Dialect();
         }
 
         throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
@@ -106,7 +106,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        return PageFlowUtil.set(new MicrosoftSqlServerNew2008R2Dialect(), new MicrosoftSqlServer2012Dialect());
+        return PageFlowUtil.set(new MicrosoftSqlServer2008R2Dialect(), new MicrosoftSqlServer2012Dialect());
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
@@ -122,7 +122,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
             badVersion("Microsoft SQL Server", 0.0, 10.4, null);
 
             // >= 10.5 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
-            good("Microsoft SQL Server", 10.5, 10.9, "", MicrosoftSqlServerNew2008R2Dialect.class);
+            good("Microsoft SQL Server", 10.5, 10.9, "", MicrosoftSqlServer2008R2Dialect.class);
 
             // >= 11.0 should result in MicrosoftSqlServer2012Dialect
             good("Microsoft SQL Server", 11.0, 12.0, "", MicrosoftSqlServer2012Dialect.class);
@@ -158,7 +158,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
                     "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
 
-            SqlDialect dialect = new MicrosoftSqlServerNew2008R2Dialect();
+            SqlDialect dialect = new MicrosoftSqlServer2008R2Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
             assertEquals(10, good.getCounter());
@@ -179,7 +179,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    return new MicrosoftSqlServerNew2008R2Dialect();
+                    return new MicrosoftSqlServer2008R2Dialect();
                 }
 
                 @NotNull

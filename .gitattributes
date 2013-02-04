@@ -221,9 +221,9 @@ authentication/src/org/labkey/authentication/opensso/view/referrerPrefix.jsp -te
 bigiron/BigIron.iml -text
 bigiron/module.properties -text
 bigiron/src/org/labkey/bigiron/BigIronModule.java -text
+bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2008R2Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2012Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServerDialectFactory.java -text
-bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServerNew2008R2Dialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialectFactory.java -text
 bigiron/src/org/labkey/bigiron/oracle/Oracle11gR1Dialect.java -text

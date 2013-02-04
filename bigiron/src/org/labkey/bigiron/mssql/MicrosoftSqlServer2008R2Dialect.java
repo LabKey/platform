@@ -64,7 +64,7 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for Microsoft SQL Server
-public class MicrosoftSqlServerNew2008R2Dialect extends SqlDialect
+public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 {
     @Override
     protected @NotNull Set<String> getReservedWords()
