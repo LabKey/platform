@@ -6960,9 +6960,9 @@ public class StudyController extends BaseStudyController
 
             // add the default categories after the explicit categories
             Map<String, Integer> defaultCategoryMap = new HashMap<String, Integer>();
-            for (Iterator<String> it = defaultCategories.iterator(); it.hasNext(); )
+            for (String cat : defaultCategories)
             {
-                defaultCategoryMap.put(it.next(), ++startingDefaultDisplayOrder);
+                defaultCategoryMap.put(cat, ++startingDefaultDisplayOrder);
             }
 
             for (DataViewInfo info : views)

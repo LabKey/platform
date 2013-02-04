@@ -305,7 +305,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'detailsUrl'},
             {name : 'thumbnail'},
             {name : 'thumbnailType'},
-            {name : 'href', mapping : 'detailsUrl'},
+            {name : 'href', mapping : 'runUrl'},
             {name : 'allowCustomThumbnail'},
             {name : 'status'}
         ];
