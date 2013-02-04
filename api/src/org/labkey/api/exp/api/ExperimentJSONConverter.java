@@ -86,7 +86,9 @@ public class ExperimentJSONConverter
         JSONArray inputMaterialArray = new JSONArray();
         for (ExpMaterial material : run.getMaterialInputs().keySet())
         {
-            inputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material));
+            JSONObject jsonMaterial = ExperimentJSONConverter.serializeMaterial(material);
+            jsonMaterial.put(ROLE, run.getMaterialInputs().get(material));
+            inputMaterialArray.put(jsonMaterial);
         }
         jsonObject.put(MATERIAL_INPUTS, inputMaterialArray);
 
