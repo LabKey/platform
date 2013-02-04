@@ -246,6 +246,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 SimpleFilter filter = new SimpleFilter("label", category.getLabel());
                 if (category.getParent() != null)
                     filter.addCondition(FieldKey.fromParts("parent"), category.getParent().getRowId());
+                else
+                    filter.addClause(new SimpleFilter.SQLClause("parent IS NULL", null));
 
                 if (getCategories(c, user, filter).length > 0)
                 {
