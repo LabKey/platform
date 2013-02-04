@@ -989,6 +989,7 @@ api/src/org/labkey/api/security/RequiresPermissionClass.java -text
 api/src/org/labkey/api/security/RequiresSiteAdmin.java -text
 api/src/org/labkey/api/security/RoleAssignment.java -text
 api/src/org/labkey/api/security/SecurableResource.java -text
+api/src/org/labkey/api/security/SecurityLogger.java -text
 api/src/org/labkey/api/security/SecurityManager.java -text
 api/src/org/labkey/api/security/SecurityMessage.java -text
 api/src/org/labkey/api/security/SecurityPolicy.java -text

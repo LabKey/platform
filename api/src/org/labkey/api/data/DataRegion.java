@@ -577,7 +577,7 @@ public class DataRegion extends AbstractDataRegion
      */
     final public Results getResultSet(RenderContext ctx) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission(ReadPermission.class))
+        if (!ctx.getViewContext().hasPermission("DataRegion.getResultSet()", ReadPermission.class))
             return null;
 
         DataRegion oldRegion = ctx.getCurrentRegion();

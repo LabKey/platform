@@ -66,7 +66,7 @@ public class PopupAdminView extends PopupMenuView
 
         User user = context.getUser();
 
-        boolean isAdminInThisFolder = context.hasPermission(AdminPermission.class);
+        boolean isAdminInThisFolder = context.hasPermission("PopupAdminView", AdminPermission.class);
         boolean hasAdminReadInRoot = ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class);
 
         visible = isAdminInThisFolder || hasAdminReadInRoot;

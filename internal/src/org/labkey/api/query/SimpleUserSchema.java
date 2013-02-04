@@ -45,6 +45,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.SimpleModule;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -202,11 +203,19 @@ public class SimpleUserSchema extends UserSchema
 
         public void wrapAllColumns()
         {
-            for (ColumnInfo col : getRealTable().getColumns())
+            try
             {
-                if (!acceptColumn(col)) continue;
+                SecurityLogger.indent("SimpleUserSchema.wrapAllColumn()");
+                for (ColumnInfo col : getRealTable().getColumns())
+                {
+                    if (!acceptColumn(col)) continue;
 
-                wrapColumn(col);
+                    wrapColumn(col);
+                }
+            }
+            finally
+            {
+                SecurityLogger.outdent();
             }
         }
 
@@ -388,7 +397,7 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
         {
-            return _userSchema.getContainer().hasPermission(user, perm);
+            return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
         }
 
         @Override

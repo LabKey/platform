@@ -40,6 +40,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -981,7 +982,7 @@ public class ContainerManager
 
         for (Container project : projects)
         {
-            if (project.shouldDisplay(user) && project.hasPermission(user, ReadPermission.class))
+            if (project.shouldDisplay(user) && project.hasPermission("getProjectList()", user, ReadPermission.class))
             {
                 ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(project);
 
@@ -1006,80 +1007,92 @@ public class ContainerManager
         NavTree tree = (NavTree) NavTreeManager.getFromCache(project.getId(), viewContext);
         if (null != tree)
             return tree;
-        User user = viewContext.getUser();
-        String projectId = project.getId();
 
-        Container[] folders = ContainerManager.getAllChildren(project);
-
-        Arrays.sort(folders);
-
-        Set<Container> containersInTree = new HashSet<Container>();
-
-        Map<String, NavTree> m = new HashMap<String, NavTree>();
-        for (Container f : folders)
+        try
         {
-            if (f.isWorkbookOrTab())
-                continue;
+            assert SecurityLogger.indent("getFolderListForUser()");
 
-            SecurityPolicy policy = f.getPolicy();
-            boolean skip = (!policy.hasPermission(user, ReadPermission.class) || (!f.shouldDisplay(user)));
-            //Always put the project and current container in...
-            if (skip && !f.equals(project) && !f.equals(c))
-                continue;
+            User user = viewContext.getUser();
+            String projectId = project.getId();
 
-            //HACK to make home link consistent...
-            String name = f.getName();
-            if (name.equals("home") && f.equals(getHomeContainer()))
-                name = "Home";
+            Container[] folders = ContainerManager.getAllChildren(project);
 
-            NavTree t = new NavTree(name);
-            if (policy.hasPermission(user, ReadPermission.class))
+            Arrays.sort(folders);
+
+            Set<Container> containersInTree = new HashSet<Container>();
+
+            Map<String, NavTree> m = new HashMap<String, NavTree>();
+            for (Container f : folders)
             {
-                ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);
-                t.setHref(url.getEncodedLocalURIString());
-            }
-            containersInTree.add(f);
-            m.put(f.getId(), t);
-        }
+                if (f.isWorkbookOrTab())
+                    continue;
 
-        //Ensure parents of any accessible folder are in the tree. If not add them with no link.
-        for (Container treeContainer : containersInTree)
-        {
-            if (!treeContainer.equals(project) && !containersInTree.contains(treeContainer.getParent()))
+                SecurityPolicy policy = f.getPolicy();
+                boolean skip = (!policy.hasPermission(user, ReadPermission.class) || (!f.shouldDisplay(user)));
+
+                //Always put the project and current container in...
+                if (skip && !f.equals(project) && !f.equals(c))
+                    continue;
+
+                //HACK to make home link consistent...
+                String name = f.getName();
+                if (name.equals("home") && f.equals(getHomeContainer()))
+                    name = "Home";
+
+                NavTree t = new NavTree(name);
+                if (policy.hasPermission(user, ReadPermission.class))
+                {
+                    ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);
+                    t.setHref(url.getEncodedLocalURIString());
+                }
+                containersInTree.add(f);
+                m.put(f.getId(), t);
+            }
+
+            //Ensure parents of any accessible folder are in the tree. If not add them with no link.
+            for (Container treeContainer : containersInTree)
             {
-                Set<Container> containersToRoot = containersToRoot(treeContainer);
-                //Possible will be added more than once, if several children are accessible, but that's OK...
-                for (Container missing : containersToRoot)
-                    if (!m.containsKey(missing.getId()))
-                    {
-                        NavTree noLinkTree = new NavTree(missing.getName());
-                        m.put(missing.getId(), noLinkTree);
-                    }
+                if (!treeContainer.equals(project) && !containersInTree.contains(treeContainer.getParent()))
+                {
+                    Set<Container> containersToRoot = containersToRoot(treeContainer);
+                    //Possible will be added more than once, if several children are accessible, but that's OK...
+                    for (Container missing : containersToRoot)
+                        if (!m.containsKey(missing.getId()))
+                        {
+                            NavTree noLinkTree = new NavTree(missing.getName());
+                            m.put(missing.getId(), noLinkTree);
+                        }
+                }
             }
-        }
 
-        for (Container f : folders)
+            for (Container f : folders)
+            {
+                if (f.getId().equals(projectId))
+                    continue;
+
+                NavTree child = m.get(f.getId());
+                if (null == child)
+                    continue;
+
+                NavTree parent = m.get(f.getParent().getId());
+                assert null != parent; //This should not happen anymore, we assure all parents are in tree.
+                if (null != parent)
+                    parent.addChild(child);
+            }
+
+            NavTree projectTree = m.get(projectId);
+
+            projectTree.setId(project.getId());
+
+            NavTreeManager.cacheTree(projectTree, user);
+            return projectTree;
+        }
+        finally
         {
-            if (f.getId().equals(projectId))
-                continue;
-
-            NavTree child = m.get(f.getId());
-            if (null == child)
-                continue;
-
-            NavTree parent = m.get(f.getParent().getId());
-            assert null != parent; //This should not happen anymore, we assure all parents are in tree.
-            if (null != parent)
-                parent.addChild(child);
+            assert SecurityLogger.outdent();
         }
-
-        NavTree projectTree = m.get(projectId);
-
-        projectTree.setId(project.getId());
-
-        NavTreeManager.cacheTree(projectTree, user);
-        return projectTree;
     }
+
 
     public static Set<Container> containersToRoot(Container child)
     {

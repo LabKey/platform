@@ -22,6 +22,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
@@ -256,7 +257,20 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         if ("/".equals(getPath()))
             return true;
-        return hasAccess(user) && getPermissions(user).contains(ReadPermission.class);
+        try
+        {
+            SecurityLogger.indent(getPath() + " AbstractWebdavResource.canRead()");
+            if (!hasAccess(user))
+            {
+                SecurityLogger.log("hasAccess()==false",user,null,false);
+                return false;
+            }
+            return getPermissions(user).contains(ReadPermission.class);
+        }
+        finally
+        {
+            SecurityLogger.outdent();
+        }
     }
 
 

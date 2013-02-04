@@ -98,7 +98,7 @@ if ("true".equals(request.getParameter("testFont"))) {
       <%
           boolean needSeparator = false;
 
-          if (currentContext.hasPermission(AdminPermission.class) || ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class))
+          if (currentContext.hasPermission("header.jsp popupadminview", AdminPermission.class) || ContainerManager.getRoot().hasPermission("header.jsp popupadminview", user, AdminReadPermission.class))
           {
               include(new PopupAdminView(currentContext), out);
               needSeparator = true;

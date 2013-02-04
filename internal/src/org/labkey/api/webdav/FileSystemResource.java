@@ -48,6 +48,7 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -426,82 +427,117 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public boolean canRead(User user, boolean forRead)
     {
-        boolean canReadPerm = super.canRead(user, forRead);
-        if (!canReadPerm || !isFile() || !forRead)
-            return canReadPerm;
-        File f = getFile();
-        if (null == f)
-            return canReadPerm;
-
-        // for real files that we are about to actually read, we want to
-        // check that the OS will allow LabKey server to read the file
-        // should always return true, unless there is a configuration problem
-        if (!f.canRead())
+        try
         {
-            _log.warn(user.getEmail() + " attempted to read file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
-            return false;
+            SecurityLogger.indent(getPath() + " FileSystemResource.canRead()");
+            boolean canReadPerm = super.canRead(user, forRead);
+            if (!canReadPerm || !isFile() || !forRead)
+                return canReadPerm;
+            File f = getFile();
+            if (null == f)
+                return canReadPerm;
+
+            // for real files that we are about to actually read, we want to
+            // check that the OS will allow LabKey server to read the file
+            // should always return true, unless there is a configuration problem
+            if (!f.canRead())
+            {
+                SecurityLogger.log("File.canRead()==false",user,null,false);
+                _log.warn(user.getEmail() + " attempted to read file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                return false;
+            }
+            return canReadPerm;
         }
-        return canReadPerm;
+        finally
+        {
+            SecurityLogger.outdent();
+        }
     }
 
 
     public boolean canWrite(User user, boolean forWrite)
     {
-        boolean canWritePerm = super.canWrite(user, forWrite) && hasFileSystem();
-        if (!canWritePerm || !isFile() || !forWrite)
-            return canWritePerm;
-        File f = getFile();
-        if (null == f)
-            return canWritePerm;
-
-        // for real files that we are about to actually write, we want to
-        // check that the OS will allow LabKey server to write the file
-        // should always return true, unless there is a configuration problem
-        if (!f.canWrite())
+        try
         {
-            _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
-            return false;
+            SecurityLogger.indent(getPath() + " FileSystemResource.canWrite()");
+            boolean canWritePerm = super.canWrite(user, forWrite) && hasFileSystem();
+            if (!canWritePerm || !isFile() || !forWrite)
+                return canWritePerm;
+            File f = getFile();
+            if (null == f)
+                return canWritePerm;
+
+            // for real files that we are about to actually write, we want to
+            // check that the OS will allow LabKey server to write the file
+            // should always return true, unless there is a configuration problem
+            if (!f.canWrite())
+            {
+                SecurityLogger.log("File.canWrite()==false",user,null,false);
+                _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                return false;
+            }
+            return canWritePerm;
         }
-        return canWritePerm;
+        finally
+        {
+            SecurityLogger.outdent();
+        }
     }
 
 
     public boolean canCreate(User user, boolean forCreate)
     {
-        boolean canCreatePerm = super.canCreate(user, forCreate) && hasFileSystem();
-        if (!canCreatePerm || !isFile() || !forCreate)
-            return canCreatePerm;
-        File f = getFile();
-        if (null == f)
-            return canCreatePerm;
-
-        // for real files that we are about to actually write, we want to
-        // check that the OS will allow LabKey server to write the file
-        // should always return true, unless there is a configuration problem
-        if (!f.canWrite())
+        try
         {
-            _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
-            return false;
+            SecurityLogger.indent(getPath() + " FileSystemResource.canCreate()");
+            boolean canCreatePerm = super.canCreate(user, forCreate) && hasFileSystem();
+            if (!canCreatePerm || !isFile() || !forCreate)
+                return canCreatePerm;
+            File f = getFile();
+            if (null == f)
+                return canCreatePerm;
+
+            // for real files that we are about to actually write, we want to
+            // check that the OS will allow LabKey server to write the file
+            // should always return true, unless there is a configuration problem
+            if (!f.canWrite())
+            {
+                SecurityLogger.log("File.canWrite()==false",user,null,false);
+                _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                return false;
+            }
+            return canCreatePerm;
         }
-        return canCreatePerm;
+        finally
+        {
+            SecurityLogger.outdent();
+        }
     }
 
 
     public boolean canDelete(User user, boolean forDelete)
     {
-        if (!super.canDelete(user, forDelete) || !hasFileSystem())
-            return false;
-        File f = getFile();
-        if (null == f)
-            return false;
-        if (!f.canWrite())
+        try
         {
-            if (forDelete)
-                _log.warn(user.getEmail() + " attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
-            return false;
+            if (!super.canDelete(user, forDelete) || !hasFileSystem())
+                return false;
+            File f = getFile();
+            if (null == f)
+                return false;
+            if (!f.canWrite())
+            {
+                SecurityLogger.log("File.canWrite()==false",user,null,false);
+                if (forDelete)
+                    _log.warn(user.getEmail() + " attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                return false;
+            }
+            // can't delete if already processed
+            return getActions(user).isEmpty();
         }
-        // can't delete if already processed
-        return getActions(user).isEmpty();
+        finally
+        {
+            SecurityLogger.outdent();
+        }
     }
 
 

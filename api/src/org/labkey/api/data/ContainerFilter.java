@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -121,7 +122,10 @@ public abstract class ContainerFilter
      */
     public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean useJDBCParameters, boolean allowNulls)
     {
+        SecurityLogger.indent("ContainerFilter");
         Collection<String> ids = getIds(container);
+        SecurityLogger.outdent();
+
         if (ids == null)
         {
             if (allowNulls)
@@ -660,7 +664,7 @@ public abstract class ContainerFilter
             {
                 for(Container c : parent.getChildren())
                 {
-                    if(c.hasPermission(_user, _perm))
+                    if (c.hasPermission(_user, _perm))
                     {
                         result.add(c.getId());
                     }

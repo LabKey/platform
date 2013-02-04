@@ -215,10 +215,23 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     }
 
 
+    public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        return null != user && getContainer().hasPermission(logMsg, user, perm, _contextualRoles);
+    }
+
+
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return null != user && getContainer().hasPermission(user, perm, _contextualRoles);
+    }
+
+
+    public boolean hasPermission(String logMsg, Class<? extends Permission> perm) throws NotFoundException
+    {
+        User user = getUser();
+        return null != user && getContainer().hasPermission(logMsg, user, perm, _contextualRoles);
     }
 
 

@@ -223,15 +223,48 @@ public class SecurityPolicy implements HasPermission
         return _assignments.size() == 0;
     }
 
+
+    public boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
+    {
+        try
+        {
+            SecurityLogger.indent(logMsg);
+            return hasPermission(principal, permission, null);
+        }
+        finally
+        {
+            SecurityLogger.outdent();
+        }
+    }
+
+
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
         return hasPermission(principal, permission, null);
     }
 
+
+    public boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
+    {
+        try
+        {
+            SecurityLogger.indent(logMsg);
+            return hasPermission(principal, permission, contextualRoles);
+        }
+        finally
+        {
+            SecurityLogger.outdent();
+        }
+    }
+
+
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
     {
-        return getPermissions(principal, contextualRoles).contains(permission);
+        boolean ret = getPermissions(principal, contextualRoles).contains(permission);
+        SecurityLogger.log("SecurityPolicy.hasPermission " + permission.getSimpleName(), principal, this, ret);
+        return ret;
     }
+
 
     public boolean hasPermissions(@NotNull UserPrincipal principal, Class<? extends Permission>... permissions)
     {
@@ -240,14 +273,18 @@ public class SecurityPolicy implements HasPermission
         return hasPermissions(principal, permsSet);
     }
 
+
     public boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions)
     {
         return hasPermissions(principal, permissions, null);
     }
 
+
     public boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
-        return getPermissions(principal, contextualRoles).containsAll(permissions);
+        boolean ret = getPermissions(principal, contextualRoles).containsAll(permissions);
+        SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions.toString(), principal, this, ret);
+        return ret;
     }
 
     /**
@@ -259,13 +296,18 @@ public class SecurityPolicy implements HasPermission
      */
     public boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Collection<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
+        boolean ret = false;
         Set<Class<? extends Permission>> grantedPerms = getPermissions(principal, contextualRoles);
         for (Class<? extends Permission> requiredPerm : permissions)
         {
             if (grantedPerms.contains(requiredPerm))
-                return true;
+            {
+                ret = true;
+                break;
+            }
         }
-        return false;
+        SecurityLogger.log("SecurityPolicy.hasOneOf " + permissions.toString(), principal, this, ret);
+        return ret;
     }
 
 

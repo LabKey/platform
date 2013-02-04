@@ -261,6 +261,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return project;
     }
 
+
     // Note: don't use the security policy directly unless you really have to... call hasPermission() or hasOneOf()
     // instead, to ensure proper behavior during impersonation.
     public @NotNull SecurityPolicy getPolicy()
@@ -268,12 +269,30 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityPolicyManager.getPolicy(this);
     }
 
+
+    public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (user instanceof User && isForbiddenProject((User)user))
+            return false;
+        return getPolicy().hasPermission(logMsg, user, perm);
+    }
+
+
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (user instanceof User && isForbiddenProject((User)user))
             return false;
         return getPolicy().hasPermission(user, perm);
     }
+
+
+    public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    {
+        if (user instanceof User && isForbiddenProject((User)user))
+            return false;
+        return getPolicy().hasPermission(logMsg, user, perm, contextualRoles);
+    }
+
 
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
@@ -291,6 +310,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         return hasOneOf(user, Arrays.asList(perms));
     }
+
 
     /**
      * Don't use this anymore

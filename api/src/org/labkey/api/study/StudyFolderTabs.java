@@ -207,7 +207,7 @@ public class StudyFolderTabs
         @Override
         public boolean isVisible(Container container, User user)
         {
-            if (!container.hasPermission(user, AdminPermission.class))
+            if (!container.hasPermission(getName() + ".isVisible()", user, AdminPermission.class))
                 return false;
 
             Study study = StudyService.get().getStudy(container);

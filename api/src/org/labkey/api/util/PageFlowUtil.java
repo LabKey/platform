@@ -46,6 +46,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -2026,6 +2027,7 @@ public class PageFlowUtil
         userProps.put("phone", user.getPhone());
         userProps.put("sessionid", request == null ? null : getSessionId(request));
 
+        SecurityLogger.indent("jsInitObject");
         userProps.put("canInsert", null != container && container.hasPermission(user, InsertPermission.class));
         userProps.put("canUpdate", null != container && container.hasPermission(user, UpdatePermission.class));
         userProps.put("canUpdateOwn", null != container && container.hasPermission(user, ACL.PERM_UPDATEOWN));
@@ -2035,6 +2037,7 @@ public class PageFlowUtil
         userProps.put("isSystemAdmin", user.isAdministrator());
         userProps.put("isGuest", user.isGuest());
         json.put("user", userProps);
+        SecurityLogger.outdent();
 
         if (null != container)
         {

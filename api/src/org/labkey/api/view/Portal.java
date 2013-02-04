@@ -873,7 +873,7 @@ public class Portal
 
     public static void populatePortalView(ViewContext context, String id, HttpView template) throws Exception
     {
-        populatePortalView(context, id, template, context.getContainer().hasPermission(context.getUser(), AdminPermission.class));
+        populatePortalView(context, id, template, context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class));
     }
 
 
@@ -909,7 +909,7 @@ public class Portal
                 if (permissionContainer != null && permission != null)
                 {
                     SecurityPolicy policy = permissionContainer.getPolicy();
-                    hasPermission = policy.hasPermission(context.getUser(), permission.getClass());
+                    hasPermission = policy.hasPermission(part.getName(), context.getUser(), permission.getClass());
                 }
 
                 // If the permissionContainer is null, or the permission is missing, then we only show the webpart if

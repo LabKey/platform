@@ -106,7 +106,7 @@ abstract public class UserSchema extends AbstractSchema
         User user = getUser();
         if (user == null)
             return false;
-        return getContainer().hasPermission(user, ReadPermission.class);
+        return getContainer().hasPermission(getName() + ".canReadSchema()", user, ReadPermission.class);
     }
 
     @Nullable

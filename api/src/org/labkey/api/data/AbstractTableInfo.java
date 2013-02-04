@@ -46,6 +46,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -569,6 +570,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
+        SecurityLogger.log("AbstractTableInfo.hasPermission " + getName(), user, null, false);
         return false;
     }
 

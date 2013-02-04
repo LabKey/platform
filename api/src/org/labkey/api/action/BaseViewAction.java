@@ -600,7 +600,22 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         return null;
     }
 
+
     public static void checkActionPermissions(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles) throws UnauthorizedException
+    {
+        try
+        {
+            SecurityLogger.indent("BaseViewAction.checkActionPermissions(" + actionClass.getName() + ")");
+            _checkActionPermissions(actionClass, context, contextualRoles);
+        }
+        finally
+        {
+            SecurityLogger.outdent();
+        }
+    }
+
+
+    private static void _checkActionPermissions(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles) throws UnauthorizedException
     {
         String method = context.getRequest().getMethod();
         boolean isPOST = "POST".equals(method);
@@ -689,6 +704,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (actionClass.isAnnotationPresent(DeprecatedAction.class))
             throw new DeprecatedActionException(actionClass);
     }
+
 
     public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles)
             throws TermsOfUseException, UnauthorizedException

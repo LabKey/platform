@@ -167,10 +167,12 @@ public class AuthFilter implements Filter
 
         try
         {
+            SecurityLogger.pushSecurityContext("AuthFilter " + req.getRequestURI(), user);
             chain.doFilter(req, resp);
         }
         finally
         {
+            SecurityLogger.popSecurityContext();
             QueryService.get().clearEnvironment();
             
             // Clear all the request attributes that have been set.  This helps memtracker.  See #10747.
