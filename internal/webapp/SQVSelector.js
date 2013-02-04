@@ -262,7 +262,7 @@ Ext4.define('LABKEY.SQVModel', {
         };
         config.listeners['dataloaded'] = {
             fn : function (cb) {
-                if (!this.initallyLoaded) {
+                if (!this.initiallyLoaded) {
                     this.initiallyLoaded = true;
                     if (cb.initialValue) {
                         var record = cb.findRecord(cb.valueField, cb.initialValue);
@@ -314,7 +314,7 @@ Ext4.define('LABKEY.SQVModel', {
             dataloaded : function(cb) {
                 if (!cb.initiallyLoaded) {
                     cb.initiallyLoaded = true;
-                    if (cb.initialValue && cb.initialValue != '') {
+                    if (cb.initialValue) {
                         var record = cb.findRecord(cb.displayField, cb.initialValue);
                         if (record) {
                             cb.select(record);
@@ -390,14 +390,11 @@ Ext4.define('LABKEY.SQVModel', {
                     var schemaData = schemasInfo,
                         arrayedData = [];
                     for (var i = 0; i < schemaData.schemas.length; i++) {
-                        //arrayedData.push([schemaData.schemas[i]]);
                         arrayedData.push({"schema" : schemaData.schemas[i]});
                     }
                     schemaData = arrayedData;
                     this.schemaStore.loadData(arrayedData);
-                    if (currentSchema && this.schemaStore.getById(currentSchema)) {
-                        this.schemaCombo.setValue(currentSchema);
-                    }
+                    this.setComboValues(this.schemaCombo, currentSchema);
                     this.schemaCombo.setDisabled(false);
                     this.fireEvent('schemaload', this, selectedContainerId);
                 },
@@ -429,9 +426,7 @@ Ext4.define('LABKEY.SQVModel', {
                         }
                     }
                     this.queryStore.loadData(newQueries);
-                    if (currentQuery && this.queryStore.getById(currentQuery)) {
-                        this.queryCombo.setValue(currentQuery);
-                    }
+                    this.setComboValues(this.queryCombo, currentQuery);
                     this.queryCombo.setDisabled(false);
                     this.queryCombo.fireEvent('dataloaded', this.queryCombo);
                     this.fireEvent('queryload', this, selectedContainerId, selectedSchema);
@@ -471,14 +466,30 @@ Ext4.define('LABKEY.SQVModel', {
                         }
                     }
                     this.viewStore.loadData(filteredViews);
-                    if (currentView && this.viewStore.getById(currentView)) {
-                        this.viewCombo.setValue(currentView);
-                    }
+                    this.setComboValues(this.viewCombo, currentView);
                     this.viewCombo.setDisabled(false);
                     this.viewCombo.fireEvent('dataloaded', this.viewCombo);
                     this.fireEvent('viewload', this, selectedContainerId, selectedSchema, selectedQuery);
                 }
             });
+        }
+    },
+
+    // Sets the values on a combobox if a corresponding record is found in the store.
+    setComboValues : function (combo, values) {
+        if (values) {
+            if (combo.multiSelect && Ext4.isArray(values)) {
+                var records = [];
+                for (var i = 0; i < values.length; i++) {
+                    var record = combo.store.getById(values[i]);
+                    if (record)
+                        records.push(record);
+                }
+                combo.setValue(records);
+            }
+            else if (combo.store.getById(values)) {
+                combo.setValue(values);
+            }
         }
     }
 
