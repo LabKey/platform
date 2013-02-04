@@ -170,7 +170,7 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
 
         var model = Ext4.create('LABKEY.SQVModel', {});
 
-        model.changeQueryStore = function(schema){
+        model.changeQueryStore = function(containerId, schema){
 
             var me = this;
             me.queryCombo.setDisabled(false);
