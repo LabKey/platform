@@ -6988,11 +6988,19 @@ public class StudyController extends BaseStudyController
             Comparator<ViewCategory> t = new Comparator<ViewCategory>()
             {
                 @Override
-                public int compare(ViewCategory o1, ViewCategory o2)
+                public int compare(ViewCategory c1, ViewCategory c2)
                 {
-                    int order = ((Integer) o1.getDisplayOrder()).compareTo(o2.getDisplayOrder());
+                    int order = ((Integer) c1.getDisplayOrder()).compareTo(c2.getDisplayOrder());
                     if (order == 0)
-                        return ((Integer) o1.getRowId()).compareTo(o2.getRowId());
+                        return c1.getLabel().compareToIgnoreCase(c2.getLabel());
+                    else if (c1.getLabel().equalsIgnoreCase("Uncategorized"))
+                        return 1;
+                    else if (c2.getLabel().equalsIgnoreCase("Uncategorized"))
+                        return -1;
+                    else if (c1.getDisplayOrder() == 0)
+                        return 1;
+                    else if (c2.getDisplayOrder() == 0)
+                        return -1;
                     return order;
                 }
             };
@@ -7015,6 +7023,17 @@ public class StudyController extends BaseStudyController
                     categories.put(vc.getRowId(), vc);
                     if (null == vc.getParent())
                     {
+                        order.add(vc);
+                    }
+                    else if (!categories.containsKey(vc.getParent().getRowId()))
+                    {
+                        // Possible unreferenced parent
+                        vc = vc.getParent();
+                        if (!groups.containsKey(vc.getRowId()))
+                        {
+                            groups.put(vc.getRowId(), new ArrayList<DataViewInfo>());
+                        }
+                        categories.put(vc.getRowId(), vc);
                         order.add(vc);
                     }
                 }

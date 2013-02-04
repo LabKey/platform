@@ -17,23 +17,25 @@ Ext4.define('TreeFilter', {
         me.tree = tree;
 
         tree.filter = Ext4.Function.bind(me.filter, me);
+        tree.filterBy = Ext4.Function.bind(me.filterBy, me);
         tree.clearFilter = Ext4.Function.bind(me.clearFilter, me);
     },
 
     filter: function (value, propArray, re) {
-        var me = this,
-            tree = me.tree,
-            matches = [],                        // array of nodes matching the search criteria
-            root = tree.getRootNode(),           // root node of the tree
-            _propArray = propArray || ['text'],   // propArray is optional - will be set to the ['text'] property of the TreeStore record by default
-            _re = re || new RegExp(value, "ig"), // the regExp could be modified to allow for case-sensitive, starts  with, etc.
-            visibleNodes = [],                   // array of nodes matching the search criteria + each parent non-leaf  node up to root
-            viewNode;
 
         if (Ext4.isEmpty(value)) {               // if the search field is empty
-            me.clearFilter();
+            this.clearFilter();
             return;
         }
+
+        var me = this,
+            tree = me.tree,
+            matches = [],                         // array of nodes matching the search criteria
+            root = tree.getRootNode(),            // root node of the tree
+            _propArray = propArray || ['text'],   // propArray is optional - will be set to the ['text'] property of the TreeStore record by default
+            _re = re || new RegExp(value, "ig"),  // the regExp could be modified to allow for case-sensitive, starts  with, etc.
+            visibleNodes = [],                    // array of nodes matching the search criteria + each parent non-leaf  node up to root
+            viewNode;
 
         tree.expandAll();                       // expand all nodes for the the following iterative routines
 
@@ -69,10 +71,57 @@ Ext4.define('TreeFilter', {
             visibleNodes.push(item);   // also add the evaluated node itself to the visibleNodes array
         });
 
-        root.cascadeBy(function (node) {                            // finally loop to hide/show each node
+        root.cascadeBy(function (node) {                             // finally loop to hide/show each node
             viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
-            if (viewNode) {                                         // the first one is undefined ? escape it with a conditional
-                viewNode.setVisibilityMode(Ext4.Element.DISPLAY);   // set the visibility mode of the dom node to display (vs offsets)
+            if (viewNode) {                                          // the first one is undefined ? escape it with a conditional
+                viewNode.setVisibilityMode(Ext4.Element.DISPLAY);    // set the visibility mode of the dom node to display (vs offsets)
+                viewNode.setVisible(Ext4.Array.contains(visibleNodes, node));
+            }
+        });
+    },
+
+    filterBy: function(fn, scope) {
+        if (!Ext4.isFunction(fn)) {
+            return;
+        }
+
+        var me = this,
+            tree = me.tree,
+            root = tree.getRootNode(),
+            matches = [],
+            viewNode,
+            visibleNodes = [];
+
+        tree.expandAll();                       // expand all nodes for the the following iterative routines
+
+        root.cascadeBy(function (node) {
+            if (fn.call(scope || this, node) === true) { matches.push(node); }
+        });
+
+        if (me.allowParentFolders === false) {     // if me.allowParentFolders is false (default) then remove any  non-leaf nodes from the regex match
+            Ext4.each(matches, function (match) {
+                if (match && !match.isLeaf()) { Ext4.Array.remove(matches, match); }
+            });
+        }
+
+        Ext4.each(matches, function (item, i, arr) {   // loop through all matching leaf nodes
+            root.cascadeBy(function (node) {           // find each parent node containing the node from the matches array
+                if (node.contains(item)) {
+                    visibleNodes.push(node);           // if it's an ancestor of the evaluated node add it to the visibleNodes  array
+                }
+            });
+            if (me.allowParentFolders === true &&  !item.isLeaf()) { // if me.allowParentFolders is true and the item is  a non-leaf item
+                item.cascadeBy(function (node) {                     // iterate over its children and set them as visible
+                    visibleNodes.push(node)
+                });
+            }
+            visibleNodes.push(item);   // also add the evaluated node itself to the visibleNodes array
+        });
+
+        root.cascadeBy(function (node) {                             // finally loop to hide/show each node
+            viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
+            if (viewNode) {                                          // the first one is undefined ? escape it with a conditional
+                viewNode.setVisibilityMode(Ext4.Element.DISPLAY);    // set the visibility mode of the dom node to display (vs offsets)
                 viewNode.setVisible(Ext4.Array.contains(visibleNodes, node));
             }
         });
@@ -83,9 +132,9 @@ Ext4.define('TreeFilter', {
             tree = this.tree,
             root = tree.getRootNode();
 
-        if (me.collapseOnClear) { tree.collapseAll(); }             // collapse the tree nodes
-        root.cascadeBy(function (node) {                            // final loop to hide/show each node
-            var viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
+        if (me.collapseOnClear) { tree.collapseAll(); }              // collapse the tree nodes
+        root.cascadeBy(function (node) {                             // final loop to hide/show each node
+            var viewNode = Ext4.fly(tree.getView().getNode(node));   // get the dom element assocaited with each node
             if (viewNode) {                                          // the first one is undefined ? escape it with a conditional and show  all nodes
                 viewNode.show();
             }
@@ -212,6 +261,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var fields = [
             {name : 'id'},
             {name : 'category'},
+            {name : 'categorylabel',
+                convert : function(v, record) {
+                    if (record.raw && record.raw.category)
+                        return record.raw.category.label;
+                    return 0;
+                }
+            },
             {name : 'created',              type : 'date'},
             {name : 'createdBy'},
             {name : 'createdByUserId',      type : 'int'},
@@ -294,7 +350,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.customMode = false;
         this.searchVal = "";
-        this._height;
+        this._height = null;
 
         this.items = [];
         this.editInfo = {};
@@ -310,7 +366,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // secondary display panels
         this.customPanel = this.initCustomization();
 
-        xx = this;
         this.callParent();
     },
 
@@ -358,8 +413,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             proxy   : this.getViewProxy(),
             listeners : {
                 beforeload : function(){
-                    if (this.gridPanel)
-                        this.gridPanel.setLoading(true);
+                    if (this.gridPanel) {
+                        if (this.catWinID) {
+                            var w = Ext4.getCmp(this.catWinID);
+                            if (w && !w.isVisible())
+                                this.gridPanel.setLoading(true);
+                        }
+                        else
+                            this.gridPanel.setLoading(true);
+                    }
                 },
                 load : {fn : this.onViewLoad, scope: this},
                 scope: this
@@ -403,9 +465,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 writer : { type : 'json', root : 'categories', allowSingle : false }
             },
             listeners : {
-                load : function(s) {
-                    s.sort('displayOrder', 'ASC');
-                }
+                load : function(s) { s.sort('displayOrder', 'ASC'); }
             }
         };
 
@@ -924,10 +984,45 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
      * Aggregates the filters applied by search and by custom mode.
      */
     hiddenFilter : function() {
+
+        var _custom = this._inCustomMode();
+        var searchFields = ['name', 'categorylabel', 'type', 'modified', 'authorDisplayName', 'status'];
+
+        var filter = function(rec) {
+
+            var answer = true;
+
+            if (rec.data && this.searchVal && this.searchVal != "") {
+                var t = new RegExp(Ext4.escapeRe(this.searchVal), 'i');
+                var s = '', i=0;
+
+                for (; i < searchFields.length; i++) {
+                    if (rec.data[searchFields[i]]) {
+                        s += rec.data[searchFields[i]];
+                    }
+                }
+
+                answer = t.test(s);
+            }
+
+            // match 'mine' if current user is either the author or creator
+            if (this.searchMine && rec.data && answer) {
+                if ((rec.data.authorUserId != LABKEY.user.id) && (rec.data.createdByUserId != LABKEY.user.id)) {
+                    return false;
+                }
+            }
+
+            // custom mode will show hidden
+            if (_custom) { return answer; }
+
+            // otherwise never show hidden records
+            if (!rec.data.visible) { return false; }
+
+            return answer;
+        };
+
         this.gridPanel.clearFilter();
-        if (this.searchVal && !this.searchVal == "") {
-            this.gridPanel.filter(this.searchVal, ['name', 'status', 'type', 'authorDisplayName']);
-        }
+        this.gridPanel.filterBy(filter, this);
     },
 
     isCustomizable : function() {
@@ -966,17 +1061,16 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     onDisableCustomMode : function() {
-        if (this.customPanel && this.customPanel.isVisible())
-        {
+        if (this.customPanel && this.customPanel.isVisible()) {
             this.north.hide();
         }
 
         this.customMode = false;
 
-        this.hiddenFilter();
-
         // hide edit column
         this._getEditColumn().hide();
+
+        this.hiddenFilter();
     },
 
     // private
@@ -986,12 +1080,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.updateConfig = false;
 
         // panel might already exist
-        if (this.customPanel && this.customPanel.items.length > 0)
-        {
-            this.hiddenFilter();
+        if (this.customPanel && this.customPanel.items.length > 0) {
 
             // show edit column
             this._getEditColumn().show();
+
+            this.hiddenFilter();
 
             this.north.getEl().unmask();
             return;
@@ -1151,10 +1245,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         });
 
-        this.hiddenFilter();
-
         // show edit column
         this._getEditColumn().show();
+
+        this.hiddenFilter();
 
         this.customPanel.add(panel);
         this.north.getEl().unmask();
@@ -1261,7 +1355,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.store.load();
     },
 
-    onManageCategories : function(btn) {
+    onManageCategories : function() {
 
         var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
             pluginId : 'categorycell',
@@ -1271,12 +1365,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var confirm = false;
         var store = this.initializeCategoriesStore();
         var winID = Ext4.id();
+        this.catWinID = winID;
         var subwinID = Ext4.id();
+        this._subwinID = subwinID;
 
         // Z-Index Manager
         var zix = new Ext4.ZIndexManager(this);
 
-        zz = store;
         var grid = Ext4.create('Ext.grid.Panel', {
             store    : store,
             border   : false, frame: false,
@@ -1302,28 +1397,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     tooltip : 'Delete'
                 }],
                 listeners : {
-                    click : function(col, grid, idx)
-                    {
-                        var label = store.getAt(idx).data.label;
-
-                        Ext4.Msg.show({
-                            title : 'Delete Category',
-                            msg   : 'Please confirm you would like to <b>DELETE</b> \'' + Ext4.htmlEncode(label) + '\' from the set of categories.',
-                            buttons : Ext4.MessageBox.OKCANCEL,
-                            icon    : Ext4.MessageBox.WARNING,
-                            fn      : function(btn){
-                                if (btn == 'ok') {
-                                    store.removeAt(idx);
-                                    store.sync({
-                                        success : function() {
-                                            store.load();
-                                        }
-                                    });
-                                }
-                            },
-                            scope  : this
-                        });
-                    },
+                    click : function(col, grid, idx) { this.onDeleteCategory(store, idx, zix); },
                     scope : this
                 }
             }],
@@ -1339,7 +1413,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     drop : function() {
                         var s = grid.getStore();
                         var display = 1;
-                        console.log('changing order');
                         s.each(function(rec){
                             rec.set('displayOrder', display);
                             rec.setDirty();
@@ -1368,9 +1441,18 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             e.grid.getStore().load();
                         }
                     });
+
+                    // hide subcategory
+                    if (this._subwinID) {
+                        var sw = Ext4.getCmp(this._subwinID);
+                        if (sw && sw.isVisible())
+                            sw.hide();
+                    }
                 },
                 select : function(g, rec) {
                     var w = Ext4.getCmp(winID);
+
+                    if (rec.data && rec.data.rowid == 0) { return; }
 
                     if (w && w.isVisible()) {
                         var box = w.getBox();
@@ -1459,6 +1541,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     }, 'Dataset.Browser.Category');
                     store.insert(0, r);
                     cellEditing.startEditByPosition({row : 0, column : 0});
+
+                    // hide subcategory
+                    if (this._subwinID) {
+                        var sw = Ext4.getCmp(this._subwinID);
+                        if (sw && sw.isVisible())
+                            sw.hide();
+                    }
                 }
             },{
                 text    : 'Done',
@@ -1483,7 +1572,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         sw.close();
                     }
                 },
-
                 scope : this
             },
             scope     : this
@@ -1493,7 +1581,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         categoryOrderWindow.show();
     },
 
-    getCategoryGrid : function(categoryid, gridid, indexManager) {
+    getCategoryGrid : function(categoryid, gridid, idxMgr) {
 
         var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
             pluginId : 'subcategorycell',
@@ -1526,28 +1614,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     tooltip : 'Delete'
                 }],
                 listeners : {
-                    click : function(col, grid, idx, evt, x, y, z)
-                    {
-                        var label = store.getAt(idx).data.label;
-
-                        Ext4.Msg.show({
-                            title : 'Delete Category',
-                            msg   : 'Please confirm you would like to <b>DELETE</b> \'' + Ext4.htmlEncode(label) + '\' from the set of categories.',
-                            buttons : Ext4.MessageBox.OKCANCEL,
-                            icon    : Ext4.MessageBox.WARNING,
-                            fn      : function(btn){
-                                if (btn == 'ok') {
-                                    store.removeAt(idx);
-                                    store.sync({
-                                        success : function() {
-                                            store.load();
-                                        }
-                                    });
-                                }
-                            },
-                            scope  : this
-                        });
-                    },
+                    click : function(col, grid, idx) { this.onDeleteCategory(store, idx, idxMgr, true); },
                     scope : this
                 }
             }],
@@ -1557,16 +1624,16 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         success : function() {
                             e.grid.getStore().load();
                         },
-                        failure : function(batch, opts) {
+                        failure : function(batch) {
                             if (batch.operations && batch.operations.length > 0) {
                                 if (!batch.operations[0].request.scope.reader.jsonData.success) {
                                     var mb = Ext4.Msg.alert('Category Management', batch.operations[0].request.scope.reader.jsonData.message);
-                                    indexManager.register(mb);
+                                    idxMgr.register(mb);
                                 }
                             }
                             else {
                                 Ext4.Msg.alert('Category Managment', 'Failed to save updates.');
-                                indexManager.register(mb);
+                                idxMgr.register(mb);
                             }
                             e.grid.getStore().load();
                         }
@@ -1579,5 +1646,41 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             selType : 'rowmodel',
             scope   : this
         });
+    },
+
+    onDeleteCategory : function(store, idx, idxMgr, subcategory) {
+        var label = store.getAt(idx).data.label;
+        var me = this;
+
+        // hide subcategory
+        if (!subcategory && this._subwinID) {
+            var sw = Ext4.getCmp(this._subwinID);
+            if (sw && sw.isVisible())
+                sw.hide();
+        }
+
+        var msg = Ext4.Msg.show({
+            title : 'Delete Category',
+            msg   : 'Please confirm you would like to <b>DELETE</b> \'' + Ext4.htmlEncode(label) + '\' from the set of categories. Any views using this category will be marked uncategorized.',
+            buttons : Ext4.MessageBox.OKCANCEL,
+            icon    : Ext4.MessageBox.WARNING,
+            fn      : function(btn){
+                if (btn == 'ok') {
+                    store.removeAt(idx);
+                    store.sync({
+                        success : function() {
+                            store.load();
+                            me.gridPanel.getStore().load();
+                        }
+                    });
+                }
+            },
+            scope  : this
+        });
+
+        if (idxMgr) {
+            idxMgr.register(msg);
+            idxMgr.bringToFront(msg);
+        }
     }
 });

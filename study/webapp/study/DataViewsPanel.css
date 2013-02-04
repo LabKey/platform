@@ -69,11 +69,12 @@
 }
 
 .x4-reset .dataset-search .x4-form-text {
-    font-size: 18px;
+    font-size: 17px;
     padding-left: 6px;
     border-color: #D9D9D9;
     border-top-color: silver;
     height: 25px;
+    line-height: 15px;
 }
 
 /* participant & group filter panel label */
