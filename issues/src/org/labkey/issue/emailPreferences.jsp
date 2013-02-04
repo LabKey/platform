@@ -68,6 +68,8 @@
     Send me email when <%=h(indefArticle)%> <%=h(names.singularName)%> that's assigned to me is modified<br>
     <input type="checkbox" value="4" name="emailPreference" <%=text((emailPrefs & IssueManager.NOTIFY_CREATED_UPDATE) != 0 ? " checked" : "")%>>
     Send me email when <%=h(indefArticle)%> <%=h(names.singularName)%> I opened is modified<br>
+    <input type="checkbox" value="16" name="emailPreference" <%=text((emailPrefs & IssueManager.NOTIFY_SUBSCRIBE) != 0 ? " checked" : "")%>>
+    Send me email when any post is made<br>
     <hr/>
     <input type="checkbox" value="8" name="emailPreference" <%=text((emailPrefs & IssueManager.NOTIFY_SELF_SPAM) != 0 ? " checked" : "")%>>
     Send me email notifications when I enter/edit <%=h(indefArticle)%> <%=h(names.singularName)%><br>

@@ -1274,6 +1274,11 @@ public class IssuesController extends SpringActionController
                 emailAddresses.add(UserManager.getEmailForId(issue.getCreatedBy()));
         }
 
+        // add any users subscribed to this forum
+        List<ValidEmail> subscribedEmails = IssueManager.getSubscribedUserEmails(c);
+        for (ValidEmail email : subscribedEmails)
+            emailAddresses.add(email.getEmailAddress());
+
         // add any explicit notification list addresses
         List<ValidEmail> emails = issue.getNotifyListEmail();
         for (ValidEmail email : emails)

@@ -53,6 +53,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserDisplayNameComparator;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -115,6 +116,8 @@ public class IssueManager
     public static final int NOTIFY_ASSIGNEDTO_OPEN = 1;     // if a bug is assigned to me
     public static final int NOTIFY_ASSIGNEDTO_UPDATE = 2;   // if a bug assigned to me is modified
     public static final int NOTIFY_CREATED_UPDATE = 4;      // if a bug I created is modified
+    public static final int NOTIFY_SUBSCRIBE = 16;           // send email on all changes
+
     public static final int NOTIFY_SELF_SPAM = 8;           // spam me when I enter/edit a bug
     public static final int DEFAULT_EMAIL_PREFS = NOTIFY_ASSIGNEDTO_OPEN | NOTIFY_ASSIGNEDTO_UPDATE | NOTIFY_CREATED_UPDATE;
 
@@ -687,6 +690,33 @@ public class IssueManager
         {
             throw new RuntimeSQLException(x);
         }
+    }
+
+    public static List<ValidEmail> getSubscribedUserEmails(Container c)
+    {
+        List<ValidEmail> emails = new ArrayList<ValidEmail>();
+
+        SqlSelector ss = new SqlSelector(_issuesSchema.getSchema().getScope(), new SQLFragment("SELECT UserId FROM " + _issuesSchema.getTableInfoEmailPrefs() + " WHERE Container = ? and (EmailOption & ?) = ?", c.getId(), NOTIFY_SUBSCRIBE, NOTIFY_SUBSCRIBE));
+        Integer[] userIds = ss.getArray(Integer.class);
+
+        for (Integer userId : userIds)
+        {
+            String email = UserManager.getEmailForId(userId);
+            if (email != null)
+            {
+                try
+                {
+                    ValidEmail ve = new ValidEmail(email);
+                    emails.add(ve);
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    //ignore
+                }
+            }
+        }
+
+        return emails;
     }
 
     public static void deleteUserEmailPreferences(User user) throws SQLException
