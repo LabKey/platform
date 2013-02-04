@@ -344,7 +344,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         String title = webPart.getPropertyMap().containsKey("title") ? webPart.getPropertyMap().get("title") : "Projects";
                         view.setTitle(title);
 
-                        if (portalCtx.hasPermission(AdminPermission.class))
+                        if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                         {
                             NavTree customize = new NavTree("");
                             customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");

@@ -36,6 +36,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -533,6 +534,16 @@ public class CoreQuerySchema extends UserSchema
     @Override
     protected boolean canReadSchema()
     {
-        return !getMustCheckPermissions() || super.canReadSchema();
+        SecurityLogger.indent("CoreQuerySchema.canReadSchema()");
+        try
+        {
+            if (!getMustCheckPermissions())
+                SecurityLogger.log("getMustCheckPermissions()==false", getUser(), null, true);
+            return !getMustCheckPermissions() || super.canReadSchema();
+        }
+        finally
+        {
+            SecurityLogger.outdent();
+        }
     }
 }

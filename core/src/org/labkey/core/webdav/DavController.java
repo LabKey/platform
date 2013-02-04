@@ -2906,7 +2906,7 @@ public class DavController extends SpringActionController
                         tmp = new File(parent.getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
                         markTempFile(tmp);
                         if (!destFile.renameTo(tmp))
-                            throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not remove destination: " + dest.getPath());
+                            throw new ConfigurationException("Could not remove destination: " + dest.getPath());
                     }
                     // NOTE: destFile get's marked temp even if renameTo fails, this is OK for our uses or Temporary=T (always uniquified names)
                     if (getTemporary())

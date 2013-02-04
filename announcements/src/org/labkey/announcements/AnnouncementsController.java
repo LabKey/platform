@@ -75,6 +75,7 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -2030,13 +2031,21 @@ public class AnnouncementsController extends SpringActionController
 
         protected void init(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll, boolean isFiltered, int rowLimit)
         {
-            this.settings = settings;
-            filterText = getFilterText(settings, displayAll, isFiltered, rowLimit);
-            customizeURL = c.hasPermission(user, AdminPermission.class) ? getCustomizeURL(c, url) : null;
-            emailPrefsURL   = user.isGuest() ? null : getEmailPreferencesURL(c, url, c.getId());
-            emailManageURL = c.hasPermission(user, AdminPermission.class) ? getAdminEmailURL(c, url) : null;
-            insertURL = perm.allowInsert() ? getInsertURL(c, url) : null;
-            includeGroups = perm.includeGroups();
+            SecurityLogger.indent(getClass().getName());
+            try
+            {
+                this.settings = settings;
+                filterText = getFilterText(settings, displayAll, isFiltered, rowLimit);
+                customizeURL = c.hasPermission(user, AdminPermission.class) ? getCustomizeURL(c, url) : null;
+                emailPrefsURL   = user.isGuest() ? null : getEmailPreferencesURL(c, url, c.getId());
+                emailManageURL = c.hasPermission(user, AdminPermission.class) ? getAdminEmailURL(c, url) : null;
+                insertURL = perm.allowInsert() ? getInsertURL(c, url) : null;
+                includeGroups = perm.includeGroups();
+            }
+            finally
+            {
+                SecurityLogger.outdent();
+            }
         }
     }
 

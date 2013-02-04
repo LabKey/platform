@@ -25,6 +25,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
@@ -120,7 +121,20 @@ public class StudyQuerySchema extends UserSchema
     @Override
     protected boolean canReadSchema()
     {
-        return !getMustCheckPermissions() || super.canReadSchema();
+        SecurityLogger.indent("StudyQuerySchema.canReadSchema()");
+        try
+        {
+            if (!getMustCheckPermissions())
+            {
+                SecurityLogger.log("getMustCheckPermissions()==false", getUser(), null, true);
+                return true;
+            }
+            return super.canReadSchema();
+        }
+        finally
+        {
+            SecurityLogger.outdent();
+        }
     }
 
 

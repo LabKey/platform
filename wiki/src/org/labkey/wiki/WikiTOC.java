@@ -67,8 +67,8 @@ public class WikiTOC extends NavTreeMenu
         Container cToc = getTocContainer(context);
 
         //output only this one if wiki contains no pages
-        boolean bHasInsert = cToc.hasPermission(user, InsertPermission.class);
-        boolean bHasCopy = cToc.hasPermission(user, AdminPermission.class) && getElements().length > 0;
+        boolean bHasInsert = cToc.hasPermission("WikiTOC.getNavMenu()", user, InsertPermission.class);
+        boolean bHasCopy = cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && getElements().length > 0;
         boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && getElements().length > 0;
 
         NavTree menu = new NavTree("");

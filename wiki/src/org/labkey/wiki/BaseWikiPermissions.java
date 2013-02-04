@@ -65,27 +65,27 @@ public class BaseWikiPermissions
 
     public boolean allowRead(Wiki wiki)
     {
-        return _policy.hasPermission(_user, ReadPermission.class, getContextualRoles(wiki));
+        return _policy.hasPermission("wiki: " + wiki.getName(), _user, ReadPermission.class, getContextualRoles(wiki));
     }
 
     public boolean allowInsert()
     {
-        return _policy.hasPermission(_user, InsertPermission.class);
+        return _policy.hasPermission("wiki", _user, InsertPermission.class);
     }
 
     public boolean allowUpdate(Wiki wiki)
     {
-        return _policy.hasPermission(_user, UpdatePermission.class, getContextualRoles(wiki));
+        return _policy.hasPermission("wiki: " + wiki.getName(), _user, UpdatePermission.class, getContextualRoles(wiki));
     }
 
     public boolean allowDelete(Wiki wiki)
     {
-        return _policy.hasPermission(_user, DeletePermission.class, getContextualRoles(wiki));
+        return _policy.hasPermission("wiki: " + wiki.getName(), _user, DeletePermission.class, getContextualRoles(wiki));
     }
 
     public boolean allowAdmin()
     {
-        return _policy.hasPermission(_user, AdminPermission.class);
+        return _policy.hasPermission("wiki", _user, AdminPermission.class);
     }
 
     public boolean userIsCreator(Wiki wiki)

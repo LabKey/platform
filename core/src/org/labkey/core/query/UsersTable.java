@@ -79,7 +79,9 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         wrapAllColumns();
 
         if (SecurityManager.canSeeEmailAddresses(getContainer(), getUser()))
+        {
             addWrapColumn(getRealTable().getColumn("Email"));
+        }
         else
         {
             ColumnInfo emailCol = addColumn(new NullColumnInfo(this, "Email", JdbcType.VARCHAR));
