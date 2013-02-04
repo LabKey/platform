@@ -425,8 +425,14 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
         if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
         {
-            DomainProperty[] dps = sampleSet != null ? sampleSet.getPropertiesForType() : new DomainProperty[0];
-            saveProperties(material, dps, materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES));
+            JSONObject materialProperties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
+            // Treat an empty properties collection as if there were no property map at all.
+            // To delete a property, include a property map with that property and set its value to null.
+            if (materialProperties.size() > 0)
+            {
+                DomainProperty[] dps = sampleSet != null ? sampleSet.getPropertiesForType() : new DomainProperty[0];
+                saveProperties(material, dps, materialProperties);
+            }
         }
         
         return material;
