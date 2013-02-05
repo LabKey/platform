@@ -605,6 +605,14 @@ class PostgreSql83Dialect extends SqlDialect
         int divideBy;
         switch (part)
         {
+            case Calendar.MONTH:
+            {
+                return "((EXTRACT(YEAR FROM " + value1 + ") - EXTRACT(YEAR FROM " + value2 + ")) * 12 + EXTRACT(MONTH FROM " + value1 + ") - EXTRACT(MONTH FROM " + value2 + "))::INT";
+            }
+            case Calendar.YEAR:
+            {
+                return "(EXTRACT(YEAR FROM " + value1 + ") - EXTRACT(YEAR FROM " + value2 + "))::INT";
+            }
             case Calendar.DATE:
             {
                 divideBy = 60 * 60 * 24;
