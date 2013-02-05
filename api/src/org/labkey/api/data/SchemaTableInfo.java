@@ -522,9 +522,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         if(xmlTable.getImportTemplates() != null)
             setImportTemplates(xmlTable.getImportTemplates().getTemplateArray());
 
-        if (xmlTable.getGridUrl() != null)
+        if (xmlTable.isSetGridUrl())
         {
-            _gridURL = DetailsURL.fromString(xmlTable.getGridUrl());
+            if (StringUtils.isBlank(xmlTable.getGridUrl()))
+                _gridURL = AbstractTableInfo.LINK_DISABLER;
+            else
+                _gridURL = DetailsURL.fromString(xmlTable.getGridUrl());
         }
         if (xmlTable.isSetImportUrl())
         {
@@ -554,9 +557,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             else
                 _updateURL = DetailsURL.fromString(xmlTable.getUpdateUrl());
         }
-        if (xmlTable.getTableUrl() != null)
+        if (xmlTable.isSetTableUrl())
         {
-            _detailsURL = DetailsURL.fromString(xmlTable.getTableUrl());
+            if (StringUtils.isBlank(xmlTable.getTableUrl()))
+                _detailsURL = AbstractTableInfo.LINK_DISABLER;
+            else
+                _detailsURL = DetailsURL.fromString(xmlTable.getTableUrl());
         }
 
         if (xmlTable.getButtonBarOptions() != null)

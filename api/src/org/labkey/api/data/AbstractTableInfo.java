@@ -791,56 +791,51 @@ abstract public class AbstractTableInfo implements TableInfo
             setDescription(xmlTable.getDescription());
         if (xmlTable.getTableTitle() != null)
             setTitle(xmlTable.getTableTitle());
-        if (xmlTable.getGridUrl() != null)
-            _gridURL = parseDetailsURL(schema.getContainer(), xmlTable.getGridUrl(), errors);
+
+        if (xmlTable.isSetGridUrl())
+        {
+            if (StringUtils.isBlank(xmlTable.getGridUrl()))
+                _gridURL = LINK_DISABLER;
+            else
+                _gridURL = parseDetailsURL(schema.getContainer(), xmlTable.getGridUrl(), errors);
+        }
 
         if (xmlTable.isSetImportUrl())
         {
             if (StringUtils.isBlank(xmlTable.getImportUrl()))
-            {
                 _importURL = LINK_DISABLER;
-            }
             else
-            {
                 _importURL = parseDetailsURL(schema.getContainer(), xmlTable.getImportUrl(), errors);
-            }
         }
         if (xmlTable.isSetInsertUrl())
         {
             if (StringUtils.isBlank(xmlTable.getInsertUrl()))
-            {
                 _insertURL = LINK_DISABLER;
-            }
             else
-            {
                 _insertURL = parseDetailsURL(schema.getContainer(), xmlTable.getInsertUrl(), errors);
-            }
         }
         if (xmlTable.isSetUpdateUrl())
         {
             if (StringUtils.isBlank(xmlTable.getUpdateUrl()))
-            {
                 _updateURL = LINK_DISABLER;
-            }
             else
-            {
                 _updateURL = parseDetailsURL(schema.getContainer(), xmlTable.getUpdateUrl(), errors);
-            }
         }
         if (xmlTable.isSetDeleteUrl())
         {
             if (StringUtils.isBlank(xmlTable.getDeleteUrl()))
-            {
                 _deleteURL = LINK_DISABLER;
-            }
             else
-            {
                 _deleteURL = parseDetailsURL(schema.getContainer(), xmlTable.getDeleteUrl(), errors);
-            }
         }
 
-        if (xmlTable.getTableUrl() != null)
-            setDetailsURL(parseDetailsURL(schema.getContainer(), xmlTable.getTableUrl(), errors));
+        if (xmlTable.isSetTableUrl())
+        {
+            if (StringUtils.isBlank(xmlTable.getTableUrl()))
+                setDetailsURL(LINK_DISABLER);
+            else
+                setDetailsURL(parseDetailsURL(schema.getContainer(), xmlTable.getTableUrl(), errors));
+        }
 
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
