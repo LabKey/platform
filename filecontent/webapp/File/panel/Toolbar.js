@@ -142,12 +142,13 @@ Ext4.define('File.panel.ToolbarPanel', {
     initComponent : function(){
 
         var topText = Ext4.create('Ext.form.Label', {
-            html: '<h2>Configure Grid columns and Toolbar</h2><p>Toolbar buttons are in display order, from top to bottom.' +
-                    'You can adjust their position by clicking and dragging them, and can set their visibility by toggling'+
-                    'the checkboxes in the appropriate fields.'+
-                    '</p><br><p>Grid columns are in display order from top to bottom, but hidden columns do not appear in the grid.' +
-                    'The columns can be reorganized by clicking and dragging their respective rows, and can be hidden by checking' +
-                    'the appropriate box.  You may also set whether or not the column is sortable.</p>',
+            html: '<h2>Configure Grid columns and Toolbar</h2><p>Toolbar buttons are in display order, from top to bottom. ' +
+                    'You can adjust their position by clicking and dragging them, and can set their visibility by toggling '+
+                    'the checkboxes in the appropriate fields. '+
+                    '</p><br><p>Grid columns are in display order from top to bottom, but hidden columns do not appear in the grid. ' +
+                    'The columns can be reorganized by clicking and dragging their respective rows, and can be hidden by checking ' +
+                    'the appropriate box.  You may also set whether or not the column is sortable.</p> ' +
+                    '</br><p>Either table can be expanded or collapsed by pressing the button at the right of blue top bar.</p>',
             padding : '5 5 10 5'
         });
 
@@ -225,7 +226,7 @@ Ext4.define('File.panel.ToolbarPanel', {
 
         for(var i = 1; i < this.gridConfigs.columns.length; i++){
             var column = {};
-            column.text = baseColumnData[this.gridConfigs.columns[i].id-2];
+            column.text = baseColumnData[this.gridConfigs.columns[i].id-1];
             column.id = reverseBaseColumnData[column.text];
             this.gridConfigs.columns[i].hidden ? column.hidden = true : column.hidden = false;
             this.gridConfigs.columns[i].sortable ? column.sortable = true : column.sortable = false;
@@ -242,9 +243,8 @@ Ext4.define('File.panel.ToolbarPanel', {
             id : 'optionsPanel',
             overflowY : 'scroll',
             collapsible : true,
-            collapsed : true,
             width : '100%',
-            height: 325,
+            height: 295,
             padding : '10 5 10 5',
             store : this.optionsStore,
             viewConfig: {
@@ -254,11 +254,55 @@ Ext4.define('File.panel.ToolbarPanel', {
                 }
             },
             columns :  [
-                {header : 'Shown', dataIndex : 'shown', xtype : 'checkcolumn', flex : 1},
-                {header : 'Hide Text', dataIndex : 'hideText', xtype : 'checkcolumn', flex : 1},
-                {header : 'Hide Icon', dataIndex : 'hideIcon', xtype : 'checkcolumn', flex : 1},
+                {header : 'Shown', dataIndex : 'shown', xtype : 'checkcolumn', flex : 1, listeners:{
+                    beforecheckchange:function(col,rowIndex){
+                        if(this.optionsStore.getAt(rowIndex).data.id === 'customize')
+                        {
+                            alert('You cannot modify the shown state of the admin button.');
+                            return false;
+                        }
+                        else
+                        {
+                            this.optionsStore.getAt(rowIndex).set('hideText', true);
+                            this.optionsStore.getAt(rowIndex).set('hideIcon', true);
+                        }
+                    },
+                    scope : this
+                }},
+                {header : 'Hide Text', dataIndex : 'hideText', xtype : 'checkcolumn', flex : 1, listeners:{
+                    beforecheckchange:function(col, rowIndex, isChecked){
+                        if(isChecked){
+                            if(this.optionsStore.getAt(rowIndex).data.hideIcon == true && this.optionsStore.getAt(rowIndex).data.id == 'customize')
+                            {
+                               alert('Action impossible (would cause Admin Button to be invisible).');
+                                return false;
+                            }
+                            else if(this.optionsStore.getAt(rowIndex).data.hideIcon == true && this.optionsStore.getAt(rowIndex).data.id != 'customize')
+                            {
+                                this.optionsStore.getAt(rowIndex).set('shown', false);
+                            }
+                        }
+                    },
+                    scope : this
+                }},
+                {header : 'Hide Icon', dataIndex : 'hideIcon', xtype : 'checkcolumn', flex : 1, listeners:{
+                    beforecheckchange:function(col, rowIndex, isChecked){
+                        if(isChecked){
+                            if(this.optionsStore.getAt(rowIndex).data.hideText == true && this.optionsStore.getAt(rowIndex).data.id == 'customize')
+                            {
+                                alert('Action impossible (would cause Admin Button to be invisible).');
+                                return false;
+                            }
+                            else if(this.optionsStore.getAt(rowIndex).data.hideText == true && this.optionsStore.getAt(rowIndex).data.id != 'customize')
+                            {
+                                this.optionsStore.getAt(rowIndex).set('shown', false);
+                            }
+                        }
+                    },
+                    scope : this
+                }},
                 {header : 'Icon', dataIndex: 'icon', flex : 1, renderer : function(value){
-                    var path = '/labkey/_images/' + value;
+                    var path = LABKEY.contextPath + '/_images/' + value;
                     return '<img src = "'+path+'" />';
                 }},
                 {header : 'Text', dataIndex : 'text', flex : 2}
@@ -299,12 +343,13 @@ Ext4.define('File.panel.ToolbarPanel', {
         gridConfigsRet.importDataEnabled = this.gridConfigs.importDataEnabled;
         for(var i = 0; i < this.columnsStore.getCount(); i++){
             item = this.columnsStore.getAt(i).data;
-            gridConfigsRet.columns[i+1] = {
+            var gridConfigsRetcol = {
                 id : item.id,
                 hidden : item.hidden,
                 sortable : item.sortable,
                 width : this.gridConfigs.columns[i+1].width
-            }
+            };
+            gridConfigsRet.columns.push(gridConfigsRetcol);
         }
         return gridConfigsRet;
     },
@@ -315,7 +360,12 @@ Ext4.define('File.panel.ToolbarPanel', {
         var position = 0;
         for(var i = 0; i < this.optionsStore.getCount(); i++){
             item = this.optionsStore.getAt(i).data;
+            if(item.id === 'customize'){
+                item.shown = true;
+            }
             if(item.shown){
+                if(item.hideIcon && item.hideText)
+                    continue;
                 tBarRet[position] = {
                     position : position,
                     id : item.id,
