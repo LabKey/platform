@@ -86,7 +86,7 @@ public class HomeTemplate extends PrintTemplate
         else
             setView("header", getHeaderView(page));
 
-        setView("topmenu", new MenuBarView(context.getContainer()));
+        setView("topmenu", new MenuBarView(context));
 
         setBody(body);
         setView("appbar", getAppBarView(context, page));

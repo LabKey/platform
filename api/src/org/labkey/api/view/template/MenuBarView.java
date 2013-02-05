@@ -22,6 +22,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.apache.commons.collections15.MultiMap;
+import org.labkey.api.view.ViewContext;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -39,9 +40,10 @@ public class MenuBarView extends JspView<List<Portal.WebPart>>
         super(MenuBarView.class,  "menuBar.jsp", menus);
     }
 
-    public MenuBarView(Container container)
+    public MenuBarView(ViewContext ctx)
     {
         super(MenuBarView.class, "menuBar.jsp", null);
+        Container container = ctx.getContainer();
         Container project = container.getProject();
 
         //Probably not right for site-level admin pages...
@@ -52,7 +54,7 @@ public class MenuBarView extends JspView<List<Portal.WebPart>>
 
         if (laf.isMenuUIEnabled())
         {
-            Collection<Portal.WebPart> allParts = Portal.getParts(project);
+            Collection<Portal.WebPart> allParts = Portal.getParts(project, ctx);
             MultiMap<String, Portal.WebPart> locationMap = Portal.getPartsByLocation(allParts);
             List<Portal.WebPart> menuParts = (List<Portal.WebPart>) locationMap.get("menubar");
 

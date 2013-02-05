@@ -429,6 +429,48 @@ public class Portal
         return Collections.unmodifiableList(new ArrayList<WebPart>(parts));
     }
 
+    public static List<WebPart> getParts(Container c, ViewContext context)
+    {
+        return getParts(c, DEFAULT_PORTAL_PAGE_ID, context);
+    }
+
+
+    public static List<WebPart> getParts(Container c, String pageId, ViewContext context)
+    {
+        Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);
+        List<WebPart> visibleParts = new ArrayList<WebPart>();
+
+        for (WebPart part : parts)
+        {
+            if (part.getPermission() != null)
+            {
+                Container permissionContainer = part.getPermissionContainer() != null ? part.getPermissionContainer() : context.getContainer();
+                Permission permission = RoleManager.getPermission(part.getPermission());
+                boolean isAdmin = context.getUser().isAdministrator();
+                boolean hasPermission = false;
+
+                if (permissionContainer != null && permission != null)
+                {
+                    SecurityPolicy policy = permissionContainer.getPolicy();
+                    hasPermission = policy.hasPermission(part.getName(), context.getUser(), permission.getClass());
+                }
+
+                // If the permissionContainer is null, or the permission is missing, then we only show the webpart if
+                // the user is an admin.
+                if (hasPermission || isAdmin)
+                {
+                    visibleParts.add(part);
+                }
+            }
+            else
+            {
+                visibleParts.add(part);
+            }
+        }
+        
+        return Collections.unmodifiableList(visibleParts);
+    }
+
 
     // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
     public static WebPart getPart(Container c, int webPartRowId)
@@ -881,51 +923,22 @@ public class Portal
     {
         id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
         String contextPath = context.getContextPath();
-        List<WebPart> allParts = getParts(context.getContainer(), id);
-        List<WebPart> visibleParts = new ArrayList<WebPart>();
+        List<WebPart> parts = getParts(context.getContainer(), id, context);
 
         // Initialize content for non-default portal pages that are folder tabs
-        if (allParts.isEmpty() && !StringUtils.equalsIgnoreCase(DEFAULT_PORTAL_PAGE_ID,id))
+        if (parts.isEmpty() && !StringUtils.equalsIgnoreCase(DEFAULT_PORTAL_PAGE_ID,id))
         {
             for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
             {
                 if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
                 {
                     folderTab.initializeContent(context.getContainer());
-                    allParts = getParts(context.getContainer(), id);
+                    parts = getParts(context.getContainer(), id, context);
                 }
             }
         }
 
-        for (WebPart part : allParts)
-        {
-            if (part.getPermission() != null)
-            {
-                Container permissionContainer = part.getPermissionContainer() != null ? part.getPermissionContainer() : context.getContainer();
-                Permission permission = RoleManager.getPermission(part.getPermission());
-                boolean isAdmin = context.getUser().isAdministrator();
-                boolean hasPermission = false;
-
-                if (permissionContainer != null && permission != null)
-                {
-                    SecurityPolicy policy = permissionContainer.getPolicy();
-                    hasPermission = policy.hasPermission(part.getName(), context.getUser(), permission.getClass());
-                }
-
-                // If the permissionContainer is null, or the permission is missing, then we only show the webpart if
-                // the user is an admin.
-                if (hasPermission || isAdmin)
-                {
-                    visibleParts.add(part);
-                }
-            }
-            else
-            {
-                visibleParts.add(part);
-            }
-        }
-
-        MultiMap<String, WebPart> locationMap = getPartsByLocation(visibleParts);
+        MultiMap<String, WebPart> locationMap = getPartsByLocation(parts);
         Collection<String> locations = locationMap.keySet();
 
         for (String location : locations)
