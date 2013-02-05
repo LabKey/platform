@@ -17,6 +17,7 @@ package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.tika.io.IOUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext;
@@ -76,10 +77,13 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -269,7 +273,14 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     throw new NotFoundException("No valid pipeline root found");
                 }
                 File exportDir = root.resolvePath("export");
-                writer.write(container, ctx, new FileSystemFile(exportDir));
+                try
+                {
+                    writer.write(container, ctx, new FileSystemFile(exportDir));
+                }
+                catch (Container.ContainerException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                }
                 _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
                 break;
             }
@@ -283,16 +294,39 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 File exportDir = root.resolvePath("export");
                 exportDir.mkdir();
                 ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip"));
-                writer.write(container, ctx, zip);
-                zip.close();
+                try
+                {
+                    writer.write(container, ctx, zip);
+                    zip.close();
+                }
+                catch (Container.ContainerException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                }
                 _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
                 break;
             }
             case 2:
             {
-                ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip"));
-                writer.write(container, ctx, zip);
-                zip.close();
+                // Write to stream first, so any error can be reported properly
+                OutputStream outputStream = null;
+                try
+                {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    outputStream = new BufferedOutputStream(baos);
+                    ZipFile zip = new ZipFile(outputStream, true);
+                    writer.write(container, ctx, zip);
+                    zip.close();
+                    PageFlowUtil.streamFileBytes(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip"), baos.toByteArray(), false);
+                }
+                catch (Container.ContainerException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                }
+                finally
+                {
+                    IOUtils.closeQuietly(outputStream);
+                }
                 break;
             }
         }

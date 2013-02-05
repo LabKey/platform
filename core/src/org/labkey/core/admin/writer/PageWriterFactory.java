@@ -21,6 +21,8 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.WebPartFactory;
@@ -28,6 +30,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.PagesDocument;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +58,20 @@ public class PageWriterFactory implements FolderWriterFactory
 
         public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            // Check container for validity; in rare cases user may have changed their custom folderType.xml and caused
+            // duplicate subfolders (same name) to exist
+            // Get list of child containers that are not container tabs, but match container tabs; these are bad
+            FolderType folderType = ContainerManager.getFolderType(c);
+            List<String> errorStrings = new ArrayList<String>();
+            List<Container> containersMatchingTabs = ContainerManager.findAndCheckContainersMatchingTabs(c, folderType, errorStrings);
+            if (!containersMatchingTabs.isEmpty())
+            {
+                throw new Container.ContainerException("Folder " + c.getPath() +
+                        " has a subfolder with the same name as a container tab folder, which is an invalid state." +
+                        " This may have been caused by changing the folder type's tabs after this folder was set to its folder type." +
+                        " An administrator should either delete the offending subfolder or change the folder's folder type.\n");
+            }
+
             FolderDocument.Folder folderXml = ctx.getXml();
             FolderDocument.Folder.Pages folderPagesXML = folderXml.addNewPages();
             folderPagesXML.setFile(PageWriterFactory.FILENAME);
