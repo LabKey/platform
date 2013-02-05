@@ -320,47 +320,12 @@ public class ContainerManager
             return;
 
         // Check for any containers that need to be moved into container tabs
-        List<Container> containersBecomingTabs = new ArrayList<Container>();
+        List<String> errorStrings = new ArrayList<String>();
         if (folderType.hasContainerTabs())
         {
-            for (FolderTab folderTab : folderType.getDefaultTabs())
-            {
-                if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
-                {
-                    for (Container child : c.getChildren())
-                    {
-                        if (child.getName().equalsIgnoreCase(folderTab.getName()))
-                        {
-                            if (!child.getFolderType().getName().equalsIgnoreCase(folderTab.getFolderTypeName()))
-                            {
-                                errors.reject(SpringActionController.ERROR_MSG, "Child folder " + child.getName() +
-                                        " matches container tab, but folder type " + child.getFolderType().getName() + " doesn't match tab's folder type " +
-                                        folderTab.getFolderTypeName() + ".");
-                            }
+            List<Container> containersBecomingTabs = findAndCheckContainersMatchingTabs(c, folderType, errorStrings);
 
-                            int childCount = child.getChildren().size();
-                            if (childCount > 0)
-                            {
-                                errors.reject(SpringActionController.ERROR_MSG, "Child folder " + child.getName() +
-                                        " matches container tab, but cannot be converted to a tab folder because it has " + childCount + " children.");
-                            }
-
-                            if (child.isWorkbook())
-                            {
-                                errors.reject(SpringActionController.ERROR_MSG, "Child folder " + child.getName() +
-                                        " matches container tab, but cannot be converted to a tab folder because it is a workbook.");
-                            }
-
-                            if (!errors.hasErrors() && !child.isContainerTab())
-                                containersBecomingTabs.add(child);
-
-                            break;  // we found name match; can't be another
-                        }
-                    }
-                }
-            }
-
-            if (!errors.hasErrors() && !containersBecomingTabs.isEmpty())
+            if (errorStrings.isEmpty() && !containersBecomingTabs.isEmpty())
             {
                 // Make containers tab container; Folder tab will find them by name
                 try
@@ -386,7 +351,7 @@ public class ContainerManager
             }
         }
 
-        if (!errors.hasErrors())
+        if (errorStrings.isEmpty())
         {
             //only toggle the menu bar if it was not already set
             if (folderType.isMenubarEnabled() && !LookAndFeelProperties.getInstance(c).isShowMenuBar())
@@ -403,6 +368,53 @@ public class ContainerManager
             // TODO: Not needed? I don't think we've changed the container's state.
             _removeFromCache(c);
         }
+        else
+        {
+            for (String errorString : errorStrings)
+                errors.reject(SpringActionController.ERROR_MSG, errorString);
+        }
+    }
+
+    public static List<Container> findAndCheckContainersMatchingTabs(Container c, FolderType folderType, List<String> errorStrings)
+    {
+        List<Container> containersMatchingTabs = new ArrayList<Container>();
+        for (FolderTab folderTab : folderType.getDefaultTabs())
+        {
+            if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
+            {
+                for (Container child : c.getChildren())
+                {
+                    if (child.getName().equalsIgnoreCase(folderTab.getName()))
+                    {
+                        if (!child.getFolderType().getName().equalsIgnoreCase(folderTab.getFolderTypeName()))
+                        {
+                            errorStrings.add("Child folder " + child.getName() +
+                                    " matches container tab, but folder type " + child.getFolderType().getName() + " doesn't match tab's folder type " +
+                                    folderTab.getFolderTypeName() + ".");
+                        }
+
+                        int childCount = child.getChildren().size();
+                        if (childCount > 0)
+                        {
+                            errorStrings.add("Child folder " + child.getName() +
+                                    " matches container tab, but cannot be converted to a tab folder because it has " + childCount + " children.");
+                        }
+
+                        if (child.isWorkbook())
+                        {
+                            errorStrings.add("Child folder " + child.getName() +
+                                    " matches container tab, but cannot be converted to a tab folder because it is a workbook.");
+                        }
+
+                        if (!child.isContainerTab())
+                            containersMatchingTabs.add(child);
+
+                        break;  // we found name match; can't be another
+                    }
+                }
+            }
+        }
+        return containersMatchingTabs;
     }
 
     public static boolean setMenuEnabled(Container c, User u, boolean enabled)
