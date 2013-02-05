@@ -245,9 +245,13 @@ abstract public class UserSchema extends AbstractSchema
             TableInfo table = tables.get(tableName);
             for (ColumnInfo column : table.getColumns())
             {
+                // Skip calculated columns (e.g., ExprColumn)
+                if (column.isCalculated())
+                    continue;
+
                 ForeignKey fk = column.getFk();
 
-                // skip fake FKs that just wrap the RowId
+                // Skip fake FKs that just wrap the RowId
                 if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
                     continue;
 
@@ -274,7 +278,7 @@ abstract public class UserSchema extends AbstractSchema
                 if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
                     lookupTableName = t.getName();
 
-                //skip self-referencing FKs
+                // Skip self-referencing FKs
                 if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
                     continue;
 
@@ -311,9 +315,13 @@ abstract public class UserSchema extends AbstractSchema
 
         for (ColumnInfo column : table.getColumns())
         {
+            // Skip calculated columns (e.g., ExprColumn)
+            if (column.isCalculated())
+                continue;
+
             ForeignKey fk = column.getFk();
 
-            // skip fake FKs that just wrap the RowId
+            // Skip fake FKs that just wrap the RowId
             if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
                 continue;
 
@@ -337,7 +345,7 @@ abstract public class UserSchema extends AbstractSchema
             if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
                 lookupTableName = t.getName();
 
-            //skip self-referencing FKs
+            // Skip self-referencing FKs
             if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
                 continue;
 
@@ -394,6 +402,7 @@ abstract public class UserSchema extends AbstractSchema
         return ret;
     }
 
+    @Nullable
     public ActionURL urlFor(QueryAction action, QueryDefinition queryDef)
     {
         return queryDef.urlFor(action, getContainer());
