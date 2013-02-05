@@ -264,7 +264,9 @@
       </ns:column>
       <ns:column columnName="Title"/>
       <ns:column columnName="Body"/>
+      <ns:column columnName="CreatedBy"/>
       <ns:column columnName="Created"/>
+      <ns:column columnName="ModifiedBy"/>
       <ns:column columnName="Modified"/>
     </ns:columns>
   </ns:table>
