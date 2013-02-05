@@ -27,13 +27,23 @@ import java.io.OutputStream;
 import java.util.List;
 
 /**
+ * Responsible for storing whatever is desired from a data file in the database. May be the full
+ * file's content, a subset, just summary, etc.
  * User: jeckels
  * Date: Sep 23, 2005
  */
 public interface ExperimentDataHandler extends Handler<ExpData>
 {
+    /**
+     * Import whatever content from the file is destined for storage in the database. Typically persisted in a schema
+     * owned by the module that holds the implementation of the ExperimentDataHandler.
+     */
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException;
 
+    /**
+     * Stream the content of this data object. Typically this just streams the bytes of the file from disk, but could
+     * create something based exclusively on what's in the database.
+     */
     public void exportFile(ExpData data, File dataFile, OutputStream out) throws ExperimentException;
 
     public ActionURL getContentURL(Container container, ExpData data);

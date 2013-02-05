@@ -46,6 +46,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1061,6 +1062,20 @@ public class DbScope
                     executor.setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
                     dialect.testDialectKeywords(executor);
                     dialect.testKeywordCandidates(executor);
+
+                    testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.DATE, 31);
+                    testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.DATE, 366);
+
+                    testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.MONTH, 1);
+                    testDateDiff(scope, dialect, "2/1/2000", "1/31/2000", Calendar.MONTH, 1);
+                    testDateDiff(scope, dialect, "1/1/2000", "1/1/2000", Calendar.MONTH, 0);
+                    testDateDiff(scope, dialect, "1/31/2000", "1/1/2000", Calendar.MONTH, 0);
+                    testDateDiff(scope, dialect, "12/31/2000", "1/1/2000", Calendar.MONTH, 11);
+                    testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.MONTH, 12);
+                    testDateDiff(scope, dialect, "1/31/2001", "1/1/2000", Calendar.MONTH, 12);
+
+                    testDateDiff(scope, dialect, "1/1/2000", "12/31/2000", Calendar.YEAR, 0);
+                    testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.YEAR, 1);
                 }
                 finally
                 {
@@ -1068,6 +1083,16 @@ public class DbScope
                         scope.releaseConnection(conn);
                 }
             }
+        }
+
+        private void testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
+        {
+            SQLFragment sql = new SQLFragment("SELECT (");
+            sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
+            sql.append(") AS Diff");
+
+            int actual = new SqlSelector(scope, sql).getObject(Integer.class);
+            assertEquals(expected, actual);
         }
     }
 
