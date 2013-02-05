@@ -692,6 +692,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public static ForeignKey makeForeignKey(QuerySchema fromSchema, ColumnType.Fk fk)
     {
+        ForeignKey ret = null;
         if (fk.getFkDbSchema() != null)
         {
             Container targetContainer = fromSchema.getContainer();
@@ -699,19 +700,31 @@ abstract public class AbstractTableInfo implements TableInfo
             {
                 targetContainer = ContainerManager.getForPath(fk.getFkFolderPath());
                 if (targetContainer == null || !targetContainer.hasPermission(fromSchema.getUser(), ReadPermission.class))
-                {
                     return null;
-                }
             }
             if (!fromSchema.getSchemaName().equals(fk.getFkDbSchema()) || !targetContainer.equals(fromSchema.getContainer()))
             {
                 // Let the QueryForeignKey lazily create the schema on demand
-                return new QueryForeignKey(fk.getFkDbSchema(), targetContainer, fromSchema.getUser(), fk.getFkTable(), fk.getFkColumnName(), fk.getFkDisplayColumnName());
+                ret = new QueryForeignKey(fk.getFkDbSchema(), targetContainer, fromSchema.getUser(), fk.getFkTable(), fk.getFkColumnName(), fk.getFkDisplayColumnName());
             }
         }
 
-        // We can reuse the same schema object
-        return new QueryForeignKey(fromSchema, fk.getFkTable(), fk.getFkColumnName(), fk.getFkDisplayColumnName());
+        if (ret == null)
+        {
+            // We can reuse the same schema object
+            ret = new QueryForeignKey(fromSchema, fk.getFkTable(), fk.getFkColumnName(), fk.getFkDisplayColumnName());
+        }
+
+        if (fk.isSetFkMultiValued())
+        {
+            String type = fk.getFkMultiValued();
+            if ("junction".equals(type))
+                ret = new MultiValuedForeignKey(ret, fk.getFkJunctionLookup());
+            else
+                throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
+        }
+
+        return ret;
     }
 
 

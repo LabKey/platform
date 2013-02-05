@@ -859,13 +859,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 String type = xfk.getFkMultiValued();
 
                 if ("junction".equals(type))
-                {
                     fk = new MultiValuedForeignKey(new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false), xfk.getFkJunctionLookup());
-                }
                 else
-                {
                     throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
-                }
             }
         }
 
@@ -1786,6 +1782,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setCalculated(boolean calculated)
     {
+        checkLocked();
         _calculated = calculated;
     }
 }
