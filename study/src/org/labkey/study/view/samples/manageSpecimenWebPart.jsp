@@ -56,6 +56,8 @@
                 fields: [{
                     name: dataFieldName,
                     sortType: function(value) { return value.toLowerCase(); }
+                },{
+                    name: 'value'
                 }],
                 sortInfo: { field: dataFieldName }
             }),
@@ -69,6 +71,13 @@
             editable:false,
             queryMode:'local',
             triggerAction: 'all',
+            forceSelection: true,
+            listeners: {
+                select: function(combo1, records, opts) {
+                    if (records && records[0] && records[0].get(this.displayField) == '&nbsp;')
+                        this.setValue('',true);
+                }
+            },
             margin: 2
         });
 
@@ -80,7 +89,7 @@
 
     function populateColumns(columnCombo, details, initialValue)
     {
-        var records = ["", ""];
+        var records = [['&nbsp;','']];
         var columns = [
                 <%
                     for (int i = 0; i < columns.length; i += 1)
