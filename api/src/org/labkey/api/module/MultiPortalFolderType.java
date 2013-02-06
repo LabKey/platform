@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
@@ -179,8 +180,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         {
             FolderTab folderTab = folderTabMap.get(sortedPages.get(i).getPageId());
             Portal.PortalPage portalPage = sortedPages.get(i);
-            
-            if (folderTab != null && folderTab.isVisible(container, ctx.getUser()))
+
+            // Make sure tab isVisible and if its a container tab, make sure user has permission to see container
+            if (folderTab != null && folderTab.isVisible(container, ctx.getUser()) && hasPermission(folderTab, container, ctx.getUser()))
             {
                 String label = portalPage.getCaption() != null ?
                         portalPage.getCaption() :
@@ -271,7 +273,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         for (Portal.PortalPage tab : tabs)
         {
             FolderTab folderTab = findTab(tab.getPageId());
-            if (!tab.isHidden() && null != folderTab && folderTab.isVisible(c, user))
+            if (!tab.isHidden() && null != folderTab && folderTab.isVisible(c, user) && hasPermission(folderTab, c, user))
             {
                 return folderTab.getURL(c, user);
             }
@@ -368,6 +370,20 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         return result;
     }
 
+    private boolean hasPermission(FolderTab folderTab, Container container, User user)
+    {
+        if (FolderTab.TAB_TYPE.Container == folderTab.getTabType())
+        {
+            // Container Tab must be SimpleFolderType
+            SimpleFolderTab simpleFolderTab = (SimpleFolderTab)folderTab;
+            Container folderContainer = simpleFolderTab.getContainer(container, user);
+            if (null != folderContainer && !folderContainer.hasPermission(user, ReadPermission.class))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     @Override @Nullable
     public FolderTab getDefaultTab()
