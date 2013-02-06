@@ -93,51 +93,42 @@ public class DatasetViewProvider implements DataViewProvider
         if (isVisible(container, user))
         {
             Study study = StudyService.get().getStudy(container);
-            for (DataSet ds : study.getDataSets())
+
+            if (null != study)
             {
-                if (ds.canRead(user))
+                for (DataSet ds : study.getDataSets())
                 {
-                    DefaultViewInfo view = new DefaultViewInfo(TYPE, ds.getEntityId(), ds.getLabel(), container);
-
-                    if (ds.getCategory() != null)
+                    if (ds.canRead(user))
                     {
-                        view.setCategory(ViewCategoryManager.getInstance().getCategory(container, ds.getCategory()));
-/*
-                        view.setCategory(ds.getCategory());
+                        DefaultViewInfo view = new DefaultViewInfo(TYPE, ds.getEntityId(), ds.getLabel(), container);
 
-                        ViewCategory vc = ViewCategoryManager.getInstance().getCategory(container, ds.getCategory());
-                        if (vc != null)
-                            view.setCategoryDisplayOrder(vc.getDisplayOrder());
+                        if (ds.getViewCategory() != null)
+                        {
+                            view.setCategory(ds.getViewCategory());
+                        }
                         else
-                            view.setCategoryDisplayOrder(ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER);
-*/
+                        {
+                            view.setCategory(ReportUtil.getDefaultCategory(container, null, null));
+                        }
+                        view.setType("Dataset");
+                        view.setDescription(ds.getDescription());
+                        view.setIcon(AppProps.getInstance().getContextPath() + "/reports/grid.gif");
+                        view.setVisible(ds.isShowByDefault());
+
+                        ActionURL runUrl = new ActionURL(StudyController.DefaultDatasetReportAction.class, container).addParameter("datasetId", ds.getDataSetId());
+                        view.setRunUrl(runUrl);
+                        view.setDetailsUrl(runUrl);
+
+                        view.setThumbnailUrl(new ActionURL(StudyController.ThumbnailAction.class, container));
+                        view.setModified(ds.getModified());
+
+                        view.setTags(ReportPropsManager.get().getProperties(ds.getEntityId(), container));
+
+                        view.setSchemaName("study");
+                        view.setQueryName(ds.getName());
+
+                        datasets.add(view);
                     }
-                    else
-                    {
-                        view.setCategory(ReportUtil.getDefaultCategory(container, null, null));
-/*
-                        view.setCategory("Uncategorized");
-                        view.setCategoryDisplayOrder(ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER);
-*/
-                    }
-                    view.setType("Dataset");
-                    view.setDescription(ds.getDescription());
-                    view.setIcon(AppProps.getInstance().getContextPath() + "/reports/grid.gif");
-                    view.setVisible(ds.isShowByDefault());
-
-                    ActionURL runUrl = new ActionURL(StudyController.DefaultDatasetReportAction.class, container).addParameter("datasetId", ds.getDataSetId());
-                    view.setRunUrl(runUrl);
-                    view.setDetailsUrl(runUrl);
-                    
-                    view.setThumbnailUrl(new ActionURL(StudyController.ThumbnailAction.class, container));
-                    view.setModified(ds.getModified());
-
-                    view.setTags(ReportPropsManager.get().getProperties(ds.getEntityId(), container));
-
-                    view.setSchemaName("study");
-                    view.setQueryName(ds.getName());
-
-                    datasets.add(view);
                 }
             }
         }

@@ -145,19 +145,15 @@ Ext4.define('Study.window.ParticipantGroup', {
                 change : function(combo, newValue, oldValue){
                     var shared = false;
                     var index = categoryStore.findExact('RowId', newValue);
-                    if(index > -1){
+                    if (index > -1) {
                         shared = categoryStore.getAt(index).data.shared;
                     }
-                    //simplePanel.queryById('sharedBox').setValue(shared);
-
                 }
             }
         });
 
-        this.webPartPanel = Ext4.create('Ext.panel.Panel', {
-            xtype: 'panel',
-            width :  defaultWidth,
-            grow : true,
+        this.selectionGrid = Ext4.create('Ext.Component', {
+            width  :  defaultWidth,
             border : false
         });
 
@@ -224,7 +220,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                         },
                         scope : this
                     }
-                }, infoCombo, this.webPartPanel
+                }, infoCombo, this.selectionGrid
             ]
         });
 
@@ -248,7 +244,7 @@ Ext4.define('Study.window.ParticipantGroup', {
 
     onDemographicSelect : function(combo, records, idx) {
         if (Ext4.isArray(records) && records.length > 0) {
-            this.getQueryWebPart(records[0].get("Label"));
+            this.displayQueryWebPart(records[0].get("Label"));
         }
     },
 
@@ -298,34 +294,40 @@ Ext4.define('Study.window.ParticipantGroup', {
         });
     },
 
-    getGroupData : function(){
+    getGroupData : function() {
         var fieldValues = this.queryById('simplePanel').getValues(),
             ptidsPre = fieldValues['participantIdentifiers'].split(','),
+            categoryCombo = this.queryById('participantCategory'),
+            categoryStore = categoryCombo.getStore(),
+            categoryValue = categoryCombo.getValue(),
             categoryLabel,
             categoryId,
             categoryType,
-            categoryCombo = Ext4.ComponentQuery.query('combo[id=participantCategory]')[0],
-            categoryStore = categoryCombo.getStore();
-        for(var i = 0; i < ptidsPre.length; i++){
-            ptidsPre[i] = ptidsPre[i].split('\n');
-        }
-        if(typeof categoryCombo.getValue() == 'number'){
-            categoryId = categoryCombo.getValue();
+            ptids = [], i, q, count;
+
+        if (Ext4.isNumber(categoryValue)) {
+            categoryId = categoryValue;
             categoryLabel = categoryStore.getAt(categoryStore.findExact("RowId", categoryId)).data.label;
             categoryType = 'manual';
-        } else {
+        }
+        else {
             categoryLabel = categoryCombo.getRawValue();
             categoryType = categoryLabel == '' ? 'list' : 'manual';
-            if(categoryType == 'list' && (this.category && this.category.type == 'list')){
+            if (categoryType == 'list' && (this.category && this.category.type == 'list')) {
                 categoryId = this.category.rowId;
             }
         }
-        var ptids = [];
-        for(var i = 0, count = 0; i < ptidsPre.length; i++){
-            for(var q = 0; q < ptidsPre[i].length; q++, count++){
-                if(ptidsPre[i][q].trim() != "")
+
+        for(i=0; i < ptidsPre.length; i++) {
+            ptidsPre[i] = ptidsPre[i].split('\n');
+        }
+
+        for (i=0, count = 0; i < ptidsPre.length; i++) {
+            for (q=0; q < ptidsPre[i].length; q++, count++) {
+                if (ptidsPre[i][q].trim() != "") {
                     ptids[count] = ptidsPre[i][q].trim();
-                else count--;
+                }
+                else { count--; }
             }
         }
 
@@ -335,110 +337,98 @@ Ext4.define('Study.window.ParticipantGroup', {
             categoryLabel : categoryLabel,
             categoryType : categoryType,
             categoryShared : Ext4.getCmp('sharedBox').getValue()
-        }
+        };
 
-        if(categoryId !== null && categoryId != undefined){
+        if (categoryId !== null && categoryId != undefined) {
             groupData.categoryId = categoryId;
         }
-        if(this.groupRowId !== null && this.groupRowId != undefined) {
+        if (this.groupRowId !== null && this.groupRowId != undefined) {
             groupData.rowId = this.groupRowId;
         }
         return groupData;
     },
 
-    getQueryWebPart : function(queryName){
-        var me = this;
-        var initialLoad = true;
-        if(!this.hideDataRegion){
-            var webPart = new LABKEY.QueryWebPart({
-                renderTo: this.webPartPanel.id,
-                autoScroll : true,
-                dataRegionName : this.dataRegionName,
-                scope : this,
-                schemaName: 'study',
-                queryName: queryName,
-                frame : 'none',
-                border : false,
-                showRecordSelectors : true,
-                showUpdateColumn : false,
-                buttonBar : {
-                    position: (this.canEdit ? 'top' : 'none'),
-                    includeStandardButtons : false,
-                    items : [{
-                        text : 'Add Selected',
-                        requiresSelection : true,
-                        handler : function() {
-                            me.getSelectedDemoParticipants(queryName, "selected");
-                        }
-                    },{
-                        text : 'Add All',
-                        handler : function(){
-                            me.getSelectedDemoParticipants(queryName, "all");
-                        }
+    displayQueryWebPart : function(queryName) {
 
-                    }
+        if (!this.hideDataRegion) {
 
-                    ]
-                },
-                success : function(){
-                    if(initialLoad){
-                        //QueryWebPart is an Ext 3 based component, so we need to include Ext 3 here.
-                        if(Ext){
-                            Ext.onReady(function(){
-                                me.webPartPanel.height = Ext.ComponentMgr.get(this.dataRegionName).table.dom.scrollHeight + 15;
-                                me.doLayout();
-                                Ext.ComponentMgr.get(this.dataRegionName).clearSelected();
-                                initialLoad = false;
-                            }, this);
-                        }
+            //QueryWebPart is an Ext 3 based component, so we need to include Ext 3 here.
+            if (Ext) {
 
-                    }
-                }
-            });
+                Ext.onReady(function() {
+
+                    var me = this;
+                    var wp = new LABKEY.QueryWebPart({
+                        renderTo: this.selectionGrid.id,
+                        autoScroll : true,
+                        dataRegionName : this.dataRegionName,
+                        schemaName: 'study',
+                        queryName: queryName,
+                        frame : 'none',
+                        border : false,
+                        showRecordSelectors : true,
+                        showUpdateColumn : false,
+                        buttonBar : {
+                            position: (this.canEdit ? 'top' : 'none'),
+                            includeStandardButtons : false,
+                            items : [{
+                                text : 'Add Selected',
+                                requiresSelection : true,
+                                handler : function() { me._getSelectedDemoParticipants(queryName, 'selected'); }
+                            },{
+                                text : 'Add All',
+                                handler : function() { me._getSelectedDemoParticipants(queryName, 'all'); }
+                            }]
+                        },
+                        scope : this
+                    });
+
+                }, this);
+
+            }
         }
-
     },
 
-    getSelectedDemoParticipants : function(queryName, showStr) {
-        var ptidCategoryPanel = this.down('panel');
-        var me = this;
-        if(Ext){
-            Ext.onReady(function(){
-                var myFilters = Ext.ComponentMgr.get(me.dataRegionName).getUserFilterArray();
-                var mySelectionKey = Ext.ComponentMgr.get(me.dataRegionName).selectionKey;
-                LABKEY.Query.selectRows({
-                    schemaName : 'study',
-                    queryName : queryName,
-                    selectionKey : mySelectionKey,
-                    showRows : showStr,
-                    filterArray : myFilters,
-                    columns : this.subject.columnName,
-                    scope : this,
-                    success : function(data){
+    /**
+     * Assumes the presence of a rendered QueryWebPart.
+     * Ext 3.4 is required and should be checked before calling this method.
+     */
+    _getSelectedDemoParticipants : function(queryName, showStr) {
 
-                        var classPanelValues = ptidCategoryPanel.getValues();
-                        var tempIds = classPanelValues['participantIdentifiers'];
+        var ptidCategoryPanel = this.getComponent('simplePanel');
+        var myFilters = Ext.ComponentMgr.get(this.dataRegionName).getUserFilterArray();
+        var mySelectionKey = Ext.ComponentMgr.get(this.dataRegionName).selectionKey;
 
-                        var tempIdsArray = tempIds.split(",");
-                        for (var i = 0; i < tempIdsArray.length; i++){
-                            tempIdsArray[i] = tempIdsArray[i].trim();
-                        }
+        LABKEY.Query.selectRows({
+            schemaName : 'study',
+            queryName : queryName,
+            selectionKey : mySelectionKey,
+            showRows : showStr,
+            filterArray : myFilters,
+            columns : this.subject.columnName,
+            success : function(data) {
 
-                        //append the selected ids to the current list
-                        for(i = 0; i < data.rows.length; i++){
-                            if(tempIdsArray.indexOf(data.rows[i][me.subject.nounColumnName]) == -1){
-                                tempIds += (tempIds.length > 0 ? ", " : "") + data.rows[i][me.subject.nounColumnName];
-                                tempIdsArray.push(data.rows[i][me.subject.nounColumnName]);
-                            }
-                        }
+                var classPanelValues = ptidCategoryPanel.getValues();
+                var tempIds = classPanelValues['participantIdentifiers'];
 
-                        ptidCategoryPanel.getForm().setValues({
-                            participantIdentifiers : tempIds
-                        });
+                var tempIdsArray = tempIds.split(",");
+                for (var i = 0; i < tempIdsArray.length; i++){
+                    tempIdsArray[i] = tempIdsArray[i].trim();
+                }
+
+                //append the selected ids to the current list
+                for(i = 0; i < data.rows.length; i++){
+                    if(tempIdsArray.indexOf(data.rows[i][this.subject.nounColumnName]) == -1){
+                        tempIds += (tempIds.length > 0 ? ", " : "") + data.rows[i][this.subject.nounColumnName];
+                        tempIdsArray.push(data.rows[i][this.subject.nounColumnName]);
                     }
-                });
-            }, this)
-        }
-    }
+                }
 
+                ptidCategoryPanel.getForm().setValues({
+                    participantIdentifiers : tempIds
+                });
+            },
+            scope : this
+        });
+    }
 });

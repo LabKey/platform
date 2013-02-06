@@ -243,7 +243,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFolderURL : function() {
-        return this.fileSystem.concatPaths(this.getRootURL(), this.rootOffset);
+        return this.fileSystem.concatPaths(this.getRootURL(), this.getFolderOffset());
     },
 
     getFolderOffset : function() {
@@ -251,6 +251,14 @@ Ext4.define('File.panel.Browser', {
     },
 
     setFolderOffset : function(offsetPath, model) {
+
+        if (model && Ext4.isString(offsetPath)) {
+            var splitUrl = offsetPath.split(this.getRootURL());
+            if (splitUrl && splitUrl.length > 1) {
+                offsetPath = splitUrl[1];
+            }
+        }
+
         this.rootOffset = offsetPath;
         this.currentFolder = model;
         this.fireEvent('folderchange', offsetPath, model);
@@ -355,7 +363,7 @@ Ext4.define('File.panel.Browser', {
             this.fireEvent('treechange', this.getFolderURL());
         }
         else if (rec.data.uri && rec.data.uri.length > 0) {
-            this.setFolderOffset(rec.data.id, rec);
+            this.setFolderOffset(rec.data.uri, rec);
             this.fireEvent('treechange', this.getFolderURL());
         }
         this.tree.getView().expand(rec);
@@ -377,11 +385,16 @@ Ext4.define('File.panel.Browser', {
         Ext4.applyIf(config, {
             flex : 4,
             region : 'center',
-            selType : 'checkboxmodel',
             viewConfig : {
                 emptyText : '<span style="margin-left: 5px; opacity: 0.3;"><i>No Files Found</i></span>'
             }
         });
+
+        if (!config.selModel && !config.selType) {
+            config.selModel = Ext4.create('Ext.selection.CheckboxModel', {
+                mode : 'SINGLE'
+            });
+        }
 
         Ext4.apply(config, {
             xtype   : 'grid',
@@ -402,6 +415,10 @@ Ext4.define('File.panel.Browser', {
                     if (rec.data.collection) {
                         this.setFolderOffset(rec.data.id, rec);
                         this.fireEvent('gridchange', this.getFolderURL());
+                    }
+                    else {
+                        // Download the file
+                        this.onDownload({recs : [rec]});
                     }
                 },
                 scope : this
@@ -678,9 +695,9 @@ Ext4.define('File.panel.Browser', {
     },
 
     // TODO: Support multiple selection download -- migrate to file system
-    onDownload : function() {
+    onDownload : function(config) {
 
-        var recs = this.getGrid().getSelectionModel().getSelection();
+        var recs = (config && config.recs) ? config.recs : this.getGrid().getSelectionModel().getSelection();
 
         if (recs.length == 1) {
 
