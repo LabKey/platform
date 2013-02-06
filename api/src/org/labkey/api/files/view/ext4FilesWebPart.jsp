@@ -22,9 +22,8 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%!
@@ -32,20 +31,7 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
-      resources.add(ClientDependency.fromFilePath("applet.js"));
-      resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
-      resources.add(ClientDependency.fromFilePath("StatusBar.js"));
-      resources.add(ClientDependency.fromFilePath("fileBrowser.js"));
-      resources.add(ClientDependency.fromFilePath("Reorderer.js"));
-      resources.add(ClientDependency.fromFilePath("ToolbarDroppable.js"));
-      resources.add(ClientDependency.fromFilePath("ToolbarReorderer.js"));
-      resources.add(ClientDependency.fromFilePath("ActionsAdmin.js"));
-      resources.add(ClientDependency.fromFilePath("PipelineAction.js"));
-      resources.add(ClientDependency.fromFilePath("FileProperties.js"));
-      resources.add(ClientDependency.fromFilePath("FileContent.js"));
-
       resources.add(ClientDependency.fromFilePath("File"));
-
       return resources;
   }
 %>
@@ -89,8 +75,8 @@
     Ext4.onReady(function() {
         var fileSystem = Ext4.create('File.system.Webdav', {
             baseUrl  : <%=q(bean.getRootPath())%>,
-            offsetUrl: <%=PageFlowUtil.jsString(bean.getRootOffset())%>,
-            rootName:'fileset'
+            offsetUrl: <%=q(bean.getRootOffset())%>,
+            rootName : 'fileset'
         });
 
         var fb = Ext4.create('File.panel.Browser', {
@@ -106,10 +92,7 @@
             <%--disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,--%>
             <%--containerPath: <%=q(c.getPath())%>,--%>
             fileSystem: fileSystem,
-            isWebPart: true,
-            gridConfig : {
-                selType : 'rowmodel'
-            }
+            isWebPart: true
         });
     });
 </script>

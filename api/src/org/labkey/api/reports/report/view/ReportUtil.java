@@ -18,7 +18,7 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.CustomApiForm;
@@ -41,7 +41,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
-import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -405,7 +404,7 @@ public class ReportUtil
         return getViews(context, schemaName, queryName, includeReports, includeQueries, new DefaultReportFilter());
     }
 
-    public static ViewCategory getDefaultCategory(Container c, String schema, String query)
+    public static ViewCategory getDefaultCategory(Container c, @Nullable String schema, @Nullable String query)
     {
         ViewCategory vc;
         if ("study".equalsIgnoreCase(schema) && !StringUtils.isEmpty(query))
