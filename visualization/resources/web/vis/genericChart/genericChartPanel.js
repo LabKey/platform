@@ -11,13 +11,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     extend : 'Ext.panel.Panel',
     alias: 'widget.labkey-genericchartpanel',
 
-//    requires : [
-//        'LABKEY.vis.DeveloperOptionsPanel',
-//        'LABKEY.vis.GenericChartOptionsPanel',
-//        'LABKEY.vis.GenericChartAxisPanel',
-//        'LABKEY.vis.GenericChartGroupingPanel'
-//    ],
-
     constructor : function(config) {
 
         Ext4.QuickTips.init();
@@ -1804,21 +1797,34 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 scales.x = {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType};
                 var hasNegative = false;
                 var hasZero = false;
+                var allXDataIsNull = true;
+
+                // Check for values < 0, if log scale show error accordingly.
+                for(var i = 0; i < this.chartData.rows.length; i++){
+                    var value = measures.x.acc(this.chartData.rows[i]);
+
+                    if(value != null){
+                        allXDataIsNull = false;
+                    }
+
+                    if(value < 0 || value === null){
+                        hasNegative = true;
+                    } else if(value === 0){
+                        hasZero = true;
+                    }
+                }
+
+                if(allXDataIsNull){
+                    this.viewPanel.getEl().unmask();
+                    Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' are null. Please choose a different measure', this.showXMeasureWindow, this);
+                    return;
+                }
 
                 if(scales.x.trans === 'log'){
-                    // Check for values < 0, show error accordingly.
-                    for(var i = 0; i < this.chartData.rows.length; i++){
-                        var value = measures.x.acc(this.chartData.rows[i]);
-
-                        if(value < 0 || value === null || value === undefined){
-                            hasNegative = true;
-                            this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
-                            scales.x.trans = 'linear';
-                            this.xMeasurePanel.setScaleType('linear');
-                            break;
-                        } else if(value === 0){
-                            hasZero = true;
-                        }
+                    if(hasNegative){
+                        this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
+                        scales.x.trans = 'linear';
+                        this.xMeasurePanel.setScaleType('linear');
                     }
 
                     if(hasZero && !hasNegative){
@@ -1961,20 +1967,31 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getDiscreteXAcc: function(measures){
         return function(row){
-            var value = row[measures.x.name].displayValue ? row[measures.x.name].displayValue : row[measures.x.name].value;
+            var valueObj = row[measures.x.name];
+            var value = null;
+
+            if(valueObj){
+                value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
+            }
+
             if(value === null){
                 value = "Not in " + measures.x.label;
             }
+
             return value;
         };
     },
 
     getContinuousXAcc: function(measures){
         return function(row){
-            var value = row[measures.x.name].value;
+            var value = null;
 
-            if(Math.abs(value) === Infinity){
-                return null;
+            if(row[measures.x.name]){
+                value = row[measures.x.name].value;
+
+                if(Math.abs(value) === Infinity){
+                    value = null;
+                }
             }
 
             return value;
@@ -2041,13 +2058,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 label: chartOptions.grouping.pointMeasure.label,
                 acc: function(row){
                     var valueObj = row[measures.shape.name];
-                    var value;
+                    var value = null;
 
                     if(valueObj){
                         value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
-                    } else {
-                        value = null;
                     }
+
                     if(value === null || value === undefined){
                         value = "n/a";
                     }
