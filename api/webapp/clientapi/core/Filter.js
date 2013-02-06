@@ -250,8 +250,11 @@ LABKEY.Filter = new function()
                 for (var idx = 0; idx < aggregateArray.length; ++idx)
                 {
                     var aggregate = aggregateArray[idx];
+                    var value = "type=" + aggregate.type;
+                    if (aggregate.label)
+                        value = value + "&label=" + aggregate.label;
                     if (aggregate.type && aggregate.column)
-                        params[dataRegionName + '.agg.' + aggregate.column] = aggregate.type;
+                        params[dataRegionName + '.agg.' + aggregate.column] = encodeURIComponent(value);
                 }
             }
             return params;

@@ -137,9 +137,12 @@
  * each of which is created using the {@link LABKEY.Filter.create} method. These filters can be modified or removed by the user
  * interacting with the UI.
  * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the target query is a parameterized query
- * @param {Array} [config.aggregates] An array of aggregate definitions. The objects in this array should have two
- * properties: 'column' and 'type'. The column property is the column name, and the type property may be one of the
- * the {@link LABKEY.AggregateTypes} values.
+ * @param {Array} [config.aggregates] An array of aggregate definitions. The objects in this array should have the properties:
+ * <ul>
+ *     <li><b>column:</b> The name of the column to be aggregated.</li>
+ *     <li><b>type:</b> The aggregate type (see {@link LABKEY.AggregateTypes})</li>
+ *     <li><b>label:</b> Optional label used when rendering the aggregate row.
+ * </ul>
  * @param {String} [config.showRows] Either 'paginated' (the default) 'selected', 'unselected', 'all', or 'none'.
  *        When 'paginated', the maxRows and offset parameters can be used to page through the query's result set rows.
  *        When 'selected' or 'unselected' the set of rows selected or unselected by the user in the grid view will be returned.
@@ -183,7 +186,7 @@ var qwp1 = new LABKEY.QueryWebPart({
 	queryName: 'People',
 	buttonBarPosition: 'none',
 	aggregates: [
-		{column: 'First', type: LABKEY.AggregateTypes.COUNT},
+		{column: 'First', type: LABKEY.AggregateTypes.COUNT, label: 'Total People'},
 		{column: 'Age', type: LABKEY.AggregateTypes.AVG}
 	],
 	filters: [
