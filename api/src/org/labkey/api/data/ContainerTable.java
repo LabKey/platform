@@ -172,7 +172,6 @@ public class ContainerTable extends FilteredTable<UserSchema>
 
         ColumnInfo name = getColumn("Name");
         name.setURL(webURLExp);
-        name.setDisplayColumnFactory(dcf);
 
         ColumnInfo title = getColumn("Title");
         title.setURL(webURLExp);
