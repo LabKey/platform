@@ -43,8 +43,14 @@ Ext4.define('File.panel.Admin', {
             scope: this
         };
 
+        this.resetDefaultsButton = Ext4.create('Ext.button.Button', {
+            text: 'Reset To Default',
+            handler: this.onResetDefaults,
+            scope: this
+        });
 
-        this.buttons = [submitButton, cancelButton];
+
+        this.buttons = [submitButton, cancelButton, this.resetDefaultsButton];
         this.callParent();
     },
 
@@ -58,10 +64,15 @@ Ext4.define('File.panel.Admin', {
     },
 
     getActionsPanel: function(){
-        return {
-            title: 'Actions',
-            items: []
-        };
+//        this.actionsPanel = Ext4.create('', {
+//            title: 'Actions'
+//        });
+
+//        this.actionsPanel.on('activate', function(){
+//            this.resetDefaultsButton.show();
+//        }, this);
+
+//        return this.actionsPanel;
     },
 
     getFilePropertiesPanel: function(){
@@ -74,6 +85,10 @@ Ext4.define('File.panel.Admin', {
 
         this.filePropertiesPanel.on('editfileproperties', this.onEditFileProperties, this);
 
+        this.filePropertiesPanel.on('activate', function(){
+            this.resetDefaultsButton.hide();
+        }, this);
+
         return this.filePropertiesPanel;
     },
 
@@ -83,6 +98,10 @@ Ext4.define('File.panel.Admin', {
             tbarActions : this.pipelineFileProperties.tbarActions,
             gridConfigs : this.pipelineFileProperties.gridConfig
         });
+
+        this.toolBarPanel.on('activate', function(){
+            this.resetDefaultsButton.show();
+        }, this);
         return this.toolBarPanel;
     },
 
@@ -113,6 +132,10 @@ Ext4.define('File.panel.Admin', {
             });
         }
 
+        this.generalSettingsPanel.on('activate', function(){
+            this.resetDefaultsButton.hide();
+        }, this);
+
         return this.generalSettingsPanel;
     },
 
@@ -132,7 +155,6 @@ Ext4.define('File.panel.Admin', {
 
         if(!handler){
             handler = function(){
-                console.log("Save successful");
                 this.fireEvent('success');
                 this.fireEvent('close');
             }
@@ -158,5 +180,43 @@ Ext4.define('File.panel.Admin', {
         };
         
         this.onSubmit(null, null, handler);
+    },
+
+    onResetDefaults: function(){
+        var tab = this.getActiveTab(),
+            type,
+            msg;
+        if(tab.title === "Toolbar and Grid Settings"){
+            type = 'tbar';
+            msg = 'All grid and toolbar button customizations on this page will be deleted, continue?';
+        } else if(tab.title === "Actions"){
+            type = 'actions';
+            msg = 'All action customizations on this page will be deleted, continue?';
+        }
+
+        var requestConfig = {
+            url: LABKEY.ActionURL.buildURL('filecontent', 'resetFileOptions', null, {type:type}),
+            method: 'POST',
+            success: function(response){
+                this.onCancel();
+            },
+            failure: function(response){
+                var json = Ext4.JSON.decode(response.responseText);
+                console.log(json);
+            },
+            scope: this
+        };
+
+        Ext4.Msg.show({
+            title: 'Confirm Reset',
+            msg: msg,
+            buttons: Ext4.Msg.YESNO,
+            icon: Ext4.Msg.QUESTION,
+            fn: function(choice){
+                if(choice === 'yes'){
+                    Ext4.Ajax.request(requestConfig);
+                }
+            }
+        });
     }
 });

@@ -747,7 +747,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     showAdminWindow: function() {
-        if(this.adminWindow) {
+        if(this.adminWindow && !this.adminWindow.isDestroyed) {
             this.adminWindow.setVisible(true);
         } else {
             Ext4.Ajax.request({
@@ -760,7 +760,7 @@ Ext4.define('File.panel.Browser', {
                         title: 'Manage File Browser Configuration',
                         width: 800,
                         height: 600,
-                        closeAction: 'hide',
+                        closeAction: 'destroy',
                         layout: 'fit',
                         modal: true,
                         items: [this.getAdminPanel(json)]
