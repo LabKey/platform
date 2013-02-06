@@ -346,7 +346,15 @@ public class ProjectController extends SpringActionController
             {
                 Container childContainer = ContainerManager.getChild(c, pageId1);
                 if (null != childContainer && childContainer.isContainerTab())
-                    throw new RedirectException(new ActionURL(BeginAction.class, childContainer));
+                {
+                    // Redirect to child container, but only if user has permission
+                    if (childContainer.hasPermission(getUser(), ReadPermission.class))
+                        throw new RedirectException(new ActionURL(BeginAction.class, childContainer));
+                    else
+                    {
+                        throw new RedirectException(new ActionURL(BeginAction.class, c));    // same class with no parameter
+                    }
+                }
             }
 
             PageConfig page = getPageConfig();

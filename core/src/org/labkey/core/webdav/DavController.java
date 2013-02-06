@@ -4764,7 +4764,10 @@ public class DavController extends SpringActionController
 
         public String getResourcePath()
         {
-            return null != resource ? resource.getPath().toString() : getResourcePath().toString();
+            if (null != resource)
+                return resource.getPath().toString();
+            Path p = DavController.this.getResourcePath();
+            return null == p ? "" : p.toString();
         }
     }
 
