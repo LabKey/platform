@@ -123,6 +123,19 @@ public class SurveyManager
                         // set defaults for the survey questions
                         trimmedMap.put("width", 800);
 
+                        // issue 17131: since surveys will likely be used in subfolders, always add the lookup containerPath
+                        if (trimmedMap.containsKey("lookup"))
+                        {
+                            JSONObject lookup = (JSONObject)trimmedMap.get("lookup");
+                            if (!lookup.containsKey("containerPath"))
+                            {
+                                // use the container Id for the generated property as it avoids dealing with special/tricky characters
+                                // the user can still enter the path as a string if they would like
+                                lookup.put("containerPath", context.getContainer().getEntityId());
+                                trimmedMap.put("lookup", lookup);
+                            }
+                        }
+
                         columns.add(trimmedMap);
                     }
                 }

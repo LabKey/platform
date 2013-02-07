@@ -418,14 +418,11 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                     '    "shortCaption": "Lookup Field",<br/>' +
                     '    "required": false,<br/>' +
                     '    "lookup": {<br/>' +
-                    '        "keyColumn": "Key",<br/>' +
-                    '        "schema": "lists",<br/>' +
-                    '        "displayColumn": "Value",<br/>' +
-                    '        "schemaName": "lists",<br/>' +
-                    '        "queryName": "lookup1",<br/>' +
-                    '        "table": "lookup1",<br/>' +
-                    '        "isPublic": true,<br/>' +
-                    '        "public": true<br/>' +
+                    '       "keyColumn": "Key",<br/>' +
+                    '       "displayColumn": "Value",<br/>' +
+                    '       "schemaName": "lists",<br/>' +
+                    '       "queryName": "lookup1",<br/>' +
+                    '       "containerPath": "/Project/..."<br/>' +
                     '    }<br/>' +
                     '}</code>'
         });
@@ -537,6 +534,20 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                     '              "width": 175 <br/>' +
                     '            }<br/>' +
                     '        ]<br/>' +
+                    '    }<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
+            title : '<span style="font-style: italic;">Positive Integer (ExtJS)</span>',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "extConfig": {<br/>' +
+                    '        "xtype": "numberfield",<br/>' +
+                    '        "fieldLabel": "Positive Integer",<br/>' +
+                    '        "name": "pos_int",<br/>' +
+                    '        "allowDecimals": false,<br/>' +
+                    '        "minValue": 0,<br/>' +
+                    '        "width": 800<br/>' +
                     '    }<br/>' +
                     '}</code>'
         });
