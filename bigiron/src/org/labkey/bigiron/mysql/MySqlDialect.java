@@ -253,5 +253,12 @@ public class MySqlDialect extends SimpleSqlDialect
     public String getTempTablePrefix()
     {
         return "";
-    }  
+    }
+
+    // Haven't tested this
+    @Override
+    public boolean allowSortOnSubqueryWithoutLimit()
+    {
+        return true;
+    }
 }
