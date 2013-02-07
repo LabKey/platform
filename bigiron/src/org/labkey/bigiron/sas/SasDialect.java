@@ -194,6 +194,13 @@ public abstract class SasDialect extends SimpleSqlDialect
         // Don't test keywords on SAS
     }
 
+    // I think this is rigth
+    @Override
+    public boolean allowSortOnSubqueryWithoutLimit()
+    {
+        return false;
+    }
+
     // SAS driver doesn't support setting java.sql.Timestamp parameters, so convert to java.sql.Date
     private static class SasStatementWrapper extends StatementWrapper
     {
