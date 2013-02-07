@@ -55,6 +55,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -1899,6 +1900,7 @@ public class ContainerManager
     }
 
 
+    @TestTimeout(120)
     public static class TestCase extends Assert implements ContainerListener
     {
         Map<Path, Container> _containers = new HashMap<Path, Container>();
