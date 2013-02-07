@@ -57,9 +57,9 @@ public interface QueryDefinition
     /**
      * Return a tableInfo representing this query.
      */
-    TableInfo getTable(List<QueryException> errors, boolean includeMetadata);
-    TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata);
-    TableInfo getMainTable();
+    @Nullable TableInfo getTable(List<QueryException> errors, boolean includeMetadata);
+    @Nullable TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata);
+    @Nullable TableInfo getMainTable();
 
     String getSql();
     String getMetadataXml();

@@ -18,6 +18,7 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Debug;
@@ -308,6 +309,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
      * CAREFUL: You probably should be using currentContext() instead of this.  This context won't represent the
      * "current" action if, for example, the original action has forwarded somewhere else
      */
+    @Nullable
     public static ViewContext getRootContext()
     {
 		ViewStack stack = _viewContexts.get();
@@ -606,6 +608,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
      * Current view context. Dangerous because some views do not use a ViewContext
      * object for their model and can cause a class cast exception.
      */
+    @Nullable
     public static ViewContext currentContext()
     {
         // CONSIDER: if we ever have something besides HttpView on stack
@@ -753,6 +756,11 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public void setClientDependencies(Set<ClientDependency> scripts)
     {
         _clientDependencies = new LinkedHashSet<ClientDependency>(scripts);
+    }
+
+    public void addClientDepedency(ClientDependency resource)
+    {
+        _clientDependencies.add(resource);
     }
 
     public void addClientDependencies(Set<ClientDependency> resources)
