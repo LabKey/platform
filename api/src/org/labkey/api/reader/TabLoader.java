@@ -234,7 +234,17 @@ public class TabLoader extends DataLoader
         if ("\\N".equals(value))
             return "";
         if (_unescapeBackslashes)
-            return StringEscapeUtils.unescapeJava(value);
+        {
+            try
+            {
+                return StringEscapeUtils.unescapeJava(value);
+            }
+            catch (NumberFormatException nfe)
+            {
+                // Issue 16691: OctalUnescaper or UnicodeUnescaper translators will throw NumberFormatException for illegal sequences such as '\' followed by octal '9' or unicode 'zzzz'.
+                throw new IllegalArgumentException("Can't unescape value '" + value + "'.  Number format error " + nfe.getMessage());
+            }
+        }
         return value;
     }
 
