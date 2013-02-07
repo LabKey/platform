@@ -91,8 +91,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new ColorConverter(), Color.class);
         _register(new ContainerConverter(), Container.class);
         _register(new GuidConverter(), GUID.class);
-        _register(new DoubleConverter(), Double.TYPE);
-        _register(new NullSafeConverter(new DoubleConverter()), Double.class);
+        _register(new InfDoubleConverter(), Double.TYPE);
+        _register(new InfDoubleConverter(), Double.class);
         _register(new NullSafeConverter(new DoubleArrayConverter()), double[].class);
         _register(new NullSafeConverter(new FloatConverter()), Float.class);
         _register(new FloatConverter(), Float.TYPE);
@@ -640,6 +640,49 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return new JSONObject((String)value);
 
             throw new ConversionException("Could not convert '" + value + "' to an JSONObject");
+        }
+    }
+
+
+    /* Java 7 formats using infinity symbol instead of "Infinity", but doesn't parse it */
+    public static class InfDoubleConverter implements Converter
+    {
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            if (value instanceof String && ((String)value).isEmpty())
+                return null;
+            if (value == null)
+                return null;
+
+            if (value instanceof Double)
+            {
+                return (value);
+            }
+            else if (value instanceof Number)
+            {
+                return new Double(((Number) value).doubleValue());
+            }
+
+            String s = value.toString();
+            try
+            {
+                return new Double(s);
+            }
+            catch (NumberFormatException x)
+            {
+                if (s.equals("\u221E"))
+                    return Double.POSITIVE_INFINITY;
+                else if (s.equals("-\u221E"))
+                    return Double.NEGATIVE_INFINITY;
+                else if (s.equals("\uFFFD"))
+                    return Double.NaN;
+                throw new ConversionException(x);
+            }
+            catch (Exception e)
+            {
+                throw new ConversionException(e);
+            }
         }
     }
 }

@@ -37,6 +37,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.Format;
 import java.util.Date;
 import java.util.HashSet;
@@ -206,24 +207,41 @@ public abstract class DisplayColumn extends RenderColumn
         return _width;
     }
 
+
     public void setNoWrap(boolean nowrap)
     {
         _nowrap = nowrap;
     }
 
+
     public void setFormatString(String formatString)
     {
         super.setFormatString(formatString);
-        _format = createFormat(formatString);
+        _format = createFormat(formatString, null);
+        if (null == getTsvFormatString() && null == getTsvFormat())
+            _tsvFormat = createFormat(formatString, tsvFormatSymbols);
+    }
+
+
+    // java 7 changed to using infinity symbols for formatting, which is challenging for tsv import/export
+    // use old school "Infinity" for now
+    static DecimalFormatSymbols tsvFormatSymbols = new DecimalFormatSymbols();
+    static
+    {
+        tsvFormatSymbols.setInfinity(String.valueOf(Double.POSITIVE_INFINITY));
+        tsvFormatSymbols.setNaN(String.valueOf(Double.NaN));
     }
 
     public void setTsvFormatString(String formatString)
     {
+        if (null == getTsvFormatString() && null == formatString)
+            return;
         super.setTsvFormatString(formatString);
-        _tsvFormat = createFormat(formatString);
+        _tsvFormat = createFormat(formatString, tsvFormatSymbols);
     }
 
-    private Format createFormat(String formatString)
+
+    private Format createFormat(String formatString, @Nullable DecimalFormatSymbols dfs)
     {
         if (null != formatString)
         {
@@ -232,7 +250,12 @@ public abstract class DisplayColumn extends RenderColumn
             if (Boolean.class.isAssignableFrom(valueClass) || boolean.class.isAssignableFrom(valueClass))
                 return new BooleanFormat(formatString);
             if (valueClass.isPrimitive() || Number.class.isAssignableFrom(valueClass))
-                return new DecimalFormat(formatString);
+            {
+                if (null == dfs)
+                    return new DecimalFormat(formatString);
+                else
+                    return new DecimalFormat(formatString, dfs);
+            }
             else if (Date.class.isAssignableFrom(valueClass))
                 return FastDateFormat.getInstance(formatString);
         }
@@ -240,15 +263,18 @@ public abstract class DisplayColumn extends RenderColumn
         return null;
     }
 
+
     public Format getFormat()
     {
         return _format;
     }
 
+
     public Format getTsvFormat()
     {
         return _tsvFormat;
     }
+
 
     /** @return the HTML version of this column's value */
     public String getFormattedValue(RenderContext ctx)
@@ -256,6 +282,7 @@ public abstract class DisplayColumn extends RenderColumn
         Format format = getFormat();
         return formatValue(ctx, format);
     }
+
 
     private String formatValue(RenderContext ctx, Format format)
     {
@@ -270,6 +297,7 @@ public abstract class DisplayColumn extends RenderColumn
             return (String)value;
         return ConvertUtils.convert(value);
     }
+
 
     /** @return the TSV formatted value. Should not include surrounding quotes - the caller will handle this. */
     public String getTsvFormattedValue(RenderContext ctx)
