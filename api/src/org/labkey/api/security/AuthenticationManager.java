@@ -573,10 +573,11 @@ public class AuthenticationManager
 
 
     // Implementers should annotate with @AdminConsoleAction
-    public abstract static class PickAuthLogoAction extends FormViewAction<AuthLogoForm>
+    public abstract static class AbstractPickAuthLogoAction extends FormViewAction<AuthLogoForm>
     {
         abstract protected String getProviderName();
         abstract protected ActionURL getReturnURL();
+        abstract protected ActionURL getPostURL();
 
         public void validateCommand(AuthLogoForm target, Errors errors)
         {
@@ -584,7 +585,7 @@ public class AuthenticationManager
 
         public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<AuthLogoBean>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(getProviderName(), getReturnURL(), reshow), errors);
+            return new JspView<AuthLogoBean>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(getProviderName(), getPostURL(), getReturnURL(), reshow), errors);
         }
 
         public boolean handlePost(AuthLogoForm form, BindException errors) throws Exception
@@ -660,16 +661,18 @@ public class AuthenticationManager
 
     public static class AuthLogoBean
     {
-        public String name;
-        public ActionURL returnURL;
-        public String url;
-        public String headerLogo;
-        public String loginPageLogo;
-        public boolean reshow;
+        public final String name;
+        public final ActionURL returnURL;
+        public final ActionURL postURL;
+        public final String url;
+        public final String headerLogo;
+        public final String loginPageLogo;
+        public final boolean reshow;
 
-        private AuthLogoBean(String name, ActionURL returnURL, boolean reshow)
+        private AuthLogoBean(String name, ActionURL postURL, ActionURL returnURL, boolean reshow)
         {
             this.name = name;
+            this.postURL = postURL;
             this.returnURL = returnURL;
             this.reshow = reshow;
             url = getAuthLogoURLs().get(name);
