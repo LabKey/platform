@@ -170,6 +170,12 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public IndexTask createTask(String description, TaskListener l)
+    {
+        return _dummyTask;
+    }
+
+    @Override
     public void addPathToCrawl(Path path, Date d)
     {
     }

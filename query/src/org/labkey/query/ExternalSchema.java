@@ -82,6 +82,7 @@ public class ExternalSchema extends SimpleUserSchema
     protected final Map<String, TableType> _metaDataMap;
     protected final NamedFiltersType[] _namedFilters;
 
+
     public static ExternalSchema get(User user, Container container, ExternalSchemaDef def)
     {
         TemplateSchemaType template = def.lookupTemplate(container);
@@ -96,6 +97,8 @@ public class ExternalSchema extends SimpleUserSchema
         }
 
         final DbSchema schema = getDbSchema(def, template);
+        if (null == schema)
+            return null;
         TableSource tableSource = new TableSource()
         {
             public Collection<String> getTableNames()         { return schema.getTableNames(); }
@@ -108,6 +111,7 @@ public class ExternalSchema extends SimpleUserSchema
 
         return new ExternalSchema(user, container, def, template, schema, metaDataMap, namedFilters, availableTables, hiddenTables);
     }
+
 
     protected ExternalSchema(User user, Container container, AbstractExternalSchemaDef def, TemplateSchemaType template, DbSchema schema,
                              Map<String, TableType> metaDataMap,

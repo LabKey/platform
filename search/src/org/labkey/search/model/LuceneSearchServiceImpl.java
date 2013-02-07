@@ -256,7 +256,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             PROPERTY.navtrail.toString(), PROPERTY.securableResourceId.toString());
 
     @Override
-    Map<?, ?> preprocess(String id, WebdavResource r)
+    Map<?, ?> preprocess(String id, WebdavResource r, Throwable[] handledException)
     {
         FileStream fs = null;
 
@@ -494,6 +494,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encryption libraries to index this document.  Refer to the LabKey Software documentation for instructions.");
             else
                 logAsPreProcessingException(r, err);
+            handledException[0] = err;
         }
         catch (TikaException e)
         {
@@ -576,26 +577,31 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 logAsPreProcessingException(r, e);
             }
+            handledException[0] = cause;
         }
         catch (IOException e)
         {
             // Permissions problem, network drive disappeared, file disappeared, etc.
             logAsWarning(r, e);
+            handledException[0] = e;
         }
         catch (SAXException e)
         {
             // Malformed XML/HTML
             logAsWarning(r, e);
+            handledException[0] = e;
         }
         catch (RuntimeSQLException x)
         {
             if (SqlDialect.isTransactionException(x))
                 throw x;
             logAsPreProcessingException(r, x);
+            handledException[0] = x;
         }
         catch (Throwable e)
         {
             logAsPreProcessingException(r, e);
+            handledException[0] = e;
         }
         finally
         {

@@ -15,6 +15,7 @@
  */
 package org.labkey.search.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.search.SearchService;
 
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.io.StringReader;
 public abstract class AbstractIndexTask implements SearchService.IndexTask
 {
     final private String _description;
+    final protected SearchService.TaskListener _listener;
     protected long _start;
     protected long _complete = 0;
     protected boolean _cancelled = false;
@@ -47,10 +49,11 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     final Object _completeEvent = new Object(){public String toString() {return "complete event";}};
 
     
-    public AbstractIndexTask(String description)
+    public AbstractIndexTask(String description, @Nullable SearchService.TaskListener l)
     {
         _description = description;
         _start = System.currentTimeMillis();
+        _listener = l;
     }
 
 

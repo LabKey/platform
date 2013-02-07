@@ -18,11 +18,13 @@ package org.labkey.search.model;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Table;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
@@ -90,7 +92,9 @@ public class DavCrawler implements ShutdownListener
         Date modified;
         //long length;
     }
-    
+
+    static private Cache<Path,ResourceInfo> errors = CacheManager.getCache(1000,TimeUnit.DAYS.toMillis(7),"crawler indexing errors");
+
 
     // to make testing easier, break out the interface for persisting crawl state
     // This is an awkward factoring.  Break out the "FileQueue" function instead
@@ -211,10 +215,11 @@ public class DavCrawler implements ShutdownListener
     LinkedList<Pair<String, Date>> _recent = new LinkedList<Pair<String, Date>>();
 
     
-    class IndexDirectoryJob implements Runnable
+    class IndexDirectoryJob implements Runnable, SearchService.TaskListener
     {
         SearchService.IndexTask _task;
         Path _path;
+        WebdavResource _directory;
         boolean _full;
         Date _lastCrawl=null;
         Date _nextCrawl=null;
@@ -225,18 +230,27 @@ public class DavCrawler implements ShutdownListener
             _path = path;
             _lastCrawl = last;
             _full = next.getTime() <= SavePaths.oldDate.getTime();
-            _task = getSearchService().createTask("Index " + _path.toString());
+            _task = getSearchService().createTask("Index " + _path.toString(), this);
+        }
+
+        /** TaskListener **/
+
+        @Override
+        public void success()
+        {
+            _paths.updatePath(_path, _indexTime, _nextCrawl, true);
+            addRecent(_directory);
         }
 
 
-//        public void submit()
-//        {
-//            _listingRateLimiter.add(0,true);
-//            _fileIORateLimiter.add(0,true);
-//
-//            _task.addRunnable(this, SearchService.PRIORITY.crawl);
-//            _task.setReady();
-//        }
+        @Override
+        public void indexError(Resource r, Throwable t)
+        {
+            ResourceInfo info = new ResourceInfo(new Date(HeartBeat.currentTimeMillis()), new Date(r.getLastModified()));
+            errors.put(r.getPath(), info);
+        }
+
+        /** TaskListener **/
 
 
         public void run()
@@ -247,10 +261,10 @@ public class DavCrawler implements ShutdownListener
 
             _log.debug("IndexDirectoryJob.run(" + _path + ")");
 
-            final WebdavResource r = getResolver().lookup(_path);
+            _directory = getResolver().lookup(_path);
 
             // CONSIDER: delete previously indexed resources in child containers as well
-            if (null == r || !r.isCollection() || !r.shouldIndex() || skipContainer(r))
+            if (null == _directory || !_directory.isCollection() || !_directory.shouldIndex() || skipContainer(_directory))
             {
                 if (_path.startsWith(getResolver().getRootPath()))
                     _paths.deletePath(_path);
@@ -258,22 +272,14 @@ public class DavCrawler implements ShutdownListener
             }
 
             _indexTime = new Date(System.currentTimeMillis());
-            long changeInterval = (r instanceof WebdavResolver.WebFolder) ? CacheManager.DAY / 2 : CacheManager.DAY;
+            long changeInterval = (_directory instanceof WebdavResolver.WebFolder) ? CacheManager.DAY / 2 : CacheManager.DAY;
             long nextCrawl = _indexTime.getTime() + (long)(changeInterval * (0.5 + 0.5 * Math.random()));
             _nextCrawl = new Date(nextCrawl);
 
-            _task.onSuccess(new Runnable() {
-                public void run()
-                {
-                    _paths.updatePath(_path, _indexTime, _nextCrawl, true);
-                    addRecent(r);
-                }
-            });
-
             // if this is a web folder, call enumerate documents
-            if (r instanceof WebdavResolver.WebFolder)
+            if (_directory instanceof WebdavResolver.WebFolder)
             {
-                Container c = ContainerManager.getForId(r.getContainerId());
+                Container c = ContainerManager.getForId(_directory.getContainerId());
                 if (null == c)
                     return;
                 getSearchService().indexContainer(_task, c,  _full ? null : _lastCrawl);
@@ -284,7 +290,7 @@ public class DavCrawler implements ShutdownListener
             // CONSIDER: store documentId in crawlResources
             Map<String,ResourceInfo> map = _paths.getFiles(_path);
 
-            for (WebdavResource child : r.list())
+            for (WebdavResource child : _directory.list())
             {
                 if (_shuttingDown)
                     return;
@@ -299,6 +305,11 @@ public class DavCrawler implements ShutdownListener
                     long lastModified = child.getLastModified();
 
                     if (lastModified == savedModified.getTime() && (lastModified <= lastIndexed.getTime() || lastIndexed.getTime() == SavePaths.failDate.getTime()))
+                        continue;
+
+                    // if we've failed at indexing this, don't try again: see Issue 16776
+                    ResourceInfo errorInfo = errors.get(child.getPath());
+                    if (null != errorInfo && errorInfo.modified.getTime() == lastModified)
                         continue;
 
                     if (skipFile(child))

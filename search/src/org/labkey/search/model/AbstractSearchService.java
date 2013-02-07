@@ -144,7 +144,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         addTask(task);
         return task;
     }
-    
+
+    @Override
+    public IndexTask createTask(String description, TaskListener l)
+    {
+        _IndexTask task = new _IndexTask(description, l);
+        addTask(task);
+        return task;
+    }
 
     public IndexTask defaultTask()
     {
@@ -168,7 +175,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         _IndexTask(String description)
         {
-            super(description);
+            super(description, null);
+        }
+
+        _IndexTask(String description, TaskListener l)
+        {
+            super(description, l);
         }
 
 
@@ -948,8 +960,21 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         try
         {
+            Throwable[] out = new Throwable[] {null};
             _log.debug("preprocess(" + r.getDocumentId() + ")");
-            i._preprocessMap = preprocess(i._id, i._res);
+
+            /** TESTING */
+            assert null==(out[0]="test_preprocess_exception".equals(r.getName())?new IllegalArgumentException("testing"):null) || true;
+
+            if (null == out[0])
+                i._preprocessMap = preprocess(i._id, i._res, out);
+
+            if (null != out[0])
+            {
+                _IndexTask t = (_IndexTask)i._task;
+                if (null != t && null != t._listener)
+                    t._listener.indexError(r,out[0]);
+            }
             if (null == i._preprocessMap)
             {
                 _log.debug("skipping " + i._id);
@@ -1221,7 +1246,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     static Map emptyMap = Collections.emptyMap();
     
-    Map<?,?> preprocess(String id, WebdavResource r)
+    Map<?,?> preprocess(String id, WebdavResource r, Throwable[] handledException)
     {
         return emptyMap;
     }

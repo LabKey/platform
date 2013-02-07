@@ -2375,7 +2375,7 @@ public class QueryController extends SpringActionController
 
     protected boolean isQueryEditable(TableInfo table)
     {
-        if (!getViewContext().getContainer().hasPermission(getUser(), DeletePermission.class))
+        if (!getViewContext().getContainer().hasPermission("isQueryEditable", getUser(), DeletePermission.class))
             return false;
         QueryUpdateService updateService = null;
         try
@@ -5319,6 +5319,23 @@ public class QueryController extends SpringActionController
             }
 
             return errors;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public static class Expr extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView(QueryController.class, "expressionEval.jsp", null);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
 }
