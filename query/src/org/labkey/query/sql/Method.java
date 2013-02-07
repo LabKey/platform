@@ -21,7 +21,12 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
@@ -44,111 +49,6 @@ public abstract class Method
     {
         labkeyMethod.put("abs", new JdbcMethod("abs", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("acos", new JdbcMethod("acos", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("asin", new JdbcMethod("asin", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("atan", new JdbcMethod("atan", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("atan2", new JdbcMethod("atan2", JdbcType.DOUBLE, 2, 2));
-        labkeyMethod.put("ceiling", new JdbcMethod("ceiling", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("cos", new JdbcMethod("cos", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("cot", new JdbcMethod("cot", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("degrees", new JdbcMethod("degrees", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("exp", new JdbcMethod("exp", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("floor", new JdbcMethod("floor", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("log", new JdbcMethod("log", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("log10", new JdbcMethod("log10", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("mod", new JdbcMethod("mod", JdbcType.DOUBLE, 2, 2));
-        labkeyMethod.put("pi", new JdbcMethod("pi", JdbcType.DOUBLE, 0, 0));
-        labkeyMethod.put("power", new JdbcMethod("power", JdbcType.DOUBLE, 2, 2));
-        labkeyMethod.put("radians", new JdbcMethod("radians", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("rand", new JdbcMethod("rand", JdbcType.DOUBLE, 0, 1));
-        labkeyMethod.put("round", new Method("round", JdbcType.DOUBLE, 1, 2)
-			{
-				@Override
-				public MethodInfo getMethodInfo()
-				{
-					return new RoundInfo();
-				}
-			});
-        labkeyMethod.put("sign", new JdbcMethod("sign", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("sin", new JdbcMethod("sin", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("sqrt", new JdbcMethod("sqrt", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("tan", new JdbcMethod("tan", JdbcType.DOUBLE, 1, 1));
-        labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
-
-        labkeyMethod.put("concat", new JdbcMethod("concat", JdbcType.VARCHAR, 2, 2));
-        labkeyMethod.put("lcase", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("length", new JdbcMethod("length", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("locate", new Method("locate", JdbcType.INTEGER, 2, 3)
-            {
-                public MethodInfo getMethodInfo()
-                {
-                    return new AbstractMethodInfo(_jdbcType)
-                    {
-                        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
-                        {
-                            assert arguments.length == 2 || arguments.length == 3;
-                            if (arguments.length == 2)
-                                return schema.getSqlDialect().sqlLocate(arguments[0], arguments[1]);
-                            else
-                                return schema.getSqlDialect().sqlLocate(arguments[0], arguments[1], arguments[2]);
-                        }
-                    };
-                }
-            });
-        labkeyMethod.put("lower", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("left", new JdbcMethod("left", JdbcType.VARCHAR, 2, 2));
-        labkeyMethod.put("ltrim", new JdbcMethod("ltrim", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
-        labkeyMethod.put("rtrim", new JdbcMethod("rtrim", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("substring", new JdbcMethod("substring", JdbcType.VARCHAR, 2, 3));
-        labkeyMethod.put("startswith", new Method("startswith", JdbcType.BOOLEAN, 2, 2)
-            {
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new StartsWithInfo();
-            }
-        });
-        labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
-
-        labkeyMethod.put("curdate", new JdbcMethod("curdate", JdbcType.DATE, 0, 0));
-        labkeyMethod.put("curtime", new JdbcMethod("curtime", JdbcType.DATE, 0, 0));
-        labkeyMethod.put("dayofmonth", new JdbcMethod("dayofmonth", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("dayofweek", new JdbcMethod("dayofweek", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("dayofyear", new JdbcMethod("dayofyear", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("hour", new JdbcMethod("hour", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("minute", new JdbcMethod("minute", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("month", new JdbcMethod("month", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("monthname", new JdbcMethod("monthname", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("now", new JdbcMethod("curdate", JdbcType.TIMESTAMP, 0, 0));
-        labkeyMethod.put("quarter", new JdbcMethod("quarter", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("second", new JdbcMethod("second", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("week", new JdbcMethod("week", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("year", new JdbcMethod("year", JdbcType.INTEGER, 1, 1));
-	    labkeyMethod.put("timestampadd", new Method("timestampadd", JdbcType.TIMESTAMP, 3, 3)
-			{
-				@Override
-				public MethodInfo getMethodInfo()
-				{
-					return new TimestampInfo(this);
-				}
-			});
-        labkeyMethod.put("timestampdiff", new Method("timestampdiff", JdbcType.INTEGER, 3, 3)
-            {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new TimestampInfo(this);
-                }
-            });
-        labkeyMethod.put("age_in_months", new Method(JdbcType.INTEGER, 2, 2)
-            {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new AgeInMonthsMethodInfo();
-                }
-            });
         labkeyMethod.put("age", new Method(JdbcType.INTEGER, 2, 3)
             {
                 @Override
@@ -174,6 +74,14 @@ public abstract class Method
                     }
                 }
             });
+        labkeyMethod.put("age_in_months", new Method(JdbcType.INTEGER, 2, 2)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new AgeInMonthsMethodInfo();
+                }
+            });
         labkeyMethod.put("age_in_years", new Method(JdbcType.INTEGER, 2, 2)
             {
                 @Override
@@ -182,16 +90,9 @@ public abstract class Method
                     return new AgeInYearsMethodInfo();
                 }
             });
-
-
-        labkeyMethod.put("ifnull", new JdbcMethod("ifnull", JdbcType.OTHER, 2, 2));
-        labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2){
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new IsEqualInfo();
-            }
-        });
+        labkeyMethod.put("asin", new JdbcMethod("asin", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("atan", new JdbcMethod("atan", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("atan2", new JdbcMethod("atan2", JdbcType.DOUBLE, 2, 2));
         labkeyMethod.put("cast", new Method("convert", JdbcType.OTHER, 2, 2)
             {
                 @Override
@@ -200,14 +101,7 @@ public abstract class Method
                     return new ConvertInfo();
                 }
             });
-        labkeyMethod.put("convert", new Method("convert", JdbcType.OTHER, 2, 2)
-            {
-                @Override
-                public MethodInfo getMethodInfo()
-                {
-                    return new ConvertInfo();
-                }
-            });
+        labkeyMethod.put("ceiling", new JdbcMethod("ceiling", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("coalesce", new Method("coalesce", JdbcType.OTHER, 0, Integer.MAX_VALUE)
             {
                 @Override
@@ -216,17 +110,34 @@ public abstract class Method
                     return new PassthroughInfo("coalesce", JdbcType.OTHER);
                 }
             });
-
-        // special functions
-
-        labkeyMethod.put("userid", new Method("userid", JdbcType.INTEGER, 0, 0) {
+        labkeyMethod.put("concat", new JdbcMethod("concat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("convert", new Method("convert", JdbcType.OTHER, 2, 2)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new ConvertInfo();
+                }
+            });
+        labkeyMethod.put("cos", new JdbcMethod("cos", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("cot", new JdbcMethod("cot", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("curdate", new JdbcMethod("curdate", JdbcType.DATE, 0, 0));
+        labkeyMethod.put("curtime", new JdbcMethod("curtime", JdbcType.DATE, 0, 0));
+        labkeyMethod.put("dayofmonth", new JdbcMethod("dayofmonth", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("dayofweek", new JdbcMethod("dayofweek", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("dayofyear", new JdbcMethod("dayofyear", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("degrees", new JdbcMethod("degrees", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("exp", new JdbcMethod("exp", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("floor", new JdbcMethod("floor", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("hour", new JdbcMethod("hour", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("ifnull", new JdbcMethod("ifnull", JdbcType.OTHER, 2, 2));
+        labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2){
             @Override
             public MethodInfo getMethodInfo()
             {
-                return new UserIdInfo();
+                return new IsEqualInfo();
             }
         });
-
         labkeyMethod.put("ismemberof", new Method("ismemberof", JdbcType.BOOLEAN, 1, 2) {
             @Override
             public MethodInfo getMethodInfo()
@@ -234,8 +145,98 @@ public abstract class Method
                 return new IsMemberInfo();
             }
         });
-
+        labkeyMethod.put("lcase", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("left", new JdbcMethod("left", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("length", new JdbcMethod("length", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("log", new JdbcMethod("log", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("log10", new JdbcMethod("log10", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("locate", new Method("locate", JdbcType.INTEGER, 2, 3)
+            {
+                public MethodInfo getMethodInfo()
+                {
+                    return new AbstractMethodInfo(_jdbcType)
+                    {
+                        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+                        {
+                            assert arguments.length == 2 || arguments.length == 3;
+                            if (arguments.length == 2)
+                                return schema.getSqlDialect().sqlLocate(arguments[0], arguments[1]);
+                            else
+                                return schema.getSqlDialect().sqlLocate(arguments[0], arguments[1], arguments[2]);
+                        }
+                    };
+                }
+            });
+        labkeyMethod.put("lower", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("ltrim", new JdbcMethod("ltrim", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("minute", new JdbcMethod("minute", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("mod", new JdbcMethod("mod", JdbcType.DOUBLE, 2, 2));
+        labkeyMethod.put("month", new JdbcMethod("month", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("monthname", new JdbcMethod("monthname", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("now", new JdbcMethod("curdate", JdbcType.TIMESTAMP, 0, 0));
+        labkeyMethod.put("pi", new JdbcMethod("pi", JdbcType.DOUBLE, 0, 0));
+        labkeyMethod.put("power", new JdbcMethod("power", JdbcType.DOUBLE, 2, 2));
+        labkeyMethod.put("quarter", new JdbcMethod("quarter", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("radians", new JdbcMethod("radians", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("rand", new JdbcMethod("rand", JdbcType.DOUBLE, 0, 1));
+        labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("round", new Method("round", JdbcType.DOUBLE, 1, 2)
+			{
+				@Override
+				public MethodInfo getMethodInfo()
+				{
+					return new RoundInfo();
+				}
+			});
+        labkeyMethod.put("rtrim", new JdbcMethod("rtrim", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("second", new JdbcMethod("second", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("sign", new JdbcMethod("sign", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("sin", new JdbcMethod("sin", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("sqrt", new JdbcMethod("sqrt", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("startswith", new Method("startswith", JdbcType.BOOLEAN, 2, 2)
+            {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new StartsWithInfo();
+            }
+        });
+        labkeyMethod.put("substring", new JdbcMethod("substring", JdbcType.VARCHAR, 2, 3));
+        labkeyMethod.put("tan", new JdbcMethod("tan", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("timestampadd", new Method("timestampadd", JdbcType.TIMESTAMP, 3, 3)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new TimestampInfo(this);
+                }
+            });
+        labkeyMethod.put("timestampdiff", new Method("timestampdiff", JdbcType.INTEGER, 3, 3)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new TimestampInfo(this);
+                }
+            });
+        labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
+        labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
         // USERID() is handled by SqlParser, converted to "@@USERID"
+        labkeyMethod.put("userid", new Method("userid", JdbcType.INTEGER, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new UserIdInfo();
+            }
+        });
+        labkeyMethod.put("week", new JdbcMethod("week", JdbcType.INTEGER, 1, 1));
+        labkeyMethod.put("year", new JdbcMethod("year", JdbcType.INTEGER, 1, 1));
+
+        // ========== Methods above this line have been documented ==========
+        // Put new methods below this line and move above after they're documented, i.e.,
+        // added to https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql
+
     }
 
 
@@ -300,43 +301,6 @@ public abstract class Method
             return ret;
         }
     }
-
-
-    // TODO: New version of jTDS driver fixes this; test and remove this code
-    // Address jTDS parsing issue; see #15479
-//    private static class CurDateMethod extends JdbcMethod
-//    {
-//        CurDateMethod(JdbcType type)
-//        {
-//            super("curdate", type, 0, 0);
-//        }
-//
-//        @Override
-//        public MethodInfo getMethodInfo()
-//        {
-//            return new CurDateMethodInfo(this);
-//        }
-//    }
-//
-//
-//    private static class CurDateMethodInfo extends JdbcMethodInfoImpl
-//    {
-//        public CurDateMethodInfo(Method method)
-//        {
-//            super(method._name, method._jdbcType);
-//        }
-//
-//        @Override
-//        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
-//        {
-//            // jTDS driver blows up if query contains more than a few {fn curdate()} expansions, so don't use it on SQL Server.
-//            // See #15479 and http://sourceforge.net/p/jtds/bugs/673
-//            if (schema.getSqlDialect().isSqlServer())
-//                return new SQLFragment("convert(datetime, convert(varchar, getdate(), 112))");
-//            else
-//                return super.getSQL(schema, arguments);
-//        }
-//    }
 
 
     class TimestampInfo extends JdbcMethodInfoImpl
