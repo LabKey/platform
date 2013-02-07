@@ -80,20 +80,24 @@
         });
 
         var fb = Ext4.create('File.panel.Browser', {
-            adminUser : true,
-            <%--renderTo : <%=q(bean.getContentId())%>,--%>
             renderTo : <%=q(bean.getContentId())%>,
-            height: 350,
+            height: <%= height %>,
             showFolderTree: <%=bean.isShowFolderTree()%>,
             expandFolderTree: <%=!bean.isFolderTreeCollapsed()%>,
             disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,
             showDetails: <%=bean.isShowDetails()%>,
-            <%--expandFileUpload: <%=bean.isExpandFileUpload()%>,--%>
+            expandUpload: <%=bean.isExpandFileUpload()%>,
             <%--disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,--%>
             <%--containerPath: <%=q(c.getPath())%>,--%>
             fileSystem: fileSystem,
             isWebPart: true
         });
+
+        var resize = function() {
+            if (fb && fb.doLayout) { fb.doLayout(); }
+        };
+
+        Ext4.EventManager.onWindowResize(resize);
     });
 </script>
 
