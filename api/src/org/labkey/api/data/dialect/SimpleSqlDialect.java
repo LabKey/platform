@@ -389,12 +389,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean allowSortOnSubqueryWithoutLimit()
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public boolean isCaseSensitive()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
