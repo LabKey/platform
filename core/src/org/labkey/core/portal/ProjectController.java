@@ -1350,7 +1350,10 @@ public class ProjectController extends SpringActionController
                 Container c = getViewContext().getContainer();
                 if (form.getContainer() != null && form.getContainer().length > 0)
                     c = form.getContainer()[0];
-                resultMap = getContainerJSON(c, user);
+                if (null != c) // 17166
+                    resultMap = getContainerJSON(c, user);
+                else
+                    resultMap = Collections.emptyMap();
             }
 
             response.putAll(resultMap);

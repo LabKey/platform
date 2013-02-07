@@ -446,12 +446,14 @@ public abstract class VisitManager
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
 
+            SQLFragment studyPtidsFragment = studyDataPtids(changedDatasets); // 17167
+
             // Don't bother if we explicitly know that no participants were added, or that no datasets were edited
-            if (!changedDatasets.isEmpty() && (potentiallyInsertedParticipants == null || !potentiallyInsertedParticipants.isEmpty()))
+            if (null != studyPtidsFragment && !changedDatasets.isEmpty() && (potentiallyInsertedParticipants == null || !potentiallyInsertedParticipants.isEmpty()))
             {
                 SQLFragment datasetParticipantsSQL = new SQLFragment("INSERT INTO " + tableParticipant + " (container, participantid)\n" +
                         "SELECT DISTINCT ?, participantid\n" +
-                        "FROM (").append(studyDataPtids(changedDatasets)).append("\n" +
+                        "FROM (").append(studyPtidsFragment).append("\n" +
                         ") x WHERE participantid NOT IN (SELECT participantid FROM " + tableParticipant + " WHERE container = ?)");
                 datasetParticipantsSQL.add(c);
                 datasetParticipantsSQL.add(c);
