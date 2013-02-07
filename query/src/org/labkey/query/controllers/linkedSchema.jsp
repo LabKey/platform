@@ -30,6 +30,8 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -249,7 +251,7 @@
             listeners: {
                 change: function (field, value) {
                     console.log("source schema changed: " + value);
-                },
+                }
 //                disable: function (field, options) {
 //                    sourceSchemaField.setDisabled(true);
 //                },
@@ -294,11 +296,24 @@
             }
         }
 
+        <%
+        ArrayList<String> tables = new ArrayList<String>();
+        if (initialTemplate == null)
+        {
+            if (def.getTables() != null || def.getTables().length() > 0)
+                tables.addAll(Arrays.asList(def.getTables().split(",")));
+        }
+        else
+        {
+            if (initialTemplate.isSetTables())
+                tables.addAll(Arrays.asList(initialTemplate.getTables().getTableNameArray()));
+        }
+        %>
         var tablesCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
             name: 'tables',
             fieldLabel: false,
             width: 395,
-            value: <%=q(initialTemplate == null ? def.getTables() : (initialTemplate.getTables() == null ? "" : StringUtils.join(initialTemplate.getTables().getTableNameArray(), ",")))%>,
+            value: <%=text(new JSONArray(tables).toString())%>,
             multiSelect: true,
             allowBlank: true
         }));
@@ -354,6 +369,7 @@
                 text: <%=q(bean.isInsert() ? "Create" : "Update")%>,
                 type: 'submit',
                 handler: function () {
+                    var tablesValue;
                     var templateName = schemaTemplateCombo.getValue();
                     var templateRecord = templateName ? schemaTemplateCombo.store.getById(templateName) : undefined;
                     if (templateRecord) {
@@ -365,17 +381,28 @@
 
                         tablesCombo.setValue(null);
                         tablesField.setDisabled(true);
+                        tablesValue = null;
 
                         metadataField.setValue(null);
                         metadataField.setDisabled(true);
                     } else {
                         var tables = tablesCombo.getValue();
-                        if (!tables || tables.length == 0 || tables.length == tablesCombo.store.getCount()) {
-                            tablesCombo.setValue('*');
+                        tablesCombo.setDisabled(true);
+
+                        if (!tables) {
+                            tablesValue = "*";
+                        } else if (tables.length == 0 || tables.length == tablesCombo.store.getCount()) {
+                            tablesValue = "*";
+                        } else {
+                            tablesValue = tables.join(",");
                         }
                     }
 
-                    f.getForm().submit();
+                    f.getForm().submit({
+                        params: {
+                            tables: tablesValue
+                        }
+                    });
                 }
             },{
                 <% if (bean.isInsert()) { %>
