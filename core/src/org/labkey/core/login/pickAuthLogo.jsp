@@ -22,7 +22,7 @@
 <%
     HttpView<AuthenticationManager.AuthLogoBean> me = (HttpView<AuthenticationManager.AuthLogoBean>) HttpView.currentView();
     AuthenticationManager.AuthLogoBean bean = me.getModelBean();
-%><form action="<%=h(buildURL(AuthenticationManager.PickAuthLogoAction.class))%>" enctype="multipart/form-data" method="post">
+%><form action="<%=h(bean.postURL)%>" enctype="multipart/form-data" method="post">
 <table>
 <%=formatMissedErrorsInTable("form", 3)%>
 <tr>
@@ -30,11 +30,11 @@
 </tr>
 <tr id="auth_header_logo_row">
     <td class="labkey-form-label" nowrap>Page header logo</td>
-    <%=bean.headerLogo%>
+    <%=text(bean.headerLogo)%>
 </tr>
 <tr id="auth_login_page_logo_row">
     <td class="labkey-form-label" nowrap>Login page logo</td>
-    <%=bean.loginPageLogo%>
+    <%=text(bean.loginPageLogo)%>
 </tr>
 <tr>
     <td class="labkey-form-label" nowrap>Enter a URL<%=PageFlowUtil.helpPopup("URL Instructions", "Include <code>%returnURL%</code> as the redirect parameter within the URL.  <code>%returnURL%</code> will be replaced with a link to the login page including the current page as a redirect parameter.  Examples:<br><br>http://localhost:8080/openfm/UI/Login?service=adminconsoleservice&goto=%returnURL%<br>https://machine.domain.org:8443/openfm/WSFederationServlet/metaAlias/wsfedsp?wreply=%returnURL%", true, 700)%></td>

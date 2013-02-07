@@ -143,12 +143,18 @@ public class OpenSSOController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class PickAuthLogoAction extends AuthenticationManager.PickAuthLogoAction
+    public class PickAuthLogoAction extends AuthenticationManager.AbstractPickAuthLogoAction
     {
         @Override
         protected String getProviderName()
         {
             return OpenSSOProvider.NAME;
+        }
+
+        @Override
+        protected ActionURL getPostURL()
+        {
+            return getPickAuthLogoURL();
         }
 
         protected ActionURL getReturnURL()
