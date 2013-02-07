@@ -210,7 +210,7 @@ public class CustomViewUtil
         TableInfo tinfo = queryDef.getTable(null, true);
 
         List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> columns = view.getColumnProperties();
-        if (columns.size() == 0)
+        if (columns.size() == 0 && tinfo != null)
         {
             columns = new ArrayList<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>>();
             for (FieldKey key : tinfo.getDefaultVisibleColumns())
@@ -296,24 +296,27 @@ public class CustomViewUtil
             }
 
 
-            Map<FieldKey, ColumnInfo> allCols = QueryService.get().getColumns(tinfo, uncachedFieldKeys);
             List<Map<String, Object>> allColMaps = new ArrayList<Map<String, Object>>(allKeys.size());
-            for (FieldKey field : allKeys)
+            if (tinfo != null)
             {
-                Map<String, Object> metadata = columnMetadata.get(field);
-                if (metadata == null)
+                Map<FieldKey, ColumnInfo> allCols = QueryService.get().getColumns(tinfo, uncachedFieldKeys);
+                for (FieldKey field : allKeys)
                 {
-                    // Column may be in select list but not present in the actual table
-                    ColumnInfo col = allCols.get(field);
-                    if (col != null)
+                    Map<String, Object> metadata = columnMetadata.get(field);
+                    if (metadata == null)
                     {
-                        DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
-                        metadata = JsonWriter.getMetaData(dc, null, false, true, false);
-                        columnMetadata.put(field, metadata);
+                        // Column may be in select list but not present in the actual table
+                        ColumnInfo col = allCols.get(field);
+                        if (col != null)
+                        {
+                            DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
+                            metadata = JsonWriter.getMetaData(dc, null, false, true, false);
+                            columnMetadata.put(field, metadata);
+                        }
                     }
+                    if (metadata != null)
+                        allColMaps.add(metadata);
                 }
-                if (metadata != null)
-                    allColMaps.add(metadata);
             }
             // property name "fields" matches LABKEY.Query.ExtendedSelectRowsResults (ie, metaData.fields)
             ret.put("fields", allColMaps);

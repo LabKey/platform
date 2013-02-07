@@ -334,6 +334,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
 
+    @Nullable
     private TablesDocument getTablesDocument(List<QueryException> errors)
     {
         String xml = getMetadataXml();
@@ -351,11 +352,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return null;
     }
 
+    @Nullable
     public TableInfo getTable(List<QueryException> errors, boolean includeMetadata)
     {
         return getTable(getSchema(), errors, includeMetadata);
     }
 
+    @Nullable
     public TableInfo getTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
         if (_useCache)
@@ -392,6 +395,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return createTable(schema, errors, includeMetadata);
     }
 
+    @Nullable
     protected TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
         if (errors == null)
@@ -438,7 +442,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
         }
 
-        if (errors.isEmpty())
+        if (ret != null && errors.isEmpty())
         {
             // Apply ContainerContext to any URLs added in metadata override.
             ((QueryTableInfo)ret).afterConstruct();
@@ -448,6 +452,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return ret;
     }
 
+    @Nullable
     public TableInfo getMainTable()
     {
         Query query = getQuery(getSchema());
