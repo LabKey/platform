@@ -13,14 +13,9 @@ Ext4.define('File.panel.Browser', {
     alias: ['widget.filebrowser'],
 
     /**
-     * @cfg {Boolean} adminUser
-     */
-    adminUser : false,
-
-    /**
      * @cfg {Boolean} border
      */
-    border : false,
+    border : true,
 
     /**
      * @cfg {Boolean} bufferFiles
@@ -51,6 +46,11 @@ Ext4.define('File.panel.Browser', {
      * @cfg {File.system.Abstract} fileSystem
      */
     fileSystem : undefined,
+
+    /**
+     * @cfg {Number} minWidth
+     */
+    minWidth : 650,
 
     /**
      * @cfg {Boolean} showFolders
@@ -137,10 +137,12 @@ Ext4.define('File.panel.Browser', {
         var nameTpl =
             '<div height="16px" width="100%">' +
                 '<div style="float: left;">' +
-                    '<img height="16px" width="16px" src="{icon}" alt="{type}" style="vertical-align: bottom; margin-right: 5px;">' +
+                    '<div style="float: left;">' +
+                        '<img height="16px" width="16px" src="{icon}" alt="{type}" style="vertical-align: bottom; margin-right: 5px;">' +
+                    '</div>' +
                 '</div>' +
                 '<div style="padding-left: 20px; white-space:normal !important;">' +
-                    '<span>{name:htmlEncode}</span>' +
+                    '<span style="display: inline-block;">{name:htmlEncode}</span>' +
                 '</div>' +
             '</div>';
 
@@ -277,6 +279,30 @@ Ext4.define('File.panel.Browser', {
             }
         });
 
+        // Request Root Node Information
+        Ext4.Ajax.request({
+            url    : this.getRootURL(),
+            headers: store.getProxy().headers,
+            method : 'GET',
+            params : store.getProxy().getPropParams({action: 'read'}) + '&depth=0',
+            success: function(response) {
+                if (response && response.responseXML) {
+                    var records = store.getProxy().getReader().readRecords(response.responseXML).records;
+                    if (Ext4.isArray(records)) {
+                        var data = records[0].data;
+                        Ext4.apply(store.tree.root.data, {
+                            options : data.options,
+                            uri     : data.uri
+                        });
+                        this.setFolderOffset(store.tree.root.data.id, store.tree.root);
+                        return;
+                    }
+                }
+                console.warn('Failed to initialize root. See Browser.getFolderTreeCfg');
+            },
+            scope : this
+        });
+
         if (!this.showHidden) {
             store.on('beforeappend', function(s, node) {
                 if (node && node.data && Ext4.isString(node.data.name)) {
@@ -298,6 +324,7 @@ Ext4.define('File.panel.Browser', {
 
         return {
             xtype : 'treepanel',
+            itemId : 'treenav',
             region : 'west',
             cls : 'themed-panel',
             flex : 1,
@@ -385,6 +412,8 @@ Ext4.define('File.panel.Browser', {
         Ext4.applyIf(config, {
             flex : 4,
             region : 'center',
+            border: false,
+            style : 'border-top: 1px solid #b4b4b4;',
             viewConfig : {
                 emptyText : '<span style="margin-left: 5px; opacity: 0.3;"><i>No Files Found</i></span>'
             }
@@ -442,7 +471,7 @@ Ext4.define('File.panel.Browser', {
             });
         }
         baseItems.push(
-//            {iconCls : 'iconUp', handler : this.onTreeUp, tooltip : 'Navigate to the parent folder', scope: this},
+            {iconCls : 'iconUp', handler : this.onTreeUp, tooltip : 'Navigate to the parent folder', scope: this},
             {
                 iconCls : 'iconReload',
                 handler : this.onRefresh,
@@ -475,6 +504,8 @@ Ext4.define('File.panel.Browser', {
                 itemId : 'upload',
                 handler : this.onUpload,
                 tooltip : 'Upload files or folders from your local machine to the server',
+                enableToggle : true,
+                pressed : this.showUpload && this.expandUpload,
                 disabled : true,
                 scope   : this
             }
@@ -500,10 +531,9 @@ Ext4.define('File.panel.Browser', {
     },
 
     onFolderChange : function(path, model) {
-        var d = model.data;
         var tb = this.getDockedComponent(0);
         if (tb) {
-            tb.getComponent('delete').setDisabled(!this.fileSystem.canDelete(model));
+            tb.getComponent('delete').setDisabled(!this.fileSystem.canDelete(model)); // TODO: Check grid selection
             tb.getComponent('download').setDisabled(!this.fileSystem.canRead(model));
             tb.getComponent('mkdir').setDisabled(!this.fileSystem.canMkdir(model));
             tb.getComponent('upload').setDisabled(!this.fileSystem.canWrite(model));
@@ -518,9 +548,9 @@ Ext4.define('File.panel.Browser', {
         this.uploadPanel = Ext4.create('File.panel.Upload', {
             region : 'north',
             header : false,
-            border : true,
-            collapseMode : 'mini',
-            collapsed : !this.expandUpload,
+//            collapseMode : 'mini',
+//            collapsed : !this.expandUpload,
+            hidden : !this.expandUpload,
             fileSystem : this.fileSystem,
             listeners : {
                 transfercomplete : function() {
@@ -543,7 +573,7 @@ Ext4.define('File.panel.Browser', {
         var detailsTpl = new Ext4.XTemplate(
            '<table class="fb-details">' +
                 '<tr><th>Name:</th><td>{name}</td></tr>' +
-                '<tr><th>WebDav URL:</th><td>{href}</td></tr>' +
+                '<tr><th>WebDav URL:</th><td><a target="_blank" href="{href}">{href}</a></td></tr>' +
                 '<tpl if="lastmodified != undefined">' +
                     '<tr><th>Modified:</th><td>{lastmodified:this.renderDate}</td></tr>' +
                 '</tpl>' +
@@ -723,33 +753,49 @@ Ext4.define('File.panel.Browser', {
 
     onRefresh : function() {
         this.gridMask.delay(0);
-        this.getFileStore().load();
+        if (!this.refreshTask) {
+            this.refreshTask = new Ext4.util.DelayedTask(function() {
+                this.getFileStore().load();
+            }, this);
+        }
+        this.refreshTask.delay(250);
+    },
+
+    onTreeUp : function() {
+        var tree = this.getComponent('treenav');
+        if (tree && tree.getSelectionModel().hasSelection()) {
+            var sm = tree.getSelectionModel();
+            var node = sm.getSelection()[0];
+            if (node && node.parentNode) {
+                sm.select(node.parentNode);
+            }
+        }
     },
 
     onUpload : function() {
-        this.getUploadPanel().toggleCollapse();
+        this.getUploadPanel().isVisible() ? this.getUploadPanel().hide() : this.getUploadPanel().show();
     },
 
-    getAdminPanel: function(pipelineFileProperties) {
-        return Ext4.create('File.panel.Admin', {
-            width: 800,
-            height: 600,
-            plain: true,
+    getAdminPanelCfg : function(pipelineFileProperties) {
+        return {
+            xtype : 'fileadmin',
+            width : 750,
+            height: 562,
+            plain : true,
             border: false,
             pipelineFileProperties: pipelineFileProperties.config,
             listeners: {
-                scope: this,
-                close: function(){
-                    this.adminWindow.close();
-                }
+                close: function() { this.adminWindow.close(); },
+                scope: this
             }
-        });
+        };
     },
 
     showAdminWindow: function() {
-        if(this.adminWindow && !this.adminWindow.isDestroyed) {
+        if (this.adminWindow && !this.adminWindow.isDestroyed) {
             this.adminWindow.setVisible(true);
-        } else {
+        }
+        else {
             Ext4.Ajax.request({
                 scope: this,
                 url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath),
@@ -758,12 +804,10 @@ Ext4.define('File.panel.Browser', {
                     this.adminWindow = Ext4.create('Ext.window.Window', {
                         cls: 'data-window',
                         title: 'Manage File Browser Configuration',
-                        width: 800,
-                        height: 600,
                         closeAction: 'destroy',
                         layout: 'fit',
                         modal: true,
-                        items: [this.getAdminPanel(json)]
+                        items: [this.getAdminPanelCfg(json)]
                     }).show();
                 },
                 failure: function(){}

@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresExt4ClientAPI(true);
+
 /**
  * See http://docs.sencha.com/ext-js/4-1/#!/api/Ext.ux.CheckColumn
  */
@@ -97,23 +97,23 @@ Ext4.define('Ext.ux.CheckColumn', {
         return '<div class="' + cls.join(' ') + '">&#160;</div>';
     }
 });
+
 Ext4.define('File.panel.ToolbarPanel', {
     extend : 'Ext.panel.Panel',
 
     constructor : function(config){
         Ext4.QuickTips.init();
         Ext4.applyIf(config, {
-           title : 'Toolbar and Grid Settings',
-            tbarActions :
-                    [
-                        {id : 'folderTreeToggle', hideText : true, hideIcon : false},
-                        {id : 'parentFolder', hideText : true, hideIcon : false},
-                        {id : 'createDirectory', hideText : true, hideIcon : false},
-                        {id : 'download', hideText : true, hideIcon : false},
-                        {id : 'deletePath', hideText : true, hideIcon : false},
-                        {id : 'importData', hideText : false, hideIcon : false},
-                        {id : 'customize', hideText : false, hideIcon : false}
-                    ],
+            title : 'Toolbar and Grid Settings',
+            tbarActions : [
+                {id : 'folderTreeToggle', hideText : true, hideIcon : false},
+                {id : 'parentFolder', hideText : true, hideIcon : false},
+                {id : 'createDirectory', hideText : true, hideIcon : false},
+                {id : 'download', hideText : true, hideIcon : false},
+                {id : 'deletePath', hideText : true, hideIcon : false},
+                {id : 'importData', hideText : false, hideIcon : false},
+                {id : 'customize', hideText : false, hideIcon : false}
+            ],
             gridConfigs : {
                 columns : [
                     {id : 1},
@@ -128,20 +128,21 @@ Ext4.define('File.panel.ToolbarPanel', {
                     {id : 10, sortable : true, hidden : true}
                 ]
             }
-
         });
+
         Ext4.apply(config, {
-            xtype : 'panel',
             border : false,
             padding : '10px',
             autoScroll : true
         });
+
         this.callParent([config]);
     },
 
-    initComponent : function(){
+    initComponent : function() {
 
-        var topText = Ext4.create('Ext.form.Label', {
+        var topText = {
+            xtype : 'label',
             html: '<h2>Configure Grid columns and Toolbar</h2><p>Toolbar buttons are in display order, from top to bottom. ' +
                     'You can adjust their position by clicking and dragging them, and can set their visibility by toggling '+
                     'the checkboxes in the appropriate fields. '+
@@ -150,49 +151,53 @@ Ext4.define('File.panel.ToolbarPanel', {
                     'the appropriate box.  You may also set whether or not the column is sortable.</p> ' +
                     '</br><p>Either table can be expanded or collapsed by pressing the button at the right of blue top bar.</p>',
             padding : '5 5 10 5'
-        });
+        };
 
-        Ext4.define('columnsModel', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'hidden', type : 'boolean'},
-                {name : 'sortable', type : 'boolean'},
-                {name : 'text', type : 'string'},
-                {name : 'id', type : 'int'}
-            ]
-        });
+        if (!Ext4.ModelManager.isRegistered('columnsModel')) {
+            Ext4.define('columnsModel', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'hidden', type : 'boolean'},
+                    {name : 'sortable', type : 'boolean'},
+                    {name : 'text', type : 'string'},
+                    {name : 'id', type : 'int'}
+                ]
+            });
+        }
 
-        Ext4.define('optionsModel', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'shown', type : 'boolean'},
-                {name : 'hideText', type : 'boolean'},
-                {name : 'hideIcon', type : 'boolean'},
-                {name : 'icon', type : 'string'},
-                {name : 'text', type : 'string'}
-            ]
+        if (!Ext4.ModelManager.isRegistered('optionsModel')) {
+            Ext4.define('optionsModel', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'shown', type : 'boolean'},
+                    {name : 'hideText', type : 'boolean'},
+                    {name : 'hideIcon', type : 'boolean'},
+                    {name : 'icon', type : 'string'},
+                    {name : 'text', type : 'string'}
+                ]
+            });
+        }
 
-        });
-
-        var baseDataArray = [];
-        baseDataArray['customize'] = {icon : 'configure.png', text : 'Admin', used : false};
-        baseDataArray['auditLog'] = {icon : 'audit_log.png', text : 'Audit Log', used : false};
-        baseDataArray['createDirectory'] = {icon : 'folder_new.png', text : 'Create Folder', used : false} ;
-        baseDataArray['deletePath'] = {icon : 'delete.png', text : 'Delete', used : false};
-        baseDataArray['download'] = {icon : 'download.png', text : 'Download', used : false};
-        baseDataArray['editFileProps'] = {icon : 'editprops.png', text : 'Edit Properties', used : false};
-        baseDataArray['emailPreferences'] = {icon : 'email.png', text : 'Email Preferences', used : false};
-        baseDataArray['importData'] = {icon : 'db_commit.png', text : 'Import Data', used : false};
-        baseDataArray['movePath'] = {icon : 'move.png', text : 'Move', used : false};
-        baseDataArray['parentFolder'] = {icon : 'up.png', text : 'Parent Folder', used : false};
-        baseDataArray['refresh'] = {icon : 'reload.png', text : 'Refresh', used : false};
-        baseDataArray['renamePath'] = {icon : 'rename.png', text : 'Rename', used : false};
-        baseDataArray['folderTreeToggle'] = {icon : 'folder_tree.png', text : 'Toggle Folder Tree', used : false};
-        baseDataArray['upload'] = {icon : 'upload.png', text : 'Upload Files', used : false};
+        var baseData = {
+            auditLog         : {icon : 'audit_log.png',   text : 'Audit Log', used : false},
+            createDirectory  : {icon : 'folder_new.png',  text : 'Create Folder', used : false},
+            customize        : {icon : 'configure.png',   text : 'Admin', used : false},
+            deletePath       : {icon : 'delete.png',      text : 'Delete', used : false},
+            download         : {icon : 'download.png',    text : 'Download', used : false},
+            editFileProps    : {icon : 'editprops.png',   text : 'Edit Properties', used : false},
+            emailPreferences : {icon : 'email.png',       text : 'Email Preferences', used : false},
+            importData       : {icon : 'db_commit.png',   text : 'Import Data', used : false},
+            movePath         : {icon : 'move.png',        text : 'Move', used : false},
+            parentFolder     : {icon : 'up.png',          text : 'Parent Folder', used : false},
+            refresh          : {icon : 'reload.png',      text : 'Refresh', used : false},
+            renamePath       : {icon : 'rename.png',      text : 'Rename', used : false},
+            folderTreeToggle : {icon : 'folder_tree.png', text : 'Toggle Folder Tree', used : false},
+            upload           : {icon : 'upload.png',      text : 'Upload Files', used : false}
+        };
 
         var processedData = [];
-        for(var i = 0; i < this.tbarActions.length; i++){
-            var tbarAction = baseDataArray[this.tbarActions[i].id];
+        for (var i=0; i < this.tbarActions.length; i++) {
+            var tbarAction = baseData[this.tbarActions[i].id];
             tbarAction.hideIcon = this.tbarActions[i].hideIcon;
             tbarAction.hideText = this.tbarActions[i].hideText;
             tbarAction.shown = true;
@@ -200,14 +205,16 @@ Ext4.define('File.panel.ToolbarPanel', {
             tbarAction.used = true;
             processedData.push(tbarAction);
         }
-        for(var remainingItem in baseDataArray){
 
-            if(baseDataArray[remainingItem].used != true && baseDataArray[remainingItem].used != null){
-                baseDataArray[remainingItem].hideIcon = false;
-                baseDataArray[remainingItem].hideText = false;
-                baseDataArray[remainingItem].shown = false;
-                baseDataArray[remainingItem].id = remainingItem;
-                processedData.push(baseDataArray[remainingItem]);
+        for (i in baseData) {
+            if (baseData.hasOwnProperty(i)) {
+                if(baseData[i].used != true && baseData[i].used != null){
+                    baseData[i].hideIcon = false;
+                    baseData[i].hideText = false;
+                    baseData[i].shown = false;
+                    baseData[i].id = i;
+                    processedData.push(baseData[i]);
+                }
             }
         }
 
@@ -220,17 +227,18 @@ Ext4.define('File.panel.ToolbarPanel', {
         var baseColumnData = ['File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
                 'Usages', 'Download Link', 'File Extension'];
         var reverseBaseColumnData = [];
-        for(var i = 0; i < baseColumnData.length; i++){
+        for(i=0; i < baseColumnData.length; i++){
             reverseBaseColumnData[baseColumnData[i]] = i+1;
         }
 
-        for(var i = 1; i < this.gridConfigs.columns.length; i++){
-            var column = {};
-            column.text = baseColumnData[this.gridConfigs.columns[i].id-1];
-            column.id = reverseBaseColumnData[column.text];
-            this.gridConfigs.columns[i].hidden ? column.hidden = true : column.hidden = false;
-            this.gridConfigs.columns[i].sortable ? column.sortable = true : column.sortable = false;
-            columnData.push(column);
+        for(i=1; i < this.gridConfigs.columns.length; i++) {
+            var text = baseColumnData[this.gridConfigs.columns[i].id-1];
+            columnData.push({
+                id   : reverseBaseColumnData[text],
+                text : text,
+                hidden : this.gridConfigs.columns[i].hidden,
+                sortable : this.gridConfigs.columns[i].sortable
+            });
         }
 
         this.columnsStore = Ext4.create('Ext.data.Store', {
@@ -238,15 +246,17 @@ Ext4.define('File.panel.ToolbarPanel', {
             data : columnData
         });
 
-        var optionsPanel = Ext4.create('Ext.grid.Panel', {
+        var optionsPanel = {
+            xtype : 'grid',
             title : 'Toolbar Options',
             id : 'optionsPanel',
-            overflowY : 'scroll',
+            titleCollapse : true,
             collapsible : true,
             width : '100%',
             height: 295,
             padding : '10 5 10 5',
             store : this.optionsStore,
+            expanded : true,
             viewConfig: {
                 plugins: {
                     ptype: 'gridviewdragdrop',
@@ -272,12 +282,12 @@ Ext4.define('File.panel.ToolbarPanel', {
                 {header : 'Hide Text', dataIndex : 'hideText', xtype : 'checkcolumn', flex : 1, listeners:{
                     beforecheckchange:function(col, rowIndex, isChecked){
                         if(isChecked){
-                            if(this.optionsStore.getAt(rowIndex).data.hideIcon == true && this.optionsStore.getAt(rowIndex).data.id == 'customize')
+                            if(this.optionsStore.getAt(rowIndex).data.hideIcon && this.optionsStore.getAt(rowIndex).data.id == 'customize')
                             {
                                alert('Action impossible (would cause Admin Button to be invisible).');
                                 return false;
                             }
-                            else if(this.optionsStore.getAt(rowIndex).data.hideIcon == true && this.optionsStore.getAt(rowIndex).data.id != 'customize')
+                            else if(this.optionsStore.getAt(rowIndex).data.hideIcon && this.optionsStore.getAt(rowIndex).data.id != 'customize')
                             {
                                 this.optionsStore.getAt(rowIndex).set('shown', false);
                             }
@@ -288,12 +298,12 @@ Ext4.define('File.panel.ToolbarPanel', {
                 {header : 'Hide Icon', dataIndex : 'hideIcon', xtype : 'checkcolumn', flex : 1, listeners:{
                     beforecheckchange:function(col, rowIndex, isChecked){
                         if(isChecked){
-                            if(this.optionsStore.getAt(rowIndex).data.hideText == true && this.optionsStore.getAt(rowIndex).data.id == 'customize')
+                            if(this.optionsStore.getAt(rowIndex).data.hideText && this.optionsStore.getAt(rowIndex).data.id == 'customize')
                             {
                                 alert('Action impossible (would cause Admin Button to be invisible).');
                                 return false;
                             }
-                            else if(this.optionsStore.getAt(rowIndex).data.hideText == true && this.optionsStore.getAt(rowIndex).data.id != 'customize')
+                            else if(this.optionsStore.getAt(rowIndex).data.hideText && this.optionsStore.getAt(rowIndex).data.id != 'customize')
                             {
                                 this.optionsStore.getAt(rowIndex).set('shown', false);
                             }
@@ -306,15 +316,25 @@ Ext4.define('File.panel.ToolbarPanel', {
                     return '<img src = "'+path+'" />';
                 }},
                 {header : 'Text', dataIndex : 'text', flex : 2}
-            ]
-        });
+            ],
+            listeners : {
+                beforeexpand : function(g) {
+                    Ext4.getCmp('gridSettingsPanel').collapse();
+                },
+                collapse : function(g) {
+                    Ext4.getCmp('gridSettingsPanel').expand();
+                }
+            }
+        };
 
-        var gridPanel = Ext4.create('Ext.grid.Panel', {
+        var gridPanel = {
+            xtype : 'grid',
             title : 'Grid Settings',
+            id : 'gridSettingsPanel',
+            titleCollapse : true,
             collapsible : true,
             collapsed : true,
             width : '100%',
-            overflowY : 'scroll',
             padding : '10 5 10 5',
             store : this.columnsStore,
             viewConfig: {
@@ -327,8 +347,16 @@ Ext4.define('File.panel.ToolbarPanel', {
                 {header : 'Hidden', dataIndex : 'hidden', xtype : 'checkcolumn', flex : 1},
                 {header : 'Sortable', dataIndex : 'sortable', xtype : 'checkcolumn', flex : 1},
                 {header : 'Text', dataIndex : 'text', flex : 1}
-            ]
-        });
+            ],
+            listeners : {
+                beforeexpand : function(g) {
+                    Ext4.getCmp('optionsPanel').collapse();
+                },
+                collapse : function(g) {
+                    Ext4.getCmp('optionsPanel').expand();
+                }
+            }
+        };
 
 
         this.items = [topText, optionsPanel, gridPanel];
@@ -371,7 +399,7 @@ Ext4.define('File.panel.ToolbarPanel', {
                     id : item.id,
                     hideIcon : item.hideIcon,
                     hideText : item.hideText
-                }
+                };
                 position++;
             }
         }

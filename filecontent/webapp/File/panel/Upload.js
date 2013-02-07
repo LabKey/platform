@@ -25,6 +25,8 @@ Ext4.define('File.panel.Upload', {
 
     lastSummary: {info:0, success:0, file:'', pct:0},
 
+    header : false,
+
     TRANSFER_STATES: {
         success   : 1,
         info      : 0,
@@ -161,14 +163,12 @@ Ext4.define('File.panel.Upload', {
         var uploadsContainer = Ext4.create('Ext.container.Container', {
             layout: 'hbox',
             height: 100,
-            width: 600,
             items: [radioPanel, uploadsPanel]
         });
 
         var outerContainer = Ext4.create('Ext.container.Container', {
             layout: 'vbox',
             height: 130,
-            width: 600,
             items: [this.getAppletStatusBar(), uploadsContainer]
         });
 

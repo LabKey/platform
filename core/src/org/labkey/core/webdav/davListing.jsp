@@ -57,7 +57,7 @@
             layout : 'fit',
             items : [{
                 xtype : 'filebrowser',
-                adminUser : true,
+                border : false,
                 fileSystem : fileSystem,
                 gridConfig : {
                     selType : 'rowmodel'

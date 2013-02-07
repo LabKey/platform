@@ -7,6 +7,8 @@ Ext4.define('File.panel.Admin', {
 
     extend : 'Ext.tab.Panel',
 
+    alias : ['widget.fileadmin'],
+
     constructor : function(config) {
 
         Ext4.apply(config, {
@@ -30,14 +32,12 @@ Ext4.define('File.panel.Admin', {
         this.items = this.getItems();
 
         var submitButton = {
-            xtype: 'button',
             text: 'submit',
             handler: this.onSubmit,
             scope: this
         };
 
         var cancelButton = {
-            xtype: 'button',
             text: 'cancel',
             handler: this.onCancel,
             scope: this

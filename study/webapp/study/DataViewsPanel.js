@@ -724,18 +724,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                    '</a>' +
                 '</tpl>';
 
-        var nameTpl =
-                '<div height="16px" width="100%">' +
-                    '<tpl if="icon != undefined && icon != \'\'">' +
-                        '<div style="float: left;">' +
-                        '<img height="16px" width="16px" src="{icon}" alt="{type}" style="vertical-align: bottom; margin-right: 5px;">' +
-                        '</div>' +
-                    '</tpl>' +
-                    '<div style="padding-left: 20px; white-space:normal !important;">' +
-                    '<a href="{runUrl}" {[ values.runTarget ? "target=\'" + values.runTarget + "\'" : "" ]} > {name:htmlEncode}</a>' +
-                    '</div>' +
-                '</div>';
-
         var _columns = [];
 
         _columns.push({
@@ -775,7 +763,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             menuDisabled : true,
             sortable : false,
             tdCls    : 'x4-name-column-cell',
-            tpl      :  nameTpl,
             scope    : this
         },{
             id       : 'category-column-' + this.webpartId,
