@@ -3557,6 +3557,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     getInputFieldConfig: function(idx)
     {
         idx = idx || 0;
+        var jtype = this._jsonType;
         var config = {
             xtype         : this.getFieldXtype(),
             itemId        : 'inputField' + idx,
@@ -3580,7 +3581,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 },
                 scope : this
             },
-            validator: function(value){
+            validator: function(value) {
+
+                // support for filtering '∞'
+                if (jtype == 'float' && value.indexOf('∞') > -1) {
+                    value = value.replace('∞', 'Infinity');
+                    this.setRawValue(value); // does not fire validation
+                }
+
                 var idx = this.filterIndex;
                 var window = this.findParentBy(function(item){
                     return item.itemId == 'filterWindow';
