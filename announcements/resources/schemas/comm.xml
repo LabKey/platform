@@ -254,7 +254,7 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="PagesAndVersions" tableDbType="VIEW">
-    <ns:tableUrl>/wiki/page.view?name=${Name}</ns:tableUrl>
+    <ns:tableUrl/>
     <ns:columns>
       <ns:column columnName="Container">
         <ns:isHidden>true</ns:isHidden>
