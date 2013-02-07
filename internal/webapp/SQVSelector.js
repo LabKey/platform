@@ -478,14 +478,19 @@ Ext4.define('LABKEY.SQVModel', {
     // Sets the values on a combobox if a corresponding record is found in the store.
     setComboValues : function (combo, values) {
         if (values) {
-            if (combo.multiSelect && Ext4.isArray(values)) {
-                var records = [];
-                for (var i = 0; i < values.length; i++) {
-                    var record = combo.store.getById(values[i]);
-                    if (record)
-                        records.push(record);
+            if (combo.multiSelect) {
+                if (Ext4.isString(values))
+                    values = values.split(",");
+
+                if (Ext4.isArray(values)) {
+                    var records = [];
+                    for (var i = 0; i < values.length; i++) {
+                        var record = combo.store.getById(values[i]);
+                        if (record)
+                            records.push(record);
+                    }
+                    combo.setValue(records);
                 }
-                combo.setValue(records);
             }
             else if (combo.store.getById(values)) {
                 combo.setValue(values);
