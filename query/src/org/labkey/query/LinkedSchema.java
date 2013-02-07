@@ -142,7 +142,7 @@ public class LinkedSchema extends ExternalSchema
     @Override
     public Map<String, QueryDefinition> getQueryDefs()
     {
-        Map<String, QueryDefinition> queries = QueryService.get().getQueryDefs(getUser(), _sourceSchema.getContainer(), _sourceSchema.getSchemaName());
+        Map<String, QueryDefinition> queries =_sourceSchema.getQueryDefs();
         Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<QueryDefinition>(queries.size());
 
         for (String key : queries.keySet())
