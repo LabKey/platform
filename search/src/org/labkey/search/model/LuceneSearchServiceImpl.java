@@ -777,17 +777,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private String getNameToLog(WebdavResource r)
     {
+        Container c = ContainerManager.getForId(r.getContainerId());
+        String folder = (null != c ? " (folder: " + c.getPath() + ")" : "");
         File f = r.getFile();
 
         if (null != f)
-            return f.getPath();
+            return f.getPath() + folder;
 
         // If it's not a file in the file system then return the resource path and the container path
         String name = r.getPath().toString();
-        Container c = ContainerManager.getForId(r.getContainerId());
         String url = r.getExecuteHref(null);
 
-        return name + (null != c ? " (folder: " + c.getPath() + ")" : "") + " (" + url + ")";
+        return name + folder + " (" + url + ")";
     }
 
     private void logAsPreProcessingException(WebdavResource r, Throwable e)
