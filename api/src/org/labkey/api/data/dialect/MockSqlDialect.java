@@ -72,4 +72,10 @@ public class MockSqlDialect extends SimpleSqlDialect
     {
         return Collections.emptySet();
     }
+
+    @Override
+    public boolean allowSortOnSubqueryWithoutLimit()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
 }
