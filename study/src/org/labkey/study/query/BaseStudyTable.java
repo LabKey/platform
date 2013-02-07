@@ -145,10 +145,6 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             });
         }
 
-        // Issue 15791 and 16154: R labkey.data object contains both lookup value and foreign key
-        // Use self as display column for participant id to avoid using ParticipantId/ParticipantId as display column.
-        participantColumn.setDisplayField(participantColumn);
-
         return addColumn(participantColumn);
     }
 
