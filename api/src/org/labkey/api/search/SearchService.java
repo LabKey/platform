@@ -26,6 +26,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -108,6 +109,13 @@ public interface SearchService
     }
 
 
+    public interface TaskListener
+    {
+        void success();
+        void indexError(Resource r, Throwable t);
+    }
+
+
     public interface IndexTask extends Future<IndexTask>
     {
         String getDescription();
@@ -141,8 +149,6 @@ public interface SearchService
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
         void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
-
-        void onSuccess(Runnable r);
     }
 
 
@@ -245,6 +251,7 @@ public interface SearchService
     List<SecurableResource> getSecurableResources(User user);    
     IndexTask defaultTask();
     IndexTask createTask(String description);
+    IndexTask createTask(String description, TaskListener l);
 
     void deleteResource(String identifier);
 
