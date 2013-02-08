@@ -118,17 +118,273 @@ Ext4.define('File.panel.Browser', {
 
     initComponent : function() {
 
+        this.createActions();
         this.items = this.getItems();
 
         // Configure Toolbar
-        this.tbar = this.getToolbarItems();
-
-        if (this.tbar) {
-            // Attach listeners
-            this.on('folderchange', this.onFolderChange, this);
+        if(this.isWebDav){
+            this.tbar = this.getWebDavToolbarItems();
+        } else {
+            this.getAdminActionsConfig();
         }
 
+        // Attach listeners
+        this.on('folderchange', this.onFolderChange, this);
+
         this.callParent();
+    },
+
+    createActions: function(){
+        this.actions = {};
+
+        this.actions.parentFolder = new Ext4.Action({
+            text: 'Parent Folder',
+            itemId: 'parentFolder',
+            tooltip: 'Navigate to parent folder',
+            iconCls:'iconUp',
+            disabledClass:'x-button-disabled',
+            handler : this.onTreeUp,
+            scope: this,
+            hideText: true
+        });
+
+        this.actions.refresh = new Ext4.Action({
+            text: 'Refresh',
+            itemId: 'refresh',
+            tooltip: 'Refresh the contents of the current folder',
+            iconCls: 'iconReload',
+            disabledClass: 'x-button-disabled',
+            handler : this.onRefresh,
+            scope: this,
+            hideText: true
+        });
+
+        this.actions.createDirectory = new Ext4.Action({
+            text: 'Create Folder',
+            itemId: 'createDirectory',
+            iconCls:'iconFolderNew',
+            tooltip: 'Create a new folder on the server',
+            disabledClass: 'x-button-disabled',
+            handler : this.onCreateDirectory,
+            scope: this,
+            hideText: true
+        });
+
+        this.actions.download = new Ext4.Action({
+            text: 'Download',
+            itemId: 'download',
+            tooltip: 'Download the selected files or folders',
+            iconCls: 'iconDownload',
+            disabledClass: 'x-button-disabled',
+            handler: this.onDownload,
+            scope: this,
+            hideText: true
+        });
+        
+        this.actions.deletePath = new Ext4.Action({
+            text: 'Delete',
+            itemId: 'deletePath',
+            tooltip: 'Delete the selected files or folders',
+            iconCls: 'iconDelete',
+            disabledClass: 'x-button-disabled',
+            handler: this.onDelete,
+            scope: this,
+            disabled: true,
+            hideText: true
+        });
+
+        this.actions.renamePath = new Ext4.Action({
+            text: 'Rename',
+            itemId: 'renamePath',
+            tooltip: 'Rename the selected file or folder',
+            iconCls: 'iconRename',
+            disabledClass: 'x-button-disabled',
+            scope: this,
+            disabled: true,
+            hideText: true
+        });
+
+        this.actions.movePath = new Ext4.Action({
+            text: 'Move',
+            itemId: 'movePath',
+            tooltip: 'Move the selected file or folder',
+            iconCls: 'iconMove',
+            disabledClass: 'x-button-disabled',
+            scope: this,
+            disabled: true,
+            hideText: true
+        });
+
+        this.actions.help = new Ext4.Action({
+            text: 'Help',
+            itemId: 'help',
+            scope: this
+        });
+
+        this.actions.showHistory = new Ext4.Action({
+            text: 'Show History',
+            itemId: 'showHistory',
+            scope: this
+        });
+
+        this.actions.uploadTool = new Ext4.Action({
+            text: 'Multi-file Upload',
+            itemId: 'uploadTool',
+            iconCls: 'iconUpload',
+            tooltip: "Upload multiple files or folders using drag-and-drop<br>(requires Java)",
+            scope: this,
+            disabled: true
+        });
+
+        this.actions.upload = new Ext4.Action({
+            text: 'Upload Files',
+            itemId: 'upload',
+            enableToggle: true,
+            pressed: this.expandFileUpload,
+            iconCls: 'iconUpload',
+            handler : this.onUpload,
+            scope: this,
+            disabledClass:'x-button-disabled',
+            tooltip: 'Upload files or folders from your local machine to the server'
+        });
+
+        this.actions.appletFileAction = new Ext4.Action({
+            text: '&nbsp;&nbsp;&nbsp;&nbsp;Choose File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
+            itemId: 'appletFileAction',
+            scope: this,
+            disabled: false,
+            cls: 'applet-button'
+        });
+
+        this.actions.appletDirAction = new Ext4.Action({
+            text: '&nbsp;Choose Folder&nbsp;',
+            itemId: 'appletDirAction',
+            scope: this,
+            disabled: false,
+            cls: 'applet-button'
+        });
+
+        this.actions.appletDragAndDropAction = new Ext4.Action({
+            text: 'Drag and Drop&nbsp;',
+            itemId: 'appletDragAndDropAction',
+            scope: this,
+            disabled: false,
+            cls     : 'applet-button'
+        });
+
+        this.actions.folderTreeToggle = new Ext4.Action({
+            text: 'Toggle Folder Tree',
+            itemId: 'folderTreeToggle',
+            enableToggle: true,
+            iconCls: 'iconFolderTree',
+            disabledClass:'x-button-disabled',
+            tooltip: 'Show or hide the folder tree',
+            hideText: true,
+            handler : function() { this.tree.toggleCollapse(); },
+            scope: this
+        });
+
+        this.actions.importData = new Ext4.Action({
+            text: 'Import Data',
+            itemId: 'importData',
+            listeners: {click:function(button, event) {this.onImportData(button);}, scope:this},
+            iconCls: 'iconDBCommit',
+            disabledClass:'x-button-disabled',
+            tooltip: 'Import data from files into the database, or analyze data files',
+            scope: this
+        });
+
+        this.actions.customize = new Ext4.Action({
+            text: 'Admin',
+            itemId: 'customize',
+            iconCls: 'iconConfigure',
+            disabledClass:'x-button-disabled',
+            disabled : true,
+            tooltip: 'Configure the buttons shown on the toolbar',
+            handler: this.showAdminWindow,
+            scope: this
+        });
+
+        this.actions.editFileProps = new Ext4.Action({
+            text: 'Edit Properties',
+            itemId: 'editFileProps',
+            iconCls: 'iconEditFileProps',
+            disabledClass:'x-button-disabled',
+            tooltip: 'Edit properties on the selected file(s)',
+            hideText: true,
+            scope: this
+        });
+
+        this.actions.emailPreferences = new Ext4.Action({
+            text: 'Email Preferences',
+            itemId: 'emailPreferences',
+            iconCls: 'iconEmailSettings',
+            disabledClass:'x-button-disabled',
+            tooltip: 'Configure email notifications on file actions.',
+            hideText: true,
+            scope: this
+        });
+
+        this.actions.auditLog = new Ext4.Action({
+            text: 'Audit History',
+            itemId: 'auditLog',
+            iconCls: 'iconAuditLog',
+            disabledClass:'x-button-disabled',
+            tooltip: 'View the files audit log for this folder.',
+            scope: this
+        });
+    },
+
+    getAdminActionsConfig : function(){
+        Ext4.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath),
+            method:'GET',
+            disableCaching:false,
+            success : this.configureFileBrowser,
+            failure: LABKEY.Utils.displayAjaxErrorResponse,
+            scope: this
+//            updatePipelineActions: updatePipelineActions,
+//            updateSelection: updateSelection
+        });
+    },
+
+    configureFileBrowser : function(response){
+        var json = Ext4.JSON.decode(response.responseText);
+        if(json.config.tbarActions){
+            this.addTbarActions(json.config.tbarActions);
+        }
+    },
+
+    addTbarActions : function(tbarConfig){
+        var toolbar = this.getDockedItems()[0];
+
+        if(toolbar){
+            // Remove the current toolbar incase we just custmized it.
+            this.removeDocked(toolbar);
+        }
+
+        var buttons = [];
+
+        for(var i = 0; i < tbarConfig.length; i++){
+            var actionConfig = tbarConfig[i];
+            var action = this.actions[actionConfig.id];
+
+            if(actionConfig.hideText){
+                action.setText('');
+            }
+
+            if(actionConfig.hideIcon){
+                action.setIconCls('');
+            }
+
+            if(actionConfig.id == 'customize'){
+                action.setDisabled(this.disableGeneralAdminSettings);
+            }
+
+            buttons.push(action);
+        }
+
+        this.addDocked({xtype:'toolbar', dock: 'top', items: buttons});
     },
 
     initGridColumns : function() {
@@ -461,65 +717,33 @@ Ext4.define('File.panel.Browser', {
         return config;
     },
 
-    getToolbarItems : function() {
+    getWebDavToolbarItems : function() {
         var baseItems = [];
+
+        this.actions.folderTreeToggle.setText('');
+        this.actions.parentFolder.setText('');
+        this.actions.refresh.setText('');
+        this.actions.createDirectory.setText('');
+        this.actions.download.setText('');
+        this.actions.deletePath.setText('');
+
+        this.actions.createDirectory.setDisabled(true);
+        this.actions.download.setDisabled(true);
+        this.actions.deletePath.setDisabled(true);
+        this.actions.upload.setDisabled(true);
+
         if (this.showFolderTree) {
-            baseItems.push({
-                iconCls : 'iconFolderTree',
-                handler : function() { this.tree.toggleCollapse(); },
-                scope: this
-            });
+            baseItems.push(this.actions.folderTreeToggle);
         }
+
         baseItems.push(
-            {iconCls : 'iconUp', handler : this.onTreeUp, tooltip : 'Navigate to the parent folder', scope: this},
-            {
-                iconCls : 'iconReload',
-                handler : this.onRefresh,
-                tooltip : 'Refresh the contents of the current folder',
-                scope: this
-            },{
-                iconCls : 'iconFolderNew',
-                itemId : 'mkdir',
-                handler : this.onCreateDirectory,
-                tooltip : 'Create a new folder on the server',
-                disabled : true,
-                scope : this
-            },{
-                iconCls : 'iconDownload',
-                itemId : 'download',
-                handler: this.onDownload,
-                tooltip : 'Download the selected files or folders',
-                disabled : true,
-                scope: this
-            },{
-                iconCls : 'iconDelete',
-                itemId : 'delete',
-                handler: this.onDelete,
-                disabled : true,
-                tooltip : 'Delete the selected files or folders',
-                scope: this
-            },{
-                iconCls : 'iconUpload',
-                text    : 'Upload Files',
-                itemId : 'upload',
-                handler : this.onUpload,
-                tooltip : 'Upload files or folders from your local machine to the server',
-                enableToggle : true,
-                pressed : this.showUpload && this.expandUpload,
-                disabled : true,
-                scope   : this
-            }
+                this.actions.parentFolder,
+                this.actions.refresh,
+                this.actions.createDirectory,
+                this.actions.download,
+                this.actions.deletePath,
+                this.actions.upload
         );
-        
-        if(this.disableGeneralAdminSettings === false) {
-            baseItems.push({
-                xtype: 'button',
-                text: 'admin',
-                iconCls: 'iconConfigure',
-                handler: this.showAdminWindow,
-                scope: this
-            });
-        }
 
         if (Ext4.isArray(this.tbarItems)) {
             for (var i=0; i < this.tbarItems.length; i++) {
@@ -533,9 +757,9 @@ Ext4.define('File.panel.Browser', {
     onFolderChange : function(path, model) {
         var tb = this.getDockedComponent(0);
         if (tb) {
-            tb.getComponent('delete').setDisabled(!this.fileSystem.canDelete(model)); // TODO: Check grid selection
+            tb.getComponent('deletePath').setDisabled(!this.fileSystem.canDelete(model)); // TODO: Check grid selection
             tb.getComponent('download').setDisabled(!this.fileSystem.canRead(model));
-            tb.getComponent('mkdir').setDisabled(!this.fileSystem.canMkdir(model));
+            tb.getComponent('createDirectory').setDisabled(!this.fileSystem.canMkdir(model));
             tb.getComponent('upload').setDisabled(!this.fileSystem.canWrite(model));
         }
     },
@@ -785,6 +1009,7 @@ Ext4.define('File.panel.Browser', {
             border: false,
             pipelineFileProperties: pipelineFileProperties.config,
             listeners: {
+                success: this.getAdminActionsConfig,
                 close: function() { this.adminWindow.close(); },
                 scope: this
             }

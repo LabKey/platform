@@ -58,6 +58,7 @@
             items : [{
                 xtype : 'filebrowser',
                 border : false,
+                isWebDav  : true,
                 fileSystem : fileSystem,
                 gridConfig : {
                     selType : 'rowmodel'

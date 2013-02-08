@@ -198,7 +198,8 @@ Ext4.define('File.panel.Admin', {
             url: LABKEY.ActionURL.buildURL('filecontent', 'resetFileOptions', null, {type:type}),
             method: 'POST',
             success: function(response){
-                this.onCancel();
+                this.fireEvent('success');
+                this.fireEvent('close');
             },
             failure: function(response){
                 var json = Ext4.JSON.decode(response.responseText);
