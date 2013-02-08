@@ -201,10 +201,14 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         if (!category.canDelete(c, user))
             throw new RuntimeException("You must be an administrator to delete a view category");
 
+        List<ViewCategory> categoriesToDelete = new ArrayList<ViewCategory>();
         try {
             category = getCategory(category.getRowId());
             if (category == null)
                 throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+
+            categoriesToDelete.add(category);
+            categoriesToDelete.addAll(category.getSubcategories());
 
             // delete the category definition (plus any subcategories) and fire the deleted event
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
@@ -214,15 +218,20 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());
             executor.execute(sql);
 
-            getCategoryCache().remove(getCacheKey(category.getRowId()));
-            getCategoryCache().remove(getCacheKey(c, category.getLabel()));
+            for (ViewCategory vc : categoriesToDelete)
+            {
+                getCategoryCache().remove(getCacheKey(vc.getRowId()));
+                getCategoryCache().remove(getCacheKey(category));
+            }
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
         }
 
-        List<Throwable> errors = fireDeleteCategory(user, category);
+        List<Throwable> errors = new ArrayList<Throwable>();
+        for (ViewCategory vc : categoriesToDelete)
+            errors.addAll(fireDeleteCategory(user, vc));
 
         if (errors.size() != 0)
         {
@@ -259,6 +268,10 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 category.beforeInsert(user, c.getId());
 
                 ret = Table.insert(user, getTableInfoCategories(), category);
+
+                getCategoryCache().put(getCacheKey(ret), ret);
+                getCategoryCache().put(getCacheKey(ret.getRowId()), ret);
+
                 errors = fireCreatedCategory(user, ret);
             }
             else
@@ -272,7 +285,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                     ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
 
                     getCategoryCache().remove(getCacheKey(existing.getRowId()));
-                    getCategoryCache().remove(getCacheKey(c, existing.getLabel()));
+                    getCategoryCache().remove(getCacheKey(existing));
 
                     errors = fireUpdateCategory(user, ret);
                 }
@@ -319,9 +332,15 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         return sb.toString();
     }
 
-    private String getCacheKey(Container c, String label)
+    private String getCacheKey(ViewCategory category)
     {
-        return "ViewCategory-" + c + "-" + label;
+        if (category == null)
+            return null;
+
+        if (category.getParent() != null)
+            return getCacheKey(ContainerManager.getForId(category.getContainerId()), new String[]{category.getParent().getLabel(), category.getLabel()});
+        else
+            return getCacheKey(ContainerManager.getForId(category.getContainerId()), new String[]{category.getLabel()});
     }
 
     private String getCacheKey(int categoryId)
