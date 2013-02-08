@@ -709,6 +709,7 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
+
     public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql, String metadataXml)
     {
         Map<String, SessionQuery> queries = getSessionQueryMap(context.getRequest(), container, schemaName, true);
@@ -724,17 +725,19 @@ public class QueryServiceImpl extends QueryService
         }
         if (queryName == null)
         {
-            queryName = schemaName + "-temp-" + UniqueID.getServerSessionScopedUID();
+            queryName = schemaName + "_inner_" + UniqueID.getServerSessionScopedUID();
             queries.put(queryName, sq);
         }
         return getSessionQuery(context, container, schemaName, queryName);
     }
+
 
     @Override
     public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql)
     {
         return saveSessionQuery(context, container, schemaName, sql, null);
     }
+
 
     private static final String PERSISTED_TEMP_QUERIES_KEY = "LABKEY.PERSISTED_TEMP_QUERIES";
     private static class SessionQuery implements Serializable
