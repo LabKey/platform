@@ -175,10 +175,10 @@ public abstract class EmailPrefsSelector
 
         UserPreference getApplicablePreference(@Nullable AnnouncementModel ann)
         {
-            String srcIdentifier = null != ann ? ann.lookupSrcIdentifer() : null;
-
             if (null != ann)
             {
+                String srcIdentifier = ann.lookupSrcIdentifer();
+
                 // srcIdentfier preference takes precedence, so return it if present
                 UserPreference up = _preferenceMap.get(srcIdentifier);
 
