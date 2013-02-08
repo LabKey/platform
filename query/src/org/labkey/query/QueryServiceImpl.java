@@ -725,7 +725,7 @@ public class QueryServiceImpl extends QueryService
         }
         if (queryName == null)
         {
-            queryName = schemaName + "_inner_" + UniqueID.getServerSessionScopedUID();
+            queryName = schemaName + "_temp_" + UniqueID.getServerSessionScopedUID();
             queries.put(queryName, sq);
         }
         return getSessionQuery(context, container, schemaName, queryName);
