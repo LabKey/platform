@@ -87,14 +87,18 @@ Ext4.define('Ext.ux.CheckColumn', {
 
     // Note: class names are not placed on the prototype bc renderer scope
     // is not in the header.
-    renderer : function(value){
+    renderer : function(value, metadata){
         var cssPrefix = Ext4.baseCSSPrefix,
                 cls = [cssPrefix + 'grid-checkheader'];
 
         if (value) {
             cls.push(cssPrefix + 'grid-checkheader-checked');
         }
-        return '<div class="' + cls.join(' ') + '">&#160;</div>';
+
+        if(metadata && metadata.disabled){
+            return '<div style="opacity : .5" class="' + cls.join(' ') + '">&#160;</div>';
+        }
+        else return '<div class="' + cls.join(' ') + '">&#160;</div>';
     }
 });
 
@@ -264,17 +268,30 @@ Ext4.define('File.panel.ToolbarPanel', {
                 }
             },
             columns :  [
-                {header : 'Shown', dataIndex : 'shown', xtype : 'checkcolumn', flex : 1, listeners:{
-                    beforecheckchange:function(col,rowIndex){
+                {header : 'Shown', dataIndex : 'shown', xtype : 'checkcolumn', flex : 1, renderer : function(value, meta, rec, rowIndex)
+                {
+                  if(rec.data.id === 'customize')
+                  {
+                      return (new Ext4.ux.CheckColumn()).renderer(value, {tdCls : "", style : "", disabled : true});
+                  }
+                  else
+                      return (new Ext4.ux.CheckColumn()).renderer(value);
+                },
+                    listeners:{
+                    beforecheckchange:function(col,rowIndex, isChecked){
                         if(this.optionsStore.getAt(rowIndex).data.id === 'customize')
                         {
-                            alert('You cannot modify the shown state of the admin button.');
                             return false;
                         }
-                        else
+                        else if(!isChecked)
                         {
                             this.optionsStore.getAt(rowIndex).set('hideText', true);
                             this.optionsStore.getAt(rowIndex).set('hideIcon', true);
+                        }
+                        else
+                        {
+                            this.optionsStore.getAt(rowIndex).set('hideText', false);
+                            this.optionsStore.getAt(rowIndex).set('hideIcon', false);
                         }
                     },
                     scope : this
@@ -284,7 +301,9 @@ Ext4.define('File.panel.ToolbarPanel', {
                         if(isChecked){
                             if(this.optionsStore.getAt(rowIndex).data.hideIcon && this.optionsStore.getAt(rowIndex).data.id == 'customize')
                             {
-                               alert('Action impossible (would cause Admin Button to be invisible).');
+                                var msg = Ext4.Msg.alert('Visibility Error', 'Invalid action (would cause Admin Button to be invisible).');
+                                this.up('window').zIndexManager.register(msg);
+
                                 return false;
                             }
                             else if(this.optionsStore.getAt(rowIndex).data.hideIcon && this.optionsStore.getAt(rowIndex).data.id != 'customize')
@@ -300,7 +319,8 @@ Ext4.define('File.panel.ToolbarPanel', {
                         if(isChecked){
                             if(this.optionsStore.getAt(rowIndex).data.hideText && this.optionsStore.getAt(rowIndex).data.id == 'customize')
                             {
-                                alert('Action impossible (would cause Admin Button to be invisible).');
+                                var msg = Ext4.Msg.alert('Visibility Error', 'Invalid action (would cause Admin Button to be invisible).');
+                                this.up('window').zIndexManager.register(msg);
                                 return false;
                             }
                             else if(this.optionsStore.getAt(rowIndex).data.hideText && this.optionsStore.getAt(rowIndex).data.id != 'customize')
