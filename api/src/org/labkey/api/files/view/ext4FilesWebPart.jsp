@@ -90,7 +90,8 @@
             <%--disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,--%>
             <%--containerPath: <%=q(c.getPath())%>,--%>
             fileSystem: fileSystem,
-            isWebPart: true
+            isWebPart: true,
+            isWebDav: false
         });
 
         var resize = function() {
