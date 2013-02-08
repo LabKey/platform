@@ -192,9 +192,11 @@ public class SpecimenImporter
     {
         SPECIMEN_EVENTS
         {
-            public String getName()
+            public List<String> getTableNames()
             {
-                return "SpecimenEvent";
+                List<String> names = new ArrayList<String>(1);
+                names.add("SpecimenEvent");
+                return names;
             }
 
             public boolean isEvents()
@@ -213,9 +215,11 @@ public class SpecimenImporter
             }},
         SPECIMENS
         {
-            public String getName()
+            public List<String> getTableNames()
             {
-                return "Specimen";
+                List<String> names = new ArrayList<String>(1);
+                names.add("Specimen");
+                return names;
             }
 
             public boolean isEvents()
@@ -234,9 +238,11 @@ public class SpecimenImporter
             }},
         VIALS
         {
-            public String getName()
+            public List<String> getTableNames()
             {
-                return "Vial";
+                List<String> names = new ArrayList<String>(1);
+                names.add("Vial");
+                return names;
             }
 
             public boolean isEvents()
@@ -256,9 +262,12 @@ public class SpecimenImporter
         },
         SPECIMENS_AND_SPECIMEN_EVENTS
         {
-            public String getName()
+            public List<String> getTableNames()
             {
-                return "Specimen";
+                List<String> names = new ArrayList<String>(1);
+                names.add("Specimen");
+                names.add("SpecimenEvent");
+                return names;
             }
 
             public boolean isEvents()
@@ -278,9 +287,12 @@ public class SpecimenImporter
         },
         VIALS_AND_SPECIMEN_EVENTS
         {
-            public String getName()
+            public List<String> getTableNames()
             {
-                return "Vials";
+                List<String> names = new ArrayList<String>(1);
+                names.add("Vial");
+                names.add("SpecimenEvent");
+                return names;
             }
 
             public boolean isEvents()
@@ -301,7 +313,7 @@ public class SpecimenImporter
         public abstract boolean isEvents();
         public abstract boolean isVials();
         public abstract boolean isSpecimens();
-        public abstract String getName();
+        public abstract List<String> getTableNames();
     }
 
     public static class SpecimenColumn extends ImportableColumn
@@ -485,7 +497,7 @@ public class SpecimenImporter
             new SpecimenColumn(VISIT_COL, "VisitValue", NUMERIC_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("protocol_number", "ProtocolNumber", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("visit_description", "VisitDescription", "VARCHAR(10)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("other_specimen_id", "OtherSpecimenId", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("other_specimen_id", "OtherSpecimenId", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("volume", "Volume", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS, "MAX"),
             new SpecimenColumn("volume_units", "VolumeUnits", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("stored", "Stored", "INT", TargetTable.SPECIMEN_EVENTS),
@@ -1092,7 +1104,7 @@ public class SpecimenImporter
                     LocationImpl location;
                     if (!siteMap.containsKey(currentLocation))
                     {
-                        location = StudyManager.getInstance().getLocation(specimen.getContainer(), currentLocation.intValue());
+                        location = StudyManager.getInstance().getLocation(specimen.getContainer(), currentLocation);
                         if (location != null)
                             siteMap.put(currentLocation, location);
                     }
@@ -1100,7 +1112,7 @@ public class SpecimenImporter
                         location = siteMap.get(currentLocation);
 
                     if (location != null)
-                        atRepository = location.isRepository() != null && location.isRepository().booleanValue();
+                        atRepository = location.isRepository() != null && location.isRepository();
                 }
 
                 // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
@@ -2658,6 +2670,63 @@ public class SpecimenImporter
             {
                 if (rs != null) try { rs.close(); } catch (SQLException e) { }
             }
+        }
+
+        @Test
+        public void tempTableConsistencyTest() throws Exception
+        {
+            DbSchema schema = StudySchema.getInstance().getSchema();
+            for (SpecimenColumn specimenColumn : SPECIMEN_COLUMNS)
+            {
+                TargetTable targetTable = specimenColumn.getTargetTable();
+                List<String> tableNames = targetTable.getTableNames();
+                for (String tableName : tableNames)
+                {
+                    checkConsistency(schema, tableName, specimenColumn);
+                }
+            }
+            for (ImportableColumn importableColumn : ADDITIVE_COLUMNS)
+            {
+                checkConsistency(schema, "SpecimenAdditive", importableColumn);
+            }
+            for (ImportableColumn importableColumn : DERIVATIVE_COLUMNS)
+            {
+                checkConsistency(schema, "SpecimenDerivative", importableColumn);
+            }
+            for (ImportableColumn importableColumn : PRIMARYTYPE_COLUMNS)
+            {
+                checkConsistency(schema, "SpecimenPrimaryType", importableColumn);
+            }
+            for (ImportableColumn importableColumn : SITE_COLUMNS)
+            {
+                checkConsistency(schema, "Site", importableColumn);
+            }
+        }
+
+        private void checkConsistency(DbSchema schema, String tableName, ImportableColumn importableColumn)
+        {
+            String columnName = importableColumn.getDbColumnName();
+            TableInfo tableInfo = schema.getTable(tableName);
+            ColumnInfo columnInfo = tableInfo.getColumn(columnName);
+            String jdbcTypeName = columnInfo.getJdbcType().name();
+            boolean consistent = true;
+            if (jdbcTypeName.equalsIgnoreCase("varchar"))
+            {
+                if (importableColumn.getSQLType().name().equalsIgnoreCase("varchar") && columnInfo.getScale() == importableColumn.getMaxSize())
+                    consistent = true;
+                else
+                    consistent = false;
+            }
+            else if (columnInfo.getJdbcType().equals(importableColumn.getSQLType()))
+                consistent = true;
+            else if (importableColumn.getSQLType().name().equalsIgnoreCase("double") &&
+                    (jdbcTypeName.equalsIgnoreCase("real") || jdbcTypeName.equalsIgnoreCase("decimal")))
+                consistent = true;
+            else
+                consistent = false;
+
+            assert consistent : "Column '" + columnName +
+                                "' in table '" + tableName + "' has an inconsistent type between the importer and SQL.";
         }
     }
 
