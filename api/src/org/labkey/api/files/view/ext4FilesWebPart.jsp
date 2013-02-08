@@ -79,6 +79,16 @@
             rootName : 'fileset'
         });
 
+        var buttonActions = [];
+
+        <%
+        for (FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {
+        %>
+        buttonActions.push('<%=text(action.name())%>');
+        <%
+        }
+        %>
+
         var fb = Ext4.create('File.panel.Browser', {
             renderTo : <%=q(bean.getContentId())%>,
             height: <%= height %>,
@@ -90,6 +100,7 @@
             <%--disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,--%>
             <%--containerPath: <%=q(c.getPath())%>,--%>
             fileSystem: fileSystem,
+            tbarItems: buttonActions,
             isWebPart: true,
             isWebDav: false
         });
