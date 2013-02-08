@@ -129,6 +129,21 @@ public class StudyServiceImpl implements StudyService.Service
         return def.getDataSetId();
     }
 
+    @Override
+    public int getDatasetId(Container c, String datasetLabel, String name)
+    {
+        Study study = StudyManager.getInstance().getStudy(c);
+        if (study == null)
+            return -1;
+
+        // first try resolving the dataset def by label, and then by name
+        DataSet def = StudyManager.getInstance().getDataSetDefinition(study, datasetLabel);
+        if (def == null)
+            def = StudyManager.getInstance().getDataSetDefinitionByName(study, name);
+
+        return def == null ? -1 : def.getDataSetId();
+    }
+
     public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
             throws SQLException
     {
