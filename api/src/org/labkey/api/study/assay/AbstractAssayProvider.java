@@ -548,15 +548,34 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 else
                 {
                     ExpData[] inputDatas = context.getReRun().getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
+                    ExpData primaryInputData = null;
                     if (inputDatas.length == 1)
+                    {
+                        primaryInputData = inputDatas[0];
+                    }
+                    else if (inputDatas.length > 1)
+                    {
+                        // The original run was likely run through a transform script
+                        // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=16952
+                        for (ExpData inputData : inputDatas)
+                        {
+                            // Look for a file that was created by the "core" step in the protocol. Transformed files
+                            // are created by the ExperimentRunOutput step.
+                            if (inputData.getSourceApplication().getApplicationType() == ExpProtocol.ApplicationType.ProtocolApplication)
+                            {
+                                if (primaryInputData != null)
+                                {
+                                    throw new IllegalStateException("More than one primary data file associated with run: " + context.getReRun().getRowId());
+                                }
+                                primaryInputData = inputData;
+                            }
+                        }
+                    }
+                    if (primaryInputData != null)
                     {
                         Map<String, File> oldFiles = new HashMap<String, File>();
                         oldFiles.put(AssayDataCollector.PRIMARY_FILE, inputDatas[0].getFile());
                         result.add(new PreviouslyUploadedDataCollector(oldFiles));
-                    }
-                    else if (inputDatas.length > 1)
-                    {
-                        throw new IllegalStateException("More than one primary data file associated with run: " + context.getReRun().getRowId());
                     }
                 }
             }
