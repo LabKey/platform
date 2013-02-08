@@ -176,6 +176,7 @@ Ext4.define('File.panel.Browser', {
             tooltip: 'Download the selected files or folders',
             iconCls: 'iconDownload',
             disabledClass: 'x-button-disabled',
+            disabled: true,
             handler: this.onDownload,
             scope: this,
             hideText: true
@@ -290,6 +291,7 @@ Ext4.define('File.panel.Browser', {
             listeners: {click:function(button, event) {this.onImportData(button);}, scope:this},
             iconCls: 'iconDBCommit',
             disabledClass:'x-button-disabled',
+            disabled: true,
             tooltip: 'Import data from files into the database, or analyze data files',
             scope: this
         });
@@ -299,7 +301,7 @@ Ext4.define('File.panel.Browser', {
             itemId: 'customize',
             iconCls: 'iconConfigure',
             disabledClass:'x-button-disabled',
-            disabled : true,
+//            disabled : true,
             tooltip: 'Configure the buttons shown on the toolbar',
             handler: this.showAdminWindow,
             scope: this
@@ -333,6 +335,26 @@ Ext4.define('File.panel.Browser', {
             tooltip: 'View the files audit log for this folder.',
             scope: this
         });
+
+        this.initializeActions();
+    },
+
+    initializeActions: function(){
+        for(var a in this.actions){
+            var action = this.actions[a];
+            if(action && action.isAction){
+                action.initialConfig.prevText = action.initialConfig.text;
+                action.initialConfig.prevIconCls = action.initialConfig.iconCls;
+
+                if (action.initialConfig.hideText){
+                    action.setText(undefined);
+                }
+
+                if (action.initialConfig.hideIcon){
+                    action.setIconClass(undefined);
+                }
+            }
+        }
     },
 
     getAdminActionsConfig : function(){
@@ -350,38 +372,45 @@ Ext4.define('File.panel.Browser', {
 
     configureFileBrowser : function(response){
         var json = Ext4.JSON.decode(response.responseText);
-        if(json.config.tbarActions){
+        if(json.config){
             this.addTbarActions(json.config.tbarActions);
         }
     },
 
     addTbarActions : function(tbarConfig){
         var toolbar = this.getDockedItems()[0];
+        var buttons = [];
 
         if(toolbar){
             // Remove the current toolbar incase we just custmized it.
             this.removeDocked(toolbar);
         }
 
-        var buttons = [];
+        if(tbarConfig){
+            for(var i = 0; i < tbarConfig.length; i++){
+                var actionConfig = tbarConfig[i];
+                var action = this.actions[actionConfig.id];
 
-        for(var i = 0; i < tbarConfig.length; i++){
-            var actionConfig = tbarConfig[i];
-            var action = this.actions[actionConfig.id];
+                if(actionConfig.hideText){
+                    action.setText(undefined);
+                } else {
+                    action.setText(action.initialConfig.prevText);
+                }
 
-            if(actionConfig.hideText){
-                action.setText('');
+                if(actionConfig.hideIcon){
+                    action.setIconCls(undefined);
+                } else {
+                    action.setIconCls(action.initialConfig.prevIconCls);
+                }
+
+                if(actionConfig.id == 'customize'){
+                    action.setDisabled(this.disableGeneralAdminSettings);
+                }
+
+                buttons.push(action);
             }
-
-            if(actionConfig.hideIcon){
-                action.setIconCls('');
-            }
-
-            if(actionConfig.id == 'customize'){
-                action.setDisabled(this.disableGeneralAdminSettings);
-            }
-
-            buttons.push(action);
+        } else {
+            buttons = this.getDefaultWebPartToolbarItems(this.tbarItems);
         }
 
         this.addDocked({xtype:'toolbar', dock: 'top', items: buttons});
@@ -717,7 +746,17 @@ Ext4.define('File.panel.Browser', {
         return config;
     },
 
-    getWebDavToolbarItems : function() {
+    getDefaultWebPartToolbarItems : function(tbarItems){
+        var tbarButtons = [];
+
+        for(var i = 0; i < tbarItems.length; i++){
+            tbarButtons.push(this.actions[tbarItems[i]]);
+        }
+
+        return tbarButtons;
+    },
+
+    getWebDavToolbarItems : function(){
         var baseItems = [];
 
         this.actions.folderTreeToggle.setText('');
