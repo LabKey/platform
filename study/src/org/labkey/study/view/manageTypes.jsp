@@ -195,7 +195,7 @@
         <td align=right><a href="<%=h(details)%>"><%=def.getDataSetId()%></a></td>
         <td><a href="<%=h(details)%>"><%= h(def.getName()) %></a></td>
         <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=h(details)%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
-        <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %>&nbsp;</td>
+        <td><%= h(def.getViewCategory() != null ? def.getViewCategory().getLabel() : null) %>&nbsp;</td>
         <td><%= def.getType()%>&nbsp;</td>
         <td><%= def.getCohort() != null ? h(def.getCohort().getLabel()) : "All" %></td>
         <td><%= def.isShowByDefault() ? "" : "false" %></td>

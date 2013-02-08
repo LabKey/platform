@@ -24,6 +24,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewService;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.util.DateUtil;
@@ -142,7 +144,14 @@ public class StudySchedule implements CustomApiForm
             o.put("entityId", ds.getEntityId());
         }
         o.put("label", ds.getLabel());
-        o.put("category", ds.getCategory());
+
+        ViewCategory vc = null;
+        if (ds.getCategoryId() != null)
+            vc = ViewCategoryManager.getInstance().getCategory(ds.getCategoryId());
+
+        if (vc != null)
+            o.put("category", vc.toJSON(user));
+
         o.put("description", ds.getDescription());
         o.put("displayOrder", ds.getDisplayOrder());
         o.put("id", ds.getDataSetId());

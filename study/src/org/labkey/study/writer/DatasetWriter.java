@@ -104,11 +104,7 @@ public class DatasetWriter implements InternalStudyWriter
         if (null != defaultNumberFormat)
             dsXml.setDefaultNumberFormat(defaultNumberFormat);
 
-        // Create <categories> element now so it appears first in the file
-        DatasetsDocument.Datasets.Categories categoriesXml = dsXml.addNewCategories();
         DatasetsDocument.Datasets.Datasets2 datasets2Xml = dsXml.addNewDatasets();
-
-        Set<String> categories = new LinkedHashSet<String>();
 
         for (DataSetDefinition def : datasets)
         {
@@ -130,14 +126,9 @@ public class DatasetWriter implements InternalStudyWriter
             {
                 category = ViewCategoryManager.getInstance().getCategory(def.getCategoryId());
             }
-            else if (def.getCategory() != null)
-            {
-                category = ViewCategoryManager.getInstance().ensureViewCategory(ctx.getContainer(), ctx.getUser(), def.getCategory());
-            }
 
             if (null != category)
             {
-                categories.add(category.getLabel());
                 datasetXml.setCategory(ViewCategoryManager.getInstance().encode(category));
             }
 
@@ -150,11 +141,6 @@ public class DatasetWriter implements InternalStudyWriter
             PropertyList propList = datasetXml.addNewTags();
             ReportPropsManager.get().exportProperties(def.getEntityId(), ctx.getContainer(), propList);
         }
-
-        if (categories.isEmpty())
-            dsXml.unsetCategories();     // Don't need the <categories> element after all
-        else
-            categoriesXml.setCategoryArray(categories.toArray(new String[categories.size()]));
 
         if (ctx.useOldFormats())
         {

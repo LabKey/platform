@@ -54,7 +54,7 @@
         <td><input type="checkbox" name="datasetIds" value="<%=def.getDataSetId()%>"></td>
         <td><a href="<%=detailsLink%>"><%=def.getDataSetId()%></a></td>
         <td><a href="<%=detailsLink%>"><%= h(def.getLabel()) %></a></td>
-        <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %></td>
+        <td><%= h(def.getViewCategory() != null ? def.getViewCategory().getLabel() : null) %></td>
         <td><%= def.getType() %></td>
         <td align="right"><%=StudyManager.getInstance().getNumDatasetRows(HttpView.currentContext().getUser(), def)%></td>
     </tr>

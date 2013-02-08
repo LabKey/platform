@@ -22,13 +22,44 @@
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="com.google.gson.Gson" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.api.reports.model.ViewCategory" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("dataviews"));
+      return resources;
+  }
+%>
+
 <%
     CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
+
+    Gson gson = new Gson();
+
+    List<Map<String, Object>> datasetInfo = new ArrayList<Map<String, Object>>();
+    for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
+    {
+        Map<String, Object> ds = new HashMap<String, Object>();
+        ViewCategory category = entry.getValue().viewCategory;
+
+        ds.put("id", entry.getKey() + "-viewcategory");
+        ds.put("categoryId", category != null ? category.getRowId() : null);
+
+        datasetInfo.add(ds);
+    }
 %>
+
 
 <labkey:errors/>
 
@@ -72,7 +103,7 @@
                 <input type="text" size="20" name="label" value="<%= data.label != null ? data.label : "" %>">
             </td>
             <td>
-                <input type="text" size="20" name="extraData" value="<%= data.category != null ? data.category : "" %>">
+                <div id="<%=h(id + "-viewcategory")%>"></div>
             </td>
             <td>
                 <%
@@ -126,3 +157,46 @@
 <%
     }
 %>
+
+<script type="text/javascript">
+
+    Ext4.onReady(function() {
+
+        var datasetInfo = <%=text(gson.toJson(datasetInfo))%>;
+        var store = LABKEY.study.DataViewUtil.getViewCategoriesStore();
+
+        for (var i=0; i < datasetInfo.length; i++)
+        {
+            var ds = datasetInfo[i];
+            Ext4.create('Ext.form.field.ComboBox', {
+                name        : 'category',
+                hiddenName  : 'extraData',
+                store       : store,
+                typeAhead   : true,
+                typeAheadDelay : 75,
+                renderTo       : ds.id,
+                minChars       : 1,
+                autoSelect     : false,
+                queryMode      : 'remote',
+                displayField   : 'label',
+                valueField     : 'rowid',
+                value          : ds.categoryId || '',
+                emptyText      : 'Uncategorized',
+                tpl : new Ext4.XTemplate(
+                    '<ul><tpl for=".">',
+                        '<li role="option" class="x4-boundlist-item">',
+                            '<tpl if="parent &gt; -1">',
+                                '<span style="padding-left: 20px;">{label:htmlEncode}</span>',
+                            '</tpl>',
+                            '<tpl if="parent &lt; 0">',
+                                '<span>{label:htmlEncode}</span>',
+                            '</tpl>',
+                        '</li>',
+                    '</tpl></ul>'
+                )
+            });
+        }
+    });
+
+</script>
+

@@ -4330,7 +4330,7 @@ public class StudyController extends BaseStudyController
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();
-                data.category = def.getCategory();
+                data.viewCategory = def.getViewCategory();
                 data.cohort = def.getCohortId();
                 data.visible = def.isShowByDefault();
                 data.status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
@@ -4358,7 +4358,15 @@ public class StudyController extends BaseStudyController
                     int id = ids[i];
                     DatasetVisibilityData data = bean.get(id);
                     data.label = labels != null ? labels[i] : null;
-                    data.category = categories != null ? categories[i] : null;
+                    if (categories != null && categories[i] != null)
+                    {
+                        Integer categoryId = null;
+                        if (NumberUtils.isDigits(categories[i]))
+                        {
+                            categoryId = NumberUtils.toInt(categories[i]);
+                            data.viewCategory = ViewCategoryManager.getInstance().getCategory(categoryId);
+                        }
+                    }
                     data.cohort = cohorts[i] == -1 ? null : cohorts[i];
                     data.visible = visible.contains(id);
                 }
@@ -4418,17 +4426,21 @@ public class StudyController extends BaseStudyController
                 boolean show = visible.contains(allIds[i]);
                 String[] extraData = form.getExtraData();
                 String category = extraData == null ? null : extraData[i];
+                Integer categoryId = null;
+                if (NumberUtils.isDigits(category))
+                    categoryId = NumberUtils.toInt(category);
+
                 Integer cohortId = null;
                 if (form.getCohort() != null)
                     cohortId = form.getCohort()[i];
                 if (cohortId != null && cohortId.intValue() == -1)
                     cohortId = null;
                 String label = form.getLabel()[i];
-                if (def.isShowByDefault() != show || !nullSafeEqual(category, def.getCategory()) || !nullSafeEqual(label, def.getLabel()) || !BaseStudyController.nullSafeEqual(cohortId, def.getCohortId()))
+                if (def.isShowByDefault() != show || !nullSafeEqual(categoryId, def.getCategoryId()) || !nullSafeEqual(label, def.getLabel()) || !BaseStudyController.nullSafeEqual(cohortId, def.getCohortId()))
                 {
                     def = def.createMutable();
                     def.setShowByDefault(show);
-                    def.setCategory(category);
+                    def.setCategoryId(categoryId);
                     def.setCohortId(cohortId);
                     def.setLabel(label);
                     StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
@@ -4449,10 +4461,10 @@ public class StudyController extends BaseStudyController
     public static class DatasetVisibilityData
     {
         public String label;
-        public String category;
         public Integer cohort; // null for none
         public String status;
         public boolean visible;
+        public ViewCategory viewCategory;
     }
 
     @RequiresPermissionClass(AdminPermission.class)

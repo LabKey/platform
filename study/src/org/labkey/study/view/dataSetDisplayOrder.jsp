@@ -96,8 +96,8 @@ function orderModule(down)
                     desc.append(def.getDataSetId());
                     if (def.getLabel() != null)
                         desc.append(": ").append(h(def.getLabel()));
-                    if (def.getCategory() != null)
-                        desc.append(" (").append(h(def.getCategory())).append(")");
+                    if (def.getViewCategory() != null)
+                        desc.append(" (").append(h(def.getViewCategory().getLabel())).append(")");
                     if (first)
                     {
                         // we'll pad the first entry to give our select box reasonable width

@@ -27,6 +27,6 @@
     <tr><td class=labkey-form-label>Name</td><th align=left><%= h(dataset.getName()) %></th></tr>
     <tr><td class=labkey-form-label>Label</td><td><%= h(dataset.getLabel()) %></td></tr>
     <tr><td class=labkey-form-label>Display String</td><td><%= h(dataset.getDisplayString()) %></td></tr>
-    <tr><td class=labkey-form-label>Category</td><td><%= h(dataset.getCategory()) %></td></tr>
+    <tr><td class=labkey-form-label>Category</td><td><%= h(dataset.getViewCategory() != null ? dataset.getViewCategory().getLabel() : null) %></td></tr>
     <tr><td class=labkey-form-label>Visit Date Column</td><td><%= h(dataset.getVisitDateColumnName()) %></td></tr>
 </table>

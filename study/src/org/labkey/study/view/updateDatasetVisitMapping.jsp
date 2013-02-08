@@ -77,7 +77,7 @@
         </tr>
         <tr>
             <td class="labkey-form-label">Category</td>
-            <td><%= h(dataset.getCategory()) %></td>
+            <td><%= h(dataset.getViewCategory() != null ? dataset.getViewCategory().getLabel() : null) %></td>
         </tr>
         <tr>
            <td class="labkey-form-label">Cohort</td><td><%=h(cohortMap.get(dataset.getCohortId()))%></td>

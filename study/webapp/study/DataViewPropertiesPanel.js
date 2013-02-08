@@ -34,34 +34,6 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         this.extraItems = config.extraItems || [];
         this.disableShared = config.disableShared;
 
-        // define data models
-        if (!Ext4.ModelManager.isRegistered('Dataset.Browser.Category')) {
-            Ext4.define('Dataset.Browser.Category', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'created',      type : 'string'},
-                    {name : 'createdBy'                  },
-                    {name : 'displayOrder', type : 'int' },
-                    {name : 'label'                      },
-                    {name : 'modfied',      type : 'string'},
-                    {name : 'modifiedBy'                 },
-                    {name : 'rowid',        type : 'int' },
-                    {name : 'subCategories' },
-                    {name : 'parent',       type : 'int' }
-                ]
-            });
-        }
-
-        if (!Ext4.ModelManager.isRegistered('LABKEY.data.User')) {
-            Ext4.define('LABKEY.data.User', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'userId',       type : 'int'},
-                    {name : 'displayName'               }
-                ]
-            });
-        }
-
         this.callParent([config]);
     },
 
@@ -85,7 +57,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 typeAheadDelay : 75,
                 editable: true, // required for typeAhead
                 forceSelection : true, // user must pick from list
-                store       : this.initializeUserStore(),
+                store       : LABKEY.study.DataViewUtil.getUsersStore(),
                 value       : this.data.authorUserId ? this.data.authorUserId : null,
                 queryMode : 'local',
                 displayField : 'DisplayName',
@@ -165,7 +137,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 xtype       : 'combo',
                 fieldLabel  : 'Category',
                 name        : 'category',
-                store       : this.initializeCategoriesStore(),
+                store       : LABKEY.study.DataViewUtil.getViewCategoriesStore(),
                 typeAhead   : true,
                 typeAheadDelay : 75,
                 minChars       : 1,
@@ -345,9 +317,25 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         }, this);
 
         this.callParent([arguments]);
-    },
+    }
+});
 
-    initializeUserStore : function() {
+Ext4.define('LABKEY.study.DataViewUtil', {
+
+    singleton : true,
+
+    getUsersStore : function() {
+
+        // define data models
+        if (!Ext4.ModelManager.isRegistered('LABKEY.data.User')) {
+            Ext4.define('LABKEY.data.User', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'userId',       type : 'int'},
+                    {name : 'displayName'               }
+                ]
+            });
+        }
 
         var config = {
             model   : 'LABKEY.data.User',
@@ -376,7 +364,25 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         return Ext4.create('Ext.data.Store', config);
     },
 
-    initializeCategoriesStore : function(useGrouping) {
+    getViewCategoriesStore : function(useGrouping) {
+
+        // define data models
+        if (!Ext4.ModelManager.isRegistered('Dataset.Browser.Category')) {
+            Ext4.define('Dataset.Browser.Category', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'created',      type : 'string'},
+                    {name : 'createdBy'                  },
+                    {name : 'displayOrder', type : 'int' },
+                    {name : 'label'                      },
+                    {name : 'modfied',      type : 'string'},
+                    {name : 'modifiedBy'                 },
+                    {name : 'rowid',        type : 'int' },
+                    {name : 'subCategories' },
+                    {name : 'parent',       type : 'int' }
+                ]
+            });
+        }
 
         var config = {
             pageSize: 100,
