@@ -45,6 +45,7 @@
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
 
+    String storeId = "dataset-visibility-category-store";
     Gson gson = new Gson();
 
     List<Map<String, Object>> datasetInfo = new ArrayList<Map<String, Object>>();
@@ -152,7 +153,9 @@
         }
     %>
     </table>
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", StudyController.ManageTypesAction.class)%>
+    <%= generateSubmitButton("Save") %>&nbsp;
+    <%= generateButton("Cancel", StudyController.ManageTypesAction.class)%>&nbsp;
+    <%= generateButton("Manage Categories", "javascript:void(0);", "onManageCategories()")%>
 </form>
 <%
     }
@@ -160,10 +163,26 @@
 
 <script type="text/javascript">
 
+    function onManageCategories() {
+
+        Ext4.onReady(function(){
+            var window = LABKEY.study.DataViewUtil.getManageCategoriesDialog();
+
+            window.on('afterchange', function(cmp){
+                var store = Ext4.data.StoreManager.lookup('<%=h(storeId)%>');
+                if (store)
+                    store.load();
+                else
+                    location.reload();
+            }, this);
+            window.show();
+        });
+    }
+
     Ext4.onReady(function() {
 
         var datasetInfo = <%=text(gson.toJson(datasetInfo))%>;
-        var store = LABKEY.study.DataViewUtil.getViewCategoriesStore();
+        var store = LABKEY.study.DataViewUtil.getViewCategoriesStore({storeId : '<%=h(storeId)%>'});
 
         for (var i=0; i < datasetInfo.length; i++)
         {

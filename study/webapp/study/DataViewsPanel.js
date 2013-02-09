@@ -434,44 +434,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return this.store;
     },
 
-    initializeCategoriesStore : function(categoryid) {
-
-        var extraParams = {
-            // These parameters are required for specific webpart filtering
-            pageId : this.pageId,
-            index  : this.index,
-            parent : categoryid
-        };
-
-        if (extraParams.parent == undefined) {
-            extraParams.parent = -1;
-        }
-
-        var config = {
-            pageSize: 100,
-            model   : 'Dataset.Browser.Category',
-            autoLoad: true,
-            autoSync: false,
-            proxy   : {
-                type   : 'ajax',
-                api    : {
-                    create  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
-                    read    : LABKEY.ActionURL.buildURL('study', 'getCategories.api'),
-                    update  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
-                    destroy : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api')
-                },
-                extraParams : extraParams,
-                reader : { type : 'json', root : 'categories' },
-                writer : { type : 'json', root : 'categories', allowSingle : false }
-            },
-            listeners : {
-                load : function(s) { s.sort('displayOrder', 'ASC'); }
-            }
-        };
-
-        return Ext4.create('Ext.data.Store', config);
-    },
-
     initializeUserStore : function() {
 
         return Ext4.create('Ext.data.Store', {
@@ -1344,12 +1306,168 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     onManageCategories : function() {
 
+        var window = LABKEY.study.DataViewUtil.getManageCategoriesDialog();
+
+        window.on('categorychange', function(cmp){
+            this.gridPanel.getStore().load();
+            console.log('category changed')
+        }, this);
+        window.show();
+    }
+});
+
+
+Ext4.define('LABKEY.study.DataViewUtil', {
+
+    singleton : true,
+
+    getUsersStore : function() {
+
+        // define data models
+        if (!Ext4.ModelManager.isRegistered('LABKEY.data.User')) {
+            Ext4.define('LABKEY.data.User', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'userId',       type : 'int'},
+                    {name : 'displayName'               }
+                ]
+            });
+        }
+
+        var config = {
+            model   : 'LABKEY.data.User',
+            autoLoad: true,
+            pageSize: 10000,
+            proxy   : {
+                type   : 'ajax',
+                url : LABKEY.ActionURL.buildURL('query', 'selectRows.api'),
+                extraParams : {
+                    schemaName  : 'core',
+                    queryName   : 'UsersMsgPrefs'
+                },
+                reader : {
+                    type : 'json',
+                    root : 'rows'
+                }
+            },
+            listeners : {
+                load : function(s, recs, success, operation, ops) {
+                    s.sort('DisplayName', 'ASC');
+                    s.insert(0, {UserId : -1, DisplayName : 'None'});
+                }
+            }
+        };
+
+        return Ext4.create('Ext.data.Store', config);
+    },
+
+    getViewCategoriesStore : function(opts) {
+
+        var options = {};
+        Ext4.apply(options, opts, {index : 1});
+
+        // define data models
+        if (!Ext4.ModelManager.isRegistered('Dataset.Browser.Category')) {
+            Ext4.define('Dataset.Browser.Category', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'created',      type : 'string'},
+                    {name : 'createdBy'                  },
+                    {name : 'displayOrder', type : 'int' },
+                    {name : 'label'                      },
+                    {name : 'modfied',      type : 'string'},
+                    {name : 'modifiedBy'                 },
+                    {name : 'rowid',        type : 'int' },
+                    {name : 'subCategories' },
+                    {name : 'parent',       type : 'int' }
+                ]
+            });
+        }
+
+        var config = {
+            pageSize: 100,
+            model   : 'Dataset.Browser.Category',
+            autoLoad: true,
+            autoSync: false,
+            proxy   : {
+                type   : 'ajax',
+                api    : {
+                    create  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
+                    read    : LABKEY.ActionURL.buildURL('study', 'getCategories.api'),
+                    update  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
+                    destroy : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api')
+                },
+                extraParams : {
+                    // These parameters are required for specific webpart filtering
+                    pageId : options.pageId,
+                    index  : options.index
+                },
+                reader : {
+                    type : 'json',
+                    root : 'categories'
+                },
+                writer: {
+                    type : 'json',
+                    root : 'categories',
+                    allowSingle : false
+                }
+            },
+            inRawLoad : false,
+            listeners : {
+                load : function(s, recs) {
+
+                    if (!s.inRawLoad) {
+                        s.inRawLoad = true;
+                        var parents = {}, keys = [],
+                            newRecs = [], labels = [], r, d, p, u;
+
+                        for (r=0; r < recs.length; r++) {
+                            if (recs[r].get('parent') == -1) {
+                                parents[recs[r].get('rowid')] = {record : recs[r], subs : []};
+                                keys.push(recs[r].get('rowid'));
+                            }
+                        }
+
+                        for (r=0; r < recs.length; r++) {
+                            if (recs[r].get('parent') >= 0) {
+                                parents[recs[r].get('parent')].subs.push(recs[r]);
+                            }
+                        }
+
+                        for (p=0; p < keys.length; p++) {
+                            d = parents[keys[p]].record.data;
+                            newRecs.push(d);
+                            labels.push(parents[keys[p]].record.get('label'));
+                            for (u=0; u < parents[keys[p]].subs.length; u++) {
+                                d = parents[keys[p]].subs[u].data;
+                                newRecs.push(d);
+                                labels.push(parents[keys[p]].subs[u].get('label'));
+                            }
+                        }
+
+                        s.loadData(newRecs);
+                    }
+
+                    s.inRawLoad = false;
+                }
+            }
+        };
+
+        Ext4.applyIf(config, options);
+        if (options.useGrouping) {
+            config["groupField"] = 'category';
+        }
+
+        return Ext4.create('Ext.data.Store', config);
+    },
+
+    getManageCategoriesDialog : function(config) {
+
         var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
             pluginId : 'categorycell',
             clicksToEdit: 2
         });
 
-        var confirm = false;
         var store = this.initializeCategoriesStore();
         var winID = Ext4.id();
         this.catWinID = winID;
@@ -1363,6 +1481,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             store    : store,
             border   : false, frame: false,
             scroll   : 'vertical',
+            bubbleEvents : ['categorychange'],
             columns  : [{
                 xtype    : 'templatecolumn',
                 text     : 'Category',
@@ -1384,7 +1503,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     tooltip : 'Delete'
                 }],
                 listeners : {
-                    click : function(col, grid, idx) { this.onDeleteCategory(store, idx, zix); },
+                    click : function(col, td, idx) { this.onDeleteCategory(grid, store, idx, zix); },
                     scope : this
                 }
             }],
@@ -1468,7 +1587,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                 closable : true,
                                 floatable : true,
                                 gid : gid,
-                                items : [this.getCategoryGrid(rec.data.rowid, gid, zix)],
+                                items : [this.getCategoryGrid(grid, rec.data.rowid, gid, zix)],
                                 listeners : {
                                     close : function(p) {
                                         p.destroy();
@@ -1506,7 +1625,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope     : this
         });
 
-        var categoryOrderWindow = Ext4.create('Ext.window.Window', {
+        var dialog = Ext4.create('Ext.window.Window', {
             title  : 'Manage Categories',
             id : winID,
             width  : 400,
@@ -1541,19 +1660,16 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 handler : function() {
                     grid.getStore().sync({
                         success : function() {
-                            this.gridPanel.getStore().load();
                         },
                         scope : this
                     });
-                    categoryOrderWindow.close();
+                    dialog.fireEvent('afterchange', dialog);
+                    dialog.close();
                 },
                 scope : this
             }],
             listeners : {
                 beforeclose : function() {
-                    if (confirm) {
-                        this.onEditSave();
-                    }
                     var sw = Ext4.getCmp(subwinID);
                     if (sw) {
                         sw.close();
@@ -1564,25 +1680,31 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope     : this
         });
 
-        zix.register(categoryOrderWindow);
-        categoryOrderWindow.show();
+        zix.register(dialog);
+        dialog.addEvents('afterchange', 'done');
+
+        return dialog;
     },
 
-    getCategoryGrid : function(categoryid, gridid, idxMgr) {
+    /**
+     * @private
+     */
+    getCategoryGrid : function(parentCmp, categoryid, gridid, idxMgr) {
 
         var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
             pluginId : 'subcategorycell',
             clicksToEdit : 2
         });
 
-        var store = this.initializeCategoriesStore(categoryid);
+        var store = this.initializeCategoriesStore({categoryId : categoryid});
 
-        return Ext4.create('Ext.grid.Panel', {
+        var grid = Ext4.create('Ext.grid.Panel', {
             id : gridid || Ext4.id(),
             store   : store,
             columns : [{
                 xtype    : 'templatecolumn',
                 text     : 'Subcategory',
+
                 flex     : 1,
                 sortable : true,
                 dataIndex: 'label',
@@ -1601,7 +1723,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     tooltip : 'Delete'
                 }],
                 listeners : {
-                    click : function(col, grid, idx) { this.onDeleteCategory(store, idx, idxMgr, true); },
+                    click : function(col, td, idx) { this.onDeleteCategory(parentCmp, store, idx, idxMgr, true); },
                     scope : this
                 }
             }],
@@ -1633,11 +1755,19 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             selType : 'rowmodel',
             scope   : this
         });
+
+        return grid;
     },
 
-    onDeleteCategory : function(store, idx, idxMgr, subcategory) {
+    /**
+     * @private
+     * @param store
+     * @param idx
+     * @param idxMgr
+     * @param subcategory
+     */
+    onDeleteCategory : function(grid, store, idx, idxMgr, subcategory) {
         var label = store.getAt(idx).data.label;
-        var me = this;
 
         // hide subcategory
         if (!subcategory && this._subwinID) {
@@ -1657,7 +1787,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     store.sync({
                         success : function() {
                             store.load();
-                            me.gridPanel.getStore().load();
+                            grid.fireEvent('categorychange', grid);
                         }
                     });
                 }
@@ -1669,5 +1799,49 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             idxMgr.register(msg);
             idxMgr.bringToFront(msg);
         }
+    },
+
+    /**
+     * @private
+     */
+    initializeCategoriesStore : function(opts) {
+
+        var options = {};
+        Ext4.apply(options, opts, {index : 1});
+
+        var extraParams = {
+            // These parameters are required for specific webpart filtering
+            pageId : options.pageId,
+            index  : options.index,
+            parent : options.categoryId
+        };
+
+        if (extraParams.parent == undefined) {
+            extraParams.parent = -1;
+        }
+
+        var config = {
+            pageSize: 100,
+            model   : 'Dataset.Browser.Category',
+            autoLoad: true,
+            autoSync: false,
+            proxy   : {
+                type   : 'ajax',
+                api    : {
+                    create  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
+                    read    : LABKEY.ActionURL.buildURL('study', 'getCategories.api'),
+                    update  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
+                    destroy : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api')
+                },
+                extraParams : extraParams,
+                reader : { type : 'json', root : 'categories' },
+                writer : { type : 'json', root : 'categories', allowSingle : false }
+            },
+            listeners : {
+                load : function(s) { s.sort('displayOrder', 'ASC'); }
+            }
+        };
+
+        return Ext4.create('Ext.data.Store', config);
     }
 });
