@@ -1260,7 +1260,7 @@ public class ContainerManager
     }
 
     // Delete a container from the database
-    public static boolean delete(Container c, User user)
+    public static boolean delete(final Container c, User user)
     {
         try
         {
@@ -1286,21 +1286,27 @@ public class ContainerManager
                     throw new RuntimeException(first);
             }
 
-            synchronized (DATABASE_QUERY_LOCK)
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId=?", c.getId());
+            Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainers() + " WHERE EntityId=?", c.getId());
+            // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
+            SecurityPolicyManager.removeAll(c);
+
+            // After we've committed the transaction, be sure that we remove this container from the cache
+            // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17015
+            CORE.getSchema().getScope().addCommitTask(new Runnable()
             {
-                try
+                @Override
+                public void run()
                 {
-                    Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId=?", c.getId());
-                    Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainers() + " WHERE EntityId=?", c.getId());
-                    // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
-                    SecurityPolicyManager.removeAll(c);
+                    // Be sure that we've waited until any threads that might be populating the cache have finished
+                    // before we guarantee that we've removed this now-deleted container
+                    synchronized (DATABASE_QUERY_LOCK)
+                    {
+                        _removeFromCache(c);
+                    }
                 }
-                finally
-                {
-                    _removeFromCache(c);
-                }
-                CORE.getSchema().getScope().commitTransaction();
-            }
+            });
+            CORE.getSchema().getScope().commitTransaction();
         }
         catch (SQLException x)
         {
