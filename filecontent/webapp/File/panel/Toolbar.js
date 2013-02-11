@@ -112,10 +112,17 @@ Ext4.define('File.panel.ToolbarPanel', {
             tbarActions : [
                 {id : 'folderTreeToggle', hideText : true, hideIcon : false},
                 {id : 'parentFolder', hideText : true, hideIcon : false},
+                {id : 'refresh', hideText : true, hideIcon : false},
                 {id : 'createDirectory', hideText : true, hideIcon : false},
                 {id : 'download', hideText : true, hideIcon : false},
                 {id : 'deletePath', hideText : true, hideIcon : false},
+                {id : 'renamePath', hideText : true, hideIcon : false},
+                {id : 'movePath', hideText : true, hideIcon : false},
+                {id : 'editFileProps', hideText : true, hideIcon : false},
+                {id : 'upload', hideText : false, hideIcon : false},
                 {id : 'importData', hideText : false, hideIcon : false},
+                {id : 'emailPreferences', hideText : true, hideIcon : false},
+                {id : 'auditLog', hideText : false, hideIcon : false},
                 {id : 'customize', hideText : false, hideIcon : false}
             ],
             gridConfigs : {
