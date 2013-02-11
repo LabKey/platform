@@ -4738,10 +4738,6 @@ api/webapp/ext-4.1.0/src/view/View.js -text
 api/webapp/ext-4.1.0/src/window/MessageBox.js -text
 api/webapp/ext-4.1.0/src/window/Window-legacy.js -text
 api/webapp/ext-4.1.0/src/window/Window.js -text
-api/webapp/groupTabPanel/GroupTab.css -text
-api/webapp/groupTabPanel/GroupTab.js -text
-api/webapp/groupTabPanel/GroupTabPanel.js -text
-api/webapp/groupTabPanel/UngroupedTab.css -text
 api/webapp/gtheme/img/btn-arrow.gif -text
 api/webapp/gtheme/img/btn.gif -text
 api/webapp/gtheme/img/icons7.png -text
@@ -5394,6 +5390,10 @@ internal/webapp/extWidgets/ImportPanel.js -text
 internal/webapp/extWidgets/ImportWizard.js -text
 internal/webapp/extWidgets/LabkeyCombo.js -text
 internal/webapp/extWidgets/SearchPanel.js -text
+internal/webapp/groupTabPanel/GroupTab.css -text
+internal/webapp/groupTabPanel/GroupTab.js -text
+internal/webapp/groupTabPanel/GroupTabPanel.js -text
+internal/webapp/groupTabPanel/UngroupedTab.css -text
 internal/webapp/gxt/css/gxt-all.css -text
 internal/webapp/gxt/css/gxt-gray.css -text
 internal/webapp/gxt/images/default/box/corners-blue.gif -text
