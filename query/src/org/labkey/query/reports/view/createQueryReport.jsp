@@ -17,17 +17,23 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.query.reports.ReportsController.LinkReportForm" %>
+<%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.query.reports.ReportsController" %>
-<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresScript("study/DataViewPropertiesPanel.js");
-</script>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("study/DataViewsPanel.css"));
+        resources.add(ClientDependency.fromFilePath("study/DataViewUtil.js"));
+        resources.add(ClientDependency.fromFilePath("study/DataViewPropertiesPanel.js"));
+        return resources;
+    }
+%>
 <%
     JspView<ReportsController.QueryReportForm> me = (JspView<ReportsController.QueryReportForm>) HttpView.currentView();
     ReportsController.QueryReportForm bean = me.getModelBean();

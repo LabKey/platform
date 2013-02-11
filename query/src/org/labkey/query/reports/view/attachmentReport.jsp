@@ -20,12 +20,20 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.labkey.query.reports.ReportsController.AttachmentReportForm" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresScript("study/DataViewPropertiesPanel.js");
-</script>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("study/DataViewsPanel.css"));
+        resources.add(ClientDependency.fromFilePath("study/DataViewUtil.js"));
+        resources.add(ClientDependency.fromFilePath("study/DataViewPropertiesPanel.js"));
+        return resources;
+    }
+%>
 <%
     JspView<ReportsController.AttachmentReportForm> me = (JspView<ReportsController.AttachmentReportForm>) HttpView.currentView();
     ReportsController.AttachmentReportForm form = me.getModelBean();
