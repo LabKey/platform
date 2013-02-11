@@ -4974,7 +4974,6 @@ internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
 internal/src/org/labkey/api/webdav/view/fileEmailNotify.jsp -text
 internal/src/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp -text
 internal/webapp/ComponentDataView.js -text
-internal/webapp/ComponentListView.js -text
 internal/webapp/Ext.ux.MultiSelectTreePanel.js -text
 internal/webapp/Ext.ux.dd.GridDragDropRowOrder.js -text
 internal/webapp/Ext.ux.form.LovCombo.css -text
@@ -5379,7 +5378,6 @@ internal/webapp/editarea/regexp.js -text
 internal/webapp/editarea/resize_area.js -text
 internal/webapp/editarea/search_replace.js -text
 internal/webapp/editarea/template.html -text
-internal/webapp/ext-exploded.js -text
 internal/webapp/extWidgets/DetailsPanel.js -text
 internal/webapp/extWidgets/ExcelUploadPanel.js -text
 internal/webapp/extWidgets/Ext4DefaultFilterPanel.js -text
