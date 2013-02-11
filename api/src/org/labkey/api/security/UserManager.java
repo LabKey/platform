@@ -41,6 +41,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -551,7 +552,13 @@ public class UserManager
         {
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
                     Collections.singletonMap("Active", active), userId);
-            addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " + 
+
+            // update the modified bit on the users table
+            Map<String, Object> map = new HashMap<String, Object>();
+            map.put("Modified", new Timestamp(System.currentTimeMillis()));
+            Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
+
+            addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " +
                     (active ? "re-enabled" : "disabled"));
         }
         catch(SQLException e)
