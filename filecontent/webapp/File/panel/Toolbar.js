@@ -160,7 +160,7 @@ Ext4.define('File.panel.ToolbarPanel', {
                     '</p><br><p>Grid columns are in display order from top to bottom, but hidden columns do not appear in the grid. ' +
                     'The columns can be reorganized by clicking and dragging their respective rows, and can be hidden by checking ' +
                     'the appropriate box.  You may also set whether or not the column is sortable.</p> ' +
-                    '</br><p>Either table can be expanded or collapsed by pressing the button at the right of blue top bar.</p>',
+                    '</br><p>Either table can be expanded or collapsed by pressing the button at the right of title bar.</p>',
             padding : '5 5 10 5'
         };
 
@@ -264,7 +264,7 @@ Ext4.define('File.panel.ToolbarPanel', {
             titleCollapse : true,
             collapsible : true,
             width : '100%',
-            height: 295,
+            height: 290,
             padding : '10 5 10 5',
             store : this.optionsStore,
             expanded : true,
@@ -409,13 +409,21 @@ Ext4.define('File.panel.ToolbarPanel', {
         return gridConfigsRet;
     },
 
-    getTbarActions : function(){
+    gridConfigsChanged : function()
+    {
+        return (this.columnsStore.getUpdatedRecords().length > 0);
+    },
+
+    getTbarActions : function()
+    {
         var item;
         var tBarRet = [];
         var position = 0;
-        for(var i = 0; i < this.optionsStore.getCount(); i++){
+        for(var i = 0; i < this.optionsStore.getCount(); i++)
+        {
             item = this.optionsStore.getAt(i).data;
-            if(item.id === 'customize'){
+            if(item.id === 'customize')
+            {
                 item.shown = true;
             }
             if(item.shown){
@@ -432,6 +440,11 @@ Ext4.define('File.panel.ToolbarPanel', {
         }
 
         return tBarRet;
+    },
+
+    tbarChanged : function()
+    {
+        return (this.optionsStore.getUpdatedRecords().length > 0);
     }
 });
 

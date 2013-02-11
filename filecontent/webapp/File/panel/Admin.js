@@ -147,11 +147,18 @@ Ext4.define('File.panel.Admin', {
         var updateURL = LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath);
         var postData = {
             expandFileUpload: this.showUploadCheckBox.getValue(),
-            fileConfig: this.filePropertiesPanel.getFileConfig(),
-            gridConfig: this.toolBarPanel.getGridConfigs(),
-            tbarActions: this.toolBarPanel.getTbarActions()
+            fileConfig: this.filePropertiesPanel.getFileConfig()
             //actions: this.actionsPanel.getActionConfigs()
         };
+
+        if(this.toolBarPanel.gridConfigsChanged())
+        {
+            postData.gridConfig = this.toolBarPanel.getGridConfigs();
+        }
+        if(this.toolBarPanel.tbarChanged())
+        {
+            postData.tbarActions = this.toolBarPanel.getTbarActions();
+        }
 
         if(!handler){
             handler = function(){
