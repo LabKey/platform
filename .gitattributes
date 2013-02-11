@@ -3470,6 +3470,7 @@ study/webapp/WEB-INF/study/studyContext.xml -text
 study/webapp/dataviews.lib.xml -text
 study/webapp/sampleRequest.js -text
 study/webapp/study/DataViewPropertiesPanel.js -text
+study/webapp/study/DataViewUtil.js -text
 study/webapp/study/DataViewsPanel.css -text
 study/webapp/study/DataViewsPanel.js -text
 study/webapp/study/MeasurePicker.js -text

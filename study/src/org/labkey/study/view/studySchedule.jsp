@@ -34,6 +34,7 @@
       resources.add(ClientDependency.fromFilePath("Ext4"));
       resources.add(ClientDependency.fromFilePath("study/DataViewsPanel.css"));
       resources.add(ClientDependency.fromFilePath("study/StudySchedule.css"));
+      resources.add(ClientDependency.fromFilePath("study/DataViewUtil.js"));
       resources.add(ClientDependency.fromFilePath("study/StudyScheduleGrid.js"));
       return resources;
   }
