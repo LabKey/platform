@@ -761,10 +761,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 fields: [
                     {name : 'id'},
                     {name : 'name'},
-                    {name : 'category'},
+                    {name : 'category', mapping : 'category.label', convert : function(v) { if (v == 'Uncategorized') return ''; return v; }},
                     {name : 'createdBy'},
                     {name : 'createdByUserId',      type : 'int'},
                     {name : 'type'},
+                    {name : 'icon'},
                     {name : 'description'},
                     {name : 'schemaName'},
                     {name : 'queryName'},
@@ -876,6 +877,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var grid = new Ext.grid.EditorGridPanel({
+            viewConfig : {
+                forceFit : true
+            },
             store: new Ext.data.Store({
                 proxy: new Ext.data.HttpProxy({
                     url: LABKEY.ActionURL.buildURL('study', 'browseData.api')
@@ -885,10 +889,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     fields: [
                         {name : 'id'},
                         {name : 'name'},
-                        {name : 'category'},
+                        {name : 'category', mapping : 'category.label', convert : function(v) { if (v == 'Uncategorized') return ''; return v; }},
                         {name : 'createdBy'},
                         {name : 'createdByUserId',      type : 'int'},
                         {name : 'type'},
+                        {name : 'icon'},
                         {name : 'description'},
                         {name : 'schemaName'},
                         {name : 'queryName'},
@@ -911,8 +916,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 selectionModel,
                 {header: 'Name', width: 200, sortable: true, dataIndex: 'name'},
                 {header: 'Category', width: 120, sortable: true, dataIndex:'category'},
-                {header: 'Type', width: 140, sortable: true, dataIndex: 'type'},
-                {header: 'Description', width: 145, sortable: true, dataIndex: 'description'}
+                {header: 'Type', width: 60, sortable: true, dataIndex: 'type', renderer : function(v, meta, rec) {
+                    return '<div style="margin-left: auto; margin-right: auto; width: 30px; vertical-align: middle;">' +
+                                '<img title="' + rec.data.type + '" src="' + rec.data.icon + '" alt="' + rec.data.type +'" height="16px" width="16px">' +
+                           '</div>';
+                }
+                },
+                {header: 'Description', sortable: true, dataIndex: 'description'}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
