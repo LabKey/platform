@@ -93,7 +93,7 @@ public class StudyWriterFactory implements FolderWriterFactory
             if (null != study && ctx.getContext(StudyExportContext.class) == null)
             {
                 StudyExportContext exportCtx = new StudyExportContext(study, ctx.getUser(), c, "old".equals(ctx.getFormat()), ctx.getDataTypes(),
-                        ctx.isRemoveProtected(), new ParticipantMapper(study, ctx.isShiftDates(), ctx.isAlternateIds()), ctx.getLoggerGetter());
+                        ctx.isRemoveProtected(), new ParticipantMapper(study, ctx.isShiftDates(), ctx.isAlternateIds()), ctx.isMaskClinic(), ctx.getLoggerGetter());
                 ctx.addContext(StudyExportContext.class, exportCtx);
             }
         }

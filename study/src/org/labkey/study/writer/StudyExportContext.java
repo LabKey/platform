@@ -42,6 +42,7 @@ public class StudyExportContext extends AbstractContext
     private final List<DataSetDefinition> _datasets = new LinkedList<DataSetDefinition>();
     private final Set<Integer> _datasetIds = new HashSet<Integer>();
     private final boolean _removeProtected;
+    private final boolean _maskClinic;
     private final ParticipantMapper _participantMapper;
     private Set<Integer> _visitIds = null;
     private List<String> _participants = new ArrayList<String>();
@@ -49,30 +50,31 @@ public class StudyExportContext extends AbstractContext
 
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, LoggerGetter logger)
     {
-        this(study, user, c, oldFormats, dataTypes, false, new ParticipantMapper(study, false, false), logger);
+        this(study, user, c, oldFormats, dataTypes, false, new ParticipantMapper(study, false, false), false, logger);
     }
 
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Set<DataSetDefinition> initDatasets, LoggerGetter logger)
     {
-        this(study, user, c, oldFormats, dataTypes, false, new ParticipantMapper(study, false, false), logger);
+        this(study, user, c, oldFormats, dataTypes, false, new ParticipantMapper(study, false, false), false, logger);
         setDatasets(initDatasets);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger)
     {
         super(user, c, StudyXmlWriter.getStudyDocument(), logger, null);
         _oldFormats = oldFormats;
         _dataTypes = dataTypes;
         _removeProtected = removeProtected;
         _participantMapper = participantMapper;
+        _maskClinic = maskClinic;
 
         if (_datasets.size() == 0)
             initializeDatasets(study);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, Set<DataSetDefinition> initDatasets, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, boolean maskClinic, Set<DataSetDefinition> initDatasets, LoggerGetter logger)
     {
-        this(study, user, c, oldFormats, dataTypes, removeProtected, participantMapper, logger);
+        this(study, user, c, oldFormats, dataTypes, removeProtected, participantMapper, maskClinic, logger);
         setDatasets(initDatasets);
     }
 
@@ -102,6 +104,12 @@ public class StudyExportContext extends AbstractContext
     public boolean isAlternateIds()
     {
         return getParticipantMapper().isAlternateIds();
+    }
+
+    @Override
+    public boolean isMaskClinic()
+    {
+        return _maskClinic;
     }
 
     private void initializeDatasets(StudyImpl study)

@@ -1171,7 +1171,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             name: 'alternateids',
             fieldLabel: "Export Alternate " + this.subject.nounSingular + " IDs?",
             checked: true,
-            value: true
+            value: true,
+            gtip: '<div>' +
+                    '<div class=\'g-tip-header\'><span>Export Alternate ' + this.subject.nounSingular + ' IDs</span></div>' +
+                    '<div class=\'g-tip-subheader\'>' +
+                        'Selecting this option will replace each ' + this.subject.nounSingular.toLowerCase() + ' id by an alternate randomly generated id.' +
+                    '</div>' +
+                '</div>'
         });
 
         this.shiftDatesCheckBox = new Ext.form.Checkbox({
@@ -1179,7 +1185,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             name: 'shiftDates',
             fieldLabel: 'Shift Participant Dates?',
             checked: true,
-            value: true
+            value: true,
+            gtip: '<div>' +
+                    '<div class=\'g-tip-header\'><span>Shift Participant Dates</span></div>' +
+                    '<div class=\'g-tip-subheader\'>' +
+                        'Selecting this option will shift selected date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days).' +
+                    '</div>' +
+                '</div>'
         });
 
         this.protectedColumnsCheckBox = new Ext.form.Checkbox({
@@ -1187,7 +1199,26 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             name: 'removeProtected',
             fieldLabel: 'Remove All Columns Tagged as Protected?',
             checked: true,
-            value: true
+            value: true,
+            gtip: '<div>' +
+                    '<div class=\'g-tip-header\'><span>Remove Protected Columns</span></div>' +
+                    '<div class=\'g-tip-subheader\'>' +
+                        'Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.' +
+                    '</div>' +
+                '</div>'
+        });
+
+        this.maskClinicCheckBox = new Ext.form.Checkbox({
+            name: 'maskClinic',
+            fieldLabel: "Mask Clinic Names?",
+            checked: false,
+            value: true,
+            gtip: '<div>' +
+                    '<div class=\'g-tip-header\'><span>Mask Clinic Names</span></div>' +
+                    '<div class=\'g-tip-subheader\'>' +
+                        'Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).' +
+                    '</div>' +
+                '</div>'
         });
 
         var optionsPanel = new Ext.form.FormPanel({
@@ -1200,7 +1231,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             items: [
                 this.protectedColumnsCheckBox,
                 this.shiftDatesCheckBox,
-                this.alternateIdsCheckBox
+                this.alternateIdsCheckBox,
+                this.maskClinicCheckBox
             ]
         });
 
@@ -1250,6 +1282,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.dstPath = this.info.dstPath;
 
         if(this.mode == 'publish'){
+            params.maskClinic = this.maskClinicCheckBox.getValue();
             params.useAlternateParticipantIds = this.alternateIdsCheckBox.getValue();
             params.shiftDates = this.shiftDatesCheckBox.getValue();
             params.removeProtectedColumns = this.protectedColumnsCheckBox.getValue();

@@ -197,8 +197,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 User user = getUser();
                 Set<String> dataTypes = getDataTypesToExport(_form);
 
-                FolderExportContext ctx = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new",
-                        _form.isRemoveProtectedColumns(), _form.isShiftDates(), _form.isUseAlternateParticipantIds(), new PipelineJobLoggerGetter(this));
+                FolderExportContext ctx = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new", false,
+                        _form.isRemoveProtectedColumns(), _form.isShiftDates(), _form.isUseAlternateParticipantIds(),
+                        _form.isMaskClinic(), new PipelineJobLoggerGetter(this));
 
                 if (_form.getLists() != null)
                     ctx.setListIds(_form.getLists());
@@ -212,7 +213,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 StudyExportContext studyCtx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(),
                         false, dataTypes, _form.isRemoveProtectedColumns(),
                         new ParticipantMapper(_sourceStudy, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
-                        _datasets, new PipelineJobLoggerGetter(this)
+                        _form.isMaskClinic(), _datasets, new PipelineJobLoggerGetter(this)
                 );
 
                 if (selectedVisits != null)

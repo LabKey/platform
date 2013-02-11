@@ -51,16 +51,9 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
         pw.print("# ");
         pw.println(queryInfo.getFilename());
 
-        SQLFragment sql = new SQLFragment().append("SELECT ");
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columns.size());
-        String comma = "";
-
         for (ImportableColumn column : columns)
         {
-            sql.append(comma);
-            sql.append(column.getDbColumnName());
-            comma = ", ";
-
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
             DisplayColumn dc = new DataColumn(ci);
             dc.setCaption(column.getTsvColumnName());
@@ -71,17 +64,32 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
             displayColumns.add(dc);
         }
 
-        sql.append(" FROM ");
-        sql.append(queryInfo.getTableInfo());
-        sql.append(" WHERE Container = ? ORDER BY ExternalId");
-
-        sql.add(ctx.getContainer());
-
-        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
+        SQLFragment sql = generateSql(ctx, tinfo, columns);
+        ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet();
 
         TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs), displayColumns);
         gridWriter.write(pw);
         gridWriter.close();  // Closes ResultSet and PrintWriter
+    }
+
+    protected SQLFragment generateSql(ImportContext<StudyDocument.Study> ctx, TableInfo tinfo, Collection<ImportableColumn> columns)
+    {
+        SQLFragment sql = new SQLFragment().append("SELECT ");
+        String comma = "";
+
+        for (ImportableColumn column : columns)
+        {
+            sql.append(comma);
+            sql.append(column.getDbColumnName());
+            comma = ", ";
+        }
+
+        sql.append(" FROM ");
+        sql.append(tinfo, "ti");
+        sql.append(" WHERE Container = ? ORDER BY ExternalId");
+
+        sql.add(ctx.getContainer());
+        return sql;
     }
 
     public static class QueryInfo

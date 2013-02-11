@@ -3447,6 +3447,7 @@ study/src/org/labkey/study/writer/CohortWriter.java -text
 study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
 study/src/org/labkey/study/writer/DatasetWriter.java -text
 study/src/org/labkey/study/writer/InternalStudyWriter.java -text
+study/src/org/labkey/study/writer/LocationSpecimenWriter.java -text
 study/src/org/labkey/study/writer/MissingValueWriterFactory.java -text
 study/src/org/labkey/study/writer/OutputStreamWrapper.java -text
 study/src/org/labkey/study/writer/ParticipantCommentWriter.java -text

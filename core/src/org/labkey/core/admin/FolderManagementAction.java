@@ -261,7 +261,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         FolderWriterImpl writer = new FolderWriterImpl();
         FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
                 form.getFormat(), form.isIncludeSubfolders(), form.isRemoveProtected(), form.isShiftDates(),
-                form.isAlternateIds(), new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
 
         switch(form.getLocation())
         {
@@ -509,6 +509,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private boolean removeProtected;
         private boolean shiftDates;
         private boolean alternateIds;
+        private boolean maskClinic;
 
         public String[] getActiveModules()
         {
@@ -739,6 +740,16 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public void setAlternateIds(boolean alternateIds)
         {
             this.alternateIds = alternateIds;
+        }
+
+        public boolean isMaskClinic()
+        {
+            return maskClinic;
+        }
+
+        public void setMaskClinic(boolean maskClinic)
+        {
+            this.maskClinic = maskClinic;
         }
     }
 

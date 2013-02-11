@@ -29,6 +29,7 @@ public class ChildStudyDefinition
     private boolean _removeProtectedColumns;
     private boolean _shiftDates;
     private boolean _useAlternateParticipantIds;
+    private boolean _maskClinic;
     private boolean _includeSpecimens;
     private boolean _specimenRefresh = false;
     private Integer[] _visits;
@@ -149,6 +150,14 @@ public class ChildStudyDefinition
 
     public void setUseAlternateParticipantIds(boolean useAlternateParticipantIds){
         _useAlternateParticipantIds = useAlternateParticipantIds;
+    }
+
+    public boolean isMaskClinic(){
+        return _maskClinic;
+    }
+
+    public void setMaskClinic(boolean maskClinic){
+        _maskClinic = maskClinic;
     }
 
     public Integer[] getVisits(){

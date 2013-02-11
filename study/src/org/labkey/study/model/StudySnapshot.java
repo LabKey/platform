@@ -142,6 +142,7 @@ public class StudySnapshot
         private boolean useAlternateParticipantIds;
         private boolean removeProtectedColumns;
         private boolean shiftDates;
+        private boolean maskClinic;
         private Set<Integer> visits;
         private List<String> participants;
 
@@ -155,6 +156,7 @@ public class StudySnapshot
             useAlternateParticipantIds = ctx.isAlternateIds();
             removeProtectedColumns = ctx.isRemoveProtected();
             shiftDates = ctx.isShiftDates();
+            maskClinic = ctx.isMaskClinic();
 
             visits = ctx.getVisitIds();
             participants = ctx.getParticipants();
@@ -178,6 +180,11 @@ public class StudySnapshot
         public boolean isShiftDates()
         {
             return shiftDates;
+        }
+
+        public boolean isMaskClinic()
+        {
+            return maskClinic;
         }
 
         public Set<Integer> getVisits()

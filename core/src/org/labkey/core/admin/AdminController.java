@@ -4077,7 +4077,7 @@ public class AdminController extends SpringActionController
                         // export objects from the source folder
                         FolderWriterImpl writer = new FolderWriterImpl();
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
-                                form.getTemplateIncludeSubfolders(), false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                                form.getTemplateIncludeSubfolders(), false, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
                         writer.write(sourceContainer, exportCtx, vf);
 
                         // create the new target container
