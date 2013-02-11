@@ -35,21 +35,17 @@ public class FolderExportContext extends AbstractFolderContext
     private boolean _removeProtected = false;
     private boolean _shiftDates = false;
     private boolean _alternateIds = false;
+    private boolean _maskClinic = false;
     private Set<String> _viewIds;
     private Set<String> _reportIds;
     private Set<Integer> _listIds;
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
     {
-        this(user, c, dataTypes, format, false, false, false, false, logger);
+        this(user, c, dataTypes, format, false, false, false, false, false, logger);
     }
 
-    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean removeProtected, boolean shiftDates, boolean alternateIds, LoggerGetter logger)
-    {
-        this(user, c, dataTypes, format, false, removeProtected, shiftDates, alternateIds, logger);
-    }
-
-    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removeProtected, boolean shiftDates, boolean alternateIds, LoggerGetter logger)
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removeProtected, boolean shiftDates, boolean alternateIds, boolean maskClinic, LoggerGetter logger)
     {
         super(user, c, getFolderDocument(), logger, null);
         _dataTypes = dataTypes;
@@ -58,6 +54,7 @@ public class FolderExportContext extends AbstractFolderContext
         _removeProtected = removeProtected;
         _shiftDates = shiftDates;
         _alternateIds = alternateIds;
+        _maskClinic = maskClinic;
     }
 
     public Set<String> getDataTypes()
@@ -93,6 +90,11 @@ public class FolderExportContext extends AbstractFolderContext
     public boolean isAlternateIds()
     {
         return _alternateIds;
+    }
+
+    public boolean isMaskClinic()
+    {
+        return _maskClinic;
     }
 
     public static FolderDocument getFolderDocument()
