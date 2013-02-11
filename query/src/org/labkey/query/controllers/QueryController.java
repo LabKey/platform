@@ -4195,7 +4195,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageViewsAction extends SimpleViewAction<QueryForm>
     {
         QueryForm _form;
@@ -4215,7 +4215,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(AdminPermission.class)
     public class InternalDeleteView extends ConfirmAction<InternalViewForm>
     {
         public ModelAndView getConfirmView(InternalViewForm form, BindException errors) throws Exception
@@ -4241,7 +4241,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermissionClass(AdminPermission.class)
     public class InternalSourceViewAction extends FormViewAction<InternalSourceViewForm>
     {
         public void validateCommand(InternalSourceViewForm target, Errors errors)
@@ -4285,7 +4285,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermissionClass(AdminPermission.class)
     public class InternalNewViewAction extends FormViewAction<InternalNewViewForm>
     {
         int _customViewId = 0;

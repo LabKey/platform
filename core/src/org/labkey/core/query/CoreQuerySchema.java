@@ -388,62 +388,6 @@ public class CoreQuerySchema extends UserSchema
     protected FilteredTable getUserTable()
     {
         return new UsersTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME));
-
-/*
-        User user = getUser();
-        TableInfo usersBase = CoreSchema.getInstance().getTableInfoUsers();
-        FilteredTable users = new FilteredTable(usersBase);
-
-        ColumnInfo userIdCol = users.addWrapColumn(usersBase.getColumn("UserId"));
-        userIdCol.setKeyField(true);
-        userIdCol.setReadOnly(true);
-
-        ColumnInfo entityIdCol = users.addWrapColumn(usersBase.getColumn("EntityId"));
-        entityIdCol.setHidden(true);
-
-        ColumnInfo displayNameCol = users.addWrapColumn(usersBase.getColumn("DisplayName"));
-        displayNameCol.setReadOnly(true);
-        users.addWrapColumn(usersBase.getColumn("FirstName"));
-        users.addWrapColumn(usersBase.getColumn("LastName"));
-        users.addWrapColumn(usersBase.getColumn("Description"));
-        users.addWrapColumn(usersBase.getColumn("Created"));
-        users.addWrapColumn(usersBase.getColumn("Modified"));
-
-        if (canSeeEmailAddresses())
-        {
-            users.addWrapColumn(usersBase.getColumn("Email"));
-        }
-        else
-        {
-            users.addColumn(new NullColumnInfo(users, "Email", JdbcType.VARCHAR));
-        }
-
-        if (getUser().isAdministrator() || getContainer().hasPermission(getUser(), AdminPermission.class))
-        {
-            users.addWrapColumn(usersBase.getColumn("Phone"));
-            users.addWrapColumn(usersBase.getColumn("Mobile"));
-            users.addWrapColumn(usersBase.getColumn("Pager"));
-            users.addWrapColumn(usersBase.getColumn("IM"));
-            users.addWrapColumn(usersBase.getColumn("Active"));
-            users.addWrapColumn(usersBase.getColumn("LastLogin"));
-
-            // The details action requires admin permission so don't offer the link if they can't see it
-            users.setDetailsURL(new DetailsURL(new ActionURL(UserController.DetailsAction.class, getContainer()), Collections.singletonMap("userId", "UserId")));
-        }
-
-
-        List<FieldKey> defCols = new ArrayList<FieldKey>();
-        for (ColumnInfo columnInfo : users.getColumns())
-        {
-            if (!columnInfo.isHidden() && !"Created".equalsIgnoreCase(columnInfo.getName()) && !"Modified".equalsIgnoreCase(columnInfo.getName()))
-            {
-                defCols.add(FieldKey.fromParts(columnInfo.getName()));
-            }
-        }
-        users.setDefaultVisibleColumns(defCols);
-
-        return users;
-*/
     }
 
 
