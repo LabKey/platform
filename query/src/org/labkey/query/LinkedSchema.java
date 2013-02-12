@@ -24,12 +24,16 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
@@ -111,21 +115,7 @@ public class LinkedSchema extends ExternalSchema
     {
         SchemaKey sourceSchemaName = SchemaKey.fromString(template != null ? template.getSourceSchemaName() : def.getSourceSchemaName());
 
-        User sourceSchemaUser = user;
-        // We may want to be a little more locked down than this, but this gives the user read access to the source
-        // container, even if they don't normally have access
-//        User sourceSchemaUser = new LimitedUser(user, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false)
-//        {
-//            @Override
-//            public Set<Role> getContextualRoles(SecurityPolicy policy)
-//            {
-//                if (policy.getContainerId().equals(sourceContainer.getId()))
-//                {
-//                    return super.getContextualRoles(policy);
-//                }
-//                return Collections.emptySet();
-//            }
-//        };
+        User sourceSchemaUser = new LinkedSchemaUserWrapper(user, sourceContainer);
         return QueryService.get().getUserSchema(sourceSchemaUser, sourceContainer, sourceSchemaName);
     }
 
@@ -252,4 +242,28 @@ public class LinkedSchema extends ExternalSchema
         return queryDef;
     }
 
+
+    private static class LinkedSchemaUserWrapper extends LimitedUser
+    {
+        private final Container _sourceContainer;
+
+        public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
+        {
+            super(realUser, realUser.getGroups(), Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            _sourceContainer = sourceContainer;
+        }
+
+        @Override
+        public Set<Role> getContextualRoles(SecurityPolicy policy)
+        {
+            // For the linked schema's source container, grant ReaderRoler via the LimitedUser implementation
+            if (policy.getContainerId().equals(_sourceContainer.getId()))
+            {
+                return super.getContextualRoles(policy);
+            }
+
+            // For all other containers, just rely on normal permissions
+            return Collections.emptySet();
+        }
+    }
 }

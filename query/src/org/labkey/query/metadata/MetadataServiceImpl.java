@@ -597,6 +597,8 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
         XmlOptions xmlOptions = new XmlOptions();
         xmlOptions.setSavePrettyPrint();
+        // Don't use an explicit namespace, making the XML much more readable
+        xmlOptions.setUseDefaultNamespace();
         queryDef.setMetaData(doc.xmlText(xmlOptions));
         try
         {
