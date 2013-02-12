@@ -237,6 +237,13 @@ Ext4.define('File.panel.ToolbarPanel', {
         var columnData = [];
         var baseColumnData = ['File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
                 'Usages', 'Download Link', 'File Extension'];
+        var inUse = {};
+
+        if(this.useCustomProps){
+            for(var i = 0; i < this.fileProperties.length; i++){
+                baseColumnData.push(this.fileProperties[i].label);
+            }
+        }
         var reverseBaseColumnData = [];
         for(i=0; i < baseColumnData.length; i++){
             reverseBaseColumnData[baseColumnData[i]] = i+1;
@@ -250,6 +257,22 @@ Ext4.define('File.panel.ToolbarPanel', {
                 hidden : this.gridConfigs.columns[i].hidden,
                 sortable : this.gridConfigs.columns[i].sortable
             });
+            inUse[reverseBaseColumnData[text]] = true;
+        }
+        for(var i = 0; i < this.fileProperties.length; i++){
+            if((i+10) in inUse)
+            {
+                continue;
+            }
+            else
+            {
+                columnData.push({
+                    id : i + 10,
+                    text : this.fileProperties[i].label,
+                    hidden : false,
+                    sortable : true
+                });
+            }
         }
 
         this.columnsStore = Ext4.create('Ext.data.Store', {
@@ -402,7 +425,7 @@ Ext4.define('File.panel.ToolbarPanel', {
                 id : item.id,
                 hidden : item.hidden,
                 sortable : item.sortable,
-                width : this.gridConfigs.columns[i+1].width
+                width : this.gridConfigs.columns[i+1] ? this.gridConfigs.columns[i+1].width : 80
             };
             gridConfigsRet.columns.push(gridConfigsRetcol);
         }
@@ -411,7 +434,9 @@ Ext4.define('File.panel.ToolbarPanel', {
 
     gridConfigsChanged : function()
     {
-        return (this.columnsStore.getUpdatedRecords().length > 0);
+        //TODO Get this to work (need to find a way to see if the rows were reordered)
+        //return (this.columnsStore.getUpdatedRecords().length > 0);
+        return true;
     },
 
     getTbarActions : function()

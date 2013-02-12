@@ -1047,6 +1047,7 @@ Ext4.define('File.panel.Browser', {
             plain : true,
             border: false,
             pipelineFileProperties: pipelineFileProperties.config,
+            fileProperties : pipelineFileProperties.fileProperties,
             listeners: {
                 success: this.getAdminActionsConfig,
                 close: function() { this.adminWindow.close(); },

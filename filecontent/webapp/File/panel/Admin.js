@@ -96,7 +96,9 @@ Ext4.define('File.panel.Admin', {
         this.toolBarPanel = Ext4.create('File.panel.ToolbarPanel', {
             title : 'Toolbar and Grid Settings',
             tbarActions : this.pipelineFileProperties.tbarActions,
-            gridConfigs : this.pipelineFileProperties.gridConfig
+            gridConfigs : this.pipelineFileProperties.gridConfig,
+            useCustomProps: this.pipelineFileProperties.fileConfig === 'useCustom',
+            fileProperties : this.fileProperties
         });
 
         this.toolBarPanel.on('activate', function(){
