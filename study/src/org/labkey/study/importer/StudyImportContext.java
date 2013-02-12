@@ -197,10 +197,4 @@ public class StudyImportContext extends AbstractContext
 
         return null;
     }
-
-    @Override
-    public boolean isMaskClinic()
-    {
-        return false;
-    }
 }
