@@ -1318,7 +1318,7 @@ public class QueryServiceImpl extends QueryService
     // Use a WeakHashMap to cache QueryDefs. This means that the cache entries will only be associated directly
     // with the exact same UserSchema instance, regardless of whatever UserSchema.equals() returns. This means
     // that the scope of the cache is very limited, and this is a very conservative cache.
-    private Map<ObjectIdentityCacheKey, Map<String, QueryDef>> _metadataCache = new WeakHashMap<ObjectIdentityCacheKey, Map<String, QueryDef>>();
+    private Map<ObjectIdentityCacheKey, WeakReference<Map<String, QueryDef>>> _metadataCache = new WeakHashMap<ObjectIdentityCacheKey, WeakReference<Map<String, QueryDef>>>();
 
     /** Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality */
     private static class ObjectIdentityCacheKey
@@ -1365,11 +1365,13 @@ public class QueryServiceImpl extends QueryService
     public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @Nullable Path dir)
     {
         ObjectIdentityCacheKey schemaCacheKey = new ObjectIdentityCacheKey(schema, customQuery, allModules, dir);
-        Map<String, QueryDef> queryDefs = _metadataCache.get(schemaCacheKey);
+        WeakReference<Map<String, QueryDef>> ref = _metadataCache.get(schemaCacheKey);
+        Map<String, QueryDef> queryDefs = ref == null ? null : ref.get();
         if (queryDefs == null)
         {
             queryDefs = new CaseInsensitiveHashMap<QueryDef>();
-            _metadataCache.put(schemaCacheKey, queryDefs);
+            ref = new WeakReference<Map<String, QueryDef>>(queryDefs);
+            _metadataCache.put(schemaCacheKey, ref);
         }
         // Check if we've already cached the QueryDef for this specific UserSchema object
         if (queryDefs.containsKey(tableName))
