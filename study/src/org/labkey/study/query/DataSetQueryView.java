@@ -56,6 +56,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -76,6 +77,7 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.ResultSet;
@@ -332,6 +334,19 @@ public class DataSetQueryView extends StudyQueryView
     @Override
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
+        HttpServletRequest request = HttpView.currentRequest();
+        Boolean allowFacet = null != request && Boolean.parseBoolean(request.getParameter("facet"));
+        if (allowFacet)
+        {
+            // Set the Data Region to facet mode
+            view.getDataRegion().setFacetable(allowFacet);
+
+            ActionButton btn = new ActionButton("Filter");
+            btn.setActionType(ActionButton.Action.SCRIPT);
+            btn.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].showFaceting(); return false;");
+            bar.add(btn);
+        }
+
         bar.add(createViewButton(getItemFilter()));
         bar.add(createChartButton());
 

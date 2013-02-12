@@ -13,6 +13,8 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
 
     extend : 'Ext.panel.Panel',
 
+    alias : 'widget.participantfilter',
+
     bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
 
     constructor : function(config) {
@@ -272,16 +274,15 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 }
 
                 for (var type in categories) {
-                    if (categories.hasOwnProperty(type))
-                    {
-                        if (type == 'cohort')
+                    if (categories.hasOwnProperty(type)) {
+                        if (type == 'cohort') {
                             continue;
+                        }
 
                         var groupConfig = Ext4.clone(storeConfig);
                         groupConfig.data = categories[type];
 
                         groupSectionCfg.push({
-
                             normalWrap  : this.normalWrap,
                             store       : Ext4.create('Ext.data.Store', groupConfig),
                             selection   : this.getInitialSelection('participantGroup'),
@@ -303,9 +304,9 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 })
             },
             params : {
-                includeParticipantIds   : this.includeParticipantIds,
-                includeUnassigned       : this.includeUnassigned,
-                type                    : ['participantGroup', 'cohort']
+                includeParticipantIds : this.includeParticipantIds,
+                includeUnassigned     : this.includeUnassigned,
+                type                  : ['participantGroup', 'cohort']
             },
             failure : this.onFailure,
             scope   : this

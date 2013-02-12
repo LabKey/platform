@@ -978,6 +978,35 @@ table.labkey-data-region
     border-spacing: 0;
 }
 
+.labkey-data-region-wrap {
+    white-space: nowrap;
+    float: left;
+}
+
+.x4-reset div.facet_header {
+    height: 35px;
+    background-color: #E7EFF4;
+    background-image: none;
+    box-shadow: none;
+    border-bottom: 1px solid black;
+}
+
+.x4-reset div.facet_header .x4-panel-header-text {
+    color: #126495;
+    text-transform: uppercase;
+    font-size: 10px;
+}
+
+.facet-wrap,
+.facet-wrap div.x4-reset
+{
+    float: left;
+}
+
+.region-wrap {
+    float: right;
+}
+
 /* Used to draw a border around the entire data region table when showBorders = false */
 table.labkey-show-surrounding-border
 {
@@ -1015,10 +1044,6 @@ table.wiki-table td, table.wiki-table th
     padding: 4px;
     border-width: 1px 1px 0 0;
     text-align: left;
-}
-
-table.labkey-pad-cells
-{
 }
 
 .labkey-pad-cells td
