@@ -165,6 +165,12 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     }
 
     @Override
+    public boolean isMaskClinic()
+    {
+        return false;
+    }
+
+    @Override
     public <K extends ImportContext> void addContext(Class<K> contextClass, K context)
     {
         _contextMap.put(contextClass, context);
