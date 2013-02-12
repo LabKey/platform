@@ -108,6 +108,8 @@ public class DataRegion extends AbstractDataRegion
     private List<String> _groupHeadings;
     private boolean _horizontalGroups = true;
 
+    private boolean _facetable = false;
+
     private Long _totalRows = null; // total rows in the query or null if unknown
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
@@ -894,6 +896,13 @@ public class DataRegion extends AbstractDataRegion
     {
         if(renderButtons)
             renderFormHeader(ctx, out, MODE_GRID);
+        if (isFacetable())
+        {
+            out.write("\n<div class=\"labkey-data-region-wrap\"><div id=\"");
+            out.write(PageFlowUtil.filter("dataregion_facet_" + getName()));
+            out.write("\" class=\"facet-wrap\"></div>");
+            out.write("<div class=\"region-wrap\">");
+        }
         out.write("\n<table class=\"labkey-data-region");
 
         if (isShowBorders())
@@ -929,6 +938,8 @@ public class DataRegion extends AbstractDataRegion
     protected void renderRegionEnd(RenderContext ctx, Writer out, boolean renderButtons, List<DisplayColumn> renderers) throws IOException
     {
         out.write("\n</table>");
+        if (isFacetable())
+            out.write("<div></div>");
         if (renderButtons)
             renderFormEnd(ctx, out);
 
@@ -2488,6 +2499,16 @@ public class DataRegion extends AbstractDataRegion
     {
         String name = htmlEncode ? PageFlowUtil.filterQuote(getName()) : PageFlowUtil.jsString(getName());
         return "document.forms[" + name + "]";
+    }
+
+    public boolean isFacetable()
+    {
+        return _facetable;
+    }
+
+    public void setFacetable(boolean facetable)
+    {
+        _facetable = facetable;
     }
 
     public boolean isShowBorders()

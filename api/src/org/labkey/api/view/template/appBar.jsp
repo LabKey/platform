@@ -140,11 +140,10 @@
 
 <script type="text/javascript">
     (function(){
-        var setMinWidth = function(){
+        var setMinWidth = function(tabs) {
             var buttonBar = Ext4.get(Ext4.query('.labkey-folder-header .button-bar')[0]);
             var folderTitle = Ext4.get(Ext4.query('.labkey-folder-title')[0]);
             var appBar = Ext4.get(Ext4.query('.labkey-app-bar')[0]);
-            var tabs = Ext4.query('.labkey-app-bar ul li');
             var totalWidth = 0;
 
             for(var i = 0; i < tabs.length; i++){
@@ -163,10 +162,10 @@
             }
         };
 
-        var addTabListeners = function(){
-            var tabs = Ext4.query('.labkey-app-bar ul li');
-            for(var i = 0; i < tabs.length; i++){
-                var tab = Ext4.get(tabs[i]);
+        var addTabListeners = function(tabs) {
+            var tab, i=0;
+            for(; i < tabs.length; i++){
+                tab = Ext4.get(tabs[i]);
                 tab.on('mouseover', function(){
                     var tabMenu =  Ext4.get(this.query('span[class=labkey-tab-menu]')[0]);
                     if(tabMenu){
@@ -183,11 +182,10 @@
             }
         };
 
-        var tabs = LABKEY.ExtAdapter.query('.labkey-app-bar ul li');
-
         Ext4.onReady(function(){
-            setMinWidth();
-            addTabListeners();
+            var tabs = Ext4.query('.labkey-app-bar ul li');
+            setMinWidth(tabs);
+            addTabListeners(tabs);
         });
     })();
 </script>

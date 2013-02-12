@@ -5250,6 +5250,7 @@ internal/webapp/codemirror/theme/vibrant-ink.css -text
 internal/webapp/codemirror/theme/xq-dark.css -text
 internal/webapp/color_functions.js -text
 internal/webapp/completion.js -text
+internal/webapp/dataregion/panel/Facet.js -text
 internal/webapp/designer/designer2.js -text
 internal/webapp/designer/wand.gif -text
 internal/webapp/editarea/autocompletion.js -text

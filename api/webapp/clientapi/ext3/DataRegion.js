@@ -185,14 +185,22 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     // private
     beforeDestroy : function ()
     {
+        this.doDestroy();
+        LABKEY.DataRegion.superclass.beforeDestroy.call(this);
+    },
+
+    doDestroy : function()
+    {
         if (this.headerLock())
         {
             Ext.EventManager.un(window, 'load', this._resizeContainer, this);
             Ext.EventManager.un(window, 'resize', this._resizeContainer, this);
             Ext.EventManager.un(window, 'scroll', this._scrollContainer, this);
             Ext.EventManager.un(document, 'DOMNodeInserted', this._resizeContainer, this);
-            this.resizeTask.cancel();
-            delete this.resizeTask;
+            if (this.resizeTask) {
+                this.resizeTask.cancel();
+                delete this.resizeTask;
+            }
         }
 
         if (this.msgbox)
@@ -206,8 +214,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             this.customizeView.destroy();
             delete this.customizeView;
         }
-
-        LABKEY.DataRegion.superclass.beforeDestroy.call(this);
     },
 
     /**
@@ -271,6 +277,33 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             return;
 
         this._setParam(".offset", newoffset, [".offset", ".showRows"]);
+    },
+
+    showFaceting : function() {
+
+        var dr = this;
+
+        var initFacet = function() {
+
+            dr.facet = Ext4.create('LABKEY.dataregion.panel.Facet', {
+                dataRegion : dr
+            });
+
+            // Once intialized this method is replaced to toggle faceting
+            dr.showFaceting = function() {
+                dr.facet.toggleCollapse();
+                if (dr.resizeTask) {
+                    dr.resizeTask.delay(350);
+                }
+            };
+        };
+
+        LABKEY.requiresExt4Sandbox();  // Ext 4 might not be present
+        LABKEY.requiresScript([
+            '/study/ReportFilterPanel.js',
+            '/study/ParticipantFilterPanel.js',
+            '/dataregion/panel/Facet.js'
+        ], true, initFacet);
     },
 
     /**
@@ -1102,6 +1135,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     _initHeaderLock : function() {
         // initialize constants
         this.headerRow          = Ext.get('dataregion_header_row_' + this.name);
+        if (!this.headerRow) {
+            console.log('header locking has been disabled on ' + this.name);
+            this._allowHeaderLock = false;
+            return;
+        }
         this.headerRowContent   = this.headerRow.child('td');
         this.headerSpacer       = Ext.get('dataregion_header_row_spacer_' + this.name);
         this.colHeaderRow       = Ext.get('dataregion_column_header_row_' + this.name);
