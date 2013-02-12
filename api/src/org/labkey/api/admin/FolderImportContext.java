@@ -111,4 +111,10 @@ public class FolderImportContext extends AbstractFolderContext
 
         return folderDoc;
     }
+
+    @Override
+    public boolean isMaskClinic()
+    {
+        return false;
+    }
 }
