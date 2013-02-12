@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 /**
@@ -85,7 +86,7 @@ class PostgreSql83Dialect extends SqlDialect
 
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<String, Integer>();
     private InClauseGenerator _inClauseGenerator = null;
-    private boolean _arraySortFunctionExists = false;
+    private AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
@@ -463,7 +464,7 @@ class PostgreSql83Dialect extends SqlDialect
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
     {
         // Sort function might not exist in external datasource; skip that syntax if not
-        boolean useSortFunction = sorted && _arraySortFunctionExists;
+        boolean useSortFunction = sorted && _arraySortFunctionExists.get();
 
         SQLFragment result = new SQLFragment("array_to_string(");
         if (useSortFunction)
@@ -778,7 +779,10 @@ class PostgreSql83Dialect extends SqlDialect
     private void determineIfArraySortFunctionExists(DbScope scope)
     {
         Selector selector = new SqlSelector(scope, "SELECT * FROM pg_catalog.pg_namespace n INNER JOIN pg_catalog.pg_proc p ON pronamespace = n.oid WHERE nspname = 'core' AND proname = 'sort'");
-        _arraySortFunctionExists = selector.exists();
+        _arraySortFunctionExists.set(selector.exists());
+
+        // Array sort function should always exist in LabKey scope (for now)
+        assert !scope.isLabKeyScope() || _arraySortFunctionExists.get();
     }
 
 
