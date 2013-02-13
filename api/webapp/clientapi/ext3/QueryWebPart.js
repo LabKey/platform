@@ -528,20 +528,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
                         if (dr)
                         {
-                            dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
-                            dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
-                            dr.on("beforesortchange", this.beforeSortChange, this);
-                            dr.on("beforeclearsort", this.beforeClearSort, this);
-                            dr.on("beforefilterchange", this.beforeFilterChange, this);
-                            dr.on("beforeclearfilter", this.beforeClearFilter, this);
-                            dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
-                            dr.on("beforechangeview", this.beforeChangeView, this);
-                            dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
-                            dr.on("beforesetparameters", this.beforeSetParameters, this);
-                            dr.on("buttonclick", this.onButtonClick, this);
-                            dr.on("beforerefresh", this.beforeRefresh, this);
-
-
+                            this._attachListeners(dr);
 
                             if (customizeViewTab)
                                 dr.showCustomizeView(customizeViewTab, false, false);
@@ -590,6 +577,21 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             }, this, true),
             scope: this
         });
+    },
+
+    _attachListeners : function(dr) {
+        dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
+        dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
+        dr.on("beforesortchange", this.beforeSortChange, this);
+        dr.on("beforeclearsort", this.beforeClearSort, this);
+        dr.on("beforefilterchange", this.beforeFilterChange, this);
+        dr.on("beforeclearfilter", this.beforeClearFilter, this);
+        dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
+        dr.on("beforechangeview", this.beforeChangeView, this);
+        dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
+        dr.on("beforesetparameters", this.beforeSetParameters, this);
+        dr.on("buttonclick", this.onButtonClick, this);
+        dr.on("beforerefresh", this.beforeRefresh, this);
     },
 
     mask : function(message) {
@@ -821,6 +823,42 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         return this.dataRegionName ? LABKEY.DataRegions[this.dataRegionName] : null;
     }
 });
+
+/**
+ * Acts as another constructor -- requires a LABKEY.DataRegion be provided at instantiation
+ * NOTE: This will ignore most parameters provided and source solely from the DataRegion.
+ * Still respects the following configuration options:
+ * success, failure, listeners, scope, and parameters
+ * @return {LABKEY.QueryWebPart} A QueryWebPart instance that wraps the target Data Region
+ */
+LABKEY.QueryWebPart.constructFromDataRegion = function(config) {
+
+    if (!config.dataRegion) {
+        Ext.Msg.alert('Construction Error', 'A dataRegion configuration must be provided.');
+    }
+
+    var dr = config.dataRegion;
+
+    var qwp = new LABKEY.QueryWebPart({
+        schemaName : dr.schemaName,
+        queryName  : dr.queryName,
+        dataRegionName : dr.name,
+        frame      : false, // never render a frame,
+        parameters : config.parameters,
+        listeners  : config.listeners,
+        success    : config.success,
+        failure    : config.failure,
+        scope      : config.scope
+    });
+
+    qwp._attachListeners(dr);
+
+    // Get Render Element
+    var renderEl = Ext.get(dr.name).parent('div'); // Ext will assign an ID if one is not found
+    qwp.renderTo = renderEl.id;
+
+    return qwp;
+};
 
 /**
  * A read-only object that exposes properties representing standard buttons shown in LabKey data grids.

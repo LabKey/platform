@@ -9,8 +9,13 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             return;
         }
 
+        var renderTarget = 'dataregion_facet_' + config.dataRegion.name;
+        var targetHTML = '<div id="' + renderTarget + '" style="float: left;"></div>';
+
+        Ext4.get(config.dataRegion.name).up('div').insertHtml('beforeBegin', targetHTML);
+
         Ext4.applyIf(config, {
-            renderTo : 'dataregion_facet_' + config.dataRegion.name,
+            renderTo : renderTarget,
             title : 'Faceted Search',
             collapsed : true,
             collapsible : true,
@@ -161,21 +166,63 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             ];
         }
 
-        var qwp = new LABKEY.QueryWebPart({
-            schemaName : this.dataRegion.schemaName,
-            queryName  : this.dataRegion.queryName,
-            frame      : false,
-            showPagination : true,
-            filterArray: filterArray,
-            listeners  : {
-                render : function() {
-                    this.dataRegion = LABKEY.DataRegions[qwp.dataRegionName];
-                }
-            }
-        });
+        if (!this.qwp) {
 
-        // Render over previous Data Region
-        qwp.render('dataregion_' + this.dataRegion.name);
+            // Wrap the corresponding Data Region with a QWP
+            this.qwp = LABKEY.QueryWebPart.constructFromDataRegion({
+                dataRegion : this.dataRegion,
+                parameters : {
+                    facet : true
+                },
+                success : function(dr) {
+
+                    // Give access to to this filter panel to the Data Region
+                    if (dr) {
+                        LABKEY.DataRegions[dr.name].setFacet(this);
+                    }
+                },
+                scope : this
+            });
+
+//            this.qwp = new LABKEY.QueryWebPart({
+//                dataRegion : this.dataRegion,
+//                parameters : {
+//                    facet : true
+//                },
+//                success : function(dr) {
+//
+//                    // Give access to to this filter panel to the Data Region
+//                    if (dr) {
+//                        LABKEY.DataRegions[dr.name].setFacet(this);
+//                    }
+//                },
+//                scope : this
+//            });
+        }
+
+        // Already have a QWP, so just Ajax as a normal filter
+        var dr = LABKEY.DataRegions[this.qwp.dataRegionName];
+        if (dr) {
+            var paramValPairs = this.qwp.userFilters;
+            if (filterArray.length > 0) {
+                var f = filterArray[0];
+
+                var newValArray = [];
+                for (var p in paramValPairs) {
+                    if (paramValPairs.hasOwnProperty(p)) {
+                        newValArray.push([p, paramValPairs[p]]);
+                    }
+                }
+
+                var paramName = f.getURLParameterName().replace('query.', this.dataRegion.name + '.');
+                newValArray.push([paramName, f.getURLParameterValue()]);
+                dr.changeFilter(newValArray, LABKEY.DataRegion.buildQueryString(newValArray));
+            }
+            else {
+                // Clear any filters for this field
+                dr.clearFilter('ParticipantId');
+            }
+        }
     },
 
     onFailure : function(resp) {

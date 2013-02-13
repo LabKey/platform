@@ -279,7 +279,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this._setParam(".offset", newoffset, [".offset", ".showRows"]);
     },
 
-    showFaceting : function() {
+    loadFaceting : function(cb, scope) {
 
         var dr = this;
 
@@ -289,13 +289,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 dataRegion : dr
             });
 
-            // Once intialized this method is replaced to toggle faceting
-            dr.showFaceting = function() {
-                dr.facet.toggleCollapse();
-                if (dr.resizeTask) {
-                    dr.resizeTask.delay(350);
-                }
-            };
+            dr.facetLoaded = true;
+
+            if (cb) { cb.call(scope); }
         };
 
         LABKEY.requiresExt4Sandbox();  // Ext 4 might not be present
@@ -304,6 +300,23 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             '/study/ParticipantFilterPanel.js',
             '/dataregion/panel/Facet.js'
         ], true, initFacet);
+    },
+
+    showFaceting : function() {
+        if (this.facetLoaded) {
+            this.facet.toggleCollapse();
+            if (this.resizeTask) {
+                this.resizeTask.delay(350);
+            }
+        }
+        else {
+            this.loadFaceting(this.showFaceting, this);
+        }
+    },
+
+    setFacet : function(facet) {
+        this.facet = facet;
+        this.facetLoaded = true;
     },
 
     /**
