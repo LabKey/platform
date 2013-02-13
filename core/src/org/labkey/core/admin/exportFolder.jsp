@@ -36,6 +36,7 @@ FolderManagementAction.FolderManagementForm form = (FolderManagementAction.Folde
 
 Study study = StudyService.get().getStudy(c);
 String subjectNoun = study != null ? study.getSubjectNounSingular() : null;
+String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : null;
 %>
 
 <labkey:errors/>
@@ -97,9 +98,9 @@ formItems.push({xtype: "spacer", height: 20});
 formItems.push({xtype: "label", text: "Options:"});
 formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
 formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove All Columns Tagged as Protected<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.")%>', name: 'removeProtected', objectType: 'otherOptions'});
-formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Shift <%=PageFlowUtil.filter(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + PageFlowUtil.filter(subjectNoun.toLowerCase()) + " by a random, " + PageFlowUtil.filter(subjectNoun.toLowerCase()) + " specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
-formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Export Alternate <%=PageFlowUtil.filter(subjectNoun)%> IDs<%=PageFlowUtil.helpPopup("Export Alternate " + PageFlowUtil.filter(subjectNoun) + " IDs", "Selecting this option will replace each " + PageFlowUtil.filter(subjectNoun.toLowerCase()) + " id by an alternate randomly generated id.")%>', name: 'alternateIds', objectType: 'otherOptions'});
-formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove Clinic Names<%=PageFlowUtil.helpPopup("Remove Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).")%>', name: 'maskClinic', objectType: 'otherOptions'});
+formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Shift <%=PageFlowUtil.filter(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + PageFlowUtil.filter(subjectNounLowercase) + " by a random, " + PageFlowUtil.filter(subjectNounLowercase) + " specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
+formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Export Alternate <%=PageFlowUtil.filter(subjectNoun)%> IDs<%=PageFlowUtil.helpPopup("Export Alternate " + PageFlowUtil.filter(subjectNoun) + " IDs", "Selecting this option will replace each " + PageFlowUtil.filter(subjectNounLowercase) + " id by an alternate randomly generated id.")%>', name: 'alternateIds', objectType: 'otherOptions'});
+formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Remove Clinic Names<%=PageFlowUtil.helpPopup("Remove Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).")%>', name: 'maskClinic', objectType: 'otherOptions'});
 
 formItems.push({xtype: "spacer", height: 20});
 formItems.push({xtype: "label", text: "Export to:"});
