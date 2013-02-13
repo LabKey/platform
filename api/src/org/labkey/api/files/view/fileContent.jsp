@@ -19,12 +19,12 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.files.view.FilesWebPart" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%!
@@ -60,19 +60,19 @@
 
     Container c = context.getContainer();
 
-    ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
+    ActionURL projConfig = c.isProject() ? urlProvider(AdminUrls.class).getProjectSettingsFileURL(c) : urlProvider(AdminUrls.class).getFolderManagementFileURL(c);
     int height = 350;
 %>
 
 <%  if (!bean.isEnabled()) { %>
 
-    File sharing has been disabled for this project. Sharing can be configured from the <a href="<%=projConfig%>">project settings</a> view.    
+    File sharing has been disabled for this <%=h(c.getContainerNoun())%>. Sharing can be configured from the <a href="<%=projConfig%>"><%=h(c.getContainerNoun())%> settings</a> view.
 
 <%  } else if (!bean.isRootValid()) { %>
 
     <span class="labkey-error">
         The file root for this folder is invalid. It may not exist or may have been configured incorrectly.<br>
-        <%=c.hasPermission(context.getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem."%>
+        <%=text(c.hasPermission(context.getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem.")%>
     </span>
 
 <%  } %>

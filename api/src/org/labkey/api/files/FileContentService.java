@@ -40,9 +40,10 @@ public interface FileContentService
     public static final String PIPELINE_LINK = "@pipeline";
 
     /**
-     * Returns the project file root of the specified container
+     * Returns the file root of the specified container.  It not explicitly defined,
+     * it will default to a path relative to the first parent container with an override
      */
-    File getProjectFileRoot(Container c);
+    File getFileRoot(Container c);
 
     /**
      * Returns the file root for a container of the specified content type
@@ -131,7 +132,11 @@ public interface FileContentService
 
     public void setAdminOptions(Container c, FilesAdminOptions options);
 
-    public File getProjectDefaultRoot(Container c, boolean createDir);
+    /**
+     * Returns the default file root of the specified container.  This will default to a path
+     * relative to the first parent container with an override
+     */
+    public File getDefaultRoot(Container c, boolean createDir);
 
     public String getDomainURI(Container c);
 

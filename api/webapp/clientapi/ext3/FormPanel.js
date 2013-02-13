@@ -752,6 +752,14 @@ LABKEY.ext.FormHelper =
                 var dateVal = new Date(value);
                 if (isNaN(dateVal))
                 {
+                    //filters can use relative dates, in the format +1d, -5H, etc.  we try to identfy those here
+                    //this is fairly permissive and does not attempt to parse this value into a date.  See CompareType.asDate()
+                    //for server-side parsing
+                    if (value.match(/^(-|\+)/i))
+                    {
+                        return value;
+                    }
+
                     alert(value + " is not a valid date for field '" + colName + "'.");
                     return undefined;
                 }

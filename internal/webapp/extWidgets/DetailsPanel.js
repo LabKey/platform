@@ -35,6 +35,10 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             fieldDefaults: {
                 labelWidth: 175
             },
+            items: [{
+                html: 'Loading...',
+                border: false
+            }],
             dockedItems: [{
                 xtype: 'toolbar',
                 ui: 'footer',

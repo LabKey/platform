@@ -61,12 +61,6 @@ public interface Notification
     public String getMessage(Container c, User u);
 
     /**
-     * @return A list of strings that should correspond to 'notification types'.  Users subscribe to one or more
-     * notification types, which governs how the list of recipients is identified.
-     */
-    public Set<String> getNotificationTypes();
-
-    /**
      * @return The string description of this notification that appears in the UI
      */
     public String getDescription();
