@@ -1195,7 +1195,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // for date based charts, give error message if there are no calculated interval values
         if (!this.hasIntervalData)
-            this.addWarningText("No calculated interval values (i.e. Days, Months, etc.) for the selected 'Measure Date' and 'Interval Start Date'.")
+            this.addWarningText("No calculated interval values (i.e. Days, Months, etc.) for the selected 'Measure Date' and 'Interval Start Date'.");
+
+        // issue 17132: only apply clipRect if the user set a custom axis range
+        var applyClipRect = (
+            xAxisIndex > -1 && (this.chartInfo.axis[xAxisIndex].range.min != null || this.chartInfo.axis[xAxisIndex].range.max != null) ||
+            leftAxisIndex > -1 && (this.chartInfo.axis[leftAxisIndex].range.min != null || this.chartInfo.axis[leftAxisIndex].range.max != null) ||
+            rightAxisIndex > -1 && (this.chartInfo.axis[rightAxisIndex].range.min != null || this.chartInfo.axis[rightAxisIndex].range.max != null)
+        );
 
         // Use the same max/min for every chart if displaying more than one chart.
         if (this.chartInfo.chartLayout != "single")
@@ -1379,7 +1386,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         series: seriesList,
                         individualData: dataPerParticipant[participant],
                         height: this.chartInfo.subject.values.length > 1 ? 380 : 600,
-                        style: this.chartInfo.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null
+                        style: this.chartInfo.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null,
+                        applyClipRect: applyClipRect
                     });
 
                     if(this.plotConfigInfoArr.length > this.maxCharts){
@@ -1418,7 +1426,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         individualData: groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
                         aggregateData: groupedAggregateData && groupedAggregateData[group.label] ? groupedAggregateData[group.label] : null,
                         height: this.chartInfo.subject.groups.length > 1 ? 380 : 600,
-                        style: this.chartInfo.subject.groups.length > 1 ? 'border-bottom: solid black 1px;' : null
+                        style: this.chartInfo.subject.groups.length > 1 ? 'border-bottom: solid black 1px;' : null,
+                        applyClipRect: applyClipRect
                     });
 
                     if(this.plotConfigInfoArr.length > this.maxCharts){
@@ -1439,7 +1448,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         title: this.concatChartTitle(this.chartInfo.title, seriesList[i].label),
                         series: [seriesList[i]],
                         height: seriesList.length > 1 ? 380 : 600,
-                        style: seriesList.length > 1 ? 'border-bottom: solid black 1px;' : null
+                        style: seriesList.length > 1 ? 'border-bottom: solid black 1px;' : null,
+                        applyClipRect: applyClipRect
                     });
 
                     if(this.plotConfigInfoArr.length > this.maxCharts){
@@ -1454,7 +1464,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     title: this.chartInfo.title,
                     series: seriesList,
                     height: 610,
-                    style: null
+                    style: null,
+                    applyClipRect: applyClipRect
                 });
             }
 
@@ -1556,6 +1567,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var aggregateData = this.plotConfigInfoArr[configIndex].aggregateData ? this.plotConfigInfoArr[configIndex].aggregateData : (this.aggregateData ? this.aggregateData.rows : null);
         var aggregateColumnAliases = this.aggregateData ? this.aggregateData.columnAliases : null;
         var aggregateVisitMap = this.aggregateData ? this.aggregateData.visitMap : null;
+        var applyClipRect = this.plotConfigInfoArr[configIndex].applyClipRect;
 
         var generateLayerAes = function(name, yAxisSide, columnName){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
@@ -1845,7 +1857,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var plotConfig = {
             renderTo: newChartDiv.getId(),
-            clipRect: true,
+            clipRect: applyClipRect,
             labels: {
                 main: {
                     value: mainTitle,
