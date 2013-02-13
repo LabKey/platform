@@ -1377,7 +1377,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
             AttachmentService.Service svc = AttachmentService.get();
 
-            File curRoot = fileService.getProjectFileRoot(proj);
+            File curRoot = fileService.getFileRoot(proj);
             assertTrue(curRoot.isDirectory());
 
             AttachmentDirectory attachParent = fileService.getMappedAttachmentDirectory(folder, true);

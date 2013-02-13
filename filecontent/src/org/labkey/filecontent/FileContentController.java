@@ -20,7 +20,20 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.ExtFormAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentForm;
@@ -668,7 +681,7 @@ public class FileContentController extends SpringActionController
 
            if (service != null)
            {
-               File root = service.getProjectFileRoot(getContainer());
+               File root = service.getFileRoot(getContainer());
                if (null == form.getRootPath() && null != root)
                {
                    String path = root.getPath();
@@ -750,7 +763,7 @@ public class FileContentController extends SpringActionController
            File webRoot = null;
 
            if (service != null)
-               webRoot = service.getProjectFileRoot(getContainer().getProject());
+               webRoot = service.getFileRoot(getContainer());
            form.setRootPath(webRoot == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(webRoot).getAbsolutePath());
            form.setMessage(StringUtils.trimToNull(message));
            setReshow(true);
@@ -784,7 +797,7 @@ public class FileContentController extends SpringActionController
                form.setPath(null);
                form.setFileSetName(null);
            }
-           File webRoot = service.getProjectFileRoot(getContainer().getProject());
+           File webRoot = service.getFileRoot(getContainer());
            form.setRootPath(webRoot == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(webRoot).getAbsolutePath());
            setReshow(true);
 
@@ -796,6 +809,8 @@ public class FileContentController extends SpringActionController
     {
         private String _node;
         private String _rootContainer;
+        private boolean _showOverridesOnly = false;
+        private boolean _excludeWorkbooksAndTabs = false;
 
         public String getNode()
         {
@@ -815,6 +830,26 @@ public class FileContentController extends SpringActionController
         public void setRootContainer(String rootContainer)
         {
             _rootContainer = rootContainer;
+        }
+
+        public boolean isShowOverridesOnly()
+        {
+            return _showOverridesOnly;
+        }
+
+        public void setShowOverridesOnly(boolean showOverridesOnly)
+        {
+            _showOverridesOnly = showOverridesOnly;
+        }
+
+        public boolean isExcludeWorkbooksAndTabs()
+        {
+            return _excludeWorkbooksAndTabs;
+        }
+
+        public void setExcludeWorkbooksAndTabs(boolean excludeWorkbooksAndTabs)
+        {
+            _excludeWorkbooksAndTabs = excludeWorkbooksAndTabs;
         }
     }
 
@@ -838,13 +873,17 @@ public class FileContentController extends SpringActionController
 
                 if (root != null)
                 {
-                    ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
-                    Map<String, Object> node = createFileSetNode("@files", root.getFileSystemDirectory());
-                    node.put("default", svc.isUseDefaultRoot(c));
-                    node.put("configureURL", config.getEncodedLocalURIString());
-                    node.put("browseURL", browse.getEncodedLocalURIString());
+                    boolean isDefault = svc.isUseDefaultRoot(c);
+                    if (!isDefault || !form.isShowOverridesOnly())
+                    {
+                        ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
+                        Map<String, Object> node = createFileSetNode("@files", root.getFileSystemDirectory());
+                        node.put("default", svc.isUseDefaultRoot(c));
+                        node.put("configureURL", config.getEncodedLocalURIString());
+                        node.put("browseURL", browse.getEncodedLocalURIString());
 
-                    children.add(node);
+                        children.add(node);
+                    }
                 }
 
                 for (AttachmentDirectory fileSet : svc.getRegisteredDirectories(c))
@@ -860,14 +899,18 @@ public class FileContentController extends SpringActionController
                 PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(c);
                 if (pipeRoot != null)
                 {
-                    ActionURL config = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
-                    ActionURL pipelineBrowse = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, null);
-                    Map<String, Object> node = createFileSetNode("@pipeline", pipeRoot.getRootPath());
-                    node.put("default", PipelineService.get().hasSiteDefaultRoot(c));
-                    node.put("configureURL", config.getEncodedLocalURIString());
-                    node.put("browseURL", pipelineBrowse.getEncodedLocalURIString());
+                    boolean isDefault = PipelineService.get().hasSiteDefaultRoot(c);
+                    if (!isDefault || !form.isShowOverridesOnly())
+                    {
+                        ActionURL config = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
+                        ActionURL pipelineBrowse = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, null);
+                        Map<String, Object> node = createFileSetNode("@pipeline", pipeRoot.getRootPath());
+                        node.put("default", isDefault );
+                        node.put("configureURL", config.getEncodedLocalURIString());
+                        node.put("browseURL", pipelineBrowse.getEncodedLocalURIString());
 
-                    children.add(node);
+                        children.add(node);
+                    }
                 }
             }
             catch (MissingRootDirectoryException e){}
@@ -875,6 +918,9 @@ public class FileContentController extends SpringActionController
 
             for (Container child : c.getChildren())
             {
+                if (form.isExcludeWorkbooksAndTabs() && child.isWorkbookOrTab())
+                    continue;
+
                 Map<String, Object> node = new HashMap<String, Object>();
 
                 node.put("id", child.getId());

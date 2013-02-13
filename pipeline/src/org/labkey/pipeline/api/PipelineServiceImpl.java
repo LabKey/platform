@@ -28,15 +28,27 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.GlobusKeyPair;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineProtocolFactory;
+import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineQueue;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.*;
-import org.labkey.pipeline.importer.FolderImportJob;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.PipelineController;
+import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
 import org.labkey.pipeline.status.PipelineQueryView;
@@ -54,7 +66,16 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class PipelineServiceImpl extends PipelineService
 {
@@ -113,7 +134,7 @@ public class PipelineServiceImpl extends PipelineService
                 {
                     if (svc.isUseDefaultRoot(container.getProject()))
                     {
-                        File root = svc.getProjectFileRoot(container.getProject());
+                        File root = svc.getFileRoot(container);
                         if (root != null)
                         {
                             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
@@ -122,7 +143,7 @@ public class PipelineServiceImpl extends PipelineService
                     }
                     else
                     {
-                        File root = svc.getProjectDefaultRoot(container, true);
+                        File root = svc.getDefaultRoot(container, true);
                         if (root != null)
                         {
                             File dir = new File(root, svc.getFolderName(FileContentService.ContentType.files));

@@ -105,7 +105,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         {
             for (Map<String, Object> row : result)
             {
-                StudyServiceImpl.addDatasetAuditEvent(user, container, _dataset, null, row);
+                if (!isBulkLoad())
+                    StudyServiceImpl.addDatasetAuditEvent(user, container, _dataset, null, row);
 
                 try
                 {

@@ -20,24 +20,43 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.view.SetupForm;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.ThemeFont;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.WebTheme;
+import org.labkey.api.view.WebThemeManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -48,7 +67,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -74,7 +97,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         {
             if (!form.isPipelineRootForm() && !form.isDisableFileSharing() && !form.hasSiteDefaultRoot())
             {
-                String root = StringUtils.trimToNull(form.getProjectRootPath());
+                String root = StringUtils.trimToNull(form.getFolderRootPath());
                 if (root != null)
                 {
                     File f = new File(root);
@@ -269,22 +292,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 return PipelineService.get().savePipelineSetup(getViewContext(), form, errors);
             else
             {
-                if (form.isDisableFileSharing())
-                    service.disableFileRoot(c);
-                else if (form.hasSiteDefaultRoot())
-                    service.setIsUseDefaultRoot(c.getProject(), true);
-                else
-                {
-                    String root = StringUtils.trimToNull(form.getProjectRootPath());
-
-                    if (root != null)
-                    {
-                        service.setIsUseDefaultRoot(c.getProject(), false);
-                        service.setFileRoot(c.getProject(), new File(root));
-                    }
-                    else
-                        service.setFileRoot(c.getProject(), null);
-                }
+                FolderManagementAction.setFileRootFromForm(getViewContext(), form);
             }
         }
         return true;
@@ -436,42 +444,14 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
                     if (!_reshow || _form.isPipelineRootForm())
                     {
-                        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
-                        String confirmMessage = null;
-
-                        if (service != null)
+                        try
                         {
-                            if (service.isFileRootDisabled(c))
-                            {
-                                _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.disable.name());
-                                confirmMessage = "File sharing has been disabled for this project";
-                            }
-                            else if (service.isUseDefaultRoot(c))
-                            {
-                                _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name());
-                                File root = service.getProjectFileRoot(getViewContext().getContainer());
-                                if (root != null && root.exists())
-                                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath();
-                            }
-                            else
-                            {
-                                File root = service.getProjectFileRoot(getViewContext().getContainer());
-
-                                _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name());
-                                if (root != null)
-                                {
-                                    root = FileUtil.getAbsoluteCaseSensitiveFile(root);
-                                    _form.setProjectRootPath(root.getAbsolutePath());
-                                    if (root.exists())
-                                        confirmMessage = "The file root is set to: " + root.getAbsolutePath();
-                                    else
-                                        _errors.reject(SpringActionController.ERROR_MSG, "File root '" + root + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
-                                }
-                            }
+                            FolderManagementAction.setConfirmMessage(getViewContext(), _form);
                         }
-
-                        if (getViewContext().getActionURL().getParameter("rootSet") != null && confirmMessage != null)
-                            _form.setConfirmMessage(confirmMessage);
+                        catch (IllegalArgumentException e)
+                        {
+                            _errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                        }
                     }
                     VBox box = new VBox();
                     box.addView(new JspView<AdminController.ProjectSettingsForm>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));

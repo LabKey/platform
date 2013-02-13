@@ -35,6 +35,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
@@ -43,6 +44,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ActionNames;
@@ -54,6 +56,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -65,6 +68,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -81,8 +85,8 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.sql.SQLException;
@@ -148,6 +152,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return handleMvIndicatorsPost(form, errors);
         else if (form.isFullTextSearchTab())
             return handleFullTextSearchPost(form, errors);
+        else if (form.isFilesTab())
+            return handleFilesPost(form, errors);
         else if (form.isMessagesTab())
             return handleMessagesPost(form, errors);
         else if (form.isExportTab())
@@ -221,6 +227,96 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             _successURL = container.getFolderType().getStartURL(container, getUser());
 
         return true;
+    }
+
+    private boolean handleFilesPost(FolderManagementForm form, BindException errors) throws Exception
+    {
+        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+
+        if (service != null)
+        {
+            if (form.isPipelineRootForm())
+                return PipelineService.get().savePipelineSetup(getViewContext(), form, errors);
+            else
+            {
+                setFileRootFromForm(getViewContext(), form);
+            }
+        }
+
+        _successURL = getViewContext().getActionURL();
+
+        return true;
+    }
+
+    public static void setFileRootFromForm(ViewContext ctx, AdminController.FileManagementForm form)
+    {
+        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+
+        if (form.isDisableFileSharing())
+            service.disableFileRoot(ctx.getContainer());
+        else if (form.hasSiteDefaultRoot())
+            service.setIsUseDefaultRoot(ctx.getContainer(), true);
+        else
+        {
+            String root = StringUtils.trimToNull(form.getFolderRootPath());
+
+            // test permissions.  only site admins are able to turn on a custom file root for a folder
+            // this is only relevant if the folder is either being switched to a custom file root,
+            // or if the file root is changed.
+            if (!service.isUseDefaultRoot(ctx.getContainer()) && !service.getFileRoot(ctx.getContainer()).getPath().equalsIgnoreCase(form.getFolderRootPath()))
+            {
+                if (!ctx.getUser().isAdministrator())
+                    throw new UnauthorizedException("Only site admins change change file roots");
+            }
+
+            if (root != null)
+            {
+                service.setIsUseDefaultRoot(ctx.getContainer(), false);
+                service.setFileRoot(ctx.getContainer(), new File(root));
+            }
+            else
+                service.setFileRoot(ctx.getContainer(), null);
+        }
+    }
+
+    public static void setConfirmMessage(ViewContext ctx, AdminController.FileManagementForm form) throws IllegalArgumentException
+    {
+        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+        String confirmMessage = null;
+
+        if (service != null)
+        {
+            if (service.isFileRootDisabled(ctx.getContainer()))
+            {
+                form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.disable.name());
+                confirmMessage = "File sharing has been disabled for this " + ctx.getContainer().getContainerNoun();
+            }
+            else if (service.isUseDefaultRoot(ctx.getContainer()))
+            {
+                form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name());
+                File root = service.getFileRoot(ctx.getContainer());
+                if (root != null && root.exists())
+                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath();
+            }
+            else
+            {
+                File root = service.getFileRoot(ctx.getContainer());
+
+                form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name());
+                if (root != null)
+                {
+                    root = FileUtil.getAbsoluteCaseSensitiveFile(root);
+                    form.setFolderRootPath(root.getAbsolutePath());
+                    if (root.exists())
+                        confirmMessage = "The file root is set to: " + root.getAbsolutePath();
+                    else
+                        throw new IllegalArgumentException("File root '" + root + "' does not appear to be a valid directory accessible to the server at " + ctx.getRequest().getServerName() + ".");
+                }
+            }
+        }
+
+        if (ctx.getActionURL().getParameter("rootSet") != null && confirmMessage != null)
+            form.setConfirmMessage(confirmMessage);
     }
 
     private boolean handleFullTextSearchPost(FolderManagementForm form, BindException errors) throws SQLException
@@ -481,7 +577,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         return getViewContext().getUser();
     }
 
-    public static class FolderManagementForm
+    public static class FolderManagementForm extends SetupForm implements AdminController.FileManagementForm
     {
         // folder type settings
         private String[] activeModules = new String[ModuleLoader.getInstance().getModules().size()];
@@ -510,6 +606,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private boolean shiftDates;
         private boolean alternateIds;
         private boolean maskClinic;
+
+        // file management settings
+        private String _folderRootPath;
+        private String _fileRootOption;
 
         public String[] getActiveModules()
         {
@@ -587,6 +687,11 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public boolean isFullTextSearchTab()
         {
             return "fullTextSearch".equals(getTabId());
+        }
+
+        public boolean isFilesTab()
+        {
+            return "files".equals(getTabId());
         }
 
         public boolean isMessagesTab()
@@ -742,6 +847,37 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             this.alternateIds = alternateIds;
         }
 
+        //file management
+        public String getFolderRootPath()
+        {
+            return _folderRootPath;
+        }
+
+        public void setFolderRootPath(String folderRootPath)
+        {
+            _folderRootPath = folderRootPath;
+        }
+
+        public String getFileRootOption()
+        {
+            return _fileRootOption;
+        }
+
+        public void setFileRootOption(String fileRootOption)
+        {
+            _fileRootOption = fileRootOption;
+        }
+
+        public boolean isDisableFileSharing()
+        {
+            return AdminController.ProjectSettingsForm.FileRootProp.disable.name().equals(getFileRootOption());
+        }
+
+        public boolean hasSiteDefaultRoot()
+        {
+            return AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(getFileRootOption());
+        }
+
         public boolean isMaskClinic()
         {
             return maskClinic;
@@ -805,6 +941,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 tabs.add(new TabInfo("Notifications", "messages", url));
                 tabs.add(new TabInfo("Export", "export", url));
                 tabs.add(new TabInfo("Import", "import", url));
+                tabs.add(new TabInfo("Files", "files", url));
                 tabs.add(new TabInfo("Information", "info", url));
             }
             return tabs;
@@ -829,6 +966,21 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             else if ("fullTextSearch".equals(tabId))
             {
                 return new JspView<FolderManagementForm>("/org/labkey/core/admin/fullTextSearch.jsp", _form, _errors);
+            }
+            else if ("files".equals(tabId))
+            {
+                HttpView view = new JspView<FolderManagementForm>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors);
+
+                try
+                {
+                    FolderManagementAction.setConfirmMessage(getViewContext(), _form);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    _errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                }
+
+                return view;
             }
             else if ("messages".equals(tabId))
             {

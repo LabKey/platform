@@ -16,10 +16,13 @@
 
 package org.labkey.filecontent;
 
+import junit.framework.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Test;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Container;
@@ -50,6 +53,7 @@ import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
 
@@ -59,7 +63,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -109,43 +115,38 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     private @Nullable File _getFileRoot(Container c)
     {
-        File root = getProjectFileRoot(c);
+        File root = getFileRoot(c);
         if (root != null)
         {
             File dir;
 
             //Don't want the Project part of the path.
-            if (c.isProject())
-                dir = root;
+            if (c.isRoot())
+                dir = getSiteDefaultRoot();
             else
-            {
-                //Cut off the project name
-                String extraPath = c.getPath();
-                extraPath = extraPath.substring(c.getProject().getName().length() + 2);
-                dir = new File(root, extraPath);
-            }
+                dir = root;
 
             return dir;
         }
         return null;
     }
 
-    public @Nullable File getProjectFileRoot(Container c)
+    public @Nullable File getFileRoot(Container c)
     {
         if (c == null)
             return null;
 
-        Container project = c.getProject();
-        if (null == project)
+        Container effective = getEffectiveContainer(c);
+        if (null == effective)
             return null;
 
-        FileRoot root = FileRootManager.get().getFileRoot(project);
+        FileRoot root = FileRootManager.get().getFileRoot(effective);
         if (root.isEnabled())
         {
             // check if there is a site wide file root
             if (root.getPath() == null || root.isUseDefault())
             {
-                return getProjectDefaultRoot(c, true);
+                return getDefaultRoot(c, true);
             }
             else
                 return new File(root.getPath());
@@ -153,25 +154,62 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return null;
     }
 
-    public File getProjectDefaultRoot(Container c, boolean createDir)
+    public File getDefaultRoot(Container c, boolean createDir)
     {
-        File siteRoot = getSiteDefaultRoot();
-        if (siteRoot != null && c != null && c.getProject() != null)
+        Container effective = getEffectiveContainer(c);
+        Container firstOverride = getFirstAncestorWithOverride(c);
+
+        File parentRoot;
+        if (firstOverride == null)
         {
-            File projRoot = new File(siteRoot, c.getProject().getName());
-
-            if (!projRoot.exists() && createDir)
-                projRoot.mkdirs();
-
-            return projRoot;
+            parentRoot = getSiteDefaultRoot();
+            firstOverride = ContainerManager.getRoot();
         }
+        else
+        {
+            parentRoot = getFileRoot(firstOverride);
+        }
+
+        if (parentRoot != null && effective != null)
+        {
+            File fileRoot = new File(parentRoot, getRelativePath(effective, firstOverride));
+
+            if (!fileRoot.exists() && createDir)
+                fileRoot.mkdirs();
+
+            return fileRoot;
+        }
+        return null;
+    }
+
+    private String getRelativePath(Container c, Container ancestor)
+    {
+        String path = c.getPath();
+        return path.replaceAll("^" + ancestor.getPath(), "");
+    }
+
+    //returns the first parent container that has a custom file root, or NULL if none have overrides
+    private Container getFirstAncestorWithOverride(Container c)
+    {
+        Container toTest = c.getParent();
+        if (toTest != null)
+        {
+            while (isUseDefaultRoot(toTest))
+            {
+                if (toTest.equals(ContainerManager.getRoot()))
+                    return null;
+
+                toTest = toTest.getParent();
+            }
+        }
+
         return null;
     }
 
     public void setFileRoot(Container c, File path)
     {
-        if (!c.isProject())
-            throw new IllegalArgumentException("File roots are only currently supported at the project level");
+        if (c.isWorkbookOrTab())
+            throw new IllegalArgumentException("File roots cannot be set of workbooks or tabs");
         
         FileRoot root = FileRootManager.get().getFileRoot(c);
         root.setEnabled(true);
@@ -199,10 +237,10 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (container == null || container.isRoot())
             throw new IllegalArgumentException("Disabling either a null project or the root project is not allowed.");
 
-        Container project = container.getProject();
-        if (project != null)
+        Container effective = getEffectiveContainer(container);
+        if (effective != null)
         {
-            FileRoot root = FileRootManager.get().getFileRoot(project);
+            FileRoot root = FileRootManager.get().getFileRoot(effective);
             String oldValue = root.getPath();
             root.setEnabled(false);
             FileRootManager.get().saveFileRoot(null, root);
@@ -218,11 +256,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (c == null || c.isRoot())
             _log.error("isFileRootDisabled : The file root of either a null project or the root project cannot be disabled.");
 
-        Container project = c.getProject();
-        if (null == project)
+        Container effective = getEffectiveContainer(c);
+        if (null == effective)
             return false;
 
-        FileRoot root = FileRootManager.get().getFileRoot(project);
+        FileRoot root = FileRootManager.get().getFileRoot(effective);
         return !root.isEnabled();
     }
 
@@ -231,27 +269,32 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (c == null)
             return true;
         
-        Container project = c.getProject();
-        if (null == project)
+        Container effective = getEffectiveContainer(c);
+        if (null == effective)
             return true;
 
-        FileRoot root = FileRootManager.get().getFileRoot(project);
+        FileRoot root = FileRootManager.get().getFileRoot(effective);
         return root.isUseDefault() || StringUtils.isEmpty(root.getPath());
+    }
+
+    private Container getEffectiveContainer(Container c)
+    {
+        return c.isWorkbookOrTab() ? c.getParent() : c;
     }
 
     public void setIsUseDefaultRoot(Container c, boolean useDefaultRoot)
     {
-        Container project = c.getProject();
-        if (project != null)
+        Container effective = getEffectiveContainer(c);
+        if (effective != null)
         {
-            FileRoot root = FileRootManager.get().getFileRoot(project);
+            FileRoot root = FileRootManager.get().getFileRoot(effective);
             String oldValue = root.getPath();
             root.setEnabled(true);
             root.setUseDefault(useDefaultRoot);
             FileRootManager.get().saveFileRoot(null, root);
 
             ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
-                    project, ContainerManager.Property.WebRoot, oldValue, null);
+                    effective, ContainerManager.Property.WebRoot, oldValue, null);
             ContainerManager.firePropertyChangeEvent(evt);
         }
     }
@@ -358,7 +401,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     File getMappedDirectory(Container c, boolean create) throws UnsetRootDirectoryException, MissingRootDirectoryException
     {
-        File root = getProjectFileRoot(c);
+        File root = getFileRoot(c);
         if (null == root)
         {
             if (create)
@@ -767,5 +810,182 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public static FileContentServiceImpl getInstance()
     {
         return (FileContentServiceImpl) ServiceRegistry.get(FileContentService.class);
+    }
+
+    public static class TestCase extends AssertionError
+    {
+        private static final String PROJECT1 = "FileRootTestProject1";
+        private static final String PROJECT1_SUBFOLDER1 = "Subfolder1";
+        private static final String PROJECT1_SUBFOLDER2 = "Subfolder2";
+        private static final String PROJECT1_SUBSUBFOLDER = "SubSubfolder";
+        private static final String PROJECT2 = "FileRootTestProject2";
+
+        private static final String FILE_ROOT_SUFFIX = "_FileRootTest";
+        private static final String TXT_FILE = "FileContentTestFile.txt";
+
+        private Map<Container, File> _expectedPaths;
+
+        @Test
+        public void fileRootsTest() throws Exception
+        {
+            //pre-clean
+            cleanup();
+
+            _expectedPaths = new HashMap<Container, File>();
+
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            Assert.assertNotNull(svc);
+
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
+            _expectedPaths.put(project1, null);
+
+            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT2);
+            _expectedPaths.put(project2, null);
+
+            Container subfolder1 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER1);
+            _expectedPaths.put(subfolder1, null);
+
+            Container subfolder2 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER2);
+            _expectedPaths.put(subfolder2, null);
+
+            Container subsubfolder = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER);
+            _expectedPaths.put(subsubfolder, null);
+
+            //set custom root on project, then expect children to inherit
+            File testRoot = getTestRoot();
+
+            svc.setFileRoot(project1, testRoot);
+            _expectedPaths.put(project1, testRoot);
+
+            //the subfolder should inherit from the parent
+            _expectedPaths.put(subfolder1, new File(testRoot, subfolder1.getName()));
+            Assert.assertEquals("Incorrect values returned by getDefaultRoot", _expectedPaths.get(subfolder1), svc.getDefaultRoot(subfolder1, false));
+            Assert.assertEquals("Subfolder1 has incorrect root", _expectedPaths.get(subfolder1).getPath(), svc.getFileRoot(subfolder1).getPath());
+
+            _expectedPaths.put(subfolder2, new File(testRoot, subfolder2.getName()));
+            Assert.assertEquals("Incorrect values returned by getDefaultRoot", _expectedPaths.get(subfolder2), svc.getDefaultRoot(subfolder2, false));
+            Assert.assertEquals("Subfolder2 has incorrect root", _expectedPaths.get(subfolder2).getPath(), svc.getFileRoot(subfolder2).getPath());
+
+            _expectedPaths.put(subsubfolder, new File(_expectedPaths.get(subfolder1), subsubfolder.getName()));
+            Assert.assertEquals("Incorrect values returned by getDefaultRoot", _expectedPaths.get(subsubfolder), svc.getDefaultRoot(subsubfolder, false));
+            Assert.assertEquals("SubSubfolder has incorrect root", _expectedPaths.get(subsubfolder).getPath(), svc.getFileRoot(subsubfolder).getPath());
+
+            //override root on 1st child, expect children of that folder to inherit
+            _expectedPaths.put(subfolder1, new File(testRoot, "CustomSubfolder"));
+            _expectedPaths.get(subfolder1).mkdirs();
+            svc.setFileRoot(subfolder1, _expectedPaths.get(subfolder1));
+            Assert.assertEquals("SubSubfolder has incorrect root", new File(_expectedPaths.get(subfolder1), subsubfolder.getName()).getPath(), svc.getFileRoot(subsubfolder).getPath());
+
+            //reset project, we assume overridden child roots to remain the same
+            svc.setFileRoot(project1, null);
+            Assert.assertEquals("Subfolder1 has incorrect root", _expectedPaths.get(subfolder1).getPath(), svc.getFileRoot(subfolder1).getPath());
+            Assert.assertEquals("SubSubfolder has incorrect root", new File(_expectedPaths.get(subfolder1), subsubfolder.getName()).getPath(), svc.getFileRoot(subsubfolder).getPath());
+
+        }
+
+        private File getTestRoot()
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            File siteRoot = svc.getSiteDefaultRoot();
+            File testRoot = new File(siteRoot, FILE_ROOT_SUFFIX);
+            testRoot.mkdirs();
+            Assert.assertTrue("Unable to create test file root", testRoot.exists());
+
+            return testRoot;
+        }
+
+        @Test
+        //when we move a folder, we expect child files to follow, and expect
+        // any file paths stored in the DB to also get updated
+        public void testFolderMove() throws Exception
+        {
+            //pre-clean
+            cleanup();
+
+            _expectedPaths = new HashMap<Container, File>();
+
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            Assert.assertNotNull(svc);
+
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
+            _expectedPaths.put(project1, null);
+
+            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT2);
+            _expectedPaths.put(project2, null);
+
+            Container subfolder1 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER1);
+            _expectedPaths.put(subfolder1, null);
+
+            Container subfolder2 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER2);
+            _expectedPaths.put(subfolder2, null);
+
+            Container subsubfolder = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER);
+            _expectedPaths.put(subsubfolder, null);
+
+            //create a test file that we will follow
+            File fileRoot = svc.getFileRoot(subsubfolder, ContentType.files);
+            fileRoot.mkdirs();
+
+            File childFile = new File(fileRoot, TXT_FILE);
+            childFile.createNewFile();
+
+            ExpData data = ExperimentService.get().createData(subsubfolder, new DataType("FileContentTest"));
+            data.setDataFileURI(childFile.toURI());
+            data.save(TestContext.get().getUser());
+            int rowId = data.getRowId();
+
+            Assert.assertTrue("File not found: " + childFile.getPath(), childFile.exists());
+            ContainerManager.move(subsubfolder, subfolder2, TestContext.get().getUser());
+            Container movedSubfolder = ContainerManager.getChild(subfolder2, subsubfolder.getName());
+
+            _expectedPaths.put(movedSubfolder, new File(svc.getFileRoot(subfolder2), movedSubfolder.getName()));
+            Assert.assertEquals("Incorrect values returned by getDefaultRoot", _expectedPaths.get(movedSubfolder), svc.getDefaultRoot(movedSubfolder, false));
+            Assert.assertEquals("SubSubfolder has incorrect root", _expectedPaths.get(movedSubfolder).getPath(), svc.getFileRoot(movedSubfolder).getPath());
+
+            File expectedFile = new File(svc.getFileRoot(movedSubfolder, ContentType.files), TXT_FILE);
+            Assert.assertTrue("File was not moved, expected: " + expectedFile.getPath(), expectedFile.exists());
+
+            ExpData movedData = ExperimentService.get().getExpData(rowId);
+            Assert.assertNotNull(movedData);
+
+            Assert.assertTrue(movedData.getFile().getPath().equals(expectedFile.getPath()));
+        }
+
+        @After
+        public void cleanup()
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            Assert.assertNotNull(svc);
+
+            Container project1 = ContainerManager.getForPath(PROJECT1);
+            if (project1 != null)
+            {
+                ContainerManager.deleteAll(project1, TestContext.get().getUser());
+
+                File file1 = svc.getFileRoot(project1);
+                if (file1 != null && file1.exists())
+                {
+                    FileUtil.deleteDir(file1);
+                }
+            }
+
+            Container project2 = ContainerManager.getForPath(PROJECT2);
+            if (project2 != null)
+            {
+                ContainerManager.deleteAll(project2, TestContext.get().getUser());
+
+                File file2 = svc.getFileRoot(project2);
+                if (file2 != null && file2.exists())
+                {
+                    FileUtil.deleteDir(file2);
+                }
+            }
+
+            File testRoot = getTestRoot();
+            if (testRoot.exists())
+            {
+                FileUtil.deleteDir(testRoot);
+            }
+        }
     }
 }

@@ -141,7 +141,25 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FolderTab;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.WebTheme;
+import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -488,6 +506,13 @@ public class AdminController extends SpringActionController
         public ActionURL getFolderManagementURL(Container c)
         {
             return new ActionURL(FolderManagementAction.class, c);
+        }
+
+        public ActionURL getFolderManagementFileURL(Container c)
+        {
+            ActionURL url = getFolderManagementURL(c);
+            url.addParameter("tabId", "files");
+            return url;
         }
 
         public ActionURL getInitialFolderSettingsURL(Container c)
@@ -1205,8 +1230,27 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static interface FileManagementForm
+    {
+        public String getFolderRootPath();
 
-    public static class ProjectSettingsForm extends SetupForm
+        public void setFolderRootPath(String folderRootPath);
+
+        public String getFileRootOption();
+
+        public void setFileRootOption(String fileRootOption);
+
+        public String getConfirmMessage();
+
+        public void setConfirmMessage(String confirmMessage);
+
+        public boolean isDisableFileSharing();
+
+        public boolean hasSiteDefaultRoot();
+
+    }
+
+    public static class ProjectSettingsForm extends SetupForm implements FileManagementForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
@@ -1222,7 +1266,7 @@ public class AdminController extends SpringActionController
         private String _reportAProblemPath;
         private boolean _enableMenuBar;
         private String _tabId;
-        private String _projectRootPath;
+        private String _folderRootPath;
         private String _fileRootOption;
         private String _supportEmail;
 
@@ -1230,7 +1274,7 @@ public class AdminController extends SpringActionController
         {
             disable,
             siteDefault,
-            projectSpecified,
+            folderOverride,
         }
 
         public boolean getShouldInherit()
@@ -1412,14 +1456,14 @@ public class AdminController extends SpringActionController
             _enableMenuBar = enableMenuBar;
         }
 
-        public String getProjectRootPath()
+        public String getFolderRootPath()
         {
-            return _projectRootPath;
+            return _folderRootPath;
         }
 
-        public void setProjectRootPath(String projectRootPath)
+        public void setFolderRootPath(String folderRootPath)
         {
-            _projectRootPath = projectRootPath;
+            _folderRootPath = folderRootPath;
         }
 
         public String getFileRootOption()
@@ -4329,10 +4373,10 @@ public class AdminController extends SpringActionController
         public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
-            String projectRootPath = StringUtils.trimToNull(form.getProjectRootPath());
+            String folderRootPath = StringUtils.trimToNull(form.getFolderRootPath());
             String fileRootOption = form.getFileRootOption();
 
-            if(projectRootPath == null && !fileRootOption.equals("default"))
+            if(folderRootPath == null && !fileRootOption.equals("default"))
             {
                 errors.reject(ERROR_MSG, "Error: Must supply a default file location.");
                 return false;
@@ -4341,18 +4385,18 @@ public class AdminController extends SpringActionController
             FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
             if(fileRootOption.equals("default"))
             {
-                service.setIsUseDefaultRoot(c.getProject(), true);
+                service.setIsUseDefaultRoot(c, true);
             }
             else
             {
-                if (!service.isValidProjectRoot(projectRootPath))
+                if (!service.isValidProjectRoot(folderRootPath))
                 {
-                    errors.reject(ERROR_MSG, "File root '" + projectRootPath + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                    errors.reject(ERROR_MSG, "File root '" + folderRootPath + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
                     return false;
                 }
 
                 service.setIsUseDefaultRoot(c.getProject(), false);
-                service.setFileRoot(c.getProject(), new File(projectRootPath));
+                service.setFileRoot(c.getProject(), new File(folderRootPath));
             }
 
             _successURL = getContainer().getStartURL(getUser());

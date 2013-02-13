@@ -16,30 +16,44 @@
  */
 %>
 <%@ page import="org.labkey.api.files.FileContentService"%>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
-<%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    AdminController.ProjectSettingsForm bean = ((JspView<AdminController.ProjectSettingsForm>)HttpView.currentView()).getModelBean();
+    AdminController.FileManagementForm bean = ((JspView<AdminController.FileManagementForm>)HttpView.currentView()).getModelBean();
 
-    // the default project file root based on the site default root
-    String projectDefaultRoot = "";
-    File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
+    // the default file root based on the root of the first ancestor with an override, or site root
+    String defaultRoot = "";
+    FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+    File siteRoot = service.getSiteDefaultRoot();
     if (siteRoot != null)
     {
-        File projRoot = new File(siteRoot, getViewContext().getContainer().getProject().getName());
-        if (projRoot != null)
+        File defaultRootFile = service.getDefaultRoot(getViewContext().getContainer(), false);
+        if (defaultRootFile != null)
         {
-            projectDefaultRoot = FileUtil.getAbsoluteCaseSensitiveFile(projRoot).getAbsolutePath();
+            defaultRoot = FileUtil.getAbsoluteCaseSensitiveFile(defaultRootFile).getAbsolutePath();
         }
     }
+
+    //b/c setting a custom file root potentially allows access to any files, we only allow
+    //site admins to do this.  however, folder admin can disable sharing on a folder
+    //if this folder already has a custom file root, only a site admin can make further changes
+    User user = getViewContext().getUser();
+    boolean canChangeFileSettings = getViewContext().getContainer().hasPermission(user, AdminPermission.class) || user.isAdministrator();
+    if (AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !getViewContext().getUser().isAdministrator())
+    {
+        canChangeFileSettings = false;
+    }
+    boolean canSetCustomFileRoot = getViewContext().getUser().isAdministrator();
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
@@ -56,8 +70,8 @@
     <table>
         <tr><td></td></tr>
         <tr><td colspan="10">LabKey Server allows you to upload and process your data files, including flow, proteomics and study-related
-            files. By default, LabKey stores your files in a standard directory structure. You can override this location for each
-            project if you wish.
+            files. By default, LabKey stores your files in a standard directory structure. Site administrators can override this location for each
+            folder if you wish.
         </td></tr>
         <tr><td></td></tr>
         <tr>
@@ -67,23 +81,23 @@
 --%>
             <td>
                 <table>
-                    <tr><td><input type="radio" name="fileRootOption" id="optionDisable" value="<%=AdminController.ProjectSettingsForm.FileRootProp.disable%>"
-                                   <%=AdminController.ProjectSettingsForm.FileRootProp.disable.name().equals(bean.getFileRootOption()) ? " checked" : ""%>
+                    <tr><td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionDisable" value="<%=AdminController.ProjectSettingsForm.FileRootProp.disable%>"
+                                   <%=text(AdminController.ProjectSettingsForm.FileRootProp.disable.name().equals(bean.getFileRootOption()) ? " checked" : "")%>
                                    onclick="updateSelection();">
-                        Disable file sharing for this project</td></tr>
+                        Disable file sharing for this <%=h(getViewContext().getContainer().getContainerNoun())%></td></tr>
                     <tr>
-                        <td><input type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault%>"
-                                   <%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) ? " checked" : ""%>
+                        <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault%>"
+                                   <%=text(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) ? " checked" : "")%>
                                    onclick="updateSelection();">
                             Use a default based on the site-level root</td>
-                        <td><input type="text" id="rootPath" size="64" disabled="true" value="<%=h(projectDefaultRoot)%>"></td>
+                        <td><input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
                     </tr>
                     <tr>
-                        <td><input type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=AdminController.ProjectSettingsForm.FileRootProp.projectSpecified%>"
-                                   <%=AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name().equals(bean.getFileRootOption()) ? " checked" : ""%>
+                        <td><input <%=h(canChangeFileSettings && canSetCustomFileRoot ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=AdminController.ProjectSettingsForm.FileRootProp.folderOverride%>"
+                                   <%=text(AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) ? " checked" : "")%>
                                    onclick="updateSelection();">
-                            Use a project-level file root</td>
-                        <td><input type="text" id="projectRootPath" name="projectRootPath" size="64" value="<%=h(bean.getProjectRootPath())%>"></td>
+                            Use a <%=text(getViewContext().getContainer().getContainerNoun())%>-level file root</td>
+                        <td><input type="text" id="folderRootPath" name="folderRootPath" size="64" value="<%=h(bean.getFolderRootPath())%>"></td>
                     </tr>
                 </table>
             </td>
@@ -100,7 +114,7 @@
 
 <script type="text/javascript">
 
-    Ext.onReady(function()
+    Ext4.onReady(function()
     {
         updateSelection();
     });
@@ -109,17 +123,17 @@
     {
         if (document.getElementById('optionDisable').checked)
         {
-            document.getElementById('projectRootPath').style.display = 'none';
+            document.getElementById('folderRootPath').style.display = 'none';
             document.getElementById('rootPath').style.display = 'none';
         }
         if (document.getElementById('optionSiteDefault').checked)
         {
-            document.getElementById('projectRootPath').style.display = 'none';
+            document.getElementById('folderRootPath').style.display = 'none';
             document.getElementById('rootPath').style.display = '';
         }
         if (document.getElementById('optionProjectSpecified').checked)
         {
-            document.getElementById('projectRootPath').style.display = '';
+            document.getElementById('folderRootPath').style.display = '';
             document.getElementById('rootPath').style.display = 'none';
         }
     }

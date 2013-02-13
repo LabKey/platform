@@ -17,7 +17,13 @@
 package org.labkey.filecontent;
 
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
@@ -68,7 +74,7 @@ public class FileRootManager
             if (root != null)
                 return (root == NULL_ROOT) ? new FileRoot(c) : root;
 
-            SimpleFilter filter = new SimpleFilter("Container", c.getId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), c.getId());
             FileRoot[] roots = Table.select(getTinfoFileRoots(), Table.ALL_COLUMNS, filter, null, FileRoot.class);
             if (roots.length > 0)
             {

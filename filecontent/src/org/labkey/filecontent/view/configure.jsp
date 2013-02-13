@@ -17,7 +17,9 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory"%>
-<%@ page import="org.labkey.api.attachments.AttachmentService"%>
+<%@ page import="org.labkey.api.files.FileContentService"%>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -25,9 +27,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="java.io.File" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -47,20 +46,20 @@
     if (null != form.getMessage())
     {
         // UNDONE: do we have a message style?
-        %><div style="color:green;"><%=form.getMessage()%></div><%
+        %><div style="color:green;"><%=text(form.getMessage())%></div><%
     }
 
     if (ctx.getUser().isAdministrator())
     {
-        File rootFile = service.getProjectFileRoot(ctx.getContainer().getProject());
+        File rootFile = service.getFileRoot(ctx.getContainer());
         ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(ctx.getContainer()).addParameter("tabId", "files");
         if (null == rootFile)
         { %>
-            There is no file root for this project.
+            There is no file root for this folder.
      <% }
         else
         { %>
-            The file root for this project is <br><blockquote><%=h(org.labkey.api.util.FileUtil.getAbsoluteCaseSensitiveFile(rootFile).getAbsolutePath())%></blockquote>
+            The file root for this folder is <br><blockquote><%=h(org.labkey.api.util.FileUtil.getAbsoluteCaseSensitiveFile(rootFile).getAbsolutePath())%></blockquote>
             The directory containing files for this folder is
         <%
             String path = "<unset>";
@@ -94,7 +93,7 @@ Each file set is an additional directory that stores files accessible to users o
         </tr>
         <tr>
             <td class="labkey-form-label">Path</td>
-            <td><%=h(attDir.getFileSystemDirectory().getPath())%> <%=attDir.getFileSystemDirectory().exists() ? "" : "Directory does not exist. An administrator must create it."%></td>
+            <td><%=h(attDir.getFileSystemDirectory().getPath())%> <%=h(attDir.getFileSystemDirectory().exists() ? "" : "Directory does not exist. An administrator must create it.")%></td>
         </tr>
         <tr>
             <td colspan=2><%=generateButton("Show Files", buildURL(FileContentController.BeginAction.class, "fileSetName=" + h(attDir.getLabel())))%> <%=generateSubmitButton("Remove")%> (Files will not be deleted)</td>
@@ -123,8 +122,8 @@ if (ctx.getUser().isAdministrator())
 {
 %>
 <br><b>Additional Information</b><br>
-When you set a file root for a project, you can use your LabKey Server installation as a secure web content server.<br>
-For each project you can define a parallel file-system tree containing files you would like LabKey Server to return<br>
+When you set a file root for a folder, you can use your LabKey Server installation as a secure web content server.<br>
+For each folder you can define a parallel file-system tree containing files you would like LabKey Server to return<br>
 You can then use LabKey URLs to download those files.
 If, for example, you set the content root for the Home project to<br>
 <pre>
@@ -132,11 +131,11 @@ If, for example, you set the content root for the Home project to<br>
 </pre>
 <br>and that directory contained test.html, the link<br>
 <pre>
-http://<%=request.getServerName()%><%=request.getContextPath()%>/files/home/test.html
+http://<%=text(request.getServerName())%><%=text(request.getContextPath())%>/files/home/test.html
 </pre>
     will return the file. You could also use links like this
 <pre>
-    http://<%=request.getServerName()%><%=request.getContextPath()%>/files/home/subdir/other.html
+    http://<%=text(request.getServerName())%><%=text(request.getContextPath())%>/files/home/subdir/other.html
 </pre>
 to serve the file<br>
 <pre>

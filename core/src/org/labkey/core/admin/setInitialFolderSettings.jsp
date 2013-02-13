@@ -16,13 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.module.FolderType" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="java.io.File" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -105,7 +103,7 @@
                 xtype: 'textfield',
                 cls: 'labkey-wizard-input',
                 itemId: 'fileLocation',
-                name: 'projectRootPath',
+                name: 'folderRootPath',
                 disabled: true,
                 width: 400,
                 fieldCls: 'labkey-wizard-input',

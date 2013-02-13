@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 
@@ -108,5 +109,17 @@ public class FileContentModule extends DefaultModule
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(FileRootManager.FILECONTENT_SCHEMA_NAME);
+    }
+
+    @Override
+    @NotNull
+    public Set<Class> getIntegrationTests()
+    {
+        @SuppressWarnings({"unchecked"})
+        Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
+                FileContentServiceImpl.TestCase.class
+        ));
+
+        return testClasses;
     }
 }

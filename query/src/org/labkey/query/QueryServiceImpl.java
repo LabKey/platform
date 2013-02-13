@@ -1318,7 +1318,7 @@ public class QueryServiceImpl extends QueryService
     // Use a WeakHashMap to cache QueryDefs. This means that the cache entries will only be associated directly
     // with the exact same UserSchema instance, regardless of whatever UserSchema.equals() returns. This means
     // that the scope of the cache is very limited, and this is a very conservative cache.
-    private Map<ObjectIdentityCacheKey, WeakReference<Map<String, QueryDef>>> _metadataCache = new WeakHashMap<ObjectIdentityCacheKey, WeakReference<Map<String, QueryDef>>>();
+    private Map<ObjectIdentityCacheKey, WeakReference<Map<String, QueryDef>>> _metadataCache = Collections.synchronizedMap(new WeakHashMap<ObjectIdentityCacheKey, WeakReference<Map<String, QueryDef>>>());
 
     /** Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality */
     private static class ObjectIdentityCacheKey

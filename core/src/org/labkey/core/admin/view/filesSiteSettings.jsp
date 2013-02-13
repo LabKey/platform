@@ -21,13 +21,6 @@
 <%@ page import="org.labkey.core.admin.FileSettingsForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
-<script type="text/javascript">
-    LABKEY.requiresClientAPI(true);
-    LABKEY.requiresScript("TreeGrid.js");
-    Ext.QuickTips.init();
-</script>
-
 <%
     FileSettingsForm bean = ((JspView<FileSettingsForm>)HttpView.currentView()).getModelBean();
 %>
@@ -81,35 +74,34 @@
 <script type="text/javascript">
     var isUpgrade = <%=bean.isUpgrade()%>;
 
-    function configSelected(node)
-    {
-        if (node != undefined && node.attributes.configureURL != undefined)
-        {
-            window.location = node.attributes.configureURL;
-        }
-    }
-
-    function browseSelected(node)
-    {
-        if (node != undefined && node.attributes.browseURL != undefined)
-        {
-            window.location = node.attributes.browseURL;
-        }
-    }
-
-    Ext.onReady(function(){
+    Ext4.onReady(function(){
 
         // show the file root browser
         if (!isUpgrade)
         {
-            var tree = new Ext.ux.tree.TreeGrid({
-                //width: 800,
-                //height: 500,
-                rootVisible:false,
-                autoScroll:true,
-                //renderTo: 'viewsGrid',
+            Ext4.QuickTips.init();
 
+            var store = Ext4.create('Ext.data.TreeStore', {
+                fields: ['name', 'path', 'default', 'browseURL', 'configureURL'],
+                proxy: {
+                    type: 'ajax',
+                    extraParams: {excludeWorkbooksAndTabs: true},
+                    url: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container)
+                },
+                folderSort: true,
+                autoLoad: true
+            });
+
+            var tree = Ext4.create('Ext.tree.Panel', {
+                useArrows: true,
+                rootVisible: false,
+                store: store,
+                multiSelect: false,
+                singleExpand: false,
+
+                autoScroll:true,
                 columns:[{
+                    xtype: 'treecolumn',
                     header:'Project',
                     width:330,
                     dataIndex:'name'
@@ -122,17 +114,88 @@
                     width:75,
                     dataIndex:'default'
                 }],
-                tbar: [
-                    {text:'Expand All', tooltip: {text:'Expands all containers', title:'Expand All'}, listeners:{click:function(button, event) {tree.expandAll();}}},
-                    {text:'Collapse All', tooltip: {text:'Collapses all containers', title:'Collapse All'}, listeners:{click:function(button, event) {tree.collapseAll();}, scope:this}},
-                    {text:'Configure Selected', tooltip: {text:'Configure settings for the selected root', title:'Configure Selected'}, listeners:{click:function(button, event) {configSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
-                    {text:'Browse Selected', tooltip: {text:'Browse files from the selected root', title:'Browse Selected'}, listeners:{click:function(button, event) {browseSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
-                ],
-                dataUrl: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container),
-                listeners: {dblclick: function(node){browseSelected(node);}}
-            });
+                tbar: [{
+                    text:'Expand All',
+                    tooltip: {text:'Expands all containers', title:'Expand All'},
+                    handler: function(button, event) {button.up('treepanel').expandAll();}
+                },{
+                    text:'Collapse All',
+                    tooltip: {text:'Collapses all containers', title:'Collapse All'},
+                    handler: function(button, event) {button.up('treepanel').collapseAll();}
+                },{
+                    text: 'Show Overridden Only',
+                    tooltip: {text: 'Will show only nodes that have custom file or pipeline roots', title: 'Show Overridden Only'},
+                    showOverridesOnly: false,
+                    handler: function(button){
+                        var tree = button.up('treepanel');
+                        var showOverridesOnly = !button.showOverridesOnly;
 
-            var panel = new Ext.Panel({
+                        if (showOverridesOnly){
+                            button.setText('Show All');
+                            button.setTooltip({
+                                text: 'Will show all containers, including those that use a default file root',
+                                title: 'Show All'
+                            });
+                        }
+                        else {
+                            button.setText('Show Overridden Only');
+                            button.setTooltip({
+                                text: 'Will show only nodes that have custom file or pipeline roots',
+                                title: 'Show Overridden Only'
+                            });
+                        }
+                        button.showOverridesOnly = showOverridesOnly;
+
+                        tree.store.proxy.extraParams.showOverridesOnly = showOverridesOnly;
+                        tree.store.load();
+                    }
+                },{
+                    text:'Configure Selected',
+                    tooltip: {text:'Configure settings for the selected root', title:'Configure Selected'},
+                    listeners:{
+                        click:function(button, event) {
+                            var selected = tree.getSelectionModel().getSelection();
+                            if (selected.length){
+                                var node = selected[0];
+                                if (node.get('configureURL')){
+                                    window.location = node.get('configureURL');
+                                }
+                            }
+                            else {
+                                Ext4.Msg.alert('Error', 'No nodes selected');
+                            }
+                        },
+                        scope:this
+                    }
+                },{
+                    text:'Browse Selected',
+                    tooltip: {text:'Browse files from the selected root', title:'Browse Selected'},
+                    listeners:{
+                        click:function(button, event) {
+                            var tree = button.up('treepanel');
+                            var selected = tree.getSelectionModel().getSelection();
+                            if (selected.length){
+                                tree.browseSelected(selected[0]);
+                            }
+                            else {
+                                Ext4.Msg.alert('Error', 'No nodes selected');
+                            }
+                        }
+                    }
+                }],
+                listeners: {
+                    itemdblclick: function(panel, node, item){
+                        this.browseSelected(node);
+                    }
+                },
+                browseSelected: function(node){
+                    if (node.get('browseURL')){
+                        window.location = node.get('browseURL');
+                    }
+                }
+        });
+
+            var panel = Ext4.create('Ext.panel.Panel', {
                 layout: 'fit',
                 renderTo: 'viewsGrid',
                 items: [tree],
