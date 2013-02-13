@@ -28,7 +28,7 @@
 %>
 <labkey:errors/>
 <form action="<%=h(buildURL(StudyController.ManageLocationsAction.class))%>" method="POST">
-    <table>
+    <table id="manageLocationsTable">
         <tr>
             <th>&nbsp;</th>
             <th>Location Id</th>
