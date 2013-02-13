@@ -336,11 +336,15 @@ public class DataSetQueryView extends StudyQueryView
     {
         HttpServletRequest request = HttpView.currentRequest();
         Boolean allowFacet = null != request && Boolean.parseBoolean(request.getParameter("facet"));
+        if (!allowFacet)
+        {
+            // Determine if data region parameterized
+            String dataRegionName = view.getDataRegion().getName();
+            allowFacet = null != request && Boolean.parseBoolean(request.getParameter(dataRegionName + ".param.facet"));
+        }
+
         if (allowFacet)
         {
-            // Set the Data Region to facet mode
-            view.getDataRegion().setFacetable(allowFacet);
-
             ActionButton btn = new ActionButton("Filter");
             btn.setActionType(ActionButton.Action.SCRIPT);
             btn.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].showFaceting(); return false;");
