@@ -192,18 +192,18 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     private Container getFirstAncestorWithOverride(Container c)
     {
         Container toTest = c.getParent();
-        if (toTest != null)
-        {
-            while (isUseDefaultRoot(toTest))
-            {
-                if (toTest.equals(ContainerManager.getRoot()))
-                    return null;
+        if (toTest == null)
+            return null;
 
-                toTest = toTest.getParent();
-            }
+        while (isUseDefaultRoot(toTest))
+        {
+            if (toTest.equals(ContainerManager.getRoot()))
+                return null;
+
+            toTest = toTest.getParent();
         }
 
-        return null;
+        return toTest;
     }
 
     public void setFileRoot(Container c, File path)
@@ -859,28 +859,35 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
             //the subfolder should inherit from the parent
             _expectedPaths.put(subfolder1, new File(testRoot, subfolder1.getName()));
-            Assert.assertEquals("Incorrect values returned by getDefaultRoot", _expectedPaths.get(subfolder1), svc.getDefaultRoot(subfolder1, false));
-            Assert.assertEquals("Subfolder1 has incorrect root", _expectedPaths.get(subfolder1).getPath(), svc.getFileRoot(subfolder1).getPath());
+            assertPathsEqual("Incorrect values returned by getDefaultRoot", _expectedPaths.get(subfolder1), svc.getDefaultRoot(subfolder1, false));
+            assertPathsEqual("Subfolder1 has incorrect root", _expectedPaths.get(subfolder1), svc.getFileRoot(subfolder1));
 
             _expectedPaths.put(subfolder2, new File(testRoot, subfolder2.getName()));
-            Assert.assertEquals("Incorrect values returned by getDefaultRoot", _expectedPaths.get(subfolder2), svc.getDefaultRoot(subfolder2, false));
-            Assert.assertEquals("Subfolder2 has incorrect root", _expectedPaths.get(subfolder2).getPath(), svc.getFileRoot(subfolder2).getPath());
+            assertPathsEqual("Incorrect values returned by getDefaultRoot", _expectedPaths.get(subfolder2), svc.getDefaultRoot(subfolder2, false));
+            assertPathsEqual("Subfolder2 has incorrect root", _expectedPaths.get(subfolder2), svc.getFileRoot(subfolder2));
 
             _expectedPaths.put(subsubfolder, new File(_expectedPaths.get(subfolder1), subsubfolder.getName()));
-            Assert.assertEquals("Incorrect values returned by getDefaultRoot", _expectedPaths.get(subsubfolder), svc.getDefaultRoot(subsubfolder, false));
-            Assert.assertEquals("SubSubfolder has incorrect root", _expectedPaths.get(subsubfolder).getPath(), svc.getFileRoot(subsubfolder).getPath());
+            assertPathsEqual("Incorrect values returned by getDefaultRoot", _expectedPaths.get(subsubfolder), svc.getDefaultRoot(subsubfolder, false));
+            assertPathsEqual("SubSubfolder has incorrect root", _expectedPaths.get(subsubfolder), svc.getFileRoot(subsubfolder));
 
             //override root on 1st child, expect children of that folder to inherit
             _expectedPaths.put(subfolder1, new File(testRoot, "CustomSubfolder"));
             _expectedPaths.get(subfolder1).mkdirs();
             svc.setFileRoot(subfolder1, _expectedPaths.get(subfolder1));
-            Assert.assertEquals("SubSubfolder has incorrect root", new File(_expectedPaths.get(subfolder1), subsubfolder.getName()).getPath(), svc.getFileRoot(subsubfolder).getPath());
+            assertPathsEqual("SubSubfolder has incorrect root", new File(_expectedPaths.get(subfolder1), subsubfolder.getName()), svc.getFileRoot(subsubfolder));
 
             //reset project, we assume overridden child roots to remain the same
             svc.setFileRoot(project1, null);
-            Assert.assertEquals("Subfolder1 has incorrect root", _expectedPaths.get(subfolder1).getPath(), svc.getFileRoot(subfolder1).getPath());
-            Assert.assertEquals("SubSubfolder has incorrect root", new File(_expectedPaths.get(subfolder1), subsubfolder.getName()).getPath(), svc.getFileRoot(subsubfolder).getPath());
+            assertPathsEqual("Subfolder1 has incorrect root", _expectedPaths.get(subfolder1), svc.getFileRoot(subfolder1));
+            assertPathsEqual("SubSubfolder has incorrect root", new File(_expectedPaths.get(subfolder1), subsubfolder.getName()), svc.getFileRoot(subsubfolder));
 
+        }
+
+        private void assertPathsEqual(String msg, File expected, File actual)
+        {
+            String expectedPath = FileUtil.getAbsoluteCaseSensitiveFile(expected).getPath();
+            String actualPath = FileUtil.getAbsoluteCaseSensitiveFile(actual).getPath();
+            Assert.assertEquals(msg, expectedPath, actualPath);
         }
 
         private File getTestRoot()
@@ -939,8 +946,8 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             Container movedSubfolder = ContainerManager.getChild(subfolder2, subsubfolder.getName());
 
             _expectedPaths.put(movedSubfolder, new File(svc.getFileRoot(subfolder2), movedSubfolder.getName()));
-            Assert.assertEquals("Incorrect values returned by getDefaultRoot", _expectedPaths.get(movedSubfolder), svc.getDefaultRoot(movedSubfolder, false));
-            Assert.assertEquals("SubSubfolder has incorrect root", _expectedPaths.get(movedSubfolder).getPath(), svc.getFileRoot(movedSubfolder).getPath());
+            assertPathsEqual("Incorrect values returned by getDefaultRoot", _expectedPaths.get(movedSubfolder), svc.getDefaultRoot(movedSubfolder, false));
+            assertPathsEqual("SubSubfolder has incorrect root", _expectedPaths.get(movedSubfolder), svc.getFileRoot(movedSubfolder));
 
             File expectedFile = new File(svc.getFileRoot(movedSubfolder, ContentType.files), TXT_FILE);
             Assert.assertTrue("File was not moved, expected: " + expectedFile.getPath(), expectedFile.exists());
@@ -948,7 +955,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             ExpData movedData = ExperimentService.get().getExpData(rowId);
             Assert.assertNotNull(movedData);
 
-            Assert.assertTrue(movedData.getFile().getPath().equals(expectedFile.getPath()));
+            assertPathsEqual("Incorrect file path", expectedFile, movedData.getFile());
         }
 
         @After
