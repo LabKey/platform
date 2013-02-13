@@ -57,4 +57,7 @@ abstract public class NotificationService
     abstract public User getUser(Notification n, Container c);
 
     abstract public Date getNextFireTime(Notification n);
+
+    //returns whether the service is enabled at the site level, which lets admins globally turn it off
+    abstract public boolean isServiceEnabled();
 }
