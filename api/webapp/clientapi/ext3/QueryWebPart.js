@@ -292,6 +292,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                 "render"
         );
 
+        if (config.dataRegion) {
+            this.constructFromDataRegion(config);
+            return;
+        };
+
         this.errorType = 'html';
 
         Ext.apply(this, config, {
@@ -354,6 +359,43 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
         if (this.renderTo)
             this.render();
+    },
+
+    /**
+     * Acts as another constructor -- requires a LABKEY.DataRegion be provided at instantiation
+     * NOTE: This will ignore most parameters provided and source solely from the DataRegion.
+     * Still respects the following configuration options:
+     * success, failure, listeners, scope, and parameters
+     */
+    constructFromDataRegion : function(config) {
+
+        if (!config.dataRegion) {
+            Ext.Msg.alert('Construction Error', 'A dataRegion configuration must be provided.');
+        }
+
+        var dr = config.dataRegion;
+
+        Ext.apply(this, {
+            schemaName : dr.schemaName,
+            queryName  : dr.queryName,
+            dataRegionName : dr.name,
+            frame      : false, // never render a frame,
+            parameters : config.parameters,
+            listeners  : config.listeners,
+            _success   : LABKEY.Utils.getOnSuccess(config),
+            _failure   : LABKEY.Utils.getOnFailure(config),
+            scope      : config.scope
+        });
+
+        LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
+
+        this._attachListeners(dr);
+
+        // Get Render Element
+        var renderEl = Ext.get(dr.name).parent('div'); // Ext will assign an ID if one is not found
+        this.renderTo = renderEl.id;
+
+        this.qsParamsToIgnore = {};
     },
 
     createParams : function () {
@@ -823,42 +865,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         return this.dataRegionName ? LABKEY.DataRegions[this.dataRegionName] : null;
     }
 });
-
-/**
- * Acts as another constructor -- requires a LABKEY.DataRegion be provided at instantiation
- * NOTE: This will ignore most parameters provided and source solely from the DataRegion.
- * Still respects the following configuration options:
- * success, failure, listeners, scope, and parameters
- * @return {LABKEY.QueryWebPart} A QueryWebPart instance that wraps the target Data Region
- */
-LABKEY.QueryWebPart.constructFromDataRegion = function(config) {
-
-    if (!config.dataRegion) {
-        Ext.Msg.alert('Construction Error', 'A dataRegion configuration must be provided.');
-    }
-
-    var dr = config.dataRegion;
-
-    var qwp = new LABKEY.QueryWebPart({
-        schemaName : dr.schemaName,
-        queryName  : dr.queryName,
-        dataRegionName : dr.name,
-        frame      : false, // never render a frame,
-        parameters : config.parameters,
-        listeners  : config.listeners,
-        success    : config.success,
-        failure    : config.failure,
-        scope      : config.scope
-    });
-
-    qwp._attachListeners(dr);
-
-    // Get Render Element
-    var renderEl = Ext.get(dr.name).parent('div'); // Ext will assign an ID if one is not found
-    qwp.renderTo = renderEl.id;
-
-    return qwp;
-};
 
 /**
  * A read-only object that exposes properties representing standard buttons shown in LabKey data grids.

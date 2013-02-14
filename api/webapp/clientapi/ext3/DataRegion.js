@@ -136,6 +136,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this._initElements();
         this._showPagination(this.header);
         this._showPagination(this.footer);
+//        this._ensureFaceting();
 
         if (this.view && this.view.session)
         {
@@ -279,15 +280,23 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this._setParam(".offset", newoffset, [".offset", ".showRows"]);
     },
 
+    _ensureFaceting : function() {
+        if (LABKEY.ActionURL.getParameter('showFacet')) {
+            if (!LABKEY.dataregion || !LABKEY.dataregion.panel ||
+                !LABKEY.dataregion.panel.Facet.LOADED) {
+                this.showFaceting();
+            }
+        }
+        else {
+            this.loadFaceting();
+        }
+    },
+
     loadFaceting : function(cb, scope) {
 
         var dr = this;
 
         var initFacet = function() {
-
-            dr.facet = Ext4.create('LABKEY.dataregion.panel.Facet', {
-                dataRegion : dr
-            });
 
             dr.facetLoaded = true;
 
@@ -304,6 +313,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
     showFaceting : function() {
         if (this.facetLoaded) {
+            if (!this.facet) {
+                this.facet = Ext4.create('LABKEY.dataregion.panel.Facet', {
+                    dataRegion : this
+                })
+            }
             this.facet.toggleCollapse();
             if (this.resizeTask) {
                 this.resizeTask.delay(350);

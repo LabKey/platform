@@ -896,7 +896,7 @@ public class DataRegion extends AbstractDataRegion
     {
         if(renderButtons)
             renderFormHeader(ctx, out, MODE_GRID);
-        out.write("\n<table class=\"labkey-data-region");
+        out.write("\n<div class=\"labkey-data-region-wrap\"><table class=\"labkey-data-region");
 
         if (isShowBorders())
              out.write(" labkey-show-borders");
@@ -930,7 +930,7 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderRegionEnd(RenderContext ctx, Writer out, boolean renderButtons, List<DisplayColumn> renderers) throws IOException
     {
-        out.write("\n</table>");
+        out.write("\n</table></div>");
         if (renderButtons)
             renderFormEnd(ctx, out);
 

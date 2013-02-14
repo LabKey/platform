@@ -2,6 +2,12 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     extend : 'Ext.Panel',
 
+    width : 260,
+
+    statics : {
+        LOADED : true
+    },
+
     constructor : function(config) {
 
         if (!config.dataRegion) {
@@ -12,60 +18,88 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         var renderTarget = 'dataregion_facet_' + config.dataRegion.name;
         var targetHTML = '<div id="' + renderTarget + '" style="float: left;"></div>';
 
-        Ext4.get(config.dataRegion.name).up('div').insertHtml('beforeBegin', targetHTML);
+        var topEl = this.getContainerEl(config.dataRegion);
+        topEl.insertHtml('beforeBegin', targetHTML);
+        topEl.setWidth(topEl.getBox().width + this.width + 5);
 
         Ext4.applyIf(config, {
             renderTo : renderTarget,
-            title : 'Faceted Search',
             collapsed : true,
             collapsible : true,
             collapseDirection : 'left',
+            hidden : true,
             collapseMode : 'mini',
-            width : 260,
-            minHeight : 450,
-            anchorSize : 400,
-            style : 'padding-right: 5px;',
+            frameHeader : false,
+            regionName : config.dataRegion.name,
+            style : { paddingRight : '5px' },
             header : {
                 xtype : 'header',
                 title : 'Filter',
                 cls : 'facet_header'
             },
-            autoScroll: true,
-            height : Ext4.get('dataregion_' + config.dataRegion.name).getBox().height
+            cls : 'labkey-data-region-facet',
+            height : Ext4.get('dataregion_' + config.dataRegion.name).getBox().height,
+            minHeight : 450
         });
 
         this.filterTask = new Ext4.util.DelayedTask(this._filterTask, this);
-
-        fp = this;
+        this.resizeTask = new Ext4.util.DelayedTask(this._resizeTask, this);
 
         this.callParent([config]);
     },
 
     initComponent : function() {
 
-        this.items = [
-            this.getFilterCfg()
-        ];
+        this.items = [ this.getFilterCfg() ];
 
         this.callParent(arguments);
 
-        var task = new Ext4.util.DelayedTask(function(){
-            this.expand();
-        }, this);
-
-        this.on('afterrender', function() { task.delay(200); });
+        this.on('afterrender',  this.getWrappedDataRegion, this, {single: true});
         this.on('beforeexpand', function() {
-            this.show();
+            this._beforeShow(); this.show();
         }, this);
-        this.on('collapse', function() {
-            this.hide();
+        this.on('collapse',     function() {
+            this.hide(); this._afterHide();
         }, this);
+        this.on('resize',       this.onResize, this);
+    },
 
-        // Data Region Listeners
-        if (this.dataRegion) {
-            this.dataRegion.on('afterpanelshow', this.onDataRegionResize, this);
-            this.dataRegion.on('afterpanelhide', this.onDataRegionResize, this);
+    getContainerEl : function(dr) {
+        return Ext4.get(dr.name).up('div');
+    },
+
+    _beforeShow : function() {
+        var el = this.getContainerEl(this.dataRegion);
+        el.setWidth(el.getBox().width + this.width + 5);
+    },
+
+    _afterHide : function() {
+        var el = this.getContainerEl(this.dataRegion);
+        el.setWidth(null);
+    },
+
+    getWrappedDataRegion : function() {
+        if (!this.qwp) {
+            // Wrap the corresponding Data Region with a QWP
+            this.qwp = new LABKEY.QueryWebPart({
+                dataRegion : this.dataRegion,
+                parameters : {
+                    facet : true
+                },
+                success : function(dr) {
+                    // Give access to to this filter panel to the Data Region
+                    if (dr) {
+                        this.dataRegion = LABKEY.DataRegions[dr.name];
+                        LABKEY.DataRegions[dr.name].setFacet(this);
+                        var box = this.getBox();
+                        this.onResize(this, box.width, box.height);
+                    }
+                },
+                scope : this
+            });
         }
+
+        return this.qwp;
     },
 
     getFilterCfg : function() {
@@ -76,7 +110,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             xtype : 'participantfilter',
             width     : 260,
             layout    : 'fit',
-            bodyStyle : 'padding: 8px',
+            bodyStyle : 'padding: 8px;',
             normalWrap : true,
             overCls   : 'iScroll',
 
@@ -103,126 +137,131 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         });
     },
 
+    onResize : function(panel, w, h, oldW, oldH) {
+        this.resizeTask.delay(100, null, null, arguments);
+    },
+
+    // DO NOT CALL DIRECTLY. Use resizeTask.delay
+    _resizeTask : function(panel, w, h, oldW, oldH) {
+
+        // Resize data region wrapper
+        var wrap = Ext4.get('dataregion_' + this.dataRegion.name).parent('div.labkey-data-region-wrap');
+        if (wrap) {
+            var box = wrap.getBox();
+
+            // Filter Panel taller than Data Region
+            if (h > box.height) {
+                wrap.setHeight(h);
+            }
+
+            // Filter Panel has been closed -- clear any specific height setting on wrapper
+            if (w <= 1) {
+                wrap.setHeight(null);
+            }
+        }
+    },
+
     // DO NOT CALL DIRECTLY. Use filterTask.delay
     _filterTask : function() {
 
-        this.dataRegion.doDestroy();
-
-        var json = [];
-
         // Current all being selected === none being selected
-        var filters = this.filterPanel.getSelection(true, true);
+        var filters = this.filterPanel.getSelection(true, true),
+            filterMap = {},
+            filterPrefix, f=0;
 
-        if (filters.length == 0) {
-            this.onResolveFilter([]);
-            return;
-        }
-
-        for (var f=0; f < filters.length; f++) {
+        for (; f < filters.length; f++) {
             if (filters[f].get('type') != 'participant') {
-                json.push(filters[f].data);
+
+                // Build what a filter might look like
+                if (filters[f].data.category) {
+                    filterPrefix = 'ParticipantId/' + filters[f].data.category.label;
+                }
+                else {
+                    // Assume it is a cohort
+                    filterPrefix = 'ParticipantId/Cohort/Label';
+                }
+
+                if (!filterMap[filterPrefix]) {
+                    filterMap[filterPrefix] = [];
+                }
+                filterMap[filterPrefix].push(filters[f].data.label);
             }
             // deal with participant case
         }
 
-        this.resolveFilter(json, [], this.onResolveFilter, this);
+        this.onResolveFilter(filterMap);
     },
 
     onFilterChange : function() {
         this.filterTask.delay(100);
     },
 
-    resolveFilter : function(groups, subjects, callback, scope) {
-        // Ignore subjects for now
-        Ext4.Ajax.request({
-            url    : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
-            method : 'POST',
-            jsonData : Ext4.encode({
-                groups : groups
-            }),
-            success : function(resp) {
-                var json = Ext4.decode(resp.responseText);
-                var subjects = json.subjects ? json.subjects : [];
-//                if(participants && participants.length)
-//                    subjects = subjects.concat(participants);
-                callback.call(scope || this, subjects);
-            },
-            failure : this.onFailure,
-            scope   : this
-        });
+    onResolveFilter : function(filterMap) {
+
+        var qwp = this.getWrappedDataRegion();
+
+        var dr = LABKEY.DataRegions[this.regionName];
+        // Have a QWP, Ajax as a normal filter
+        if (dr) {
+            var valueArray = this.constructFilter(filterMap, dr, qwp.userFilters);
+            dr.changeFilter(valueArray, LABKEY.DataRegion.buildQueryString(valueArray));
+        }
     },
 
-    onResolveFilter : function(subjects) {
+    constructFilter : function(filterMap, dr, urlParameters) {
 
-        var filterArray = [];
-        if (subjects && subjects.length > 0) {
-            var subjectFilter = '', sep='';
-            for (var s=0; s < subjects.length; s++) {
-                subjectFilter += sep + subjects[s];
-                sep = ';';
+        var newValArray = [];
+        var urlFilters = [];
+
+        // Build LABKEY.Filters from filterMap
+        for (var f in filterMap) {
+            if (filterMap.hasOwnProperty(f)) {
+                var type, value;
+                if (filterMap[f].length > 1) {
+                    type = LABKEY.Filter.Types.IN;
+                    value = filterMap[f].join(';');
+                }
+                else {
+                    type = LABKEY.Filter.Types.EQUAL;
+                    value = filterMap[f][0];
+                }
+
+                var filter = LABKEY.Filter.create(f, value, type);
+                urlFilters.push(filter);
             }
-            filterArray = [
-                LABKEY.Filter.create('ParticipantId', subjectFilter, LABKEY.Filter.Types.CONTAINS_ONE_OF)
-            ];
         }
 
-        if (!this.qwp) {
+        // Using the set of filters, merge this against the urlParameters
+        var filterFound;
+        for (var u in urlParameters) {
+            filterFound = false;
+            if (urlParameters.hasOwnProperty(u)) {
 
-            // Wrap the corresponding Data Region with a QWP
-            this.qwp = LABKEY.QueryWebPart.constructFromDataRegion({
-                dataRegion : this.dataRegion,
-                parameters : {
-                    facet : true
-                },
-                success : function(dr) {
+                var columnFilter = u.split('~');
+                if (columnFilter.length > 1) {
 
-                    // Give access to to this filter panel to the Data Region
-                    if (dr) {
-                        LABKEY.DataRegions[dr.name].setFacet(this);
-                    }
-                },
-                scope : this
-            });
+                    columnFilter = columnFilter[0];
+                    columnFilter = columnFilter.replace(dr.name + '.', '');
 
-//            this.qwp = new LABKEY.QueryWebPart({
-//                dataRegion : this.dataRegion,
-//                parameters : {
-//                    facet : true
-//                },
-//                success : function(dr) {
-//
-//                    // Give access to to this filter panel to the Data Region
-//                    if (dr) {
-//                        LABKEY.DataRegions[dr.name].setFacet(this);
-//                    }
-//                },
-//                scope : this
-//            });
-        }
-
-        // Already have a QWP, so just Ajax as a normal filter
-        var dr = LABKEY.DataRegions[this.qwp.dataRegionName];
-        if (dr) {
-            var paramValPairs = this.qwp.userFilters;
-            if (filterArray.length > 0) {
-                var f = filterArray[0];
-
-                var newValArray = [];
-                for (var p in paramValPairs) {
-                    if (paramValPairs.hasOwnProperty(p)) {
-                        newValArray.push([p, paramValPairs[p]]);
+                    if (filterMap[columnFilter]) {
+                        filterFound = true;
                     }
                 }
 
-                var paramName = f.getURLParameterName().replace('query.', this.dataRegion.name + '.');
-                newValArray.push([paramName, f.getURLParameterValue()]);
-                dr.changeFilter(newValArray, LABKEY.DataRegion.buildQueryString(newValArray));
-            }
-            else {
-                // Clear any filters for this field
-                dr.clearFilter('ParticipantId');
+                if (!filterFound) {
+                    newValArray.push([u, urlParameters[u]]);
+                }
             }
         }
+
+        // Now iterate across the urlFilters and add each to the value array
+        var fa;
+        for (f=0; f < urlFilters.length; f++) {
+            fa = urlFilters[f];
+            newValArray.push([fa.getURLParameterName(dr.name), fa.getURLParameterValue()]);
+        }
+
+        return newValArray;
     },
 
     onFailure : function(resp) {
