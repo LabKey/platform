@@ -36,6 +36,8 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             frameHeader : false,
             regionName : config.dataRegion.name,
             style : { paddingRight : '5px' },
+            autoScroll : true,
+            bodyStyle : 'overflow-x: hidden !important;',
             header : {
                 xtype : 'header',
                 title : 'Filter',
