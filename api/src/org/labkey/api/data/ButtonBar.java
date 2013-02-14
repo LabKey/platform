@@ -227,12 +227,17 @@ public class ButtonBar extends DisplayElement
         if (config.isIncludeStandardButtons())
         {
             //include all buttons in the originalButtons List that
-            //are not already in the new element list
+            //are not already in the new element list or the merged list
             //match based on button caption
             Set<String> newCaptions = new HashSet<String>();
             for (DisplayElement elem : _elementList)
             {
                 newCaptions.add(elem.getCaption());
+            }
+
+            for (Pair<ButtonConfig, DisplayElement> pair : mergedItems)
+            {
+                newCaptions.add(pair.second.getCaption());
             }
 
             for (DisplayElement elem : originalButtons)
