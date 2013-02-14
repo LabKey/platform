@@ -31,6 +31,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -810,6 +811,8 @@ public class Query
                 if (countRows >= 0)
                     QueryTestCase.assertEquals(sql, countRows, rs.getSize());
 
+                validateResults(rs);
+
 				if (name != null)
 				{
                     User user = TestContext.get().getUser();
@@ -833,7 +836,61 @@ public class Query
                 ResultSetUtil.close(rs);
             }
         }
+
+        protected void validateResults(CachedResultSet rs) throws Exception
+        {
+
+        }
     }
+
+
+    static class MethodSqlTest extends SqlTest
+    {
+        final JdbcType _type;
+        final Object _value;
+
+        MethodSqlTest(String sql, JdbcType type, Object value)
+        {
+            super(sql, 1, 1);
+            _type = type;
+            _value = value;
+        }
+
+        @Override
+        protected void validateResults(CachedResultSet rs) throws SQLException
+        {
+            QueryTestCase.assertTrue("Expected one row: " + sql, rs.next());
+            Object o = rs.getObject(1);
+            QueryTestCase.assertFalse("Expected one row: " + sql, rs.next());
+            assertSqlEquals(_value,o);
+        }
+
+        public void assertSqlEquals(Object a, Object b)
+        {
+            if (null == a)
+                QueryTestCase.assertNull("Expected NULL value: + sql", b);
+            if (null == b)
+                QueryTestCase.fail("Did not expect null value: " + sql);
+            if (a instanceof Number && b instanceof Number)
+            {
+                if (((Number)a).doubleValue() == ((Number)b).doubleValue())
+                    return;
+            }
+            if (a instanceof Character)
+                a = a.toString();
+            if (b instanceof Character)
+                b = b.toString();
+            if (_type == JdbcType.BOOLEAN)
+            {
+                a = a.equals(1) ? true : a.equals(0) ? false : a;
+                b = b.equals(1) ? true : b.equals(0) ? false : b;
+            }
+            if (a.equals(b))
+                return;
+            QueryTestCase.assertEquals("expected:<" + a + "> bug was:<" + b + "> " + sql, a,b);
+        }
+    }
+
 
 
     static class FailTest extends SqlTest
@@ -1007,6 +1064,44 @@ public class Query
 
         // METHODS
         new SqlTest("SELECT ROUND(R.d) AS _d, ROUND(R.d,1) AS _rnd, ROUND(3.1415,2) AS _pi, CONVERT(R.d,SQL_VARCHAR) AS _str FROM R", 4, Rsize),
+        new MethodSqlTest("SELECT ABS(-1) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
+            // acos
+//        new MethodSqlTest("SELECT AGE(CAST('1/2/2003' AS SQL_TIMESTAMP),CAST('1/2/2004' AS SQL_TIMESTAMP),SQL_TSI_YEAR) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
+//        new MethodSqlTest("SELECT AGE(CAST('1/2/2003' AS SQL_TIMESTAMP),CAST('1/3/2004' AS SQL_TSI_MONTH),SQL_TSI_YEAR) FROM R WHERE rowid=1", JdbcType.INTEGER, 13),
+            // asin, atan, atan2, cast
+        new MethodSqlTest("SELECT CAST('1' AS SQL_INTEGER) ", JdbcType.INTEGER, 1),
+        new MethodSqlTest("SELECT CAST('1' AS INTEGER) ", JdbcType.INTEGER, 1),
+        new MethodSqlTest("SELECT CAST('1.5' AS DOUBLE) ", JdbcType.DOUBLE, 1.5),
+        new MethodSqlTest("SELECT CAST(1 AS VARCHAR) ", JdbcType.VARCHAR, '1'),
+        new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.INTEGER, 2),
+        new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.INTEGER, 2),
+        new MethodSqlTest("SELECT COALESCE(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
+        new MethodSqlTest("SELECT concat('concat', concat('in',concat('the','hat'))) FROM R WHERE rowid=1", JdbcType.INTEGER, "concatinthehat"),
+        new MethodSqlTest("SELECT CONVERT(123,VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
+            // cos, cot, curdate,
+//        new MethodSqlTest("SELECT DAYOFMONTH(CAST('1/1/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
+//        new MethodSqlTest("SELECT DAYOFWEEK(CAST('1/1/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
+//        new MethodSqlTest("SELECT DAYOFYEAR(CAST('1/1/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
+            // degrees, exp, floor, hour
+        new MethodSqlTest("SELECT IFNULL(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
+        new MethodSqlTest("SELECT ISEQUAL(NULL, NULL) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT ISEQUAL(1, 1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT ISEQUAL(1, 2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT ISMEMBEROF(-1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),   // admin is required for junit tests
+        new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
+        new MethodSqlTest("SELECT LEFT('FRED',2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
+        new MethodSqlTest("SELECT lower('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
+            // ltrim minute, mod, month, monthname, now
+        new MethodSqlTest("SELECT ROUND(PI()) FROM R WHERE rowid=1", JdbcType.DOUBLE, 3.0),
+            // power, quarter, radians, rand, repeat, round
+        new MethodSqlTest("SELECT RTRIM('FRED ')", JdbcType.VARCHAR, "FRED"),
+            // second sign sin sqrt
+        new MethodSqlTest("SELECT STARTSWITH('FRED ','FR')", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT STARTSWITH('FRED ','Z')", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT SUBSTRING('FRED ',2,3)", JdbcType.VARCHAR, "RED"),
+            // tan, timestampadd, userid, week year
+        new MethodSqlTest("SELECT UCASE('Fred')", JdbcType.VARCHAR, "FRED"),
+        new MethodSqlTest("SELECT UPPER('fred')", JdbcType.VARCHAR, "FRED"),
 
         // LIMIT
         new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 10", 3, 10),
