@@ -819,6 +819,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         return userFilter;
     },
 
+    /**
+     * Returns an Array of LABKEY.Filter instances constructed from the URL.
+     * @returns {Array} Array of {@link LABKEY.Filter} objects that represent currently applied filters.
+     */
     getUserFilterArray : function()
     {
         var userFilter = [];
@@ -1455,7 +1459,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }
 
         // add the record selector message, the link handlers will get added after render in _onRenderMessageArea
-        var el = this.addMessage(msg, 'selection');
+        this.addMessage(msg, 'selection');
     },
 
     // private
@@ -2534,10 +2538,34 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
             'rendermsg',
             'clearmsg'
         );
+
+        this._renderTask = new Ext.util.DelayedTask(function(){
+            this.clear();
+            var hasMsg = false;
+            for (var name in this.parts) {
+
+                var msg = this.parts[name];
+
+                if (msg) {
+                    var div = this.parentEl.child("div");
+                    if (div.first())
+                        div.createChild({tag: 'hr'});
+                    var el = div.createChild({tag: 'div', cls: 'labkey-dataregion-msg', html: msg});
+
+                    this.fireEvent('rendermsg', this, name, el);
+                    hasMsg = true;
+                }
+            }
+            this.setVisible(hasMsg);
+        }, this);
     },
 
     // private
     destroy : function () {
+        if (this._renderTask) {
+            this._renderTask.cancel();
+            delete this._renderTask;
+        }
         this.purgeListeners();
     },
 
@@ -2570,24 +2598,7 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
     },
 
     render : function() {
-
-        this.clear();
-        var hasMsg = false;
-        for (var name in this.parts)
-        {
-            var msg = this.parts[name];
-            if (msg)
-            {
-                var div = this.parentEl.child("div");
-                if (div.first())
-                    div.createChild({tag: 'hr'});
-                var el = div.createChild({tag: 'div', cls: 'labkey-dataregion-msg', html: msg});
-
-                this.fireEvent('rendermsg', this, name, el);
-                hasMsg = true;
-            }
-        }
-        this.setVisible(hasMsg);
+        this._renderTask.delay(10);
     },
 
     setVisible : function(visible) {

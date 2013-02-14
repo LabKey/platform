@@ -310,30 +310,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
         this.filters = this.filters || this.filterArray;
 
-        // 12187: Copy user's current URL filters/sort and add them to qsParamsToIgnore so they aren't added when building the DataRegion's URL.
-        var params = LABKEY.ActionURL.getParameters();
-        this.qsParamsToIgnore = {};
-        this.userFilters = {};
-        this.userSort = "";
-        this.userContainerFilter = "";
-        for (var key in params)
-        {
-            if (key.indexOf(this.dataRegionName + ".") == 0 && key.indexOf("~") > -1)
-            {
-                this.userFilters[key] = params[key];
-                this.qsParamsToIgnore[key] = true;
-            }
-            else if (key == this.dataRegionName + ".sort")
-            {
-                this.userSort = params[key];
-                this.qsParamsToIgnore[key] = true;
-            }
-            else if (key == this.dataRegionName + ".containerFilterName")
-            {
-                this.userContainerFilter = params[key];
-                this.qsParamsToIgnore[key] = true;
-            }
-        }
+        this.initializeParameters();
         
         if (config.removeableFilters)
         {
@@ -395,7 +372,34 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         var renderEl = Ext.get(dr.name).parent('div'); // Ext will assign an ID if one is not found
         this.renderTo = renderEl.id;
 
+        this.initializeParameters();
+    },
+
+    initializeParameters : function() {
+        // 12187: Copy user's current URL filters/sort and add them to qsParamsToIgnore so they aren't added when building the DataRegion's URL.
+        var params = LABKEY.ActionURL.getParameters();
         this.qsParamsToIgnore = {};
+        this.userFilters = {};
+        this.userSort = "";
+        this.userContainerFilter = "";
+        for (var key in params)
+        {
+            if (key.indexOf(this.dataRegionName + ".") == 0 && key.indexOf("~") > -1)
+            {
+                this.userFilters[key] = params[key];
+                this.qsParamsToIgnore[key] = true;
+            }
+            else if (key == this.dataRegionName + ".sort")
+            {
+                this.userSort = params[key];
+                this.qsParamsToIgnore[key] = true;
+            }
+            else if (key == this.dataRegionName + ".containerFilterName")
+            {
+                this.userContainerFilter = params[key];
+                this.qsParamsToIgnore[key] = true;
+            }
+        }
     },
 
     createParams : function () {
@@ -461,11 +465,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         //except those we should specifically ignore
         var qsParams = LABKEY.ActionURL.getParameters();
 
-        for (var qsParam in qsParams)
+        for (var param in qsParams)
         {
-            if (-1 != qsParam.indexOf(this.dataRegionName + ".")
-                    && !this.qsParamsToIgnore[qsParam])
-                params[qsParam] = qsParams[qsParam];
+            if (qsParams.hasOwnProperty(param)) {
+                if (-1 != param.indexOf(this.dataRegionName + ".") && !this.qsParamsToIgnore[param]) {
+                    params[param] = qsParams[param];
+                }
+            }
         }
 
         //Ext uses a param called _dc to defeat caching, and it may be
@@ -763,6 +769,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     },
 
     beforeClearAllFilters : function(dataRegion) {
+        this.fireEvent('beforeclearallfilters', dataRegion);
         this.offset = 0;
         this.userFilters = null;
         this.render();

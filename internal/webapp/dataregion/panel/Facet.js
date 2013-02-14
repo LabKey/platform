@@ -21,6 +21,10 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         var topEl = this.getContainerEl(config.dataRegion);
         topEl.insertHtml('beforeBegin', targetHTML);
         topEl.setWidth(topEl.getBox().width + this.width + 5);
+//        var reqWidth = this.getRequiredWidth(config.dataRegion);
+//        if (topEl.getBox().width < reqWidth) {
+//            topEl.setWidth(reqWidth);
+//        }
 
         Ext4.applyIf(config, {
             renderTo : renderTarget,
@@ -50,11 +54,19 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     initComponent : function() {
 
-        this.items = [ this.getFilterCfg() ];
+        this.items = [];
 
         this.callParent(arguments);
 
-        this.on('afterrender',  this.getWrappedDataRegion, this, {single: true});
+        var task = new Ext4.util.DelayedTask(function(){
+            this.add(this.getFilterCfg());
+        }, this);
+
+        this.on('afterrender',  function() {
+            this.getWrappedDataRegion();
+            task.delay(200); // animation time
+        }, this, {single: true});
+
         this.on('beforeexpand', function() {
             this._beforeShow(); this.show();
         }, this);
@@ -71,11 +83,19 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     _beforeShow : function() {
         var el = this.getContainerEl(this.dataRegion);
         el.setWidth(el.getBox().width + this.width + 5);
+//        var reqWidth = this.getRequiredWidth(this.dataRegion);
+//        if (el.getBox().width < reqWidth) {
+//            el.setWidth(reqWidth);
+//        }
     },
 
     _afterHide : function() {
         var el = this.getContainerEl(this.dataRegion);
         el.setWidth(null);
+    },
+
+    getRequiredWidth : function(dr) {
+        return 265 + Ext4.get('dataregion_' + dr.name).getBox().width;
     },
 
     getWrappedDataRegion : function() {
@@ -97,6 +117,10 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 },
                 scope : this
             });
+
+            this.qwp.on('beforeclearallfilters', function(dr) {
+                this.filterPanel.getFilterPanel().selectAll(true);
+            }, this);
         }
 
         return this.qwp;
@@ -104,11 +128,9 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     getFilterCfg : function() {
 
-        var me = this;
-
         return {
             xtype : 'participantfilter',
-            width     : 260,
+            width     : this.width,
             layout    : 'fit',
             bodyStyle : 'padding: 8px;',
             normalWrap : true,
@@ -119,10 +141,9 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             subjectNoun : this.subjectNoun,
 
             listeners : {
-                afterrender : function(panel) {
-                    me.filterPanel = panel;
-                },
+                afterrender : this.onFilterRender,
                 selectionchange : this.onFilterChange,
+                beforeInitGroupConfig : this.applyFilters,
                 scope : this
             },
 
@@ -193,7 +214,11 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     },
 
     onFilterChange : function() {
-        this.filterTask.delay(100);
+        this.filterTask.delay(350);
+    },
+
+    onFilterRender : function(panel) {
+        this.filterPanel = panel;
     },
 
     onResolveFilter : function(filterMap) {
@@ -205,6 +230,47 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         if (dr) {
             var valueArray = this.constructFilter(filterMap, dr, qwp.userFilters);
             dr.changeFilter(valueArray, LABKEY.DataRegion.buildQueryString(valueArray));
+        }
+    },
+
+    // This will get called for each separate group in the Filter Display
+    applyFilters : function(fp, store) {
+        if (store && store.getCount() > 0) {
+            var userFilters = LABKEY.DataRegions[this.regionName].getUserFilterArray();
+            if (userFilters && userFilters.length > 0) {
+
+                var uf, selection = [];
+                for (var u=0; u < userFilters.length; u++) {
+
+                    uf = userFilters[u];
+
+                    for (var s=0; s < store.getRange().length; s++) {
+                        var rec = store.getAt(s);
+
+                        if (rec.data.label.toLowerCase() == uf.getValue().toLowerCase()) {
+
+                            // Check Cohorts
+                            if ((!rec.data.category || rec.data.category == '') && rec.data.type.toLowerCase() == 'cohort') {
+                                selection.push(rec);
+                            }
+                            else if (rec.data.category && rec.data.category.label) {
+
+                                // Check Participant Groups
+                                var groupName = uf.getColumnName().split('/');
+                                groupName = groupName[groupName.length-1];
+                                if (rec.data.category.label.toLowerCase() == groupName.toLowerCase()) {
+                                    selection.push(rec);
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+                if (selection.length > 0) {
+                    fp.selection = selection;
+                }
+            }
         }
     },
 
