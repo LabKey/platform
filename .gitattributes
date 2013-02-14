@@ -789,6 +789,9 @@ core/webapp/schemaBrowser.css -text
 core/webapp/schemaBrowser.js -text
 core/webapp/stylesheet.css -text
 core/webapp/stylesheet.scss -text
+dataintegration/module.properties -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.00-0.01.sql -text
+dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
 demo/module.properties -text
 demo/resources/schemas/dbscripts/postgresql/demo-0.00-1.00.sql -text
 demo/resources/schemas/dbscripts/sqlserver/demo-0.00-1.00.sql -text
