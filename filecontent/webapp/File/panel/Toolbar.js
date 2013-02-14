@@ -238,18 +238,23 @@ Ext4.define('File.panel.ToolbarPanel', {
         var baseColumnData = ['File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
                 'Usages', 'Download Link', 'File Extension'];
         var inUse = {};
-
         if(this.useCustomProps){
             for(var i = 0; i < this.fileProperties.length; i++){
-                baseColumnData.push(this.fileProperties[i].label);
+                if (this.fileProperties[i].label)
+                {
+                    baseColumnData.push(this.fileProperties[i].label);
+                }
+                else baseColumnData.push(this.fileProperties[i].name);
             }
         }
         var reverseBaseColumnData = [];
         for(i=0; i < baseColumnData.length; i++){
             reverseBaseColumnData[baseColumnData[i]] = i+1;
         }
-
         for(i=1; i < this.gridConfigs.columns.length; i++) {
+            if(this.gridConfigs.columns[i].id == 0){
+                continue;
+            }
             var text = baseColumnData[this.gridConfigs.columns[i].id-1];
             columnData.push({
                 id   : reverseBaseColumnData[text],
@@ -268,7 +273,7 @@ Ext4.define('File.panel.ToolbarPanel', {
             {
                 columnData.push({
                     id : i + 10,
-                    text : this.fileProperties[i].label,
+                    text : this.fileProperties[i].label ? this.fileProperties[i].label : this.fileProperties[i].name,
                     hidden : false,
                     sortable : true
                 });
