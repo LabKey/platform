@@ -334,23 +334,7 @@ public class DataSetQueryView extends StudyQueryView
     @Override
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
-        HttpServletRequest request = HttpView.currentRequest();
-        Boolean allowFacet = null != request && Boolean.parseBoolean(request.getParameter("facet"));
-        if (!allowFacet)
-        {
-            // Determine if data region parameterized
-            String dataRegionName = view.getDataRegion().getName();
-            allowFacet = null != request && Boolean.parseBoolean(request.getParameter(dataRegionName + ".param.facet"));
-        }
-
-        if (allowFacet)
-        {
-            ActionButton btn = new ActionButton("Filter");
-            btn.setActionType(ActionButton.Action.SCRIPT);
-            btn.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].showFaceting(); return false;");
-            bar.add(btn);
-        }
-
+        bar.add(createFilterButton());
         bar.add(createViewButton(getItemFilter()));
         bar.add(createChartButton());
 
@@ -469,6 +453,14 @@ public class DataSetQueryView extends StudyQueryView
         button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
 
         return button;
+    }
+
+    private ActionButton createFilterButton()
+    {
+        ActionButton btn = new ActionButton("Filter");
+        btn.setActionType(ActionButton.Action.SCRIPT);
+        btn.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].showFaceting(); return false;");
+        return btn;
     }
 
     private MenuButton createQCStateButton(QCStateSet currentSet)

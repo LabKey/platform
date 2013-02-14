@@ -31,18 +31,21 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         });
 
         // models Participant Groups and Cohorts mixed
-        Ext4.define('LABKEY.study.GroupCohort', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'id'},
-                {name : 'categoryId'},
-                {name : 'enrolled'},
-                {name : 'label'},
-                {name : 'description'},
-                {name : 'participantIds'},
-                {name : 'type'}
-            ]
-        });
+        if (!Ext4.ModelManager.isRegistered('LABKEY.study.GroupCohort')) {
+            Ext4.define('LABKEY.study.GroupCohort', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'id'},
+                    {name : 'categoryId'},
+                    {name : 'category'},
+                    {name : 'enrolled'},
+                    {name : 'label'},
+                    {name : 'description'},
+                    {name : 'participantIds'},
+                    {name : 'type'}
+                ]
+            });
+        }
 
         this.callParent([config]);
     },
@@ -237,12 +240,14 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
 
                     groupList.push({
                         id          : row.id,
+                        category    : row.category,
                         categoryId  : row.categoryId,
                         enrolled    : row.enrolled,
                         label       : row.label,
                         description : row.description,
                         participantIds: row.participantIds,
-                        type        : row.type});
+                        type        : row.type
+                    });
 
                     categories[key] = groupList;
                 }
@@ -274,11 +279,11 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 }
 
                 for (var type in categories) {
-                    if (categories.hasOwnProperty(type)) {
-                        if (type == 'cohort') {
-                            continue;
-                        }
+                    if (type == 'cohort') {
+                        continue;
+                    }
 
+                    if (categories.hasOwnProperty(type)) {
                         var groupConfig = Ext4.clone(storeConfig);
                         groupConfig.data = categories[type];
 

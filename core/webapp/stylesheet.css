@@ -971,24 +971,37 @@ table.labkey-customize-view td.labkey-tab-space a
 
 /* There are some odd styles that are used so that the data
 regions look the same in IE, Safari, and Firefox */
-table.labkey-data-region
-{
+table.labkey-data-region {
     background-color: #FFFFFF;
     *border-collapse: collapse;
     border-spacing: 0;
 }
 
 .labkey-data-region-wrap {
-    white-space: nowrap;
-    float: left;
+    display: inline-block;
+    border: 1px solid #DDDDDD;
+}
+
+/* Within the wrap do not outline the Data Region */
+.labkey-data-region-wrap table.labkey-show-borders {
+    border-width: 0px;
+}
+
+.labkey-data-region-facet div.x4-panel-body {
+    border-color: #DDDDDD;
 }
 
 .x4-reset div.facet_header {
-    height: 35px;
+    height: 34px;
     background-color: #E7EFF4;
+    border-color: #DDDDDD;
     background-image: none;
     box-shadow: none;
     border-bottom: 1px solid black;
+}
+
+.x4-reset div.facet_header .x4-panel-header-text-container {
+    margin-top: 2px !important;
 }
 
 .x4-reset div.facet_header .x4-panel-header-text {

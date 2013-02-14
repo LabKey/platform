@@ -251,10 +251,14 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     },
 
     getColumnCfg : function(isHeader) {
-        var tpl = '<div><span ' + (this.normalWrap ? ' class="lk-filter-panel-label normalwrap-gridcell"' : 'class="lk-filter-panel-label"') + '>{'+this.labelField+':htmlEncode}</span></div>';
 
-        if (isHeader)
-            tpl =  '<div><span ' + (this.normalWrap ? ' class="lk-filter-panel-label normalwrap-gridcell"' : 'class="lk-filter-panel-label"') + '><b class="filter-description">{'+this.labelField+':htmlEncode}</b></span></div>';
+        var field = '{'+this.labelField+':htmlEncode}';
+
+        var tpl = [
+            '<div><span class="' + (this.normalWrap ? 'lk-filter-panel-label normalwrap-gridcell' : 'lk-filter-panel-label') + '">',
+            (isHeader) ? '<b class="filter-description">' + field + '</b>' : field,
+            '</span></div>'
+        ];
 
         return [{
             xtype     : 'templatecolumn',
