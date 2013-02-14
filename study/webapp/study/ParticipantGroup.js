@@ -104,7 +104,7 @@ Ext4.define('Study.window.ParticipantGroup', {
 
         LABKEY.Query.selectRows({
             schemaName : 'study',
-            queryName : this.panelConfig.subject.nounSingular + 'Category',
+            queryName : this.panelConfig.subject.nounSingular.replace(/\s/g, '') + 'Category',
             success : function(details){
                 var manualCategories = [];
                 for(var i = 0; i < details.rows.length; i++){
