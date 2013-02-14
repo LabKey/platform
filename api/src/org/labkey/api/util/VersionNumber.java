@@ -22,12 +22,14 @@ package org.labkey.api.util;
 * Time: 11:41:14 AM
 */
 
+import java.io.Serializable;
+
 /**
  * Parses a string-based version number into major, minor and revision numbers
  * based on the format "major.minor.revision". Revision can be either an integer
  * or a string.
  */
-public class VersionNumber
+public class VersionNumber implements Serializable
 {
     private int _major = 0;
     private int _minor = 0;
