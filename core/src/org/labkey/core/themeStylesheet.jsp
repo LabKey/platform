@@ -284,6 +284,25 @@ table.labkey-data-region
     background-color: #<%= second %>;
 }
 
+/* Used for the unbordered empty or title cells sometimes put on tables */
+.labkey-data-region .labkey-data-region-title
+{
+    background-color: #<%= second %>;
+}
+
+.labkey-data-region-header-container
+{
+    background-color: #<%= grid %>;
+}
+
+.x4-reset div.facet_header {
+    background-color: #<%= grid %>;
+}
+
+.x4-reset div.facet_header .x4-panel-header-text {
+    color: #<%= link %>;
+}
+
 /* This is used for the headers on data regions that highlight on mouseover and give a drop down
 of filter options when clicked */
 th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th
@@ -292,17 +311,6 @@ th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-f
 }
 
 th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-col-header-filter th:hover
-{
-    background-color: #<%= grid %>;
-}
-
-/* Used for the unbordered empty or title cells sometimes put on tables */
-.labkey-data-region .labkey-data-region-title
-{
-    background-color: #<%= second %>;
-}
-
-.labkey-data-region-header-container
 {
     background-color: #<%= grid %>;
 }
