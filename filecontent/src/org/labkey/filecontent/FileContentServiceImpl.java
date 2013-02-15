@@ -197,7 +197,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
         while (isUseDefaultRoot(toTest))
         {
-            if (toTest.equals(ContainerManager.getRoot()))
+            if (toTest == null || toTest.equals(ContainerManager.getRoot()))
                 return null;
 
             toTest = toTest.getParent();
