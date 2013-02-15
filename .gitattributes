@@ -1,21 +1,4 @@
 * text=auto !eol
-GEOMicroarray/GEOMicroarray.iml -text
-GEOMicroarray/build.xml -text
-GEOMicroarray/module.properties -text
-GEOMicroarray/resources/schemas/dbscripts/postgresql/geomicroarray-0.00-12.30.sql -text
-GEOMicroarray/resources/schemas/dbscripts/sqlserver/geomicroarray-0.00-12.30.sql -text
-GEOMicroarray/resources/schemas/geomicroarray.xml -text
-GEOMicroarray/src/org/labkey/geomicroarray/GEOMicroarrayAssayProvider.java -text
-GEOMicroarray/src/org/labkey/geomicroarray/GEOMicroarrayColumnMappingProperty.java -text
-GEOMicroarray/src/org/labkey/geomicroarray/GEOMicroarrayContainerListener.java -text
-GEOMicroarray/src/org/labkey/geomicroarray/GEOMicroarrayController.java -text
-GEOMicroarray/src/org/labkey/geomicroarray/GEOMicroarrayManager.java -text
-GEOMicroarray/src/org/labkey/geomicroarray/GEOMicroarrayModule.java -text
-GEOMicroarray/src/org/labkey/geomicroarray/query/GEOMicroarrayFeatureAnnotationSetTable.java -text
-GEOMicroarray/src/org/labkey/geomicroarray/query/GEOMicroarrayFeatureAnnotationTable.java -text
-GEOMicroarray/src/org/labkey/geomicroarray/query/GEOMicroarrayProviderSchema.java -text
-GEOMicroarray/src/org/labkey/geomicroarray/view/manageFeatureAnnotations.jsp -text
-GEOMicroarray/src/org/labkey/geomicroarray/view/uploadFeatureAnnotation.jsp -text
 announcements/module.properties -text
 announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-10.10.sql -text
