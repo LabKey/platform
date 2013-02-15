@@ -2065,8 +2065,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 schemaName: this.tempGridInfo.schema,
                 queryName: this.tempGridInfo.query,
                 sort: this.tempGridInfo.sortCols ? this.tempGridInfo.subjectCol + ', ' + this.tempGridInfo.sortCols.join(", ") : null,
-                allowChooseQuery: false,
-                allowChooseView: false,
+                allowChooseQuery : false,
+                allowChooseView  : false,
+                allowHeaderLock  : false,
                 title: "",
                 frame: "none"
             });
