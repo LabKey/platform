@@ -85,8 +85,6 @@
 <% if (!c.isRoot()) { %>
 <div id="titleDiv" class="labkey-nav-page-header" style="padding: 5px">Permissions for <%=h(c.getPath())%></div>
 <% } %>
-<div id="buttonDiv" style="padding:5px;"></div>
-
 <div id="tabBoxDiv"></div>
 <div style="font-style:italic;">* indicates permissions are inherited</div>
 <script type="text/javascript">
@@ -111,13 +109,6 @@ Ext4.onReady(function(){
             policyEditor.save(false, policyEditor.cancel);
         }
     };
-
-    var doneBtn = Ext4.create('Ext.Button', {
-        renderTo : 'buttonDiv',
-        text     : 'Done',
-        handler  : done,
-        scope    : this
-    });
 
     var save = function() {
         var policyEditor = editor.getPolicyEditor();

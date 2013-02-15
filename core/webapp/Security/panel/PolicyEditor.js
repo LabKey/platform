@@ -210,7 +210,7 @@ Ext4.define('Security.panel.PolicyEditor', {
             disabled : !this.inheritedPolicy,
             checked  : this.inheritedOriginally,
             listeners: {
-                change : this.Inherited_onChange,
+                change : this.onChangeInherited,
                 scope  : this
             }
         });
@@ -230,37 +230,6 @@ Ext4.define('Security.panel.PolicyEditor', {
             this.firstRender = false;
             this.removeAll(true);
 
-            toAdd.push({
-                layout: 'hbox',
-                itemId: 'savebar',
-                hidden: this.saveButton === false,
-                border: false,
-                defaults: {
-                    style: {margin:'5px'}
-                },
-                items: [{
-                    xtype : 'button',
-                    text  : 'Save and Finish',
-                    handler: function(){
-                        this.save(false, this.cancel);
-                    },
-                    scope : this
-                },{
-                    xtype : 'button',
-                    text  : 'Save',
-                    handler: function(){
-                        this.save(false, function() {
-                            this.saveSuccess();
-                        }, this);
-                    },
-                    scope : this
-                },{
-                    xtype   : 'button',
-                    text    : 'Cancel',
-                    handler : this.cancel,
-                    scope   : this
-                }]
-            });
             toAdd.push({
                 xtype   : 'labkey-linkbutton',
                 text    : 'view permissions report',
@@ -476,12 +445,6 @@ Ext4.define('Security.panel.PolicyEditor', {
         if (roles) {
             roles.setDisabled(isDisabled);
         }
-
-        // hide the buttons
-        var buttonArea = this.down('#savebar');
-        if (buttonArea) {
-            buttonArea.setVisible(!isDisabled);
-        }
     },
 
     getInheritCheckboxValue : function()
@@ -534,7 +497,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         // however, calling selectText() allows you to start typing a new value right away
     },
 
-    Inherited_onChange : function(checkbox)
+    onChangeInherited : function(checkbox)
     {
         Ext4.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
 
@@ -720,7 +683,11 @@ Ext4.define('Security.panel.PolicyEditor', {
                 policy.addRoleAssignment(this.cache.groupGuests, this.policy.noPermissionsRole);
         }
 
-        this.getEl().mask();
+        if (this.getEl())
+        {
+            this.getEl().mask();
+        }
+
         if (!policy)
         {
             Security.util.Policy.deletePolicy({resourceId:this.resource.id, successCallback:success, errorCallback:this.saveFail, scope:scope});
@@ -757,7 +724,10 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     saveSuccess : function()
     {
-        this.getEl().unmask();
+        if (this.getEl())
+        {
+            this.getEl().unmask();
+        }
         // reload policy
         Security.util.Policy.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
         // feedback
@@ -788,12 +758,6 @@ Ext4.define('Security.panel.PolicyEditor', {
 
         Ext4.MessageBox.alert("Error", (json.exception || response.statusText || 'save failed'));
         this.enable();
-    },
-
-    cancel : function()
-    {
-        LABKEY.setSubmit(true);
-        window.location = this.doneURL;
     }
 });
 

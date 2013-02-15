@@ -38,7 +38,7 @@ Ext4.define('Security.panel.PermissionEditor', {
 
     getItems : function() {
 
-        var items = [this.getTabPanel()];
+        var items = [ this.getBtnPanel(), this.getTabPanel()];
 
         if (!this.isRoot && this.treeConfig) {
 
@@ -86,6 +86,53 @@ Ext4.define('Security.panel.PermissionEditor', {
         }
 
         return items;
+    },
+
+    getBtnPanel : function() {
+
+        return Ext4.create('Ext.Panel', {
+            region : 'north',
+            border: false,
+            style : 'padding: 5px;',
+            defaults: {
+                style: 'margin-right: 10px;'
+            },
+            items : [{
+                xtype : 'button',
+                text : 'Save and Finish',
+                handler : this.onSaveFinish,
+                scope : this
+            },{
+                xtype : 'button',
+                text : 'Save',
+                handler : this.onSave,
+                scope : this
+            },{
+                xtype : 'button',
+                text : 'Cancel',
+                handler : this.onCancel,
+                scope : this
+            }],
+            scope : this
+        });
+
+    },
+
+    onSaveFinish : function() {
+        var policyEditor = this.getPolicyEditor();
+        policyEditor.save(false, this.onCancel);
+    },
+
+    onSave : function() {
+        var policyEditor = this.getPolicyEditor();
+        policyEditor.save(false, function() {
+            policyEditor.saveSuccess();
+        });
+    },
+
+    onCancel : function() {
+        LABKEY.setSubmit(true);
+        window.location = this.doneURL;
     },
 
     getTabPanel : function() {
@@ -151,7 +198,6 @@ Ext4.define('Security.panel.PermissionEditor', {
             isProjectAdmin : this.isProjectAdmin,
             canInherit : this.canInherit,
             resourceId : LABKEY.container.id,
-            doneURL    : this.doneURL,
             globalPolicy : true
         });
 
