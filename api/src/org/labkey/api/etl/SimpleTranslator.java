@@ -567,6 +567,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addColumn(col, new NullColumn());
     }
 
+    public int addConstantColumn(String name, JdbcType type, Object val)
+    {
+        ColumnInfo col = new ColumnInfo(name, type);
+        return addColumn(col, new ConstantColumn(val));
+    }
 
     public static DataIterator wrapBuiltInColumns(DataIterator in , DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
     {
