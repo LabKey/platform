@@ -295,7 +295,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         if (config.dataRegion) {
             this.constructFromDataRegion(config);
             return;
-        };
+        }
 
         this.errorType = 'html';
 
