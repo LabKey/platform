@@ -171,19 +171,6 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     }
 
     @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        Set<DbSchema> result = PageFlowUtil.set();
-        for (String name : getSchemaNames())
-        {
-            DbSchema s = DbSchema.get(name);
-            result.add(s);
-        }
-        return result;
-    }
-
-    @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         for (final String schemaName : getSchemaNames())

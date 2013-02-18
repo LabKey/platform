@@ -496,9 +496,19 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @Override
     @NotNull
+    /**
+     * Returns all of the schemas claimed by the module in {@link:getSchemaNames()}. Override if only a subset
+     * should be tested.
+     */
     public Set<DbSchema> getSchemasToTest()
     {
-        return Collections.emptySet();
+        Set<DbSchema> result = new HashSet<DbSchema>();
+        for (String schemaName : getSchemaNames())
+        {
+            DbSchema schema = DbSchema.get(schemaName);
+            result.add(schema);
+        }
+        return result;
     }
 
     @Override

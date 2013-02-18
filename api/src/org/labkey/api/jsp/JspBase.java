@@ -269,7 +269,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, href, onClickScript, id);
     }
 
-    public String textLink(String text, ActionURL url, String onClickScript, String id)
+    public String textLink(String text, URLHelper url, String onClickScript, String id)
     {
         return PageFlowUtil.textLink(text, url, onClickScript, id);
     }
@@ -279,12 +279,12 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, href, onClickScript, id, props);
     }
     
-    public String textLink(String text, ActionURL url)
+    public String textLink(String text, URLHelper url)
     {
         return PageFlowUtil.textLink(text, url);
     }
 
-    public String textLink(String text, ActionURL url, String id)
+    public String textLink(String text, URLHelper url, String id)
     {
         return PageFlowUtil.textLink(text, url, id);
     }

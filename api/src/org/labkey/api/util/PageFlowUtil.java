@@ -1433,7 +1433,7 @@ public class PageFlowUtil
         return textLink(text, href, onClickScript, id, Collections.<String, String>emptyMap());
     }
 
-    public static String textLink(String text, ActionURL url, @Nullable String onClickScript, @Nullable String id)
+    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
     {
         return textLink(text, url, onClickScript, id, Collections.<String, String>emptyMap());
     }
@@ -1449,7 +1449,7 @@ public class PageFlowUtil
                 ">" + filter(text) + "</a>";
     }
 
-    public static String textLink(String text, ActionURL url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
+    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
         String additions = getAttributes(properties);
 
@@ -1478,12 +1478,12 @@ public class PageFlowUtil
         return attributes.toString();
     }
 
-    public static String textLink(String text, ActionURL url)
+    public static String textLink(String text, URLHelper url)
     {
         return textLink(text, url.getLocalURIString(), null, null);
     }
 
-    public static String textLink(String text, ActionURL url, String id)
+    public static String textLink(String text, URLHelper url, String id)
     {
         return textLink(text, url.getLocalURIString(), null, id);
     }
@@ -1723,7 +1723,8 @@ public class PageFlowUtil
                 for (String script : (r.getCssPaths(c, u, AppProps.getInstance().isDevMode())))
                 {
                     sb.append("<link href=\"");
-                    sb.append(AppProps.getInstance().getContextPath() + "/");
+                    sb.append(AppProps.getInstance().getContextPath());
+                    sb.append("/");
                     sb.append(filter(script));
                     sb.append("\" type=\"text/css\" rel=\"stylesheet\">");
 
@@ -2350,19 +2351,6 @@ public class PageFlowUtil
         {
             _log.error("Error in close", e);
         }
-    }
-
-    static public String _gif(int height, int width)
-    {
-        StringBuilder ret = new StringBuilder();
-        ret.append("<img src=\"");
-        ret.append(AppProps.getInstance().getContextPath());
-        ret.append("/_.gif\" height=\"");
-        ret.append(height);
-        ret.append("\" width=\"");
-        ret.append(width);
-        ret.append("\">");
-        return ret.toString();
     }
 
     /**
