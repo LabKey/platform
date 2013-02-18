@@ -29,7 +29,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         Ext4.applyIf(this, {
             labelField: 'label',
             idField: 'id',
-            bodyStyle: 'padding-bottom: 10px;'
+            bodyStyle: 'padding-bottom: 3px;'
         });
 
         this.addEvents('beforeInitGroupConfig', 'afterInitGroupConfig');
@@ -37,67 +37,12 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
         this.items = [];
 
-        if (this.allowAll) {
-            var cfg = this.getGridCfg(true);
-            cfg.padding = undefined;
-            Ext4.apply(cfg, {
-                itemId: 'selectAllToggle',
-                bubbleEvents: [],
-                store  : Ext4.create('Ext.data.Store',{
-                    fields : ['id', 'label'],
-                    data   : [{id: -1, label : this.description}]
-                }),
-                listeners: {
-                    selectionchange: function(model, selected) {
-                        !selected.length ? this.deselectAll() : this.selectAll();
-                    },
-                    scope: this
-                },
-                select: this.select,
-                deselect: this.deselect,
-                getGrid: function(){return this;}
-            });
-
-            this.items.push(cfg);
-
-            this.on('selectionchange', function() {
-                this.allSelected();
-                return true;
-            }, this, {stopPropogation: false});
-        }
-        else {
-            if (this.description) {
-                this.items.push({
-                    xtype : 'box',
-                    autoEl: {
-                        tag : 'div',
-                        html: '<b class="filter-description">' + this.description + '</b>'
-                    }
-                });
-            }
-        }
-
-        if (this.store) {
-
-            this.mon(this.store, 'load', this.allSelected, this, {single: true});
-
+        if (this.store)
             this.items.push(this.getGridCfg());
-        }
 
         this.callParent();
 
-        if(this.store){
-            //perhaps should be {single: true}?
-            this.mon(this.store, 'load', this.onStoreLoad, this);
-        }
-
-        //account for situation where store is already loaded
-        if(!this.rendered){
-            this.getGrid().on('afterrender', this.initSelection, this, {single: true, delay: 50});
-        }
-        else {
-            this.initSelection();
-        }
+        this.getGrid().on('viewready', this.initSelection, this, {single: true, delay: 50});
     },
 
     getGridCfg : function(isHeader) {
@@ -113,8 +58,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
             function loadRecord(tip) {
                 var r = view.getRecord(tip.triggerElement.parentNode);
-                if (r) _active = r;
-                else {
+                if (r)
+                    _active = r;
+                else
+                {
                     /* This usually occurs when mousing over grouping headers */
                     _active = null;
                     return false;
@@ -139,7 +86,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             });
         }
 
-        var selectionModel = Ext4.create('Ext.selection.CheckboxModel', {checkOnly : true});
+        var selectionModel = Ext4.create('Ext.selection.CheckboxModel', {
+            checkOnly : true,
+            injectCheckbox : 1  // add checkbox after the spacer column (used for category indenting)
+        });
 
         return {
             xtype       : 'grid',
@@ -148,20 +98,43 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             store       : this.store,
             border      : false, frame : false,
             bodyStyle   : 'border: none;',
-            padding     : '0 0 0 21px',
+            padding     : '0 0 0 1px',
             hideHeaders : true,
             multiSelect : true,
             columns     : this.getColumnCfg(isHeader),
+            features    : this.getGroupingFeatureCfg(),
             viewConfig : {
                 stripeRows : false,
                 listeners  : {
                     render : initToolTip,
                     cellclick : function(cmp, td, idx, record, tr, rowIdx, e) {
-                        var checker = e.getTarget('.lk-filter-panel-label');
-
                         // clicking on the grid label selects only that item
+                        var checker = e.getTarget('.lk-filter-panel-label');
                         if (checker)
-                            selectionModel.select(rowIdx);
+                            this.updateCategorySingleSelection(record);
+
+                        this.updateCategorySelectAll(record.get("categoryName"));
+                    },
+                    groupclick : function(grid, field, value, e) {
+                        // this event is fired on click of the checkbox or the group title, so we have to differentiate
+                        var clickedCheckbox = e.target.type && e.target.type == 'checkbox';
+
+                        var inputEl = this.getCategoryInputEl(value);
+                        if (inputEl)
+                        {
+                            // if the checkbox was clicked, the check state will already have been changed
+                            if (!clickedCheckbox)
+                                inputEl.checked = !inputEl.checked;
+
+                            this.getCategoryRecords(value).each(function(rec) {
+                                if (inputEl.checked)
+                                    grid.getSelectionModel().select(rec, true); // true to keepExisting selection of other category groups
+                                else
+                                    grid.getSelectionModel().deselect(rec);
+                            });
+                        }
+
+                        return false; // to prevent the collapse/expand for the grid grouping
                     },
                     scope  : this
                 }
@@ -172,17 +145,29 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         };
     },
 
-    onStoreLoad: function(){
-        // allows for proper selection even if render is delayed
-        var target = this.getGrid();
-        if (target) {
-            if (target.rendered) {
-                this.initSelection();
-            }
-            else {
-                target.on('afterrender', this.initSelection, this, {single: true});
-            }
-        }
+    getGroupingFeatureCfg : function() {
+        var me = this;
+        return [Ext4.create('Ext4.grid.feature.Grouping', {
+            groupHeaderTpl : [
+                '{groupValue:this.formatValue}',
+                {
+                    formatValue: function(value)
+                    {
+                        var headerHtml = "<table><tr>";
+
+                        // use the grouping header as the 'select all' option for this category
+                        if (me.allowAll)
+                            headerHtml += "<td><input type='checkbox' class='category-header' value='" + value + "' /></td>";
+
+                        var classNames = me.allowAll ? "category-label-padding category-label" : "category-label";
+
+                        return headerHtml
+                            + "<td><div class='" + classNames + " lk-filter-panel-label" + (me.normalWrap ? " normalwrap-gridcell" : "") + "'>" + value + "</div></td>"
+                            + "</tr></table>";
+                    }
+                }
+            ]
+        })];
     },
 
     initSelection: function() {
@@ -204,17 +189,23 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             if (this.maxInitSelection >= target.store.getCount()) {
                 target.getSelectionModel().selectAll();
                 if(this.allowAll){
-                    this.getSelectAllToogle().select(-1, true);
+                    this.updateSelectAllCheckboxes();
                 }
             }
             else {
                 for (var i = 0; i < this.maxInitSelection; i++)
-                    target.getSelectionModel().select(i, true);
+                {
+                    var rec = target.store.getAt(i);
+                    target.getSelectionModel().select(rec, true);
+
+                    this.updateCategorySelectAll(rec.get("categoryName"));
+                }
             }
         }
         else {
             target.getSelectionModel().deselectAll();
-            for (var s=0; s < this.selection.length; s++) {
+            for (var s=0; s < this.selection.length; s++)
+            {
                 var rec = target.getStore().findRecord('id', this.selection[s].id);
 
                 // if no matching record by id, try to find a matching record by label (just for initial selection)
@@ -235,11 +226,14 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                     // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
                     if (this.selection[s].id < 0 && (rec.data.label != this.selection[s].label))
                         continue;
+
                     target.getSelectionModel().select(rec, true);
+
+                    this.updateCategorySelectAll(rec.get("categoryName"));
                 }
             }
         }
-        this.allSelected();
+
         target.resumeEvents();
 
         // fire event to tell the panel the initial selection is compelete, return the number of selected records
@@ -255,12 +249,16 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         var field = '{'+this.labelField+':htmlEncode}';
 
         var tpl = [
-            '<div><span class="' + (this.normalWrap ? 'lk-filter-panel-label normalwrap-gridcell' : 'lk-filter-panel-label') + '">',
+            '<div><span ext:qtip="testing" class="' + (this.normalWrap ? 'lk-filter-panel-label normalwrap-gridcell' : 'lk-filter-panel-label') + '">',
             (isHeader) ? '<b class="filter-description">' + field + '</b>' : field,
             '</span></div>'
         ];
 
         return [{
+            // spacer column, used for category indenting
+            width     : 15,
+            hidden    : !this.allowAll
+        },{
             xtype     : 'templatecolumn',
             flex      : 1,
             dataIndex : this.labelField,
@@ -275,14 +273,42 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     },
 
     getSelection : function(skipIfAllSelected) {
-        //if all are checked, this is treated the same as none checked
-        if(skipIfAllSelected && this.allSelected())
-            return;
 
         var target = this.getGrid();
-        if (target)
-            return target.getSelectionModel().getSelection();
-        // return undefined -- same as getSelection()
+        if (!target)
+            return;
+
+        var selection = target.getSelectionModel().getSelection();
+
+        //if all are checked in a given category, this is treated the same as none checked
+        if(skipIfAllSelected)
+        {
+            var categoriesWithAll = [];
+            Ext4.each(target.getStore().collect("categoryName"), function(categoryName){
+
+                var allSelected = true;
+                this.getCategoryRecords(categoryName).each(function(rec){
+                    if (!target.getSelectionModel().isSelected(rec))
+                        allSelected = false;
+                });
+
+                if (allSelected)
+                    categoriesWithAll.push(categoryName);
+            }, this);
+
+            // remove the selection records from those categories that have all selected
+            for (var i = 0; i < selection.length; i++)
+            {
+                if (categoriesWithAll.indexOf(selection[i].get("categoryName")) > -1)
+                {
+                    selection.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        return selection;
+
     },
 
     select : function(id, stopEvents) {
@@ -324,26 +350,57 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     },
 
     /**
-     * Used to update the state of the 'toogle all' checkbox whenever selection changes
+     * Used to determine if all of the records in the given grid are selected
      */
-    allSelected : function() {
+    isAllSelected: function() {
         var target = this.getGrid();
-        if (target.getSelectionModel().getCount() != target.getStore().getCount()) {
-            if (this.allowAll) {
-                this.getSelectAllToogle().deselect(-1, true);
-            }
-
-            return false;
-        }
-
-        if (this.allowAll) {
-            this.getSelectAllToogle().select(-1, true);
-        }
-        return true;
+        return (target.getSelectionModel().getCount() == target.getStore().getCount());
     },
 
-    getSelectAllToogle: function(){
-        return this.down('#selectAllToggle');
+    /**
+     * Used on click of group label to select a single record within a category
+     */
+    updateCategorySingleSelection : function(recordToSelect)
+    {
+        this.getCategoryRecords(recordToSelect.get("categoryName")).each(function(rec){
+            if (rec == recordToSelect)
+                this.getGrid().getSelectionModel().select(rec, true);
+            else
+                this.getGrid().getSelectionModel().deselect(rec);
+        }, this);
+    },
+
+    /**
+     * Used to update the state of the 'toggle all' checkbox for a given category (i.e. grid grouping)
+     */
+    updateCategorySelectAll : function (value) {
+        var el = this.getCategoryInputEl(value);
+        if (el)
+        {
+            // check to see if all of the records in the category are checked
+            var toCheck = true;
+            this.getCategoryRecords(value).each(function(rec){
+                if (!this.getGrid().getSelectionModel().isSelected(rec))
+                    toCheck = false;
+            }, this);
+
+            el.checked = toCheck;
+        }
+    },
+
+    getCategoryRecords : function(value) {
+        return this.getGrid().getStore().queryBy(function(rec, id){
+            return rec.get("categoryName") == value;
+        });
+    },
+
+    getCategoryInputEl : function(value) {
+        var elArr = Ext4.query('input.category-header[value=' + value + ']');
+        return elArr.length == 1 ? elArr[0] : null;
+    },
+
+    updateSelectAllCheckboxes : function() {
+        Ext4.each(this.getGrid().getStore().collect("categoryName"), this.updateCategorySelectAll, this);
     },
 
     deselectAll : function(stopEvents) {
@@ -355,8 +412,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 this.suspendEvents();
 
             this.getGrid().getSelectionModel().deselectAll();
-            if (this.allowAll)
-                this.getSelectAllToogle().deselect(-1, true);
+            this.updateSelectAllCheckboxes();
 
             if (stopEvents)
                 this.resumeEvents();
@@ -372,8 +428,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 this.suspendEvents();
 
             this.getGrid().getSelectionModel().selectAll();
-            if (this.allowAll)
-                this.getSelectAllToogle().select(-1, true);
+            this.updateSelectAllCheckboxes();
 
             if (stopEvents)
                 this.resumeEvents();
@@ -383,7 +438,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
 /**
  * The basic unit of a filter panel.  Can contain one or more FilterSelectLists.
- * @name LABKEY.ext4.filter.SelectListPanel
+ * @name LABKEY.ext4.filter.SelectPanel
  * @cfg sections Array of config objects for LABKEY.ext4.filter.SelectList
  */
 Ext4.define('LABKEY.ext4.filter.SelectPanel', {
@@ -426,7 +481,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                     xtype     : 'templatecolumn',
                     dataIndex : 'label',
                     tdCls     : 'x4-label-column-cell',
-                    tpl       : '<div><b class="filter-description">{label:htmlEncode}</b></div>'
+                    tpl       : '<div><b class="lk-filter-panel-label filter-description">{label:htmlEncode}</b></div>'
                 }],
                 selType     : 'checkboxmodel',
                 bubbleEvents: [],
@@ -514,10 +569,9 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     getFilterPanels: function(){
         var panels = this.query('labkey-filterselectlist[hidden=false]');
         var filterPanels = [];
-        for (var i=0;i<panels.length;i++){
-            if(panels[i].itemId != 'selectAllToggle')
-                filterPanels.push(panels[i]);
-        }
+        for (var i=0;i<panels.length;i++)
+            filterPanels.push(panels[i]);
+
         return filterPanels;
     },
 
@@ -566,19 +620,21 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     allSelected : function() {
         var filterPanels = this.getFilterPanels();
         for (var i=0; i < filterPanels.length; i++) {
-            if(!filterPanels[i].allSelected())
+            if(!filterPanels[i].isAllSelected())
             {
                 if (this.allowGlobalAll)
-                    this.getSelectAllToogle().getSelectionModel().deselect(0, true);
+                    this.getGlobalSelectAllToggle().getSelectionModel().deselect(0, true);
+
                 return false;
             }
         }
         if (this.allowGlobalAll)
-            this.getSelectAllToogle().getSelectionModel().select(0, true);
+            this.getGlobalSelectAllToggle().getSelectionModel().select(0, true);
+
         return true;
     },
 
-    getSelectAllToogle: function(){
+    getGlobalSelectAllToggle: function(){
         return this.down('#globalSelectAll');
     },
 

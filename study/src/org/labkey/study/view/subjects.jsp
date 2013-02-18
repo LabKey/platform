@@ -98,7 +98,7 @@ li.ptid a.unhighlight
 }
 
 .themed-panel .filter-description {
-    font-size: smaller;
+    font-size: 11px;
 }
 
 .themed-panel div.x4-panel-header {
@@ -413,6 +413,7 @@ li.ptid a.unhighlight
             layout    : 'fit',
             bodyStyle : 'padding: 8px',
             normalWrap : true,
+            allowAll  : true,
             listeners : {
                 itemmouseenter : function(v,r,item,idx)
                 {
@@ -428,7 +429,8 @@ li.ptid a.unhighlight
                 },
                 selectionchange : function(model, selected)
                 {
-                    var json = [], filters = ptidPanel.getFilterPanel().getSelection(true);
+                    var json = [];
+                    var filters = ptidPanel.getFilterPanel().getSelection(true);
                     for (var f=0; f < filters.length; f++) {
                         json.push(filters[f].data);
                     }
@@ -596,11 +598,11 @@ li.ptid a.unhighlight
     function generateToolTip(p)
     {
         var part = _ptids[p];
-        var html = ["<div>" + part.html + "</div>"];
+        var html = ["<div style='font-weight:bold;font-size:11px;'>" + part.html + "</div>"];
         for (var g=0 ; g<_groups.length ; g++)
         {
             if (_groups[g].id != -1 && testGroupPtid(g,p))
-                html.push('<div style="white-space:nowrap;">' + $h(_groups[g].label) + '</div>');
+                html.push('<div style="white-space:nowrap;font-size:11px;">' + $h(_groups[g].label) + '</div>');
         }
         return html.join("");
     }

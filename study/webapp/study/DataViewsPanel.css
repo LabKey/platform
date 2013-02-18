@@ -188,6 +188,30 @@ div.thumbnail svg
     padding-top: 3px !important;
 }
 
+.x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell-row-checker {
+    vertical-align: top;
+}
+
+.x4-reset .report-filter-panel .x4-grid-group-hd .x4-grid-cell-inner,
+.x4-reset .report-filter-panel .filter-description {
+    font-size: 11px;
+    border-bottom: 0px !important;
+}
+
+.x4-reset .report-filter-panel .x4-grid-group-title {
+    background-image: none !important;
+    padding: 0px !important;
+}
+
+.x4-reset .report-filter-panel .category-label {
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.x4-reset .report-filter-panel .category-label-padding {
+    padding-left: 6px;
+}
+
 /* Part of Browser.js -- migrate if necessary */
 table.fb-details {
     margin: 5px 40px;

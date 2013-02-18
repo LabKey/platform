@@ -512,17 +512,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
             });
 
-            // models Participant Groups and Cohorts mixed
-            Ext4.define('LABKEY.study.GroupCohort', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'id'},
-                    {name : 'label'},
-                    {name : 'description'},
-                    {name : 'type'}
-                ]
-            });
-
             this.pageFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
             this.gridFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
 
@@ -989,7 +978,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         var me = this, panel;
 
         if (!this.filterPanel) {
-            var filterType = selection.length && selection[0].type == 'participant' ? 'participant' : 'group'
+            var filterType = selection.length && selection[0].type == 'participant' ? 'participant' : 'group';
+
             var pConfig = {
                 filterType: filterType,
                 subjectNoun: this.subjectNoun,

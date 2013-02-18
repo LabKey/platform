@@ -157,9 +157,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var steps = [];
         for(var i = 0; i < this.pageOptions.length; i++){
             if(this.pageOptions[i].active == true){
-                console.log(this.pageOptions[i].panelType);
                 steps.push(setup[i]);
-                console.log(setup[i].value);
             }
         }
 
@@ -831,8 +829,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 listQueries[this.selectedLists[i].data.name] = this.selectedLists[i].data.name;
             }
 
-            for(i = 0; i < this.info.datasets.length; i++){
-                studyQueries[this.info.datasets[i].data.Label] = this.info.datasets[i].data.Label;
+            if (this.info.datasets)
+            {
+                for(i = 0; i < this.info.datasets.length; i++){
+                    studyQueries[this.info.datasets[i].data.Label] = this.info.datasets[i].data.Label;
+                }
             }
 
             viewsStore.filterBy(function(record){

@@ -38,6 +38,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                     {name : 'id'},
                     {name : 'categoryId'},
                     {name : 'category'},
+                    {name : 'categoryName'},
                     {name : 'enrolled'},
                     {name : 'label'},
                     {name : 'description'},
@@ -219,22 +220,13 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 var o = Ext4.decode(response.responseText);
                 var groups = o.groups || [];
 
-                // parse out the group types
+                // parse out the group types (i.e. cohort and participantGroup)
                 var categories = {};
-                var categoryName = {};
                 for (var i=0; i < groups.length; i++)
                 {
                     var row = groups[i];
-                    var key;
-
-                    if (row.type == 'cohort') {
-                        key = row.type;
-                        categoryName[key] = 'Cohorts';
-                    } else {
-                        key = row.categoryId;
-                        if (row.category)
-                            categoryName[key] = row.category.label;
-                    }
+                    var key = row.type;
+                    var categoryName =  row.category ? row.category.label : 'Cohorts';
 
                     var groupList = categories[key] || [];
 
@@ -242,6 +234,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                         id          : row.id,
                         category    : row.category,
                         categoryId  : row.categoryId,
+                        categoryName : categoryName,
                         enrolled    : row.enrolled,
                         label       : row.label,
                         description : row.description,
@@ -254,7 +247,25 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
 
                 var storeConfig = {
                     pageSize : 100,
-                    model    : 'LABKEY.study.GroupCohort'
+                    model    : 'LABKEY.study.GroupCohort',
+                    groupers: [{
+                        property: 'categoryName',
+                        sorterFn: function(o1, o2) {
+                            // within a category, sort alphabetically by label (expect put the "Not in any group" at the end)
+                            if (o1.get("categoryName") == o2.get("categoryName"))
+                            {
+                                if (o1.get("id") == -1)  // -1 = "Not in any group"
+                                    return 1;
+                                else if (o2.get("id") == -1) // -1 = "Not in any group"
+                                    return 1;
+                                else
+                                    return o1.get("label") > o2.get("label") ? 1 : -1;
+                            }
+                            // sort the categories, by category ID (effectively equal to the order they were created in)
+                            else
+                                return o1.get("categoryId") > o2.get("categoryId") ? 1 : -1;
+                        }
+                    }]
                 };
 
                 var groupSectionCfg = [];
@@ -292,7 +303,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                             store       : Ext4.create('Ext.data.Store', groupConfig),
                             selection   : this.getInitialSelection('participantGroup'),
                             maxInitSelection : maxSelection,
-                            description : categoryName[type]
+                            description : 'Participant Groups'
                         });
 
                         maxSelection = maxSelection ? Math.max(0, maxSelection - groupConfig.data.length) : maxSelection;
@@ -346,7 +357,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             itemId   : 'filterPanel',
             panelName: 'participant',
             border   : false, frame : false,
-            allowAll : true,
+            allowGlobalAll  : this.allowAll,
             hidden   : this.displayMode == 'BOTH',
             sections : this.participantSectionCfg,
             schemaName: 'study',

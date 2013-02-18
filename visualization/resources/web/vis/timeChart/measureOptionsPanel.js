@@ -552,7 +552,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
     setMeasureDateStore: function(measure, measureIndex, toFireEvent){
         if (toFireEvent)
-            this.fireEvent('measureMetadataRequestPending');        
+            this.fireEvent('measureMetadataRequestPending');
 
         // add a store for measureDateCombo to a measure.
         this.measures[measureIndex].dateColStore = this.newMeasureDateStore(measure, measureIndex, toFireEvent);
