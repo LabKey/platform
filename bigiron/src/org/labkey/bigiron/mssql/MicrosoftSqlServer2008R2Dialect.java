@@ -489,8 +489,11 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         int selectIndex = sql.indexOf("SELECT");
         ret.insert(selectIndex + "SELECT".length(), "'" + delimeter + "' + CAST(");
         ret.insert(0, "SUBSTRING ((");
+        ret.append(" FOR XML PATH ('')), ");
+        // Trim off the first delimeter
+        ret.append(delimeter.length() + 1);
         // We want all the characters, so use a ridiculously long value to ensure that we don't truncate
-        ret.append(" FOR XML PATH ('')), 2, 2147483647)");
+        ret.append(", 2147483647)");
 
         return ret;
     }

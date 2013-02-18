@@ -176,16 +176,17 @@ public class ParticipantTable extends FilteredTable<StudyQuerySchema>
                 if (aliasColumn != null && sourceColumn != null)
                 {
                     // Make the SQL that will be used to build the concatenated aliases value
-                    SQLFragment concatSQL = new SQLFragment("SELECT DISTINCT ");
+                    // Need to do this with a subquery so that SQLServer is happy with the DISTINCT and ORDER BY
+                    SQLFragment concatSQL = new SQLFragment("SELECT AliasValue ");
+                    concatSQL.append(" FROM (SELECT DISTINCT ");
                     concatSQL.append(aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
-                    concatSQL.append(" FROM ");
+                    concatSQL.append(" AS AliasValue FROM ");
                     concatSQL.append(datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));
                     concatSQL.append(" WHERE ");
                     concatSQL.append(ALIAS_INNER_QUERY_ALIAS);
                     concatSQL.append(".ParticipantID = ");
                     concatSQL.append(ExprColumn.STR_TABLE_ALIAS);
-                    concatSQL.append(".ParticipantID ORDER BY ");
-                    concatSQL.append(aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
+                    concatSQL.append(".ParticipantID) Y ORDER BY AliasValue");
 
                     ExprColumn aliasesColumn = new ExprColumn(this, ALIASES_COLUMN_NAME, getSqlDialect().getSelectConcat(concatSQL, MultiValuedRenderContext.VALUE_DELIMETER), JdbcType.VARCHAR);
                     aliasesColumn.setDisplayColumnFactory(new DisplayColumnFactory()
