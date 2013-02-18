@@ -99,13 +99,6 @@ public class FileContentModule extends DefaultModule
 
     @Override
     @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set(FileRootManager.getFileContentSchema());
-    }
-
-    @Override
-    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(FileRootManager.FILECONTENT_SCHEMA_NAME);

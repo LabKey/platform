@@ -21,7 +21,6 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.views.DataViewService;
@@ -197,13 +196,6 @@ public class QueryModule extends DefaultModule
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(QueryManager.get().getDbSchemaName());
-    }
-
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return Collections.singleton(QueryManager.get().getDbSchema());
     }
 
     @Override

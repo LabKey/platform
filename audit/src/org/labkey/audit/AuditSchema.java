@@ -22,6 +22,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 public class AuditSchema
 {
     private static final AuditSchema _instance = new AuditSchema();
+    public static final String SCHEMA_NAME = "audit";
 
     public static AuditSchema getInstance()
     {
@@ -37,7 +38,7 @@ public class AuditSchema
 
     public DbSchema getSchema()
     {
-        return DbSchema.get("audit");
+        return DbSchema.get(SCHEMA_NAME);
     }
 
     public SqlDialect getSqlDialect()

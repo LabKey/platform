@@ -15,7 +15,6 @@
  */
 package org.labkey.announcements;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
@@ -34,7 +33,6 @@ import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.message.digest.DailyMessageDigest;
@@ -79,8 +77,6 @@ import java.util.Set;
 public class AnnouncementModule extends DefaultModule implements SearchService.DocumentProvider
 {
     public static final String WEB_PART_NAME = "Messages";
-
-    private static Logger _log = Logger.getLogger(AnnouncementModule.class);
 
 
     public AnnouncementModule()
@@ -224,13 +220,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     public Set<Class> getIntegrationTests()
     {
         return new HashSet<Class>(Arrays.asList(AnnouncementManager.TestCase.class));
-    }
-
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set(CommSchema.getInstance().getSchema());
     }
 
     @Override

@@ -40,49 +40,43 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize the logo, icon, and stylesheets used <%=c.isRoot() ? "throughout the site" : "in this project"%> (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize the logo, icon, and stylesheets used <%=text(c.isRoot() ? "throughout the site" : "in this project")%> (<%=text(bean.helpLink)%>)</td>
 </tr>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Header logo (appears in every page header in the upper left)</td>
-    <td><input type="file" name="logoImage" size="50"></td>
-</tr>
-<tr>
-    <td></td>
+    <td class="labkey-form-label" rowspan="2">Header logo (appears in every page header in the upper left)</td>
     <td>
         <% if (null != bean.customLogo)
         { %>
-            Currently using a custom logo. <%=textLink("view logo", TemplateResourceHandler.LOGO.getURL(c).toString()) %> <%=textLink("reset logo to default", ResetLogoAction.class)%>
+            Currently using a custom logo. <%=textLink("view logo", TemplateResourceHandler.LOGO.getURL(c)) %> <%=textLink("reset logo to default", ResetLogoAction.class)%>
         <% } else { %>
             Currently using the default logo.
         <% } %>
     </td>
 </tr>
+<tr>
+    <td>Replace with: <input type="file" name="logoImage" size="25"></td>
+</tr>
 
 <tr>
-    <td class="labkey-form-label">Favorite icon (displayed in user's favorites or bookmarks, .ico file only)</td>
-    <td><input type="file" name="iconImage" size="50"></td>
-</tr>
-<tr>
-    <td></td>
+    <td rowspan="2" class="labkey-form-label">Favorite icon (displayed in user's favorites or bookmarks, .ico file only)</td>
     <td>
         <% if (null != bean.customFavIcon)
         { %>
-            Currently using a custom favorite icon. <%=textLink("view icon", TemplateResourceHandler.FAVICON.getURL(c).toString()) %> <%=textLink("reset favorite icon to default", ResetFaviconAction.class)%>
+            Currently using a custom favorite icon. <%=textLink("view icon", TemplateResourceHandler.FAVICON.getURL(c)) %> <%=textLink("reset favorite icon to default", ResetFaviconAction.class)%>
         <% } else { %>
             Currently using the default favorite icon.
         <% } %>
     </td>
 </tr>
+<tr>
+    <td>Replace with: <input type="file" name="iconImage" size="25"></td>
+</tr>
 
 <tr>
-    <td class="labkey-form-label">Custom stylesheet</td>
-    <td><input type="file" name="customStylesheet" size="50"></td>
-</tr>
-<tr>
-    <td></td>
+    <td rowspan="2" class="labkey-form-label">Custom stylesheet</td>
     <td>
         <% if (null != bean.customStylesheet)
         { %>
@@ -91,6 +85,9 @@
             No custom stylesheet.
         <% } %>
     </td>
+</tr>
+<tr>
+    <td>Replace with: <input type="file" name="customStylesheet" size="25"></td>
 </tr>
 <tr>
     <td><%=PageFlowUtil.generateSubmitButton("Save", "_form.setClean();")%></td>

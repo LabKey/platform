@@ -18,7 +18,6 @@ package org.labkey.issue;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
@@ -150,13 +149,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     {
         return new HashSet<Class>(Arrays.asList(
             org.labkey.issue.model.IssueManager.TestCase.class ));
-    }
-
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set(IssuesSchema.getInstance().getSchema());
     }
 
     @Override

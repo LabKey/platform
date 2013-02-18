@@ -26,7 +26,6 @@ import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
@@ -218,14 +217,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         return PageFlowUtil.set(PipelineSchema.getInstance().getSchemaName());
     }
 
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set(PipelineSchema.getInstance().getSchema());
-    }
-
-
     private static class JobRestarter implements Runnable
     {
         public void run()
@@ -238,7 +229,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 {
                     Thread.sleep(5000);
                 }
-                catch (InterruptedException e) {}
+                catch (InterruptedException ignored) {}
             }
 
             // If the queue is in local server memory, then we need to restart all

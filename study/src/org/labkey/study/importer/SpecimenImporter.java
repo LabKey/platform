@@ -2708,25 +2708,18 @@ public class SpecimenImporter
             String columnName = importableColumn.getDbColumnName();
             TableInfo tableInfo = schema.getTable(tableName);
             ColumnInfo columnInfo = tableInfo.getColumn(columnName);
-            String jdbcTypeName = columnInfo.getJdbcType().name();
-            boolean consistent = true;
-            if (jdbcTypeName.equalsIgnoreCase("varchar"))
-            {
-                if (importableColumn.getSQLType().name().equalsIgnoreCase("varchar") && columnInfo.getScale() == importableColumn.getMaxSize())
-                    consistent = true;
-                else
-                    consistent = false;
-            }
-            else if (columnInfo.getJdbcType().equals(importableColumn.getSQLType()))
-                consistent = true;
-            else if (importableColumn.getSQLType().name().equalsIgnoreCase("double") &&
-                    (jdbcTypeName.equalsIgnoreCase("real") || jdbcTypeName.equalsIgnoreCase("decimal")))
-                consistent = true;
-            else
-                consistent = false;
+            JdbcType jdbcType = columnInfo.getJdbcType();
 
-            assert consistent : "Column '" + columnName +
-                                "' in table '" + tableName + "' has an inconsistent type between the importer and SQL.";
+            if (jdbcType == JdbcType.VARCHAR)
+            {
+                assert importableColumn.getSQLType() == JdbcType.VARCHAR:
+                    "Column '" + columnName + "' in table '" + tableName + "' has inconsistent types in SQL and importer: varchar vs " + importableColumn.getSQLType().name();
+                assert columnInfo.getScale() == importableColumn.getMaxSize() :
+                    "Column '" + columnName + "' in table '" + tableName + "' has inconsistent varchar lengths in importer and SQL: " + importableColumn.getMaxSize() + " vs " + columnInfo.getScale();
+            }
+            assert jdbcType == importableColumn.getSQLType() ||
+                (importableColumn.getSQLType() == JdbcType.DOUBLE && (jdbcType == JdbcType.REAL || jdbcType == JdbcType.DECIMAL)) :
+                "Column '" + columnName + "' in table '" + tableName + "' has inconsistent types in SQL and importer: " + columnInfo.getJdbcType() + " vs " + importableColumn.getSQLType();
         }
     }
 

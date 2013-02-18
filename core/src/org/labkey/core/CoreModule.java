@@ -717,18 +717,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     @Override
     @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set
-        (
-            CoreSchema.getInstance().getSchema(),       // core
-            PropertyManager.getSchema(),                // prop
-            TestSchema.getInstance().getSchema()        // test
-        );
-    }
-
-    @Override
-    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set

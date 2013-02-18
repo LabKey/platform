@@ -23,6 +23,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 public class SurveySchema
 {
     private static final SurveySchema _instance = new SurveySchema();
+    public static final String DB_SCHEMA_NAME = "survey";
 
     public static SurveySchema getInstance()
     {
@@ -38,7 +39,7 @@ public class SurveySchema
 
     public DbSchema getSchema()
     {
-        return DbSchema.get("survey");
+        return DbSchema.get(DB_SCHEMA_NAME);
     }
 
     public SqlDialect getSqlDialect()

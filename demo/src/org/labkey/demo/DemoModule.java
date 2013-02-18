@@ -105,14 +105,6 @@ public class DemoModule extends DefaultModule
 
     @Override
     @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set(DemoSchema.getInstance().getSchema());
-    }
-
-
-    @Override
-    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(DemoSchema.getInstance().getSchemaName());

@@ -429,6 +429,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
+        // Don't test studydataset and assayresult since they're dynamically generated
         return PageFlowUtil.set(StudySchema.getInstance().getSchema());
     }
 

@@ -315,13 +315,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     }
 
 
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set(ExperimentService.get().getSchema());
-    }
-
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
 //        if (c == ContainerManager.getSharedContainer())

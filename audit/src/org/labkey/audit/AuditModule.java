@@ -84,14 +84,7 @@ public class AuditModule extends DefaultModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return Collections.singleton("audit");
-    }
-
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set(AuditSchema.getInstance().getSchema());
+        return Collections.singleton(AuditSchema.SCHEMA_NAME);
     }
 
     /**
