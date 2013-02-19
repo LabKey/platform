@@ -16,7 +16,9 @@
 package org.labkey.api.exp;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -34,6 +36,9 @@ import java.util.List;
  */
 public interface ExperimentDataHandler extends Handler<ExpData>
 {
+    @Nullable
+    public DataType getDataType();
+
     /**
      * Import whatever content from the file is destined for storage in the database. Typically persisted in a schema
      * owned by the module that holds the implementation of the ExperimentDataHandler.

@@ -16,16 +16,17 @@
 
 package org.labkey.api.exp.api;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.data.Container;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.security.User;
+import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
-import java.io.OutputStream;
-import java.io.IOException;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -72,5 +73,19 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
     public void beforeMove(ExpData oldData, Container container, User user) throws ExperimentException
     {
         
+    }
+
+    @Override
+    public Priority getPriority(ExpData data)
+    {
+        if (null != getDataType())
+        {
+            Lsid lsid = new Lsid(data.getLSID());
+            if (getDataType().matches(lsid))
+            {
+                return Priority.HIGH;
+            }
+        }
+        return null;
     }
 }

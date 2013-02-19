@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -50,6 +51,9 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
@@ -66,6 +70,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -111,6 +116,101 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             throw new ExperimentException(e.toString(), e);
         }
+    }
+
+    @Override
+    public Map<DataType, List<Map<String, Object>>> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
+    {
+        ExpProtocol protocol = data.getRun().getProtocol();
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+
+        Domain dataDomain = provider.getResultsDomain(protocol);
+
+        DomainProperty[] columns = dataDomain.getProperties();
+        Map<String, DomainProperty> aliases = dataDomain.createImportMap(false);
+        Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();
+        Set<String> mvIndicatorColumns = Sets.newCaseInsensitiveHashSet();
+
+        for (DomainProperty col : columns)
+        {
+            if (col.isMvEnabled())
+            {
+                mvEnabledColumns.add(col.getName());
+                mvIndicatorColumns.add(col.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+            }
+        }
+        DataLoader loader = null;
+        try
+        {
+            loader = DataLoader.get().createLoader(dataFile, null, true, null, TabLoader.TSV_FILE_TYPE);
+
+            loader.setThrowOnErrors(settings.isThrowOnErrors());
+            for (ColumnDescriptor column : loader.getColumns())
+            {
+                if (mvEnabledColumns.contains(column.name))
+                {
+                    column.setMvEnabled(dataDomain.getContainer());
+                }
+                else if (mvIndicatorColumns.contains(column.name))
+                {
+                    column.setMvIndicator(dataDomain.getContainer());
+                    column.clazz = String.class;
+                }
+                DomainProperty prop = aliases.get(column.name);
+                if (prop != null)
+                    column.clazz = prop.getPropertyDescriptor().getPropertyType().getJavaType();
+                else
+                {
+                    // It's not an expected column. Is it an MV indicator column?
+                    if (!mvIndicatorColumns.contains(column.name))
+                    {
+                        column.load = false;
+                    }
+                }
+                if (settings.isBestEffortConversion())
+                    column.errorValues = DataLoader.ERROR_VALUE_USE_ORIGINAL;
+                else
+                    column.errorValues = ERROR_VALUE;
+            }
+            Map<DataType, List<Map<String, Object>>> datas = new HashMap<DataType, List<Map<String, Object>>>();
+            List<Map<String, Object>> dataRows = loader.load();
+
+            // loader did not parse any rows
+            if (dataRows.isEmpty() && !settings.isAllowEmptyData() && columns.length > 0)
+                throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
+            if (!dataRows.isEmpty())
+                adjustFirstRowOrder(dataRows, loader);
+
+            datas.put(getDataType(), dataRows);
+            return datas;
+        }
+        catch (IOException ioe)
+        {
+            throw new ExperimentException(ioe);
+        }
+        finally
+        {
+            if (loader != null)
+                loader.close();
+        }
+    }
+
+    /**
+     * Reorders the first row of the list of rows to be in original column order. This is usually enough
+     * to cause serializers for tsv formats to respect the original file column order. A bit of a hack but
+     * the way row maps are generated make it difficult to preserve order at row map generation time.
+     */
+    private void adjustFirstRowOrder(List<Map<String, Object>> dataRows, DataLoader loader) throws IOException
+    {
+        Map<String, Object> firstRow = dataRows.remove(0);
+        Map<String, Object> newRow = new LinkedHashMap<String, Object>();
+
+        for (ColumnDescriptor column : loader.getColumns())
+        {
+            if (firstRow.containsKey(column.name))
+                newRow.put(column.name, firstRow.get(column.name));
+        }
+        dataRows.add(0, newRow);
     }
 
     @Override
