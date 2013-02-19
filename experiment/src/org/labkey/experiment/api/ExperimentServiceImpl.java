@@ -2846,6 +2846,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public void registerExperimentDataHandler(ExperimentDataHandler handler)
     {
         _dataHandlers.add(handler);
+        if (null != handler.getDataType())
+            registerDataType(handler.getDataType());
     }
 
     public void registerExperimentRunTypeSource(ExperimentRunTypeSource source)

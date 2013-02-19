@@ -44,16 +44,13 @@ import java.util.regex.Pattern;
  */
 public class CBCDataHandler extends AbstractAssayTsvDataHandler
 {
-    public static final AssayDataType DATA_TYPE = new AssayDataType("CBCAssayData", new FileType(".dat"));
+    public static final String NAMESPACE = "CBCAssayData";
+    private static final AssayDataType DATA_TYPE = new AssayDataType(NAMESPACE, new FileType(".dat"));
 
-    public Priority getPriority(ExpData data)
+    @Override
+    public DataType getDataType()
     {
-        Lsid lsid = new Lsid(data.getLSID());
-        if (DATA_TYPE.matches(lsid))
-        {
-            return Priority.HIGH;
-        }
-        return null;
+        return DATA_TYPE;
     }
 
     @Override
@@ -145,7 +142,7 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
         }
 
         Map<DataType, List<Map<String, Object>>> datas = new HashMap<DataType, List<Map<String, Object>>>();
-        datas.put(CBCDataHandler.DATA_TYPE, rows);
+        datas.put(getDataType(), rows);
         return datas;
     }
 

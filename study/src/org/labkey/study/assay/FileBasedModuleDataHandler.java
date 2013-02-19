@@ -36,6 +36,15 @@ import java.io.File;
  */
 public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
 {
+    public static final String NAMESPACE = "RawAssayData";
+    private static final DataType RAW_DATA_TYPE = new DataType(NAMESPACE);
+
+    @Override
+    public DataType getDataType()
+    {
+        return RAW_DATA_TYPE;
+    }
+
     public void deleteData(ExpData data, Container container, User user)
     {
         // We don't import these data files directly so no need to delete them
@@ -62,9 +71,9 @@ public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
         // We don't import these data files directly so no need to delete them
     }
 
-    public Priority getPriority(ExpData object)
+    public Priority getPriority(ExpData data)
     {
-        if (ModuleAssayProvider.RAW_DATA_TYPE.matches(new Lsid(object.getLSID())))
+        if (RAW_DATA_TYPE.matches(new Lsid(data.getLSID())))
         {
             return Priority.HIGH;
         }

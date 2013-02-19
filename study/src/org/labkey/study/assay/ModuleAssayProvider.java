@@ -96,9 +96,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     private List<ScriptMetadata> _scriptMetadata = new ArrayList<ScriptMetadata>();
 
-    private Set<String> _missingScriptWarnings = new HashSet<String>(); 
-
-    public static final DataType RAW_DATA_TYPE = new DataType("RawAssayData");
+    private Set<String> _missingScriptWarnings = new HashSet<String>();
 
     public ModuleAssayProvider(String name, Module module, Resource basePath, ProviderType providerConfig)
     {

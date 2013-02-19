@@ -100,6 +100,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.study.assay.AssayImportServiceImpl;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
+import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
@@ -670,7 +671,7 @@ public class AssayController extends SpringActionController
                 File file = entry.getValue().getKey();
                 String originalName = entry.getValue().getValue();
 
-                ExpData data = ExperimentService.get().createData(getContainer(), ModuleAssayProvider.RAW_DATA_TYPE);
+                ExpData data = ExperimentService.get().createData(getContainer(), ExperimentService.get().getDataType(FileBasedModuleDataHandler.NAMESPACE));
 
                 data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
                 data.setName(originalName);

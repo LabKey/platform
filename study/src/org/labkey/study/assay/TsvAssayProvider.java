@@ -32,6 +32,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -43,6 +44,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.study.assay.AssayDataCollector;
+import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.study.assay.AssayPipelineProvider;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayTableMetadata;
@@ -99,7 +101,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, TsvDataHandler.DATA_TYPE);
+        super(protocolLSIDPrefix, runLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE));
     }
 
     public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context)

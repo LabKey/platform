@@ -340,8 +340,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PlateManager.get().registerLsidHandlers();
         registerFolderTypes();
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
-        AssayService.get().registerAssayProvider(new TsvAssayProvider());
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
+        AssayService.get().registerAssayProvider(new TsvAssayProvider());
         ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
         {
             public Set<ExperimentRunType> getExperimentRunTypes(Container container)

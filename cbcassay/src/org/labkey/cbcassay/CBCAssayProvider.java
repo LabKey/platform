@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.Domain;
@@ -115,7 +116,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
     public CBCAssayProvider()
     {
-        super("CBCAssayProtocol", "CBCAssayRun", CBCDataHandler.DATA_TYPE);
+        super("CBCAssayProtocol", "CBCAssayRun", (AssayDataType) ExperimentService.get().getDataType(CBCDataHandler.NAMESPACE));
     }
 
     private final static class CBCAssayTableMetadata extends AssayTableMetadata
