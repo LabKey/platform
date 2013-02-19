@@ -2904,6 +2904,13 @@ public class StudyManager
             }
         }
 
+        // Temporary logging to help track down failure on TeamCity with uq_domaindescriptor constraint violation
+        for (Map.Entry<String, Domain> entry : domainsMap.entrySet())
+        {
+            boolean same = entry.getKey().equals(entry.getValue().getTypeURI());
+            _log.info("About to insert dataset domain entry. Matching: " + same + " (" + entry.getKey() + ", " + entry.getValue().getTypeURI() + ")");
+        }
+
         for (Domain d : domainsMap.values())
         {
             try
