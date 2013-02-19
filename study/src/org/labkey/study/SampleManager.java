@@ -25,7 +25,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -58,6 +57,7 @@ import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 import javax.servlet.ServletException;
+import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -65,7 +65,7 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 
-public class SampleManager
+public class SampleManager implements ContainerManager.ContainerListener
 {
     private final static SampleManager _instance = new SampleManager();
 
@@ -141,6 +141,8 @@ public class SampleManager
         }, SampleRequestStatus.class);
 
         initGroupedValueAllowedColumnMap();
+
+        ContainerManager.addContainerListener(this);
     }
 
     public static SampleManager getInstance()
@@ -165,6 +167,30 @@ public class SampleManager
     public RequirementProvider<SampleRequestRequirement, SampleRequestActor> getRequirementsProvider()
     {
         return _requirementProvider;
+    }
+
+    @Override
+    public void containerCreated(Container c, User user)
+    {
+        clearCaches(c);
+    }
+
+    @Override
+    public void containerDeleted(Container c, User user)
+    {
+        clearCaches(c);
+    }
+
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {
+        clearCaches(c);
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt)
+    {
+        clearCaches((Container)evt.getSource());
     }
 
     public Specimen getSpecimen(Container container, int rowId)
@@ -2861,6 +2887,11 @@ public class SampleManager
         public Map<String, GroupedResults> childGroupedResultsMap;
     }
 
+    private static String getGroupedValuesCacheKey(Container container)
+    {
+        return container.getId();
+    }
+
     public Map<String, Object> getGroupedValuesForColumn(Container container, String[] grouping)
     {
         // ColumnName and filter names are "QueryView" names; map them to actual table names before building query
@@ -2869,28 +2900,27 @@ public class SampleManager
             return null;
 
         TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenDetail();
-        String cacheKey = container.getId() + "";
-        for (int i = 0; i < grouping.length; i += 1)
+        String cacheKey = getGroupedValuesCacheKey(container);
+        for (String g : grouping)
         {
-            if (!StringUtils.isNotBlank(grouping[i]))
+            if (!StringUtils.isNotBlank(g))
                 break;      // Grouping may have null entries for groupBys that are not chosen to be used
-            cacheKey += "/" + grouping[i];
+            cacheKey += "/" + g;
         }
         Map<String, Object> groupedValue = (Map<String, Object>) DbCache.get(tableInfo, cacheKey);
         if (null != groupedValue)
             return groupedValue;
 
         Table.TableResultSet resultSet = null;
-        SQLFragment sql = null;
         try
         {
             QueryService queryService = QueryService.get();
             List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
-            for (int i = 0; i < grouping.length; i += 1)
+            for (String aGrouping : grouping)
             {
-                if (!StringUtils.isNotBlank(grouping[i]))
+                if (!StringUtils.isNotBlank(aGrouping))
                     break;      // Grouping may have null/blank entries for groupBys that are not chosen to be used
-                GroupedValueColumnHelper columnHelper = getGroupedValueAllowedMap().get(grouping[i]);
+                GroupedValueColumnHelper columnHelper = getGroupedValueAllowedMap().get(aGrouping);
                 FieldKey fieldKey = columnHelper.getFieldKey();
                 fieldKeys.add(fieldKey);
             }
@@ -2913,10 +2943,7 @@ public class SampleManager
                     participantIds.add("NULL");
                 else
                 {
-                    for (String ptid : ptids)
-                    {
-                        participantIds.add(ptid);
-                    }
+                    Collections.addAll(participantIds, ptids);
                 }
                 SimpleFilter.FilterClause inClause1 = new SimpleFilter.InClause(FieldKey.fromString("PTID"), participantIds);
                 SimpleFilter.FilterClause andClause = new SimpleFilter.AndClause(inClause, inClause1);
@@ -2927,7 +2954,7 @@ public class SampleManager
                 containerFilter = new SimpleFilter(FieldKey.fromString("Container"), container.getId());
             }
 
-            sql = queryService.getSelectSQL(tableInfo, columnMap.values(), containerFilter, null, -1, 0, false);
+            SQLFragment sql = queryService.getSelectSQL(tableInfo, columnMap.values(), containerFilter, null, -1, 0, false);
 
             // Insert COUNT
             String sampleCountName = StudySchema.getInstance().getSqlDialect().makeLegalIdentifier("SampleCount");
