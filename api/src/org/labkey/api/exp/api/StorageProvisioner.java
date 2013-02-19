@@ -222,7 +222,6 @@ public class StorageProvisioner
         String tableName = domain.getStorageTableName();
         if (null == tableName)
         {
-            log.warn("addProperties() called before table is provisioned: " + domain.getTypeURI());
             tableName = _create(scope, kind, domain);
             return;
         }
