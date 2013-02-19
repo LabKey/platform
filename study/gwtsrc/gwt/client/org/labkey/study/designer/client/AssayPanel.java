@@ -27,6 +27,8 @@ import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 import gwt.client.org.labkey.study.designer.client.model.*;
 
+import java.util.Arrays;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Mark Igra
@@ -331,12 +333,22 @@ public class AssayPanel extends Composite
 
         private ListBox getLabPicker(final GWTAssayDefinition assayDefinition)
         {
+
+            String [] labs = assayDefinition.getLabs();
+            String defaultLab = assayDefinition.getDefaultLab();
+
             ListBox lb = new ListBox();
-            if (null != assayDefinition.getLabs())
-                for (int i = 0; i < assayDefinition.getLabs().length; i++)
+            //If selection is not valid, just add it to the top of the picker to reflect current state
+            if (null == defaultLab || null == labs || !Arrays.asList(labs).contains(defaultLab))
+            {
+                lb.addItem(defaultLab == null ? "" : defaultLab);
+                lb.setItemSelected(0, true);
+            }
+            if (null != labs)
+                for (int i = 0; i < labs.length; i++)
                 {
-                    lb.addItem(assayDefinition.getLabs()[i]);
-                    if (assayDefinition.getLabs()[i].equals(assayDefinition.getDefaultLab()))
+                    lb.addItem(labs[i]);
+                    if (labs[i].equals(defaultLab))
                         lb.setItemSelected(i, true);
                 }
             lb.addChangeListener(new ChangeListener() {
