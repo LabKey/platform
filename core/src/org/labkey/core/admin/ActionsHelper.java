@@ -36,7 +36,7 @@ class ActionsHelper
         {
             Map<String, Map<String, SpringActionController.ActionStats>> controllerMap = new LinkedHashMap<String, Map<String, SpringActionController.ActionStats>>();
             moduleMap.put(module.getName(), controllerMap);
-            Map<String, Class<? extends Controller>> pageFlows = module.getPageFlowNameToClass();
+            Map<String, Class<? extends Controller>> pageFlows = module.getControllerNameToClass();
             Set<Class> controllerClasses = new HashSet<Class>(pageFlows.values());
 
             for (Class controllerClass : controllerClasses)
