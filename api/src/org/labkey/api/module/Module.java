@@ -150,9 +150,9 @@ public interface Module extends Comparable<Module>
      *
      * @return A map of pageflow name to controller class
      */
-    public Map<String, Class<? extends Controller>> getPageFlowNameToClass();
+    public Map<String, Class<? extends Controller>> getControllerNameToClass();
 
-    public Map<Class<? extends Controller>, String> getPageFlowClassToName();
+    public Map<Class<? extends Controller>, String> getControllerClassToName();
 
     /**
      * Returns the url that will be the target of a click on the module's tab.

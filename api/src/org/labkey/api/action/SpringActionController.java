@@ -614,15 +614,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
         public static final String VIEWS_DIRECTORY = "views";
 
-        private final Class _outerClass;
         private Map<String, ActionDescriptor> _nameToDescriptor;
-        private final String _pageFlowName;
+        private final String _controllerName;
 
-        public HTMLFileActionResolver(Class<? extends Controller> outerClass)
+        public HTMLFileActionResolver(String controllerName)
         {
-            _outerClass = outerClass;
             _nameToDescriptor = new HashMap<String, ActionDescriptor>();
-            _pageFlowName = ViewServlet.getPageFlowName(outerClass);
+            _controllerName = controllerName;
         }
 
         public void addTime(Controller action, long elapsedTime)
@@ -637,9 +635,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return _nameToDescriptor.get(actionName).createController(actionController);
             }
 
-            ViewContext ctx = HttpView.getRootContext();
-            String controllerName = ctx.getActionURL().getController();
-            Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
+            Module module = ModuleLoader.getInstance().getModuleForController(_controllerName);
 
             Resource r = (module == null) ? null : module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
             if (r == null || !r.isFile())
@@ -647,11 +643,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return null;
             }
 
-            HTMLFileActionDescriptor _htmlDescriptor = new HTMLFileActionDescriptor(actionName, r);
-            _nameToDescriptor.put(actionName, _htmlDescriptor);
-            registerAction(_htmlDescriptor);
+            HTMLFileActionDescriptor htmlDescriptor = new HTMLFileActionDescriptor(actionName, r);
+            _nameToDescriptor.put(actionName, htmlDescriptor);
+            registerAction(htmlDescriptor);
 
-            return _htmlDescriptor.createController(actionController);
+            return htmlDescriptor.createController(actionController);
         }
 
         private class HTMLFileActionDescriptor extends BaseActionDescriptor
@@ -669,7 +665,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             public String getPageFlow()
             {
-                return _pageFlowName;
+                return _controllerName;
             }
 
             public String getPrimaryName()
@@ -710,16 +706,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static class DefaultActionResolver implements ActionResolver
     {
-        private final Class _outerClass;
-        private final String _pageFlowName;
+        private final Class<? extends Controller> _outerClass;
+        private final String _controllerName;
         //private final Map<String, ActionDescriptor> _nameToDescriptor;
-        private Map<String, ActionDescriptor> _nameToDescriptor;
+        private final Map<String, ActionDescriptor> _nameToDescriptor;
         private HTMLFileActionResolver _htmlResolver;
 
-        public DefaultActionResolver(Class outerClass, Class<? extends Controller>... otherClasses)
+        public DefaultActionResolver(Class<? extends Controller> outerClass, Class<? extends Controller>... otherClasses)
         {
             _outerClass = outerClass;
-            _pageFlowName = ViewServlet.getPageFlowName(_outerClass);
+            _controllerName = ViewServlet.getControllerName(_outerClass);
             _htmlResolver = null; // This gets loaded if file-based actions are used.
 
             Map<String, ActionDescriptor> nameToDescriptor = new CaseInsensitiveHashMap<ActionDescriptor>();
@@ -734,7 +730,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             _nameToDescriptor = nameToDescriptor;
         }
 
-        private void addInnerClassActions(Map<String, ActionDescriptor> nameToDescriptor, Class outerClass)
+        private void addInnerClassActions(Map<String, ActionDescriptor> nameToDescriptor, Class<? extends Controller> outerClass)
         {
             Class[] innerClasses = outerClass.getDeclaredClasses();
 
@@ -878,7 +874,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             public String getPageFlow()
             {
-                return _pageFlowName;
+                return _controllerName;
             }
 
             public String getPrimaryName()
@@ -911,7 +907,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             if(_htmlResolver == null)
             {
-                _htmlResolver = new HTMLFileActionResolver(_outerClass);
+                _htmlResolver = new HTMLFileActionResolver(_controllerName);
             }
 
             Controller thisActionsController = _htmlResolver.resolveActionName(actionController, actionName);

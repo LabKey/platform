@@ -39,9 +39,9 @@ public class SimpleController extends SpringActionController implements SpringAc
     public static final String VIEWS_DIRECTORY = "views";
     public static final String BEGIN_VIEW_NAME = "begin";
 
-    public SimpleController()
+    public SimpleController(String controllerName)
     {
-        setActionResolver(new HTMLFileActionResolver(SimpleController.class));
+        setActionResolver(new HTMLFileActionResolver(controllerName));
     }
 
     private static Resource getViewResource(Module module, String actionName)

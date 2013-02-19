@@ -149,12 +149,12 @@ public class MockModule implements Module
         return null;
     }
 
-    public Map<String, Class<? extends Controller>> getPageFlowNameToClass()
+    public Map<String, Class<? extends Controller>> getControllerNameToClass()
     {
         return null;
     }
 
-    public Map<Class<? extends Controller>, String> getPageFlowClassToName()
+    public Map<Class<? extends Controller>, String> getControllerClassToName()
     {
         return null;
     }

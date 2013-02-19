@@ -22,6 +22,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.Domain;
@@ -33,7 +34,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.data.xml.TablesDocument;
+import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.http.HttpServletRequest;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
@@ -80,6 +83,12 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
 
         getSchemaNames(true);
         addController(getName().toLowerCase(), SimpleController.class);
+    }
+
+    @Override
+    public Controller getController(@Nullable HttpServletRequest request, Class controllerClass)
+    {
+        return new SimpleController(getName().toLowerCase());
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()

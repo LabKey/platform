@@ -1139,7 +1139,7 @@ public class ModuleLoader implements Filter
             {
                 TreeSet<String> set = new CaseInsensitiveTreeSet();
 
-                for (Map.Entry<String, Class<? extends Controller>> entry : module.getPageFlowNameToClass().entrySet())
+                for (Map.Entry<String, Class<? extends Controller>> entry : module.getControllerNameToClass().entrySet())
                 {
                     String key = entry.getKey();
                     if (!set.add(key))

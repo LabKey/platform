@@ -106,8 +106,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<Pair<Class, String>>();
     private Queue<Method> _deferredUpgradeTask = new LinkedList<Method>();
 
-    private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
-    private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
+    private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
+    private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<Class<? extends Controller>, String>();
     private static final String XML_FILENAME = "module.xml";
 
     private Collection<WebPartFactory> _webPartFactories;
@@ -276,30 +276,28 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             throw new IllegalArgumentException(cl.toString());
 
         // Map controller class to canonical name
-        addPageFlowClass(cl, primaryName);
+        addControllerClass(cl, primaryName);
 
-        // Map all names to controller class
-        addPageFlowName(primaryName, cl);
+        // Map aliases to controller class
         for (String alias : aliases)
-            addPageFlowName(alias, cl);
+            addControllerName(alias, cl);
     }
 
 
     // Map controller class to canonical name
-    private void addPageFlowClass(Class<? extends Controller> controllerClass, String primaryName)
+    private void addControllerClass(Class<? extends Controller> controllerClass, String primaryName)
     {
-        assert !_pageFlowNameToClass.values().contains(controllerClass) : "Controller class '" + controllerClass + "' is already registered";
-
-        _pageFlowClassToName.put(controllerClass, primaryName);
+        assert !_controllerNameToClass.values().contains(controllerClass) : "Controller class '" + controllerClass + "' is already registered";
+        _controllerClassToName.put(controllerClass, primaryName);
+        addControllerName(primaryName, controllerClass);
     }
 
 
     // Map all names to controller class
-    private void addPageFlowName(String pageFlowName, Class<? extends Controller> controllerClass)
+    private void addControllerName(String pageFlowName, Class<? extends Controller> controllerClass)
     {
-        assert null == _pageFlowNameToClass.get(pageFlowName) : "Page flow name '" + pageFlowName + "' is already registered";
-
-        _pageFlowNameToClass.put(pageFlowName, controllerClass);
+        assert null == _controllerNameToClass.get(pageFlowName) : "Controller name '" + pageFlowName + "' is already registered";
+        _controllerNameToClass.put(pageFlowName, controllerClass);
     }
 
 
@@ -402,22 +400,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
 
     @Override
-    public final Map<String, Class<? extends Controller>> getPageFlowNameToClass()
+    public final Map<String, Class<? extends Controller>> getControllerNameToClass()
     {
-        return _pageFlowNameToClass;
+        return _controllerNameToClass;
     }
 
 
     @Override
-    public final Map<Class<? extends Controller>, String> getPageFlowClassToName()
+    public final Map<Class<? extends Controller>, String> getControllerClassToName()
     {
-        return _pageFlowClassToName;
+        return _controllerClassToName;
     }
 
     @Override
     public ActionURL getTabURL(Container c, User user)
     {
-        Map<String, Class<? extends Controller>> map = getPageFlowNameToClass();
+        Map<String, Class<? extends Controller>> map = getControllerNameToClass();
 
         // Handle modules that have no controllers (e.g., BigIron)
         if (!map.isEmpty())
@@ -954,7 +952,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public Controller getController(HttpServletRequest request, String name)
     {
-        Class cls = _pageFlowNameToClass.get(name);
+        Class cls = _controllerNameToClass.get(name);
         if (null == cls)
             return null;
 

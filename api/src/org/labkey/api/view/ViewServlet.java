@@ -45,7 +45,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -82,12 +81,12 @@ public class ViewServlet extends HttpServlet
     private static final AtomicInteger _requestCount = new AtomicInteger();
     private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<Boolean>();
 
-    private static Map<Class, String> _pageFlowClassToName = null;
+    private static Map<Class<? extends Controller>, String> _controllerClassToName = null;
     private static volatile boolean _shuttingDown = false;
 
-    public static String getPageFlowName(Class controllerClass)
+    public static String getControllerName(Class<? extends Controller> controllerClass)
     {
-        return _pageFlowClassToName.get(controllerClass);
+        return _controllerClassToName.get(controllerClass);
     }
 
     public static int getRequestCount()
@@ -245,7 +244,7 @@ public class ViewServlet extends HttpServlet
     {
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            for (Class controllerClass : module.getPageFlowClassToName().keySet())
+            for (Class controllerClass : module.getControllerClassToName().keySet())
             {
                 if (Controller.class.isAssignableFrom(controllerClass))
                 {
@@ -265,10 +264,10 @@ public class ViewServlet extends HttpServlet
 
     private static void initializeControllerMaps()
     {
-        _pageFlowClassToName = new HashMap<Class, String>();
+        _controllerClassToName = new HashMap<Class<? extends Controller>, String>();
 
         for (Module module : ModuleLoader.getInstance().getModules())
-            _pageFlowClassToName.putAll(module.getPageFlowClassToName());
+            _controllerClassToName.putAll(module.getControllerClassToName());
     }
 
 
