@@ -748,29 +748,50 @@ public class Portal
             }
         });
 
-        boolean clearCache = false;
-        for (int i = 1; i < pages.size(); i += 1)
+        if (pages.size() > 0)
         {
-            Portal.PortalPage page = pages.get(i);
-            int increment = pages.get(i-1).getIndex() - page.getIndex() + 1;
-            if (increment > 0)
+            boolean clearCache = false;
+            try
             {
-                // Previous page's index is same or greate; need to bump current page's index
-                page.setIndex(page.getIndex() + increment);
-                try
+                getSchema().getScope().ensureTransaction();
+                Portal.PortalPage firstPage = pages.get(0);
+                if (firstPage.getIndex() <= 0)
                 {
-                    Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+                    firstPage.setIndex(1);      // Make sure no index is 0
+                    Table.update(null, getTableInfoPortalPages(), firstPage, new Object[] {firstPage.getContainer(), firstPage.getPageId()});
                     clearCache = true;
                 }
-                catch (SQLException x)
+                for (int i = 1; i < pages.size(); i += 1)
                 {
-                    throw new RuntimeSQLException(x);
+                    Portal.PortalPage page = pages.get(i);
+                    if (page.getIndex() <= 0)
+                    {
+                        page.setIndex(pages.get(i-1).getIndex());   // Make sure no index is 0
+                    }
+                    int increment = pages.get(i-1).getIndex() - page.getIndex() + 1;
+                    if (increment > 0)
+                    {
+                        // Previous page's index is same or greate; need to bump current page's index
+                        page.setIndex(page.getIndex() + increment);
+                        Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+                        clearCache = true;
+                    }
                 }
-            }
-        }
+                getSchema().getScope().commitTransaction();
 
-        if (clearCache)
-            WebPartCache.remove(c);
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                getSchema().getScope().closeConnection();
+            }
+
+            if (clearCache)
+                WebPartCache.remove(c);
+        }
     }
 
     public static void saveParts(Container c, String pageId, WebPart[] newParts)

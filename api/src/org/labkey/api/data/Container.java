@@ -964,6 +964,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
             }
         }
 
+        // Container tab inherits from parent
+        if (isContainerTab())
+        {
+            for (Module module : getParent().getActiveModules())
+                if (null != module)
+                    modules.add(module);
+        }
+
         // add all 'always display' modules, remove all 'never display' modules:
         for (Module module : allModules)
         {
