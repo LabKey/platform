@@ -9,6 +9,22 @@ Ext4.define('File.system.Abstract', {
         observable: 'Ext.util.Observable'
     },
 
+    statics : {
+        processAjaxResponse : function(r) {
+            if (r && r.responseText &&  r.getResponseHeader('Content-Type') && r.getResponseHeader('Content-Type').indexOf('application/json') >= 0) {
+                try {
+                    r.jsonResponse = Ext4.JSON.decode(r.responseText);
+                    if (r.jsonResponse.status) {
+                        r.status = r.jsonResponse.status;
+                    }
+                }
+                catch (error) {
+                    //ignore
+                }
+            }
+        }
+    },
+
    /**
     * @cfg {Boolean} ready
     */
@@ -138,7 +154,6 @@ Ext4.define('File.system.Abstract', {
             path: config.path,
             success: function (fs, path, records){
                 var rec = this.recordFromCache(filename);
-
                 if (Ext4.isFunction(config.success))
                     config.success.defer(1, config.scope, [this, config.name, config.path, rec]);
             },

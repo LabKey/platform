@@ -293,7 +293,7 @@ Ext4.define('File.system.Webdav', {
             url : config.path,
             success : function(response, options){
                 var success = false;
-                LABKEY.FileSystem.Util._processAjaxResponse(response);
+                File.system.Abstract.processAjaxResponse(response);
                 if (204 == response.status || 404 == response.status) // NO_CONTENT (success)
                     success = true;
                 else if (405 == response.status) // METHOD_NOT_ALLOWED
@@ -350,53 +350,61 @@ Ext4.define('File.system.Webdav', {
 
         var resourcePath = this.concatPaths(this.prefixUrl, LABKEY.ActionURL.encodePath(config.source));
         var destinationPath = this.concatPaths(this.prefixUrl, LABKEY.ActionURL.encodePath(config.destination));
-        var fileSystem = this;
-        var connection = new Ext.data.Connection();
-
-        var cfg = {
-            method: "MOVE",
-            url: resourcePath,
-            scope: this,
-            failure: function(response){
-                LABKEY.FileSystem.Util._processAjaxResponse(response);
-                if(typeof config.failure == 'function')
-                    config.failure.apply(config.scope, arguments);
-            },
-            success: function(response, options){
-                LABKEY.FileSystem.Util._processAjaxResponse(response);
-                var success = false;
-                if (201 == response.status || 204 == response.status) //CREATED,  NO_CONTENT (success)
-                    success = true;
-                else
-                    success = false;
-
-                if (success)
-                {
-                    var destParent = fileSystem.getParentPath(config.destination);
-                    fileSystem.uncacheListing(destParent); //this will cover uncaching children too
-
-                    // TODO: maybe support a config option that will to force the fileSystem to
-                    // auto-reload this location, instead just uncaching and relying on consumers to do it??
-                    this.fireEvent(LABKEY.FileSystem.FILESYSTEM_EVENTS.fileschanged, this, destParent);
-
-                    if (typeof config.success == 'function')
-                        config.success.call(config.scope, fileSystem, config.source, config.destination);
-                }
-                else {
-                    if (typeof config.failure == 'function')
-                        config.failure.call(config.scope, response, options);
-                }
-            },
-            headers: {
-                Destination: destinationPath,
-                'Content-Type': 'application/json'
-            }
+        var headers = {
+            Destination: destinationPath
         };
 
-        if (config.overwrite)
-            cfg.headers.Overwrite = 'T';
+        if (config.overwrite) {
+            headers.Overwrite = 'T';
+        }
 
-        connection.request(cfg);
+            var me = this;
+            Ext4.Ajax.request({
+                method: "MOVE",
+                url: resourcePath,
+                failure: function(response) {
+                    File.system.Abstract.processAjaxResponse(response);
+                    if (Ext4.isFunction(config.failure)) {
+                        config.failure.apply(config.scope, arguments);
+                    }
+                },
+                success: function(response, options) {
+                    File.system.Abstract.processAjaxResponse(response);
+                    var success = (201 == response.status || 204 == response.status || 200 == response.status); //CREATED,  NO_CONTENT (success)
+                    if(!success && response.status == 208){
+                       Ext4.Msg.show({
+                           title : "File Conflict",
+                           msg : "There is already a file named " + config.fileRecord.record.data.name + ' in that folder. '+
+                           'Would you like to overwrite it?',
+                           buttons : Ext4.MessageBox.YESNO,
+                           fn : function(btn){
+                               if(btn == 'yes') {
+                                    this.fileSystem.movePath(Ext4.apply(config, {overwrite : true}));
+                               }
+                           },
+                           scope : this
+                       });
+                    }
+
+
+                    else if (success) {
+                        // TODO: maybe support a config option that will to force the fileSystem to
+                        // auto-reload this location, instead just uncaching and relying on consumers to do it??
+//                    this.fireEvent(LABKEY.FileSystem.FILESYSTEM_EVENTS.fileschanged, this, destParent);
+
+                        if (Ext4.isFunction(config.success)) {
+                            config.success.call(config.scope, me, config.source, config.destination);
+                        }
+                    }
+                    else {
+                        if (Ext4.isFunction(config.failure)) {
+                            config.failure.call(config.scope, response, options);
+                        }
+                    }
+                },
+                headers: headers,
+                scope : config.scope
+            });
 
         return true;
     },

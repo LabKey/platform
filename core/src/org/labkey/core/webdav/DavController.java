@@ -2881,7 +2881,7 @@ public class DavController extends SpringActionController
             if (exists)
             {
                 if (!overwrite)
-                    throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
+                    return WebdavStatus.SC_FILE_MATCH;
                 if (dest.isCollection())
                 {
                     if (!_overwriteCollection)
@@ -2913,7 +2913,14 @@ public class DavController extends SpringActionController
                         markTempFile(dest);
                     try
                     {
-                        FileUtils.moveFile(srcFile, destFile);
+                        if (srcFile.isDirectory())
+                        {
+                            FileUtils.moveDirectory(srcFile, destFile);
+                        }
+                        else
+                        {
+                            FileUtils.moveFile(srcFile, destFile);
+                        }
                     }
                     catch (IOException ex)
                     {
@@ -4655,6 +4662,7 @@ public class DavController extends SpringActionController
         //205=Reset Content
         SC_PARTIAL_CONTENT(HttpServletResponse.SC_PARTIAL_CONTENT, "Partial Content"),
         SC_MULTI_STATUS(207, "Multi-Status"),
+        SC_FILE_MATCH(208, "File Conflict"),
         //300=Multiple Choices
         SC_MOVED_PERMANENTLY(HttpServletResponse.SC_MOVED_PERMANENTLY, "Moved Permanently"),
         SC_MOVED_TEMPORARILY(HttpServletResponse.SC_MOVED_TEMPORARILY, "Moved Temporarily"),    // Found
