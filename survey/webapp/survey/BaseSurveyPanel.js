@@ -158,8 +158,11 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 // TODO: is there a way to not have to import the JS for each defined ext alias?
                 else if (section.extAlias)
                 {
-                    console.log(section.extAlias);
-                    sectionPanel.add({xtype: section.extAlias});
+                    sectionPanel.add({
+                        xtype: section.extAlias,
+                        isSubmitted: this.isSubmitted,
+                        canEdit: this.canEdit
+                    });
                 }
 
                 this.sections.push(sectionPanel);

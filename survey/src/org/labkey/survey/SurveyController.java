@@ -874,7 +874,7 @@ public class SurveyController extends SpringActionController
                                 ColumnInfo col = table.getColumn(FieldKey.fromParts(form.getQuestionName()));
 
                                 // if the column is an attachment type, it only allows a single file per question (this is the basic case)
-                                if (col.getJavaClass() == File.class)
+                                if (col != null && col.getJavaClass() == File.class)
                                 {
                                     TableViewForm tvf = new TableViewForm(table);
 
