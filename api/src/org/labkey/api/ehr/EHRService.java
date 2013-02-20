@@ -15,9 +15,11 @@
  */
 package org.labkey.api.ehr;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.view.template.ClientDependency;
@@ -73,7 +75,21 @@ abstract public class EHRService
 
     abstract public String getDateFormat(Container c);
 
-    abstract public User getEHRUser();
-
     abstract public User getEHRUser(Container c);
+
+    abstract public void registerReportLink(REPORT_LINK_TYPE type, String label, Module owner, DetailsURL url, @Nullable String category);
+
+    public enum REPORT_LINK_TYPE
+    {
+        housing(),
+        project(),
+        protocol(),
+        animalSearch();
+
+        REPORT_LINK_TYPE()
+        {
+
+        }
+    }
+
 }
