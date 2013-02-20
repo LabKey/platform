@@ -137,6 +137,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (c == null)
             return null;
 
+        if (c.isRoot())
+        {
+            return getSiteDefaultRoot();
+        }
+
         if (!isFileRootDisabled(c))
         {
             FileRoot root = FileRootManager.get().getFileRoot(c);
