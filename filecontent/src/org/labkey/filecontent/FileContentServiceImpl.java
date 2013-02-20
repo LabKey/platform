@@ -67,6 +67,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -136,15 +137,12 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (c == null)
             return null;
 
-        Container effective = getEffectiveContainer(c);
-        if (null == effective)
-            return null;
-
-        FileRoot root = FileRootManager.get().getFileRoot(effective);
-        if (root.isEnabled())
+        if (!isFileRootDisabled(c))
         {
+            FileRoot root = FileRootManager.get().getFileRoot(c);
+
             // check if there is a site wide file root
-            if (root.getPath() == null || root.isUseDefault())
+            if (root.getPath() == null || isUseDefaultRoot(c))
             {
                 return getDefaultRoot(c, true);
             }
@@ -156,7 +154,6 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public File getDefaultRoot(Container c, boolean createDir)
     {
-        Container effective = getEffectiveContainer(c);
         Container firstOverride = getFirstAncestorWithOverride(c);
 
         File parentRoot;
@@ -170,9 +167,9 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             parentRoot = getFileRoot(firstOverride);
         }
 
-        if (parentRoot != null && effective != null)
+        if (parentRoot != null && c != null)
         {
-            File fileRoot = new File(parentRoot, getRelativePath(effective, firstOverride));
+            File fileRoot = new File(parentRoot, getRelativePath(c, firstOverride));
 
             if (!fileRoot.exists() && createDir)
                 fileRoot.mkdirs();
@@ -184,8 +181,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     private String getRelativePath(Container c, Container ancestor)
     {
-        String path = c.getPath();
-        return path.replaceAll("^" + ancestor.getPath(), "");
+        return c.getPath().replaceAll("^" + Pattern.quote(ancestor.getPath()), "");
     }
 
     //returns the first parent container that has a custom file root, or NULL if none have overrides
@@ -814,9 +810,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public static class TestCase extends AssertionError
     {
-        private static final String PROJECT1 = "FileRootTestProject1";
+        private static final String TRICKY_CHARACTERS_FOR_PROJECT_NAMES = "\u2603~!@$&()_+{}-=[],.#";
+
+        private static final String PROJECT1 = "FileRootTestProject1" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
         private static final String PROJECT1_SUBFOLDER1 = "Subfolder1";
-        private static final String PROJECT1_SUBFOLDER2 = "Subfolder2";
+        private static final String PROJECT1_SUBFOLDER2 = "Subfolder2" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
         private static final String PROJECT1_SUBSUBFOLDER = "SubSubfolder";
         private static final String PROJECT2 = "FileRootTestProject2";
 
@@ -958,7 +956,28 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             assertPathsEqual("Incorrect file path", expectedFile, movedData.getFile());
         }
 
-        @After
+        @Test
+        public void testWorkbooksAndTabs() throws Exception
+        {
+            //pre-clean
+            cleanup();
+
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            Assert.assertNotNull(svc);
+
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
+
+            Container workbook = ContainerManager.createContainer(project1, null, null, null, Container.TYPE.workbook, TestContext.get().getUser());
+            File expectedWorkbookRoot = new File(svc.getFileRoot(project1), workbook.getName());
+            assertPathsEqual("Workbook has incorrect file root", expectedWorkbookRoot, svc.getFileRoot(workbook));
+
+            Container tab = ContainerManager.createContainer(project1, "tab", null, null, Container.TYPE.tab, TestContext.get().getUser());
+            File expectedTabRoot = new File(svc.getFileRoot(project1), tab.getName());
+            assertPathsEqual("Folder tab has incorrect file root", expectedTabRoot, svc.getFileRoot(tab));
+        }
+
+
+            @After
         public void cleanup()
         {
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
