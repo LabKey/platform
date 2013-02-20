@@ -420,13 +420,12 @@ public class SurveyController extends SpringActionController
 
                             if (!section.containsKey("title"))
                                 sb.append("Each section must contain a property named : 'title'\n");
-
                             else if (section.has("questions"))
-                            {
                                 section.getJSONArray("questions");
-                            }
+                            else if (section.has("extAlias"))
+                                section.getString("extAlias");
                             else
-                                sb.append("Each section must contain a JSON array named : 'questions'\n");
+                                sb.append("Each section must contain a JSON array named 'questions' or contain a JSON string for the 'extAlias'\n");
                         }
                     }
                     else

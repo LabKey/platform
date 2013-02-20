@@ -1,6 +1,19 @@
 
-li.labkey-side-bar-title:hover
-{
+li.labkey-side-bar-title:hover {
     text-decoration: underline;
     cursor: pointer;
+}
+
+li.labkey-side-bar-title-disabled {
+    color: #C0C0C0;
+    /*font-style: italic;*/
+}
+
+.themed-panel span.x4-panel-header-text-default {
+    color: black;
+}
+
+div.lk-survey-panel {
+    margin-right: auto;
+    margin-left: auto;
 }

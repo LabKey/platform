@@ -28,26 +28,13 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
-<style type="text/css">
-
-    .themed-panel span.x4-panel-header-text-default {
-        color: black;
-    }
-
-    div.lk-survey-panel {
-
-        margin-right: auto;
-        margin-left: auto;
-    }
-
-</style>
-
 <%!
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
         resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("/survey/BaseSurveyPanel.js"));
         resources.add(ClientDependency.fromFilePath("/survey/SurveyPanel.js"));
         return resources;
     }
