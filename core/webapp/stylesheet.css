@@ -1858,6 +1858,11 @@ td.labkey-nav-tree-text
 	line-height: 1.2em;
 }
 
+td.labkey-nav-tree-text a {
+    display: inline-block;
+    width: 100%;
+}
+
 a.nav-tree-selected
 {
     font-weight: bold;
