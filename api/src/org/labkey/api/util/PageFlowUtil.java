@@ -2022,7 +2022,17 @@ public class PageFlowUtil
         if(container != null)
         {
             json.put("moduleContext", getModuleClientContext(container, user, resources));
-            Study study = StudyService.get().getStudy(container);
+
+            // TODO: Migrate this to a Context Service
+            Study study = null;
+            try
+            {
+                study = StudyService.get().getStudy(container);
+            }
+            catch (Throwable e)
+            {
+                _log.info("Unable to load Study context: " + e.getMessage());
+            }
             if (null != study)
                 json.put("Study", getStudyClientContext(study));
         }

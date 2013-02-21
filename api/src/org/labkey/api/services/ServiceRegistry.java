@@ -112,7 +112,7 @@ public class ServiceRegistry
      * Registers a service implementation. Modules that expose services should call this method
      * at load time, passing the service interface class and the implemenation instance.
      * @param type The service interface class (MyService.class)
-     * @param instance An insance of a class that implements that service.
+     * @param instance An instance of a class that implements that service.
      */
     public <T> void registerService(@NotNull Class<T> type, @NotNull T instance)
     {
