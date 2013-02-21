@@ -28,6 +28,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             Ext4.each(surveyConfig.survey.sections, function(section){
                 var sectionPanel = Ext4.create('Ext.panel.Panel', {
                     border: false,
+                    flex: 1,
+                    autoScroll: true,
                     header: this.surveyLayout == 'card' ? false : (section.header != undefined ? section.header : true),
                     sectionPanel: true, // marker for looking for a components parent section
                     completedQuestions: 0, // counter for the section header to show progress when a panel is collapsed
@@ -232,8 +234,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 var panels = Ext4.ComponentQuery.query('#' + itemId);
                 if (panels.length == 1)
                 {
-                    panels[0].currentStep = step;
-                    panels[0].updateStep();
+                    panels[0].updateStep(step);
                 }
             };
 
@@ -266,16 +267,14 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 disabled: true,
                 scope: this,
                 handler: function(cmp){
-                    this.previousEnabledStepIndex();
-                    this.updateStep();
+                    this.updateStep(this.previousEnabledStepIndex());
             }});
 
             this.nextBtn = Ext4.create('Ext.button.Button', {
                 text: 'Next',
                 scope: this,
                 handler: function(cmp){
-                    this.nextEnabledStepIndex();
-                    this.updateStep();
+                    this.updateStep(this.nextEnabledStepIndex());
             }});
             bbar = ['->', this.prevBtn, this.nextBtn];
         }
@@ -284,7 +283,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             layout: this.surveyLayout,
             border: false,
             minHeight: this.surveyLayout == 'card' ? 500 : undefined,
-            bodyStyle : 'padding: 20px;',
+            height: this.fixedHeight ? this.fixedHeight : undefined,
+            bodyStyle : 'padding: 10px;',
             activeItem: 0,
             flex: 1,
             items: this.sections,
@@ -294,27 +294,33 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     },
 
     previousEnabledStepIndex : function() {
+        var step = this.currentStep;
         var steps = this.getStepsDataArr();
-        for (var i = (this.currentStep - 1); i > -1; i--)
+        for (var i = (step - 1); i > -1; i--)
         {
             if (!steps[i].isDisabled)
             {
-                this.currentStep = i;
+                step = i;
                 break;
             }
         }
+
+        return step;
     },
 
     nextEnabledStepIndex : function() {
+        var step = this.currentStep;
         var steps = this.getStepsDataArr();
-        for (var i = (this.currentStep + 1); i < steps.length; i++)
+        for (var i = (step + 1); i < steps.length; i++)
         {
             if (!steps[i].isDisabled)
             {
-                this.currentStep = i;
+                step = i;
                 break;
             }
         }
+
+        return step;
     },
 
     getStepsDataArr : function() {
@@ -333,7 +339,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         return steps;
     },
 
-    updateStep : function() {
+    updateStep : function(step) {
+
+        this.currentStep = step;
         this.sideBar.update({steps: this.getStepsDataArr()});
         this.centerPanel.getLayout().setActiveItem(this.currentStep);
 
@@ -469,14 +477,38 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }
     },
 
+    getFormDirtyValues : function() {
+        var values = {};
+        Ext4.each(this.getForm().getFields().items, function(field){
+            if (field.submitValue && field.isDirty() && field.isValid())
+            {
+                // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radiofeilds
+                if (field.getXType() == "radiogroup")
+                {} // skip the radiogroup itself in favor of the radiofields
+                else if (field.getXType() == "radiofield")
+                    values[field.getName()] = field.getGroupValue();
+                else
+                    values[field.getName()] = field.getSubmitValue();
+            }
+        }, this);
+
+        return values;
+    },
+
     onFailure : function(resp, message, hidePanel) {
-        var error = resp && resp.responseText ? Ext4.decode(resp.responseText) : {};
+        var error = {};
+        if (resp && resp.responseText)
+            error = Ext4.decode(resp.responseText);
+        else if (resp)
+            error = resp;
+
         if (error.exception)
             message = error.exception;
         else if (error.errorInfo)
             message = error.errorInfo;
 
-        if (hidePanel)
+        // explicitly check for equals true because hidePanel could be an object
+        if (hidePanel == true)
             this.update("<span class='labkey-error'>" + message + "</span>");
         else
             Ext4.MessageBox.alert('Error', message != null ? message : 'An unknown error has ocurred.');

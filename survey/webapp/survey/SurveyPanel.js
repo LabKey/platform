@@ -442,19 +442,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.toggleSaveBtn(false, false);
 
         // get the dirty form values which are also valid and to be submitted
-        this.submitValues = {};
-        Ext4.each(this.getForm().getFields().items, function(field){
-            if (field.submitValue && field.isDirty() && field.isValid())
-            {
-                // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radiofeilds
-                if (field.getXType() == "radiogroup")
-                {} // skip the radiogroup itself in favor of the radiofields
-                else if (field.getXType() == "radiofield")
-                    this.submitValues[field.getName()] = field.getGroupValue();
-                else
-                    this.submitValues[field.getName()] = field.getSubmitValue();
-            }
-        }, this);
+        this.submitValues = this.getFormDirtyValues();
 
         // check to make sure the survey label is not null, it is required
         if (!this.surveyLabel)
