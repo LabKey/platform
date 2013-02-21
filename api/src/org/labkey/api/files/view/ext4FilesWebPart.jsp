@@ -100,9 +100,7 @@
             <%--disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,--%>
             <%--containerPath: <%=q(c.getPath())%>,--%>
             fileSystem: fileSystem,
-            tbarItems: buttonActions,
-            isWebPart: true,
-            isWebDav: false
+            tbarItems: buttonActions
         });
 
         var resize = function() {

@@ -757,18 +757,60 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             this._removeParams([".sort", ".offset"]);
     },
 
+    /**
+     * Add a filter to this Data Region.
+     * @param {LABKEY.Filter} filter
+     */
     addFilter : function(filter) {
         this._updateFilter(filter);
     },
 
-    replaceFilter : function(filter) {
-        this._updateFilter(filter, [this.name + '.' + filter.getColumnName() + '~']);
+    /**
+     * Replace a filter on this Data Region. Optionally, supply another filter to replace for cases when your filter
+     * columns don't match exactly.
+     * @param {LABKEY.Filter} filter
+     * @param {LABKEY.Filter} [filterToReplace]
+     */
+    replaceFilter : function(filter, filterToReplace) {
+        var target = filterToReplace ? filterToReplace : filter;
+        this._updateFilter(filter, [this.name + '.' + target.getColumnName() + '~']);
     },
 
+    /**
+     * Remove a filter on this DataRegion.
+     * @param {LABKEY.Filter} filter
+     */
+    removeFilter : function(filter) {
+        if (filter && filter.getColumnName) {
+            this._updateFilter(null, [this.name + '.' + filter.getColumnName() + '~']);
+        }
+    },
+
+    // private
+    // DO NOT CALL DIRECTLY. This method is private and only available for replacing advanced cohort filters
+    // for this Data Region. Remove if advanced cohorts are removed.
+    replaceAdvCohortFilter : function(filter) {
+        var params = LABKEY.DataRegion.getParamValPairsFromString(this.requestURL);
+        var skips = [];
+
+        // build set of cohort filters to skip
+        for (var i=0; i < params.length; i++) {
+            if (params[i][0].indexOf(this.name + '.') == 0) {
+                if (params[i][0].indexOf('/Cohort/Label') > -1 || params[i][0].indexOf('/InitialCohort/Label') > -1) {
+                    skips.push(params[i][0]);
+                }
+            }
+        }
+        this._updateFilter(filter, skips);
+    },
+
+    // private
     // DO NOT CALL DIRECTLY. Use addFilter, replaceFilter
     _updateFilter : function(filter, skipPrefixes) {
         var params = LABKEY.DataRegion.getParamValPairsFromString(this.requestURL, skipPrefixes);
-        params.push([filter.getURLParameterName(this.name), filter.getURLParameterValue()]);
+        if (filter) {
+            params.push([filter.getURLParameterName(this.name), filter.getURLParameterValue()]);
+        }
         this.changeFilter(params, LABKEY.DataRegion.buildQueryString(params));
     },
 
