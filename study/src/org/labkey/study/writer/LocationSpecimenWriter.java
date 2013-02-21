@@ -4,6 +4,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.xml.StudyDocument;
 
@@ -18,6 +19,8 @@ public class LocationSpecimenWriter extends StandardSpecimenWriter
     @Override
     protected SQLFragment generateSql(ImportContext<StudyDocument.Study> ctx, TableInfo tinfo, Collection<SpecimenImporter.ImportableColumn> columns)
     {
+        SqlDialect d = tinfo.getSqlDialect();
+
         // the generated SQL for the study.Location table needs to take into consideration the "maskClinic" setting on the export context
         SQLFragment sql = new SQLFragment().append("SELECT ");
         String comma = "";
@@ -28,10 +31,10 @@ public class LocationSpecimenWriter extends StandardSpecimenWriter
 
             // when masking, use generic label for clinics
             if (ctx.isMaskClinic() && column.getDbColumnName().toLowerCase().equals("label"))
-                sql.append("CASE WHEN Clinic = true THEN ").appendStringLiteral("Clinic").append(" ELSE Label END AS Label");
+                sql.append("CASE WHEN Clinic = " + d.getBooleanTRUE() + " THEN ").appendStringLiteral("Clinic").append(" ELSE Label END AS Label");
             // when masking, remove the LabwareLabCode for clinics
             else if (ctx.isMaskClinic() && column.getDbColumnName().toLowerCase().equals("labwarelabcode"))
-                sql.append("CASE WHEN Clinic = true THEN NULL ELSE LabwareLabCode END AS LabwareLabCode");
+                sql.append("CASE WHEN Clinic = " + d.getBooleanTRUE() + " THEN NULL ELSE LabwareLabCode END AS LabwareLabCode");
             else
                 sql.append(column.getDbColumnName());
 
