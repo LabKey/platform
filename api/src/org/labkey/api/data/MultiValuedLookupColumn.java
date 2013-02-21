@@ -108,7 +108,7 @@ public class MultiValuedLookupColumn extends LookupColumn
             ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
             strJoin.append(", \n\t\t\t");
             SQLFragment valueSql = new SQLFragment();
-            boolean needsCast = "entityid".equalsIgnoreCase(lc.getSqlTypeName()) || "lsidtype".equalsIgnoreCase(lc.getSqlTypeName());
+            boolean needsCast = "entityid".equalsIgnoreCase(lc.getSqlTypeName()) || "lsidtype".equalsIgnoreCase(lc.getSqlTypeName()) || "userid".equalsIgnoreCase(lc.getSqlTypeName());
             if (needsCast)
             {
                 valueSql.append("CAST((");
@@ -116,7 +116,8 @@ public class MultiValuedLookupColumn extends LookupColumn
             valueSql.append(lc.getValueSql(joinAlias));
             if (needsCast)
             {
-                valueSql.append(") AS VARCHAR)");
+                String sqlType = "userid".equalsIgnoreCase(lc.getSqlTypeName()) ? "INTEGER" : "VARCHAR";
+                valueSql.append(") AS " + sqlType + ")");
             }
 
             col.declareJoins(baseJoinTarget, joins);
