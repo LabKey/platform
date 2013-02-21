@@ -729,6 +729,9 @@ Ext4.define('File.panel.Browser', {
             if (this.actions.movePath) {
                 this.actions.movePath.setDisabled(false);
             }
+            if (this.actions.deletePath) {
+                this.actions.deletePath.setDisabled(false);
+            }
         }
         this.selectedRecord = rec;
     },
@@ -842,6 +845,9 @@ Ext4.define('File.panel.Browser', {
             }
             if (this.actions.movePath) {
                 this.actions.movePath.setDisabled(true);
+            }
+            if (this.actions.deletePath) {
+                this.actions.deletePath.setDisabled(true);
             }
         }
         this.currentDirectory = model;
@@ -1200,61 +1206,13 @@ Ext4.define('File.panel.Browser', {
                 scope: this
             });
         }
-        this.selectFile(null);
-    },
-
-    selectFile : function(record) {
-        console.log('File.panel.Browser.selectFile NYI');
-//        if (Ext4.isString(record)) {
-//            var path = record;
-//            record = this.fileSystem.recordFromCache(path);
-//            if (!record)
-//            {
-//                var parent = this.fileSystem.getParentPath(path);
-//                this.fileSystem.listFiles({
-//                    path: parent,
-//                    success: function(filesystem, parentPath, records)
-//                    {
-//                        record = this.fileSystem.recordFromCache(path);
-//                        if (record)
-//                            this.selectFile(record);
-//                    },
-//                    failure: LABKEY.Utils.displayAjaxErrorResponse,
-//                    scope: this
-//                });
-//            }
-//        }
-//        if (this.selectedRecord && record && this.selectedRecord.data.path == record.data.path)
-//            return;
-//        if (!this.selectedRecord && !record)
-//            return;
-//        this.selectedRecord = record || this.currentDirectory;
-//        this.fireEvent(LABKEY.FileSystem.BROWSER_EVENTS.selectionchange, record);
     },
 
     onRename : function() {
-        console.log('File.panel.Browser.onRename NYI');
-        return;
 
         if (!this.selectedRecord || !this.currentDirectory) {
             return;
         }
-
-        var fnRename = (function(destination)
-        {
-            this.fireEvent(LABKEY.FileSystem.BROWSER_EVENTS.movestarted);
-            var selectedRecord = selections[0];
-            this.fileSystem.renamePath({
-                source: selectedRecord.data.path,
-                destination: destination,
-                isFile: selectedRecord.data.file,
-                success: this._moveOnCallback.createDelegate(this,[selectedRecord],true),
-                failure: LABKEY.Utils.displayAjaxErrorResponse,
-                scope: this
-            });
-            this.selectFile(null);
-
-        }).createDelegate(this);
 
         var me = this;
         var okHandler = function() {
@@ -1270,7 +1228,7 @@ Ext4.define('File.panel.Browser', {
                 return;
             }
 
-            var destination = me.currentDirectory.data.path;
+            var destination = me.currentDirectory.data.id;
             if (destination != '/') {
                 destination = destination.split('@files')[1];
             }
@@ -1294,7 +1252,6 @@ Ext4.define('File.panel.Browser', {
             closeAction: 'destroy',
             origName: name,
             fileRecord: this.selectedRecord,
-            renameFile: fnRename,
             draggable : false,
             autoShow : true,
             items: [{
