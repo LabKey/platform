@@ -105,9 +105,6 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             // Wrap the corresponding Data Region with a QWP
             this.qwp = new LABKEY.QueryWebPart({
                 dataRegion : this.dataRegion,
-                parameters : {
-                    facet : true
-                },
                 success : function(dr) {
                     // Give access to to this filter panel to the Data Region
                     if (dr) {
@@ -195,13 +192,14 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         for (; f < filters.length; f++) {
             if (filters[f].get('type') != 'participant') {
 
+                // TODO: This should be populated by Participant Filter
                 // Build what a filter might look like
                 if (filters[f].data.category) {
-                    filterPrefix = 'ParticipantId/' + filters[f].data.category.label;
+                    filterPrefix = LABKEY.Study.subject.columnName + '/' + filters[f].data.category.label;
                 }
                 else {
                     // Assume it is a cohort
-                    filterPrefix = 'ParticipantId/Cohort/Label';
+                    filterPrefix = LABKEY.Study.subject.columnName + '/Cohort/Label';
                 }
 
                 if (!filterMap[filterPrefix]) {
@@ -280,10 +278,12 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
         var newValArray = [];
         var urlFilters = [];
+        var empty = true;
 
         // Build LABKEY.Filters from filterMap
         for (var f in filterMap) {
             if (filterMap.hasOwnProperty(f)) {
+                empty = false;
                 var type, value;
                 if (filterMap[f].length > 1) {
                     type = LABKEY.Filter.Types.IN;
@@ -297,6 +297,11 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 var filter = LABKEY.Filter.create(f, value, type);
                 urlFilters.push(filter);
             }
+        }
+
+        // Simple case when all options are checked/unchecked
+        if (empty) {
+            return newValArray;
         }
 
         // Using the set of filters, merge this against the urlParameters

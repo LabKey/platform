@@ -846,6 +846,17 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     public void addFilter(String dataRegionName, FieldKey field, CompareType ct, Object value)
     {
+        Pair<String, String> filter = getURLFilter(dataRegionName, field, ct, value);
+        addParameter(filter.first, filter.second);
+    }
+
+    public static Pair<String, String> getURLFilter(String dataRegionName, FieldKey field, CompareType ct, Object value)
+    {
+        return new Pair<String, String>(getURLFilterKey(dataRegionName, field, ct), getURLFilterValue(value));
+    }
+
+    public static String getURLFilterKey(String dataRegionName, FieldKey field, CompareType ct)
+    {
         StringBuilder key = new StringBuilder();
         if (!StringUtils.isEmpty(dataRegionName))
         {
@@ -855,9 +866,13 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         key.append(field);
         key.append("~");
         key.append(ct.getPreferredUrlKey());
-        addParameter(key.toString(), value == null ? "" : value.toString());
+        return key.toString();
     }
 
+    public static String getURLFilterValue(Object value)
+    {
+        return value == null ? "" : value.toString();
+    }
 
     public static boolean isHttpURL(String url)
     {

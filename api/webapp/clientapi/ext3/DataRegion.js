@@ -757,6 +757,21 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             this._removeParams([".sort", ".offset"]);
     },
 
+    addFilter : function(filter) {
+        this._updateFilter(filter);
+    },
+
+    replaceFilter : function(filter) {
+        this._updateFilter(filter, [this.name + '.' + filter.getColumnName() + '~']);
+    },
+
+    // DO NOT CALL DIRECTLY. Use addFilter, replaceFilter
+    _updateFilter : function(filter, skipPrefixes) {
+        var params = LABKEY.DataRegion.getParamValPairsFromString(this.requestURL, skipPrefixes);
+        params.push([filter.getURLParameterName(this.name), filter.getURLParameterValue()]);
+        this.changeFilter(params, LABKEY.DataRegion.buildQueryString(params));
+    },
+
     // private
     changeFilter : function (newParamValPairs, newQueryString)
     {
@@ -2389,11 +2404,11 @@ LABKEY.DataRegion.getParamValPairsFromString = function(queryString, skipPrefixe
         queryString = queryString.substring(queryString.indexOf("?") + 1);
     }
 
-    var iNew = 0;
-    var newParamValPairs = new Array(0);
+    var newParamValPairs = [];
     if (queryString != null && queryString.length > 0)
     {
         var paramValPairs = queryString.split("&");
+        var iNew = 0;
         PARAM_LOOP: for (var i = 0; i < paramValPairs.length; i++)
         {
             var paramPair = paramValPairs[i].split("=", 2);
