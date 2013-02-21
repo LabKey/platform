@@ -16,6 +16,7 @@
 package org.labkey.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -24,6 +25,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
@@ -124,6 +126,19 @@ public class SingleCohortFilter extends BaseCohortFilter
         {
             filter.addCondition(fk, getCohortId());
         }
+    }
+
+    @NotNull
+    public Pair<FieldKey, String> getURLFilter(@NotNull Study study)
+    {
+        FieldKey cohortFK = _type.getFilterColumn(study.getContainer());
+
+        Pair<FieldKey, String> filter;
+        if (null != _label)
+            filter = new Pair<FieldKey, String>(new FieldKey(cohortFK.getParent(),"Label"), _label);
+        else
+            filter = new Pair<FieldKey, String>(cohortFK, String.valueOf(_cohortId));
+        return filter;
     }
 
     @Override

@@ -36,6 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -242,7 +243,7 @@ public class CohortManager
     }
 
 
-    public void addCohortNavTree(Container container, User user, ActionURL baseURL, CohortFilter currentCohortFilter, @Nullable String dataregion, NavTree tree)
+    public void addCohortNavTree(Container container, User user, ActionURL baseURL, CohortFilter currentCohortFilter, @Nullable String dataRegionName, NavTree tree)
     {
         CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, user);
         if (cohorts.length > 0)
@@ -260,8 +261,12 @@ public class CohortManager
                     for (CohortFilter.Type type : CohortFilter.Type.values())
                     {
                         CohortFilter filter = new SingleCohortFilter(type, cohort);
-                        ActionURL url = filter.addURLParameters(study, baseURL.clone(), dataregion);
-
+                        ActionURL url = filter.addURLParameters(study, baseURL.clone(), dataRegionName);
+//                        SingleCohortFilter filter = new SingleCohortFilter(type, cohort);
+//                        Pair<FieldKey, String> filterColValue = filter.getURLFilter(study);
+//                        NavTree typeItem = new NavTree(type.getTitle());
+//
+//                        typeItem.setScript(getSelectionScript(dataRegionName, filterColValue));
                         NavTree typeItem = new NavTree(type.getTitle(), url.toString());
                         typeItem.setId(cohort.getLabel() + ":" + typeItem.getText());
                         if (filter.equals(currentCohortFilter))
@@ -277,8 +282,13 @@ public class CohortManager
                 for (CohortImpl cohort : cohorts)
                 {
                     CohortFilter filter = new SingleCohortFilter(CohortFilter.Type.PTID_CURRENT, cohort);
-                    ActionURL url = filter.addURLParameters(study, baseURL.clone(), dataregion);
+                    ActionURL url = filter.addURLParameters(study, baseURL.clone(), dataRegionName);
                     NavTree item = new NavTree(cohort.getLabel(), url.toString());
+//                    SingleCohortFilter filter = new SingleCohortFilter(CohortFilter.Type.PTID_CURRENT, cohort);
+//                    Pair<FieldKey, String> filterColValue = filter.getURLFilter(study);
+//                    NavTree item = new NavTree(cohort.getLabel());
+//
+//                    item.setScript(getSelectionScript(dataRegionName, filterColValue));
                     item.setId(caption + ":" + item.getText());
                     if (filter.equals(currentCohortFilter))
                         item.setSelected(true);
@@ -288,6 +298,16 @@ public class CohortManager
         }
     }
 
+    private String getSelectionScript(String dataRegionName, Pair<FieldKey, String> filterColValue)
+    {
+        StringBuilder script = new StringBuilder();
+        script.append("LABKEY.DataRegions['").append(dataRegionName).append("'].replaceFilter(")
+              .append("LABKEY.Filter.create('")
+              .append(filterColValue.first).append("', '").append(filterColValue.second)
+              .append("', LABKEY.Filter.Types.EQUAL)")
+              .append(");");
+        return script.toString();
+    }
 
     public void clearParticipantCohorts(Study study) throws SQLException
     {

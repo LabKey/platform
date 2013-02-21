@@ -273,10 +273,10 @@ public class ParticipantGroupManager
                     NavTree item = new NavTree(cls.getLabel());
                     for (ParticipantGroup grp : groups)
                     {
-                        ActionURL url = baseURL.clone();
-                        url = grp.addURLFilter(url, container, dataRegionName);
+                        Pair<FieldKey, String> filterColValue = grp.getFilterColAndValue(container);
 
-                        NavTree child = new NavTree(grp.getLabel(), url);
+                        NavTree child = new NavTree(grp.getLabel());
+                        child.setScript(getSelectionScript(dataRegionName, filterColValue));
                         child.setSelected(selected.contains(grp));
 
                         item.addChild(child);
@@ -324,6 +324,17 @@ public class ParticipantGroupManager
         {
             throw new RuntimeException(e);
         }
+    }
+
+    private String getSelectionScript(String dataRegionName, Pair<FieldKey, String> filterColValue)
+    {
+        StringBuilder script = new StringBuilder();
+        script.append("LABKEY.DataRegions['").append(dataRegionName).append("'].replaceFilter(")
+              .append("LABKEY.Filter.create('")
+              .append(filterColValue.first).append("', '").append(filterColValue.second)
+              .append("', LABKEY.Filter.Types.EQUAL)")
+              .append(");");
+        return script.toString();
     }
 
     private String createNewParticipantGroupScript(ViewContext context, String dataRegionName, boolean fromSelection)
