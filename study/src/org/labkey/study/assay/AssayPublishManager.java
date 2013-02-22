@@ -280,7 +280,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 }
                 else if (protocol == null &&
                         datasets[i].getTypeURI() != null &&
-                        datasets[i].getTypeURI().equals(DatasetDomainKind.generateDomainURI(assayName,targetStudy.getContainer())))
+                        datasets[i].getTypeURI().equals(DatasetDomainKind.generateDomainURI(assayName, datasets[i].getEntityId(), targetStudy.getContainer())))
                 {
                     // No protocol, but we've got a type uri match. This is used when creating a study
                     // from a study design
@@ -617,7 +617,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             if (null == datasetId)
                 datasetId = Table.executeSingleton(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", new Object[] {study.getContainer().getId(), MIN_ASSAY_ID}, Integer.class);
-            DataSetDefinition newDataSet = new DataSetDefinition(study, datasetId.intValue(), name, name, null, null);
+            DataSetDefinition newDataSet = new DataSetDefinition(study, datasetId.intValue(), name, name, null, null, null);
             newDataSet.setShowByDefault(true);
             newDataSet.setType(type);
 

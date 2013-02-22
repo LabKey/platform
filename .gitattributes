@@ -3090,6 +3090,7 @@ study/src/org/labkey/study/model/CohortManager.java -text
 study/src/org/labkey/study/model/ContinuousDatasetDomainKind.java -text
 study/src/org/labkey/study/model/CustomParticipantView.java -text
 study/src/org/labkey/study/model/DataSetDefinition.java -text
+study/src/org/labkey/study/model/DataSetDefinitionEntry.java -text
 study/src/org/labkey/study/model/DatasetDomainKind.java -text
 study/src/org/labkey/study/model/DatasetImportHelper.java -text
 study/src/org/labkey/study/model/DatasetReorderer.java -text

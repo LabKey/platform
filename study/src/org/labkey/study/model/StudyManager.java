@@ -2780,14 +2780,23 @@ public class StudyManager
 
         List<String> importErrors = new LinkedList<String>();
         final Container c = study.getContainer();
+        final Map<String, DataSetDefinitionEntry> dataSetDefEntryMap = new HashMap<String, DataSetDefinitionEntry>();
 
         // Use a factory to ensure domain URI consistency between imported properties and the dataset.  See #7944.
         DomainURIFactory factory = new DomainURIFactory() {
             public String getDomainURI(String name)
             {
-                return StudyManager.getDomainURI(c, user, name);
+                assert dataSetDefEntryMap.containsKey(name);
+                DataSetDefinitionEntry defEntry = dataSetDefEntryMap.get(name);
+                return StudyManager.getDomainURI(c, user, name, defEntry.dataSetDefinition.getEntityId());
             }
         };
+
+        // We need to build the datasets (but not save) before we create the property descriptors so that
+        // we can use the unique DomainURI for each dataset as part of the PropertyURI
+        populateDataSetDefEntryMap(study, reader, user, errors, dataSetDefEntryMap);
+        if (errors.hasErrors())
+            return false;
 
         OntologyManager.ListImportPropertyDescriptors list = OntologyManager.createPropertyDescriptors(factory, reader.getTypeNameColumn(), mapsImport, importErrors, c, true);
 
@@ -2806,75 +2815,21 @@ public class StudyManager
         if (errors.hasErrors())
             return false;
 
-        Map<Integer, SchemaReader.DataSetImportInfo> datasetInfoMap = reader.getDatasetInfo();
         StudyManager manager = StudyManager.getInstance();
 
-        for (Map.Entry<Integer, SchemaReader.DataSetImportInfo> entry : datasetInfoMap.entrySet())
+        // now actually create the datasets
+        for (Map.Entry<String, DataSetDefinitionEntry> entry : dataSetDefEntryMap.entrySet())
         {
-            int id = entry.getKey().intValue();
-            SchemaReader.DataSetImportInfo info = entry.getValue();
-            String name = info.name;
-            String label = info.label;
-            if (label == null)
-            {
-                // Default to using the name as the label if none was explicitly specified
-                label = name;
-            }
+            DataSetDefinitionEntry d = entry.getValue();
+            DataSetDefinition def = d.dataSetDefinition;
 
-            // Check for name conflicts
-            DataSet existingDef = manager.getDataSetDefinition(study, label);
-
-            if (existingDef != null && existingDef.getDataSetId() != id)
-            {
-                errors.reject("importDatasetSchemas", "Dataset '" + existingDef.getName() + "' is already using the label '" + label + "'");
-                return false;
-            }
-
-            existingDef = manager.getDataSetDefinitionByName(study, name);
-
-            if (existingDef != null && existingDef.getDataSetId() != id)
-            {
-                errors.reject("importDatasetSchemas", "A different dataset already exists with the name " + name);
-                return false;
-            }
-
-            DataSetDefinition def = manager.getDataSetDefinition(study, id);
-
-            if (def == null)
-            {
-                def = new DataSetDefinition(study, id, name, label, null, factory.getDomainURI(name));
-                def.setDescription(info.description);
-                def.setVisitDatePropertyName(info.visitDatePropertyName);
-                def.setShowByDefault(!info.isHidden);
-                def.setKeyPropertyName(info.keyPropertyName);
-                def.setCategory(info.category);
-                def.setEntityId(GUID.makeGUID());
-                def.setKeyManagementType(info.keyManagementType);
-                def.setDemographicData(info.demographicData);
-                def.setType(info.type);
+            if (d.isNew)
                 manager.createDataSetDefinition(user, def);
-            }
             else
-            {
-                def = def.createMutable();
-                def.setLabel(label);
-                def.setName(name);
-                def.setDescription(info.description);
-                if (null == def.getTypeURI())
-                    def.setTypeURI(getDomainURI(c, user, def));
-                def.setVisitDatePropertyName(info.visitDatePropertyName);
-                def.setShowByDefault(!info.isHidden);
-                def.setKeyPropertyName(info.keyPropertyName);
-                def.setCategory(info.category);
-                def.setKeyManagementType(info.keyManagementType);
-                def.setDemographicData(info.demographicData);
                 manager.updateDataSetDefinition(user, def);
-            }
 
-            if (info.tags != null)
-            {
-                ReportPropsManager.get().importProperties(def.getEntityId(), study.getContainer(), user, info.tags);
-            }
+            if (d.tags != null)
+                ReportPropsManager.get().importProperties(def.getEntityId(), study.getContainer(), user, d.tags);
         }
 
         /** now that we actually have datasets, create/update the domains */
@@ -2936,15 +2891,85 @@ public class StudyManager
     public String getDomainURI(Container c, User u, DataSet def)
     {
         if (null == def)
-            return getDomainURI(c, u, (String)null);
+            return getDomainURI(c, u, (String)null, (String)null);
         else
-            return getDomainURI(c, u, def.getName());
+            return getDomainURI(c, u, def.getName(), def.getEntityId());
     }
 
-
-    private static String getDomainURI(Container c, User u, String name)
+    private boolean populateDataSetDefEntryMap(StudyImpl study, SchemaReader reader, User user, BindException errors, Map<String, DataSetDefinitionEntry> defEntryMap)
     {
-        return DatasetDomainKind.generateDomainURI(name, c);
+        StudyManager manager = StudyManager.getInstance();
+        Container c = study.getContainer();
+        Map<Integer, SchemaReader.DataSetImportInfo> datasetInfoMap = reader.getDatasetInfo();
+
+        for (Map.Entry<Integer, SchemaReader.DataSetImportInfo> entry : datasetInfoMap.entrySet())
+        {
+            int id = entry.getKey().intValue();
+            SchemaReader.DataSetImportInfo info = entry.getValue();
+            String name = info.name;
+            String label = info.label;
+            if (label == null)
+            {
+                // Default to using the name as the label if none was explicitly specified
+                label = name;
+            }
+
+            // Check for name conflicts
+            DataSet existingDef = manager.getDataSetDefinition(study, label);
+
+            if (existingDef != null && existingDef.getDataSetId() != id)
+            {
+                errors.reject("importDatasetSchemas", "Dataset '" + existingDef.getName() + "' is already using the label '" + label + "'");
+                return false;
+            }
+
+            existingDef = manager.getDataSetDefinitionByName(study, name);
+
+            if (existingDef != null && existingDef.getDataSetId() != id)
+            {
+                errors.reject("importDatasetSchemas", "A different dataset already exists with the name " + name);
+                return false;
+            }
+
+            DataSetDefinition def = manager.getDataSetDefinition(study, id);
+
+            if (def == null)
+            {
+                def = new DataSetDefinition(study, id, name, label, null, null, null);
+                def.setDescription(info.description);
+                def.setVisitDatePropertyName(info.visitDatePropertyName);
+                def.setShowByDefault(!info.isHidden);
+                def.setKeyPropertyName(info.keyPropertyName);
+                def.setCategory(info.category);
+                def.setKeyManagementType(info.keyManagementType);
+                def.setDemographicData(info.demographicData);
+                def.setType(info.type);
+                defEntryMap.put(name, new DataSetDefinitionEntry(def, true, info.tags));
+            }
+            else
+            {
+                def = def.createMutable();
+                def.setLabel(label);
+                def.setName(name);
+                def.setDescription(info.description);
+                if (null == def.getTypeURI())
+                    def.setTypeURI(getDomainURI(c, user, def));
+                def.setVisitDatePropertyName(info.visitDatePropertyName);
+                def.setShowByDefault(!info.isHidden);
+                def.setKeyPropertyName(info.keyPropertyName);
+                def.setCategory(info.category);
+                def.setKeyManagementType(info.keyManagementType);
+                def.setDemographicData(info.demographicData);
+                defEntryMap.put(name, new DataSetDefinitionEntry(def, false, info.tags));
+            }
+        }
+
+        return true;
+    }
+
+    private static String getDomainURI(Container c, User u, String name, String id)
+    {
+        return DatasetDomainKind.generateDomainURI(name, id, c);
     }
 
 

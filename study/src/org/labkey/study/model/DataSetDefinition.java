@@ -84,6 +84,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.UnauthorizedException;
@@ -229,7 +230,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public DataSetDefinition(StudyImpl study, int dataSetId, String name, String label, String category, @Nullable String typeURI)
+    public DataSetDefinition(StudyImpl study, int dataSetId, String name, String label, String category,  String entityId, @Nullable String typeURI)
     {
         _study = study;
         setContainer(_study.getContainer());
@@ -237,7 +238,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _name = name;
         _label = label;
         _category = category;
-        _typeURI = null != typeURI ? typeURI : DatasetDomainKind.generateDomainURI(name,getContainer());
+        _entityId = null != entityId ? entityId : GUID.makeGUID();
+        _typeURI = null != typeURI ? typeURI : DatasetDomainKind.generateDomainURI(name, _entityId, getContainer());
         _showByDefault = true;
     }
 
@@ -537,7 +539,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (null == getTypeURI())
         {
             DataSetDefinition d = this.createMutable();
-            d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(),getContainer()));
+            d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(), getEntityId(), getContainer()));
             d.save(null);
         }
         ensureDomain();

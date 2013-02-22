@@ -121,19 +121,24 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     }
 
 
+
+    // Issue 16526:  nobody should call this overload of generateDomainURI for DatasetDomainKind.  Instead
+    // use the overload below with a unique id (the dataset's entityId).  Assert is here to track down
+    // any callers.
     // Lsid.toString() encodes incorrectly TODO: fix
     @Override
     public String generateDomainURI(String schemaName, String name, Container container, User user)
     {
-        // UNDONE can't use id, because it won't match OntologyManager.importTypes()!
-        //String objectid = name == null ? "" : name + "-" + id;
-        String objectid = name == null ? "" : name;
-        return (new Lsid(LSID_PREFIX, "Folder-" + container.getRowId(), objectid)).toString();
+        assert false;
+        return null;
     }
 
-    public static String generateDomainURI(String name, Container container)
+    // Issue 16526: This specific generateDomainURI takes an id to uniquify the dataset.
+    public static String generateDomainURI(String name, String id, Container container)
     {
         String objectid = name == null ? "" : name;
+        if (null != objectid && null != id)
+            objectid += "-" + id;
         return (new Lsid(LSID_PREFIX, "Folder-" + container.getRowId(), objectid)).toString();
     }
 

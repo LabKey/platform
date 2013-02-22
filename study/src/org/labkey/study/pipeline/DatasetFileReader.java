@@ -139,7 +139,7 @@ public class DatasetFileReader
         }
 
         // add fake DataSetDefinition for virtual Participant dataset
-        DataSetDefinition dsParticipant = new DataSetDefinition(_study, -1, "Participant", "Participant", null, "StudyParticipant");
+        DataSetDefinition dsParticipant = new DataSetDefinition(_study, -1, "Participant", "Participant", null, null, "StudyParticipant");
         dsMap.put("participant", dsParticipant);
 
         IdentityHashMap<DataSetDefinition, DatasetImportRunnable> jobMap = new IdentityHashMap<DataSetDefinition, DatasetImportRunnable>();
