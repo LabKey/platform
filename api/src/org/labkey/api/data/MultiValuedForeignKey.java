@@ -145,6 +145,13 @@ public class MultiValuedForeignKey implements ForeignKey
         return _fk.getLookupColumnName();
     }
 
+    @Override
+    public String getLookupDisplayName()
+    {
+        return _fk.getLookupDisplayName();
+    }
+
+    @Override
     public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
     {
         return new MultiValuedForeignKey(_fk.remapFieldKeys(null, mapping), _junctionLookup);

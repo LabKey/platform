@@ -49,7 +49,6 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.NotFoundException;
 
 import java.sql.Connection;
@@ -283,15 +282,12 @@ public class SimpleUserSchema extends UserSchema
                         lookupSchemaName = _userSchema.getName();
 
                     boolean joinWithContainer = false;
-                    String displayColumn = null;
                     if (fk instanceof ColumnInfo.SchemaForeignKey)
                     {
                         joinWithContainer = ((ColumnInfo.SchemaForeignKey)fk).isJoinWithContainer();
-                        displayColumn = ((ColumnInfo.SchemaForeignKey)fk).getDisplayColumnName();
                     }
 
-                    //ForeignKey wrapFk = new SimpleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, joinWithContainer, displayColumn);
-                    ForeignKey wrapFk = new QueryForeignKey(_userSchema, fk.getLookupTableName(), fk.getLookupColumnName(), displayColumn);
+                    ForeignKey wrapFk = new QueryForeignKey(_userSchema, fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName());
                     if (fk instanceof MultiValuedForeignKey)
                     {
                         wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
@@ -505,39 +501,4 @@ public class SimpleUserSchema extends UserSchema
         }
     }
 
-    /**
-     * The SimpleForeignKey returns a lookup TableInfo from the UserSchema
-     * rather than the underlying DbSchema's SchemaTableInfo.
-     */
-    public static class SimpleForeignKey extends ColumnInfo.SchemaForeignKey
-    {
-        UserSchema _userSchema;
-
-        public SimpleForeignKey(UserSchema userSchema, ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer, String displayColumnName)
-        {
-            super(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer, displayColumnName);
-            _userSchema = userSchema;
-        }
-
-        @Override
-        public TableInfo getLookupTableInfo()
-        {
-            UserSchema schema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), getLookupSchemaName());
-            // CONSIDER: should we throw an exception instead?
-            if (schema == null)
-                return null;
-
-            return schema.getTable(getLookupTableName(), true);
-        }
-
-        @Override
-        public StringExpression getURL(ColumnInfo parent)
-        {
-            TableInfo table = getLookupTableInfo();
-            if (table == null)
-                return null;
-
-            return LookupForeignKey.getDetailsURL(parent, table, getLookupColumnName());
-        }
-    }
 }

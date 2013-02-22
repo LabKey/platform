@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
@@ -60,11 +59,9 @@ public class ContainerForeignKey extends LookupForeignKey
 
     public ContainerForeignKey(UserSchema schema, ActionURL url)
     {
-        super("EntityId", "DisplayName");
+        super(url, null, "core", "Containers", "EntityId", "DisplayName");
         _schema = schema;
         _url = url;
-        setLookupSchemaName("Core");
-        setTableName("Containers");
     }
 
     public TableInfo getLookupTableInfo()

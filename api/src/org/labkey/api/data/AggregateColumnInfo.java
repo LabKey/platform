@@ -138,6 +138,12 @@ public class AggregateColumnInfo extends ColumnInfo
                 }
 
                 @Override
+                public String getLookupDisplayName()
+                {
+                    return fk.getLookupDisplayName();
+                }
+
+                @Override
                 public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
                 {
                     return fk.remapFieldKeys(parent, mapping);

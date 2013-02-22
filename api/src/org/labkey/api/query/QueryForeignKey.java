@@ -70,6 +70,7 @@ public class QueryForeignKey implements ForeignKey
         _displayField = displayField;
     }
 
+    @Override
     public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
     {
         TableInfo lookupTable;
@@ -114,11 +115,13 @@ public class QueryForeignKey implements ForeignKey
         return LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupTable.getColumn(displayField), false);
     }
 
+    @Override
     public Container getLookupContainer()
     {
         return null;
     }
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         if (_table == null && getSchema() != null)
@@ -138,11 +141,13 @@ public class QueryForeignKey implements ForeignKey
 
     }
 
+    @Override
     public String getLookupSchemaName()
     {
         return _schemaName;
     }
 
+    @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         TableInfo table = getLookupTableInfo();
@@ -151,16 +156,25 @@ public class QueryForeignKey implements ForeignKey
         return LookupForeignKey.getDetailsURL(parent, table, _lookupKey);
     }
 
+    @Override
     public String getLookupTableName()
     {
         return _tableName;
     }
 
+    @Override
     public String getLookupColumnName()
     {
         return _lookupKey;
     }
 
+    @Override
+    public String getLookupDisplayName()
+    {
+        return _displayField;
+    }
+
+    @Override
     public NamedObjectList getSelectList(RenderContext ctx)
     {
         NamedObjectList ret = new NamedObjectList();
@@ -171,11 +185,13 @@ public class QueryForeignKey implements ForeignKey
         return lookupTable.getSelectList(getLookupColumnName());
     }
 
+    @Override
     public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
     {
         return this;
     }
 
+    @Override
     public Set<FieldKey> getSuggestedColumns()
     {
         return null;

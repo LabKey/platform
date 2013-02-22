@@ -82,6 +82,12 @@ public interface ForeignKey
     String getLookupColumnName();
 
     /**
+     * Just for introspection.
+     * @return The name of the display column in the foreign user schema table.
+     */
+    String getLookupDisplayName();
+
+    /**
      * Fixup any references fo FieldKeys that may have been reparented or renamed by Query and
      * generate a new ForeignKey.  If fixup is not needed, return null.
      *

@@ -28,28 +28,12 @@ import org.labkey.api.security.User;
  * Foreign key class for use with Query and the 'core'
  * User Schema. Use this when setting FKs on AbstractTables
  */
-public class UserIdQueryForeignKey extends LookupForeignKey
+public class UserIdQueryForeignKey extends QueryForeignKey
 {
-    private User _user;
-    private Container _container;
-    private UserSchema _coreSchema;
-
     public UserIdQueryForeignKey(User user, Container container)
     {
-        super("UserId", "DisplayName");
-        _user = user;
-        _container = container;
+        super("core", container, user, "Users", "UserId", "DisplayName");
     }
-
-    public TableInfo getLookupTableInfo()
-    {
-        if (_coreSchema == null)
-        {
-            _coreSchema = QueryService.get().getUserSchema(_user, _container, "core");
-        }
-        return _coreSchema.getTable("users");
-    }
-
 
     /* set foreign key and display column */
     static public ColumnInfo initColumn(User user, Container container, ColumnInfo column, boolean guestAsBlank)

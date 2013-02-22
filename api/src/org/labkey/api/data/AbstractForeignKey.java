@@ -35,6 +35,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     protected String _lookupSchemaName;
     protected String _tableName;
     protected String _columnName;
+    protected String _displayColumnName;
 
     // Set of additional FieldKeys that query should select to make the join successful.
     private Set<FieldKey> _suggestedFields;
@@ -48,36 +49,35 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     
     protected AbstractForeignKey(String tableName, String columnName)
     {
-        this(tableName, columnName, null);
+        this(null, tableName, columnName);
     }
 
-    protected AbstractForeignKey(String tableName, @Nullable String columnName, @Nullable String schemaName)
+    protected AbstractForeignKey(@Nullable String schemaName, String tableName, @Nullable String columnName)
     {
+        this(schemaName, tableName, columnName, null);
+    }
+
+    protected AbstractForeignKey(@Nullable String schemaName, String tableName, @Nullable String columnName, @Nullable String displayColumnName)
+    {
+        _lookupSchemaName = schemaName;
         _tableName = tableName;
         _columnName = columnName;
-        _lookupSchemaName = schemaName;
+        _displayColumnName = displayColumnName;
     }
 
+    @Override
     public String getLookupSchemaName()
     {
         return _lookupSchemaName;
     }
 
-    public void setLookupSchemaName(String lookupSchemaName)
-    {
-        _lookupSchemaName = lookupSchemaName;
-    }
-
+    @Override
     public Container getLookupContainer()
     {
         return null;
     }
 
-    protected void setTableName(String name)
-    {
-        this._tableName = name;
-    }
-
+    @Override
     public String getLookupTableName()
     {
         if (_tableName == null)
@@ -87,15 +87,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         return _tableName;
     }
 
-    protected void setColumnName(String columnName)
-    {
-//        if (_columnName == null)
-//        {
-//            initTableAndColumnNames();
-//        }
-        _columnName = columnName;
-    }
-
+    @Override
     public String getLookupColumnName()
     {
         if (_columnName == null)
@@ -103,6 +95,12 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             initTableAndColumnNames();
         }
         return _columnName;
+    }
+
+    @Override
+    public String getLookupDisplayName()
+    {
+        return _displayColumnName;
     }
 
     private boolean _initNames = false;
@@ -115,6 +113,11 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             TableInfo table = getLookupTableInfo();
             if (table != null)
             {
+                if (_lookupSchemaName == null)
+                {
+                    _lookupSchemaName = table.getPublicSchemaName();
+                }
+
                 if (_tableName == null)
                 {
                     _tableName = table.getPublicName();
@@ -132,6 +135,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         }
     }
 
+    @Override
     public NamedObjectList getSelectList(RenderContext ctx)
     {
         NamedObjectList ret = new NamedObjectList();

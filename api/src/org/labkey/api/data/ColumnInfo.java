@@ -1164,7 +1164,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return result;
         }
 
-        public String getDisplayColumnName()
+        public String getLookupDisplayName()
         {
             return _displayColumnName;
         }

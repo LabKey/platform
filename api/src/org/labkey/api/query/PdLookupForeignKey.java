@@ -30,16 +30,11 @@ public class PdLookupForeignKey extends AbstractForeignKey
     Container _currentContainer;
     private Container _targetContainer;
 
-    public PdLookupForeignKey(User user, PropertyDescriptor pd, @NotNull Container container)
+    public PdLookupForeignKey(@NotNull User user, @NotNull PropertyDescriptor pd, @NotNull Container container)
     {
-        if (user == null)
-            throw new IllegalArgumentException("user cannot be null");
-        if (pd == null)
-            throw new IllegalArgumentException("pd cannot be null");
+        super(pd.getLookupSchema(), pd.getLookupQuery(), null);
         _pd = pd;
         _user = user;
-        setLookupSchemaName(pd.getLookupSchema());
-        setTableName(pd.getLookupQuery());
         assert container != null : "Container cannot be null";
         _currentContainer = container;
         _targetContainer = _pd.getLookupContainer() == null ? null : ContainerManager.getForId(_pd.getLookupContainer());
