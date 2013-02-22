@@ -192,14 +192,13 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         for (; f < filters.length; f++) {
             if (filters[f].get('type') != 'participant') {
 
-                // TODO: This should be populated by Participant Filter
                 // Build what a filter might look like
                 if (filters[f].data.category) {
-                    filterPrefix = LABKEY.Study.subject.columnName + '/' + filters[f].data.category.label;
+                    filterPrefix = 'ParticipantId/' + filters[f].data.category.label;
                 }
                 else {
                     // Assume it is a cohort
-                    filterPrefix = LABKEY.Study.subject.columnName + '/Cohort/Label';
+                    filterPrefix = 'ParticipantId/Cohort/Label';
                 }
 
                 if (!filterMap[filterPrefix]) {

@@ -55,8 +55,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -2020,22 +2018,7 @@ public class PageFlowUtil
         HttpServletRequest request = context.getRequest();
 
         if(container != null)
-        {
             json.put("moduleContext", getModuleClientContext(container, user, resources));
-
-            // TODO: Migrate this to a Context Service
-            Study study = null;
-            try
-            {
-                study = StudyService.get().getStudy(container);
-            }
-            catch (Throwable e)
-            {
-                _log.info("Unable to load Study context: " + e.getMessage());
-            }
-            if (null != study)
-                json.put("Study", getStudyClientContext(study));
-        }
 
         JSONObject userProps = new JSONObject();
 
@@ -2485,17 +2468,6 @@ public class PageFlowUtil
                 ret.put(m.getName().toLowerCase(), m.getPageContextJson(u, c));
             }
         }
-        return ret;
-    }
-
-    public static JSONObject getStudyClientContext(@NotNull Study study)
-    {
-        JSONObject ret = new JSONObject();
-        JSONObject subject = new JSONObject();
-        subject.put("columnName", study.getSubjectColumnName());
-        subject.put("nounSingular", study.getSubjectNounSingular());
-        subject.put("nounPlural", study.getSubjectNounPlural());
-        ret.put("subject", subject);
         return ret;
     }
 
