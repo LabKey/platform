@@ -27,7 +27,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             bodyStyle : 'padding: 5px;',
             includeParticipantIds : false,
             includeUnassigned : true,
-            subject : LABKEY.Study.subject
+            subjectNoun : {singular : 'Participant', plural : 'Participants', columnName: 'Participant'}
         });
 
         // models Participant Groups and Cohorts mixed
@@ -335,8 +335,8 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         if(!this.participantSectionCfg){
             var store = Ext4.create('LABKEY.ext4.Store', {
                 schemaName: 'study',
-                sql: 'select "' + this.subject.columnName + '" as id, "' + this.subject.columnName + '" as label, \'participant\' as type FROM study."' + this.subject.nounSingular + '"',
-                queryName: this.subject.nounSingular,
+                sql: 'select "' + this.subjectNoun.columnName + '" as id, "' + this.subjectNoun.columnName + '" as label, \'participant\' as type FROM study."' + this.subjectNoun.singular + '"',
+                queryName: this.subjectNoun.singular,
                 autoLoad: true
             });
 
@@ -348,7 +348,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 selection   : selections,
                 sectionName : 'participant',
                 maxInitSelection : this.maxInitSelection,
-                description : this.subject.nounPlural
+                description : this.subjectNoun.plural
             }]
         }
 
@@ -362,9 +362,9 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             sections : this.participantSectionCfg,
             schemaName: 'study',
             //TODO: this should be able to become a more generalized boundColumn-based filter panel
-            queryName: this.subject.nounSingular,
+            queryName: this.subjectNoun.singular,
             boundColumn: {
-                displayField: this.subject.columnName,
+                displayField: this.subjectNoun.columnName,
                 displayFieldSqlType: 'string',
                 facetingBehaviorType: 'AUTOMATIC',
                 lookup: {
