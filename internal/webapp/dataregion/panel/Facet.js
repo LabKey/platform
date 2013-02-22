@@ -15,16 +15,13 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             return;
         }
 
+        this.dataRegion = config.dataRegion;
         var renderTarget = 'dataregion_facet_' + config.dataRegion.name;
-        var targetHTML = '<div id="' + renderTarget + '" style="float: left;"></div>';
-
         var topEl = this.getContainerEl(config.dataRegion);
-        topEl.insertHtml('beforeBegin', targetHTML);
-        topEl.setWidth(topEl.getBox().width + this.width + 5);
-//        var reqWidth = this.getRequiredWidth(config.dataRegion);
-//        if (topEl.getBox().width < reqWidth) {
-//            topEl.setWidth(reqWidth);
-//        }
+        if (topEl) {
+            var targetHTML = '<div id="' + renderTarget + '" style="float: left;"></div>';
+            topEl.insertHtml('beforeBegin', targetHTML);
+        }
 
         Ext4.applyIf(config, {
             renderTo : renderTarget,
@@ -75,29 +72,35 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         this.on('collapse',     function() {
             this.hide(); this._afterHide();
         }, this);
+
+        // Attach resize event listeners
         this.on('resize',       this.onResize, this);
+        Ext4.EventManager.onWindowResize(this._beforeShow, this);
     },
 
     getContainerEl : function(dr) {
-        return Ext4.get(dr.name).up('div');
+        if (dr && dr.name) {
+            return Ext4.get(dr.name).up('div');
+        }
     },
 
     _beforeShow : function() {
         var el = this.getContainerEl(this.dataRegion);
-        el.setWidth(el.getBox().width + this.width + 5);
-//        var reqWidth = this.getRequiredWidth(this.dataRegion);
-//        if (el.getBox().width < reqWidth) {
-//            el.setWidth(reqWidth);
-//        }
+        if (el) {
+            var reqWidth = this.getRequiredWidth(this.dataRegion);
+            if (el.getBox().width < reqWidth) {
+                el.setWidth(reqWidth);
+            }
+        }
     },
 
     _afterHide : function() {
         var el = this.getContainerEl(this.dataRegion);
-        el.setWidth(null);
+        if (el) { el.setWidth(null); }
     },
 
     getRequiredWidth : function(dr) {
-        return 265 + Ext4.get('dataregion_' + dr.name).getBox().width;
+        return this.width + 50 + Ext4.get('dataregion_' + dr.name).getBox().width;
     },
 
     getWrappedDataRegion : function() {
@@ -191,6 +194,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 wrap.setHeight(null);
             }
         }
+        this._beforeShow();
     },
 
     // DO NOT CALL DIRECTLY. Use filterTask.delay
