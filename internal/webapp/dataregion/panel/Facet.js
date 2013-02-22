@@ -105,15 +105,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             // Wrap the corresponding Data Region with a QWP
             this.qwp = new LABKEY.QueryWebPart({
                 dataRegion : this.dataRegion,
-                success : function(dr) {
-                    // Give access to to this filter panel to the Data Region
-                    if (dr) {
-                        this.dataRegion = LABKEY.DataRegions[dr.name];
-                        LABKEY.DataRegions[dr.name].setFacet(this);
-                        var box = this.getBox();
-                        this.onResize(this, box.width, box.height);
-                    }
-                },
+                success : this.onQueryWebPartSuccess,
                 scope : this
             });
 
@@ -123,6 +115,26 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         }
 
         return this.qwp;
+    },
+
+    onQueryWebPartSuccess : function(dr) {
+        // Give access to to this filter panel to the Data Region
+        if (dr) {
+            this.dataRegion = LABKEY.DataRegions[dr.name];
+            LABKEY.DataRegions[dr.name].setFacet(this);
+            var box = this.getBox();
+            this.onResize(this, box.width, box.height);
+
+            // Filters might have been updated outside of facet
+            if (!this.filterChange && this.filterPanel) {
+                var fp = this.filterPanel.getFilterPanel();
+                if (fp) {
+                    fp.initSelection();
+                }
+            }
+            else { this.filterChange = false; }
+
+        }
     },
 
     getFilterCfg : function() {
@@ -228,6 +240,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         // Have a QWP, Ajax as a normal filter
         if (dr) {
             var valueArray = this.constructFilter(filterMap, dr, qwp.userFilters);
+            this.filterChange = true;
             dr.changeFilter(valueArray, LABKEY.DataRegion.buildQueryString(valueArray));
         }
     },
@@ -238,13 +251,13 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             var userFilters = LABKEY.DataRegions[this.regionName].getUserFilterArray();
             if (userFilters && userFilters.length > 0) {
 
-                var uf, selection = [];
-                for (var u=0; u < userFilters.length; u++) {
+                var uf, selection = [], rec, u, s;
+                for (u=0; u < userFilters.length; u++) {
 
                     uf = userFilters[u];
 
-                    for (var s=0; s < store.getRange().length; s++) {
-                        var rec = store.getAt(s);
+                    for (s=0; s < store.getRange().length; s++) {
+                        rec = store.getAt(s);
 
                         if (rec.data.label.toLowerCase() == uf.getValue().toLowerCase()) {
 
