@@ -1075,6 +1075,12 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
+        public String getLookupDisplayName()
+        {
+            return null;
+        }
+
+        @Override
         public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
         {
             return this;

@@ -290,7 +290,7 @@ public class ParticipantTable extends FilteredTable<StudyQuerySchema>
 
         public PivotedAliasForeignKey(TableInfo datasetTable, ColumnInfo sourceColumn, ColumnInfo aliasColumn)
         {
-            super("PivotedParticipantAliases", null, StudyQuerySchema.SCHEMA_NAME);
+            super(StudyQuerySchema.SCHEMA_NAME, "PivotedParticipantAliases", null);
             _datasetTable = datasetTable;
             _sourceColumn = sourceColumn;
             _aliasColumn = aliasColumn;
