@@ -78,7 +78,9 @@ public class MultiValuedForeignKey implements ForeignKey
             // We need to strip off the junction table's contribution to the FieldKey in the URL since we don't
             // expose the junction table itself as part of the Query tree of tables and columns
             StringExpressionFactory.FieldKeyStringExpression url = (StringExpressionFactory.FieldKeyStringExpression)lookupColumn.getURL();
-            lookupColumn.setURL(url.dropParent(junctionKey.getName()));
+            if (url != AbstractTableInfo.LINK_DISABLER)
+                url = url.dropParent(junctionKey.getName());
+            lookupColumn.setURL(url);
         }
 
         return createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);

@@ -144,9 +144,10 @@ public class SimpleUserSchema extends UserSchema
             // Populate visible lazily if we haven't already
             for (String tableName : _available)
             {
-                SchemaTableInfo table = _dbSchema.getTable(tableName);
+                TableInfo table = getTable(tableName);
 
-                if (!table.isHidden())
+                // CONSIDER: Add hidden bit to TableInfo
+                if (!(table instanceof SchemaTableInfo) || !((SchemaTableInfo)table).isHidden())
                     _visible.add(tableName);
             }
         }
@@ -289,7 +290,8 @@ public class SimpleUserSchema extends UserSchema
                         displayColumn = ((ColumnInfo.SchemaForeignKey)fk).getDisplayColumnName();
                     }
 
-                    ForeignKey wrapFk = new SimpleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, joinWithContainer, displayColumn);
+                    //ForeignKey wrapFk = new SimpleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, joinWithContainer, displayColumn);
+                    ForeignKey wrapFk = new QueryForeignKey(_userSchema, fk.getLookupTableName(), fk.getLookupColumnName(), displayColumn);
                     if (fk instanceof MultiValuedForeignKey)
                     {
                         wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
