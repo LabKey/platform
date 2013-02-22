@@ -138,7 +138,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
         String objectid = name == null ? "" : name;
         if (null != objectid && null != id)
-            objectid += "-" + id;
+        {
+            // normalize the object id
+            objectid += "-" + id.toLowerCase();
+        }
         return (new Lsid(LSID_PREFIX, "Folder-" + container.getRowId(), objectid)).toString();
     }
 
