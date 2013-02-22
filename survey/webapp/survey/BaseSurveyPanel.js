@@ -220,7 +220,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     },
 
     configureSurveyLayout : function(surveyConfig) {
-        this.currentStep = 0;
+        this.currentStep = this.getInitSection();
 
         // in card layout, we add a side bar with the section titles and next/previous buttons
         var bbar = [];
@@ -285,12 +285,25 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             minHeight: this.surveyLayout == 'card' ? 500 : undefined,
             height: this.fixedHeight ? this.fixedHeight : undefined,
             bodyStyle : 'padding: 10px;',
-            activeItem: 0,
+            activeItem: this.currentStep,
             flex: 1,
             items: this.sections,
             bbar: bbar.length > 0 ? bbar : undefined
         });
         this.add(this.centerPanel);
+    },
+
+    getInitSection : function() {
+        var goToSection = LABKEY.ActionURL.getParameter("sectionTitle");
+        if (goToSection)
+        {
+            for (var i = 0; i < this.sections.length; i++)
+            {
+                if (this.sections[i].title == goToSection)
+                    return i;
+            }
+        }
+        return 0;
     },
 
     previousEnabledStepIndex : function() {
