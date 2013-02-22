@@ -129,6 +129,11 @@ public class LinkedSchema extends ExternalSchema
         _sourceSchema = sourceSchema;
     }
 
+    public UserSchema getSourceSchema()
+    {
+        return _sourceSchema;
+    }
+
     @Override
     public Map<String, QueryDefinition> getQueryDefs()
     {

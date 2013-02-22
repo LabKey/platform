@@ -300,7 +300,7 @@
         ArrayList<String> tables = new ArrayList<String>();
         if (initialTemplate == null)
         {
-            if (def.getTables() != null || def.getTables().length() > 0)
+            if (def.getTables() != null && def.getTables().length() > 0)
                 tables.addAll(Arrays.asList(def.getTables().split(",")));
         }
         else

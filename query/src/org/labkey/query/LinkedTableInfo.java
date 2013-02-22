@@ -17,11 +17,15 @@ package org.labkey.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -30,9 +34,12 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
@@ -48,9 +55,15 @@ import java.util.Collections;
 */
 public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
 {
-    public LinkedTableInfo(UserSchema schema, TableInfo table)
+    public LinkedTableInfo(@NotNull LinkedSchema schema, @NotNull TableInfo table)
     {
         super(schema, table);
+    }
+
+    @Override @NotNull
+    public LinkedSchema getUserSchema()
+    {
+        return (LinkedSchema)super.getUserSchema();
     }
 
     @Override
@@ -81,8 +94,34 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super.fixupWrappedColumn(wrap, col);
 
-        // Remove FK and URL. LinkedTableInfo doesn't include FKs or URLs.
-        wrap.setFk(null);
+        // Fixup the column's ForeignKey if it is a user id or container foreign key
+        // or the FK points to the current schema and one of the visible tables.
+        ForeignKey fk = wrap.getFk();
+        ForeignKey fixedFk = null;
+        if (fk instanceof UserIdForeignKey || fk instanceof UserIdQueryForeignKey || fk instanceof ContainerForeignKey)
+        {
+            fixedFk = fk;
+        }
+        else if (fk != null)
+        {
+            UserSchema schema = getUserSchema();
+
+            if ((fk.getLookupSchemaName() != null && schema.getName().equals(fk.getLookupSchemaName())) &&
+                    (fk.getLookupTableName() != null && schema.getTableNames().contains(fk.getLookupTableName())) &&
+                    (fk.getLookupContainer() == null || schema.getContainer().equals(fk.getLookupContainer())))
+            {
+                //fixedFk = new QueryForeignKey(schema, fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName());
+                fixedFk = new QueryForeignKey(schema, fk.getLookupTableName(), fk.getLookupColumnName(), null);
+            }
+
+            if (fk instanceof MultiValuedForeignKey)
+            {
+                fixedFk = new MultiValuedForeignKey(fixedFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
+            }
+        }
+        wrap.setFk(fixedFk);
+
+        // Remove URL. LinkedTableInfo doesn't include URLs.
         wrap.setURL(LINK_DISABLER);
     }
 
