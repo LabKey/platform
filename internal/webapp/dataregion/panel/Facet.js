@@ -105,12 +105,20 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     getWrappedDataRegion : function() {
         if (!this.qwp) {
-            // Wrap the corresponding Data Region with a QWP
-            this.qwp = new LABKEY.QueryWebPart({
-                dataRegion : this.dataRegion,
-                success : this.onQueryWebPartSuccess,
-                scope : this
-            });
+
+            if (this.dataRegion.getQWP()) {
+                this.qwp = this.dataRegion.getQWP();
+                this.qwp.updateRenderElement(this.dataRegion);
+                this.qwp.on('success', this.onQueryWebPartSuccess, this);
+            }
+            else {
+                // Wrap the corresponding Data Region with a QWP
+                this.qwp = new LABKEY.QueryWebPart({
+                    dataRegion : this.dataRegion,
+                    success : this.onQueryWebPartSuccess,
+                    scope : this
+                });
+            }
 
             this.qwp.on('beforeclearallfilters', function(dr) {
                 this.filterPanel.getFilterPanel().selectAll(true);
@@ -165,13 +173,6 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         };
     },
 
-    onDataRegionResize : function() {
-        var newHeight = Ext4.get('dataregion_' + this.dataRegion.name).getBox().height;
-        this.animate({
-            to : { height: newHeight }
-        });
-    },
-
     onResize : function(panel, w, h, oldW, oldH) {
         this.resizeTask.delay(100, null, null, arguments);
     },
@@ -205,16 +206,18 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             filterMap = {},
             filterPrefix, f=0;
 
+        var studyCtx = LABKEY.getModuleContext('study');
+
         for (; f < filters.length; f++) {
             if (filters[f].get('type') != 'participant') {
 
                 // Build what a filter might look like
                 if (filters[f].data.category) {
-                    filterPrefix = 'ParticipantId/' + filters[f].data.category.label;
+                    filterPrefix = studyCtx.subject.columnName + '/' + filters[f].data.category.label;
                 }
                 else {
                     // Assume it is a cohort
-                    filterPrefix = 'ParticipantId/Cohort/Label';
+                    filterPrefix = studyCtx.subject.columnName + '/Cohort/Label';
                 }
 
                 if (!filterMap[filterPrefix]) {

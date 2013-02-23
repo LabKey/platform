@@ -367,12 +367,14 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
 
         this._attachListeners(dr);
-
-        // Get Render Element
-        var renderEl = Ext.get(dr.name).parent('div'); // Ext will assign an ID if one is not found
-        this.renderTo = renderEl.id;
+        this.updateRenderElement(dr);
 
         this.initializeParameters();
+    },
+
+    updateRenderElement : function(dr) {
+        var renderEl = Ext.get(dr.name).parent('div'); // Ext will assign an ID if one is not found
+        this.renderTo = renderEl.id;
     },
 
     initializeParameters : function() {
@@ -573,16 +575,17 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                     //get the data region and subscribe to events
                     Ext.onReady(function(){
                         var dr = LABKEY.DataRegions[this.dataRegionName];
-
                         if (dr)
                         {
                             this._attachListeners(dr);
+                            LABKEY.DataRegions[this.dataRegionName].setQWP(this);
 
                             if (customizeViewTab)
                                 dr.showCustomizeView(customizeViewTab, false, false);
 
                             if (this._success) //11425 : Make callback consistent with documentation
                                 Ext.onReady(function(){this._success.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()
+                            this.fireEvent('success', dr, response);
                         }
                         else
                         {

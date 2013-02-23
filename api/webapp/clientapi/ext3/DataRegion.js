@@ -1598,8 +1598,14 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 LABKEY.Utils.disableButton(buttonElement);
             }
         }
+    },
 
-//        Ext.each(this._requiresSelectionButtons, fn);
+    setQWP : function(qwp) {
+        this.qwp = qwp;
+    },
+
+    getQWP : function() {
+        return this.qwp;
     },
 
     // private

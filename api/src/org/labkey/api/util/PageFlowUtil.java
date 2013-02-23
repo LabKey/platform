@@ -2463,6 +2463,11 @@ public class PageFlowUtil
                 modules.addAll(cd.getRequiredModuleContexts(c, u));
             }
 
+            for (Module m : c.getActiveModules())
+            {
+                modules.add(m);
+            }
+
             for (Module m : modules)
             {
                 ret.put(m.getName().toLowerCase(), m.getPageContextJson(u, c));
