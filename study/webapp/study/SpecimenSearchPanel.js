@@ -123,7 +123,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
 
         this.callParent(arguments);
 
-        this.studyProps = LABKEY.getModuleContext('Study');
+        this.studyProps = LABKEY.getModuleContext('study');
         this.preloadStores();
     },
 
@@ -226,7 +226,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
 
     getGroupSearchItems: function(){
         return [
-            [this.studyProps.ParticipantNounSingular, 'study', this.studyProps.ParticipantTableName, this.studyProps.ParticipantColumnName, this.studyProps.ParticipantColumnName, this.studyProps.ParticipantColumnName, 'Any ' + this.studyProps.ParticipantNounSingular, null],
+            [this.studyProps.subject.nounSingular, 'study', this.studyProps.subject.tableName, this.studyProps.subject.columnName, this.studyProps.subject.columnName, this.studyProps.subject.columnName, 'Any ' + this.studyProps.subject.nounSingular, null],
             ['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,Label'],
             ['Primary Type', 'study', 'SpecimenPrimaryType', 'PrimaryType/Description', 'Description', 'Description', 'Any Primary Type', null],
             ['Derivative Type', 'study', 'SpecimenDerivative', 'DerivativeType/Description', 'Description', 'Description', 'Any Derivative Type', null],
@@ -302,7 +302,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
             };
 
             //special case participant
-            if(LABKEY.demoMode && queryName == this.studyProps.ParticipantNounSingular){
+            if(LABKEY.demoMode && queryName == this.studyProps.subject.nounSingular){
                 storeCfg.listeners = {
                     load: function(store){
                         store.each(function(rec){

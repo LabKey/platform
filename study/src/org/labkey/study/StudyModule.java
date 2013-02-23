@@ -764,14 +764,18 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         Map<String, String> ret = getDefaultPageContextJson(u, c);
         Study study = StudyManager.getInstance().getStudy(c);
         StudyService.Service studyService = StudyService.get();
+        JSONObject context = new JSONObject(ret);
         if (study != null)
         {
-            ret.put("ParticipantTableName", studyService.getSubjectTableName(c));
-            ret.put("ParticipantNounSingular", studyService.getSubjectNounSingular(c));
-            ret.put("ParticipantNounPlural", studyService.getSubjectNounPlural(c));
-            ret.put("ParticipantColumnName", studyService.getSubjectColumnName(c));
-            ret.put("TimepointType", study.getTimepointType().name());
+            JSONObject subject = new JSONObject();
+            subject.put("tableName", studyService.getSubjectTableName(c));
+            subject.put("nounSingular", studyService.getSubjectNounSingular(c));
+            subject.put("nounPlural", studyService.getSubjectNounPlural(c));
+            subject.put("columnName", studyService.getSubjectColumnName(c));
+
+            context.put("subject", subject);
+            context.put("timepointType", study.getTimepointType().name());
         }
-        return new JSONObject(ret);
+        return context;
     }
 }
