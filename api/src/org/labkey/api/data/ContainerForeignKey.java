@@ -59,7 +59,7 @@ public class ContainerForeignKey extends LookupForeignKey
 
     public ContainerForeignKey(UserSchema schema, ActionURL url)
     {
-        super(url, null, "core", "Containers", "EntityId", "DisplayName");
+        super(null, null, "core", "Containers", "EntityId", "DisplayName");
         _schema = schema;
         _url = url;
     }
