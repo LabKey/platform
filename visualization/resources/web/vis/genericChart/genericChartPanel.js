@@ -179,6 +179,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.showOptionsBtn.show();
                     this.groupingBtn.show();
                     this.exportPdfBtn.show();
+
+                    if(this.customButtons){
+                        for(var i = 0; i < this.customButtons.length; i++){
+                            this.customButtons[i].show();
+                        }
+                    }
+
                     if (this.isDeveloper)
                         this.developerBtn.show();
                 } else {
@@ -187,6 +194,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.showOptionsBtn.hide();
                     this.groupingBtn.hide();
                     this.exportPdfBtn.hide();
+
+                    if(this.customButtons){
+                        for(var i = 0; i < this.customButtons.length; i++){
+                            this.customButtons[i].hide();
+                        }
+                    }
+
                     if (this.isDeveloper)
                         this.developerBtn.hide();
                 }
@@ -204,9 +218,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             tbarItems.push(this.showOptionsBtn);
             tbarItems.push(this.groupingBtn);
             tbarItems.push(this.developerBtn);
-            tbarItems.push('->');
+
+            if(this.customButtons){
+                for(var i = 0; i < this.customButtons.length; i++){
+                    var btn = this.customButtons[i];
+                    btn.scope = this;
+                    tbarItems.push(btn);
+                }
+            }
 
             if(this.canEdit){
+                tbarItems.push('->');
                 tbarItems.push(this.saveBtn);
             }
             
@@ -526,6 +548,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.optionsPanel = Ext4.create('LABKEY.vis.GenericChartOptionsPanel', {
             renderType: this.renderType,
+            customRenderTypes: this.customRenderTypes,
             width: '100%',
             defaults: {
                 labelAlign: 'left',
@@ -1596,9 +1619,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     renderPlot: function(forExport) {
         var measure;
+        var customRenderType = null;
         var getFormatFn = function(field){
             return field.extFormatFn ? eval(field.extFormatFn) : this.defaultNumberFormat;
         };
+
+        if(this.customRenderTypes && this.customRenderTypes[this.renderType]){
+            customRenderType = this.customRenderTypes[this.renderType];
+        }
 
         if (!forExport)
         {
@@ -1628,7 +1656,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (!this.xAxisMeasure && !forExport)
         {
-            if(this.renderType == "scatter_plot"){
+            if(this.renderType !== "box_plot" && this.renderType !== "auto_plot"){
                 if (this.autoColumnXName)
                 {
                     measure = this.xMeasureStore.findRecord('name', this.autoColumnXName);
@@ -1758,31 +1786,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // TODO: make line charts render if this.xAxisMeasure.type == "date"
         if(!this.xAxisMeasure || this.isBoxPlot(this.renderType, this.xAxisMeasure.normalizedType)) {
-
-            if(this.xAxisMeasure){
-                measures.x.acc = this.getDiscreteXAcc(measures);
-            } else {
-                measures.x.acc = function(row){return measures.x.name};
-            }
-
-            scales.x = {scaleType: 'discrete'};
-            yMin = d3.min(this.chartData.rows, measures.y.acc);
-            yMax = d3.max(this.chartData.rows, measures.y.acc);
-            yPadding = ((yMax - yMin) * .1);
-
-            if (chartOptions.yAxis.scaleType == "log"){
-                // Issue 15760: Quick Chart -- Log Data Renders Incorrectly
-                // When subtracting padding we have to make sure we still produce valid values for a log scale.
-                // log([value less than 0]) = NaN.
-                // log(0) = -Infinity.
-                if(yMin - yPadding > 0){
-                    yMin = yMin - yPadding;
-                }
-            } else {
-                yMin = yMin - yPadding;
-            }
-
-            scales.y = {min: yMin, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
+            this.configureBoxPlotAxes(chartOptions, measures, scales);
+            
             geom = new LABKEY.vis.Geom.Boxplot({
                 lineWidth: chartOptions.lineWidth,
                 outlierOpacity: chartOptions.opacity,
@@ -1792,58 +1797,39 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 fill: '#' + chartOptions.fillColor
             });
         } else if(this.isScatterPlot(this.renderType, this.xAxisMeasure.normalizedType)){
-            if(this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double'){
-                measures.x.acc = this.getContinuousXAcc(measures);
-                scales.x = {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType};
-                var hasNegative = false;
-                var hasZero = false;
-                var allXDataIsNull = true;
+            this.configureAxes(chartOptions, measures, scales);
 
-                // Check for values < 0, if log scale show error accordingly.
-                for(var i = 0; i < this.chartData.rows.length; i++){
-                    var value = measures.x.acc(this.chartData.rows[i]);
-
-                    if(value != null){
-                        allXDataIsNull = false;
-                    }
-
-                    if(value < 0 || value === null){
-                        hasNegative = true;
-                    } else if(value === 0){
-                        hasZero = true;
-                    }
-                }
-
-                if(allXDataIsNull){
-                    this.viewPanel.getEl().unmask();
-                    Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' are null. Please choose a different measure', this.showXMeasureWindow, this);
-                    return;
-                }
-
-                if(scales.x.trans === 'log'){
-                    if(hasNegative){
-                        this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
-                        scales.x.trans = 'linear';
-                        this.xMeasurePanel.setScaleType('linear');
-                    }
-
-                    if(hasZero && !hasNegative){
-                        this.addWarningText("Some x-axis values are 0. Plotting all x-axis values as x+1");
-                    }
-                }
-            } else {
-                measures.x.acc = this.getDiscreteXAcc(measures);
-                scales.x = {scaleType: 'discrete'};
-            }
-
-            scales.y = {scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
             geom = new LABKEY.vis.Geom.Point({
                 opacity: chartOptions.opacity,
                 size: chartOptions.pointSize,
                 color: '#' + chartOptions.pointColor
             });
         } else {
-            return;
+            if(customRenderType){
+                if(customRenderType.configureAxes){
+                    customRenderType.configureAxes(this, chartOptions, measures, scales);
+                } else {
+                    this.configureAxes(chartOptions, measures, scales);
+                }
+            } else {
+                // If the render type is not found it's probably a custom one that is no longer supported.
+                // So display an error to the user so they can change the plot type.
+                this.viewPanel.getEl().unmask();
+
+                this.addWarningText(
+                        "The requested plot type, " +
+                        this.renderType +
+                        ", was not found. Please try choosing a different plot type from the options panel."
+                );
+
+                newChartDiv.insert(0, Ext4.create('Ext.container.Container', {
+                    autoEl: 'div',
+                    style: 'color: red; text-align: center;',
+                    html: this.warningText
+                }));
+
+                return;
+            }
         }
 
         for(var i = 0; i < this.chartData.metaData.fields.length; i++){
@@ -1913,17 +1899,22 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var width = chartOptions.width ? chartOptions.width : !forExport ? newChartDiv.getWidth() : 1200;
         var height = chartOptions.height ? chartOptions.height : !forExport ? newChartDiv.getHeight() - 25 : 600;
 
-        plotConfig = this.generatePlotConfig(
-                geom,
-                newChartDiv.id,
-                width,
-                height,
-                this.chartData.rows,
-                labels,
-                scales
-        );
+        if(customRenderType){
+            plotConfig = customRenderType.generatePlotConfig(this, chartOptions, measures, newChartDiv.id, width, height, this.chartData.rows, labels, scales);
+            plotConfig.aes = customRenderType.generateAes(this, chartOptions, measures, pointClickFn);
+        } else {
+            plotConfig = this.generatePlotConfig(
+                    geom,
+                    newChartDiv.id,
+                    width,
+                    height,
+                    this.chartData.rows,
+                    labels,
+                    scales
+            );
 
-        plotConfig.aes = this.generateAes(geom, measures, pointClickFn);
+            plotConfig.aes = this.generateAes(geom, measures, pointClickFn);
+        }
 
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
@@ -1996,6 +1987,81 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             return value;
         }
+    },
+
+    configureAxes: function(chartOptions, measures, scales){
+        if(this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double'){
+            measures.x.acc = this.getContinuousXAcc(measures);
+            scales.x = {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType};
+            var hasNegative = false;
+            var hasZero = false;
+            var allXDataIsNull = true;
+
+            // Check for values < 0, if log scale show error accordingly.
+            for(var i = 0; i < this.chartData.rows.length; i++){
+                var value = measures.x.acc(this.chartData.rows[i]);
+
+                if(value != null){
+                    allXDataIsNull = false;
+                }
+
+                if(value < 0 || value === null){
+                    hasNegative = true;
+                } else if(value === 0){
+                    hasZero = true;
+                }
+            }
+
+            if(allXDataIsNull){
+                this.viewPanel.getEl().unmask();
+                Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' are null. Please choose a different measure', this.showXMeasureWindow, this);
+                return;
+            }
+
+            if(scales.x.trans === 'log'){
+                if(hasNegative){
+                    this.addWarningText("Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.");
+                    scales.x.trans = 'linear';
+                    this.xMeasurePanel.setScaleType('linear');
+                }
+
+                if(hasZero && !hasNegative){
+                    this.addWarningText("Some x-axis values are 0. Plotting all x-axis values as x+1");
+                }
+            }
+        } else {
+            measures.x.acc = this.getDiscreteXAcc(measures);
+            scales.x = {scaleType: 'discrete'};
+        }
+
+        scales.y = {scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
+    },
+
+    configureBoxPlotAxes: function(chartOptions, measures, scales){
+        if(this.xAxisMeasure){
+            measures.x.acc = this.getDiscreteXAcc(measures);
+        } else {
+            measures.x.acc = function(row){return measures.x.name};
+        }
+
+        scales.x = {scaleType: 'discrete'};
+        yMin = d3.min(this.chartData.rows, measures.y.acc);
+        yMax = d3.max(this.chartData.rows, measures.y.acc);
+        yPadding = ((yMax - yMin) * .1);
+
+        if (chartOptions.yAxis.scaleType == "log"){
+            // Issue 15760: Quick Chart -- Log Data Renders Incorrectly
+            // When subtracting padding we have to make sure we still produce valid values for a log scale.
+            // log([value less than 0]) = NaN.
+            // log(0) = -Infinity.
+            if(yMin - yPadding > 0){
+                yMin = yMin - yPadding;
+            }
+        } else {
+            yMin = yMin - yPadding;
+        }
+
+        scales.y = {min: yMin, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
     },
 
     clearChartPanel: function(){
@@ -2338,6 +2404,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         chartOptions.grouping = this.groupingPanel.getPanelOptionValues();
 
         chartOptions.developer = this.developerPanel.getPanelOptionValues();
+
+        if(this.getCustomChartOptions){
+            chartOptions.customOptions = this.getCustomChartOptions();
+        }
 
         return chartOptions;
     },

@@ -27,14 +27,24 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         var labelSeparator = '';
         var labelWidth = 80;
+        var data = [
+            {renderType: 'scatter_plot', label: 'Scatter Plot'},
+            {renderType: 'box_plot', label: 'Box Plot'},
+            {renderType: 'auto_plot', label: 'Auto Plot'}
+        ];
+
+        if(this.customRenderTypes){
+            for(renderType in this.customRenderTypes){
+                data.push({
+                    renderType: renderType,
+                    label: this.customRenderTypes[renderType].label
+                });
+            }
+        }
 
         this.renderTypeStore = Ext4.create('Ext.data.Store', {
             fields: ['renderType', 'label'],
-            data: [
-                {renderType: 'scatter_plot', label: 'Scatter Plot'},
-                {renderType: 'box_plot', label: 'Box Plot'},
-                {renderType: 'auto_plot', label: 'Auto Plot'}
-            ]
+            data: data
         });
 
         this.renderTypeCombo = Ext4.create('Ext.form.ComboBox', {
