@@ -32,6 +32,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -86,6 +87,8 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             String comments = json.optString(ExperimentJSONConverter.COMMENT);
             Map<String, String> runProperties = (Map)json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
             Map<String, String> batchProperties = (Map)json.optJSONObject("batchProperties");
+            String targetStudy = json.optString("targetStudy");
+            Integer reRunId = json.containsKey("reRunId") ? json.optInt("reRunId") : null;
 
             uploadContext = new ImportRunApiUploadContext<ProviderType>(
                     protocol,
@@ -94,7 +97,9 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
                     name,
                     comments,
                     runProperties,
-                    batchProperties);
+                    batchProperties,
+                    targetStudy,
+                    reRunId);
         }
         else
         {
@@ -111,7 +116,9 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
                     form.getName(),
                     form.getComment(),
                     form.getProperties(),
-                    form.getBatchProperties());
+                    form.getBatchProperties(),
+                    form.getTargetStudy(),
+                    form.getReRunId());
         }
 
         try
@@ -174,6 +181,8 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         private Integer _batchId;
         private String _name;
         private String _comment;
+        private String _targetStudy;
+        private Integer _reRunId;
         private Map<String, String> _properties = new HashMap<String, String>();
         private Map<String, String> _batchProperties = new HashMap<String, String>();
 
@@ -217,6 +226,26 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             _comment = comment;
         }
 
+        public String getTargetStudy()
+        {
+            return _targetStudy;
+        }
+
+        public void setTargetStudy(String targetStudy)
+        {
+            _targetStudy = targetStudy;
+        }
+
+        public Integer getReRunId()
+        {
+            return _reRunId;
+        }
+
+        public void setReRunId(Integer reRunId)
+        {
+            _reRunId = reRunId;
+        }
+
         public Map<String, String> getProperties()
         {
             return _properties;
@@ -246,17 +275,23 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         private Map _uploadedData;
         private String _comments;
         private String _name;
+        private String _targetStudy;
+        private Integer _reRunId;
 
         private Map<String, String> _rawRunProperties;
         private Map<String, String> _rawBatchProperties;
         private Map<DomainProperty, String> _runProperties;
         private Map<DomainProperty, String> _batchProperties;
 
+        private TransformResult _transformResult;
+
         public ImportRunApiUploadContext(
                 @NotNull ExpProtocol protocol, @NotNull ProviderType provider, ViewContext context,
                 String name, String comment,
                 Map<String, String> runProperties,
-                Map<String, String> batchProperties)
+                Map<String, String> batchProperties,
+                String targetStudy,
+                Integer reRunId)
         {
             _protocol = protocol;
             _provider = provider;
@@ -267,6 +302,9 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
 
             _rawRunProperties = runProperties;
             _rawBatchProperties = batchProperties;
+
+            _reRunId = reRunId;
+            _targetStudy = targetStudy;
         }
 
         @NotNull
@@ -409,23 +447,23 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         @Override
         public Integer getReRunId()
         {
-            return null;
+            return _reRunId;
         }
 
         public String getTargetStudy()
         {
-            return null;
+            return _targetStudy;
         }
 
         public TransformResult getTransformResult()
         {
-            return null;
+            return _transformResult == null ? DefaultTransformResult.createEmptyResult() : _transformResult;
         }
 
         @Override
         public void setTransformResult(TransformResult result)
         {
-            throw new UnsupportedOperationException();
+            _transformResult = result;
         }
         
         @Override
