@@ -59,7 +59,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     private static final String SAMPLE_FILE_INPUT_NAME = "__sampleMetadataFile";
     protected ExpProtocol _protocol;
     private Container _container;
-    Map<WellGroupTemplate, Map<DomainProperty, String>> _sampleProperties;
+    protected Map<String, Map<DomainProperty, String>> _sampleProperties;
     private File _metadataFile;
 
     public PlateSampleFilePropertyHelper(Container container, ExpProtocol protocol, DomainProperty[] domainProperties, PlateTemplate template)
@@ -91,15 +91,15 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     public Map<String, Map<DomainProperty, String>> getPostedPropertyValues(HttpServletRequest request) throws ExperimentException
     {
         Map<String, Map<DomainProperty, String>> result = new HashMap<String, Map<DomainProperty, String>>();
-        Map<WellGroupTemplate, Map<DomainProperty, String>> sampleProperties = getSampleProperties(request);
+        Map<String, Map<DomainProperty, String>> sampleProperties = getSampleProperties(request);
         if (sampleProperties == null || sampleProperties.isEmpty())
             throw new ExperimentException("Sample metadata must be provided.");
-        for (Map.Entry<WellGroupTemplate, Map<DomainProperty, String>> entry : sampleProperties.entrySet())
-            result.put(entry.getKey().getName(), entry.getValue());
+        for (Map.Entry<String, Map<DomainProperty, String>> entry : sampleProperties.entrySet())
+            result.put(entry.getKey(), entry.getValue());
         return result;
     }
 
-    private File getSampleMetadata(HttpServletRequest request) throws ExperimentException
+    protected File getSampleMetadata(HttpServletRequest request) throws ExperimentException
     {
         if (_metadataFile != null)
             return _metadataFile;
@@ -173,7 +173,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     public static final String WELLGROUP_COLUMN = "SampleWellGroup";
     public static final String PLATELOCATION_COLUMN = "PlateLocation";
     @Override
-    public Map<WellGroupTemplate, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws ExperimentException
+    public Map<String, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws ExperimentException
     {
         if (_sampleProperties != null)
             return _sampleProperties;
@@ -182,7 +182,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         if (metadataFile == null)
             return null;
 
-        Map<WellGroupTemplate, Map<DomainProperty, String>> allProperties = new HashMap<WellGroupTemplate, Map<DomainProperty, String>>();
+        Map<String, Map<DomainProperty, String>> allProperties = new HashMap<String, Map<DomainProperty, String>>();
         try
         {
             List<WellGroupTemplate> sampleGroups = getSampleWellGroups();
@@ -220,7 +220,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                 if (sampleProperties == null)
                 {
                     sampleProperties = new HashMap<DomainProperty, String>();
-                    allProperties.put(wellgroup, sampleProperties);
+                    allProperties.put(wellgroup.getName(), sampleProperties);
                 }
                 else
                 {
@@ -246,7 +246,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         return _metadataFile;
     }
 
-    private Object getValue(Map<String, Object> row, DomainProperty property)
+    protected Object getValue(Map<String, Object> row, DomainProperty property)
     {
         Object value = row.get(property.getName());
         if (value != null)

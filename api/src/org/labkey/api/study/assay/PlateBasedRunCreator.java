@@ -66,10 +66,10 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                                   Map<ExpMaterial, String> outputMaterials,
                                   Map<ExpData, String> outputDatas) throws ExperimentException
     {
-        Map<WellGroupTemplate, ExpMaterial> originalMaterials = new HashMap<WellGroupTemplate, ExpMaterial>();
+        Map<String, ExpMaterial> originalMaterials = new HashMap<String, ExpMaterial>();
         PlateSamplePropertyHelper helper = getProvider().getSamplePropertyHelper((PlateUploadForm) context, null);
-        Map<WellGroupTemplate, Map<DomainProperty, String>> materialProperties = helper.getSampleProperties(context.getRequest());
-        for (Map.Entry<WellGroupTemplate, Map<DomainProperty, String>> entry : materialProperties.entrySet())
+        Map<String, Map<DomainProperty, String>> materialProperties = helper.getSampleProperties(context.getRequest());
+        for (Map.Entry<String, Map<DomainProperty, String>> entry : materialProperties.entrySet())
         {
             Map<DomainProperty, String> properties = entry.getValue();
             String specimenID = null;
@@ -127,7 +127,7 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                 }
             }
 
-            WellGroupTemplate wellgroup = entry.getKey();
+            String key = entry.getKey();
             ExpMaterial originalMaterial = null;
             if (resolver != null)
             {
@@ -145,14 +145,14 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                 if (targetStudyProperty != null)
                     wellgroupProperties.put(targetStudyProperty, pv.getStudyContainer() != null ? "" + pv.getStudyContainer() : null);
             }
-            originalMaterials.put(wellgroup, originalMaterial);
+            originalMaterials.put(key, originalMaterial);
         }
         Map<ExpMaterial, String> newMaterials = createDerivedMaterials(context, originalMaterials, materialProperties);
         inputMaterials.putAll(newMaterials);
     }
 
-    private Map<ExpMaterial, String> createDerivedMaterials(AssayRunUploadContext context, Map<WellGroupTemplate, ExpMaterial> originalMaterials,
-                                        Map<WellGroupTemplate, Map<DomainProperty, String>> materialProperties) throws ExperimentException
+    private Map<ExpMaterial, String> createDerivedMaterials(AssayRunUploadContext context, Map<String, ExpMaterial> originalMaterials,
+                                        Map<String, Map<DomainProperty, String>> materialProperties) throws ExperimentException
     {
         Map<ExpMaterial, String> derivedMaterials = new HashMap<ExpMaterial, String>();
         long ms = System.currentTimeMillis();
@@ -170,9 +170,9 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
             }
 
             Map<String, ExpMaterial> originalLsidToMaterial = new HashMap<String, ExpMaterial>();
-            for (Map.Entry<WellGroupTemplate, ExpMaterial> entry : originalMaterials.entrySet())
+            for (Map.Entry<String, ExpMaterial> entry : originalMaterials.entrySet())
             {
-                WellGroupTemplate wellgroup = entry.getKey();
+                String key = entry.getKey();
 
                 // we may need to insert multiple derived specimens with the same original specimen;
                 // we use a map to allows us to reuse the obects based on lsid.
@@ -182,7 +182,7 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                 else
                     originalLsidToMaterial.put(originalMaterial.getLSID(), originalMaterial);
 
-                Map<DomainProperty, String> properties = materialProperties.get(wellgroup);
+                Map<DomainProperty, String> properties = materialProperties.get(key);
 
                 String domainURI = AbstractAssayProvider.getDomainURIForPrefix(context.getProtocol(), AbstractPlateBasedAssayProvider.ASSAY_DOMAIN_SAMPLE_WELLGROUP);
                 ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(domainURI);
@@ -204,7 +204,7 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                 }
 
                 Lsid derivedLsid = new Lsid(sampleSet.getMaterialLSIDPrefix() + "OBJECT");
-                derivedLsid.setObjectId(derivedLsid.getObjectId() + "-" + wellgroup.getName() + "-" + ms);
+                derivedLsid.setObjectId(derivedLsid.getObjectId() + "-" + key + "-" + ms);
                 int index = 0;
 
                 if (!Lsid.isLsid(derivedLsid.toString()))
@@ -216,11 +216,11 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
                 String baseObjectId = derivedLsid.getObjectId();
                 while(ExperimentService.get().getExpMaterial(derivedLsid.toString()) != null)
                     derivedLsid.setObjectId(baseObjectId + "-" + ++index);
-                ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial(context.getContainer(), derivedLsid.toString(), wellgroup.getName());
+                ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial(context.getContainer(), derivedLsid.toString(), key.toString());
                 derivedMaterial.setCpasType(sampleSet.getLSID());
                 Map<ExpMaterial, String> originalMaterialSet = Collections.singletonMap(originalMaterial, null);
                 Map<ExpMaterial, String> derivedMaterialSet = Collections.singletonMap(derivedMaterial, "PreparedMaterial");
-                derivedMaterials.put(derivedMaterial, wellgroup.getName());
+                derivedMaterials.put(derivedMaterial, key);
                 ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
                 ExpRun derivationRun = ExperimentService.get().deriveSamples(originalMaterialSet, derivedMaterialSet, info, null);
                 if (sampleMetadataFile != null)

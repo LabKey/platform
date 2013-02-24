@@ -30,7 +30,7 @@ import java.util.Map;
  * User: jeckels
  * Date: Oct 3, 2007
  */
-public class PlateSamplePropertyHelper extends SamplePropertyHelper<WellGroupTemplate>
+public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
 {
     private List<String> _sampleNames;
     protected final PlateTemplate _template;
@@ -66,12 +66,12 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<WellGroupTem
         return samples;
     }
 
-    protected WellGroupTemplate getObject(int index, Map<DomainProperty, String> sampleProperties)
+    protected String getObject(int index, Map<DomainProperty, String> sampleProperties)
     {
         List<WellGroupTemplate> samples = getSampleWellGroups();
         if (index >= samples.size())
             throw new IndexOutOfBoundsException("Requested #" + index + " but there were only " + samples.size() + " well group templates");
-        return getSampleWellGroups().get(index);
+        return getSampleWellGroups().get(index).getName();
     }
 
     protected boolean isCopyable(DomainProperty pd)
