@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<etl xmlns="http://labkey.org/etl/xml">
+    <name>Hello</name>
+    <description>Test ETL!</description>
+    <transforms></transforms>
+    <source schemaName="srcSchema" queryName="srcQuery" />
+    <destination schemaName="destSchema" queryName="destQuery" />
+    <schedule><poll updateTimeColumn="none" createTimeColumn="none2"></poll></schedule>
+</etl>

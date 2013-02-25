@@ -16,12 +16,17 @@
 
 package org.labkey.di;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.di.pipeline.ETLPipelineProvider;
+import org.labkey.di.view.DataIntegrationController;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -38,11 +43,12 @@ public class DataIntegrationModule extends DefaultModule
 
     public double getVersion()
     {
-        return 0.00;
+        return 0.01;
     }
 
     protected void init()
     {
+        addController("dataintegration", DataIntegrationController.class);
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -55,6 +61,12 @@ public class DataIntegrationModule extends DefaultModule
         return true;
     }
 
+    @NotNull
+    @Override
+    public Set<String> getSchemaNames()
+    {
+        return Collections.singleton("dataintegration");
+    }
 
     @Override
     public void afterUpdate(ModuleContext moduleContext)
@@ -64,5 +76,6 @@ public class DataIntegrationModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
+        PipelineService.get().registerPipelineProvider(new ETLPipelineProvider(this));
     }
 }

@@ -1,35 +1,34 @@
-CREATE SCHEMA dataintegration
-GO
+CREATE SCHEMA dataintegration;
 
-CREATE PROCEDURE dataintegration.addDataIntegrationColumns @schemaName NVARCHAR(100), @tableName NVARCHAR(100)
-AS
-DECLARE @sql NVARCHAR(1000)
-SELECT @sql = 'ALTER TABLE [' + @schemaName + '].[' + @tableName + '] ADD  ' +
-     '_txRowVersion ROWVERSION, ' +
-     '_txLastUpdated DATETIME, ' +
-     '_txTransactionId INT, ' +
-     '_txNote NVARCHAR(1000)';
-EXEC sp_executesql @sql;
-SELECT @sql = 'ALTER TABLE [' + @schemaName + '].[' + @tableName + '] ADD CONSTRAINT [_DF_' + @tableName + '_updated] ' +
-    'DEFAULT getutcdate() FOR [_txLastUpdated]';
-EXEC sp_executesql @sql;
-
-GO
+-- CREATE PROCEDURE dataintegration.addDataIntegrationColumns @schemaName NVARCHAR(100), @tableName NVARCHAR(100)
+-- AS
+-- DECLARE @sql NVARCHAR(1000)
+-- SELECT @sql = 'ALTER TABLE [' + @schemaName + '].[' + @tableName + '] ADD  ' +
+--      '_txRowVersion ROWVERSION, ' +
+--      '_txLastUpdated DATETIME, ' +
+--      '_txTransactionId INT, ' +
+--      '_txNote NVARCHAR(1000)';
+-- EXEC sp_executesql @sql;
+-- SELECT @sql = 'ALTER TABLE [' + @schemaName + '].[' + @tableName + '] ADD CONSTRAINT [_DF_' + @tableName + '_updated] ' +
+--     'DEFAULT getutcdate() FOR [_txLastUpdated]';
+-- EXEC sp_executesql @sql;
+--
+-- GO
 
 CREATE TABLE dataintegration.TransformRun
 (
-    RowId INT IDENTITY (1, 1) NOT NULL,
+    RowId SERIAL NOT NULL,
     Container ENTITYID NOT NULL,
     RecordCount INT,
     JobId INT NOT NULL,
-    TransformId NVARCHAR(50) NOT NULL,
+    TransformId VARCHAR(50) NOT NULL,
     TransformVersion INT NOT NULL,
-    Status NVARCHAR(500),
-    StartTime DATETIME NULL,
-    EndTime DATETIME NULL,
-    Created DATETIME NULL,
+    Status VARCHAR(500),
+    StartTime TIMESTAMP NULL,
+    EndTime TIMESTAMP NULL,
+    Created TIMESTAMP NULL,
     CreatedBy INT NULL,
-    Modified DATETIME NULL,
+    Modified TIMESTAMP NULL,
     ModifiedBy INT NULL,
 
     CONSTRAINT FK_TransformRun_JobId FOREIGN KEY (JobId) REFERENCES pipeline.StatusFiles (RowId),
@@ -41,15 +40,15 @@ CREATE INDEX IDX_TransformRun_Container ON dataintegration.TransformRun(Containe
 
 CREATE TABLE dataintegration.TransformConfiguration
 (
-    RowId INT IDENTITY (1, 1) NOT NULL,
+    RowId SERIAL NOT NULL,
     Container ENTITYID NOT NULL,
     TransformId VARCHAR(50) NOT NULL,
-    Enabled BIT,
-    VerboseLogging BIT,
-    LastChecked DATETIME NULL,
-    Created DATETIME NULL,
+    Enabled BOOLEAN,
+    VerboseLogging BOOLEAN,
+    LastChecked TIMESTAMP NULL,
+    Created TIMESTAMP NULL,
     CreatedBy INT NULL,
-    Modified DATETIME NULL,
+    Modified TIMESTAMP NULL,
     ModifiedBy INT NULL,
 
     CONSTRAINT UQ_TransformConfiguration_TransformId UNIQUE (TransformId),

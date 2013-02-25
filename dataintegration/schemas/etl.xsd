@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:etl="http://labkey.org/etl/xml"
+        targetNamespace="http://labkey.org/etl/xml"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+    <element name="etl" type="etl:EtlType"/>
+
+    <complexType name="EtlType">
+        <all>
+            <element name="name" type="string" maxOccurs="1" />
+            <element name="description" type="string" maxOccurs="1" />
+            <element name="source" type="etl:SchemaQueryType" maxOccurs="1" />
+            <element name="transforms" type="etl:TransformsType" maxOccurs="1" />
+            <element name="schedule" type="etl:ScheduleType" maxOccurs="1" />
+            <element name="destination" type="etl:SchemaQueryType" maxOccurs="1" />
+        </all>
+    </complexType>
+
+    <complexType name="SchemaQueryType">
+        <attribute name="schemaName" type="string" use="required" />
+        <attribute name="queryName" type="string" use="required" />
+    </complexType>
+
+    <complexType name="TransformsType">
+        <all>
+            <element name="transform" type="etl:TransformType" minOccurs="0" />
+        </all>
+    </complexType>
+
+    <complexType name="TransformType">
+        <all>
+            <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1" />
+        </all>
+        <attribute name="type" type="string" use="required" />
+        <attribute name="file" type="string" />
+        <attribute name="streaming" type="boolean" default="true" />
+    </complexType>
+
+    <complexType name="PropertiesType">
+        <all>
+            <element name="property" type="string" minOccurs="0" />
+        </all>
+    </complexType>
+
+    <complexType name="PropertyType">
+        <attribute name="name" type="string" use="required" />
+    </complexType>
+
+    <complexType name="ScheduleType">
+        <all>
+            <element name="poll" type="etl:PollType" minOccurs="0" />
+        </all>
+    </complexType>
+
+    <complexType name="PollType">
+        <all>
+            <element name="interval" type="int" minOccurs="0" />
+        </all>
+        <attribute name="updateTimeColumn" type="string" use="required" />
+        <attribute name="createTimeColumn" type="string" use="required" />
+    </complexType>
+
+</schema>
