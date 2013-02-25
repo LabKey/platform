@@ -18,6 +18,7 @@ package org.labkey.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
@@ -44,6 +45,7 @@ import org.labkey.query.persist.LinkedSchemaDef;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -106,7 +108,12 @@ public class LinkedSchema extends ExternalSchema
 
         Map<String, TableType> metaDataMap = getMetaDataMap(tableTypes);
         Collection<String> availableTables = getAvailableTables(def, template, tableSource, metaDataMap);
-        Collection<String> hiddenTables = getHiddenTables(tableTypes);
+
+        // Gathering the hidden tables requires looking at the original schema's hidden/visible tables
+        // and then using the additional table metadata supplied.
+        Set<String> hiddenTables = new HashSet<String>(availableTables);
+        hiddenTables.removeAll(sourceSchema.getVisibleTableNames());
+        hiddenTables.addAll(getHiddenTables(tableTypes));
 
         return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, availableTables, hiddenTables);
     }
@@ -132,6 +139,21 @@ public class LinkedSchema extends ExternalSchema
     public UserSchema getSourceSchema()
     {
         return _sourceSchema;
+    }
+
+    @Override
+    public Set<String> getVisibleTableNames()
+    {
+        if (_visible == null)
+        {
+            Set<String> availableTableNames = getTableNames();
+
+            _visible = new CaseInsensitiveTreeSet();
+            for (String tableName : _sourceSchema.getVisibleTableNames())
+                if (availableTableNames.contains(tableName))
+                    _visible.add(tableName);
+        }
+        return _visible;
     }
 
     @Override

@@ -95,7 +95,8 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
         super.fixupWrappedColumn(wrap, col);
 
         // Fixup the column's ForeignKey if it is a user id or container foreign key
-        // or the FK points to the current schema and one of the visible tables.
+        // or the FK points to the current schema and one of the visible tables;
+        // otherwise remove the FK to disallow the FK.
         ForeignKey fk = wrap.getFk();
         ForeignKey fixedFk = null;
         if (fk instanceof UserIdForeignKey || fk instanceof UserIdQueryForeignKey || fk instanceof ContainerForeignKey)
@@ -104,19 +105,20 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
         }
         else if (fk != null)
         {
-            UserSchema schema = getUserSchema();
+            LinkedSchema schema = getUserSchema();
+            UserSchema sourceSchema = schema.getSourceSchema();
 
-            if ((fk.getLookupSchemaName() != null && schema.getName().equals(fk.getLookupSchemaName())) &&
+            if ((fk.getLookupSchemaName() != null && sourceSchema.getName().equals(fk.getLookupSchemaName())) &&
                     (fk.getLookupTableName() != null && schema.getTableNames().contains(fk.getLookupTableName())) &&
                     (fk.getLookupContainer() == null || schema.getContainer().equals(fk.getLookupContainer())))
             {
-                //fixedFk = new QueryForeignKey(schema, fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName());
-                fixedFk = new QueryForeignKey(schema, fk.getLookupTableName(), fk.getLookupColumnName(), null);
-            }
+                // XXX: Do we need to set the container on the join to ensure the linked schema lookups aren't exposing too much data?
+                fixedFk = new QueryForeignKey(schema, fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName());
 
-            if (fk instanceof MultiValuedForeignKey)
-            {
-                fixedFk = new MultiValuedForeignKey(fixedFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
+                if (fk instanceof MultiValuedForeignKey)
+                {
+                    fixedFk = new MultiValuedForeignKey(fixedFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
+                }
             }
         }
         wrap.setFk(fixedFk);
