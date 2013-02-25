@@ -55,6 +55,17 @@ Ext4.define('LABKEY.ext4.ComboBox', {
 
         //this is necessary to clear invalid fields, assuming the initial value is set asynchronously on store load
         this.mon(this.store, 'load', this.isValid, this, {single: true, delay: 20});
+
+        // NOTE; if you have 2 combos on the same page sharing a store (like a FormPanel w/
+        // 2 fields pointing to the same lookup), for some reason Ext doesnt clear the store filter that gets
+        // created by typeahead some of the time when you toggle between the fields.  as a result, the second
+        // field will be filtered based on the first field's value.  this listeners is a check to ensure
+        // the store filter is cleared, assuming the lastQuery string is empty.
+        this.on('beforequery', function(qe){
+            if (Ext4.isEmpty(qe.combo.lastQuery) && qe.combo.store.isFiltered()){
+                qe.combo.store.clearFilter();
+            }
+        }, this);
     }
 });
 

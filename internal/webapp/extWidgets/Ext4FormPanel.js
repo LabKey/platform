@@ -249,7 +249,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                     Ext4.apply(theField, {height: 100});
                 }
 
-                if(theField.xtype == 'combo'){
+                if(theField.xtype == 'combo' || theField.xtype == 'labkey-combo'){
                     theField.store.autoLoad = true;
                 }
 

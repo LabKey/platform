@@ -16,6 +16,7 @@
 package org.labkey.api.laboratory.assay;
 
 import org.apache.poi.ss.usermodel.Workbook;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -186,9 +187,20 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return json;
     }
 
-    public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response, boolean exportAsWebpage) throws BatchValidationException
+    public void generateTemplate(ViewContext ctx, ExpProtocol protocol, @Nullable Integer templateId, String title, JSONObject json, boolean exportAsWebpage) throws BatchValidationException
     {
-        doGenerateTemplate(json, request, response, exportAsWebpage);
+        BatchValidationException errors = new BatchValidationException();
+        validateTemplate(ctx.getUser(), ctx.getContainer(), protocol, templateId, title, json, errors);
+
+        if (errors.hasErrors())
+            throw errors;
+
+        doGenerateTemplate(json, ctx.getRequest(), ctx.getResponse(), exportAsWebpage);
+    }
+
+    public void validateTemplate(User u, Container c, ExpProtocol protocol, @Nullable Integer templateId, String title, JSONObject json, BatchValidationException errors) throws BatchValidationException
+    {
+        //NOTE: consider checking required fields; however, we need to differentiate which field we expect now, and which we expect later
     }
 
     public void doGenerateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response, boolean exportAsWebpage) throws BatchValidationException

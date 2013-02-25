@@ -63,7 +63,7 @@ public class ModuleHtmlView extends HtmlView
         _viewdef = getViewDef(r);
         setTitle(_viewdef.getTitle());
         setClientDependencies(_viewdef.getClientDependencies());
-        setHtml(replaceTokens(_viewdef.getHtml(), getViewContext(), webpart));
+        setHtml(replaceTokensForView(_viewdef.getHtml(), getViewContext(), webpart));
         if (null != _viewdef.getFrameType())
             setFrame(_viewdef.getFrameType());
 
@@ -75,7 +75,7 @@ public class ModuleHtmlView extends HtmlView
     }
 
 
-    public String replaceTokens(String html, ViewContext context, @Nullable Portal.WebPart webpart)
+    public String replaceTokensForView(String html, ViewContext context, @Nullable Portal.WebPart webpart)
     {
         if (null == html)
             return null;
@@ -94,16 +94,25 @@ public class ModuleHtmlView extends HtmlView
                 config.put(e.getKey(), e.getValue());
         }
 
-        String contextPath = null != context.getContextPath() ? context.getContextPath() : "invalid context path";
-        String containerPath = null != context.getContainer() ? context.getContainer().getPath() : "invalid container";
         String webpartContext = config.toString();
 
-        String ret = html.replaceAll("<%=\\s*contextPath\\s*%>", contextPath);
-        ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", containerPath);
+        String ret = replaceTokens(html, context);
         ret = ret.replaceAll("<%=\\s*webpartContext\\s*%>", webpartContext);
         return "<div id=\"" + wrapperDivId + "\">" + ret + "</div>";
     }
 
+    public static String replaceTokens(String html, ViewContext context)
+    {
+        if (null == html)
+            return null;
+
+        String contextPath = null != context.getContextPath() ? context.getContextPath() : "invalid context path";
+        String containerPath = null != context.getContainer() ? context.getContainer().getPath() : "invalid container";
+        String ret = html.replaceAll("<%=\\s*contextPath\\s*%>", contextPath);
+        ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", containerPath);
+
+        return ret;
+    }
 
     public static ModuleHtmlViewDefinition getViewDef(Resource r)
     {

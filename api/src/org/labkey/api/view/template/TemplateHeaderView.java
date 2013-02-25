@@ -17,12 +17,14 @@
 package org.labkey.api.view.template;
 
 import org.apache.commons.lang3.JavaVersion;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
@@ -161,6 +163,13 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                 connectionsInUse += " " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".</a>";
                 _warningMessages.add(connectionsInUse);
             }
+        }
+
+        if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
+        {
+            String message = AppProps.getInstance().getRibbonMessageHtml();
+            message = ModuleHtmlView.replaceTokens(message, getViewContext());
+            _warningMessages.add(message);
         }
     }
 

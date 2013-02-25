@@ -64,6 +64,8 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     protected static final String SSL_PORT = "sslPort";
     protected static final String USER_REQUESTED_ADMIN_ONLY_MODE = "adminOnlyMode";
     protected static final String ADMIN_ONLY_MESSAGE = "adminOnlyMessage";
+    protected static final String SHOW_RIBBON_MESSAGE = "showRibbonMessage";
+    protected static final String RIBBON_MESSAGE = "ribbonMessage";
     protected static final String EXCEPTION_REPORTING_LEVEL = "exceptionReportingLevel";
     protected static final String USAGE_REPORTING_LEVEL = "usageReportingLevel";
     protected static final String ADMINISTRATOR_CONTACT_EMAIL = "administratorContactEmail";
@@ -294,6 +296,17 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     {
         return lookupStringValue(ADMIN_ONLY_MESSAGE, "This site is currently undergoing maintenance, and only administrators can log in.");
     }
+
+    public boolean isShowRibbonMessage()
+    {
+        return lookupBooleanValue(SHOW_RIBBON_MESSAGE, false);
+    }
+
+    public String getRibbonMessageHtml()
+    {
+        return lookupStringValue(RIBBON_MESSAGE, null);
+    }
+
 
     public int getSSLPort()
     {

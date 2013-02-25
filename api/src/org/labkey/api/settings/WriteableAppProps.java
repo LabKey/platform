@@ -45,6 +45,16 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(ADMIN_ONLY_MESSAGE, adminOnlyMessage);
     }
 
+    public void setRibbonMessageHtml(String messageHtml)
+    {
+        storeStringValue(RIBBON_MESSAGE, messageHtml);
+    }
+
+    public void setShowRibbonMessage(boolean show)
+    {
+        storeBooleanValue(SHOW_RIBBON_MESSAGE, show);
+    }
+
     public void setSSLPort(int sslPort)
     {
         storeIntValue(SSL_PORT, sslPort);

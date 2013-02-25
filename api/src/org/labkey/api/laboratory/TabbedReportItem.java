@@ -15,6 +15,7 @@
  */
 package org.labkey.api.laboratory;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -147,6 +148,20 @@ public class TabbedReportItem extends AbstractNavItem
 
         if (_sampleDateFieldKey != null)
             json.put("dateFieldName", _sampleDateFieldKey);
+
+        ColumnInfo overlappingCol = ti.getColumn("overlappingProjects");
+        if (overlappingCol != null)
+        {
+            json.put("overlappingProjectsFieldName", overlappingCol.getFieldKey().toString());
+            json.put("overlappingProjectsFieldKeyArray", new JSONArray(overlappingCol.getFieldKey().getParts()));
+        }
+
+        ColumnInfo allProjectsCol = ti.getColumn("allProjects");
+        if (allProjectsCol != null)
+        {
+            json.put("allProjectsFieldName", overlappingCol.getFieldKey().toString());
+            json.put("allProjectsFieldKeyArray", new JSONArray(overlappingCol.getFieldKey().getParts()));
+        }
 
         json.put("schemaName", getSchemaName());
         json.put("queryName", getQueryName());

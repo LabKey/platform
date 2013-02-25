@@ -182,7 +182,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         nameField.put("value", ctx.getUser().getDisplayName(ctx.getUser()) + "_" + format.format(new Date()));
         runMeta.put("Name", nameField);
 
-                runMeta.put("runDate", new JSONObject().put("hidden", true));
+        runMeta.put("runDate", new JSONObject().put("hidden", true));
         runMeta.put("comments", new JSONObject().put("hidden", true));
         runMeta.put("performedBy", new JSONObject().put("hidden", true));
         domainMeta.put("Run", runMeta);

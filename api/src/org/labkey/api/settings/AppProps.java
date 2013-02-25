@@ -82,6 +82,8 @@ public class AppProps
         public boolean isSSLRequired();
         public boolean isUserRequestedAdminOnlyMode();
         public String getAdminOnlyMessage();
+        public boolean isShowRibbonMessage();
+        public String getRibbonMessageHtml();
         public int getSSLPort();
         public int getMemoryUsageDumpInterval();
         public int getMaxBLOBSize();

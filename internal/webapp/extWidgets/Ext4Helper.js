@@ -212,7 +212,7 @@ LABKEY.ext.Ext4Helper = new function(){
             {
                 field.xtype = 'displayfield';
             }
-            else if (meta.lookup && meta.lookup['public'] !== false && meta.lookups !== false)
+            else if (meta.lookup && meta.lookup['public'] !== false && meta.lookups !== false && meta.facetingBehaviorType != 'ALWAYS_OFF')
             {
                 var l = meta.lookup;
 

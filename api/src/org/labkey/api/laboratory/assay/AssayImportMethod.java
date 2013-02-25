@@ -15,6 +15,7 @@
  */
 package org.labkey.api.laboratory.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -104,7 +105,9 @@ public interface AssayImportMethod
 
     abstract public String getProviderName();
 
-    abstract public void generateTemplate(JSONObject json, HttpServletRequest request, HttpServletResponse response, boolean exportAsWebpage) throws BatchValidationException;
+    abstract public void generateTemplate(ViewContext ctx, ExpProtocol protocol, @Nullable Integer templateId, String title, JSONObject json, boolean exportAsWebpage) throws BatchValidationException;
+
+    abstract public void validateTemplate(User u, Container c, ExpProtocol protocol, @Nullable Integer templateId, String title, JSONObject json, BatchValidationException errors) throws BatchValidationException;
 
     abstract public List<String> getImportColumns(ViewContext ctx, ExpProtocol protocol);
 }
