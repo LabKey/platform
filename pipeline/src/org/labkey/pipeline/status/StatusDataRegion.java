@@ -19,19 +19,15 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.pipeline.api.PipelineStatusManager;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.util.List;
 
 /**
  * StatusDataRegion class
@@ -80,7 +76,7 @@ public class StatusDataRegion extends DataRegion
                 "LABKEY.requiresScript('pipeline/StatusUpdate.js');\n" +
                 "</script>\n");
 
-        String controller = SpringActionController.getPageFlowName(_apiAction);
+        String controller = SpringActionController.getControllerName(_apiAction);
         String action = SpringActionController.getActionName(_apiAction);
         out.write("<script type=\"text/javascript\">\n" +
                 "var su = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + ", " + PageFlowUtil.jsString(action) + ", " + PageFlowUtil.jsString(_returnURL.toString()) + ");\n" +

@@ -32,7 +32,7 @@ public class CoreFirstRequestHandler implements FirstRequestHandler.FirstRequest
     public void handleFirstRequest(HttpServletRequest request)
     {
         ViewServlet.initialize();
-        ModuleLoader.getInstance().initPageFlowToModule();
+        ModuleLoader.getInstance().initControllerToModule();
         AuthenticationManager.initialize();
     }
 }
