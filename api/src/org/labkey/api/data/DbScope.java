@@ -1048,7 +1048,7 @@ public class DbScope
     public static class DialectTestCase extends Assert
     {
         @Test
-        public void test() throws SQLException, IOException
+        public void testAllScopes() throws SQLException, IOException
         {
             for (DbScope scope : getDbScopes())
             {
@@ -1062,20 +1062,6 @@ public class DbScope
                     executor.setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
                     dialect.testDialectKeywords(executor);
                     dialect.testKeywordCandidates(executor);
-
-                    testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.DATE, 31);
-                    testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.DATE, 366);
-
-                    testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.MONTH, 1);
-                    testDateDiff(scope, dialect, "2/1/2000", "1/31/2000", Calendar.MONTH, 1);
-                    testDateDiff(scope, dialect, "1/1/2000", "1/1/2000", Calendar.MONTH, 0);
-                    testDateDiff(scope, dialect, "1/31/2000", "1/1/2000", Calendar.MONTH, 0);
-                    testDateDiff(scope, dialect, "12/31/2000", "1/1/2000", Calendar.MONTH, 11);
-                    testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.MONTH, 12);
-                    testDateDiff(scope, dialect, "1/31/2001", "1/1/2000", Calendar.MONTH, 12);
-
-                    testDateDiff(scope, dialect, "1/1/2000", "12/31/2000", Calendar.YEAR, 0);
-                    testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.YEAR, 1);
                 }
                 finally
                 {
@@ -1083,6 +1069,28 @@ public class DbScope
                         scope.releaseConnection(conn);
                 }
             }
+        }
+
+        @Test
+        public void testLabKeyScope() throws SQLException
+        {
+            DbScope scope = getLabkeyScope();
+            SqlDialect dialect = scope.getSqlDialect();
+
+            testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.DATE, 31);
+            testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.DATE, 366);
+
+            testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.MONTH, 1);
+            testDateDiff(scope, dialect, "2/1/2000", "1/31/2000", Calendar.MONTH, 1);
+            testDateDiff(scope, dialect, "1/1/2000", "1/1/2000", Calendar.MONTH, 0);
+            testDateDiff(scope, dialect, "1/31/2000", "1/1/2000", Calendar.MONTH, 0);
+            testDateDiff(scope, dialect, "12/31/2000", "1/1/2000", Calendar.MONTH, 11);
+            testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.MONTH, 12);
+            testDateDiff(scope, dialect, "1/31/2001", "1/1/2000", Calendar.MONTH, 12);
+
+            testDateDiff(scope, dialect, "1/1/2000", "12/31/2000", Calendar.YEAR, 0);
+            testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.YEAR, 1);
+
         }
 
         private void testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
