@@ -126,7 +126,7 @@ public class SimpleUserSchema extends UserSchema
      */
     protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
     {
-        return new SimpleTable(this, sourceTable);
+        return new SimpleTable<SimpleUserSchema>(this, sourceTable);
     }
 
     public Set<String> getTableNames()
@@ -143,10 +143,9 @@ public class SimpleUserSchema extends UserSchema
             // Populate visible lazily if we haven't already
             for (String tableName : _available)
             {
-                TableInfo table = getTable(tableName);
+                SchemaTableInfo table = _dbSchema.getTable(tableName);
 
-                // CONSIDER: Add hidden bit to TableInfo
-                if (!(table instanceof SchemaTableInfo) || !((SchemaTableInfo)table).isHidden())
+                if (!table.isHidden())
                     _visible.add(tableName);
             }
         }
