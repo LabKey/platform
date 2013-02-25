@@ -44,10 +44,16 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
     /** @return the merged value/indicator OOR ColumnInfo */
     public static ColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption)
     {
-        ColumnInfo combinedCol = table.addWrapColumn(numberColumn);
+        return addOORColumns(table, numberColumn, oorIndicatorColumn, caption, true);
+    }
+
+    /** @return the merged value/indicator OOR ColumnInfo */
+    public static ColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption, boolean fromRealTable)
+    {
+        ColumnInfo combinedCol = fromRealTable ? table.addWrapColumn(numberColumn) : table.addColumn(numberColumn);
         combinedCol.setLabel(caption);
 
-        ColumnInfo wrappedOORIndicatorCol = table.addWrapColumn(oorIndicatorColumn);
+        ColumnInfo wrappedOORIndicatorCol = fromRealTable ? table.addWrapColumn(oorIndicatorColumn) : table.addColumn(oorIndicatorColumn);
         wrappedOORIndicatorCol.setLabel(caption + " OOR Indicator");
 
         // Only add new columns if there is no name conflict with either the real or virtual table
@@ -60,14 +66,14 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
             return null;
         }
 
-        combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory());
-
         ColumnInfo wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
         wrappedNumberColumn.setPropertyURI(null);
         wrappedNumberColumn.setLabel(caption + " " + NUMBER_COLUMN_SUFFIX);
 
+        combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory());     // Do this after wrappedNumberColumn in case we did addColumn above instead of addWrappedColumn
+
         SQLFragment inRangeSQL = new SQLFragment("CASE WHEN ");
-        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);
+        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);                                      // TODO: getValueSql   (oorIndicatorColumn)
         inRangeSQL.append(".");
         inRangeSQL.append(oorIndicatorColumn.getName());
         inRangeSQL.append(" IS NULL THEN ");
