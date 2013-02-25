@@ -287,7 +287,7 @@ public class SimpleUserSchema extends UserSchema
                         joinWithContainer = ((ColumnInfo.SchemaForeignKey)fk).isJoinWithContainer();
                     }
 
-                    ForeignKey wrapFk = new QueryForeignKey(_userSchema, fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName());
+                    ForeignKey wrapFk = new QueryForeignKey(fk.getLookupSchemaName(), getUserSchema().getContainer(), getUserSchema().getUser(), fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName());
                     if (fk instanceof MultiValuedForeignKey)
                     {
                         wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
