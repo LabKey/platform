@@ -1078,8 +1078,12 @@ public class AdminController extends SpringActionController
             return appendAdminNavTrail(root, "Customize Site", this.getClass());
         }
 
-        public void validateCommand(SiteSettingsForm target, Errors errors)
+        public void validateCommand(SiteSettingsForm form, Errors errors)
         {
+            if (form.isShowRibbonMessage() && StringUtils.isEmpty(form.getRibbonMessageHtml()))
+            {
+                errors.reject(ERROR_MSG, "Cannot enable the ribbon message without providing a message to show");
+            }
         }
 
         public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
@@ -1140,11 +1144,14 @@ public class AdminController extends SpringActionController
             props.setExt3Required(form.isExt3Required());
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
+            props.setShowRibbonMessage(form.isShowRibbonMessage());
+            props.setRibbonMessageHtml(form.getRibbonMessageHtml());
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
             props.setMascotServer(form.getMascotServer());
             props.setMascotUserAccount(form.getMascotUserAccount());
             props.setMascotUserPassword(form.getMascotUserPassword());
             props.setMascotHTTPProxy(form.getMascotHTTPProxy());
+
 
             try
             {
@@ -1499,8 +1506,10 @@ public class AdminController extends SpringActionController
         private String _pipelineToolsDirectory;
         private boolean _sslRequired;
         private boolean _adminOnlyMode;
+        private boolean _showRibbonMessage;
         private boolean _ext3Required;
         private String _adminOnlyMessage;
+        private String _ribbonMessageHtml;
         private int _sslPort;
         private int _memoryUsageDumpInterval;
         private int _maxBLOBSize;
@@ -1767,6 +1776,26 @@ public class AdminController extends SpringActionController
         public void setCallbackPassword(String callbackPassword)
         {
             _callbackPassword = callbackPassword;
+        }
+
+        public boolean isShowRibbonMessage()
+        {
+            return _showRibbonMessage;
+        }
+
+        public void setShowRibbonMessage(boolean showRibbonMessage)
+        {
+            _showRibbonMessage = showRibbonMessage;
+        }
+
+        public String getRibbonMessageHtml()
+        {
+            return _ribbonMessageHtml;
+        }
+
+        public void setRibbonMessageHtml(String ribbonMessageHtml)
+        {
+            _ribbonMessageHtml = ribbonMessageHtml;
         }
     }
 

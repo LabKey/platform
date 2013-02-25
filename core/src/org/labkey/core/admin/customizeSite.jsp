@@ -311,7 +311,22 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Put web site in administrative mode (<%=bean.helpLink%>)</td>
+    <td colspan=2>Ribbon Bar Message (<%=text(bean.helpLink)%>)</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr>
+    <td class="labkey-form-label">Display Message</td>
+    <td><input type="checkbox" name="showRibbonMessage" <%=text(appProps.isShowRibbonMessage() ? "checked=\"true\"" : "")%>></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Message HTML</td>
+    <td><textarea id="ribbonMessageHtml" name="ribbonMessageHtml" cols="60" rows="3"><%= h(appProps.getRibbonMessageHtml()) %></textarea></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
+<tr>
+    <td colspan=2>Put web site in administrative mode (<%=text(bean.helpLink)%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
