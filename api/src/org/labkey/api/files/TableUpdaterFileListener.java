@@ -18,16 +18,25 @@ package org.labkey.api.files;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Set;
 
 /**
  *
@@ -41,6 +50,7 @@ public class TableUpdaterFileListener implements FileListener
     private final TableInfo _table;
     private final String _pathColumn;
     private final PathGetter _pathGetter;
+    private final String _keyColumn;
 
     public interface PathGetter
     {
@@ -103,9 +113,25 @@ public class TableUpdaterFileListener implements FileListener
 
     public TableUpdaterFileListener(TableInfo table, String pathColumn, PathGetter pathGetter)
     {
+        this(table, pathColumn, pathGetter, null);
+    }
+
+    public TableUpdaterFileListener(TableInfo table, String pathColumn, PathGetter pathGetter, @Nullable String keyColumn)
+    {
         _table = table;
         _pathColumn = pathColumn;
         _pathGetter = pathGetter;
+        _keyColumn = keyColumn;
+    }
+
+    @Override
+    public String getSourceName()
+    {
+        StringBuilder name = new StringBuilder();
+        name.append(_table.getSchema().getName()).append(".");
+        name.append(_table.getName()).append(".");
+        name.append(_pathColumn);
+        return name.toString();
     }
 
     @Override
@@ -173,5 +199,80 @@ public class TableUpdaterFileListener implements FileListener
             int childRows = new SqlExecutor(schema).execute(childPathsSQL);
             LOG.info("Updated " + childRows + " child paths in " + _table + " rows for move from " + src + " to " + dest);
         }
+    }
+
+    @Override
+    public Collection<File> listFiles(@Nullable Container container)
+    {
+        Set<String> columns = Collections.singleton(_pathColumn);
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(_pathColumn, null, CompareType.NONBLANK);
+        if (container != null)
+        {
+            ColumnInfo containerColumn = _table.getColumn("container");
+            if (containerColumn == null)
+                containerColumn = _table.getColumn("folder");
+
+            if (containerColumn != null)
+                filter.addCondition(containerColumn, container.getEntityId());
+            else
+                filter.addCondition(new SimpleFilter.SQLClause("1 = 0", null));
+        }
+
+        Sort sort = new Sort(_pathColumn);
+        TableSelector selector = new TableSelector(_table, columns, filter, sort);
+
+        selector.setMaxRows(Table.ALL_ROWS);
+        return selector.getArrayList(File.class);
+    }
+
+    @Override
+    public SQLFragment listFilesQuery()
+    {
+        SqlDialect dialect = _table.getSqlDialect();
+        SQLFragment selectFrag = new SQLFragment();
+        selectFrag.append("SELECT\n");
+
+        // TODO: Add container expression for tables without container column (provisioned tables, genotyping.analyses uses container in genotyping.runs table)
+        if (_table.getColumn("Container") != null)
+            selectFrag.append("  Container,\n");
+        else if (_table.getColumn("Folder") != null)
+            selectFrag.append("  Folder AS Container\n");
+        else
+            selectFrag.append("  NULL AS Container,\n");
+
+        if (_table.getColumn("Created") != null)
+            selectFrag.append("  Created,\n");
+        else
+            selectFrag.append("  NULL AS Created,\n");
+
+        if (_table.getColumn("CreatedBy") != null)
+            selectFrag.append("  CreatedBy,\n");
+        else
+            selectFrag.append("  NULL AS CreatedBy,\n");
+
+        if (_table.getColumn("Modified") != null)
+            selectFrag.append("  Modified,\n");
+        else
+            selectFrag.append("  NULL AS Modified,\n");
+
+        if (_table.getColumn("ModifiedBy") != null)
+            selectFrag.append("  ModifiedBy,\n");
+        else
+            selectFrag.append("  NULL AS ModifiedBy,\n");
+
+        selectFrag.append("  ").append(dialect.makeLegalIdentifier(_pathColumn)).append(" AS FilePath,\n");
+
+        if (_keyColumn != null)
+            selectFrag.append("  ").append(dialect.makeLegalIdentifier(_keyColumn)).append(" AS SourceKey,\n");
+        else
+            selectFrag.append("  NULL AS SourceKey,\n");
+
+        //selectFrag.append("  ? AS SourceName\n").add(getName());
+        selectFrag.append("  ").append(_table.getSchema().getSqlDialect().getStringHandler().quoteStringLiteral(getSourceName())).append(" AS SourceName\n");
+
+        selectFrag.append("FROM ").append(_table).append("\n");
+
+        return selectFrag;
     }
 }

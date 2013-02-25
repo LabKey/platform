@@ -18,9 +18,11 @@ package org.labkey.api.files;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.security.User;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
  * Listener that gets notified when the server moves files or directories on the file system. Method is invoked
@@ -30,6 +32,8 @@ import java.io.File;
  */
 public interface FileListener
 {
+    public String getSourceName();
+    
     /**
      * Called AFTER the file has already been created on disk
      * @param created newly created resource
@@ -46,4 +50,29 @@ public interface FileListener
      * @param container if available, the container in which the move was initiated
      */
     public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
+
+    /**
+     * List file paths in the database this FileListener is aware of.
+     * @param container If not null, list files in the given container, otherwise from all containers.
+     * @return
+     */
+    public Collection<File> listFiles(@Nullable Container container);
+
+    /**
+     * Returns a SQLFragment for file paths that this FileListener is aware of.
+     * The expected columns are:
+     * <ul>
+     *     <li>Container</li>
+     *     <li>Created</li>
+     *     <li>CreatedBy</li>
+     *     <li>Modified</li>
+     *     <li>ModifiedBy</li>
+     *     <li>FilePath</li>
+     *     <li>SourceKey</li>
+     *     <li>SourceName</li>
+     * </ul>
+     *
+     * @return
+     */
+    public SQLFragment listFilesQuery();
 }

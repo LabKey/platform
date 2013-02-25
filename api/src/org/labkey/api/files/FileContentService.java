@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.query.QueryUpdateService;
@@ -27,6 +28,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -150,4 +153,7 @@ public interface FileContentService
     public void fireFileCreateEvent(@NotNull File created, @Nullable User user, @Nullable Container container);
     public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
     public void addFileListener(FileListener listener);
+
+    public Map<String, Collection<File>> listFiles(@NotNull Container container);
+    public SQLFragment listFilesQuery(@NotNull User currentUser);
 }
