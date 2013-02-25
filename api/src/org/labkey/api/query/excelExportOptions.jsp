@@ -24,20 +24,18 @@
 <%
     JspView<QueryView.ExcelExportOptionsBean> me = (JspView<QueryView.ExcelExportOptionsBean>) HttpView.currentView();
     QueryView.ExcelExportOptionsBean model = me.getModelBean();
-    String xlsGUID = GUID.makeGUID();
     String xlsxGUID = GUID.makeGUID();
-    String onClickScript = null;
-
-    onClickScript = "window.location = document.getElementById('" + xlsGUID + "').checked ? " + PageFlowUtil.jsString(model.getXlsURL().getLocalURIString()) + " : (document.getElementById('" + xlsxGUID + "').checked ? " + PageFlowUtil.jsString(model.getXlsxURL().getLocalURIString()) + " : " + PageFlowUtil.jsString(model.getIqyURL() == null ? "" : model.getIqyURL().getLocalURIString()) + "); return false;";
+    String xlsGUID = GUID.makeGUID();
+    String onClickScript = "window.location = document.getElementById('" + xlsGUID + "').checked ? " + PageFlowUtil.jsString(model.getXlsURL().getLocalURIString()) + " : (document.getElementById('" + xlsxGUID + "').checked ? " + PageFlowUtil.jsString(model.getXlsxURL().getLocalURIString()) + " : " + PageFlowUtil.jsString(model.getIqyURL() == null ? "" : model.getIqyURL().getLocalURIString()) + "); return false;";
 %>
 <table class="labkey-export-tab-contents">
     <tr>
-        <td valign="center"><input type="radio" id="<%=xlsGUID%>" name="excelExportType" value="<%=h(model.getXlsURL()) %>" checked="true" /></td>
-        <td valign="center"><label for="<%=xlsGUID%>">Excel 97 File (.xls)</label> <span style="font-size: smaller">Maximum 65,536 rows and 256 columns.</span></td>
+        <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="excelExportType" value="<%=h(model.getXlsxURL()) %>" checked="true" /></td>
+        <td valign="center"><label for="<%=h(xlsxGUID)%>">Excel 2007 File (.xlsx)</label> <span style="font-size: smaller">Maximum 1,048,576 rows and 16,384 columns.</span></td>
     </tr>
     <tr>
-        <td valign="center"><input type="radio" id="<%=xlsxGUID%>" name="excelExportType" value="<%=h(model.getXlsxURL()) %>" /></td>
-        <td valign="center"><label for="<%=xlsxGUID%>">Excel 2007 File (.xlsx)</label> <span style="font-size: smaller">Maximum 1,048,576 rows and 16,384 columns.</span></td>
+        <td valign="center"><input type="radio" id="<%=h(xlsGUID)%>" name="excelExportType" value="<%=h(model.getXlsURL()) %>" /></td>
+        <td valign="center"><label for="<%=h(xlsGUID)%>">Excel 97 File (.xls)</label> <span style="font-size: smaller">Maximum 65,536 rows and 256 columns.</span></td>
     </tr>
     <% if (model.getIqyURL() != null) { %>
         <tr>
