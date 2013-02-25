@@ -109,7 +109,6 @@ public class ModuleLoader implements Filter
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<String, Throwable>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<String, Module>();
-    private static final Map<Package, String> _packageToPageFlowURL = new HashMap<Package, String>();
     private static final Map<String, Module> _schemaNameToModule = new HashMap<String, Module>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new ConcurrentHashMap<String, Collection<ResourceFinder>>();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<Class, Class<? extends UrlProvider>>();
@@ -1128,7 +1127,7 @@ public class ModuleLoader implements Filter
         return list;
     }
 
-    public void initPageFlowToModule()
+    public void initControllerToModule()
     {
         synchronized(_controllerNameToModule)
         {
@@ -1149,7 +1148,6 @@ public class ModuleLoader implements Filter
                     _controllerNameToModule.put(key.toLowerCase(), module);
 
                     Class clazz = entry.getValue();
-                    _packageToPageFlowURL.put(clazz.getPackage(), key);
                     for (Class innerClass : clazz.getClasses())
                     {
                         for (Class inter : innerClass.getInterfaces())

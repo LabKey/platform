@@ -142,8 +142,16 @@ public class ActionURL extends URLHelper implements Cloneable
     public ActionURL(Class<? extends Controller> actionClass, Container container)
     {
         this(true);
-        _controller = SpringActionController.getPageFlowName(actionClass);
+        _controller = SpringActionController.getControllerName(actionClass);
+        if (_controller == null)
+        {
+            throw new IllegalStateException("Could not find a controller name for " + actionClass);
+        }
         _action = SpringActionController.getActionName(actionClass);
+        if (_action == null)
+        {
+            throw new IllegalStateException("Could not find an action name for " + actionClass);
+        }
         setContainer(container);
     }
 
@@ -555,7 +563,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
     public ActionURL setAction(Class<? extends Controller> actionClass)
     {
-        setController(SpringActionController.getPageFlowName(actionClass));
+        setController(SpringActionController.getControllerName(actionClass));
         setAction(SpringActionController.getActionName(actionClass));
         return this;
     }

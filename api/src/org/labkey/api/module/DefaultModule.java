@@ -294,10 +294,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
 
     // Map all names to controller class
-    private void addControllerName(String pageFlowName, Class<? extends Controller> controllerClass)
+    private void addControllerName(String controllerName, Class<? extends Controller> controllerClass)
     {
-        assert null == _controllerNameToClass.get(pageFlowName) : "Controller name '" + pageFlowName + "' is already registered";
-        _controllerNameToClass.put(pageFlowName, controllerClass);
+        assert null == _controllerNameToClass.get(controllerName) : "Controller name '" + controllerName + "' is already registered";
+        _controllerNameToClass.put(controllerName, controllerClass);
     }
 
 

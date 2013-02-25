@@ -136,9 +136,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return ad;
     }
 
-    public static String getPageFlowName(Class<? extends Controller> actionClass)
+    public static String getControllerName(Class<? extends Controller> actionClass)
     {
-        return getActionDescriptor(actionClass).getPageFlow();
+        return getActionDescriptor(actionClass).getControllerName();
     }
 
     public static String getActionName(Class<? extends Controller> actionClass)
@@ -156,7 +156,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public interface ActionDescriptor
     {
-        String getPageFlow();
+        String getControllerName();
         String getPrimaryName();
         List<String> getAllNames();
         Class<? extends Controller> getActionClass();
@@ -663,7 +663,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _allNames = Arrays.asList(_primaryName);
             }
 
-            public String getPageFlow()
+            public String getControllerName()
             {
                 return _controllerName;
             }
@@ -872,7 +872,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             }
 
-            public String getPageFlow()
+            public String getControllerName()
             {
                 return _controllerName;
             }
