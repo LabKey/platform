@@ -25,7 +25,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.StudyManager;
 
 /**
  * User: brittp
@@ -52,12 +51,12 @@ public class DataSetsTable extends FilteredTable<StudyQuerySchema>
             @Override
             public SQLFragment getValueSql(String tableAlias)
             {
-                TableInfo tinfo = QuerySnapshotService.get(StudyManager.getSchemaName()).getTableInfoQuerySnapshotDef();
+                TableInfo tinfo = QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).getTableInfoQuerySnapshotDef();
                 SqlDialect d = getSqlDialect();
 
                 SQLFragment sql = new SQLFragment("(CASE WHEN EXISTS (SELECT RowId FROM ");
                 sql.append(tinfo, "qs");
-                sql.append(" WHERE 'qs.schema' = '").append(StudyManager.getSchemaName()).append("' AND ").append(tableAlias).append(".Name = qs.Name AND ");
+                sql.append(" WHERE 'qs.schema' = '").append(StudySchema.getInstance().getSchemaName()).append("' AND ").append(tableAlias).append(".Name = qs.Name AND ");
                 sql.append(tableAlias).append(".Container = qs.Container) THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
                 
                 return sql;

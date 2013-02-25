@@ -18,7 +18,14 @@ package org.labkey.study.reports;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -32,12 +39,16 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -88,7 +99,7 @@ public class ChartReportView extends AbstractReportView
             int datasetId = NumberUtils.toInt(descriptor.getProperty("datasetId"), -1);
             if (datasetId != -1)
             {
-                descriptor.setProperty(ReportDescriptor.Prop.schemaName, StudyManager.getSchemaName());
+                descriptor.setProperty(ReportDescriptor.Prop.schemaName, StudySchema.getInstance().getSchemaName());
 
                 Study study = StudyService.get().getStudy(HttpView.currentContext().getContainer());
                 if (study != null)
@@ -116,7 +127,7 @@ public class ChartReportView extends AbstractReportView
             params.add(new Pair<String, String>("chartsPerRow", chartsPerRow));
 
         ReportDescriptor descriptor = getDescriptor();
-        descriptor.setProperty(QueryParam.schemaName.toString(), StudyManager.getSchemaName());
+        descriptor.setProperty(QueryParam.schemaName.toString(), StudySchema.getInstance().getSchemaName());
         descriptor.setProperty(QueryParam.queryName.toString(), url.getParameter(QueryParam.queryName.toString()));
 
         String viewName = url.getParameter(QueryParam.viewName.toString());

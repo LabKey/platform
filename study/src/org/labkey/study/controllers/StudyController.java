@@ -738,7 +738,7 @@ public class StudyController extends BaseStudyController
                 DataSetDefinition def = getDataSetDefinition();
 
                 if (def != null &&
-                    QueryService.get().getCustomView(getUser(), getContainer(), StudyManager.getSchemaName(), def.getLabel(), viewName) == null)
+                    QueryService.get().getCustomView(getUser(), getContainer(), StudySchema.getInstance().getSchemaName(), def.getLabel(), viewName) == null)
                 {
                     ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
                     if (reportId != null && reportId.getReport(getViewContext()) != null)
@@ -784,7 +784,7 @@ public class StudyController extends BaseStudyController
                     throw new NotFoundException();
             }
 
-            boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel()) &&
+            boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), def.getLabel()) &&
                 !def.isAssayData();
 
             UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), StudyQuerySchema.SCHEMA_NAME);
@@ -5064,7 +5064,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(StudySnapshotForm form, BindException errors) throws Exception
         {
-            DbSchema schema = StudyManager.getSchema();
+            DbSchema schema = StudySchema.getInstance().getSchema();
 
             try {
                 schema.getScope().ensureTransaction();

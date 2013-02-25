@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 LabKey Corporation
+ * Copyright (c) 2012-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -408,7 +408,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
             importParticipantGroups(destStudy, vf, errors);
 
-            QuerySnapshotService.I svc = QuerySnapshotService.get(StudyManager.getSchemaName());
+            QuerySnapshotService.I svc = QuerySnapshotService.get(StudySchema.getInstance().getSchemaName());
 
             List<Integer> participantGroups = new ArrayList<Integer>();
             if (!_participantGroups.isEmpty())

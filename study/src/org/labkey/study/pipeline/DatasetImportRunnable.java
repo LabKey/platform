@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Filter;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
@@ -108,7 +109,7 @@ public class DatasetImportRunnable implements Runnable
         CPUTimer cpuImport = new CPUTimer(name + ": import");
         CPUTimer cpuCommit = new CPUTimer(name + ": commit");
 
-        DbSchema schema  = StudyManager.getSchema();
+        DbSchema schema  = StudySchema.getInstance().getSchema();
         DbScope scope = schema.getScope();
         QCState defaultQCState = _study.getDefaultPipelineQCState() != null ?
                 StudyManager.getInstance().getQCStateForRowId(_job.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;

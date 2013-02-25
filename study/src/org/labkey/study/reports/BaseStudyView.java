@@ -49,7 +49,7 @@ public class BaseStudyView<T> extends HttpView<T>
         _study = study;
 
         _studyManager = StudyManager.getInstance();
-        _schema = StudyManager.getSchema();
+        _schema = StudySchema.getInstance().getSchema();
         _tableVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
     }
 

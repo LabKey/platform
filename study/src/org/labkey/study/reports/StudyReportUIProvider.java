@@ -38,6 +38,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.TimeChartReport;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
@@ -162,7 +163,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
 
         crossTabURL.addParameter(ActionURL.Param.redirectUrl, returnUrl.getLocalURIString());
 
-        if (StudyManager.getSchemaName().equals(settings.getSchemaName()))
+        if (StudySchema.getInstance().getSchemaName().equals(settings.getSchemaName()))
         {
             // crosstab report
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, StudyCrosstabReport.TYPE);

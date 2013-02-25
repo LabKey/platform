@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.query.QueryParam"%>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.DataSetQueryView" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -35,7 +35,7 @@
     ReportsController.CreateQueryReportBean bean = me.getModelBean();
     Container container = HttpView.currentContext().getContainer();
 
-    String paramStart = QueryParam.schemaName.toString() + "=" + StudyManager.getSchemaName();
+    String paramStart = QueryParam.schemaName.toString() + "=" + StudySchema.getInstance().getSchemaName();
 %>
 <script type="text/javascript">
     function verifyLabel()

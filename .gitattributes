@@ -3107,6 +3107,7 @@ study/src/org/labkey/study/model/DataSetDefinition.java -text
 study/src/org/labkey/study/model/DataSetDefinitionEntry.java -text
 study/src/org/labkey/study/model/DatasetDomainKind.java -text
 study/src/org/labkey/study/model/DatasetImportHelper.java -text
+study/src/org/labkey/study/model/DatasetManager.java -text
 study/src/org/labkey/study/model/DatasetReorderer.java -text
 study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
@@ -3138,6 +3139,7 @@ study/src/org/labkey/study/model/SpecimenTypeSummary.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummaryRow.java -text
 study/src/org/labkey/study/model/StudyDomainKind.java -text
 study/src/org/labkey/study/model/StudyImpl.java -text
+study/src/org/labkey/study/model/StudyLsidHandler.java -text
 study/src/org/labkey/study/model/StudyManager.java -text
 study/src/org/labkey/study/model/StudySnapshot.java -text
 study/src/org/labkey/study/model/TestDatasetDomainKind.java -text

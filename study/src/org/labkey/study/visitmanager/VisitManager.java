@@ -44,8 +44,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.data.Filter;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.study.CohortFilter;
@@ -601,7 +599,7 @@ public abstract class VisitManager
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         //See if there are any demographic datasets that contain a start date
-        DbSchema schema = StudyManager.getSchema();
+        DbSchema schema = StudySchema.getInstance().getSchema();
 
         for (DataSetDefinition dataset : getStudy().getDataSets())
         {
@@ -619,7 +617,7 @@ public abstract class VisitManager
                     String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE (" +
                             tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect +
                             ") AND Container = ?";
-                    Table.execute(StudyManager.getSchema(), sql, dataset.getContainer().getId(), dataset.getContainer().getId(), dataset.getContainer().getId());
+                    Table.execute(schema, sql, dataset.getContainer().getId(), dataset.getContainer().getId(), dataset.getContainer().getId());
                     break;
                 }
             }

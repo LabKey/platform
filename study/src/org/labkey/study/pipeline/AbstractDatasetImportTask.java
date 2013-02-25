@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.util.Path;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.StudySchema;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DataSetDefinition;
@@ -90,7 +91,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         {
             try
             {
-                QuerySnapshotService.get(StudyManager.getSchemaName()).pauseUpdates(study.getContainer());
+                QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
                 DatasetFileReader reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, job);
                 List<String> errors = new ArrayList<String>();
 
@@ -159,7 +160,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
             }
             finally
             {
-                QuerySnapshotService.get(StudyManager.getSchemaName()).resumeUpdates(ctx.getUser(), study.getContainer());
+                QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).resumeUpdates(ctx.getUser(), study.getContainer());
                 File lock = StudyPipeline.lockForDataset(study, Path.parse(datasetsDirectory.getLocation()).append(datasetsFileName));
                 if (lock.exists() && lock.canRead() && lock.canWrite())
                     lock.delete();

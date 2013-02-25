@@ -32,12 +32,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -60,9 +58,11 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantCategoryListener;
 import org.labkey.study.model.ParticipantGroup;
@@ -96,7 +96,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Time: 4:57:40 PM
  */
 
-public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, StudyManager.DataSetListener, ParticipantCategoryListener
+public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, DatasetManager.DataSetListener, ParticipantCategoryListener
 {
     private static final DatasetSnapshotProvider _instance = new DatasetSnapshotProvider();
     private static final Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
@@ -114,7 +114,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private DatasetSnapshotProvider()
     {
-        StudyManager.addDataSetListener(this);
+        DatasetManager.addDataSetListener(this);
         ParticipantGroupManager.addCategoryListener(this);
     }
 
@@ -185,7 +185,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public void createSnapshot(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors) throws Exception
     {
-        DbSchema schema = StudyManager.getSchema();
+        DbSchema schema = StudySchema.getInstance().getSchema();
 
         try
         {
@@ -366,7 +366,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, def.getName());
             if (dsDef != null)
             {
-                DbSchema schema = StudyManager.getSchema();
+                DbSchema schema = StudySchema.getInstance().getSchema();
 
                 try
                 {
@@ -712,7 +712,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 form.init(_def, _def.getCreatedBy());
 
                 BindException errors = new NullSafeBindException(new Object(), "command");
-                QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form, errors, _suppressVisitManagerRecalc);
+                QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).updateSnapshot(form, errors, _suppressVisitManagerRecalc);
             }
             catch(Exception e)
             {

@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
+<%@ page import="org.labkey.study.StudySchema" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportsController.CreateCrosstabBean> me = (JspView<ReportsController.CreateCrosstabBean>) HttpView.currentView();
@@ -33,7 +34,7 @@
     ActionURL returnURL = new ActionURL(ReportsController.ManageReportsAction.class, getViewContext().getContainer());
 %>
 <form action="participantCrosstab.view" method="GET">
-<input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=StudyManager.getSchemaName()%>">
+<input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=StudySchema.getInstance().getSchemaName()%>">
 <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=StudyCrosstabReport.TYPE%>">
 <input type="hidden" name="redirectUrl" value="<%=returnURL.getLocalURIString()%>">
 <table>

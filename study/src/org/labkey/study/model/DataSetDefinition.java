@@ -2403,7 +2403,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
         }
 
-        SQLFragment sql = StudyManager.getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
+        SQLFragment sql = StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
         return sql;
     }
 

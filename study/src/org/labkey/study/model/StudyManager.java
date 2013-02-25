@@ -50,12 +50,10 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
@@ -162,7 +160,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class StudyManager
@@ -172,8 +170,8 @@ public class StudyManager
     public static final SearchService.SearchCategory assayCategory = new SearchService.SearchCategory("assay", "Study Assay");
 
     private static final Logger _log = Logger.getLogger(StudyManager.class);
-    private static StudyManager _instance;
-    private static final String SCHEMA_NAME = "study";
+    private static final StudyManager _instance = new StudyManager();
+
     private final TableInfo _tableInfoVisitMap;
     private final TableInfo _tableInfoParticipant;
     private final TableInfo _tableInfoUploadLog;
@@ -183,8 +181,7 @@ public class StudyManager
     private final QueryHelper<LocationImpl> _locationHelper;
     private final DataSetHelper _dataSetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
-
-    private Map<String, Resource> _moduleParticipantViews = null;
+    private final Map<String, Resource> _moduleParticipantViews = new ConcurrentHashMap<String, Resource>();
 
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
@@ -214,7 +211,7 @@ public class StudyManager
                     {
                         try
                         {
-                            StudyCachable[] objs = Table.executeQuery(StudyManager.getSchema(), "SELECT * FROM study.study WHERE Container = ?", new Object[]{c}, StudyImpl.class);
+                            StudyCachable[] objs = Table.executeQuery(StudySchema.getInstance().getSchema(), "SELECT * FROM study.Study WHERE Container = ?", new Object[]{c}, StudyImpl.class);
                             for (StudyCachable obj : objs)
                                 obj.lock();
                             return objs;
@@ -227,7 +224,6 @@ public class StudyManager
                 };
                 return (StudyImpl[]) StudyCache.get(getTableInfo(), c, cacheId, loader);
             }
-
         };
 
         _visitHelper = new QueryHelper<VisitImpl>(new TableInfoGetter()
@@ -335,25 +331,11 @@ public class StudyManager
     }
 
 
-    // NOTE: This (largely) deprecated pattern must be used here since some static methods are called early
-    // in the server lifecyle, before the constructor can be called.
-    public static synchronized StudyManager getInstance()
+    public static StudyManager getInstance()
     {
-        if (_instance == null)
-            _instance = new StudyManager();
         return _instance;
     }
 
-
-    public static String getSchemaName()
-    {
-        return SCHEMA_NAME;
-    }
-
-    public static DbSchema getSchema()
-    {
-        return DbSchema.get(SCHEMA_NAME);
-    }
 
     @Nullable
     public synchronized StudyImpl getStudy(Container c)
@@ -479,7 +461,7 @@ public class StudyManager
     {
         if (dataSetDefinition.getDataSetId() <= 0)
             throw new IllegalArgumentException("datasetId must be greater than zero.");
-        DbScope scope = getSchema().getScope();
+        DbScope scope = StudySchema.getInstance().getScope();
 
         try
         {
@@ -523,7 +505,7 @@ public class StudyManager
 
     public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition)
     {
-        DbScope scope = getSchema().getScope();
+        DbScope scope = StudySchema.getInstance().getScope();
 
         try
         {
@@ -567,13 +549,13 @@ public class StudyManager
                         colFrag = storageTableInfo.getSqlDialect().getISOFormat(colFrag);
                     updateKeySQL.append(colFrag);
                 }
-                new SqlExecutor(getSchema()).execute(updateKeySQL);
+                new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateKeySQL);
 
                 // Now update the LSID column. Note - this needs to be the same as DatasetImportHelper.getURI()
                 SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
                 updateLSIDSQL.append(dataSetDefinition.generateLSIDSQL());
                 // TODO drop PK
-                new SqlExecutor(getSchema()).execute(updateLSIDSQL);
+                new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateLSIDSQL);
                 // TODO add PK
             }   
             Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
@@ -606,8 +588,8 @@ public class StudyManager
         // don't use dataSet.getTableInfo() since this method is called during updateDatasetDefinition`() and may be in an inconsistent state
         TableInfo t = dataSet.getStorageTableInfo();
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT max(n) FROM (select count(*) AS n from ").append(t.getFromSQL("DS")).append(" group by participantid) x");
-        Integer maxCount = Table.executeSingleton(getSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class);
+        sql.append("SELECT max(n) FROM (SELECT COUNT(*) AS n FROM ").append(t.getFromSQL("DS")).append(" GROUP BY participantid) x");
+        Integer maxCount = Table.executeSingleton(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class);
         return maxCount == null || maxCount.intValue() <= 1;
     }
 
@@ -2079,7 +2061,7 @@ public class StudyManager
         deleteDatasetType(study, user, ds);
         try {
             QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(), 
-                    StudyManager.getSchemaName(), ds.getLabel());
+                    StudySchema.getInstance().getSchemaName(), ds.getLabel());
             if (def != null)
                 def.delete(user);
         }
@@ -3075,96 +3057,6 @@ public class StudyManager
         return dc.getFormatString() == null;
     }
 
-    // for Module()
-    public static LsidManager.LsidHandler getLsidHandler()
-    {
-        return new StudyLsidHandler();
-    }
-
-
-    static class StudyLsidHandler implements LsidManager.LsidHandler
-    {
-        public ExpObject getObject(Lsid lsid)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public Container getContainer(Lsid lsid)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public String getDisplayURL(Lsid lsid)
-        {
-            // TODO fix getDisplayUrl
-            if (true) throw new RuntimeException("not integrated with hard tables");
-
-            String fullNamespace = lsid.getNamespace();
-            if (!fullNamespace.startsWith("Study."))
-                return null;
-            String studyNamespace = fullNamespace.substring("Study.".length());
-            int i = studyNamespace.indexOf("-");
-            if (-1 == i)
-                return null;
-            String type = studyNamespace.substring(0, i);
-
-            if (type.equalsIgnoreCase("Data"))
-            {
-                try
-                {
-                    ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
-                            "SELECT Container, DatasetId, SequenceNum, ParticipantId FROM " + /*StudySchema.getInstance().getTableInfoStudyData(null) +*/ " WHERE LSID=?",
-                            new Object[] {lsid.toString()});
-                    if (!rs.next())
-                        return null;
-                    String containerId = rs.getString(1);
-                    int datasetId = rs.getInt(2);
-                    double sequenceNum = rs.getDouble(3);
-                    String ptid = rs.getString(4);
-                    Container c = ContainerManager.getForId(containerId);
-                    ActionURL url = new ActionURL(StudyController.DatasetAction.class, c);
-                    url.addParameter(DataSetDefinition.DATASETKEY, String.valueOf(datasetId));
-                    url.addParameter(VisitImpl.SEQUENCEKEY, String.valueOf(sequenceNum));
-                    url.addParameter("StudyData.participantId~eq", ptid);
-                    return url.toString();
-                }
-                catch (SQLException x)
-                {
-                    throw new RuntimeSQLException(x);
-                }
-            }
-/*
-            if (type.equalsIgnoreCase("Participant"))
-            {
-                try
-                {
-                    ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
-                            "SELECT Container, ParticipantId FROM " + StudySchema.getInstance().getTableInfoParticipant() + " WHERE IndividualLSID=?",
-                            new Object[] {lsid.toString()});
-                    if (!rs.next())
-                        return null;
-                    String containerId = rs.getString(1);
-                    String ptid = rs.getString(2);
-                    Container c = ContainerManager.getForId(containerId);
-                    ActionURL url = new ActionURL("Study", "participant", c);
-                    url.addParameter("Participant.participantId~eq", ptid);
-                    return url.getURIString();
-                }
-                catch (SQLException x)
-                {
-                    throw new RuntimeSQLException(x);
-                }
-            }
-*/
-            return null;
-        }
-
-        public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
-        {
-            return false;
-        }
-    }
-
     private String getParticipantCacheName(Container container)
     {
         return container.getId() + "/" + Participant.class.toString();
@@ -3207,25 +3099,22 @@ public class StudyManager
         if (study == null)
             return null;
 
-        if (_moduleParticipantViews != null)
+        Set<Module> activeModules = study.getContainer().getActiveModules();
+        Set<String> activeModuleNames = new HashSet<String>();
+        for (Module module : activeModules)
+            activeModuleNames.add(module.getName());
+        for (Map.Entry<String, Resource> entry : _moduleParticipantViews.entrySet())
         {
-            Set<Module> activeModules = study.getContainer().getActiveModules();
-            Set<String> activeModuleNames = new HashSet<String>();
-            for (Module module : activeModules)
-                activeModuleNames.add(module.getName());
-            for (Map.Entry<String, Resource> entry : _moduleParticipantViews.entrySet())
+            if (activeModuleNames.contains(entry.getKey()) && entry.getValue().exists())
             {
-                if (activeModuleNames.contains(entry.getKey()) && entry.getValue().exists())
+                try
                 {
-                    try
-                    {
-                        String body = IOUtils.toString(entry.getValue().getInputStream());
-                        return CustomParticipantView.createModulePtidView(body);
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException("Unable to load participant view from " + entry.getValue().getPath(), e);
-                    }
+                    String body = IOUtils.toString(entry.getValue().getInputStream());
+                    return CustomParticipantView.createModulePtidView(body);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException("Unable to load participant view from " + entry.getValue().getPath(), e);
                 }
             }
         }
@@ -3282,19 +3171,6 @@ public class StudyManager
         return new BaseStudyController.StudyJspView<ParticipantViewConfig>(getStudy(container), "participantCharacteristics.jsp", config, errors);
     }
 
-    public interface DataSetListener
-    {
-        void dataSetChanged(DataSet def);
-    }
-
-    // Thread-safe list implementation that allows iteration and modifications without external synchronization
-    private static final List<DataSetListener> _listeners = new CopyOnWriteArrayList<DataSetListener>();
-
-    public static void addDataSetListener(DataSetListener listener)
-    {
-        _listeners.add(listener);
-    }
-
     /**
      * Called when a dataset has been modified in order to set the modified time, plus any other related actions.
      * @param fireNotification - true to fire the changed notification.
@@ -3312,7 +3188,7 @@ public class StudyManager
     
     public static void fireDataSetChanged(DataSet def)
     {
-        for (DataSetListener l : _listeners)
+        for (DatasetManager.DataSetListener l : DatasetManager._listeners)
         {
             try {
                 l.dataSetChanged(def);
@@ -3592,8 +3468,6 @@ public class StudyManager
     
     public void registerParticipantView(Module module, Resource ptidView)
     {
-        if (_moduleParticipantViews == null)
-            _moduleParticipantViews = new HashMap<String, Resource>();
         _moduleParticipantViews.put(module.getName(), ptidView);
     }
 

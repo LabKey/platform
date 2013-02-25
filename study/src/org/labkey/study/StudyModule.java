@@ -125,6 +125,7 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyDomainKind;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyLsidHandler;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.VisitDatasetDomainKind;
@@ -261,7 +262,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         EnumConverter.registerEnum(SecurityType.class);
         EnumConverter.registerEnum(TimepointType.class);
-        QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
+        QuerySnapshotService.registerProvider(StudySchema.getInstance().getSchemaName(), DatasetSnapshotProvider.getInstance());
 
         ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
 
@@ -333,7 +334,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());
-        LsidManager.get().registerHandler("Study", StudyManager.getLsidHandler());
+        LsidManager.get().registerHandler("Study", new StudyLsidHandler());
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         if(null != wikiService)
             wikiService.registerMacroProvider("study", new StudyMacroProvider());
@@ -422,7 +423,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(StudyManager.getSchemaName(), "studydataset", "assayresult");
+        return PageFlowUtil.set(StudySchema.getInstance().getSchemaName(), "studydataset", "assayresult");
     }
 
     @Override

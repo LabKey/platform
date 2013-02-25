@@ -18,6 +18,7 @@ package org.labkey.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
@@ -38,6 +39,7 @@ import java.util.List;
 public class StudySchema
 {
     private static final StudySchema instance = new StudySchema();
+    private static final String SCHEMA_NAME = "study";
 
     public static StudySchema getInstance()
     {
@@ -48,9 +50,19 @@ public class StudySchema
     {
     }
 
+    public String getSchemaName()
+    {
+        return SCHEMA_NAME;
+    }
+
     public DbSchema getSchema()
     {
-        return StudyManager.getSchema();
+        return DbSchema.get(SCHEMA_NAME);
+    }
+
+    public DbScope getScope()
+    {
+        return getSchema().getScope();
     }
 
     public String getDatasetSchemaName()

@@ -36,6 +36,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
@@ -68,7 +69,7 @@ public class StudyQueryReport extends QueryReport
         {
             try {
                 String queryName = getDescriptor().getProperty(QueryParam.queryName.name());
-                QueryDefinition def = QueryService.get().getQueryDef(context.getUser(), context.getContainer(), StudyManager.getSchemaName(), queryName);
+                QueryDefinition def = QueryService.get().getQueryDef(context.getUser(), context.getContainer(), StudySchema.getInstance().getSchemaName(), queryName);
                 if (def == null)
                 {
                     // not a custom query definition, try a table based definition

@@ -52,6 +52,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
+import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
@@ -93,7 +94,7 @@ public class StudyDesignManager
 
     public DbSchema getSchema()
     {
-        return StudyManager.getSchema();
+        return StudySchema.getInstance().getSchema();
     }
 
     public TableInfo getStudyDesignTable()

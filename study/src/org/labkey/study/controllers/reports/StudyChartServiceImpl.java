@@ -47,6 +47,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
 import gwt.client.org.labkey.study.chart.client.StudyChartService;
 import gwt.client.org.labkey.study.chart.client.model.GWTPair;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -197,7 +198,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
             DataSet def = StudyManager.getInstance().getDataSetDefinition(study, showWithDataset);
             if (def != null)
                 queryName = def.getLabel();
-            return ReportUtil.getReportKey(StudyManager.getSchemaName(), queryName);
+            return ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), queryName);
         }
         return ReportUtil.getReportQueryKey(descriptor);
     }

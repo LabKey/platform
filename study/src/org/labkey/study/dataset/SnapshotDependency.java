@@ -32,8 +32,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantCategoryImpl;
-import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
@@ -115,7 +115,7 @@ public abstract class SnapshotDependency
                     Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<Integer, QuerySnapshotDefinition>();
                     if (isContainerValid(sourceData.getContainer()))
                     {
-                        List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudyManager.getSchemaName());
+                        List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudySchema.getInstance().getSchemaName());
                         if (!snapshots.isEmpty())
                         {
                             Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
@@ -218,7 +218,7 @@ public abstract class SnapshotDependency
                 // check if container is still valid
                 if (isContainerValid(sourceData.getContainer()))
                 {
-                    for (QuerySnapshotDefinition def : QueryService.get().getQuerySnapshotDefs(sourceData.getContainer(), StudyManager.getSchemaName()))
+                    for (QuerySnapshotDefinition def : QueryService.get().getQuerySnapshotDefs(sourceData.getContainer(), StudySchema.getInstance().getSchemaName()))
                     {
                         if (def.getParticipantGroups().contains(category.getRowId()))
                         {

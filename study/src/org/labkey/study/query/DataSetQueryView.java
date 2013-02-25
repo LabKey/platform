@@ -62,6 +62,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -348,7 +349,7 @@ public class DataSetQueryView extends StudyQueryView
 
         User user = getUser();
         boolean canWrite = canWrite(_dataset, user);
-        boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), _dataset.getLabel());
+        boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getLabel());
         boolean isAssayDataset = _dataset.isAssayData();
         ExpProtocol protocol = null;
 

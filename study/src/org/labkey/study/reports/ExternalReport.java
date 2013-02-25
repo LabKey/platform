@@ -42,6 +42,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -85,7 +86,7 @@ public class ExternalReport extends AbstractReport
         super.setDescriptor(descriptor);
 
         // strange, but this report is only bound to study
-        descriptor.setProperty(ReportDescriptor.Prop.schemaName, StudyManager.getSchemaName());
+        descriptor.setProperty(ReportDescriptor.Prop.schemaName, StudySchema.getInstance().getSchemaName());
     }
 
     public String getType()

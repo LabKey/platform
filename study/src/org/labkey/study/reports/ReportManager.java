@@ -53,14 +53,14 @@ import java.util.*;
  * Date: Mar 6, 2006
  * Time: 8:18:58 PM
  */
-public class ReportManager implements StudyManager.DataSetListener
+public class ReportManager implements DatasetManager.DataSetListener
 {
     private static final String SCHEMA_NAME = "study";
     private static final String TABLE_NAME = "Report";
 
     /** records the dataset id used for plotviews (charts not tied to a specific dataset view) */
     public static final int ALL_DATASETS = -1;
-    public static final String ALL_DATASETS_KEY = StudyManager.getSchemaName() + "/*";
+    public static final String ALL_DATASETS_KEY = StudySchema.getInstance().getSchemaName() + "/*";
     public static final String DATASET_CHART_PREFIX = "showWithDataset";
 
     private static final ReportManager instance = new ReportManager();
@@ -73,7 +73,7 @@ public class ReportManager implements StudyManager.DataSetListener
 
     private ReportManager()
     {
-        StudyManager.addDataSetListener(this);
+        DatasetManager.addDataSetListener(this);
     }
 
     private DbSchema getSchema()
@@ -90,7 +90,7 @@ public class ReportManager implements StudyManager.DataSetListener
     static
     {
         StringBuilder sql = new StringBuilder();
-        final SqlDialect dialect = StudyManager.getSchema().getSqlDialect();
+        final SqlDialect dialect = StudySchema.getInstance().getSchema().getSqlDialect();
 
         sql.append("(ContainerId = ?) AND (ReportOwner IS NULL OR ReportOwner = ?) ");
         sql.append("AND (ReportKey = ? ");
@@ -119,7 +119,7 @@ public class ReportManager implements StudyManager.DataSetListener
     {
         SimpleFilter filter = new SimpleFilter();
         Container container = context.getContainer();
-        String reportKey = ReportUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
+        String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getLabel());
 
         List<Pair<String, String>> labels = new ArrayList<Pair<String, String>>();
 
@@ -480,7 +480,7 @@ public class ReportManager implements StudyManager.DataSetListener
         if (def != null)
         {
             _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
-            String reportKey = ReportUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
+            String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getLabel());
             for (Report report : ReportUtil.getReports(def.getContainer(), null, reportKey, true))
             {
                 report.clearCache();
