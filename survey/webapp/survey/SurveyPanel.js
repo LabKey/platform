@@ -201,7 +201,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                             if (Ext4.Date.parse(value.value, "Y/m/d H:i:s", true))
                                 val = Ext4.Date.parse(value.value, "Y/m/d H:i:s", true);
 
-                            this.initialResponses[key] = val;
+                            this.initialResponses[key.toLowerCase()] = val;
                         }, this);
 
                         this.getSurveyDesign();

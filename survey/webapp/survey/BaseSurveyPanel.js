@@ -210,6 +210,10 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         if (!this.canEdit)
             config.readOnly = true;
 
+        // make the name lowercase for consistency
+        if (config.name)
+            config.name = config.name.toLowerCase();
+
         return config;
     },
 

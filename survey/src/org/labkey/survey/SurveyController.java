@@ -592,9 +592,9 @@ public class SurveyController extends SpringActionController
                                     survey.setResponsesPk(String.valueOf(key));
                                 }
 
-                                // set the initial status to Draft
+                                // set the initial status to Pending
                                 if (!form.isSubmitted())
-                                    survey.setStatus("Draft");
+                                    survey.setStatus("Pending");
                             }
 
                             survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
