@@ -400,7 +400,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
         }
 
-        ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileListener.Type.filePath));
+        ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileListener.Type.filePath, "RowId"));
 
         try
         {

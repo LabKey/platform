@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -62,8 +63,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -806,6 +810,53 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public void addFileListener(FileListener listener)
     {
         _fileListeners.add(listener);
+    }
+
+    @Override
+    public Map<String, Collection<File>> listFiles(@NotNull Container container)
+    {
+        Map<String, Collection<File>> files = new LinkedHashMap<String, Collection<File>>();
+        for (FileListener fileListener : _fileListeners)
+        {
+            files.put(fileListener.getSourceName(), new HashSet<File>(fileListener.listFiles(container)));
+        }
+        return files;
+    }
+
+    @Override
+    public SQLFragment listFilesQuery(@NotNull User currentUser)
+    {
+        SQLFragment frag = new SQLFragment();
+        if (currentUser == null || !currentUser.isAdministrator())
+        {
+            frag.append("SELECT\n");
+            frag.append("  CAST(NULL AS VARCHAR) AS Container,\n");
+            frag.append("  NULL AS Created,\n");
+            frag.append("  NULL AS CreatedBy,\n");
+            frag.append("  NULL AS Modified,\n");
+            frag.append("  NULL AS ModifiedBy,\n");
+            frag.append("  NULL AS FilePath,\n");
+            frag.append("  NULL AS SourceKey,\n");
+            frag.append("  NULL AS SourceName\n");
+            frag.append("WHERE 1 = 0");
+        }
+        else
+        {
+            String union = "";
+            frag.append("(");
+            for (FileListener fileListener : _fileListeners)
+            {
+                SQLFragment subselect = fileListener.listFilesQuery();
+                if (subselect != null)
+                {
+                    frag.append(union);
+                    frag.append(subselect);
+                    union = "UNION\n";
+                }
+            }
+            frag.append(")");
+        }
+        return frag;
     }
 
     public static FileContentServiceImpl getInstance()

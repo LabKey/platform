@@ -34,7 +34,7 @@ public class ExpDataFileListener extends TableUpdaterFileListener
 {
     public ExpDataFileListener()
     {
-        super(ExperimentService.get().getTinfoData(), "DataFileUrl", Type.uri);
+        super(ExperimentService.get().getTinfoData(), "DataFileUrl", Type.uri, "RowId");
     }
 
     @Override

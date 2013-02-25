@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -33,7 +34,9 @@ import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.security.User;
 
 import java.io.File;
-import java.util.List;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -44,6 +47,12 @@ import java.util.Map;
 public class FileLinkFileListener implements FileListener
 {
     private static final Logger LOG = Logger.getLogger(FileLinkFileListener.class);
+
+    @Override
+    public String getSourceName()
+    {
+        return "FileLinkFileListener";
+    }
 
     @Override
     public void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container)
@@ -113,7 +122,25 @@ public class FileLinkFileListener implements FileListener
         }
     }
 
-    private void updateHardTables(File srcFile, File destFile, User user, Container container)
+    private void updateHardTables(final File srcFile, final File destFile, final User user, final Container container)
+    {
+        hardTableFileLinkColumns(new ForEachFileLinkColumn() {
+            @Override
+            public void exec(DbSchema schema, TableInfo table, ColumnInfo column)
+            {
+                // Migrate any paths that match this file move
+                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, column.getColumnName(), TableUpdaterFileListener.Type.filePath);
+                updater.fileMoved(srcFile, destFile, user, container);
+            }
+        });
+    }
+
+    private interface ForEachFileLinkColumn
+    {
+        public void exec(DbSchema schema, TableInfo table, ColumnInfo column);
+    }
+
+    private void hardTableFileLinkColumns(final ForEachFileLinkColumn block)
     {
         // Figure out all of the FileLink columns in hard tables managed by OntologyManager
         SQLFragment sql = new SQLFragment("SELECT dd.StorageTableName, dd.StorageSchemaName, pd.Name FROM ");
@@ -126,25 +153,116 @@ public class FileLinkFileListener implements FileListener
         sql.add(PropertyType.FILE_LINK.getTypeUri());
         sql.append(" AND dd.StorageTableName IS NOT NULL AND dd.StorageSchemaName IS NOT NULL AND pd.Name IS NOT NULL");
 
-        List<Map<String, Object>> rows = (List)new SqlSelector(OntologyManager.getExpSchema(), sql).getCollection(Map.class);
-        for (Map<String, Object> row : rows)
-        {
-            // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
-            DbSchema schema = DbSchema.get(row.get("StorageSchemaName").toString());
-            if (schema != null)
+        new SqlSelector(OntologyManager.getExpSchema(), sql).forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
+            @Override
+            public void exec(Map<String, Object> row) throws SQLException
             {
-                TableInfo tableInfo = schema.getTable(row.get("StorageTableName").toString());
-                if (tableInfo != null)
+                // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
+                DbSchema schema = DbSchema.get(row.get("StorageSchemaName").toString());
+                if (schema != null)
                 {
-                    ColumnInfo column = tableInfo.getColumn(row.get("Name").toString());
-                    if (column != null)
+                    TableInfo tableInfo = schema.getTable(row.get("StorageTableName").toString());
+                    if (tableInfo != null)
                     {
-                        // Migrate any paths that match this file move
-                        TableUpdaterFileListener updater = new TableUpdaterFileListener(tableInfo, column.getColumnName(), TableUpdaterFileListener.Type.filePath);
-                        updater.fileMoved(srcFile, destFile, user, container);
+                        ColumnInfo column = tableInfo.getColumn(row.get("Name").toString());
+                        if (column != null)
+                        {
+                            block.exec(schema, tableInfo, column);
+                        }
                     }
                 }
             }
+        });
+    }
+
+    @Override
+    public Collection<File> listFiles(@Nullable Container container)
+    {
+        Collection<File> files = new ArrayList<File>();
+
+        files.addAll(listObjectPropertyFiles(container));
+        files.addAll(listHardTableFiles(container));
+
+        return files;
+    }
+
+    private Collection<File> listObjectPropertyFiles(@Nullable Container container)
+    {
+        SQLFragment frag = new SQLFragment();
+        frag.append("SELECT StringValue\n");
+        frag.append("FROM\n");
+        frag.append("  ").append(OntologyManager.getTinfoObjectProperty(), "op").append(",\n");
+        frag.append("  ").append(OntologyManager.getTinfoObject(), "o").append("\n");
+        frag.append("WHERE ");
+        frag.append("  o.ObjectId = op.ObjectId AND\n");
+        if (container != null)
+        {
+            frag.append("  o.Container = ? AND \n");
+            frag.add(container);
         }
+        frag.append("  PropertyId IN (\n");
+        frag.append("    SELECT PropertyId\n");
+        frag.append("    FROM ").append(OntologyManager.getTinfoPropertyDescriptor(), "pd").append("\n");
+        frag.append("    WHERE RangeURI = ?\n").add(PropertyType.FILE_LINK.getTypeUri());
+        frag.append("  )\n");
+
+        SqlSelector selector = new SqlSelector(OntologyManager.getExpSchema(), frag);
+        return selector.getArrayList(File.class);
+    }
+
+    private Collection<File> listHardTableFiles(@NotNull final Container container)
+    {
+        final Collection<File> files = new ArrayList<File>();
+        hardTableFileLinkColumns(new ForEachFileLinkColumn()
+        {
+            @Override
+            public void exec(DbSchema schema, TableInfo table, ColumnInfo column)
+            {
+                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, column.getColumnName(), TableUpdaterFileListener.Type.filePath);
+                files.addAll(updater.listFiles(container));
+            }
+        });
+        return files;
+    }
+
+    @Override
+    public SQLFragment listFilesQuery()
+    {
+        final SQLFragment frag = new SQLFragment();
+
+        // Object property files
+        frag.append("SELECT\n");
+        frag.append("  o.Container,\n");
+        frag.append("  NULL AS Created,\n");
+        frag.append("  NULL AS CreatedBy,\n");
+        frag.append("  NULL AS Modified,\n");
+        frag.append("  NULL AS ModifiedBy,\n");
+        frag.append("  op.StringValue AS FilePath,\n");
+        frag.append("  o.ObjectId AS SourceKey,\n");
+        frag.append("  'exp.object' AS SourceName\n");
+        frag.append("FROM\n");
+        frag.append("  ").append(OntologyManager.getTinfoObjectProperty(), "op").append(",\n");
+        frag.append("  ").append(OntologyManager.getTinfoObject(), "o").append("\n");
+        frag.append("WHERE\n");
+        frag.append("  o.ObjectId = op.ObjectId AND\n");
+        frag.append("  PropertyId IN (\n");
+        frag.append("    SELECT PropertyId\n");
+        frag.append("    FROM ").append(OntologyManager.getTinfoPropertyDescriptor(), "pd").append("\n");
+        frag.append("    WHERE RangeURI = ?\n").add(PropertyType.FILE_LINK.getTypeUri());
+        frag.append("  )\n");
+
+        hardTableFileLinkColumns(new ForEachFileLinkColumn()
+        {
+            @Override
+            public void exec(DbSchema schema, TableInfo table, ColumnInfo column)
+            {
+                // UNDONE: Add a constant container column
+                TableUpdaterFileListener updater = new TableUpdaterFileListener(table, column.getColumnName(), TableUpdaterFileListener.Type.filePath);
+                frag.append("UNION\n");
+                frag.append(updater.listFilesQuery());
+            }
+        });
+
+        return frag;
     }
 }

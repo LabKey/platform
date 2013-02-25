@@ -46,6 +46,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -222,7 +223,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AuditLogService.get().addAuditViewFactory(SampleSetAuditViewFactory.getInstance());
 
         ServiceRegistry.get(FileContentService.class).addFileListener(new ExpDataFileListener());
-        ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath));
+        ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));
         ServiceRegistry.get(FileContentService.class).addFileListener(new FileLinkFileListener());
 
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
@@ -283,9 +284,37 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public Collection<String> getSummary(Container c)
     {
         Collection<String> list = new LinkedList<String>();
-        int count = ExperimentService.get().getExperiments(c, null, false, true).length;
-        if (count > 0)
-            list.add("" + count + " Run Group" + (count > 1 ? "s" : ""));
+        int runGroupCount = ExperimentService.get().getExperiments(c, null, false, true).length;
+        if (runGroupCount > 0)
+            list.add("" + runGroupCount + " Run Group" + (runGroupCount > 1 ? "s" : ""));
+
+        User user = HttpView.currentContext().getUser();
+
+        Set<ExperimentRunType> runTypes = ExperimentService.get().getExperimentRunTypes(c);
+        for (ExperimentRunType runType : runTypes)
+        {
+            if (runType == ExperimentRunType.ALL_RUNS_TYPE)
+                continue;
+
+            long runCount = runType.getRunCount(user, c);
+            if (runCount > 0)
+                list.add(runCount + " runs of type " + runType.getDescription());
+        }
+
+        /*
+        ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(c);
+        for (ExpProtocol protocol : protocols)
+        {
+            List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(true, protocol.getRowId());
+            if (runs != null && runs.size() > 0)
+                list.add(runs.size() + " runs of type " + protocol.getName());
+        }
+        */
+
+        int sampleSetCount = ExperimentService.get().getSampleSets(c, null, false).length;
+        if (sampleSetCount > 0)
+            list.add(sampleSetCount + " Sample Set" + (sampleSetCount > 1 ? "s" : ""));
+
         return list;
     }
 

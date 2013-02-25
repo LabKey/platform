@@ -225,6 +225,7 @@ public class AdminController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
             AdminController.class,
             FilesSiteSettingsAction.class,
+            FileListAction.class,
             ProjectSettingsAction.class,
             FolderManagementAction.class);
     private static final NumberFormat _formatInteger = DecimalFormat.getIntegerInstance();

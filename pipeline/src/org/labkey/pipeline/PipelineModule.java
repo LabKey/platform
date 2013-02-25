@@ -159,7 +159,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         StatusController.registerAdminConsoleLinks();
         WebdavService.get().addProvider(new PipelineWebdavProvider());
 
-        ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash));
+        ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
     }
 
     @Override

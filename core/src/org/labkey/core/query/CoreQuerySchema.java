@@ -33,6 +33,8 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
@@ -42,7 +44,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ViewContext;
 import org.labkey.core.workbook.WorkbooksTableInfo;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -68,6 +72,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String MEMBERS_TABLE_NAME = "Members";
     public static final String CONTAINERS_TABLE_NAME = "Containers";
     public static final String WORKBOOKS_TABLE_NAME = "Workbooks";
+    public static final String FILES_TABLE_NAME = "Files";
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
 
@@ -109,6 +114,9 @@ public class CoreQuerySchema extends UserSchema
             return getContainers();
         if (USERS_MSG_SETTINGS_TABLE_NAME.equalsIgnoreCase(name))
             return new UsersMsgPrefTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME));
+        // Files table is not visible
+        if (FILES_TABLE_NAME.equalsIgnoreCase(name))
+            return getFilesTable();
         return null;
     }
 
@@ -440,10 +448,10 @@ public class CoreQuerySchema extends UserSchema
                         "  </ns:table>\n" +
                         "</ns:tables>");
         List<QueryException> errors = new ArrayList<QueryException>();
-        if (!errors.isEmpty())
-            throw errors.get(0);
         TableInfo t;
         t = def.getTable(this, errors, true);
+        if (!errors.isEmpty())
+            throw errors.get(0);
         t.getColumn("UserId").setDisplayColumnFactory(new DisplayColumnFactory(){
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -464,6 +472,11 @@ public class CoreQuerySchema extends UserSchema
         return t;
     }
 
+
+    protected TableInfo getFilesTable()
+    {
+        return new FileListTableInfo(this);
+    }
 
     protected void addNullSetFilter(FilteredTable table)
     {
@@ -490,4 +503,5 @@ public class CoreQuerySchema extends UserSchema
             SecurityLogger.outdent();
         }
     }
+
 }

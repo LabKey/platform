@@ -608,6 +608,7 @@ core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
 core/src/org/labkey/core/admin/ActionsView.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
 core/src/org/labkey/core/admin/CustomizeMenuForm.java -text
+core/src/org/labkey/core/admin/FileListAction.java -text
 core/src/org/labkey/core/admin/FileSettingsForm.java -text
 core/src/org/labkey/core/admin/FilesSiteSettingsAction.java -text
 core/src/org/labkey/core/admin/FolderManagementAction.java -text
@@ -710,6 +711,7 @@ core/src/org/labkey/core/project/projects.jsp -text
 core/src/org/labkey/core/query/AttachmentAuditViewFactory.java -text
 core/src/org/labkey/core/query/ContainerAuditViewFactory.java -text
 core/src/org/labkey/core/query/CoreQuerySchema.java -text
+core/src/org/labkey/core/query/FileListTableInfo.java -text
 core/src/org/labkey/core/query/GroupAuditViewFactory.java -text
 core/src/org/labkey/core/query/UserAuditViewFactory.java -text
 core/src/org/labkey/core/query/UsersDomainKind.java -text

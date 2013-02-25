@@ -19,6 +19,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.FileSettingsForm" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.admin.FileListAction" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -213,6 +216,8 @@
             indicates whether the directory is derived from the site-level file root (set above) or has been overriden. To view or
             manage files in a directory, double click on a row or click on the 'Browse Selected' button. To configure an
             @file or an @pipeline directory, select the directory and click on the 'Configure Selected' button in the toolbar.
+        </td></tr>
+        <tr><td>For a complete list of all file paths referenced in the LabKey database, please use the <a href="<%=new ActionURL(FileListAction.class, ContainerManager.getRoot())%>">Files List</a>.
         </td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td><div id="viewsGrid" class="extContainer"></div></td></tr>
