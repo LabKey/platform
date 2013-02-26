@@ -591,8 +591,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 target   : view.el,
                 delegate : '.x4-name-column-cell',
                 trackMouse: false,
-                width    : 500,
-                height   : 325,
+                width    : 500, // 17257: Removed height property due to clipping
                 html     : null,
                 autoHide : true,
                 anchorToTarget : true,
