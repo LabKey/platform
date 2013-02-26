@@ -15,7 +15,12 @@
  */
 package org.labkey.api.ldk;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.SimpleModule;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.web.servlet.mvc.Controller;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,6 +30,31 @@ import org.labkey.api.module.SimpleModule;
  */
 public class ExtendedSimpleModule extends SimpleModule
 {
+
+    @Override
+    public Controller getController(@Nullable HttpServletRequest request, Class controllerClass)
+    {
+        try
+        {
+            // try spring configuration first
+            Controller con = (Controller)getBean(controllerClass);
+            if (null == con)
+            {
+                con = (Controller)controllerClass.newInstance();
+                if (con instanceof ApplicationContextAware)
+                    ((ApplicationContextAware)con).setApplicationContext(getApplicationContext());
+            }
+            return con;
+        }
+        catch (IllegalAccessException x)
+        {
+            throw new RuntimeException(x);
+        }
+        catch (InstantiationException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
 
 
     @Override
