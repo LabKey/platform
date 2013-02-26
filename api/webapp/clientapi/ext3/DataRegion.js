@@ -2715,6 +2715,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     MAX_FILTER_CHOICES : 250, // 15565, Switch faceted limit to 250
+    MAX_DISPLAY_CHOICES : 100,
 
     savedSearchString : null,
 
@@ -2807,10 +2808,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         });
         this.windowGroup.register(this);
 
-        this.facetingAvailable = undefined;
-
-        this.prepareToShowPanel();
         this.preparePanelTask = new Ext.util.DelayedTask(this.prepareToShowPanel, this);
+        this.prepareToShowPanel();
     },
 
     getTabPanel : function()
@@ -2862,6 +2861,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 getActiveTab : function() {
                     return me.getDefaultFilterPanel();
                 },
+                setActiveTab : function() { /* no-op */ },
                 listeners : {
                     tabchange : function() {
                         this.syncShadow();
@@ -2955,8 +2955,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     getFacetedFilterPanel : function()
     {
-        if (this.facetPanel)
+        if (this.facetPanel) {
             return this.facetPanel;
+        }
 
         this.facetPanel = new Ext.form.FormPanel({
             title  : 'Choose Values',
@@ -2984,6 +2985,20 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return this.facetPanel;
     },
 
+    facetMask : function(apply, msg) {
+        var fp = this.getFacetedFilterPanel();
+        if (fp && fp.getEl()) {
+            apply ? fp.getEl().mask(msg) : fp.getEl().unmask();
+        }
+        else if (fp && apply) {
+            fp.on('afterrender', function(p) {
+                if (!this.isStoreLoaded(this.getLookupStore())) {
+                    p.getEl().mask(msg);
+                }
+            }, this, {single: true});
+        }
+    },
+
     getDataRegion : function()
     {
         return LABKEY.DataRegions[this.dataRegionName];
@@ -2998,53 +3013,54 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     isFacetingValid : function(store) {
-        if (!store)
+        if (!store) {
             return false;
+        }
 
-        return !(store.getCount() > this.MAX_FILTER_CHOICES || (store.fields && store.getCount() === 0) || this.forceAdvancedFilters);
+        return !(store.getCount() > this.MAX_DISPLAY_CHOICES || (store.fields && store.getCount() === 0) || this.forceAdvancedFilters);
     },
 
-    prepareToShowPanel : function()
-    {
-        if (this.facetingAvailable !== true && this.facetingAvailable !== false) {
-            if(!this.isFacetingCandidate()){
-                this.facetingAvailable = false;
-                this.prepareToShowPanel();
+    showPanel : function(forceDefault) {
+
+        if (forceDefault) {
+            this.getTabPanel().setActiveTab(0);
+        }
+        else {
+            if (this.isFacetingCandidate()) {
+                var fp = this.getFacetedFilterPanel();
+                if (!this.filterInit) {
+                    this.filterInit = true;
+                    if (fp.isVisible()) {
+                        this.configureLookupPanel(fp);
+                    }
+                    else {
+                        fp.on('show', function(p) {
+                            this.configureLookupPanel(p);
+                        }, this, {single: true});
+                    }
+                }
+            }
+
+            if (!this.isFacetingValid(this.getLookupStore())) {
+                this.getTabPanel().setActiveTab(0);
+            }
+        }
+    },
+
+    prepareToShowPanel : function() {
+
+        if (this.isFacetingCandidate()) {
+            if (this.isStoreLoaded(this.getLookupStore())) {
+                this.showPanel(false);
             }
             else {
-                //we need to load the store to determine if faceting is possible
-                var _store = this.getLookupStore();
-
-                this.facetingAvailable = this.isFacetingValid(_store);
-
-                if (this.isStoreLoaded(_store)) {
-                    this.prepareToShowPanel();
-                }
-                else {
-                    this.on('afterrender', function(w) {
-                        if (!this.isStoreLoaded(_store) || _store.isLoading) {
-                            var fp = this.getFacetedFilterPanel();
-                            if (fp && fp.getEl()) {
-                                fp.getEl().mask('Loading...');
-                            }
-                        }
-                    }, this, {single: true});
-                }
+                this.facetMask(true, 'Loading...');
             }
         }
         else {
-            if (this.facetingAvailable) {
-                var fp = this.getFacetedFilterPanel();
-                if (fp && fp.getEl()) {
-                    this.configureLookupPanel(fp);
-                }
-                else if (fp) {
-                    fp.on('show', function(p) {
-                        this.configureLookupPanel(p);
-                    }, this, {single: true});
-                }
-            }
+            this.showPanel(true);
         }
+
     },
 
     isFacetingCandidate : function()
@@ -3054,12 +3070,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             return false;
         }
 
-        var isFacetingCandidate = false;
+        var candidate = false;
 
         switch (this.boundColumn.facetingBehaviorType) {
 
             case 'ALWAYS_ON':
-                isFacetingCandidate = true;
+                candidate = true;
                 break;
             case 'ALWAYS_OFF':
                 break;
@@ -3068,15 +3084,15 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 // OR if it is of type : (boolean, int, date, text), multiline excluded
 
                 if (this.boundColumn.lookup || this.boundColumn.dimension)
-                    isFacetingCandidate = true;
+                    candidate = true;
                 // 15156: disabled faceted filtering on date columns until we address issues described in this bug
                 else if (this._jsonType == 'boolean' || this._jsonType == 'int' ||
                         (this._jsonType == 'string' && this.boundColumn.inputType != 'textarea'))
-                    isFacetingCandidate = true;
+                    candidate = true;
                 break;
         }
 
-        return isFacetingCandidate;
+        return candidate;
     },
 
     getInitialFilterType : function()
@@ -3102,7 +3118,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
 
         var shouldShow = true;
-        Ext.each(paramValPairs, function(pair){
+        Ext.each(paramValPairs, function(pair) {
             var filter = LABKEY.Filter.getFilterTypeForURLSuffix(pair.operator);
 
             if(!filter.isMultiValued() && !filter.getMultiValueFilter()){
@@ -3116,7 +3132,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
         }, this);
 
-        if(shouldShow && !this.forceAdvancedFilters){
+        if (shouldShow && !this.forceAdvancedFilters) {
             var store = this.getLookupStore();
             if(
                 (!store || store.getCount() > this.MAX_FILTER_CHOICES) ||
@@ -3140,8 +3156,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
         }
 
-        if(this.forceAdvancedFilters)
+        if(this.forceAdvancedFilters) {
             shouldShow = false;
+        }
 
         return shouldShow;
     },
@@ -3149,7 +3166,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     configureLookupPanel : function(p)
     {
         var panel = this.find('itemId', 'facetedPanel')[0];
-        if(!this.rendered || !panel){
+        if (!this.rendered || !panel) {
             this.on('render', this.configureLookupPanel, this, {single: true});
             return;
         }
@@ -3169,12 +3186,13 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         panel.add(toAdd);
 
         if (p) {
-            p.getEl().unmask();
             var f = this.getFiltersFromParams(p.filterType);
-            if (p.filterType != 'include' || f.length <= 1)
+            if (p.filterType != 'include' || f.length <= 1) {
                 this.setValuesFromParams(p, f);
+            }
         }
         this.doLayout();
+        this.facetMask();
     },
 
     getFilterCombos : function(panel)
@@ -3234,39 +3252,29 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     setValuesFromParams : function(target, values)
     {
         var tab = this.getTabPanel().getActiveTab();
-        if(!this.rendered || !tab) {
-            return;
-        }
+        if(!this.rendered || !tab) { return; }
 
         target = target || tab;
         var combos      = this.getFilterCombos(target);
         var inputFields = this.getInputFields(target);
 
-        if (!combos || !combos.length) {
-            return;
-        }
+        if (!combos || !combos.length) { return; }
 
         this.filterType = target.filterType;
-        var paramValPairs = values;
         this.hasLoaded = true;
 
         var filterIndex = 0;
 
         //reset the form
-        if(this.filterType == 'default'){
-            Ext.each(combos, function(field){
-                field.reset();
-            });
-
-            Ext.each(inputFields, function(field){
-                field.reset();
-            });
+        if (this.filterType == 'default') {
+            Ext.each(combos,      function(field) { field.reset(); });
+            Ext.each(inputFields, function(field) { field.reset(); });
         }
 
         var effectiveFilters = 0;
-        Ext.each(paramValPairs, function(pair, idx){
+        Ext.each(values, function(pair, idx) {
             var combo = combos[filterIndex];
-            if(!combo){
+            if (!combo) {
                 console.log('no input found for idx: ' + idx);
                 this.hasLoaded = false;
                 return;
@@ -3295,8 +3303,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 }
                 combo.setValue(filter.getURLSuffix());
 
-                if (filter.isDataValueRequired())
+                if (filter.isDataValueRequired()) {
                     input.enable();
+                }
 
                 if (Ext.isDefined(pair.value)) {
                     if (this.filterType == 'default') {
@@ -3305,16 +3314,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     else {
                         if(filter.getURLSuffix() == 'in' && pair.value === '') {
                             input.defaultValue = true;
-                            input.on('viewready', function(g) {
-                                g.selectAll();
-                            }, this, {single: true});
+                            input.on('viewready', function(g) { g.selectAll(); }, this, {single: true});
                         }
                         else {
                             input.defaultValue = false;
                             input.setValue(pair.value);
-                            input.on('viewready', function(g) {
-                                g.selectRequested();
-                            }, this, {single: true});
+                            input.on('viewready', function(g) { g.selectRequested(); }, this, {single: true});
                         }
                     }
                     effectiveFilters++;
@@ -3327,36 +3332,29 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             filterIndex++;
         }, this);
 
-        if(this.filterType == 'include' && !effectiveFilters){
-            if (inputFields[0].requestedRecords) {
-                input.on('viewready', function(g) {
-                    g.selectRequested();
-                }, this, {single: true});
-            }
-            else {
-                inputFields[0].on('viewready', function(g) {
-                    g.selectAll();
-                }, this, {single: true});
-            }
+        if(this.filterType == 'include' && !effectiveFilters) {
+            inputFields[0].on('viewready', function(g) { g.selectAll(); }, this, {single: true});
         }
     },
 
     getInverse : function(store, values)
     {
         var newValues = [];
-        if(!Ext.isArray(values))
+        if(!Ext.isArray(values)) {
             values = values.split(';');
+        }
 
         var val;
-        store.each(function(rec){
+        store.each(function(rec) {
             val = rec.get('value');
             if(values.indexOf(val) == -1){
                 newValues.push(val);
             }
         }, this);
 
-        if(values.indexOf('') == -1 && newValues.indexOf('') == -1 && newValues.length > 1)
+        if (values.indexOf('') == -1 && newValues.indexOf('') == -1 && newValues.length > 1) {
             newValues.push('');
+        }
 
         return newValues.join(';');
     },
@@ -3368,12 +3366,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     getXtype: function()
     {
-        switch(this._jsonType){
+        switch (this._jsonType) {
             case "date":
                 return "datefield";
             case "int":
             case "float":
-                return "numberfield";
+                return "textfield";
             case "boolean":
                 return 'labkey-booleantextfield';
             default:
@@ -3381,21 +3379,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
     },
 
-    getFieldXtype: function()
-    {
-        var xtype = this.getXtype();
-        if(xtype == 'numberfield')
-            xtype = 'textfield';
-
-        return xtype;
-    },
-
     getCheckboxGroupConfig: function(idx)
     {
         var sm = new Ext.grid.CheckboxSelectionModel({
             listeners: {
                 selectionchange: {
-                    fn: function(sm){
+                    fn: function(sm) {
                         // NOTE: this will manually set the checked state of the header checkbox.  it would be better
                         // to make this a real tri-state (ie. selecting some records is different then none), but since this is still Ext3
                         // and ext4 will be quite different it doesnt seem worth the effort right now
@@ -3570,27 +3559,15 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 }
             },
             selectNone : function() {
-                if(this.rendered)
+                if(this.rendered) {
                     this.getSelectionModel().selectRows([]);
+                }
                 else {
                     this.on('render', this.selectNone, this, {single: true});
                 }
             },
             scope : this
         };
-    },
-
-    getActiveTab: function()
-    {
-        var panel = this.find('itemId', 'filterArea');
-        if(!panel || !panel.length){
-            return;
-        }
-        panel = panel[0];
-        if(panel.xtype == 'tabpanel')
-            return panel.getActiveTab();
-        else
-            return panel;
     },
 
     getComboConfig: function(idx)
@@ -3625,11 +3602,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
                     var selectedValue = filter ? filter.getURLSuffix() : '';
 
-                    var re = /^filterComboBox/;
                     var combos = this.getFilterCombos();
                     var inputFields = this.getInputFields();
 
-                    if(filter && !filter.isDataValueRequired()){
+                    if (filter && !filter.isDataValueRequired()) {
                         //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
                         inputField.disable();
                         inputField.setValue();
@@ -3668,7 +3644,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                             combo.enable();
                         }, this);
 
-                        if(combos.length){
+                        if (combos.length) {
                             combos[0].focus('', 50);
                         }
                     }
@@ -3684,8 +3660,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     var input = combo.findParentByType('panel').find('itemId', 'inputField'+combo.filterIndex)[0];
                     var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
 
-                    if(filter && filter.isDataValueRequired())
+                    if (filter && filter.isDataValueRequired()) {
                         input.enable();
+                    }
                 },
                 scope: this
             },
@@ -3698,7 +3675,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         idx = idx || 0;
         var jtype = this._jsonType;
         var config = {
-            xtype         : this.getFieldXtype(),
+            xtype         : this.getXtype(),
             itemId        : 'inputField' + idx,
             filterIndex   : idx,
             id            : 'value_'+(idx + 1),   //for compatibility with tests...
@@ -3710,8 +3687,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             listeners     : {
                 disable   : function(field){
                     //Call validate after disable so any pre-existing validation errors go away.
-                    if(field.rendered)
+                    if(field.rendered) {
                         field.validate();
+                    }
                 },
                 focus : function(f) {
                     if (this.focusTask) {
@@ -3733,19 +3711,22 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     return item.itemId == 'filterWindow';
                 });
 
-                if(!window)
+                if (!window) {
                     return;
+                }
 
                 var combos = window.find('itemId', 'filterComboBox'+idx);
-                if(!combos.length)
+                if (!combos.length) {
                     return;
+                }
 
                 return window.inputFieldValidator(this, combos[0]);
             }
         };
 
-        if(this._jsonType == "date")
+        if (this._jsonType == "date") {
             config.altFormats = LABKEY.Utils.getDateAltFormats();
+        }
 
         return config;
     },
@@ -4086,17 +4067,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         sql += 'SELECT DISTINCT t.';
 
         var fieldKey;
-        if(column.displayField){
+        if (column.displayField) {
             fieldKey = LABKEY.FieldKey.fromString(column.displayField);
         }
         else {
             fieldKey = LABKEY.FieldKey.fromParts(column.fieldKeyArray);
         }
 
-        sql += fieldKey.toSQLString();
-
-        sql += ' AS value FROM "' + dataRegion.queryName.replace("\"", "\"\"") + '" t';
-        sql += ') s';
+        sql += fieldKey.toSQLString() + ' AS value FROM "' + dataRegion.queryName.replace("\"", "\"\"") + '" t) s';
 
         return sql;
     },
