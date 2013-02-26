@@ -212,6 +212,10 @@ div.thumbnail svg
     padding-left: 6px;
 }
 
+.x4-reset .report-filter-panel .category-checked {
+    background-position: 0 -13px;
+}
+
 /* Part of Browser.js -- migrate if necessary */
 table.fb-details {
     margin: 5px 40px;

@@ -257,7 +257,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                                 if (o1.get("id") == -1)  // -1 = "Not in any group"
                                     return 1;
                                 else if (o2.get("id") == -1) // -1 = "Not in any group"
-                                    return 1;
+                                    return -1;
                                 else
                                     return o1.get("label") > o2.get("label") ? 1 : -1;
                             }

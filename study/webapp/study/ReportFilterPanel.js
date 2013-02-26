@@ -110,29 +110,36 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                     render : initToolTip,
                     cellclick : function(cmp, td, idx, record, tr, rowIdx, e) {
                         // clicking on the grid label selects only that item
-                        var checker = e.getTarget('.lk-filter-panel-label');
-                        if (checker)
+                        if (e.getTarget('.lk-filter-panel-label'))
                             this.updateCategorySingleSelection(record);
+                        else if (e.getTarget('.x4-grid-row-checker'))
+                        {
+                            // clicking on the checkbox for a row, selects or deselects just that row
+                            if (!this.getGrid().getSelectionModel().isSelected(record))
+                                this.getGrid().getSelectionModel().select(record, true);
+                            else
+                                this.getGrid().getSelectionModel().deselect(record);
+                        }
 
                         this.updateCategorySelectAll(record.get("categoryName"));
                     },
+                    beforecellmousedown: function(view, cell, cellIdx, record, row, rowIdx, eOpts){
+                        // disable "row" selection for this grid and defer to the cellclick handler above instead
+                        return false;
+                    },
                     groupclick : function(grid, field, value, e) {
-                        // this event is fired on click of the checkbox or the group title, so we have to differentiate
-                        var clickedCheckbox = e.target.type && e.target.type == 'checkbox';
-
                         var inputEl = this.getCategoryInputEl(value);
                         if (inputEl)
                         {
-                            // if the checkbox was clicked, the check state will already have been changed
-                            if (!clickedCheckbox)
-                                inputEl.checked = !inputEl.checked;
+                            // switch the state of the checkbox for the category group header
+                            this.checkGroupHeaderCheckbox(inputEl, !this.isGroupHeaderCheckbox(inputEl));
 
                             this.getCategoryRecords(value).each(function(rec) {
-                                if (inputEl.checked)
+                                if (this.isGroupHeaderCheckbox(inputEl))
                                     grid.getSelectionModel().select(rec, true); // true to keepExisting selection of other category groups
                                 else
                                     grid.getSelectionModel().deselect(rec);
-                            });
+                            }, this);
                         }
 
                         return false; // to prevent the collapse/expand for the grid grouping
@@ -158,7 +165,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
                         // use the grouping header as the 'select all' option for this category
                         if (me.allowAll)
-                            headerHtml += "<td><input type='checkbox' class='category-header' value='" + value + "' /></td>";
+                            headerHtml += "<td><input type='button' class='category-header x4-form-checkbox' category='" + value + "' /></td>";
 
                         var classNames = me.allowAll ? "category-label-padding category-label" : "category-label";
 
@@ -257,7 +264,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
         return [{
             // spacer column, used for category indenting
-            width     : 15,
+            width     : 20,
             hidden    : !this.allowAll
         },{
             xtype     : 'templatecolumn',
@@ -385,7 +392,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                     toCheck = false;
             }, this);
 
-            el.checked = toCheck;
+            this.checkGroupHeaderCheckbox(el, toCheck);
         }
     },
 
@@ -395,8 +402,19 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         });
     },
 
+    isGroupHeaderCheckbox : function(el) {
+        return el.className.indexOf("category-checked") > -1;
+    },
+
+    checkGroupHeaderCheckbox : function(el, check) {
+        if (check)
+            el.setAttribute("class", "category-header x4-form-checkbox category-checked");
+        else
+            el.setAttribute("class", "category-header x4-form-checkbox");
+    },
+
     getCategoryInputEl : function(value) {
-        var elArr = Ext4.query('input.category-header[value=' + value + ']');
+        var elArr = Ext4.query('input.category-header[category=' + value + ']');
         return elArr.length == 1 ? elArr[0] : null;
     },
 
