@@ -1014,7 +1014,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      */
     isMessageShowing : function()
     {
-        return this.msgbox && this.msgbox.isVisible();
+        return this.msgbox && this.msgbox.getEl() && this.msgbox.isVisible();
     },
 
     /** If a message is currently showing, hide it and clear out its contents */
@@ -1893,14 +1893,15 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      */
     hideCustomizeView : function ()
     {
-        if (this.customizeView && this.customizeView.isVisible())
+        if (this.customizeView && this.customizeView.getEl() && this.customizeView.getEl().dom && this.customizeView.isVisible()) {
             this._showButtonPanel(this.header || this.footer, "~~customizeView~~", true, null);
+        }
     },
 
     // private
     toggleShowCustomizeView : function ()
     {
-        if (this.customizeView && this.customizeView.isVisible())
+        if (this.customizeView && this.customizeView.getEl() && this.customizeView.getEl().dom && this.customizeView.isVisible())
             this.hideCustomizeView();
         else
             this.showCustomizeView();
@@ -2670,7 +2671,7 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
     },
     
     isVisible : function() {
-
+        if (!this.parentEl.dom) { return false; }
         return this.parentEl.isVisible();
     },
 
@@ -2993,7 +2994,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         else if (fp && apply) {
             fp.on('afterrender', function(p) {
                 if (!this.isStoreLoaded(this.getLookupStore())) {
-                    p.getEl().mask(msg);
+                    if (p && p.getEl()) {
+                        p.getEl().mask(msg);
+                    }
                 }
             }, this, {single: true});
         }
@@ -3030,7 +3033,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 var fp = this.getFacetedFilterPanel();
                 if (!this.filterInit) {
                     this.filterInit = true;
-                    if (fp.isVisible()) {
+                    if (fp && fp.getEl() && fp.getEl().dom && fp.isVisible()) {
                         this.configureLookupPanel(fp);
                     }
                     else {

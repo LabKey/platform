@@ -818,7 +818,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             {
                 for (var i = 0; i < urlParameters.filter.length; i++)
                 {
-                    var filter = urlParameters.filters[i];
+                    var filter = urlParameters.filter[i];
                     this.userFilters["." + filter.fieldKey + "~" + filter.op] = filter.value;
                 }
             }
