@@ -27,6 +27,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             bodyStyle : 'padding: 5px;',
             includeParticipantIds : false,
             includeUnassigned : true,
+            defaultSelectUncheckedCategory : false,
             subjectNoun : {singular : 'Participant', plural : 'Participants', columnName: 'Participant'}
         });
 
@@ -283,6 +284,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                         store       : Ext4.create('Ext.data.Store', cohortConfig),
                         selection   : this.getInitialSelection('cohort'),
                         maxInitSelection : maxSelection,
+                        defaultSelectUncheckedCategory : this.defaultSelectUncheckedCategory,
                         description : 'Cohorts'
                     });
 
@@ -303,6 +305,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                             store       : Ext4.create('Ext.data.Store', groupConfig),
                             selection   : this.getInitialSelection('participantGroup'),
                             maxInitSelection : maxSelection,
+                            defaultSelectUncheckedCategory : this.defaultSelectUncheckedCategory,
                             description : 'Participant Groups'
                         });
 
@@ -348,6 +351,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 selection   : selections,
                 sectionName : 'participant',
                 maxInitSelection : this.maxInitSelection,
+                defaultSelectUncheckedCategory : this.defaultSelectUncheckedCategory,
                 description : this.subjectNoun.plural
             }]
         }

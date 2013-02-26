@@ -190,6 +190,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         if (this.maxInitSelection === undefined)
             this.maxInitSelection = target.store.getCount();
 
+        // default to not selecting a category if its selection is empty
+        if (this.defaultSelectUncheckedCategory === undefined)
+            this.defaultSelectUncheckedCategory = false;
+
         this.fireEvent('beforeInitGroupConfig', this, target.store);
 
         target.suspendEvents(); // queueing of events id depended on
@@ -197,7 +201,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             if (this.maxInitSelection >= target.store.getCount()) {
                 target.getSelectionModel().selectAll();
                 if(this.allowAll){
-                    this.updateSelectAllCheckboxes();
+                    this.updateCategorySelectAllCheckboxes(false);
                 }
             }
             else {
@@ -236,10 +240,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                         continue;
 
                     target.getSelectionModel().select(rec, true);
-
-                    this.updateCategorySelectAll(rec.get("categoryName"));
                 }
             }
+
+            this.updateCategorySelectAllCheckboxes(this.defaultSelectUncheckedCategory);
         }
 
         target.resumeEvents();
@@ -379,20 +383,34 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     },
 
     /**
-     * Used to update the state of the 'toggle all' checkbox for a given category (i.e. grid grouping)
+     * Used to update the state of the 'toggle all' checkbox for a given category (i.e. grid grouping).
+     * The 'selectEmptyCategory' option lets a grid set a category to be selected by default if there are no selection for that category (used by dataset facet filter).
      */
-    updateCategorySelectAll : function (value) {
+    updateCategorySelectAll : function (value, selectEmptyCategory) {
         var el = this.getCategoryInputEl(value);
         if (el)
         {
-            // check to see if all of the records in the category are checked
-            var toCheck = true;
+            // check to see if all of the records in the category are checked or unchecked
+            var allChecked = true;
+            var allUnchecked = true;
             this.getCategoryRecords(value).each(function(rec){
                 if (!this.getGrid().getSelectionModel().isSelected(rec))
-                    toCheck = false;
+                    allChecked = false;
+                else
+                    allUnchecked = false;
             }, this);
 
-            this.checkGroupHeaderCheckbox(el, toCheck);
+            if (allChecked)
+                this.checkGroupHeaderCheckbox(el, true);
+            else if (selectEmptyCategory && allUnchecked)
+            {
+                this.checkGroupHeaderCheckbox(el, true);
+                this.getCategoryRecords(value).each(function(rec){
+                    this.getGrid().getSelectionModel().select(rec, true);
+                }, this);
+            }
+            else
+                this.checkGroupHeaderCheckbox(el, false);
         }
     },
 
@@ -418,8 +436,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         return elArr.length == 1 ? elArr[0] : null;
     },
 
-    updateSelectAllCheckboxes : function() {
-        Ext4.each(this.getGrid().getStore().collect("categoryName"), this.updateCategorySelectAll, this);
+    updateCategorySelectAllCheckboxes : function(selectEmptyCategory) {
+        Ext4.each(this.getGrid().getStore().collect("categoryName"), function(category){
+            this.updateCategorySelectAll(category, selectEmptyCategory);
+        }, this);
     },
 
     deselectAll : function(stopEvents) {
@@ -431,7 +451,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 this.suspendEvents();
 
             this.getGrid().getSelectionModel().deselectAll();
-            this.updateSelectAllCheckboxes();
+            this.updateCategorySelectAllCheckboxes(false);
 
             if (stopEvents)
                 this.resumeEvents();
@@ -447,7 +467,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 this.suspendEvents();
 
             this.getGrid().getSelectionModel().selectAll();
-            this.updateSelectAllCheckboxes();
+            this.updateCategorySelectAllCheckboxes(false);
 
             if (stopEvents)
                 this.resumeEvents();
