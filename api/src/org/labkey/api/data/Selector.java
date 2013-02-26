@@ -45,6 +45,9 @@ public interface Selector
 
     <K> K[] getArray(Class<K> clazz);
 
+    // Convenience method that avoids "unchecked assignment" warnings
+    Map<String, Object>[] getMapArray();
+
     <K> Collection<K> getCollection(Class<K> clazz);
 
     <K> ArrayList<K> getArrayList(Class<K> clazz);

@@ -61,6 +61,13 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     }
 
     @Override
+    public Map<String, Object>[] getMapArray()
+    {
+        //noinspection unchecked
+        return getArray(Map.class);
+    }
+
+    @Override
     public <K> Collection<K> getCollection(Class<K> clazz)
     {
         return getArrayList(clazz);
