@@ -166,6 +166,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             // Filter specific config
             filterType  : 'group',
             subjectNoun : this.subjectNoun,
+            defaultSelectUncheckedCategory : true,
 
             listeners : {
                 afterrender : this.onFilterRender,
