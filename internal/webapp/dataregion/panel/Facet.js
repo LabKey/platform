@@ -50,6 +50,10 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             minHeight : 450
         });
 
+        var studyCtx = LABKEY.getModuleContext('study');
+        this.SUBJECT_PREFIX = studyCtx.subject.columnName + '/';
+        this.COHORT_PREFIX  = studyCtx.subject.columnName + '/Cohort/Label';
+
         this.filterTask = new Ext4.util.DelayedTask(this._filterTask, this);
         this.resizeTask = new Ext4.util.DelayedTask(this._resizeTask, this);
 
@@ -224,11 +228,11 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
                 // Build what a filter might look like
                 if (filters[f].data.category) {
-                    filterPrefix = studyCtx.subject.columnName + '/' + filters[f].data.category.label;
+                    filterPrefix = this.SUBJECT_PREFIX + filters[f].data.category.label;
                 }
                 else {
                     // Assume it is a cohort
-                    filterPrefix = studyCtx.subject.columnName + '/Cohort/Label';
+                    filterPrefix = this.COHORT_PREFIX;
                 }
 
                 if (!filterMap[filterPrefix]) {
@@ -306,15 +310,13 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     constructFilter : function(filterMap, dr, urlParameters) {
 
-        var newValArray = [];
+        var newValues = [];
         var urlFilters = [];
-        var empty = true;
         var NOT = 'Not in any group';
 
         // Build LABKEY.Filters from filterMap
         for (var f in filterMap) {
             if (filterMap.hasOwnProperty(f)) {
-                empty = false;
                 var type, value;
                 if (filterMap[f].length > 1) {
                     type = LABKEY.Filter.Types.IN;
@@ -329,11 +331,6 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 var filter = LABKEY.Filter.create(f, value, type);
                 urlFilters.push(filter);
             }
-        }
-
-        // Simple case when all options are checked/unchecked
-        if (empty) {
-            return newValArray;
         }
 
         // Using the set of filters, merge this against the urlParameters
@@ -354,7 +351,11 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 }
 
                 if (!filterFound) {
-                    newValArray.push([u, urlParameters[u]]);
+                    // 17280: Can't remove facet for one category
+                    // Drop any matching filters related to Groups or Cohorts
+                    if (u.indexOf(this.SUBJECT_PREFIX) < 0 && u.indexOf(this.COHORT_PREFIX) < 0) {
+                        newValues.push([u, urlParameters[u]]);
+                    }
                 }
             }
         }
@@ -363,10 +364,10 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         var fa;
         for (f=0; f < urlFilters.length; f++) {
             fa = urlFilters[f];
-            newValArray.push([fa.getURLParameterName(dr.name), fa.getURLParameterValue()]);
+            newValues.push([fa.getURLParameterName(dr.name), fa.getURLParameterValue()]);
         }
 
-        return newValArray;
+        return newValues;
     },
 
     onFailure : function(resp) {
