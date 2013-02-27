@@ -28,6 +28,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -316,7 +317,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                     {
                         ColumnInfo mvColumn = datasetTable.getColumn(property.getName() + MvColumn.MV_INDICATOR_SUFFIX);
                         String mvIndicator = (String)requestMap.get(updateForm.getFormFieldName(mvColumn));
-                        MvFieldWrapper mvWrapper = new MvFieldWrapper(value, mvIndicator);
+                        MvFieldWrapper mvWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(c), value, mvIndicator);
                         dataMap.put(property, mvWrapper);
                     }
                     else

@@ -50,6 +50,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -448,7 +449,7 @@ public class ListController extends SpringActionController
                             }
                             else
                             {
-                                MvFieldWrapper mvWrapper = new MvFieldWrapper(formValue, mvIndicator);
+                                MvFieldWrapper mvWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(getContainer()), formValue, mvIndicator);
                                 item.setProperty(property, mvWrapper);
                             }
                         }
