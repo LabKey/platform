@@ -2080,17 +2080,14 @@ public class IssuesController extends SpringActionController
     }
 
 
-    static String _toString(Object a)
+    static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String field, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
     {
-        return null == a ? "" : a.toString();
-    }
-
-
-    static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String field2, String from, String to, boolean newIssue)
-    {
-        String encField = PageFlowUtil.filter(field2);
+        // Use custom caption if one is configured
+        CustomColumn cc = ccc.getCustomColumn(field.toLowerCase());
+        String encField = PageFlowUtil.filter(null != cc ? cc.getCaption() : field);
         from = from == null ? "" : from;
         to = to == null ? "" : to;
+
         if (!from.equals(to))
         {
             sbText.append(encField);
@@ -2141,7 +2138,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    static ChangeSummary createChangeSummary(Issue issue, Issue previous, Issue duplicateOf, User user, Class<? extends Controller> action, String comment, CustomColumnConfiguration ccc, User currentUser)
+    static ChangeSummary createChangeSummary(Issue issue, Issue previous, @Nullable Issue duplicateOf, User user, Class<? extends Controller> action, String comment, CustomColumnConfiguration ccc, User currentUser)
     {
         StringBuilder sbHTMLChanges = new StringBuilder();
         StringBuilder sbTextChanges = new StringBuilder();
@@ -2175,17 +2172,17 @@ public class IssuesController extends SpringActionController
 
             // issueChanges is not defined yet, but it leaves things flexible
             sbHTMLChanges.append("<table class=issues-Changes>");
-            _appendChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(currentUser), issue.getAssignedToName(currentUser), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), ccc, newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), ccc, newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(currentUser), issue.getAssignedToName(currentUser), ccc, newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Notify",
                     StringUtils.join(previous.getNotifyListDisplayNames(null),";"),
                     StringUtils.join(issue.getNotifyListDisplayNames(null),";"),
-                    newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType(), newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", pevPriStringVal, String.valueOf(issue.getPriority()), newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), newIssue);
+                    ccc, newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType(), ccc, newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), ccc, newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", pevPriStringVal, String.valueOf(issue.getPriority()), ccc, newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), ccc, newIssue);
 
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", prevInt1StringVal, String.valueOf(issue.getInt1()), ccc, newIssue);
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", prevInt2StringVal, String.valueOf(issue.getInt2()), ccc, newIssue);
@@ -2223,7 +2220,7 @@ public class IssuesController extends SpringActionController
 
         // Record only fields with read permissions
         if (null != cc && cc.getPermission().equals(ReadPermission.class))
-            _appendChange(sbHtml, sbText, cc.getCaption(), from, to, newIssue);
+            _appendChange(sbHtml, sbText, cc.getCaption(), from, to, ccc, newIssue);
     }
 
 
