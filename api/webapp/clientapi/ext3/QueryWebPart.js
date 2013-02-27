@@ -848,6 +848,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     },
 
     beforeRefresh : function(dataRegion) {
+        this.fireEvent('beforerefresh', dataRegion);
         this.render();
         return false;
     },

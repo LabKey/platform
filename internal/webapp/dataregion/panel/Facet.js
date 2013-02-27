@@ -128,6 +128,11 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             this.qwp.on('beforeclearallfilters', function(dr) {
                 this.filterPanel.getFilterPanel().selectAll(true);
             }, this);
+            this.qwp.on('beforerefresh', function(dr) {
+                this.remove(0);
+                this.filterPanel = undefined;
+                this.add(this.getFilterCfg());
+            }, this);
         }
 
         return this.qwp;
@@ -304,6 +309,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         var newValArray = [];
         var urlFilters = [];
         var empty = true;
+        var NOT = 'Not in any group';
 
         // Build LABKEY.Filters from filterMap
         for (var f in filterMap) {
@@ -319,6 +325,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                     value = filterMap[f][0];
                 }
 
+                value = value.replace(NOT, ''); // 17279: Working for 'Not in any group'
                 var filter = LABKEY.Filter.create(f, value, type);
                 urlFilters.push(filter);
             }
@@ -332,9 +339,9 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         // Using the set of filters, merge this against the urlParameters
         var filterFound;
         for (var u in urlParameters) {
-            filterFound = false;
             if (urlParameters.hasOwnProperty(u)) {
 
+                filterFound = false;
                 var columnFilter = u.split('~');
                 if (columnFilter.length > 1) {
 
