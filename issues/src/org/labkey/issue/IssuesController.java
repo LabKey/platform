@@ -2080,11 +2080,18 @@ public class IssuesController extends SpringActionController
     }
 
 
-    static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String field, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
+    private static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String internalFieldName, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
     {
         // Use custom caption if one is configured
-        CustomColumn cc = ccc.getCustomColumn(field.toLowerCase());
-        String encField = PageFlowUtil.filter(null != cc ? cc.getCaption() : field);
+        CustomColumn cc = ccc.getCustomColumn(internalFieldName.toLowerCase());
+        _appendChange(sbHTML, sbText, internalFieldName, cc, from, to, newIssue);
+    }
+
+
+    private static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String internalFieldName, @Nullable CustomColumn cc, String from, String to, boolean newIssue)
+    {
+        // Use custom caption if one is configured
+        String encField = PageFlowUtil.filter(null != cc ? cc.getCaption() : internalFieldName);
         from = from == null ? "" : from;
         to = to == null ? "" : to;
 
@@ -2214,13 +2221,13 @@ public class IssuesController extends SpringActionController
         return new ChangeSummary(issue.addComment(user, formattedComment.toString()), sbTextChanges.toString(), summary);
     }
 
-    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String field, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
+    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String internalFieldName, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
     {
-        CustomColumn cc = ccc.getCustomColumn(field);
+        CustomColumn cc = ccc.getCustomColumn(internalFieldName);
 
         // Record only fields with read permissions
         if (null != cc && cc.getPermission().equals(ReadPermission.class))
-            _appendChange(sbHtml, sbText, cc.getCaption(), from, to, ccc, newIssue);
+            _appendChange(sbHtml, sbText, internalFieldName, cc, from, to, newIssue);
     }
 
 
