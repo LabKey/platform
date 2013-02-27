@@ -93,6 +93,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -318,12 +319,23 @@ public class IssueManager
     }
 
 
-    static class CustomColumnMap extends HashMap<String, CustomColumn>
+    static class CustomColumnMap extends LinkedHashMap<String, CustomColumn>
     {
+        private CustomColumnMap(Map<String, CustomColumn> map)
+        {
+            // Copy the map ensuring the canonical order specified by COLUMN_NAMES
+            for (String name : CustomColumnConfiguration.COLUMN_NAMES)
+            {
+                CustomColumn cc = map.get(name);
+
+                if (null != cc)
+                    put(name, cc);
+            }
+        }
     }
 
 
-    // Delete all old rows and insert the new rows; we don't bother detecting changes becasue this should be rare.
+    // Delete all old rows and insert the new rows; we don't bother detecting changes because this operation should be infrequent.
     public static void saveCustomColumnConfiguration(Container c, CustomColumnConfiguration ccc)
     {
         TableInfo table = IssuesSchema.getInstance().getTableInfoCustomColumns();
@@ -355,14 +367,14 @@ public class IssueManager
 
     public static class CustomColumnConfiguration
     {
-        private static final String[] _columnNames = {"type", "area", "priority", "milestone", "resolution", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
+        private static final String[] COLUMN_NAMES = {"type", "area", "priority", "milestone", "resolution", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
 
         private final CustomColumnMap _map;
 
         // Values are being loaded from the database
-        public CustomColumnConfiguration(@NotNull CustomColumnMap map)
+        public CustomColumnConfiguration(@NotNull Map<String, CustomColumn> map)
         {
-            _map = map;
+            _map = new CustomColumnMap(map);
         }
 
         // Valued are being posted from the admin page
@@ -384,7 +396,7 @@ public class IssueManager
                 pickListColumnNames = new HashSet<String>((List<String>)pickList);
 
             List<String> perms = context.getList("permissions");
-            // Should have one for each string column (not int columns yet)
+            // Should have one for each string column (we don't support permissions on int columns yet)
             assert perms.size() == 5;
             Map<String, Class<? extends Permission>> permMap = new HashMap<String, Class<? extends Permission>>();
 
@@ -395,9 +407,9 @@ public class IssueManager
                 permMap.put("string" + (i + 1), perm);
             }
 
-            _map = new CustomColumnMap();
+            Map<String, CustomColumn> ccMap = new HashMap<String, CustomColumn>();
 
-            for (String columnName : _columnNames)
+            for (String columnName : COLUMN_NAMES)
             {
                 String caption = (String)map.get(columnName);
 
@@ -405,9 +417,11 @@ public class IssueManager
                 {
                     Class<? extends Permission> perm = permMap.get(columnName);
                     CustomColumn cc = new CustomColumn(c, columnName, caption, pickListColumnNames.contains(columnName), null != perm ? perm : ReadPermission.class);
-                    _map.put(columnName, cc);
+                    ccMap.put(columnName, cc);
                 }
             }
+
+            _map = new CustomColumnMap(ccMap);
         }
 
         public CustomColumn getCustomColumn(String name)

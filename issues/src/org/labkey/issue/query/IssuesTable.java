@@ -61,7 +61,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 
     private String getCustomCaption(String realName, CustomColumnConfiguration ccc)
     {
-        String caption = ccc.getCaption(realName);
+        String caption = ccc.getCaption(realName.toLowerCase());
         return caption == null ? realName : caption;
     }
 
@@ -127,7 +127,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         addWrapColumn(_rootTable.getColumn("Closed"));
         addWrapColumn(_rootTable.getColumn("NotifyList"));
 
-        // add any custom columns
+        // add any custom columns that weren't added above
         for (CustomColumn cc : ccc.getCustomColumns(_userSchema.getUser()))
         {
             ColumnInfo realColumn = getRealTable().getColumn(cc.getName());

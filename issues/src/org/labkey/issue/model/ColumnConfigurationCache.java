@@ -27,9 +27,10 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.issue.model.IssueManager.CustomColumn;
 import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
-import org.labkey.issue.model.IssueManager.CustomColumnMap;
 
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: adam
@@ -43,7 +44,7 @@ public class ColumnConfigurationCache
         @Override
         public CustomColumnConfiguration load(Container c, @Nullable Object argument)
         {
-            final CustomColumnMap map = new CustomColumnMap();
+            final Map<String, CustomColumn> map = new HashMap<String, CustomColumn>();
             Filter filter = new SimpleFilter(new FieldKey(null, "Container"), c);
             new TableSelector(IssuesSchema.getInstance().getTableInfoCustomColumns(), filter, null).forEach(
                 new Selector.ForEachBlock<CustomColumn>() {
