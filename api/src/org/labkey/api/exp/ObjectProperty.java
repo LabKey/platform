@@ -20,6 +20,7 @@ import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentFile;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.data.MvUtil;
 
 import java.util.Date;
 import java.util.Map;
@@ -219,8 +220,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         Object value = value();
         if (mvIndicator == null)
             return value;
-        MvFieldWrapper wrapper = new MvFieldWrapper(value, mvIndicator);
-        return wrapper;
+        return new MvFieldWrapper(MvUtil.getMvIndicators(container), value, mvIndicator);
     }
 
     public Object value()

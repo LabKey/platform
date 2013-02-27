@@ -533,7 +533,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                                 if (mvIndicatorIndex != -1)
                                 {
                                     // There is such a column, so this value had better be good.
-                                    MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                    MvFieldWrapper mvWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(column.getMvContainer()));
                                     mvWrapper.setValue( ("".equals(fld)) ?
                                         column.missingValues :
                                         column.converter.convert(column.clazz, fld));
@@ -545,13 +545,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                                     // No such column. Is this a valid MV indicator or a valid value?
                                     if (MvUtil.isValidMvIndicator(fld.toString(), column.getMvContainer()))
                                     {
-                                        MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                        MvFieldWrapper mvWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(column.getMvContainer()));
                                         mvWrapper.setMvIndicator("".equals(fld) ? null : fld.toString());
                                         values[i] = mvWrapper;
                                     }
                                     else
                                     {
-                                        MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                        MvFieldWrapper mvWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(column.getMvContainer()));
                                         mvWrapper.setValue( ("".equals(fld)) ?
                                             column.missingValues :
                                             column.converter.convert(column.clazz, fld));
@@ -568,7 +568,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                                 // There's an mv column that matches
                                 if (values[mvColumnIndex] == null)
                                 {
-                                    MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                    MvFieldWrapper mvWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(column.getMvContainer()));
                                     mvWrapper.setMvIndicator("".equals(fld) ? null : fld.toString());
                                     values[mvColumnIndex] = mvWrapper;
                                     values[i] = mvWrapper;
@@ -588,7 +588,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                                 {
                                     throw new ConversionException(fld + " is not a valid MV indicator");
                                 }
-                                MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                MvFieldWrapper mvWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(column.getMvContainer()));
                                 mvWrapper.setMvIndicator("".equals(fld) ? null : fld.toString());
                                 values[i] = mvWrapper;
                             }

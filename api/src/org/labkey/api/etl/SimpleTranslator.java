@@ -43,9 +43,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -336,7 +334,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     return null;
                 }
 
-                return new MvFieldWrapper(value, String.valueOf(mv));
+                return new MvFieldWrapper(MvUtil.getMvIndicators(_mvContainer), value, String.valueOf(mv));
             }
 
             return value;

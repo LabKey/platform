@@ -402,7 +402,7 @@ public class ExcelLoader extends DataLoader
             ColumnDescriptor[] allColumns = getColumns();
             ArrayList row = grid.get(lineNum());
             Object[] fields = new Object[_activeColumns.length];
-            for (int columnIndex = 0, fieldIndex = 0; columnIndex < row.size(); columnIndex++)
+            for (int columnIndex = 0, fieldIndex = 0; columnIndex < row.size() && columnIndex < allColumns.length; columnIndex++)
             {
                 // UNDONE: it seems to me that DataLoader should handle .load==false
                 ColumnDescriptor cd = allColumns[columnIndex];

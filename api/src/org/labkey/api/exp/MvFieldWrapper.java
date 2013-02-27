@@ -15,6 +15,8 @@
  */
 package org.labkey.api.exp;
 
+import java.util.Set;
+
 /**
  * For fields with associated missing value indicator, this wrapper holds both an actual value
  * (which may be null) and an mv indicator (which also may be null).
@@ -26,13 +28,18 @@ public class MvFieldWrapper
 {
     private Object value;
     private String mvIndicator;
+    private final Set<String> _validMVIndicators;
 
-    public MvFieldWrapper() {}
-
-    public MvFieldWrapper(Object value, String mvIndicator)
+    public MvFieldWrapper(Set<String> mvIndicators, Object value, String mvIndicator)
     {
-        this.value = value;
-        this.mvIndicator = mvIndicator;
+        this(mvIndicators);
+        setValue(value);
+        setMvIndicator(mvIndicator);
+    }
+
+    public MvFieldWrapper(Set<String> mvIndicators)
+    {
+        _validMVIndicators = mvIndicators;
     }
 
     public Object getValue()
@@ -54,6 +61,16 @@ public class MvFieldWrapper
     {
         if ("".equals(mvIndicator))
             mvIndicator = null;
+
+        // Transform to canonical casing
+        for (String validMVIndicator : _validMVIndicators)
+        {
+            if (validMVIndicator.equalsIgnoreCase(mvIndicator))
+            {
+                mvIndicator = validMVIndicator;
+            }
+        }
+
         this.mvIndicator = mvIndicator;
     }
 

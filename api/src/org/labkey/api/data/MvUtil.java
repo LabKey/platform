@@ -18,8 +18,9 @@ package org.labkey.api.data;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -62,7 +63,7 @@ public class MvUtil
 
     public static boolean isMvIndicator(String indicator, Container c)
     {
-        return getMvIndicators(c).contains(indicator);
+        return new CaseInsensitiveHashSet(getMvIndicators(c)).contains(indicator);
     }
 
     public static String getMvLabel(String mvIndicator, Container c)
@@ -164,24 +165,18 @@ public class MvUtil
     private static Map<String, String> getFromDb(Container c)
     {
         Map<String, String> indicatorsAndLabels = new CaseInsensitiveHashMap<String>();
-        try
-        {
-            TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
-            Set<String> selectColumns = new HashSet<String>();
-            selectColumns.add("mvindicator");
-            selectColumns.add("label");
-            Filter filter = new SimpleFilter("container", c.getId());
-            Map[] selectResults = Table.select(mvTable, selectColumns, filter, null, Map.class);
 
-            //noinspection unchecked
-            for (Map<String, String> m : selectResults)
-            {
-                indicatorsAndLabels.put(m.get("mvindicator"), m.get("label"));
-            }
-        }
-        catch (SQLException e)
+        TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
+        Set<String> selectColumns = new HashSet<String>();
+        selectColumns.add("mvindicator");
+        selectColumns.add("label");
+        Filter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
+        Map[] selectResults = new TableSelector(mvTable, selectColumns, filter, null).getArray(Map.class);
+
+        //noinspection unchecked
+        for (Map<String, String> m : selectResults)
         {
-            throw UnexpectedException.wrap(e);
+            indicatorsAndLabels.put(m.get("mvindicator"), m.get("label"));
         }
 
         return indicatorsAndLabels;
