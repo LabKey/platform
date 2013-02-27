@@ -1204,6 +1204,10 @@ public class IssuesController extends SpringActionController
 
     private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action) throws ServletException
     {
+        // Skip the email if no comment and no public fields have changed, #17304
+        if (fieldChanges.isEmpty() && comment.isEmpty())
+            return;
+
         final Set<String> allAddresses = getEmailAddresses(issue, prevIssue, action);
 
         for (String to : allAddresses)
