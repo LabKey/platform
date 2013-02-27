@@ -18,7 +18,6 @@ package org.labkey.api.jsp;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jasper.JspC;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.settings.AppProps;
@@ -34,7 +33,11 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -49,7 +52,6 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private static final Map<ResourceFinder, ClassLoader> _classLoaders = new HashMap<ResourceFinder, ClassLoader>();
     private static final boolean TEST = false;          // Set to true to force a re-compile of each JSP the first time it's encountered
     private static final Set<String> _compiledJsps = new HashSet<String>();    // Used during test mode
-    private static final Set<String> _badPaths = new ConcurrentHashSet<String>();
 
     @Override
     public Class loadClass(ServletContext context, String packageName, String jspFilename) throws ClassNotFoundException
@@ -57,31 +59,16 @@ public class RecompilingJspClassLoader extends JspClassLoader
         String compiledJspPath = getCompiledJspPath(packageName, jspFilename);
         Collection<ResourceFinder> finders = ModuleLoader.getInstance().getResourceFindersForPath(compiledJspPath);
 
-        if (null == finders)
+        for (ResourceFinder finder : finders)
         {
-            // TODO: Remove once we've investigated #16113
-            if (!_badPaths.contains(compiledJspPath))
-            {
-                _log.info("No ResourceFinders for " + compiledJspPath);
-                ModuleLoader.getInstance().logResourceFinders();
-                _badPaths.add(compiledJspPath);
-            }
-        }
-        else
-        {
-            for (ResourceFinder finder : finders)
-            {
-                File jspTempBuildDirectory = new File(finder.getBuildPath() + JSP_PATH);
-                File classFile = new File(jspTempBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
-                File sourceFile = null;
-                if (null != finder.getSourcePath())
-                    sourceFile = new File(finder.getSourcePath() + "/src" + getSourceJspPath(packageName, jspFilename));
+            File jspTempBuildDirectory = new File(finder.getBuildPath() + JSP_PATH);
+            File classFile = new File(jspTempBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
+            File sourceFile = null;
+            if (null != finder.getSourcePath())
+                sourceFile = new File(finder.getSourcePath() + "/src" + getSourceJspPath(packageName, jspFilename));
 
-                if (classFile.exists() || (null != sourceFile && sourceFile.exists()))
-                    return getCompiledClassFile(classFile, jspTempBuildDirectory, finder, packageName, jspFilename);
-            }
-
-            _log.warn("Can't load " + compiledJspPath);
+            if (classFile.exists() || (null != sourceFile && sourceFile.exists()))
+                return getCompiledClassFile(classFile, jspTempBuildDirectory, finder, packageName, jspFilename);
         }
 
         return super.loadClass(context, packageName, jspFilename);

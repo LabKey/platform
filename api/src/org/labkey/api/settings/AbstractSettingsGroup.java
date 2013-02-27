@@ -54,7 +54,7 @@ public abstract class AbstractSettingsGroup
         }
     }
 
-    protected String lookupStringValue(String name, String defaultValue)
+    protected String lookupStringValue(String name, @Nullable String defaultValue)
     {
         return lookupStringValue(ContainerManager.getRoot(), name, defaultValue);
     }

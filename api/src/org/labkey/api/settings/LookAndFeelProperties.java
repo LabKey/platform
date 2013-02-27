@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.view.ThemeFont;
@@ -77,12 +78,12 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
         return !getProperties(_c).isEmpty();
     }
 
-    protected String lookupStringValue(String name, String defaultValue)
+    protected String lookupStringValue(String name, @Nullable String defaultValue)
     {
         return lookupStringValue(_c, name, defaultValue);
     }
 
-    protected String lookupStringValue(Container c, String name, String defaultValue)
+    protected String lookupStringValue(Container c, String name, @Nullable String defaultValue)
     {
         if (c.isRoot())
             return super.lookupStringValue(c, name, defaultValue);

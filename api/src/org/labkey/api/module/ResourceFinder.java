@@ -26,7 +26,7 @@ public class ResourceFinder
     String _buildPath;
     String _sourcePath;
 
-    public ResourceFinder(String name, String sourcePath, String buildPath)
+    ResourceFinder(String name, String sourcePath, String buildPath)
     {
         _name = name;
         _sourcePath = sourcePath;
@@ -34,11 +34,6 @@ public class ResourceFinder
 
         assert _sourcePath != null : "Source path not set; it appears you need to rebuild";
         assert _buildPath != null : "Build path not set; it appears you need to rebuild";
-    }
-
-    public ResourceFinder(Module module)
-    {
-        this(module.getName(), module.getSourcePath(), module.getBuildPath());
     }
 
     public String getName()

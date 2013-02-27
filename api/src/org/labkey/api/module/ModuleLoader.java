@@ -22,6 +22,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -96,7 +97,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: migra
@@ -110,7 +110,7 @@ public class ModuleLoader implements Filter
     private static final Map<String, Throwable> _moduleFailures = new HashMap<String, Throwable>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<String, Module>();
     private static final Map<String, Module> _schemaNameToModule = new HashMap<String, Module>();
-    private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new ConcurrentHashMap<String, Collection<ResourceFinder>>();
+    private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<String, Collection<ResourceFinder>>();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<Class, Class<? extends UrlProvider>>();
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
@@ -1225,10 +1225,20 @@ public class ModuleLoader implements Filter
     }
 
 
-    public void registerResourcePrefix(String prefix, ResourceFinder finder)
+    public void registerResourcePrefix(String prefix, Module module)
+    {
+        registerResourcePrefix(prefix, module.getName(), module.getSourcePath(), module.getBuildPath());
+    }
+
+    public void registerResourcePrefix(String prefix, String name, String sourcePath, String buildPath)
     {
         if (null == prefix)
             return;
+
+        if (!new File(sourcePath).isDirectory() || !new File(buildPath).isDirectory())
+            return;
+
+        ResourceFinder finder = new ResourceFinder(name, sourcePath, buildPath);
 
         synchronized(_resourceFinders)
         {
@@ -1244,40 +1254,18 @@ public class ModuleLoader implements Filter
         }
     }
 
-    // TODO: Remove once we've investigated #16113
-    public void logResourceFinders()
-    {
-        _log.info(_resourceFinders);
-    }
-
-    public Collection<ResourceFinder> getResourceFindersForPath(String path)
+    public @NotNull Collection<ResourceFinder> getResourceFindersForPath(String path)
     {
         //NOTE: jasper encodes underscores in JSPs, so decode this here
         path = path.replaceAll("_005f", "_");
 
-        boolean firstMultiple = true;
-        Collection<ResourceFinder> finders = null;
-        for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
+        Collection<ResourceFinder> finders = new LinkedList<ResourceFinder>();
+
+        synchronized (_resourceFinders)
         {
-            if (path.startsWith(e.getKey()))
-            {
-                if (finders == null)
-                {
-                    finders = e.getValue();
-                }
-                else
-                {
-                    // Combine all ResourceFinders that match the path prefix.
-                    if (firstMultiple)
-                    {
-                        // First time we find multiple matches, create a new LinkedList.
-                        // On subsequent matches we just append to the existing LinkedList.
-                        finders = new LinkedList<ResourceFinder>(finders);
-                        firstMultiple = false;
-                    }
+            for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
+                if (path.startsWith(e.getKey()))
                     finders.addAll(e.getValue());
-                }
-            }
         }
 
         return finders;

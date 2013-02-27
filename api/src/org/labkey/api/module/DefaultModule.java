@@ -176,8 +176,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 INSTANTIATED_MODULES.add(reg);
         }
 
-        if (null != getSourcePath() && null != getBuildPath())
-            ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), new ResourceFinder(this));
+        ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), this);
 
         _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
 
