@@ -287,9 +287,8 @@ public class ParticipantGroupManager
                 }
                 else if (null != groups && groups.length == 1)
                 {
-                    ActionURL url = baseURL.clone();
-                    url = groups[0].addURLFilter(url, container, dataRegionName);
-                    NavTree item = button.addMenuItem(groups[0].getLabel(), url.toString(), null, selected.contains(groups[0]));
+                    Pair<FieldKey, String> filterColValue = groups[0].getFilterColAndValue(container);
+                    NavTree item = button.addMenuItem(groups[0].getLabel(), null, getSelectionScript(dataRegionName, filterColValue), selected.contains(groups[0]));
                     if (cls.isShared())
                         item.setImageSrc(context.getContextPath() + "/reports/grid_shared.gif");
                 }
