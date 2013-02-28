@@ -786,6 +786,21 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }
     },
 
+    replaceFilterMatch : function(filter, filterMatch) {
+        var params = LABKEY.DataRegion.getParamValPairsFromString(this.requestURL);
+        var skips = [];
+
+        for (var f=0; f < params.length; f++) {
+            if (params[f][0].indexOf(this.name + '.') == 0) {
+                if (params[f][0].indexOf(filterMatch) > -1) {
+                    skips.push(params[f][0]);
+                }
+            }
+        }
+
+        this._updateFilter(filter, skips);
+    },
+
     // private
     // DO NOT CALL DIRECTLY. This method is private and only available for replacing advanced cohort filters
     // for this Data Region. Remove if advanced cohorts are removed.
