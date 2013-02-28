@@ -466,10 +466,11 @@ class PostgreSql83Dialect extends SqlDialect
         // Sort function might not exist in external datasource; skip that syntax if not
         boolean useSortFunction = sorted && _arraySortFunctionExists.get();
 
+        // TODO: PostgreSQL 9.0 also has "string_agg()" which we should use in place of array_to_string(array_agg())
         SQLFragment result = new SQLFragment("array_to_string(");
         if (useSortFunction)
         {
-            result.append("core.sort(");   // TODO: Switch PostgreSQL 9.0 to use ORDER BY option inside array aggregate instead of this function
+            result.append("core.sort(");   // TODO: Switch PostgreSQL 9.0 dialect to use ORDER BY option inside array aggregate instead of our custom function
         }
         result.append(getArrayAggregateFunctionName()).append("(");
         if (distinct)

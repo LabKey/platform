@@ -156,6 +156,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
                         " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR, getColumn(Column.SourceProtocolApplication));
                 col.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                col.setSqlTypeName("lsidtype");
                 return col;
             case SourceProtocolApplication:
             {

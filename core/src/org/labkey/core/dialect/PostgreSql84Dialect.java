@@ -31,9 +31,9 @@ public class PostgreSql84Dialect extends PostgreSql83Dialect
 
     // 8.4 added a built-in array_agg() aggregate function. Once we remove support for 8.3 we can drop our custom aggregate function.
     // TODO: A great idea... but we need to make this work on PostgreSQL DOMAINS (e.g., LSID, EntityId, etc.) or avoid them
-//    @Override
-//    protected String getArrayAggregateFunctionName()
-//    {
-//        return "array_agg";
-//    }
+    @Override
+    protected String getArrayAggregateFunctionName()
+    {
+        return "array_agg";
+    }
 }
