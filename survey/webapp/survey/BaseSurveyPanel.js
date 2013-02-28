@@ -25,21 +25,27 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         this.callParent();
     },
 
-    generateSurveySections : function(surveyConfig) {
+    generateSurveySections : function(surveyConfig, panelType) {
+
+        // default to a normal ext panel
+        if (!panelType)
+            panelType = 'Ext.panel.Panel';
 
         // add each of the sections as a panel to the sections array
         if (surveyConfig.survey)
         {
             Ext4.each(surveyConfig.survey.sections, function(section){
-                var sectionPanel = Ext4.create('Ext.panel.Panel', {
+                var sectionPanel = Ext4.create(panelType, {
                     border: false,
                     flex: 1,
                     autoScroll: true,
+                    cls : 'iScroll', // webkit custom scroll bars
                     header: this.surveyLayout == 'card' ? false : (section.header != undefined ? section.header : true),
                     sectionPanel: true, // marker for looking for a components parent section
                     completedQuestions: 0, // counter for the section header to show progress when a panel is collapsed
                     origTitle: section.title || '',
                     title: section.title || '',
+                    copyFromPrevious: section.copyFromPrevious || false,
                     isDisabled: section.initDisabled || false,
                     defaults: {
                         labelWidth: section.defaultLabelWidth || 350,
@@ -52,7 +58,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 // for card layout, add the section title as a displayfield instead of a panel header
                 if (this.surveyLayout == 'card' && section.title)
                 {
-                    sectionPanel.add(this.getCardSectionHeader(section.title));    // todo
+                    sectionPanel.add(this.getCardSectionHeader(section.title));
                 }
                 else
                 {
@@ -500,8 +506,13 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     },
 
     getFormDirtyValues : function() {
+        return this.getDirtyValues(this.getForm());
+    },
+
+    getDirtyValues : function(form)
+    {
         var values = {};
-        Ext4.each(this.getForm().getFields().items, function(field){
+        Ext4.each(form.getFields().items, function(field){
             if (field.submitValue && field.isDirty() && field.isValid())
             {
                 // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radiofeilds
