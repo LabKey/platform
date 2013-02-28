@@ -23,6 +23,8 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         this.dataRegion = config.dataRegion;
         var renderTarget = 'dataregion_facet_' + config.dataRegion.name;
         var topEl = this.getContainerEl(config.dataRegion);
+        var tableEl = this.getDataRegionTableEl(config.dataRegion);
+        tableEl.setWidth(tableEl.getBox().width);
         if (topEl) {
             var targetHTML = '<div id="' + renderTarget + '" style="float: left;"></div>';
             topEl.insertHtml('beforeBegin', targetHTML);
@@ -93,6 +95,12 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         }
     },
 
+    getDataRegionTableEl : function(dr) {
+        if (dr && dr.name) {
+            return Ext4.get('dataregion_' + dr.name);
+        }
+    },
+
     _beforeShow : function() {
         var el = this.getContainerEl(this.dataRegion);
         if (el) {
@@ -109,7 +117,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     },
 
     getRequiredWidth : function(dr) {
-        return this.width + 50 + Ext4.get('dataregion_' + dr.name).getBox().width;
+        return this.width + 10 + this.getDataRegionTableEl(dr).getBox().width;
     },
 
     getWrappedDataRegion : function() {
@@ -147,8 +155,10 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         if (dr) {
             this.dataRegion = LABKEY.DataRegions[dr.name];
             LABKEY.DataRegions[dr.name].setFacet(this);
+            var tableEl = this.getDataRegionTableEl(this.dataRegion);
+            tableEl.setWidth(tableEl.getBox().width);
             var box = this.getBox();
-            this.onResize(this, box.width, box.height);
+            this._resizeTask(this, box.width, box.height);
 
             // Filters might have been updated outside of facet
             if (!this.filterChange && this.filterPanel) {
@@ -220,8 +230,6 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         var filters = this.filterPanel.getSelection(true, true),
             filterMap = {},
             filterPrefix, f=0;
-
-        var studyCtx = LABKEY.getModuleContext('study');
 
         for (; f < filters.length; f++) {
             if (filters[f].get('type') != 'participant') {
