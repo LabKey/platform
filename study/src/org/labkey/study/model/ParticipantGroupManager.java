@@ -288,7 +288,7 @@ public class ParticipantGroupManager
                 else if (null != groups && groups.length == 1)
                 {
                     Pair<FieldKey, String> filterColValue = groups[0].getFilterColAndValue(container);
-                    NavTree item = button.addMenuItem(groups[0].getLabel(), null, getSelectionScript(dataRegionName, filterColValue), selected.contains(groups[0]));
+                    NavTree item = button.addMenuItem(groups[0].getLabel(), null, getSelectionReplaceScript(dataRegionName, filterColValue, filterColValue.first.getParent().getName()), selected.contains(groups[0]));
                     if (cls.isShared())
                         item.setImageSrc(context.getContextPath() + "/reports/grid_shared.gif");
                 }
@@ -332,6 +332,18 @@ public class ParticipantGroupManager
               .append("LABKEY.Filter.create('")
               .append(filterColValue.first).append("', '").append(filterColValue.second)
               .append("', LABKEY.Filter.Types.EQUAL)")
+              .append(");");
+        return script.toString();
+    }
+
+    private String getSelectionReplaceScript(String dataRegionName, Pair<FieldKey, String> filterColValue, String match)
+    {
+        StringBuilder script = new StringBuilder();
+        script.append("LABKEY.DataRegions['").append(dataRegionName).append("'].replaceFilterMatch(")
+              .append("LABKEY.Filter.create('")
+              .append(filterColValue.first).append("', '").append(filterColValue.second)
+              .append("', LABKEY.Filter.Types.EQUAL), ")
+              .append("'").append(match).append("/'")
               .append(");");
         return script.toString();
     }
