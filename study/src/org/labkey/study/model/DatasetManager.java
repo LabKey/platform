@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.study.model;
 
 import org.labkey.api.study.DataSet;
@@ -13,15 +28,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class DatasetManager
 {
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
-    public static final List<DataSetListener> _listeners = new CopyOnWriteArrayList<DataSetListener>();
+    private static final List<DatasetListener> _listeners = new CopyOnWriteArrayList<DatasetListener>();
 
-    public static void addDataSetListener(DataSetListener listener)
+    public static void addDataSetListener(DatasetListener listener)
     {
         _listeners.add(listener);
     }
 
-    public interface DataSetListener
+    public static List<DatasetListener> getListeners()
     {
-        void dataSetChanged(DataSet def);
+        return _listeners;
+    }
+
+    public interface DatasetListener
+    {
+        void datasetChanged(DataSet def);
     }
 }

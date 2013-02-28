@@ -2665,9 +2665,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
 
-    private static class DataSetDefObjectFactory extends BeanObjectFactory<DataSetDefinition>
+    private static class DatasetDefObjectFactory extends BeanObjectFactory<DataSetDefinition>
     {
-        DataSetDefObjectFactory()
+        DatasetDefObjectFactory()
         {
             super(DataSetDefinition.class);
             assert !_readableProperties.remove("storageTableInfo");
@@ -2677,7 +2677,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     static
     {
-        ObjectFactory.Registry.register(DataSetDefinition.class, new DataSetDefObjectFactory());        
+        ObjectFactory.Registry.register(DataSetDefinition.class, new DatasetDefObjectFactory());
     }
 
 

@@ -179,7 +179,7 @@ public class StudyManager
     private final QueryHelper<StudyImpl> _studyHelper;
     private final QueryHelper<VisitImpl> _visitHelper;
     private final QueryHelper<LocationImpl> _locationHelper;
-    private final DataSetHelper _dataSetHelper;
+    private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
     private final Map<String, Resource> _moduleParticipantViews = new ConcurrentHashMap<String, Resource>();
 
@@ -262,7 +262,7 @@ public class StudyManager
          * this is probably a little overkill, e.g. name change doesn't need to unmaterialize
          * however, this is the best choke point
          */
-        _dataSetHelper = new DataSetHelper(dataSetGetter);
+        _datasetHelper = new DatasetHelper(dataSetGetter);
         _tableInfoVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
         _tableInfoParticipant = StudySchema.getInstance().getTableInfoParticipant();
         //_tableInfoStudyData = StudySchema.getInstance().getTableInfoStudyData(null);
@@ -272,9 +272,9 @@ public class StudyManager
     }
 
 
-    class DataSetHelper extends QueryHelper<DataSetDefinition>
+    class DatasetHelper extends QueryHelper<DataSetDefinition>
     {
-        DataSetHelper(TableInfoGetter tableGetter)
+        DatasetHelper(TableInfoGetter tableGetter)
         {
             super(tableGetter, DataSetDefinition.class);
         }
@@ -468,7 +468,7 @@ public class StudyManager
             scope.ensureTransaction();
 
             ensureViewCategory(user, dataSetDefinition);
-            _dataSetHelper.create(user, dataSetDefinition);
+            _datasetHelper.create(user, dataSetDefinition);
 
             scope.commitTransaction();
             indexDataset(null, dataSetDefinition);
@@ -560,7 +560,7 @@ public class StudyManager
             }   
             Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
             ensureViewCategory(user, dataSetDefinition);
-            _dataSetHelper.update(user, dataSetDefinition, pk);
+            _datasetHelper.update(user, dataSetDefinition, pk);
 
             if (!old.getLabel().equals(dataSetDefinition.getLabel()))
             {
@@ -1710,7 +1710,7 @@ public class StudyManager
                 filter.addInClause("Type", Arrays.asList(types));
             }
         }
-        List<DataSetDefinition> datasets = Arrays.asList(_dataSetHelper.get(study.getContainer(), filter, null));
+        List<DataSetDefinition> datasets = Arrays.asList(_datasetHelper.get(study.getContainer(), filter, null));
 
         // sort by display order, category, and dataset ID
         Collections.sort(datasets, new Comparator<DataSetDefinition>(){
@@ -1748,7 +1748,7 @@ public class StudyManager
 
     public PropertyDescriptor[] getSharedProperties(Study study)
     {
-        return _dataSetHelper.getSharedProperties(study.getContainer());
+        return _datasetHelper.getSharedProperties(study.getContainer());
     }
 
     @Nullable
@@ -1756,14 +1756,14 @@ public class StudyManager
     {
         try
         {
-            DataSetDefinition ds = _dataSetHelper.get(s.getContainer(), id, "DataSetId");
+            DataSetDefinition ds = _datasetHelper.get(s.getContainer(), id, "DataSetId");
             // update old rows w/o entityid
             if (null != ds && null == ds.getEntityId())
             {
                 ds.setEntityId(GUID.makeGUID());
                 Table.execute(StudySchema.getInstance().getSchema(), "UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDataSetId());
-                _dataSetHelper.clearCache(ds);
-                ds = _dataSetHelper.get(s.getContainer(), id, "DataSetId");
+                _datasetHelper.clearCache(ds);
+                ds = _datasetHelper.get(s.getContainer(), id, "DataSetId");
                 // calling updateDataSetDefinition() during load (getDatasetDefinition()) may cause recursion problems
                 //updateDataSetDefinition(null, ds);
             }
@@ -1786,7 +1786,7 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
         filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, FieldKey.fromParts("Label"));
 
-        DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
+        DataSetDefinition[] defs = _datasetHelper.get(s.getContainer(), filter);
         if (defs != null && defs.length == 1)
             return defs[0];
 
@@ -1800,7 +1800,7 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
         filter.addCondition("EntityId", entityId);
 
-        DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
+        DataSetDefinition[] defs = _datasetHelper.get(s.getContainer(), filter);
         if (defs != null && defs.length == 1)
             return defs[0];
 
@@ -1814,7 +1814,7 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
         filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, FieldKey.fromParts("Name"));
 
-        DataSet[] defs = _dataSetHelper.get(s.getContainer(), filter);
+        DataSet[] defs = _datasetHelper.get(s.getContainer(), filter);
         if (defs != null && defs.length == 1)
             return defs[0];
 
@@ -1896,7 +1896,7 @@ public class StudyManager
 
     public void uncache(DataSetDefinition def)
     {
-        _dataSetHelper.clearCache(def);
+        _datasetHelper.clearCache(def);
         String uri = def.getTypeURI();
         if (null != uri)
             domainCache.remove(uri);
@@ -2076,7 +2076,7 @@ public class StudyManager
         // this._dataSetHelper.delete(ds);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
                 "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
-        _dataSetHelper.clearCache(study.getContainer());
+        _datasetHelper.clearCache(study.getContainer());
 
         SecurityPolicyManager.deletePolicy(ds);
 
@@ -2139,7 +2139,7 @@ public class StudyManager
         if (unmaterializeDatasets && null != study)
             for (DataSetDefinition def : getDataSetDefinitions(study))
                 uncache(def);
-        _dataSetHelper.clearCache(c);
+        _datasetHelper.clearCache(c);
 
         DbCache.clear(StudySchema.getInstance().getTableInfoQCState());
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
@@ -2190,8 +2190,8 @@ public class StudyManager
             assert deletedTables.add(_tableInfoVisitMap);
             Table.delete(_tableInfoUploadLog, containerFilter);
             assert deletedTables.add(_tableInfoUploadLog);
-            Table.delete(_dataSetHelper.getTableInfo(), containerFilter);
-            assert deletedTables.add(_dataSetHelper.getTableInfo());
+            Table.delete(_datasetHelper.getTableInfo(), containerFilter);
+            assert deletedTables.add(_datasetHelper.getTableInfo());
             Table.delete(_locationHelper.getTableInfo(), containerFilter);
             assert deletedTables.add(_locationHelper.getTableInfo());
             Table.delete(_visitHelper.getTableInfo(), containerFilter);
@@ -2252,7 +2252,7 @@ public class StudyManager
             // dataset tables
             for (DataSetDefinition dsd : dsds)
             {
-                fireDataSetChanged(dsd);
+                fireDatasetChanged(dsd);
             }
 
             // Clear this container ID from any source and destination columns of study snapshots. Then delete any
@@ -2882,12 +2882,12 @@ public class StudyManager
     {
         StudyManager manager = StudyManager.getInstance();
         Container c = study.getContainer();
-        Map<Integer, SchemaReader.DataSetImportInfo> datasetInfoMap = reader.getDatasetInfo();
+        Map<Integer, SchemaReader.DatasetImportInfo> datasetInfoMap = reader.getDatasetInfo();
 
-        for (Map.Entry<Integer, SchemaReader.DataSetImportInfo> entry : datasetInfoMap.entrySet())
+        for (Map.Entry<Integer, SchemaReader.DatasetImportInfo> entry : datasetInfoMap.entrySet())
         {
             int id = entry.getKey().intValue();
-            SchemaReader.DataSetImportInfo info = entry.getValue();
+            SchemaReader.DatasetImportInfo info = entry.getValue();
             String name = info.name;
             String label = info.label;
             if (label == null)
@@ -3183,19 +3183,20 @@ public class StudyManager
         def.save(user);
 
         if (fireNotification)
-            fireDataSetChanged(def);
+            fireDatasetChanged(def);
     }
     
-    public static void fireDataSetChanged(DataSet def)
+    public static void fireDatasetChanged(DataSet def)
     {
-        for (DatasetManager.DataSetListener l : DatasetManager._listeners)
+        for (DatasetManager.DatasetListener l : DatasetManager.getListeners())
         {
-            try {
-                l.dataSetChanged(def);
+            try
+            {
+                l.datasetChanged(def);
             }
             catch (Throwable t)
             {
-                _log.error("fireDataSetChanged", t);
+                _log.error("fireDatasetChanged", t);
             }
         }
     }
@@ -3296,7 +3297,7 @@ public class StudyManager
         body.append(searchTitle).append("\n");
 
         StudyQuerySchema schema = new StudyQuerySchema(dsd.getStudy(), User.getSearchUser(), false);
-        TableInfo tableInfo = schema.createDataSetTableInternal(dsd);
+        TableInfo tableInfo = schema.createDatasetTableInternal(dsd);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, tableInfo.getDefaultVisibleColumns());
         String sep = "";
         for (ColumnInfo column : columns.values())
@@ -3666,8 +3667,8 @@ public class StudyManager
         {
             for (DataSetDefinition def : getDatasetsForCategory(category))
             {
-                _instance._dataSetHelper.clearCache(def);
-                _instance._dataSetHelper.clearCache(def.getContainer());
+                _instance._datasetHelper.clearCache(def);
+                _instance._datasetHelper.clearCache(def.getContainer());
             }
         }
 
@@ -3680,7 +3681,7 @@ public class StudyManager
                 {
                     SimpleFilter filter = new SimpleFilter("Container", study.getContainer().getId());
                     filter.addCondition("CategoryId", category.getRowId());
-                    return _instance._dataSetHelper.get(study.getContainer(), filter);
+                    return _instance._datasetHelper.get(study.getContainer(), filter);
                 }
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012 LabKey Corporation
+ * Copyright (c) 2008-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Time: 4:57:40 PM
  */
 
-public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, DatasetManager.DataSetListener, ParticipantCategoryListener
+public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, DatasetManager.DatasetListener, ParticipantCategoryListener
 {
     private static final DatasetSnapshotProvider _instance = new DatasetSnapshotProvider();
     private static final Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
@@ -506,7 +506,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
-    public void dataSetChanged(final DataSet def)
+    public void datasetChanged(final DataSet def)
     {
         _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
 

@@ -54,7 +54,7 @@ public class SchemaXmlReader implements SchemaReader
     private static final String NAME_KEY = "PlateName";
 
     private final List<Map<String, Object>> _importMaps = new LinkedList<Map<String, Object>>();
-    private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
+    private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
 
     public SchemaXmlReader(StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, ImportException
     {
@@ -79,13 +79,13 @@ public class SchemaXmlReader implements SchemaReader
 
         TablesType tablesXml = tablesDoc.getTables();
 
-        _datasetInfoMap = new HashMap<Integer, DataSetImportInfo>(tablesXml.getTableArray().length);
+        _datasetInfoMap = new HashMap<Integer, DatasetImportInfo>(tablesXml.getTableArray().length);
 
         for (TableType tableXml : tablesXml.getTableArray())
         {
             String datasetName = tableXml.getTableName();
 
-            DataSetImportInfo info = new DataSetImportInfo(datasetName);
+            DatasetImportInfo info = new DatasetImportInfo(datasetName);
             DatasetImportProperties tableProps = extraImportProps.get(datasetName);
 
             if (null == tableProps)
@@ -236,7 +236,7 @@ public class SchemaXmlReader implements SchemaReader
         return _importMaps;
     }
 
-    public Map<Integer, DataSetImportInfo> getDatasetInfo()
+    public Map<Integer, DatasetImportInfo> getDatasetInfo()
     {
         return _datasetInfoMap;
     }

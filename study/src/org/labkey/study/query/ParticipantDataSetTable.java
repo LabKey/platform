@@ -93,7 +93,7 @@ public class ParticipantDataSetTable extends VirtualTable
                 {
                     try
                     {
-                        DataSetTableImpl dsTable = _schema.createDataSetTableInternal(def);
+                        DataSetTableImpl dsTable = _schema.createDatasetTableInternal(def);
                         dsTable.hideParticipantLookups();
                         dsTable.overlayMetadata(dsTable.getName(), _schema, new ArrayList<QueryException>());
                         return dsTable;

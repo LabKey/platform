@@ -21,8 +21,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    JspView<StudyController.DataSetForm> me = (JspView<StudyController.DataSetForm>) HttpView.currentView();
-    StudyController.DataSetForm form = me.getModelBean();
+    JspView<StudyController.DatasetForm> me = (JspView<StudyController.DatasetForm>) HttpView.currentView();
+    StudyController.DatasetForm form = me.getModelBean();
 %>
 <labkey:errors/>
 <form action="createDataSet.post" method="POST">

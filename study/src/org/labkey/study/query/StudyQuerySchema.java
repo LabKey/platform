@@ -251,7 +251,7 @@ public class StudyQuerySchema extends UserSchema
      * CONSIDER: use Schema.getTable() instead, use this only if you intend to manipulate the tableinfo in some way
      * UserSchema will call afterConstruct() for tables constructed the usual way
      */
-    public DataSetTableImpl createDataSetTableInternal(DataSetDefinition definition)
+    public DataSetTableImpl createDatasetTableInternal(DataSetDefinition definition)
     {
         try
         {

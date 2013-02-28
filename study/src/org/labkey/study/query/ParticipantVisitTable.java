@@ -184,7 +184,7 @@ public class ParticipantVisitTable extends FilteredTable<StudyQuerySchema>
         {
             try
             {
-                DataSetTableImpl ret = _userSchema.createDataSetTableInternal(dsd);
+                DataSetTableImpl ret = _userSchema.createDatasetTableInternal(dsd);
                 ret.hideParticipantLookups();
                 return ret;
             }

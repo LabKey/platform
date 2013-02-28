@@ -359,10 +359,10 @@ public class StudyController extends BaseStudyController
 
     @RequiresPermissionClass(AdminPermission.class)
     @SuppressWarnings("unchecked")
-    public class EditTypeAction extends SimpleViewAction<DataSetForm>
+    public class EditTypeAction extends SimpleViewAction<DatasetForm>
     {
         private DataSet _def;
-        public ModelAndView getView(DataSetForm form, BindException errors) throws Exception
+        public ModelAndView getView(DatasetForm form, BindException errors) throws Exception
         {
             StudyImpl study = getStudy();
             DataSetDefinition def = study.getDataSet(form.getDatasetId());
@@ -1936,17 +1936,17 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class UpdateDatasetVisitMappingAction extends FormViewAction<DataSetForm>
+    public class UpdateDatasetVisitMappingAction extends FormViewAction<DatasetForm>
     {
         DataSetDefinition _def;
 
-        public void validateCommand(DataSetForm form, Errors errors)
+        public void validateCommand(DatasetForm form, Errors errors)
         {
             if (form.getDatasetId() < 1)
                 errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be greater than zero.");
         }
 
-        public ModelAndView getView(DataSetForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DatasetForm form, boolean reshow, BindException errors) throws Exception
         {
             _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
 
@@ -1959,7 +1959,7 @@ public class StudyController extends BaseStudyController
             return new JspView<DataSetDefinition>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def, errors);
         }
 
-        public boolean handlePost(DataSetForm form, BindException errors) throws Exception
+        public boolean handlePost(DatasetForm form, BindException errors) throws Exception
         {
             DataSetDefinition original = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
             DataSetDefinition modified = original.createMutable();
@@ -1979,7 +1979,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(DataSetForm dataSetForm)
+        public ActionURL getSuccessURL(DatasetForm dataSetForm)
         {
             return new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", dataSetForm.getDatasetId());
         }
@@ -2036,7 +2036,7 @@ public class StudyController extends BaseStudyController
                 return;
 
             User user = getViewContext().getUser();
-            TableInfo t = new StudyQuerySchema((StudyImpl)_study, user, true).createDataSetTableInternal(_def);
+            TableInfo t = new StudyQuerySchema((StudyImpl)_study, user, true).createDatasetTableInternal(_def);
             setTarget(t);
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
@@ -2491,7 +2491,7 @@ public class StudyController extends BaseStudyController
                     keys.add(Collections.<String, Object>singletonMap("lsid", lsid));
 
                 StudyQuerySchema schema = new StudyQuerySchema(study, getViewContext().getUser(), true);
-                TableInfo datasetTable = schema.createDataSetTableInternal((DataSetDefinition) dataset);
+                TableInfo datasetTable = schema.createDatasetTableInternal((DataSetDefinition) dataset);
 
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;
@@ -4321,7 +4321,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class DataSetVisibilityAction extends FormViewAction<DatasetPropertyForm>
+    public class DatasetVisibilityAction extends FormViewAction<DatasetPropertyForm>
     {
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
         {
@@ -4468,7 +4468,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class DataSetDisplayOrderAction extends FormViewAction<DatasetReorderForm>
+    public class DatasetDisplayOrderAction extends FormViewAction<DatasetReorderForm>
     {
         public ModelAndView getView(DatasetReorderForm form, boolean reshow, BindException errors) throws Exception
         {
@@ -6003,7 +6003,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DataSetForm
+    public static class DatasetForm
     {
         private String _name;
         private String _label;

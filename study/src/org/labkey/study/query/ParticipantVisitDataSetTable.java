@@ -247,7 +247,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             {
                 try
                 {
-                    DataSetTableImpl dsTable = _schema.createDataSetTableInternal(_dataset);
+                    DataSetTableImpl dsTable = _schema.createDatasetTableInternal(_dataset);
                     dsTable.hideParticipantLookups();
                     return dsTable;
                 }

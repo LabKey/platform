@@ -17,7 +17,6 @@ package org.labkey.study.importer;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -27,11 +26,8 @@ import org.labkey.study.model.DataSetDefinition;
 import org.springframework.validation.BindException;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.*;
 
 /**
@@ -42,7 +38,7 @@ import java.util.*;
 public class SchemaTsvReader implements SchemaReader
 {
     private final List<Map<String, Object>> _importMaps;
-    private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
+    private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
     private final String _typeNameColumn;
 
 
@@ -52,7 +48,7 @@ public class SchemaTsvReader implements SchemaReader
         List<Map<String, Object>> mapsLoad = loader.load();
 
         _importMaps = new ArrayList<Map<String, Object>>(mapsLoad.size());
-        _datasetInfoMap = new HashMap<Integer, DataSetImportInfo>();
+        _datasetInfoMap = new HashMap<Integer, DatasetImportInfo>();
         _typeNameColumn = typeNameColumn;
 
         if (mapsLoad.size() > 0)
@@ -96,7 +92,7 @@ public class SchemaTsvReader implements SchemaReader
                     isHidden = (null != hidden && hidden.booleanValue());
                 }
 
-                DataSetImportInfo info = _datasetInfoMap.get(typeId);
+                DatasetImportInfo info = _datasetInfoMap.get(typeId);
 
                 if (info != null)
                 {
@@ -115,7 +111,7 @@ public class SchemaTsvReader implements SchemaReader
                 // we've got a good entry
                 if (null == info)
                 {
-                    info = new DataSetImportInfo(typeName);
+                    info = new DatasetImportInfo(typeName);
                     info.label = (String) props.get(labelColumn);
                     if (info.label == null || info.label.length() == 0)
                     {
@@ -247,7 +243,7 @@ public class SchemaTsvReader implements SchemaReader
         return _importMaps;
     }
 
-    public Map<Integer, DataSetImportInfo> getDatasetInfo()
+    public Map<Integer, DatasetImportInfo> getDatasetInfo()
     {
         return _datasetInfoMap;
     }

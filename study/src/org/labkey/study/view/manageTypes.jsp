@@ -128,14 +128,14 @@
     {
     %><tr>
         <td>Datasets can be displayed in any order.</td>
-        <td><%= textLink("Change Display Order", DataSetDisplayOrderAction.class)%></td>
+        <td><%= textLink("Change Display Order", DatasetDisplayOrderAction.class)%></td>
     </tr><%
     }
 
 %>
     <tr>
         <td>Dataset visibility, label, and category can all be changed.</td>
-        <td><%= textLink("Change Properties", DataSetVisibilityAction.class)%></td>
+        <td><%= textLink("Change Properties", DatasetVisibilityAction.class)%></td>
     </tr>
     <tr>
         <td>Datasets may be deleted by an administrator.</td>

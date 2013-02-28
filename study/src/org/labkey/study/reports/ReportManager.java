@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2012 LabKey Corporation
+ * Copyright (c) 2006-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ import java.util.*;
  * Date: Mar 6, 2006
  * Time: 8:18:58 PM
  */
-public class ReportManager implements DatasetManager.DataSetListener
+public class ReportManager implements DatasetManager.DatasetListener
 {
     private static final String SCHEMA_NAME = "study";
     private static final String TABLE_NAME = "Report";
@@ -475,7 +475,7 @@ public class ReportManager implements DatasetManager.DataSetListener
         public String getContainerId(){return _containerId;}
     }
 
-    public void dataSetChanged(final DataSet def)
+    public void datasetChanged(final DataSet def)
     {
         if (def != null)
         {

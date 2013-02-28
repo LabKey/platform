@@ -20,23 +20,23 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController.CreateCrosstabBean" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
-<%@ page import="org.labkey.study.StudySchema" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ReportsController.CreateCrosstabBean> me = (JspView<ReportsController.CreateCrosstabBean>) HttpView.currentView();
-    org.labkey.study.controllers.reports.ReportsController.CreateCrosstabBean bean = me.getModelBean();
+    JspView<CreateCrosstabBean> me = (JspView<ReportsController.CreateCrosstabBean>) HttpView.currentView();
+    CreateCrosstabBean bean = me.getModelBean();
 
     ActionURL returnURL = new ActionURL(ReportsController.ManageReportsAction.class, getViewContext().getContainer());
 %>
 <form action="participantCrosstab.view" method="GET">
-<input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=StudySchema.getInstance().getSchemaName()%>">
-<input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=StudyCrosstabReport.TYPE%>">
-<input type="hidden" name="redirectUrl" value="<%=returnURL.getLocalURIString()%>">
+<input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(StudySchema.getInstance().getSchemaName())%>">
+<input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyCrosstabReport.TYPE)%>">
+<input type="hidden" name="redirectUrl" value="<%=h(returnURL)%>">
 <table>
     <tr>
         <td>Dataset</td>
@@ -46,7 +46,7 @@
                     for (DataSetDefinition dataset : bean.getDatasets())
                     {
                 %>
-                <option value="<%= dataset.getLabel()%>"><%= h(dataset.getDisplayString()) %></option>
+                <option value="<%=h(dataset.getLabel())%>"><%= h(dataset.getDisplayString()) %></option>
                 <%
                     }
                 %>
@@ -56,7 +56,7 @@
     <tr>
         <td>Visit</td>
         <td>
-            <select name="<%=VisitImpl.VISITKEY%>">
+            <select name="<%=h(VisitImpl.VISITKEY)%>">
                 <option value="0">All Visits</option>
                 <%
                     for (VisitImpl visit : bean.getVisits())

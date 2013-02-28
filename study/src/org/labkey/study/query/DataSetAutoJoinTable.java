@@ -146,7 +146,7 @@ public class DataSetAutoJoinTable extends VirtualTable
             ret = new AliasedColumn(name, _participantIdColumn);
         }
 
-        DataSetForeignKey fk = null;
+        DatasetForeignKey fk = null;
         if (_source.isDemographicData())
         {
             if (dsd.isDemographicData())
@@ -187,20 +187,20 @@ public class DataSetAutoJoinTable extends VirtualTable
         return ret;
     }
 
-    private DataSetForeignKey createParticipantFK(DataSetDefinition dsd)
+    private DatasetForeignKey createParticipantFK(DataSetDefinition dsd)
     {
         assert dsd.isDemographicData();
-        DataSetForeignKey fk = new DataSetForeignKey(dsd);
+        DatasetForeignKey fk = new DatasetForeignKey(dsd);
         fk.setJoinDescription(StudyService.get().getSubjectColumnName(dsd.getContainer()));
         return fk;
     }
 
-    private DataSetForeignKey createParticipantSequenceNumFK(DataSetDefinition dsd)
+    private DatasetForeignKey createParticipantSequenceNumFK(DataSetDefinition dsd)
     {
         assert !dsd.isDemographicData() && (dsd.getKeyPropertyName() == null || dsd.isAssayData());
         assert !_source.isDemographicData();
 
-        DataSetForeignKey fk = new DataSetForeignKey(dsd);
+        DatasetForeignKey fk = new DatasetForeignKey(dsd);
         if (_sequenceNumFieldKey != null)
         {
             fk.addJoin(_sequenceNumFieldKey, "SequenceNum", false);
@@ -211,7 +211,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         return fk;
     }
 
-    private DataSetForeignKey createParticipantSequenceNumKeyFK(DataSetDefinition dsd)
+    private DatasetForeignKey createParticipantSequenceNumKeyFK(DataSetDefinition dsd)
     {
         assert !dsd.isDemographicData() && dsd.getKeyPropertyName() != null;
         assert !_source.isDemographicData() && _keyPropertyName != null;
@@ -219,7 +219,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         if (!_source.hasMatchingExtraKey(dsd))
             return null;
 
-        DataSetForeignKey fk = new DataSetForeignKey(dsd);
+        DatasetForeignKey fk = new DatasetForeignKey(dsd);
         if (_sequenceNumFieldKey != null && _keyFieldKey != null)
         {
             fk.addJoin(_sequenceNumFieldKey, "SequenceNum", false);
@@ -242,12 +242,12 @@ public class DataSetAutoJoinTable extends VirtualTable
         return null;
     }
 
-    private class DataSetForeignKey extends LookupForeignKey
+    private class DatasetForeignKey extends LookupForeignKey
     {
         private final DataSetDefinition dsd;
         private String _joinDescription;
 
-        public DataSetForeignKey(DataSetDefinition dsd)
+        public DatasetForeignKey(DataSetDefinition dsd)
         {
             super(StudyService.get().getSubjectColumnName(dsd.getContainer()));
             this.dsd = dsd;
@@ -257,7 +257,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         {
             try
             {
-                DataSetTableImpl ret = _schema.createDataSetTableInternal(dsd);
+                DataSetTableImpl ret = _schema.createDatasetTableInternal(dsd);
                 ret.hideParticipantLookups();
                 return ret;
             }

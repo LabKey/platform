@@ -15,20 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="com.google.gson.Gson" %>
+<%@ page import="org.labkey.api.reports.model.ViewCategory"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="com.google.gson.Gson" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.api.reports.model.ViewCategory" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -79,7 +79,7 @@
     {
 %>
 
-<form action="<%=h(buildURL(StudyController.DataSetVisibilityAction.class))%>" method="POST">
+<form action="<%=h(buildURL(StudyController.DatasetVisibilityAction.class))%>" method="POST">
 
 <p>Datasets can be hidden on the study overview screen.</p>
 <p>Hidden data can always be viewed, but is not shown by default.</p>

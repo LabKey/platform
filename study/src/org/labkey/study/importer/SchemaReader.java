@@ -15,7 +15,6 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.study.DataSet;
 import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DataSetDefinition;
@@ -38,12 +37,12 @@ public interface SchemaReader
 {
     List<Map<String, Object>> getImportMaps();
 
-    Map<Integer, DataSetImportInfo> getDatasetInfo();
+    Map<Integer, DatasetImportInfo> getDatasetInfo();
     String getTypeNameColumn();
 
-    public static class DataSetImportInfo
+    public static class DatasetImportInfo
     {
-        DataSetImportInfo(String name)
+        DatasetImportInfo(String name)
         {
             this.name = name;
         }

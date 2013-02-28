@@ -79,7 +79,7 @@ function orderModule(down)
     return false;
 }
 </script>
-<form method="post" name="reorder" action="<%=h(buildURL(StudyController.DataSetDisplayOrderAction.class))%>" enctype="multipart/form-data">
+<form method="post" name="reorder" action="<%=h(buildURL(StudyController.DatasetDisplayOrderAction.class))%>" enctype="multipart/form-data">
     <input type="hidden" name="resetOrder" value="false">
     <table>
         <tr>
