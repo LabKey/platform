@@ -87,8 +87,15 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 
     public static void doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImportContext ctx, StudyImpl study) throws PipelineJobException
     {
-        if (null != datasetsDirectory && null != datasetsFileName && Arrays.asList(datasetsDirectory.list()).contains(datasetsFileName))
+        if (null != datasetsDirectory && null != datasetsFileName)
         {
+            // If a directory and dataset file have been specified then make sure the file exists, #17208
+            if (!Arrays.asList(datasetsDirectory.list()).contains(datasetsFileName))
+            {
+                ctx.getLogger().error("Dataset file \"" + datasetsFileName + "\" not found");
+                return;
+            }
+
             try
             {
                 QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());

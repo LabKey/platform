@@ -18,6 +18,7 @@ package org.labkey.study.writer;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -37,7 +38,6 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.study.Cohort;
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
@@ -65,7 +65,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: adam
@@ -159,7 +158,7 @@ public class DatasetWriter implements InternalStudyWriter
 
         // Write out the .dataset file and add reference to study.xml
         Datasets.Definition definitionXml = datasetsXml.addNewDefinition();
-        String datasetFilename = vf.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".dataset");
+        String datasetFilename = vf.makeLegalName(study.getShortName() + ".dataset");
         definitionXml.setFile(datasetFilename);
 
         PrintWriter writer = vf.getPrintWriter(datasetFilename);

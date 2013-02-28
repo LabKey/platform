@@ -64,7 +64,7 @@ class SpecimenArchiveWriter implements InternalStudyWriter
                 specimenWebPartGrouping.setGroupByArray(groupings.get(i));
             }
         }
-        String archiveName = vf.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
+        String archiveName = vf.makeLegalName(study.getShortName() + ".specimens");
         VirtualFile zip = vf.createZipArchive(archiveName);
         if (!zip.equals(vf)) // MemoryVirtualFile doesn't add a zip archive, it just returns vf
             specimens.setFile(archiveName);

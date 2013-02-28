@@ -197,6 +197,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
+    // TODO: Make admin editable, persist, and display. For now, just use the first "word" of the label.
+    public String getShortName()
+    {
+        String shortName = _label.split("\\s", 2)[0];
+        return shortName.isEmpty() ? _label : shortName;
+    }
+
+
     public VisitImpl[] getVisits(Visit.Order order)
     {
         return StudyManager.getInstance().getVisits(this, order);
