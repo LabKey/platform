@@ -1168,11 +1168,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         //Export Alternate Participant IDs
 
-        this.alternateIdsCheckBox = new Ext.form.Checkbox({
-            name: 'alternateids',
+        this.alternateIdsCheckBoxLabel = new Ext.form.Label({
             fieldLabel: "Export Alternate " + this.subject.nounSingular + " IDs?",
-            checked: true,
-            value: true,
             gtip: '<div>' +
                     '<div class=\'g-tip-header\'><span>Export Alternate ' + this.subject.nounSingular + ' IDs</span></div>' +
                     '<div class=\'g-tip-subheader\'>' +
@@ -1180,13 +1177,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     '</div>' +
                 '</div>'
         });
-
-        this.shiftDatesCheckBox = new Ext.form.Checkbox({
-            xtype: 'checkbox',
-            name: 'shiftDates',
-            fieldLabel: 'Shift Participant Dates?',
+        this.alternateIdsCheckBox = new Ext.form.Checkbox({
+            name: 'alternateids',
+            hideLabel: true,
             checked: true,
-            value: true,
+            value: true
+        });
+
+        this.shiftDatesCheckBoxLabel = new Ext.form.Label({
+            fieldLabel: 'Shift Participant Dates?',
             gtip: '<div>' +
                     '<div class=\'g-tip-header\'><span>Shift Participant Dates</span></div>' +
                     '<div class=\'g-tip-subheader\'>' +
@@ -1194,13 +1193,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     '</div>' +
                 '</div>'
         });
-
-        this.protectedColumnsCheckBox = new Ext.form.Checkbox({
+        this.shiftDatesCheckBox = new Ext.form.Checkbox({
             xtype: 'checkbox',
-            name: 'removeProtected',
-            fieldLabel: 'Remove All Columns Tagged as Protected?',
+            name: 'shiftDates',
+            hideLabel: true,
             checked: true,
-            value: true,
+            value: true
+        });
+
+        this.protectedColumnsCheckBoxLabel = new Ext.form.Label({
+            fieldLabel: 'Remove All Columns Tagged as Protected?',
             gtip: '<div>' +
                     '<div class=\'g-tip-header\'><span>Remove Protected Columns</span></div>' +
                     '<div class=\'g-tip-subheader\'>' +
@@ -1208,12 +1210,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     '</div>' +
                 '</div>'
         });
+        this.protectedColumnsCheckBox = new Ext.form.Checkbox({
+            xtype: 'checkbox',
+            name: 'removeProtected',
+            hideLabel: true,
+            checked: true,
+            value: true
+        });
 
-        this.maskClinicCheckBox = new Ext.form.Checkbox({
-            name: 'maskClinic',
+        this.maskClinicCheckBoxLabel = new Ext.form.Label({
             fieldLabel: "Mask Clinic Names?",
-            checked: false,
-            value: true,
             gtip: '<div>' +
                     '<div class=\'g-tip-header\'><span>Mask Clinic Names</span></div>' +
                     '<div class=\'g-tip-subheader\'>' +
@@ -1221,20 +1227,47 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     '</div>' +
                 '</div>'
         });
+        this.maskClinicCheckBox = new Ext.form.Checkbox({
+            name: 'maskClinic',
+            hideLabel: true,
+            checked: true,
+            value: true
+        });
 
-        var optionsPanel = new Ext.form.FormPanel({
-            defaults: {labelSeparator: ''},
+        var optionsPanel = new Ext.FormPanel({
             padding: '10px 0px',
             border: false,
-            labelWidth: 300,
             height: 300,
             width : 400,
             items: [
-                this.protectedColumnsCheckBox,
-                this.shiftDatesCheckBox,
-                this.alternateIdsCheckBox,
-                this.maskClinicCheckBox
-            ]
+            {
+                layout:'column',
+                border: false,
+                items:[{
+                    columnWidth: .5,
+                    border: false,
+                    layout: 'form',
+                    labelWidth: 275,
+                    defaults: { labelSeparator: '' },
+                    items: [
+                        this.protectedColumnsCheckBoxLabel,
+                        this.shiftDatesCheckBoxLabel,
+                        this.alternateIdsCheckBoxLabel,
+                        this.maskClinicCheckBoxLabel
+                    ]
+                },{
+                    columnWidth: .5,
+                    border: false,
+                    layout: 'form',
+                    defaults: { height: 22 },
+                    items: [
+                        this.protectedColumnsCheckBox,
+                        this.shiftDatesCheckBox,
+                        this.alternateIdsCheckBox,
+                        this.maskClinicCheckBox
+                    ]
+                }]
+            }]
         });
 
         items.push(optionsPanel);
