@@ -218,9 +218,20 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             target.getSelectionModel().deselectAll();
             for (var s=0; s < this.selection.length; s++)
             {
-                var rec = target.getStore().findRecord('id', this.selection[s].id);
+                // first try matching on cateogryId and record id
+                var rec = target.getStore().getAt(target.getStore().findBy(function(record){
+                    return record.get("categoryId") == this.selection[s].categoryId && record.get("id") == this.selection[s].id;
+                }, this));
 
-                // if no matching record by id, try to find a matching record by label (just for initial selection)
+                // next try matching on categoryName and record label
+                if (!rec)
+                {
+                    rec = target.getStore().getAt(target.getStore().findBy(function(record){
+                        return record.get("categoryName") == this.selection[s].categoryName && record.get("label") == this.selection[s].label;
+                    }, this));
+                }
+
+                // finally try to find a matching record by just the label
                 if (!rec)
                 {
                     var label = null;
@@ -432,7 +443,8 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     },
 
     getCategoryInputEl : function(value) {
-        var elArr = Ext4.query('input.category-header[category=' + value + ']');
+        // query for the category header input using the root of the query as the current dom element
+        var elArr = Ext4.query('input.category-header[category=' + value + ']', this.getEl().dom);
         return elArr.length == 1 ? elArr[0] : null;
     },
 
