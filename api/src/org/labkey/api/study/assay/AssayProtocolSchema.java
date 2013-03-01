@@ -215,8 +215,12 @@ public abstract class AssayProtocolSchema extends AssaySchema
     public final ContainerFilterable createDataTable()
     {
         ContainerFilterable table = createDataTable(true);
-        if (table != null && table.getColumn("Properties") != null)
-            fixupPropertyURLs(table.getColumn("Properties"));
+        if (null != table)
+        {
+            ColumnInfo columnInfo = table.getColumn("Properties");
+            if (null != columnInfo)
+                fixupPropertyURLs(columnInfo);
+        }
         return table;
     }
 

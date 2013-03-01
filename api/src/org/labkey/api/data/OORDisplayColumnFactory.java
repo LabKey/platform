@@ -73,13 +73,17 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
         combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory());     // Do this after wrappedNumberColumn in case we did addColumn above instead of addWrappedColumn
 
         SQLFragment inRangeSQL = new SQLFragment("CASE WHEN ");
-        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);                                      // TODO: getValueSql   (oorIndicatorColumn)
-        inRangeSQL.append(".");
-        inRangeSQL.append(oorIndicatorColumn.getName());
+        SQLFragment valueSql = oorIndicatorColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS);
+        inRangeSQL.append(valueSql);
+//        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);                                      // TODO: getValueSql   (oorIndicatorColumn)
+//        inRangeSQL.append(".");
+//        inRangeSQL.append(oorIndicatorColumn.getName());
         inRangeSQL.append(" IS NULL THEN ");
-        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);
-        inRangeSQL.append(".");
-        inRangeSQL.append(numberColumn.getName());
+        valueSql = numberColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS);
+        inRangeSQL.append(valueSql);
+//        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);
+//        inRangeSQL.append(".");
+//        inRangeSQL.append(numberColumn.getName());
         inRangeSQL.append(" ELSE NULL END");
 
         ColumnInfo inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
