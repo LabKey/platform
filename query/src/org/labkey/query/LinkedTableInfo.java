@@ -29,6 +29,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.flag.FlagForeignKey;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -94,12 +95,12 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super.fixupWrappedColumn(wrap, col);
 
-        // Fixup the column's ForeignKey if it is a user id or container foreign key
-        // or the FK points to the current schema and one of the visible tables;
+        // Fixup the column's ForeignKey if it is a user id, container, or exp.flag foreign key
+        // or if the FK points to the current schema and one of the exposed tables or queries;
         // otherwise remove the FK to disallow the FK.
         ForeignKey fk = wrap.getFk();
         ForeignKey fixedFk = null;
-        if (fk instanceof UserIdForeignKey || fk instanceof UserIdQueryForeignKey || fk instanceof ContainerForeignKey)
+        if (fk instanceof UserIdForeignKey || fk instanceof UserIdQueryForeignKey || fk instanceof ContainerForeignKey || fk instanceof FlagForeignKey)
         {
             fixedFk = fk;
         }
@@ -109,7 +110,7 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
             UserSchema sourceSchema = schema.getSourceSchema();
 
             if ((fk.getLookupSchemaName() != null && sourceSchema.getName().equals(fk.getLookupSchemaName())) &&
-                    (fk.getLookupTableName() != null && schema.getTableNames().contains(fk.getLookupTableName())) &&
+                    (fk.getLookupTableName() != null && (schema.getTableNames().contains(fk.getLookupTableName()) || schema.getQueryDefs().keySet().contains(fk.getLookupTableName()))) &&
                     (fk.getLookupContainer() == null || schema.getContainer().equals(fk.getLookupContainer())))
             {
                 // XXX: Do we need to set the container on the join to ensure the linked schema lookups aren't exposing too much data?
@@ -133,8 +134,10 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
         if ("Container".equalsIgnoreCase(col.getName()) || "Folder".equalsIgnoreCase(col.getName()))
         {
             // Remap the container column to be the the target instead
-            col = new ExprColumn(col.getParentTable(), col.getName(), new SQLFragment("'" + getContainer().getEntityId() + "'"), JdbcType.VARCHAR);
-            col.copyAttributesFrom(col);
+            ColumnInfo ret = new ExprColumn(col.getParentTable(), col.getName(), new SQLFragment("'" + getContainer().getEntityId() + "'"), JdbcType.VARCHAR);
+            ret.copyAttributesFrom(col);
+            ret.setHidden(col.isHidden());
+            col = ret;
         }
         return super.wrapColumn(col);
     }

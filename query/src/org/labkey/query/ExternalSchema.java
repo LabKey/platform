@@ -74,6 +74,7 @@ public class ExternalSchema extends SimpleUserSchema
     protected interface TableSource
     {
         public Collection<String> getTableNames();
+        public Collection<String> getQueryNames();
         public boolean isTableAvailable(String tableName);
     }
 
@@ -102,6 +103,7 @@ public class ExternalSchema extends SimpleUserSchema
         TableSource tableSource = new TableSource()
         {
             public Collection<String> getTableNames()         { return schema.getTableNames(); }
+            public Collection<String> getQueryNames()         { return Collections.emptyList(); }
             public boolean isTableAvailable(String tableName) { return schema.getTable(tableName) != null; }
         };
 
@@ -214,11 +216,54 @@ public class ExternalSchema extends SimpleUserSchema
         if (allowed == null || allowed.size() == 0)
             return Collections.emptySet();
 
-        // Some tables in the "allowed" list may no longer exist, so check each table in the schema.  #13002
+        // Some tables in the "allowed" list may no longer exist or may be query names, so check each table in the schema.  #13002
         Set<String> available = new HashSet<String>(allowed.size());
         for (String name : allowed)
             if (tableSource.isTableAvailable(name))
                 available.add(name);
+
+        return available;
+    }
+
+    protected static @NotNull Collection<String> getAvailableQueries(AbstractExternalSchemaDef def, TemplateSchemaType template, @Nullable TableSource tableSource)
+    {
+        if (null == tableSource)
+            return Collections.emptySet();
+
+        Collection<String> allowed = null;
+        if (template != null)
+        {
+            TemplateSchemaType.Tables tables = template.getTables();
+            if (tables != null)
+            {
+                String[] tableNames = tables.getTableNameArray();
+                if (tableNames != null)
+                {
+                    if (tableNames.length == 1 && tableNames[0].equals("*"))
+                        allowed = tableSource.getQueryNames();
+                    else
+                        allowed = Arrays.asList(tableNames);
+                }
+            }
+        }
+        else
+        {
+            String allowedTableNames = def.getTables();
+            if ("*".equals(allowedTableNames))
+                allowed = tableSource.getQueryNames();
+            else
+                allowed = new CsvSet(allowedTableNames);
+        }
+
+        if (allowed == null || allowed.size() == 0)
+            return Collections.emptySet();
+
+        // The "allowed" list contains both query and table names, so check each query in the schema.
+        Collection<String> queryNames = tableSource.getQueryNames();
+        Set<String> available = new HashSet<String>(allowed.size());
+        for (String queryName : queryNames)
+            if (allowed.contains(queryName))
+                available.add(queryName);
 
         return available;
     }

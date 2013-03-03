@@ -77,6 +77,7 @@ public class LinkedSchema extends ExternalSchema
     }
 
     private final UserSchema _sourceSchema;
+    protected final Collection<String> _availableQueries;
 
     public static LinkedSchema get(User user, Container container, LinkedSchemaDef def)
     {
@@ -90,9 +91,11 @@ public class LinkedSchema extends ExternalSchema
             return null;
 
         final Set<String> tableNames = sourceSchema.getTableNames();
+        final Set<String> queryNames = sourceSchema.getQueryDefs().keySet();
         TableSource tableSource = new TableSource()
         {
             public Collection<String> getTableNames()         { return tableNames; }
+            public Collection<String> getQueryNames()         { return queryNames; }
             public boolean isTableAvailable(String tableName) { return tableNames.contains(tableName); }
         };
 
@@ -115,7 +118,9 @@ public class LinkedSchema extends ExternalSchema
         hiddenTables.removeAll(sourceSchema.getVisibleTableNames());
         hiddenTables.addAll(getHiddenTables(tableTypes));
 
-        return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, availableTables, hiddenTables);
+        Collection<String> availableQueries = getAvailableQueries(def, template, tableSource);
+
+        return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, availableTables, hiddenTables, availableQueries);
     }
 
     private static UserSchema getSourceSchema(LinkedSchemaDef def, TemplateSchemaType template, Container sourceContainer, User user)
@@ -129,11 +134,14 @@ public class LinkedSchema extends ExternalSchema
     private LinkedSchema(User user, Container container, LinkedSchemaDef def, TemplateSchemaType template, UserSchema sourceSchema,
                          Map<String, TableType> metaDataMap,
                          NamedFiltersType[] namedFilters,
-                         Collection<String> availableTables, Collection<String> hiddenTables)
+                         Collection<String> availableTables,
+                         Collection<String> hiddenTables,
+                         Collection<String> availableQueries)
     {
         super(user, container, def, template, sourceSchema.getDbSchema(), metaDataMap, namedFilters, availableTables, hiddenTables);
 
         _sourceSchema = sourceSchema;
+        _availableQueries = availableQueries;
     }
 
     public UserSchema getSourceSchema()
@@ -159,14 +167,20 @@ public class LinkedSchema extends ExternalSchema
     @Override
     public Map<String, QueryDefinition> getQueryDefs()
     {
+        if (_availableQueries.size() == 0)
+            return super.getQueryDefs();
+
         Map<String, QueryDefinition> queries =_sourceSchema.getQueryDefs();
         Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<QueryDefinition>(queries.size());
 
         for (String key : queries.keySet())
         {
-            QueryDefinition queryDef = queries.get(key);
-            LinkedSchemaQueryDefinition wrappedQueryDef = new LinkedSchemaQueryDefinition(this, queryDef);
-            ret.put(key, wrappedQueryDef);
+            if (_availableQueries.contains(key))
+            {
+                QueryDefinition queryDef = queries.get(key);
+                LinkedSchemaQueryDefinition wrappedQueryDef = new LinkedSchemaQueryDefinition(this, queryDef);
+                ret.put(key, wrappedQueryDef);
+            }
         }
 
         // Get all the custom queries from the standard locations

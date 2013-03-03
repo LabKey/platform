@@ -146,8 +146,8 @@ else
 <h2>Linked Schemas</h2>
 <p>
     Linked schemas can be created by refrencing an existing LabKey schema in the current or different folder.
-    The linked schema may expose some or all of the tables from the original schema.  The linked tables
-    may be filtered such that only a subset of the rows are available.
+    The linked schema may expose some or all of the tables and queries from the original schema.
+    The linked tables and queries may be filtered such that only a subset of the rows are available.
 </p>
 <%
     List<LinkedSchemaDef> linkedSchemas = Arrays.asList(QueryManager.get().getLinkedSchemaDefs(c));
@@ -184,12 +184,25 @@ else
         ActionURL urlDelete = new ActionURL(QueryController.DeleteLinkedSchemaAction.class, c).addParameter("externalSchemaId", Integer.toString(linkedSchema.getExternalSchemaId()));
 
         Container sourceContainer = linkedSchema.lookupSourceContainer();
+
+        ActionURL urlSourceView = null;
+        if (sourceContainer != null && linkedSchema.getSourceSchemaName() != null)
+        {
+            urlSourceView = urls.urlSchemaBrowser(sourceContainer, linkedSchema.getSourceSchemaName());
+        }
+
     %>
         <tr class='<%=text(i % 2 == 0 ? "labkey-row" : "labkey-alternate-row")%>'>
             <td><%=h(linkedSchema.getUserSchemaName())%></td>
             <td><%=h(linkedSchema.getSchemaTemplate())%></td>
             <td><%=h(sourceContainer != null ? sourceContainer.getPath() : linkedSchema.getSourceContainerId())%></td>
-            <td><%=h(linkedSchema.getSourceSchemaName())%></td>
+            <td>
+                <% if (urlSourceView != null) { %>
+                <a href="<%=h(urlSourceView)%>"><%=h(linkedSchema.getSourceSchemaName())%></a>
+                <% } else { %>
+                <%=h(linkedSchema.getSourceSchemaName())%>
+                <% } %>
+            </td>
             <td class="labkey-noborder"><labkey:link text="view schema" href="<%=h(urlView)%>" /></td>
             <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="edit" href="<%=h(urlEdit)%>" /></td><%}%>
             <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
