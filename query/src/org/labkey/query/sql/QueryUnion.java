@@ -421,6 +421,12 @@ public class QueryUnion extends QueryRelation
         }
 
         @Override
+        boolean isHidden()
+        {
+            return _first.isHidden();
+        }
+
+        @Override
         void copyColumnAttributesTo(ColumnInfo to)
         {
             _first.copyColumnAttributesTo(to);

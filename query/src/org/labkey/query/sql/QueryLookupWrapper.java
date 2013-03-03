@@ -365,6 +365,12 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
         @Override
+        boolean isHidden()
+        {
+            return _wrapped.isHidden();
+        }
+
+        @Override
         void copyColumnAttributesTo(ColumnInfo to)
         {
             _wrapped.copyColumnAttributesTo(to);
@@ -455,6 +461,12 @@ public class QueryLookupWrapper extends QueryRelation
         public JdbcType getJdbcType()
         {
             return _lkCol.getJdbcType();
+        }
+
+        @Override
+        boolean isHidden()
+        {
+            return _lkCol.isHidden();
         }
 
         void copyColumnAttributesTo(ColumnInfo to)

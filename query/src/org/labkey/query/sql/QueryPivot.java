@@ -440,6 +440,12 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
+        boolean isHidden()
+        {
+            return _s.isHidden();
+        }
+
+        @Override
         void copyColumnAttributesTo(ColumnInfo to)
         {
             _s.copyColumnAttributesTo(to);
@@ -583,6 +589,12 @@ public class QueryPivot extends QueryRelation
             String getAlias()
             {
                 return alias;
+            }
+
+            @Override
+            boolean isHidden()
+            {
+                return agg.isHidden();
             }
 
             @Override

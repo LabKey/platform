@@ -393,6 +393,12 @@ public class QueryTable extends QueryRelation
             return _col.getJdbcType();
         }
 
+        @Override
+        boolean isHidden()
+        {
+            return _col.isHidden();
+        }
+
         void copyColumnAttributesTo(ColumnInfo to)
         {
             to.copyAttributesFrom(_col);

@@ -317,7 +317,9 @@ groupByLoop:
                         }
                         for (String name :  r.getAllColumns().keySet())
                         {
-                            columnList.add(new SelectColumn(new FieldKey(parent,name)));
+                            SelectColumn col = new SelectColumn(new FieldKey(parent,name));
+                            col._selectStarColumn = true;
+                            columnList.add(col);
                         }
                         continue;
                     }
@@ -1656,6 +1658,7 @@ groupByLoop:
     {
         FieldKey _key;
         boolean _selected = false;
+        boolean _selectStarColumn = false;
         QNode _node;
         QExpr _field;
         QExpr _resolved;
@@ -1803,12 +1806,34 @@ groupByLoop:
 
 
         @Override
+        boolean isHidden()
+        {
+            QExpr expr = getResolvedField();
+            if (expr instanceof QField)
+            {
+                return ((QField)expr).getRelationColumn().isHidden();
+            }
+            else
+            {
+                if (_colinfo == null)
+                {
+                    _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()));
+                }
+                _colinfo.isHidden();
+            }
+            return false;
+        }
+
+        @Override
         void copyColumnAttributesTo(ColumnInfo to)
         {
             QExpr expr = getResolvedField();
             if (expr instanceof QField)
             {
-                ((QField)expr).getRelationColumn().copyColumnAttributesTo(to);
+                RelationColumn rc = ((QField)expr).getRelationColumn();
+                rc.copyColumnAttributesTo(to);
+                if (_selectStarColumn)
+                    to.setHidden(rc.isHidden());
             }
             else
             {
@@ -1817,6 +1842,8 @@ groupByLoop:
                     _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()));
                 }
                 to.copyAttributesFrom(_colinfo);
+                if (_selectStarColumn)
+                    to.setHidden(_colinfo.isHidden());
             }
 
             String label=chooseLabel();
