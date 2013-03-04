@@ -34,7 +34,19 @@ Ext4.define('Study.window.ParticipantGroup', {
             layout : 'fit',
             autoScroll : true,
             modal : true,
-            resizable : false
+            resizable : false,
+            listeners: {
+                show: function(win){
+                    listeners: {
+                        new Ext4.util.KeyNav(win.getEl(), {
+                            "enter" : function(e){
+                                win.saveCategory();
+                            },
+                            scope : this
+                        });
+                    }
+                }
+            }
         });
         this.callParent([config]);
     },
@@ -270,7 +282,10 @@ Ext4.define('Study.window.ParticipantGroup', {
     },
 
     saveCategory : function(){
-        var me = this.up('panel').up('window');
+        if (this.xtype === 'button')
+            var me = this.up('panel').up('window');
+        else
+            var me = this;
         if (!me.validate()) return;
 
         var groupData = me.getGroupData();
