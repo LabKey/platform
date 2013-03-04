@@ -81,7 +81,7 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                 for (UserSchema schema : externalSchemas.values())
                 {
                     // TODO: move shouldIndexMetaData() into UserSchema or higher
-                    if (!((ExternalSchema)schema).shouldIndexMetaData())
+                    if (null == schema || !((ExternalSchema)schema).shouldIndexMetaData())
                         continue;
 
                     String schemaName = schema.getName();
