@@ -218,11 +218,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());
             executor.execute(sql);
 
-            for (ViewCategory vc : categoriesToDelete)
-            {
-                getCategoryCache().remove(getCacheKey(vc.getRowId()));
-                getCategoryCache().remove(getCacheKey(category));
-            }
+            getCategoryCache().clear();
         }
         catch (SQLException x)
         {
@@ -249,7 +245,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             ViewCategory ret = null;
             List<Throwable> errors;
 
-            if (category.isNew())
+            if (category.isNew()) // insert
             {
                 // check for duplicates
                 SimpleFilter filter = new SimpleFilter("label", category.getLabel());
@@ -269,12 +265,11 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
                 ret = Table.insert(user, getTableInfoCategories(), category);
 
-                getCategoryCache().put(getCacheKey(ret), ret);
-                getCategoryCache().put(getCacheKey(ret.getRowId()), ret);
+                getCategoryCache().clear();
 
                 errors = fireCreatedCategory(user, ret);
             }
-            else
+            else // update
             {
                 ViewCategory existing = getCategory(category.getRowId());
                 if (existing != null)
@@ -284,8 +279,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
                     ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
 
-                    getCategoryCache().remove(getCacheKey(existing.getRowId()));
-                    getCategoryCache().remove(getCacheKey(existing));
+                    getCategoryCache().clear();
 
                     errors = fireUpdateCategory(user, ret);
                 }
