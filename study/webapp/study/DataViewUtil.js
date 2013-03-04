@@ -111,16 +111,18 @@ Ext4.define('LABKEY.study.DataViewUtil', {
                         var parents = {}, keys = [],
                             newRecs = [], labels = [], r, d, p, u;
 
-                        for (r=0; r < recs.length; r++) {
-                            if (recs[r].get('parent') == -1) {
-                                parents[recs[r].get('rowid')] = {record : recs[r], subs : []};
-                                keys.push(recs[r].get('rowid'));
+                        if (Ext4.isArray(recs)) {
+                            for (r=0; r < recs.length; r++) {
+                                if (recs[r].get('parent') == -1) {
+                                    parents[recs[r].get('rowid')] = {record : recs[r], subs : []};
+                                    keys.push(recs[r].get('rowid'));
+                                }
                             }
-                        }
 
-                        for (r=0; r < recs.length; r++) {
-                            if (recs[r].get('parent') >= 0) {
-                                parents[recs[r].get('parent')].subs.push(recs[r]);
+                            for (r=0; r < recs.length; r++) {
+                                if (recs[r].get('parent') >= 0) {
+                                    parents[recs[r].get('parent')].subs.push(recs[r]);
+                                }
                             }
                         }
 
