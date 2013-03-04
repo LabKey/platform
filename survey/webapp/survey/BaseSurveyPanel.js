@@ -8,6 +8,7 @@ LABKEY.requiresExt4ClientAPI();
 LABKEY.requiresScript("/extWidgets/Ext4Helper.js");
 LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
 LABKEY.requiresScript("/survey/AttachmentField.js");
+LABKEY.requiresScript("/biotrust/DiseaseTypeQuestion.js");
 LABKEY.requiresScript("/biotrust/LinkToDiscarded.js");
 LABKEY.requiresScript("/biotrust/StudySampleRequestPanel.js");
 LABKEY.requiresScript("/biotrust/TissueRecordPanel.js");
@@ -174,7 +175,14 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                     sectionPanel.add({
                         xtype: section.extAlias,
                         isSubmitted: this.isSubmitted,
-                        canEdit: this.canEdit
+                        canEdit: this.canEdit,
+                        listeners: {
+                            // allow custom section panels to fire save events back to the parent
+                            saveSurvey: function(successUrl, idParamName) {
+                                this.saveSurvey(null, null, false, successUrl, idParamName);
+                            },
+                            scope: this
+                        }
                     });
                 }
 
@@ -234,8 +242,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         return {xtype:'displayfield', value: txt};
     },
 
-    configureSurveyLayout : function(surveyConfig) {
-        this.currentStep = this.getInitSection();
+    configureSurveyLayout : function(surveyConfig, initSectionTitle) {
+        this.currentStep = this.getInitSection(initSectionTitle || LABKEY.ActionURL.getParameter("sectionTitle"));
 
         // in card layout, we add a side bar with the section titles and next/previous buttons
         var bbar = [];
@@ -308,8 +316,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         this.add(this.centerPanel);
     },
 
-    getInitSection : function() {
-        var goToSection = LABKEY.ActionURL.getParameter("sectionTitle");
+    getInitSection : function(goToSection) {
         if (goToSection)
         {
             for (var i = 0; i < this.sections.length; i++)
@@ -526,6 +533,10 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }, this);
 
         return values;
+    },
+
+    saveSurvey : function(btn, evt, toSubmit, successUrl, idParamName) {
+        // default, do nothing
     },
 
     onFailure : function(resp, message, hidePanel) {

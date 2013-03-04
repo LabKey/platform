@@ -156,7 +156,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         {
             var autoSaveFn = function(count){
                 // without btn/event arguments so we don't show the success msg
-                this.saveSurvey(null, null, false);
+                this.saveSurvey(null, null, false, null, null);
             };
             this.autoSaveTask = Ext4.TaskManager.start({
                 run: autoSaveFn,
@@ -357,7 +357,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             height: 30,
             scope: this,
             handler: function(btn, evt) {
-                this.saveSurvey(btn, evt, false);
+                this.saveSurvey(btn, evt, false, null, null);
             }
         });
 
@@ -432,8 +432,17 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.updateSubmitInfo();
     },
 
-    saveSurvey : function(btn, evt, toSubmit) {
+    saveSurvey : function(btn, evt, toSubmit, successUrl, idParamName) {
         //console.log('Attempting save at ' + new Date().format('g:i:s A'));
+
+        // check to make sure the survey label is not null, it is required
+        if (!this.surveyLabel)
+        {
+            if (successUrl)
+                Ext4.MessageBox.alert('Error', 'The ' + this.labelCaption + ' is requried.');
+
+            return;
+        }
 
         // check to see if there is anything to be saved (or submitted)
         if (!this.isSurveyDirty() && !toSubmit)
@@ -443,13 +452,6 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         // get the dirty form values which are also valid and to be submitted
         this.submitValues = this.getFormDirtyValues();
-
-        // check to make sure the survey label is not null, it is required
-        if (!this.surveyLabel)
-        {
-            //Ext4.MessageBox.alert('Error', 'The ' + this.labelCaption + ' is requried.');
-            return;
-        }
 
         // send the survey rowId, surveyDesignId, and responsesPk as params to the API call
         Ext4.Ajax.request({
@@ -519,6 +521,13 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         // if no btn param, the save was done via the auto save task
                         this.autosaveInfo.update("<span style='font-style: italic; font-size: 90%'>Responses automatically saved at " + new Date().format('g:i:s A') + "</span>");
                     }
+
+                    if (successUrl && idParamName)
+                    {
+                        var params = {};
+                        params[idParamName] = this.rowId;
+                        window.location = successUrl + "&" + LABKEY.ActionURL.queryString(params);
+                    }
                 }
                 else
                     this.onFailure(resp);
@@ -530,7 +539,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
     submitSurvey : function() {
         // call the save function with the toSubmit parameter as true
-        this.saveSurvey(null, null, true);
+        this.saveSurvey(null, null, true, null, null);
     },
 
     toggleSaveBtn : function(enable, toggleMsg) {

@@ -67,7 +67,7 @@ public class SurveyQueryView extends QueryView
             insertURL.addParameter("surveyDesignId", _surveyDesignId);
             insertURL.addParameter(QueryParam.srcURL, getReturnURL().toString());
 
-            ActionButton insert = new ActionButton(insertURL, "Create New Survey");
+            ActionButton insert = new ActionButton(insertURL, "Create Survey");
             insert.setActionType(ActionButton.Action.LINK);
             bar.add(insert);
         }
