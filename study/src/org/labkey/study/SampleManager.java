@@ -3014,7 +3014,8 @@ public class SampleManager implements ContainerManager.ContainerListener
 
                             GroupedValueColumnHelper columnHelper = getGroupedValueAllowedMap().get(grouping[i]);
                             ColumnInfo columnInfo = columnMap.get(columnHelper.getFieldKey());
-                            String labelValue = (String)rowMap.get(columnInfo.getAlias());
+                            Object value = rowMap.get(columnInfo.getAlias());
+                            String labelValue = (null != value) ? value.toString() : null;
                             GroupedResults groupedResults = currentGroupedResultsMap.get(labelValue);
                             if (null == groupedResults)
                             {
@@ -3067,7 +3068,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         {
             viewName = groupedResults.viewName;             // They are all the same in this collection
             Map<String, Object> groupedValue = new HashMap<String, Object>(5);
-            groupedValue.put("label", groupedResults.labelValue);
+            groupedValue.put("label", (null != groupedResults.labelValue) ? groupedResults.labelValue : "[empty]");
             groupedValue.put("count", groupedResults.count);
             groupedValue.put("url", getURL(container, groupedResults.urlFilterName, groupedValueFilters, groupedResults.labelValue));
             Map<String, GroupedResults> childGroupResultsMap = groupedResults.childGroupedResultsMap;
@@ -3075,7 +3076,7 @@ public class SampleManager implements ContainerManager.ContainerListener
             {
                 GroupedValueFilter groupedValueFilter = new GroupedValueFilter();
                 groupedValueFilter.setViewColumnName(groupedResults.viewName);
-                groupedValueFilter.setFilterValueName(null != groupedValue.get("label") ? groupedValue.get("label").toString() : null);
+                groupedValueFilter.setFilterValueName(null != groupedResults.labelValue ? groupedResults.labelValue.toString() : null);
                 List<GroupedValueFilter> groupedValueFiltersCopy = new ArrayList<GroupedValueFilter>(groupedValueFilters); // Need copy because can't share across members of groupedResultsMap
                 groupedValueFiltersCopy.add(groupedValueFilter);
                 Map<String, Object> nextLevelGroup = buildGroupedValue(childGroupResultsMap, container, groupedValueFiltersCopy);
