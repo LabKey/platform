@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -151,6 +152,9 @@ Ext4.onReady(function(){
         iconField: 'iconurl',
         labelField: 'Name',
         urlField: 'url',
+        region : 'center',
+        overflowY : 'auto',
+        sizeContainer : true,
         iconSize: config.iconSize,
         labelPosition: config.labelPosition,
         hideCreateButton: config.hideCreateButton,
@@ -159,14 +163,15 @@ Ext4.onReady(function(){
         width: '100%',
         border: false,
         frame: false,
+        header : false,
         buttonAlign: 'left',
         emptyText: 'No folder to display',
         deferEmptyText: false,
         store: store
-    }
+    };
 
     //NOTE: separated to differentiate site admins from those w/ admin permission in this container
-    if(<%=isAdmin%>){
+    if (<%=isAdmin%>) {
         panelCfg.buttons = [{
             text: 'Create New ' + config.noun,
             hidden: !LABKEY.Security.currentUser.isAdmin || config.hideCreateButton,
@@ -176,12 +181,20 @@ Ext4.onReady(function(){
     }
 
     var panel = Ext4.create('LABKEY.ext.IconPanel', panelCfg);
-    panel.render('<%=text(renderTarget)%>');
     Ext4.apply(panel, config);
     panel.getFilterArray = getFilterArray;
 
     panel.store.filterArray = getFilterArray(panel);
     panel.store.load();
+
+    var container = Ext4.create('Ext.container.Container', {
+        renderTo : <%=PageFlowUtil.jsString(renderTarget)%>,
+        layout   : 'border',
+        height   : 400,
+        border   : false, frame : false,
+        style    : 'background-color: transparent;',
+        items    : [panel]
+    });
 });
 
     /**
@@ -325,7 +338,7 @@ Ext4.onReady(function(){
                     }],
                     buttons: [{
                         text: 'Submit',
-                        handler: function(btn){
+                        handler: function(btn) {
                             var mode = btn.up('window').down('#folderTypes').getValue().folderTypes;
 
                             if(mode == 'project'){
@@ -358,8 +371,12 @@ Ext4.onReady(function(){
                             var hideCreateButton = btn.up('window').down('#hideCreateButton').getValue();
                             panel.hideCreateButton = hideCreateButton;
 
-                            panel.getDockedItems()[0].down('button').setVisible(!hideCreateButton);
-                            //panel.getDockedItems()[0].setVisible(!hideCreateButton);
+                            if (panel.getDockedItems().length > 0) {
+                                var createBtn = panel.getDockedItems()[0].down('button');
+                                if (createBtn) {
+                                    createBtn.setVisible(!hideCreateButton);
+                                }
+                            }
 
                             var styleField = btn.up('window').down('#style').getValue().style;
                             panel.resizeIcons.call(panel, styleField);
