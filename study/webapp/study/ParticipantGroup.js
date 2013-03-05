@@ -37,14 +37,12 @@ Ext4.define('Study.window.ParticipantGroup', {
             resizable : false,
             listeners: {
                 show: function(win){
-                    listeners: {
-                        new Ext4.util.KeyNav(win.getEl(), {
-                            "enter" : function(e){
-                                win.saveCategory();
-                            },
-                            scope : this
-                        });
-                    }
+                    new Ext4.util.KeyNav(win.getEl(), {
+                        "enter" : function(e){
+                            win.saveCategory();
+                        },
+                        scope : this
+                    });
                 }
             }
         });
