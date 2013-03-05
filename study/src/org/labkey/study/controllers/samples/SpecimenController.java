@@ -463,12 +463,12 @@ public class SpecimenController extends BaseStudyController
         private Integer _selectedRequest;
         private Set<Pair<String, String>> _filteredPtidVisits;
 
-        public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view)
+        public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view) throws ServletException
         {
             this(context, view, Collections.<Pair<String, String>>emptySet());
         }
 
-        public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view, Set<Pair<String, String>> filteredPtidVisits)
+        public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view, Set<Pair<String, String>> filteredPtidVisits) throws ServletException
         {
             Map<String, String[]> params = context.getRequest().getParameterMap();
 
@@ -477,7 +477,7 @@ public class SpecimenController extends BaseStudyController
             ActionURL otherView = context.cloneActionURL();
             otherView.deleteParameters();
 
-            StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
+            StudyImpl study = BaseStudyController.getStudy(false, context.getContainer());
             StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
 
             TableInfo otherTableInfo = schema.getTable(otherTable);
@@ -3282,9 +3282,9 @@ public class SpecimenController extends BaseStudyController
         private ViewContext _viewContext;
         private boolean _hasReports = true;
 
-        public ReportConfigurationBean(ViewContext viewContext)
+        public ReportConfigurationBean(ViewContext viewContext) throws ServletException
         {
-            Study study = StudyManager.getInstance().getStudy(viewContext.getContainer());
+            Study study = BaseStudyController.getStudy(false, viewContext.getContainer());
             _viewContext = viewContext;
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeSummaryReportFactory());
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeParticipantReportFactory());
@@ -3306,13 +3306,13 @@ public class SpecimenController extends BaseStudyController
             }
         }
 
-        public ReportConfigurationBean(SpecimenVisitReportParameters singleFactory, boolean listView)
+        public ReportConfigurationBean(SpecimenVisitReportParameters singleFactory, boolean listView) throws ServletException
         {
             _listView = listView;
             _viewContext = singleFactory.getViewContext();
             assert (_viewContext != null) : "Expected report factory to be instantiated by Spring.";
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, singleFactory);
-            _hasReports = StudyManager.getInstance().getStudy(_viewContext.getContainer()) != null && singleFactory.getReports().size() > 0;
+            _hasReports = BaseStudyController.getStudy(false, _viewContext.getContainer()) != null && singleFactory.getReports().size() > 0;
         }
 
         private void registerReportFactory(String category, SpecimenVisitReportParameters factory)
@@ -3524,14 +3524,14 @@ public class SpecimenController extends BaseStudyController
         private boolean _mixedFlagState;
         private Map<String, Map<String, Integer>> _participantVisitMap = new TreeMap<String, Map<String, Integer>>();
 
-        public UpdateSpecimenCommentsBean(ViewContext context, Specimen[] samples, String referrer)
+        public UpdateSpecimenCommentsBean(ViewContext context, Specimen[] samples, String referrer) throws ServletException
         {
             super(context, samples, false, false, true, true);
             _referrer = referrer;
             try
             {
                 Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(samples);
-                _participantVisitMap = generateParticipantVisitMap(samples, StudyManager.getInstance().getStudy(context.getContainer()));
+                _participantVisitMap = generateParticipantVisitMap(samples, BaseStudyController.getStudy(false, context.getContainer()));
                 _mixedComments = false;
                 _mixedFlagState = false;
                 SpecimenComment prevComment = currentComments.get(samples[0]);
@@ -4875,33 +4875,41 @@ public class SpecimenController extends BaseStudyController
         public void validateCommand(ManageCommentsForm form, Errors errors)
         {
             String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
-            final Study study = StudyManager.getInstance().getStudy(getContainer());
-            if (form.getParticipantCommentDataSetId() != null && form.getParticipantCommentDataSetId() != -1)
+            try
             {
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantCommentDataSetId());
-                if (def != null && !def.isDemographicData())
+                final Study study = BaseStudyController.getStudy(false, getContainer());
+                if (form.getParticipantCommentDataSetId() != null && form.getParticipantCommentDataSetId() != -1)
                 {
-                    errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
-                }
-
-                if (form.getParticipantCommentProperty() == null)
-                    errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + " Comment Assignment.");
-            }
-
-            if (study.getTimepointType() != TimepointType.CONTINUOUS)
-            {
-                if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
-                {
-                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantVisitCommentDataSetId());
-                    if (def != null && def.isDemographicData())
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantCommentDataSetId());
+                    if (def != null && !def.isDemographicData())
                     {
-                        errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
+                        errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
                     }
 
-                    if (form.getParticipantVisitCommentProperty() == null)
-                        errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + "/Visit Comment Assignment.");
+                    if (form.getParticipantCommentProperty() == null)
+                        errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + " Comment Assignment.");
+                }
+
+                if (study.getTimepointType() != TimepointType.CONTINUOUS)
+                {
+                    if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
+                    {
+                        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantVisitCommentDataSetId());
+                        if (def != null && def.isDemographicData())
+                        {
+                            errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
+                        }
+
+                        if (form.getParticipantVisitCommentProperty() == null)
+                            errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + "/Visit Comment Assignment.");
+                    }
                 }
             }
+            catch (ServletException e)
+            {
+                errors.reject(ERROR_MSG, "You cannot call this from outside of a study.");
+            }
+
         }
 
         public ModelAndView getView(ManageCommentsForm form, boolean reshow, BindException errors) throws Exception
@@ -5519,7 +5527,7 @@ public class SpecimenController extends BaseStudyController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Container container = getContainer();
-            StudyImpl study = StudyManager.getInstance().getStudy(container);
+            StudyImpl study = BaseStudyController.getStudy(false, container);
             if (study != null)
             {
                 RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(container);
