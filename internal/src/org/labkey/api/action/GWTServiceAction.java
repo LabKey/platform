@@ -48,7 +48,7 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
         }
         else
         {
-            service.doPost(getViewContext().getRequest(), getViewContext().getResponse());
+            service.doPost(httpServletRequest, httpServletResponse);
         }
         return null;
     }

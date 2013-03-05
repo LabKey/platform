@@ -311,6 +311,8 @@ public class ExcelFactory
                         }
                         return "";
                     }
+                    case Cell.CELL_TYPE_ERROR:
+                        return ((Byte)cell.getErrorCellValue()).toString();
                 }
                 return cell.getStringCellValue();
             }
