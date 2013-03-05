@@ -8,6 +8,7 @@ LABKEY.requiresExt4ClientAPI();
 LABKEY.requiresScript("/extWidgets/Ext4Helper.js");
 LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
 LABKEY.requiresScript("/survey/AttachmentField.js");
+LABKEY.requiresScript("/survey/UsersCombo.js");
 LABKEY.requiresScript("/biotrust/DiseaseTypeQuestion.js");
 LABKEY.requiresScript("/biotrust/LinkToDiscarded.js");
 LABKEY.requiresScript("/biotrust/StudySampleRequestPanel.js");

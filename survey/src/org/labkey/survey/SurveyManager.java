@@ -201,6 +201,11 @@ public class SurveyManager
 
     public Survey saveSurvey(Container container, User user, Survey survey)
     {
+        return saveSurvey(container, user, survey, null);
+    }
+
+    public Survey saveSurvey(Container container, User user, Survey survey, @Nullable Map<String, Object> row)
+    {
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
         List<Throwable> errors;
 
@@ -220,7 +225,7 @@ public class SurveyManager
             else
             {
                 ret = Table.update(user, table, survey, survey.getRowId());
-                errors = fireUpdateSurvey(container, user, ret);
+                errors = fireUpdateSurvey(container, user, ret, row);
             }
 
             if (!errors.isEmpty())
@@ -398,14 +403,14 @@ public class SurveyManager
         return errors;
     }
 
-    private static List<Throwable> fireUpdateSurvey(Container c, User user, Survey survey)
+    private static List<Throwable> fireUpdateSurvey(Container c, User user, Survey survey, Map<String, Object> row)
     {
         List<Throwable> errors = new ArrayList<Throwable>();
 
         for (SurveyListener l : _surveyListeners)
         {
             try {
-                l.surveyUpdated(c, user, survey);
+                l.surveyUpdated(c, user, survey, row);
             }
             catch (Throwable t)
             {

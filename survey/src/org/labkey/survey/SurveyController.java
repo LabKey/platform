@@ -597,7 +597,7 @@ public class SurveyController extends SpringActionController
                                     survey.setStatus("Pending");
                             }
 
-                            survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
+                            survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey, row);
 
                             response.put("surveyResults", row);
                             response.put("survey", new JSONObject(survey));
