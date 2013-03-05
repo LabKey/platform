@@ -19,14 +19,19 @@
 LABKEY.requiresCss("/extWidgets/IconPanel.css");
 
 Ext4.define('LABKEY.ext.IconPanel', {
+
     extend: 'Ext.panel.Panel',
-    initComponent: function(){
+
+    sizeContainer : false,
+
+    initComponent: function() {
+
         Ext4.QuickTips.init();
 
         Ext4.applyIf(this, {
             bodyStyle: 'padding:5px',
             cls: 'labkey-iconpanel',
-            iconSizeBtnHandler: function(btn){
+            iconSizeBtnHandler: function(btn) {
                 btn.ownerCt.items.each(function(i){
                     i.setChecked(false);
                 });
@@ -35,7 +40,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
 
                 this.resizeIcons(btn);
             },
-            resizeIcons: function(config){
+            resizeIcons: function(config) {
                 var view = this.down('#dataView');
                 this.iconSize = config.iconSize;
                 view.renderData.iconSize = config.iconSize;
@@ -43,71 +48,10 @@ Ext4.define('LABKEY.ext.IconPanel', {
                 view.renderData.labelPosition = config.labelPosition;
                 view.refresh();
             },
-            items: [{
-                xtype: 'dataview',
-                itemId: 'dataView',
-                store: this.store,
-                setTemplate: function(template) {
-                    this.tpl = template;
-                    this.refresh();
-                },
-                tpl: [
-                    '<table><tr>',
-                    '<tpl for=".">',
-                        '<td class="thumb-wrap">',
-                        '<div ' +
-                            '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>',
-                            'style="width: {thumbWidth};" class="tool-icon thumb-wrap thumb-wrap-{labelPosition}">',
-                            '<a ' + '<tpl if="url">href="{url}"</tpl>' + '>',
-                            '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" style="width: {imageSize}px;height: {imageSize}px;" class="thumb-{iconSize}"></div>',
-                            '<span class="thumb-label-{labelPosition}">{label:htmlEncode}</span>',
-                            '</a>',
-                        '</div>',
-                        '</td>',
-                        '<tpl if="xindex % columns === 0"></tr><tr></tpl>',
-                    '</tpl>',
-                    '</td></tr></table>',
-                    '<div class="x-clear"></div>'
-                ],
-                imageSizeMap: {
-                    large: 60,
-                    medium: 40,
-                    small: 20
-                },
-                prepareData: function(d){
-                    var panel = this.up('panel');
-                    var item = Ext4.apply({}, this.renderData);
-
-                    if(panel.iconField)
-                        item.iconurl = d[panel.iconField];
-                    if(panel.labelField)
-                        item.label = d[panel.labelField];
-                    if(panel.urlField)
-                        item.url = d[panel.urlField];
-                    if(panel.tooltipField)
-                        item.tooltip = d[panel.tooltipField];
-
-                    var multiplier = 1.66;
-                    item.imageSize = this.imageSizeMap[this.renderData.iconSize];
-                    item.thumbWidth = item.labelPosition=='bottom' ? item.imageSize * multiplier + 'px':  '100%';
-                    item.columns = item.labelPosition=='bottom' ? this.calculateColumnNumber(item.imageSize*multiplier) : 1;
-                    return item;
-                },
-                calculateColumnNumber: function(thumbWidth){
-                    var totalWidth = this.ownerCt.container.getWidth();
-                    return parseInt(totalWidth / (thumbWidth + 10)); //padding
-                },
-                renderData: {
-                    iconSize: this.iconSize || 'medium',
-                    labelPosition: this.labelPosition || 'bottom'
-                },
-                //trackOver: true,
-                //overItemCls: 'x4-item-over',
-                itemSelector: 'div.thumb-wrap'
-            }]
+            items: [this.getDataViewCfg()]
         });
 
-        if(this.showMenu){
+        if (this.showMenu) {
             this.tools = this.tools || [];
             this.tools.push([{
                 xtype: 'button',
@@ -145,24 +89,106 @@ Ext4.define('LABKEY.ext.IconPanel', {
         this.callParent(arguments);
 
         //resize panel on window resize
-        this.on('afterrender', function(panel, opts ){
-            this._previousWidth = this.container.getWidth();
-
-            Ext4.EventManager.onWindowResize(function (h, w, options) {
-                if(this._previousWidth && this._previousWidth == this.container.getWidth()){
-                    return;
-                }
-
-                this._previousWidth = this.container.getWidth();
-                this.setWidth(this._previousWidth);  //get the width of the DIV containing it
-                this.down('dataview').refresh();
-            }, this);
-        }, this);
+        this.on('afterrender', this.onAfterRender, this);
 
         //poor solution to firefox Ext4 layout issue that occurs when adding items from store after panel has rendered
         //TODO: should revisit with future Ext4 versions
         if(!this.store.getCount()){
             this.mon(this.store, 'load', this.doLayout, this, {single: true});
         }
+    },
+
+    onAfterRender : function(panel, opts) {
+        this._previousWidth = this.container.getWidth();
+        Ext4.EventManager.onWindowResize(this.onResize, this);
+
+        // configure initial sizing
+        if (this.sizeContainer) {
+            this.down('dataview').on('viewready', function() {
+                Ext4.isGecko ? Ext4.defer(this.onSizeContainer, 100, this) : this.onSizeContainer();
+            }, this, {single: true});
+        }
+    },
+
+    onResize : function(h, w, opts) {
+        if (this._previousWidth && this._previousWidth == this.container.getWidth()) {
+            return;
+        }
+
+        this._previousWidth = this.container.getWidth();
+        this.setWidth(this._previousWidth);  //get the width of the DIV containing it
+        this.down('dataview').refresh();
+        this.onSizeContainer();
+    },
+
+    onSizeContainer : function() {
+        if (this.sizeContainer) {
+            this.up('container').setHeight(this.down('dataview').getHeight() + 65);
+        }
+    },
+
+    getDataViewCfg : function() {
+        return {
+            xtype: 'dataview',
+            itemId: 'dataView',
+            store: this.store,
+            setTemplate: function(template) {
+                this.tpl = template;
+                this.refresh();
+            },
+            tpl: [
+                '<table><tr>',
+                '<tpl for=".">',
+                    '<td class="thumb-wrap">',
+                    '<div ' +
+                        '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>',
+                        'style="width: {thumbWidth};" class="tool-icon thumb-wrap thumb-wrap-{labelPosition}">',
+                        '<a ' + '<tpl if="url">href="{url}"</tpl>' + '>',
+                        '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" style="width: {imageSize}px;height: {imageSize}px;" class="thumb-{iconSize}"></div>',
+                        '<span class="thumb-label-{labelPosition}">{label:htmlEncode}</span>',
+                        '</a>',
+                    '</div>',
+                    '</td>',
+                    '<tpl if="xindex % columns === 0"></tr><tr></tpl>',
+                '</tpl>',
+                '</td></tr></table>',
+                '<div class="x-clear"></div>'
+            ],
+            imageSizeMap: {
+                large: 60,
+                medium: 40,
+                small: 20
+            },
+            prepareData: function(d){
+                var panel = this.up('panel');
+                var item = Ext4.apply({}, this.renderData);
+
+                if(panel.iconField)
+                    item.iconurl = d[panel.iconField];
+                if(panel.labelField)
+                    item.label = d[panel.labelField];
+                if(panel.urlField)
+                    item.url = d[panel.urlField];
+                if(panel.tooltipField)
+                    item.tooltip = d[panel.tooltipField];
+
+                var multiplier = 1.66;
+                item.imageSize = this.imageSizeMap[this.renderData.iconSize];
+                item.thumbWidth = item.labelPosition=='bottom' ? item.imageSize * multiplier + 'px':  '100%';
+                item.columns = item.labelPosition=='bottom' ? this.calculateColumnNumber(item.imageSize*multiplier) : 1;
+                return item;
+            },
+            calculateColumnNumber: function(thumbWidth){
+                var totalWidth = this.ownerCt.container.getWidth();
+                return parseInt(totalWidth / (thumbWidth + 10)); //padding
+            },
+            renderData: {
+                iconSize: this.iconSize || 'medium',
+                labelPosition: this.labelPosition || 'bottom'
+            },
+            //trackOver: true,
+            //overItemCls: 'x4-item-over',
+            itemSelector: 'div.thumb-wrap'
+        };
     }
 });
