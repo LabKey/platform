@@ -11,6 +11,7 @@ LABKEY.requiresScript("/survey/AttachmentField.js");
 LABKEY.requiresScript("/survey/UsersCombo.js");
 LABKEY.requiresScript("/biotrust/DiseaseTypeQuestion.js");
 LABKEY.requiresScript("/biotrust/LinkToDiscarded.js");
+LABKEY.requiresScript("/biotrust/ProtocolDocuments.js");
 LABKEY.requiresScript("/biotrust/StudySampleRequestPanel.js");
 LABKEY.requiresScript("/biotrust/TissueRecordPanel.js");
 LABKEY.requiresCss("/survey/Survey.css");
