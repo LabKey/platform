@@ -43,7 +43,7 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
                     scope: this,
                     selectionchange: function() {
                         this.down('#edit-selected-btn').setDisabled(!this.getSelectionModel().hasSelection());
-                        this.down('#remove-selected-btn').setDisabled(!this.getSelectionModel().hasSelection());
+                        this.down('#delete-selected-btn').setDisabled(!this.getSelectionModel().hasSelection());
                     }
                 }
             });
@@ -73,8 +73,8 @@ Ext4.define('LABKEY.ext4.SurveyGridQuestion', {
                     },
                     scope: this
                 },{
-                    itemId: 'remove-selected-btn',
-                    text:'Remove Selected',
+                    itemId: 'delete-selected-btn',
+                    text:'Delete Selected',
                     disabled: true,
                     handler: function() {
                         var selected = this.getSelectionModel().getSelection();

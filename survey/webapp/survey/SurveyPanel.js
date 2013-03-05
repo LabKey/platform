@@ -446,7 +446,17 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         // check to see if there is anything to be saved (or submitted)
         if (!this.isSurveyDirty() && !toSubmit)
+        {
+            // if there is a url to go to, navigate now
+            if (successUrl && idParamName)
+            {
+                var params = {};
+                params[idParamName] = this.rowId;
+                window.location = successUrl + "&" + LABKEY.ActionURL.queryString(params);
+            }
+
             return;
+        }
 
         this.toggleSaveBtn(false, false);
 
