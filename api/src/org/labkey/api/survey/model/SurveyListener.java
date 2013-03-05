@@ -15,8 +15,11 @@
  */
 package org.labkey.api.survey.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -27,5 +30,5 @@ public interface SurveyListener
 {
     void surveyDeleted(Container c, User user, Survey survey) throws Exception;
     void surveyCreated(Container c, User user, Survey survey) throws Exception;
-    void surveyUpdated(Container c, User user, Survey survey) throws Exception;
+    void surveyUpdated(Container c, User user, Survey survey, @Nullable Map<String, Object> rowData) throws Exception;
 }
