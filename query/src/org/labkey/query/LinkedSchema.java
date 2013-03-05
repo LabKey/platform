@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
@@ -235,8 +236,18 @@ public class LinkedSchema extends ExternalSchema
     private QueryDefinition createQueryDef(String name, TableInfo sourceTable, @Nullable TableType xmlTable)
     {
         QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), _sourceSchema, name);
-        StringBuilder sql = new StringBuilder("SELECT * FROM ");
-        sql.append("\"");
+        StringBuilder sql = new StringBuilder("SELECT\n");
+        String sep = "";
+        for (ColumnInfo col : sourceTable.getColumns())
+        {
+            sql.append(sep);
+            sql.append("\"").append(col.getName()).append("\"");
+            if (col.isHidden())
+                sql.append(" @hidden");
+
+            sep = ", ";
+        }
+        sql.append(" FROM \"");
         sql.append(_sourceSchema.getContainer().getPath());
         sql.append("\".");
         sql.append(_sourceSchema.getSchemaPath().toSQLString());

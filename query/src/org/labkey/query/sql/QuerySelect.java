@@ -318,7 +318,10 @@ groupByLoop:
                         for (String name :  r.getAllColumns().keySet())
                         {
                             SelectColumn col = new SelectColumn(new FieldKey(parent,name));
-                            col._selectStarColumn = true;
+                            // UNDONE: Remember columns expanded by "SELECT *" so we can copy the hiddenness of a column.
+                            // UNDONE: Unfortunately, since .selectRows() and .executeSql() use QueryView, the default column list won't include these hidden columns.
+                            // UNDONE: See issue 17316 and 17332.
+                            //col._selectStarColumn = true;
                             columnList.add(col);
                         }
                         continue;
