@@ -235,6 +235,10 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         if (config.name)
             config.name = config.name.toLowerCase();
 
+        // apply lookup filter (currently only supports "ISBLANK" filter type
+        if (question.lookup && question.lookup.filterColumn)
+            config.store.filterArray = [LABKEY.Filter.create(question.lookup.filterColumn, null, LABKEY.Filter.Types.ISBLANK)];
+
         return config;
     },
 
