@@ -197,12 +197,23 @@ public class UserController extends SpringActionController
             return url;
         }
 
-        public ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId, boolean checkIfRequired)
+        public ActionURL getCheckUserUpdateURL(Container c, URLHelper returnURL, int userId, boolean checkIfRequired)
         {
             ActionURL url = new ActionURL(CheckUpdateAction.class, c);
             url.addReturnURL(returnURL);
             url.addParameter("userId", userId);
             url.addParameter("checkIfRequired", checkIfRequired);
+
+            return url;
+        }
+
+        public ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId)
+        {
+            ActionURL url = new ActionURL(ShowUpdateAction.class, c);
+            url.addReturnURL(returnURL);
+            url.addParameter("userId", userId);
+            url.addParameter(QueryParam.schemaName.toString(), "core");
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
 
             return url;
         }
@@ -917,14 +928,20 @@ public class UserController extends SpringActionController
         public ActionURL getSuccessURL(QueryUpdateForm form)
         {
             URLHelper returnURL = form.getReturnURLHelper();
-            return new UserUrlsImpl().getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), returnURL);
+            if (returnURL == null)
+                return new UserUrlsImpl().getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), returnURL);
+            else
+                return new ActionURL(returnURL.toString());
         }
 
         @Override
         public ActionURL getCancelURL(QueryUpdateForm form)
         {
             URLHelper returnURL = form.getReturnURLHelper();
-            return new UserUrlsImpl().getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), returnURL);
+            if (returnURL == null)
+                return new UserUrlsImpl().getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), returnURL);
+            else
+                return new ActionURL(returnURL.toString());
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -459,7 +459,7 @@ public class LoginController extends SpringActionController
         // If this is user's first log in or some required field isn't filled in then go to update page first
         if (!skipProfile && null != user)
         {
-            returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
+            returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
         }
         return returnURL;
     }
