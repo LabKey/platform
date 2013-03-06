@@ -33,7 +33,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -134,7 +133,7 @@ public class ReportService
 
     public interface ViewFactory
     {
-        public String getExtraFormHtml(ViewContext ctx, ScriptReportBean bean) throws ServletException;
+        public String getExtraFormHtml(ViewContext ctx, ScriptReportBean bean);
     }
 
     public interface DesignerInfo

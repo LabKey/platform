@@ -89,7 +89,6 @@ import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.naming.NamingException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.beans.PropertyChangeEvent;
@@ -2125,7 +2124,7 @@ public class SecurityManager
 
     public interface ViewFactory
     {
-        public HttpView createView(ViewContext context) throws ServletException;
+        public HttpView createView(ViewContext context);
     }
 
 
