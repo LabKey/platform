@@ -55,7 +55,6 @@ import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -510,12 +509,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public void validateForm(BrowseGroupsForm browseGroupsForm, Errors errors)
         {
-            try{
-                _study = BaseStudyController.getStudy(false, getContainer());
-             }
-            catch(ServletException e){
-                    errors.reject(ERROR_MSG, "Cannot be accessed from a non-study");
-             }
+            _study = StudyManager.getInstance().getStudy(getContainer());
 
             if (_study == null)
                 errors.reject(ERROR_MSG, "A study does not exist in this folder");
@@ -829,12 +823,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public void validateForm(GroupsForm groupsForm, Errors errors)
         {
-            try{
-                _study = BaseStudyController.getStudy(false, getContainer());
-            }
-            catch(ServletException e){
-                errors.reject(ERROR_MSG, "Cannot be accessed from a non-study");
-            }
+            _study = StudyManager.getInstance().getStudy(getContainer());
 
             if (_study == null)
                 errors.reject(ERROR_MSG, "A study does not exist in this folder");

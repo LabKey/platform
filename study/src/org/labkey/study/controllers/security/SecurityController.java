@@ -41,7 +41,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.util.*;
@@ -66,7 +65,7 @@ public class SecurityController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("studySecurity"));
-            StudyImpl study = BaseStudyController.getStudy(false, getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (null == study)
                 return HttpView.redirect(new ActionURL(StudyController.BeginAction.class, getContainer()));
 
@@ -88,7 +87,7 @@ public class SecurityController extends SpringActionController
 
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            Study study = BaseStudyController.getStudy(false, getContainer());
+            Study study = StudyManager.getInstance().getStudy(getContainer());
             HttpServletRequest request = getViewContext().getRequest();
             Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
             HashSet<Integer> set = new HashSet<Integer>(groups.length*2);
@@ -164,7 +163,7 @@ public class SecurityController extends SpringActionController
 
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            Study study = BaseStudyController.getStudy(false, getContainer());
+            Study study = StudyManager.getInstance().getStudy(getContainer());
             Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
             HashSet<Integer> groupsInProject = new HashSet<Integer>(groups.length*2);
             for (Group g : groups)
@@ -280,7 +279,7 @@ public class SecurityController extends SpringActionController
         {
             if (TAB_STUDY.equals(tabId))
             {
-                StudyImpl study = BaseStudyController.getStudy(false, getViewContext().getContainer());
+                StudyImpl study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
                 if (null == study)
                 {
                     throw new RedirectException(new ActionURL(StudyController.BeginAction.class, getViewContext().getContainer()));
@@ -382,7 +381,7 @@ public class SecurityController extends SpringActionController
         {
             try
             {
-                Study study = BaseStudyController.getStudy(false, getContainer());
+                Study study = StudyManager.getInstance().getStudy(getContainer());
                 root.addChild(study.getLabel(), BaseStudyController.getStudyOverviewURL(getContainer()));
 
                 if (getUser().isAdministrator())
@@ -423,7 +422,7 @@ public class SecurityController extends SpringActionController
 
         public boolean handlePost(StudySecurityForm form, BindException errors) throws Exception
         {
-            StudyImpl study = BaseStudyController.getStudy(false, getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study != null && form.getSecurityType() != study.getSecurityType())
             {
                 StudyImpl updated = study.createMutable();
@@ -565,9 +564,9 @@ public class SecurityController extends SpringActionController
 
     public static class StudySecurityViewFactory implements SecurityManager.ViewFactory
     {
-        public HttpView createView(ViewContext context) throws ServletException
+        public HttpView createView(ViewContext context)
         {
-            if (BaseStudyController.getStudy(false, context.getContainer()) != null)
+            if (StudyManager.getInstance().getStudy(context.getContainer()) != null)
                 return new StudySecurityPermissionsView();
             else
                 return null;
