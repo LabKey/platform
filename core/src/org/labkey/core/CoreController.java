@@ -1429,7 +1429,7 @@ public class CoreController extends SpringActionController
                                 // Disable so they can't act on it directly, since they have no permission
                                 childProps.put("disabled", true);
                             }
-                            childProps.put("expanded", true);
+                            childProps.put("expanded", getViewContext().getContainer().isDescendant(child));
                             childrenProps.put(childProps);
                         }
                     }

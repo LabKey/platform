@@ -73,12 +73,12 @@ Ext4.define('Security.panel.PermissionEditor', {
                 split      : true,
                 border     : true,
                 listeners  : {
-                    load : function(tree, node, recs) {
+                    load : function(store, node, recs) {
                         for (var r=0; r < recs.length; r++) {
                             if (recs[r].data.cls != '')
                                 return;
                         }
-                        tree.getRootNode().set('cls', 'x-tree-node-current');
+                        store.getRootNode().set('cls', 'x-tree-node-current');
                     }
                 }
             });
