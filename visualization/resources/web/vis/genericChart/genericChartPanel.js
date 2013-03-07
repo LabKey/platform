@@ -1620,6 +1620,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     renderPlot: function(forExport) {
         var measure;
         var customRenderType = null;
+        var showBoxPlotTip = false;
         var getFormatFn = function(field){
             return field.extFormatFn ? eval(field.extFormatFn) : this.defaultNumberFormat;
         };
@@ -1786,6 +1787,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // TODO: make line charts render if this.xAxisMeasure.type == "date"
         if(!this.xAxisMeasure || this.isBoxPlot(this.renderType, this.xAxisMeasure.normalizedType)) {
+            showBoxPlotTip = true;
             this.configureBoxPlotAxes(chartOptions, measures, scales);
             
             geom = new LABKEY.vis.Geom.Boxplot({
@@ -1797,6 +1799,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 fill: '#' + chartOptions.fillColor
             });
         } else if(this.isScatterPlot(this.renderType, this.xAxisMeasure.normalizedType)){
+            showBoxPlotTip = false;
             this.configureAxes(chartOptions, measures, scales);
 
             geom = new LABKEY.vis.Geom.Point({
@@ -1805,6 +1808,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 color: '#' + chartOptions.pointColor
             });
         } else {
+            showBoxPlotTip = false;
             if(customRenderType){
                 if(customRenderType.configureAxes){
                     customRenderType.configureAxes(this, chartOptions, measures, scales);
@@ -1928,6 +1932,22 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             style: 'color: red; text-align: center;',
             html: this.warningText
         }));
+
+        var boxPlotTip = Ext4.query('#boxPlotTip');
+        
+        if(boxPlotTip.length > 0){
+            if(showBoxPlotTip){
+                Ext4.get(boxPlotTip[0]).show();
+            } else {
+                Ext4.get(boxPlotTip[0]).hide();
+            }
+        } else if(showBoxPlotTip) {
+            newChartDiv.insert(0, Ext4.create('Ext.container.Container', {
+                autoEl: 'div',
+                id: 'boxPlotTip',
+                html: 'To see how a boxplot is constructed please view our documentation <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=boxplot">here</a>.'
+            }));
+        }
 
         if (!forExport){
             this.exportPdfBtn.addListener('click', this.exportChartToPdf, this);
