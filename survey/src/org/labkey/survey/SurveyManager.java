@@ -277,14 +277,20 @@ public class SurveyManager
     }
 
     // delete all survey designs and survey instances in this container
-    public void delete(Container c)
+    public void delete(Container c, User user)
     {
         SurveySchema s = SurveySchema.getInstance();
         SqlExecutor executor = new SqlExecutor(s.getSchema());
 
+        Survey[] surveys = getSurveys(c);
+
         SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
         deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE Container = ?").add(c);
         executor.execute(deleteSurveysSql);
+
+        // invoke any survey listeners to clean up any dependent objects
+        for (Survey survey : surveys)
+            fireDeleteSurvey(c, user, survey);
 
         SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
         deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE Container = ?").add(c);

@@ -65,6 +65,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.survey.SurveyUrls;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -85,13 +86,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SurveyController extends SpringActionController
+public class SurveyController extends SpringActionController implements SurveyUrls
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SurveyController.class);
 
     public SurveyController()
     {
         setActionResolver(_actionResolver);
+    }
+
+    @Override
+    public ActionURL getUpdateSurveyAction(Container container, int surveyId, int surveyDesignId)
+    {
+        return new ActionURL(UpdateSurveyAction.class, container).
+                addParameter("rowId", surveyId).
+                addParameter("surveyDesignId", surveyDesignId);
+    }
+
+    @Override
+    public ActionURL getSurveyDesignAction(Container container, int surveyDesignId)
+    {
+        return new ActionURL(UpdateSurveyAction.class, container).addParameter("surveyDesignId", surveyDesignId);
     }
 
     @RequiresPermissionClass(ReadPermission.class)
