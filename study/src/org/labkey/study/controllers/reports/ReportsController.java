@@ -1968,9 +1968,14 @@ public class ReportsController extends BaseStudyController
                 throw new RuntimeException(e);
             }
 
-            if (BaseStudyController.getStudy(false, ctx.getContainer()) == null || !RReport.class.isAssignableFrom(report.getClass()))
+            try{
+                if (BaseStudyController.getStudy(false, ctx.getContainer()) == null || !RReport.class.isAssignableFrom(report.getClass()))
+                    return null;
+            }
+            catch (RedirectException re)
+            {
                 return null;
-
+            }
             boolean hasQuery = bean.getQueryName() != null || bean.getSchemaName() != null || bean.getViewName() != null;
 
             StringBuilder html = new StringBuilder();
