@@ -286,7 +286,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         // if we have an existing survey record, initialize the fields based on the surveyResults
         if (this.initialResponses != null)
-            this.getForm().setValues(this.initialResponses);
+            this.setValues(this.getForm(), this.initialResponses);
 
         this.clearLoadingMask();
     },
@@ -490,7 +490,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
                     // reset the values so that the form's dirty state is cleared, with one special case for the survey label field
                     this.submitValues[this.down('.textfield[itemId=surveyLabel]').getName()] = this.down('.textfield[itemId=surveyLabel]').getValue();
-                    this.getForm().setValues(this.submitValues);
+                    this.setValues(this.getForm(), this.submitValues);
 
                     var msgBox = Ext4.create('Ext.window.Window', {
                         title    : 'Success',

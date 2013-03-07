@@ -518,6 +518,21 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }
     },
 
+    setValues : function(form, values) {
+        form.setValues(values);
+
+        // the form.setValues doesn't play nicely with radio groups that have boolean false values, so set them via the radiogroup
+        var rbGrps = this.query('radiogroup');
+        Ext4.each(rbGrps, function(rbCmp){
+            Ext4.each(rbCmp.initialConfig.items, function(rb){
+                var objVal = {};
+                objVal[rb.name] = values[rb.name];
+                rbCmp.setValue(objVal);
+            }, this);
+        }, this);
+
+    },
+
     getFormDirtyValues : function() {
         return this.getDirtyValues(this.getForm());
     },
