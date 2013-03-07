@@ -55,6 +55,7 @@ public class ParticipantCategoryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("Label"));
         addWrapColumn(_rootTable.getColumn("Type"));
         addWrapColumn(_rootTable.getColumn("Created"));
+        addWrapColumn(_rootTable.getColumn("Shared"));
 
         ColumnInfo createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));
         createdBy.setFk(new UserIdForeignKey());
