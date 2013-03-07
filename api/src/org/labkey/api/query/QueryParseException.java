@@ -23,8 +23,8 @@ import org.labkey.api.data.TableInfo;
 
 public class QueryParseException extends QueryException
 {
-    int _line;
-    int _column;
+    protected int _line;
+    protected int _column;
 
     public QueryParseException(String message, Throwable cause, int line, int column)
     {
@@ -83,6 +83,7 @@ public class QueryParseException extends QueryException
         error.put("msg", getMessage());
         error.put("line",getLine());
         error.put("col", getColumn());
+        error.put("type", "sql");
 
         if (lines != null && getLine() <= lines.length && getLine() >= 1)
         {

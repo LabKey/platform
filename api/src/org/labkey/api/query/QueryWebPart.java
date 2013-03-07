@@ -226,7 +226,10 @@ public class QueryWebPart extends VBox
 
         for (QueryException e : errors)
         {
-            errorArray.put(e.toJSON(queryDef.getSql()));
+            if (e instanceof MetadataParseException)
+                errorArray.put(e.toJSON(queryDef.getMetadataXml()));
+            else
+                errorArray.put(e.toJSON(queryDef.getSql()));
         }
         errorResponse.put("parseErrors", errorArray);
         errorResponse.put("success", false);
