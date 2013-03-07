@@ -34,6 +34,7 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
+import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
@@ -230,9 +231,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         List<QueryParseException> ret = new ArrayList<QueryParseException>();
 
-        for (QueryException e : getQuery(schema).getParseErrors())
-            ret.add(wrapParseException(e));
-
         String metadata = StringUtils.trimToNull(getMetadataXml());
         if (metadata != null)
         {
@@ -246,17 +244,22 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             catch (XmlException xmle)
             {
-                ret.add(wrapParseException(new MetadataException("Metadata XML " + XmlBeansUtil.getErrorMessage(xmle))));
+                ret.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(xmle), null, xmle.getError().getLine(), xmle.getError().getColumn()));
             }
             for (XmlError xmle : errors)
             {
-                ret.add(new QueryParseException(xmle.getMessage(), null, xmle.getLine(), xmle.getColumn()));
+                ret.add(new MetadataParseException(xmle.getMessage(), null, xmle.getLine(), xmle.getColumn()));
             }
+        }
+        else
+        {
+            for (QueryException e : getQuery(schema).getParseErrors())
+                ret.add(wrapParseException(e, true));
         }
         return ret;
     }
 
-    static QueryParseException wrapParseException(Throwable e)
+    static QueryParseException wrapParseException(Throwable e, boolean metadataExists)
     {
         if (e instanceof QueryParseException)
         {
@@ -264,7 +267,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
         if (e instanceof MetadataException)
         {
-            return new QueryParseException(e.getMessage(), e, 0, 0);
+            return new QueryParseException(metadataExists ? "Error with dependent query XML: " + e.getMessage() : e.getMessage(), e, 0, 0);
         }
         return new QueryParseException("Unexpected exception", e, 0, 0);
     }

@@ -8,6 +8,13 @@ Ext.namespace("LABKEY.query");
 LABKEY.requiresScript("editarea/edit_area_full.js");
 LABKEY.requiresCss("_images/icons.css");
 
+// http://stackoverflow.com/questions/494035/how-do-you-pass-a-variable-to-a-regular-expression-javascript/494122#494122
+if (window.RegExp && !window.RegExp.quote) {
+    RegExp.quote = function(str) {
+        return (str+'').replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1");
+    };
+}
+
 LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
     constructor : function(config) {
@@ -622,8 +629,9 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
     onDone : function()
     {
-        if (this.query.executeUrl);
+        if (this.query.executeUrl) {
             window.location = this.query.executeUrl;
+        }
     },
 
     onSave : function(showView)
@@ -669,7 +677,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
                 this.showErrors(msgs);
             }
             else
-                this.showErrors();
+                this.clearErrors();
 
             this.getMetadataEditor().saved();
             this.getSourceEditor().saved();
@@ -685,13 +693,29 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         }
     },
 
-
-    showErrors : function(errors, elementId)
+    clearErrors : function()
     {
-        var errorEl = Ext.get(elementId);
+        var errorEls = Ext.DomQuery.select('.error-container');
+        for (var i=0; i < errorEls.length; i++) {
+            Ext.get(errorEls[i]).parent().update('');
+        }
+    },
+
+    showErrors : function(errors)
+    {
+        var tabEl;
+        if (errors && errors.length > 0)
+        {
+            this.gotoError(errors[0]);
+
+            // default to showing errors are source tab
+            var tabEl = errors[0].type == 'xml' ? this.getMetadataEditor().display : this.getSourceEditor().display;
+        }
+
+        var errorEl = tabEl ? Ext.get(tabEl) : undefined;
         var queryEl = Ext.get('query-response-panel');
 
-        if (!errors)
+        if (!errors || errors.length == 0)
         {
             if (errorEl) errorEl.update('');
             if (queryEl) queryEl.update('');
@@ -715,14 +739,13 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         {
             queryEl.update('');
             queryEl.update(inner);
-            this.gotoError(errors[0]);
         }
     },
 
 
     gotoError : function(error)
     {
-        var _editor = error.errorStr ? this.sourceEditor : this.metaEditor;
+        var _editor = error.type == 'xml' ? this.metaEditor : this.sourceEditor;
         this.tabPanel.setActiveTab(_editor);
         if (_editor && _editor.eal)
         {
@@ -739,7 +762,12 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
                 var valArr = val.split('\n');
                 var _s = -1;
                 if (error && error.line && error.line > 1) {
-                    _s = valArr[error.line-1].search(error.errorStr);
+                    if (RegExp) {
+                        _s = valArr[error.line-1].search(RegExp.quote(error.errorStr));
+                    }
+                    else {
+                        _s = valArr[error.line-1].search(error.errorStr);
+                    }
 
                     // calculate string position offset
                     if (_s >= 0) {
@@ -773,6 +801,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             this._executing = false;
             return;
         }
+        this.clearErrors();
         this.getSourceEditor().setDisplay(this._dataTabId);
         this.tabPanel.setActiveTab(this.dataTab);
         this.dataTab.getEl().mask('Loading Query...', 'loading-indicator indicator-helper');
@@ -806,7 +835,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
                     var errors = [];
                     for (var e=0; e < response.parseErrors.length; e++)
                         errors.push(response.parseErrors[e]);
-                    this.showErrors(errors, errors[0].errorStr ? this.getSourceEditor().display : this.getMetadataEditor().display);
+                    this.showErrors(errors);
                 }
                 this._executing = false;
             },
@@ -834,7 +863,6 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
     addTab : function(config, makeActive)
     {
-
         this.tabPanel.add(config);
         this.tabPanel.doLayout();
         this.doLayout();
