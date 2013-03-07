@@ -1626,8 +1626,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     // private
     onSelectChange : function (selectionCount)
     {
-        this.updateRequiresSelectionButtons(selectionCount);
         this.fireEvent('selectchange', this, selectionCount);
+        this.updateRequiresSelectionButtons(selectionCount);
     },
 
     onButtonClick : function(buttonId)
