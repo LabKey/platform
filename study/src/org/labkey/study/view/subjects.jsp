@@ -64,7 +64,6 @@
     String colName       = StudyService.get().getSubjectColumnName(container);
 
     ActionURL subjectUrl = new ActionURL(StudyController.ParticipantAction.class, container);
-    subjectUrl.addParameter("participantId", "");
     String urlTemplate   = subjectUrl.getEncodedLocalURIString();
     DbSchema dbschema    = StudySchema.getInstance().getSchema();
     final JspWriter _out = out;
@@ -72,6 +71,7 @@
     String divId        = "participantsDiv" + getRequestScopedUID();
     String listDivId    = "listDiv" + getRequestScopedUID();
     String groupsDivId  = "groupsDiv" + getRequestScopedUID();
+    String groupsPanelId  = "groupsPanel" + getRequestScopedUID();
 
     String viewObject = "subjectHandler" + bean.getIndex();
     WebTheme theme    = WebThemeManager.getTheme(container);
@@ -298,7 +298,12 @@ li.ptid a.unhighlight
     {
         ptid = _ptids[i];
         h = $h(ptid);
-        _ptids[i] = {index:i, ptid:ptid, html:(h==ptid?ptid:h)};
+        _ptids[i] = {
+            index:i,
+            ptid:ptid,
+            html:(h==ptid?ptid:h),
+            urlParam: Ext4.Object.toQueryString({participantId: ptid})
+        };
     }
 
     function test(s, p)
@@ -404,7 +409,8 @@ li.ptid a.unhighlight
         <% if (bean.getWide()) { %>
         var ptidPanel = X.create('LABKEY.study.ParticipantFilterPanel',
         {
-            renderTo  : X.get('<%=groupsDivId%>'),
+            renderTo  : X.get(<%=q(groupsDivId)%>),
+            id        : <%=q(groupsPanelId)%>,
             title     : 'Show',
             border    : true,
             width     : 260,
@@ -495,7 +501,8 @@ li.ptid a.unhighlight
             target: ptidPanel,
             dynamic: false,
             minWidth: 260,
-            minHeight: 350
+            minHeight: 350,
+            listeners: { resize: doAdjustSize }
         });
         <% } %>
 
@@ -535,7 +542,7 @@ li.ptid a.unhighlight
                 {
                     if (++count > 1 && count % _ptidPerCol == 1)
                         html.push('</ul></td><td valign="top"><ul class="subjectlist">');
-                    html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" style="white-space:nowrap;"><a href="' + _urlTemplate + p.html + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
+                    html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" style="white-space:nowrap;"><a href="' + _urlTemplate + p.urlParam + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
                 }
 
                 if (_isWide && showEnrolledText)
@@ -683,6 +690,11 @@ li.ptid a.unhighlight
         // we don't want ptidDiv to change height as it filters, so set height explicitly after first layout
         ptidDiv.setHeight(ptidDiv.getHeight());
 
+        // the groups panel starts with a height of 350, but make that bigger to match the ptid div
+        var groupsPanel = X.ComponentQuery.query('participantfilter[id=<%=(groupsPanelId)%>]');
+        if (groupsPanel.length == 1 && groupsPanel[0].getHeight() < ptidDiv.getHeight())
+            groupsPanel[0].setHeight(ptidDiv.getHeight());
+
         X.EventManager.onWindowResize(doAdjustSize);
         doAdjustSize();
     }
@@ -710,11 +722,11 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
 </script>
 
 <div style="">
-    <table id="<%= divId %>">
+    <table id=<%= q(divId) %>>
         <tr>
             <% if (bean.getWide()) { %>
             <td style="margin: 5px;" valign=top>
-                <div id="<%=groupsDivId%>"></div>
+                <div id=<%=q(groupsDivId)%>></div>
             </td>
             <% } %>
             <td style="margin: 5px;" valign=top class="iScroll">

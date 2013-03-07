@@ -49,31 +49,33 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
         var initToolTip = function(view) {
             var labelField = this.labelField;
-            var _active;
+            var _activeLabel;
 
             var renderTip = function(tip) {
-                if (_active) {
-                    tip.update('<b>' + Ext4.util.Format.htmlEncode(_active.data[labelField]) + '</b><br>Click the label to ' +
+                if (_activeLabel) {
+                    tip.update('<b>' + Ext4.util.Format.htmlEncode(_activeLabel) + '</b><br>Click the label to ' +
                             'select only this item. Click the checkbox to toggle this item and preserve other selections.');
                 }
             };
 
             var loadRecord = function(tip) {
-                var r = view.getRecord(tip.triggerElement.parentNode);
-                if (r) {
-                    _active = r;
+                var parentNode = tip.triggerElement.parentNode.parentNode;
+                if (parentNode.className.indexOf("x4-grid-group-hd") > -1)
+                {
+                    _activeLabel = parentNode.innerText;
                 }
-                else {
-                    /* This usually occurs when mousing over grouping headers */
-                    _active = null;
-                    return false;
+                else
+                {
+                    var r = view.getRecord(parentNode);
+                    _activeLabel = (r != null ? r.data[labelField] : null);
                 }
-                return true;
+
+                return _activeLabel != null;
             };
 
             view.tip = Ext4.create('Ext.tip.ToolTip', {
                 target   : view.el,
-                delegate : '.x4-label-column-cell',
+                delegate : '.x4-grid-cell-inner',
                 showDelay: 850,
                 listeners: {
                     beforeshow : function(tip) {
