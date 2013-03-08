@@ -40,9 +40,9 @@ Ext4.define('LABKEY.ext4.UsersCombo', {
         this.callParent();
     },
 
-    setValue : function(value) {
+    setValue : function(value, doSelect) {
         this.initialValue = value;
-        this.callParent([value]);
+        this.callParent([value, doSelect]);
     }
 });
 

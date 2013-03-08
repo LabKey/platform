@@ -30,6 +30,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
     generateSurveySections : function(surveyConfig, panelType) {
 
+        this.requiredFieldNames = [];
+
         // default to a normal ext panel
         if (!panelType)
             panelType = 'Ext.panel.Panel';
@@ -139,6 +141,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                         if (config.name && !config.itemId)
                             config.itemId = 'item-' + config.name;
 
+                        // add the section title to each config (to test for disabled sections)
+                        config.sectionTitle = section.title;
+
                         // register any configured listeners
                         // Note: we allow for an array of listeners OR an array of question names to apply a single listener to
                         var listeners = question.listeners || {};
@@ -200,6 +205,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             config.allowBlank = false;
             config.labelStyle = "font-weight: bold;";
             config.fieldLabel = config.fieldLabel + "*";
+
+            if (config.name)
+                this.requiredFieldNames.push(config.name);
         }
 
         // customize the checkbox config to make sure unchecked values get submitted
@@ -235,7 +243,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         if (config.name)
             config.name = config.name.toLowerCase();
 
-        // apply lookup filter (currently only supports "ISBLANK" filter type
+        // apply lookup filter (currently only supports "ISBLANK" filter type)
         if (question.lookup && question.lookup.filterColumn)
             config.store.filterArray = [LABKEY.Filter.create(question.lookup.filterColumn, null, LABKEY.Filter.Types.ISBLANK)];
 
@@ -417,7 +425,13 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     },
 
     fieldValidityChanged : function(cmp, isValid) {
-        this.validStatus[cmp.getName()] = isValid;
+        var name = cmp.getName();
+
+        // special case for radiogroups to set that valid status for the group instead of the radio field
+        if (cmp.getXType() == "radiofield" && cmp.findParentByType("radiogroup"))
+            name = cmp.findParentByType("radiogroup").getName();
+
+        this.validStatus[name] = isValid;
     },
 
     questionChangeHandler : function(cmp, newValue, oldValue) {
@@ -519,7 +533,6 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     },
 
     setValues : function(form, values) {
-        form.setValues(values);
 
         // the form.setValues doesn't play nicely with radio groups that have boolean false values, so set them via the radiogroup
         var rbGrps = this.query('radiogroup');
@@ -531,6 +544,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             }, this);
         }, this);
 
+        form.setValues(values);
     },
 
     getFormDirtyValues : function() {

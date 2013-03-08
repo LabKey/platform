@@ -439,7 +439,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         if (!this.surveyLabel)
         {
             if (successUrl)
-                Ext4.MessageBox.alert('Error', 'The ' + this.labelCaption + ' is requried.');
+                Ext4.MessageBox.alert('Error', 'The ' + this.labelCaption + ' is required.');
 
             return;
         }
@@ -578,9 +578,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             {
                 var cmp = this.down('[name=' + name + ']');
                 if (cmp)
-                {
                     msg += "-" + (cmp.shortCaption ? cmp.shortCaption : name) + "<br/>";
-                }
             }
         }
 
@@ -595,6 +593,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     },
 
     isSurveyDirty : function() {
+        console.log(this.getFormDirtyValues());
         return this.getForm().isDirty();
     },
 
