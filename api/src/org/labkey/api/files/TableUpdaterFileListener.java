@@ -272,6 +272,7 @@ public class TableUpdaterFileListener implements FileListener
         selectFrag.append("  ").append(_table.getSchema().getSqlDialect().getStringHandler().quoteStringLiteral(getSourceName())).append(" AS SourceName\n");
 
         selectFrag.append("FROM ").append(_table).append("\n");
+        selectFrag.append("WHERE ").append(dialect.makeLegalIdentifier(_pathColumn)).append(" IS NOT NULL\n");
 
         return selectFrag;
     }
