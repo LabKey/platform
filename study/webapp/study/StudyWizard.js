@@ -114,16 +114,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         else
         {
             this.nextBtn = new Ext.Button({text: 'Next', scope: this, handler: function(){
-                if  (this.currentStep == 0)
-                {
-                   var present = this.checkIfFolderPresent();
-                }
-                else
-                {
-                    this.lastStep = this.currentStep;
-                    this.currentStep++;
-                    this.updateStep();
-                }
+                this.lastStep = this.currentStep;
+                this.currentStep++;
+                this.updateStep();
             }});
         }
 
@@ -238,46 +231,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         {
             this.nextBtn.setText('Next');
             this.nextBtn.setHandler(function(){
-                if  (this.currentStep == 0)
-                {
-                    this.checkIfFolderPresent();
-                }
-                else
-                {
-                    this.lastStep = this.currentStep;
-                    this.currentStep++;
-                    this.updateStep();
-                }
+                this.currentStep++;
+                this.updateStep();
             }, this);
         }
         this.pages.getLayout().setActiveItem(this.currentStep);
-    },
-
-    checkIfFolderPresent : function() {
-        var present = false;
-        Ext.Ajax.request({
-            url : LABKEY.ActionURL.buildURL('project', 'getContainers.api', this.info.dstPath.replace(this.info.name, '')),
-            success : function(details){
-                var response = Ext.util.JSON.decode(details.responseText);
-                var exists = false;
-                for(var i = 0; i < response.children.length; i++)
-                {
-                    if(this.info.name == response.children[i].name)
-                    {
-                        Ext.MessageBox.alert("Study Already Present", "A study with that name already exists in that folder.");
-                        present = true;
-                        return;
-                    }
-                }
-                if(!present)
-                {
-                    this.lastStep = this.currentStep;
-                    this.currentStep++;
-                    this.updateStep();
-                }
-            },
-            scope: this
-        });
     },
 
     getNamePanel : function() {
