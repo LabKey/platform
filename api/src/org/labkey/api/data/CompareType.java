@@ -53,12 +53,6 @@ public enum CompareType
 {
     EQUAL("Equals", "eq", true, " = ?", "EQUAL", OperatorType.EQ)
         {
-            @Deprecated // Use FieldKey version instead.
-            FilterClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             @Override
             FilterClause createFilterClause(FieldKey fieldKey, Object value)
             {
@@ -83,12 +77,6 @@ public enum CompareType
         },
     DATE_EQUAL("(Date) Equals", "dateeq", true, null, "DATE_EQUAL", OperatorType.DATEEQ)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
@@ -96,12 +84,6 @@ public enum CompareType
         },
     DATE_NOT_EQUAL("(Date) Does Not Equal", "dateneq", true, null, "DATE_NOT_EQUAL", OperatorType.DATENEQ)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
@@ -109,12 +91,6 @@ public enum CompareType
         },
     NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_MISSING", OperatorType.NEQORNULL)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new NotEqualOrNullClause(fieldKey, value);
@@ -128,12 +104,6 @@ public enum CompareType
         },
     NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUAL", OperatorType.NEQ)
         {
-            @Deprecated // Use FieldKey version instead.
-            FilterClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             @Override
             FilterClause createFilterClause(FieldKey fieldKey, Object value)
             {
@@ -148,12 +118,6 @@ public enum CompareType
         },
     ISBLANK("Is Blank", "isblank", false, " IS NULL", "MISSING", OperatorType.ISBLANK)
         {
-            @Deprecated // Use FieldKey version instead.
-            public FilterClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public FilterClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return super.createFilterClause(fieldKey, null);
@@ -167,12 +131,6 @@ public enum CompareType
         },
     NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "NOT_MISSING", OperatorType.ISNONBLANK)
         {
-            @Deprecated // Use FieldKey version instead.
-            public FilterClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public FilterClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return super.createFilterClause(fieldKey, null);
@@ -186,12 +144,6 @@ public enum CompareType
         },
     DATE_GT("(Date) Is Greater Than", "dategt", true, " >= ?", "DATE_GREATER_THAN", OperatorType.GTE) // GT --> >= roundup(date)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
@@ -216,12 +168,6 @@ public enum CompareType
         },
     DATE_LT("(Date) Is Less Than", "datelt", true, " < ?", "DATE_LESS_THAN", OperatorType.LT)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
@@ -246,12 +192,6 @@ public enum CompareType
         },
     DATE_GTE("(Date) Is Greater Than or Equal To", "dategte", true, " >= ?", "DATE_GREATER_THAN_OR_EQUAL", OperatorType.GTE)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
@@ -276,12 +216,6 @@ public enum CompareType
         },
     DATE_LTE("(Date) Is Less Than or Equal To", "datelte", true, " < ?", "DATE_LESS_THAN_OR_EQUAL", OperatorType.LT)  // LTE --> < roundup(date)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
@@ -306,12 +240,6 @@ public enum CompareType
         },
     CONTAINS("Contains", "contains", true, null, "CONTAINS", OperatorType.CONTAINS)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new ContainsClause(fieldKey, value);
@@ -325,12 +253,6 @@ public enum CompareType
         },
     DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", true, null, "DOES_NOT_CONTAIN", OperatorType.DOESNOTCONTAIN)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new DoesNotContainClause(fieldKey, value);
@@ -344,12 +266,6 @@ public enum CompareType
         },
     DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", true, null, "DOES_NOT_START_WITH", OperatorType.DOESNOTSTARTWITH)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new DoesNotStartWithClause(fieldKey, value);
@@ -363,12 +279,6 @@ public enum CompareType
         },
     STARTS_WITH("Starts With", "startswith", true, null, "STARTS_WITH", OperatorType.STARTSWITH)
         {
-            @Deprecated // Use FieldKey version instead.
-            public CompareClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             public CompareClause createFilterClause(FieldKey fieldKey, Object value)
             {
                 return new StartsWithClause(fieldKey, value);
@@ -382,12 +292,6 @@ public enum CompareType
         },
     IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "IN", OperatorType.IN)
         {
-            @Deprecated // Use FieldKey version instead.
-            FilterClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(FieldKey fieldKey, Object value)
             {
@@ -421,12 +325,6 @@ public enum CompareType
         },
     NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", true, null, "NOT_IN", OperatorType.NOTIN)
         {
-            @Deprecated // Use FieldKey version instead.
-            FilterClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(FieldKey fieldKey, Object value)
             {
@@ -460,12 +358,6 @@ public enum CompareType
         },
     CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", true, null, "CONTAINS_ONE_OF", OperatorType.CONTAINSONEOF)
         {
-            @Deprecated // Use FieldKey version instead.
-            FilterClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(FieldKey fieldKey, Object value)
             {
@@ -492,12 +384,6 @@ public enum CompareType
         },
     CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", true, null, "CONTAINS_NONE_OF", OperatorType.CONTAINSNONEOF)
         {
-            @Deprecated // Use FieldKey version instead.
-            FilterClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(FieldKey fieldKey, Object value)
             {
@@ -521,12 +407,6 @@ public enum CompareType
         },
     HAS_QC("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
         {
-            @Deprecated // Use FieldKey version instead.
-            QcClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             @Override
             QcClause createFilterClause(FieldKey fieldKey, Object value)
             {
@@ -541,12 +421,6 @@ public enum CompareType
         },
     NO_QC("Does Not Have An MV Indicator", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
         {
-            @Deprecated // Use FieldKey version instead.
-            QcClause createFilterClause(String colName, Object value)
-            {
-                return createFilterClause(FieldKey.fromString(colName), value);
-            }
-
             @Override
             QcClause createFilterClause(FieldKey fieldKey, Object value)
             {
