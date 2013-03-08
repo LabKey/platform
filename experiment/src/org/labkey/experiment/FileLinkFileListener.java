@@ -244,6 +244,7 @@ public class FileLinkFileListener implements FileListener
         frag.append("  ").append(OntologyManager.getTinfoObjectProperty(), "op").append(",\n");
         frag.append("  ").append(OntologyManager.getTinfoObject(), "o").append("\n");
         frag.append("WHERE\n");
+        frag.append("  op.StringValue IS NOT NULL AND\n");
         frag.append("  o.ObjectId = op.ObjectId AND\n");
         frag.append("  PropertyId IN (\n");
         frag.append("    SELECT PropertyId\n");
