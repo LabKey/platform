@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.UserSchema;
@@ -27,6 +28,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.query.persist.QueryManager;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 /**
  * Created by IntelliJ IDEA.
@@ -38,18 +40,45 @@ import org.springframework.validation.BindException;
 @RequiresPermissionClass(ReadPermission.class)
 public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQueryForm>
 {
+    UserSchema schema;
+    TableInfo table;
+
+    @Override
+    public void validateForm(ValidateQueryForm form, Errors errors)
+    {
+        if (null == StringUtils.trimToNull(form.getSchemaName()))
+            errors.rejectValue("schemaName", SpringActionController.ERROR_REQUIRED, "schemaName parameter is required");
+
+        if (null == StringUtils.trimToNull(form.getQueryName()))
+            errors.rejectValue("queryName", SpringActionController.ERROR_REQUIRED, "queryName parameter is required");
+
+        if (errors.hasErrors())
+            return;
+
+        schema = form.getSchema();
+        if (null == schema)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, "Schema not found: " + form.getSchemaName());
+            return;
+        }
+
+        table = schema.getTable(form.getQueryName());
+        if (null == table)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, "Query not found: " + form.getQueryName());
+            return;
+        }
+    }
+
+
     public ApiResponse execute(ValidateQueryForm form, BindException errors) throws Exception
     {
-        if (null == StringUtils.trimToNull(form.getQueryName()) || null == StringUtils.trimToNull(form.getSchemaName()))
-            throw new IllegalArgumentException("You must specify a schema and query name!");
-
-        UserSchema schema = form.getSchema();
-        TableInfo table = schema.getTable(form.getQueryName());
         QueryManager.get().validateQuery(table, form.isIncludeAllColumns());
 
         //if we got here, the query is OK
         return new ApiSimpleResponse("valid", true);
     }
+
 
     public static class ValidateQueryForm extends QueryForm
     {
@@ -65,5 +94,4 @@ public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQ
             _includeAllColumns = includeAllColumns;
         }
     }
-
 }
