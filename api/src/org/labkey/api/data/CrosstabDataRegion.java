@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -36,6 +37,7 @@ import java.util.List;
  */
 public class CrosstabDataRegion extends DataRegion
 {
+    private static final Logger _log = Logger.getLogger(CrosstabDataRegion.class);
     private CrosstabSettings _settings = null;
     private CrosstabTableInfo _table = null;
     private int _numRowAxisCols = 0;
@@ -50,6 +52,9 @@ public class CrosstabDataRegion extends DataRegion
         _numMemberMeasures = numMemberMeasures;
         _numRowAxisCols = numRowAxisCols;
         _allowHeaderLock = false;
+//        _log.info("Measures       : " + _numMeasures);
+//        _log.info("Member Measures: " + _numMemberMeasures);
+//        _log.info("Row Axis Cols  : " + _numRowAxisCols);
     }
 
     @Override
@@ -84,15 +89,18 @@ public class CrosstabDataRegion extends DataRegion
 
                 if (currentMember != null)
                 {
-                    renderColumnGroupHeader(memberColumns.size(),
-                            getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
+                    if (_numMeasures != _numMemberMeasures || colDim.getMemberUrl(currentMember) != null)
+                    {
+                        renderColumnGroupHeader(memberColumns.size(),
+                                getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
+                    }
                 }
 
                 for (DisplayColumn renderer : memberColumns)
                 {
                     if (alternate)
                         renderer.addDisplayClass("labkey-alternate-col");
-                    if (currentMember != null)
+                    if (currentMember != null && _numMeasures != _numMemberMeasures)
                     {
                         String memberCaption = currentMember.getCaption();
                         String innerCaption = renderer.getCaption(ctx);
