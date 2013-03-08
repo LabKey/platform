@@ -27,7 +27,6 @@ import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatFiltersType;
 import org.labkey.data.xml.ConditionalFormatType;
 import org.labkey.data.xml.ConditionalFormatsType;
-import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import java.awt.*;
 import java.net.URISyntaxException;

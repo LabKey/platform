@@ -89,7 +89,7 @@ public abstract class ContainerFilter
         return result;
     }
 
-    /** Create a FilterClause that restiracts based on the containers that meet the filter */
+    /** Create a FilterClause that restricts based on the containers that meet the filter */
     public SimpleFilter.FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Container container)
     {
         return new ContainerClause(schema, containerFilterColumn, this, container);

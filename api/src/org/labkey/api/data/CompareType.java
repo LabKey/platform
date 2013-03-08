@@ -324,240 +324,241 @@ public enum CompareType
             }
         },
     DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", true, null, "DOES_NOT_CONTAIN", OperatorType.DOESNOTCONTAIN)
+        {
+            @Deprecated // Use FieldKey version instead.
+            public CompareClause createFilterClause(String colName, Object value)
             {
-                @Deprecated // Use FieldKey version instead.
-                public CompareClause createFilterClause(String colName, Object value)
-                {
-                    return createFilterClause(FieldKey.fromString(colName), value);
-                }
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
 
-                public CompareClause createFilterClause(FieldKey fieldKey, Object value)
-                {
-                    return new DoesNotContainClause(fieldKey, value);
-                }
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new DoesNotContainClause(fieldKey, value);
+            }
 
-                @Override
-                public boolean meetsCriteria(Object value, Object[] filterValues)
-                {
-                    return value == null || value.toString().indexOf((String)filterValues[0]) == -1;
-                }
-            },
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value == null || value.toString().indexOf((String)filterValues[0]) == -1;
+            }
+        },
     DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", true, null, "DOES_NOT_START_WITH", OperatorType.DOESNOTSTARTWITH)
+        {
+            @Deprecated // Use FieldKey version instead.
+            public CompareClause createFilterClause(String colName, Object value)
             {
-                @Deprecated // Use FieldKey version instead.
-                public CompareClause createFilterClause(String colName, Object value)
-                {
-                    return createFilterClause(FieldKey.fromString(colName), value);
-                }
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
 
-                public CompareClause createFilterClause(FieldKey fieldKey, Object value)
-                {
-                    return new DoesNotStartWithClause(fieldKey, value);
-                }
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new DoesNotStartWithClause(fieldKey, value);
+            }
 
-                @Override
-                public boolean meetsCriteria(Object value, Object[] filterValues)
-                {
-                    return value == null || !value.toString().startsWith((String)filterValues[0]);
-                }
-            },
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value == null || !value.toString().startsWith((String)filterValues[0]);
+            }
+        },
     STARTS_WITH("Starts With", "startswith", true, null, "STARTS_WITH", OperatorType.STARTSWITH)
+        {
+            @Deprecated // Use FieldKey version instead.
+            public CompareClause createFilterClause(String colName, Object value)
             {
-                @Deprecated // Use FieldKey version instead.
-                public CompareClause createFilterClause(String colName, Object value)
-                {
-                    return createFilterClause(FieldKey.fromString(colName), value);
-                }
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
 
-                public CompareClause createFilterClause(FieldKey fieldKey, Object value)
-                {
-                    return new StartsWithClause(fieldKey, value);
-                }
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new StartsWithClause(fieldKey, value);
+            }
 
-                @Override
-                public boolean meetsCriteria(Object value, Object[] filterValues)
-                {
-                    return value != null && value.toString().startsWith((String)filterValues[0]);
-                }
-            },
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value != null && value.toString().startsWith((String)filterValues[0]);
+            }
+        },
     IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "IN", OperatorType.IN)
+        {
+            @Deprecated // Use FieldKey version instead.
+            FilterClause createFilterClause(String colName, Object value)
             {
-                @Deprecated // Use FieldKey version instead.
-                FilterClause createFilterClause(String colName, Object value)
-                {
-                    return createFilterClause(FieldKey.fromString(colName), value);
-                }
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
 
-                // Each compare type uses CompareClause by default
-                FilterClause createFilterClause(FieldKey fieldKey, Object value)
+            // Each compare type uses CompareClause by default
+            FilterClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                if (value instanceof Collection)
                 {
-                    if (value instanceof Collection)
+                    return new SimpleFilter.InClause(fieldKey, (Collection<?>)value, false);
+                }
+                else
+                {
+                    List<String> values = new ArrayList<String>();
+                    if (value != null)
                     {
-                        return new SimpleFilter.InClause(fieldKey, (Collection<?>)value, false);
-                    }
-                    else
-                    {
-                        List<String> values = new ArrayList<String>();
-                        if (value != null)
+                        if (value.toString().trim().equals(""))
                         {
-                            if (value.toString().trim().equals(""))
-                            {
-                                values.add(null);
-                            }
-                            else
-                            {
-                                values.addAll(parseParams(value));
-                            }
+                            values.add(null);
                         }
-                        return new SimpleFilter.InClause(fieldKey, values, true);
-                    }
-                }
-
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
-                {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
-                }},
-    NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", true, null, "NOT_IN", OperatorType.NOTIN)
-            {
-                @Deprecated // Use FieldKey version instead.
-                FilterClause createFilterClause(String colName, Object value)
-                {
-                    return createFilterClause(FieldKey.fromString(colName), value);
-                }
-
-                // Each compare type uses CompareClause by default
-                FilterClause createFilterClause(FieldKey fieldKey, Object value)
-                {
-                    if (value instanceof Collection)
-                    {
-                        return new SimpleFilter.InClause(fieldKey, (Collection)value, false, true);
-                    }
-                    else
-                    {
-                        List<String> values = new ArrayList<String>();
-                        if (value != null)
-                        {
-                            if (value.toString().trim().equals(""))
-                            {
-                                values.add(null);
-                            }
-                            else
-                            {
-                                values.addAll(parseParams(value));
-                            }
-                        }
-                        return new SimpleFilter.InClause(fieldKey, values, true, true);
-                    }
-                }
-
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
-                {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
-                }
-            },
-    CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", true, null, "CONTAINS_ONE_OF", OperatorType.CONTAINSONEOF)
-            {
-                @Deprecated // Use FieldKey version instead.
-                FilterClause createFilterClause(String colName, Object value)
-                {
-                    return createFilterClause(FieldKey.fromString(colName), value);
-                }
-
-                // Each compare type uses CompareClause by default
-                FilterClause createFilterClause(FieldKey fieldKey, Object value)
-                {
-                    if (value instanceof Collection)
-                    {
-                        return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false);
-                    }
-                    else
-                    {
-                        List<String> values = new ArrayList<String>();
-                        if (value != null && !value.toString().trim().equals(""))
+                        else
                         {
                             values.addAll(parseParams(value));
                         }
-                        return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
                     }
+                    return new SimpleFilter.InClause(fieldKey, values, true);
                 }
+            }
 
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+            }
+        },
+    NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", true, null, "NOT_IN", OperatorType.NOTIN)
+        {
+            @Deprecated // Use FieldKey version instead.
+            FilterClause createFilterClause(String colName, Object value)
+            {
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            // Each compare type uses CompareClause by default
+            FilterClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                if (value instanceof Collection)
                 {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
-                }},
+                    return new SimpleFilter.InClause(fieldKey, (Collection)value, false, true);
+                }
+                else
+                {
+                    List<String> values = new ArrayList<String>();
+                    if (value != null)
+                    {
+                        if (value.toString().trim().equals(""))
+                        {
+                            values.add(null);
+                        }
+                        else
+                        {
+                            values.addAll(parseParams(value));
+                        }
+                    }
+                    return new SimpleFilter.InClause(fieldKey, values, true, true);
+                }
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+            }
+        },
+    CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", true, null, "CONTAINS_ONE_OF", OperatorType.CONTAINSONEOF)
+        {
+            @Deprecated // Use FieldKey version instead.
+            FilterClause createFilterClause(String colName, Object value)
+            {
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            // Each compare type uses CompareClause by default
+            FilterClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                if (value instanceof Collection)
+                {
+                    return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false);
+                }
+                else
+                {
+                    List<String> values = new ArrayList<String>();
+                    if (value != null && !value.toString().trim().equals(""))
+                    {
+                        values.addAll(parseParams(value));
+                    }
+                    return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
+                }
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
+            }
+        },
     CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", true, null, "CONTAINS_NONE_OF", OperatorType.CONTAINSNONEOF)
+        {
+            @Deprecated // Use FieldKey version instead.
+            FilterClause createFilterClause(String colName, Object value)
             {
-                @Deprecated // Use FieldKey version instead.
-                FilterClause createFilterClause(String colName, Object value)
-                {
-                    return createFilterClause(FieldKey.fromString(colName), value);
-                }
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
 
-                // Each compare type uses CompareClause by default
-                FilterClause createFilterClause(FieldKey fieldKey, Object value)
-                {
-                    if (value instanceof Collection)
-                    {
-                        return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false, true);
-                    }
-                    else
-                    {
-                        Set<String> values = parseParams(value);
-
-                        return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
-                    }
-                }
-
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
-                {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
-                }},
-    HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
-    // TODO: Switch to MV_INDICATOR
+            // Each compare type uses CompareClause by default
+            FilterClause createFilterClause(FieldKey fieldKey, Object value)
             {
-                @Deprecated // Use FieldKey version instead.
-                QcClause createFilterClause(String colName, Object value)
+                if (value instanceof Collection)
                 {
-                    return createFilterClause(FieldKey.fromString(colName), value);
+                    return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false, true);
                 }
+                else
+                {
+                    Set<String> values = parseParams(value);
 
-                @Override
-                QcClause createFilterClause(FieldKey fieldKey, Object value)
-                {
-                    return new QcClause(fieldKey, false);
+                    return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
                 }
+            }
 
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
-                {
-                    throw new UnsupportedOperationException("Conditional formatting not yet supported for QC/MV value indicators");
-                }
-            },
-    NO_QC("Does Not Have A QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
-    // TODO: Switch to MV_INDICATOR
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                @Deprecated // Use FieldKey version instead.
-                QcClause createFilterClause(String colName, Object value)
-                {
-                    return createFilterClause(FieldKey.fromString(colName), value);
-                }
+                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
+            }
+        },
+    HAS_QC("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
+        {
+            @Deprecated // Use FieldKey version instead.
+            QcClause createFilterClause(String colName, Object value)
+            {
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
 
-                @Override
-                QcClause createFilterClause(FieldKey fieldKey, Object value)
-                {
-                    return new QcClause(fieldKey, true);
-                }
+            @Override
+            QcClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new QcClause(fieldKey, false);
+            }
 
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
-                {
-                    throw new UnsupportedOperationException("Conditional formatting not yet supported for QC/MV value indicators");
-                }
-            };
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
+            }
+        },
+    NO_QC("Does Not Have An MV Indicator", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
+        {
+            @Deprecated // Use FieldKey version instead.
+            QcClause createFilterClause(String colName, Object value)
+            {
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            @Override
+            QcClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new QcClause(fieldKey, true);
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
+            }
+        };
 
 
     private String _preferredURLKey;

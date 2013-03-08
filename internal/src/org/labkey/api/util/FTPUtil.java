@@ -70,7 +70,7 @@ public class FTPUtil
     }
 
 
-    // Downloads the specified file to a temporary file
+    // Download the specified file to a temporary file
     public static File downloadFile(String user, String password, String url, String directory, String filename) throws IOException, ServletException
     {
         FTPClient ftp = null;
