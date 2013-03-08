@@ -778,8 +778,14 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
                         _s += offset;
                     }
                 }
-                else
-                    _s = val.search(error.errorStr);
+                else  {
+                    if (RegExp) {
+                        _s = val.search(RegExp.quote(error.errorStr));
+                    }
+                    else {
+                        _s = val.search(error.errorStr);
+                    }
+                }
 
                 // Highlight selected text
                 if (_s >= 0 && error.errorStr) {
