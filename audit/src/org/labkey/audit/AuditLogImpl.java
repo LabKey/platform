@@ -62,17 +62,14 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -86,7 +83,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     private static final Logger _log = Logger.getLogger(AuditLogImpl.class);
     private static final String OBJECT_XML_KEY = "objectXML";
-    private static Map<String, AuditViewFactory> _auditViewFactories = new ConcurrentHashMap<String, AuditViewFactory>();
     private static final Map<String, Boolean> _factoryInitialized = new HashMap<String, Boolean>();
 
     private Queue<Pair<User, AuditLogEvent>> _eventQueue = new LinkedList<Pair<User, AuditLogEvent>>();
@@ -420,29 +416,17 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public void addAuditViewFactory(AuditViewFactory factory)
     {
-        AuditViewFactory previous = _auditViewFactories.put(factory.getEventType(), factory);
-
-        if (null != previous)
-            throw new IllegalStateException("AuditViewFactory \"" + factory.getEventType() + "\" is already registered: "
-                    + previous.getClass().getName() + " vs. " + factory.getClass().getName());
+        AuditLogService.addAuditViewFactory(factory);
     }
 
     public AuditViewFactory getAuditViewFactory(String eventType)
     {
-        return _auditViewFactories.get(eventType);
+        return AuditLogService.getAuditViewFactory(eventType);
     }
 
     public List<AuditViewFactory> getAuditViewFactories()
     {
-        List<AuditViewFactory> factories = new ArrayList<AuditViewFactory>(_auditViewFactories.values());
-
-        Collections.sort(factories, new Comparator<AuditViewFactory>(){
-            public int compare(AuditViewFactory o1, AuditViewFactory o2)
-            {
-                return (o1.getName().compareToIgnoreCase(o2.getName()));
-            }
-        });
-        return Collections.unmodifiableList(factories);
+        return AuditLogService.getAuditViewFactories();
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
