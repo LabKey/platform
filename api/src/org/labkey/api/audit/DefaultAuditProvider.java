@@ -115,16 +115,17 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
 
     public void addAuditViewFactory(AuditLogService.AuditViewFactory factory)
     {
+        AuditLogService.addAuditViewFactory(factory);
     }
 
     public AuditLogService.AuditViewFactory getAuditViewFactory(String eventType)
     {
-        return null;
+        return AuditLogService.getAuditViewFactory(eventType);
     }
 
     public List<AuditLogService.AuditViewFactory> getAuditViewFactories()
     {
-        return Collections.emptyList();
+        return AuditLogService.getAuditViewFactories();
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)

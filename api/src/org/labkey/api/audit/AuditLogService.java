@@ -31,8 +31,12 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -43,6 +47,35 @@ public class AuditLogService
 {
     static private I _instance;
     static private final I _defaultProvider = new DefaultAuditProvider(); 
+    private static Map<String, AuditViewFactory> _auditViewFactories = new ConcurrentHashMap<String, AuditViewFactory>();
+
+    public static void addAuditViewFactory(AuditViewFactory factory)
+    {
+        AuditViewFactory previous = _auditViewFactories.put(factory.getEventType(), factory);
+
+        if (null != previous)
+            throw new IllegalStateException("AuditViewFactory \"" + factory.getEventType() + "\" is already registered: "
+                    + previous.getClass().getName() + " vs. " + factory.getClass().getName());
+    }
+
+    public static AuditViewFactory getAuditViewFactory(String eventType)
+    {
+        return _auditViewFactories.get(eventType);
+    }
+
+    public static List<AuditViewFactory> getAuditViewFactories()
+    {
+        List<AuditViewFactory> factories = new ArrayList<AuditViewFactory>(_auditViewFactories.values());
+
+        Collections.sort(factories, new Comparator<AuditViewFactory>()
+        {
+            public int compare(AuditViewFactory o1, AuditViewFactory o2)
+            {
+                return (o1.getName().compareToIgnoreCase(o2.getName()));
+            }
+        });
+        return Collections.unmodifiableList(factories);
+    }
 
     static public synchronized I get()
     {
