@@ -66,6 +66,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.survey.SurveyUrls;
+import org.labkey.api.survey.model.SurveyStatus;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -592,7 +593,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                             {
                                 survey.setSubmittedBy(getUser().getUserId());
                                 survey.setSubmitted(new Date());
-                                survey.setStatus("Submitted");
+                                survey.setStatus(SurveyStatus.Submitted.name());
                             }
 
                             Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
@@ -609,10 +610,11 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                                 // set the initial status to Pending
                                 if (!form.isSubmitted())
-                                    survey.setStatus("Pending");
+                                    survey.setStatus(SurveyStatus.Pending.name());
                             }
 
-                            survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey, row);
+                            survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
+                            SurveyManager.get().fireUpdateSurveyResponses(getContainer(), getUser(), survey, row);
 
                             response.put("surveyResults", row);
                             response.put("survey", new JSONObject(survey));

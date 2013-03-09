@@ -21,6 +21,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -201,11 +202,6 @@ public class SurveyManager
 
     public Survey saveSurvey(Container container, User user, Survey survey)
     {
-        return saveSurvey(container, user, survey, null);
-    }
-
-    public Survey saveSurvey(Container container, User user, Survey survey, @Nullable Map<String, Object> row)
-    {
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
         List<Throwable> errors;
 
@@ -216,16 +212,18 @@ public class SurveyManager
             table.setAuditBehavior(AuditBehaviorType.DETAILED);
 
             Survey ret;
+            BeanObjectFactory<Survey> objectFactory = new BeanObjectFactory<Survey>(Survey.class);
             if (survey.isNew())
             {
                 survey.beforeInsert(user, container.getId());
                 ret = Table.insert(user, table, survey);
-                errors = fireCreatedSurvey(container, user, ret);
+
+                errors = fireCreatedSurvey(container, user, survey, objectFactory.toMap(ret, null));
             }
             else
             {
                 ret = Table.update(user, table, survey, survey.getRowId());
-                errors = fireUpdateSurvey(container, user, ret, row);
+                errors = fireUpdateSurvey(container, user, ret, objectFactory.toMap(survey, null), objectFactory.toMap(ret, null));
             }
 
             if (!errors.isEmpty())
@@ -282,19 +280,29 @@ public class SurveyManager
         SurveySchema s = SurveySchema.getInstance();
         SqlExecutor executor = new SqlExecutor(s.getSchema());
 
+        SurveyDesign[] surveyDesigns = getSurveyDesigns(c, ContainerFilter.CURRENT);
+
+        for (SurveyDesign design : surveyDesigns)
+            deleteSurveyDesign(c, user, design.getRowId(), true);
+
         Survey[] surveys = getSurveys(c);
 
-        SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
-        deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE Container = ?").add(c);
-        executor.execute(deleteSurveysSql);
+        if (surveys.length > 0)
+        {
+            SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
+            deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE Container = ?").add(c);
+            executor.execute(deleteSurveysSql);
 
-        // invoke any survey listeners to clean up any dependent objects
-        for (Survey survey : surveys)
-            fireDeleteSurvey(c, user, survey);
+            // invoke any survey listeners to clean up any dependent objects
+            for (Survey survey : surveys)
+                fireDeleteSurvey(c, user, survey);
+        }
+/*
 
         SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
         deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE Container = ?").add(c);
         executor.execute(deleteSurveyDesignsSql);
+*/
     }
 
     /**
@@ -409,14 +417,14 @@ public class SurveyManager
         return errors;
     }
 
-    private static List<Throwable> fireUpdateSurvey(Container c, User user, Survey survey, Map<String, Object> row)
+    public List<Throwable> fireUpdateSurvey(Container c, User user, Survey survey, Map<String, Object> oldRow, Map<String, Object> row)
     {
         List<Throwable> errors = new ArrayList<Throwable>();
 
         for (SurveyListener l : _surveyListeners)
         {
             try {
-                l.surveyUpdated(c, user, survey, row);
+                l.surveyUpdated(c, user, survey, oldRow, row);
             }
             catch (Throwable t)
             {
@@ -426,14 +434,31 @@ public class SurveyManager
         return errors;
     }
 
-    private static List<Throwable> fireCreatedSurvey(Container c, User user, Survey survey)
+    public List<Throwable> fireCreatedSurvey(Container c, User user, Survey survey, Map<String, Object> rowData)
     {
         List<Throwable> errors = new ArrayList<Throwable>();
 
         for (SurveyListener l : _surveyListeners)
         {
             try {
-                l.surveyCreated(c, user, survey);
+                l.surveyCreated(c, user, survey, rowData);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
+    public List<Throwable> fireUpdateSurveyResponses(Container c, User user, Survey survey, Map<String, Object> rowData)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (SurveyListener l : _surveyListeners)
+        {
+            try {
+                l.surveyResponsesUpdated(c, user, survey, rowData);
             }
             catch (Throwable t)
             {

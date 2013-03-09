@@ -29,15 +29,21 @@ import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.survey.model.Survey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.survey.SurveyController;
+import org.labkey.survey.SurveyManager;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -122,8 +128,42 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     return SurveyTableDomainKind.getDomainContainer(c);
                 }
             };
-            return new SimpleQueryUpdateService(this, table, helper);
+            return new SurveysTableQueryUpdateService(this, table, helper);
         }
         return null;
+    }
+
+    private static class SurveysTableQueryUpdateService extends SimpleQueryUpdateService
+    {
+        public SurveysTableQueryUpdateService(SimpleUserSchema.SimpleTable queryTable, TableInfo dbTable, DomainUpdateHelper helper)
+        {
+            super(queryTable, dbTable, helper);
+        }
+
+        @Override
+        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
+        {
+            Map<String, Object> ret = super._insert(user, c, row);
+
+            if (ret.containsKey("rowId"))
+            {
+                Survey survey = SurveyManager.get().getSurvey(c, user, (Integer)ret.get("rowId"));
+                if (survey != null)
+                    SurveyManager.get().fireCreatedSurvey(c, user, survey, ret);
+            }
+            return ret;
+        }
+
+        @Override
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        {
+            Map<String, Object> ret = super._update(user, c, row, oldRow, keys);
+
+            Survey survey = SurveyManager.get().getSurvey(c, user, (Integer)keys[0]);
+            if (survey != null)
+                SurveyManager.get().fireUpdateSurvey(c, user, survey, oldRow, ret);
+
+            return ret;
+        }
     }
 }
