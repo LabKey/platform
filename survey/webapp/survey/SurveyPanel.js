@@ -391,6 +391,14 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             style: "text-align: center;"
         });
 
+        this.doneBtn = Ext4.create('Ext.button.Button', {
+            text: 'Done',
+            width: 175,
+            height: 30,
+            handler: function() { this.leavePage(); },
+            scope: this
+        });
+
         // the set of buttons and text on the end survey page changes based on whether or not the survey was submitted
         // and whether or not the user can edit a submitted survey (i.e. is project/site admin)
         var items = [{
@@ -398,7 +406,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             layout: {type: 'vbox', align: 'center'},
             items: this.canEdit
                     ? [this.updateSubmittedInfo, this.saveBtn, this.saveDisabledInfo, this.autosaveInfo]
-                    : [this.updateSubmittedInfo]
+                    : [this.updateSubmittedInfo, this.doneBtn]
         }];
         if (this.canEdit && !this.isSubmitted)
         {
@@ -411,7 +419,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         }
 
         this.sections.push(Ext4.create('Ext.panel.Panel', {
-            title: 'Save / Submit',
+            title: this.canEdit ? 'Save / Submit' : 'Done',
             isDisabled: false,
             layout: {
                 type: 'hbox',
@@ -507,11 +515,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         msgBox.show();
                         this.closeMsgBox = new Ext4.util.DelayedTask(function(){
                             msgBox.hide();
-
-                            if (this.returnURL)
-                                window.location = this.returnURL;
-                            else
-                                window.history.back();
+                            this.leavePage();
                         }, this);
                         this.closeMsgBox.delay(2500);
 
@@ -602,6 +606,13 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         if (this.isSurveyDirty() && this.down('.textfield[itemId=surveyLabel]').isValid())
             this.toggleSaveBtn(true, false);
+    },
+
+    leavePage : function() {
+        if (this.returnURL)
+            window.location = this.returnURL;
+        else
+            window.history.back();
     },
 
     saveSurveyAttachments : function() {
