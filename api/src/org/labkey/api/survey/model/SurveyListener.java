@@ -29,6 +29,31 @@ import java.util.Map;
 public interface SurveyListener
 {
     void surveyDeleted(Container c, User user, Survey survey) throws Exception;
-    void surveyCreated(Container c, User user, Survey survey) throws Exception;
-    void surveyUpdated(Container c, User user, Survey survey, @Nullable Map<String, Object> rowData) throws Exception;
+
+    /**
+     * Invoked when a survey is created
+     *
+     * @param rowData the data representing the new survey
+     * @throws Exception
+     */
+    void surveyCreated(Container c, User user, Survey survey, Map<String, Object> rowData) throws Exception;
+
+    /**
+     * Invoked when a survey is updated
+     *
+     * @param oldRow the row data before the update
+     * @param rowData the row data after the update
+     * @throws Exception
+     */
+    void surveyUpdated(Container c, User user, Survey survey, @Nullable Map<String, Object> oldRow, Map<String, Object> rowData) throws Exception;
+
+    /**
+     * Invoked when the responses associated with the specified survey are changed.
+     * @param c
+     * @param user
+     * @param survey
+     * @param rowData the reponses (survey answers) that have been modified.
+     * @throws Exception
+     */
+    void surveyResponsesUpdated(Container c, User user, Survey survey, Map<String, Object> rowData) throws Exception;
 }
