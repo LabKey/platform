@@ -32,20 +32,20 @@ import java.util.List;
  */
 public class StringUtilsLabKey
 {
-    // Finds the longest common prefix of the passed in string collection.  In other words, the longest string (prefix)
-    // such that, for all s in strings, s.startsWith(prefix).  An empty collection returns the empty string and a single
-    // element collection returns that string.
+    // Finds the longest common prefix present in all elements of the passed in string collection. In other words,
+    // the longest string (prefix) such that, for all s in strings, s.startsWith(prefix). An empty collection returns
+    // the empty string and a single element collection returns that string.
     public static String findCommonPrefix(@NotNull Collection<String> strings)
     {
         if (strings.isEmpty())
             return "";
 
         List<String> list = new ArrayList<String>(strings);
-        Collections.sort(list);
 
         if (strings.size() == 1)
             return list.get(0);
 
+        Collections.sort(list);
         String first = list.get(0);
         String last = list.get(list.size() - 1);
         int i = 0;
@@ -147,6 +147,33 @@ public class StringUtilsLabKey
     public static class TestCase extends Assert
     {
         @Test
+        public void testFindCommonPrefix()
+        {
+            assertEquals("", findCommonPrefix(Collections.<String>emptySet()));
+            assertEquals("", findCommonPrefix(PageFlowUtil.set("")));
+            assertEquals("abcdefghijklmnopqrstuvwxyz", findCommonPrefix(PageFlowUtil.set("abcdefghijklmnopqrstuvwxyz")));
+            assertEquals("abc", findCommonPrefix(PageFlowUtil.set("abcdefghijklmnop", "abcxyz", "abcdefg")));
+            assertEquals("xyz", findCommonPrefix(PageFlowUtil.set("xyzabc", "xyzasdfj", "xyzafjf", "xyzpqr")));
+        }
+
+        @Test
+        public void testContainsUpperCase()
+        {
+            assertTrue(containsUpperCase("ABC"));
+            assertTrue(containsUpperCase("Abc"));
+            assertTrue(containsUpperCase("abC"));
+            assertTrue(containsUpperCase("aBc"));
+            assertTrue(containsUpperCase("abcdefghijklmnopqrstuvwxyZ"));
+            assertTrue(containsUpperCase("123908565938293487A120394902348"));
+            assertTrue(containsUpperCase("A230948092830498"));
+            assertFalse(containsUpperCase("123409523987"));
+            assertFalse(containsUpperCase("abcdefghijklmnoopqrstuvwxyz"));
+            assertFalse(containsUpperCase("!@#$%^&*^)"));
+            assertFalse(containsUpperCase("xyz"));
+            assertFalse(containsUpperCase("abc"));
+        }
+
+        @Test
         public void testIsText()
         {
             assertTrue(isText("this is a test\n\r"));
@@ -157,6 +184,22 @@ public class StringUtilsLabKey
             assertTrue(isText("\u00c0t\u00e9"));
 //            assertFalse(isText("\ufffe"));
 //            assertFalse(isText("\ufeff"));
+        }
+
+        @Test
+        public void testPluralize()
+        {
+            assertEquals("-1 wombats", pluralize(-1, "wombat"));
+            assertEquals("0 wombats", pluralize(0, "wombat"));
+            assertEquals("1 wombat", pluralize(1, "wombat"));
+            assertEquals("2 wombats", pluralize(2, "wombat"));
+            assertEquals("27 wombats", pluralize(27, "wombat"));
+
+            assertEquals("-1 octopi", pluralize(-1, "octopus", "octopi"));
+            assertEquals("0 octopi", pluralize(0, "octopus", "octopi"));
+            assertEquals("1 octopus", pluralize(1, "octopus", "octopi"));
+            assertEquals("2 octopi", pluralize(2, "octopus", "octopi"));
+            assertEquals("27 octopi", pluralize(27, "octopus", "octopi"));
         }
     }
 }
