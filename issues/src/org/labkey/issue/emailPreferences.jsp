@@ -34,19 +34,7 @@
     String message = bean.getMessage();
     int issueId = bean.getIssueId();
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(context.getContainer());
-    String indefArticle;
-    switch(names.singularName.toLowerCase().charAt(0))
-    {
-        case 'a':
-        case 'e':
-        case 'i':
-        case 'o':
-        case 'u':
-            indefArticle = "an";
-            break;
-        default:
-            indefArticle = "a";
-    }
+    String indefArticle = names.getIndefiniteSingularArticle();
 
     if (message != null)
     {
@@ -72,7 +60,7 @@
     Send me email when any <%=h(names.singularName)%> is created or modified<br>
     <hr/>
     <input type="checkbox" value="8" name="emailPreference"<%=checked((emailPrefs & IssueManager.NOTIFY_SELF_SPAM) != 0)%>>
-    Send me email notifications when I enter/edit <%=h(indefArticle)%> <%=h(names.singularName)%><br>
+    Send me email notifications when I create or modify <%=h(indefArticle)%> <%=h(names.singularName)%><br>
     <br>
     <%=generateSubmitButton("Update")%><%
     if (issueId > 0)

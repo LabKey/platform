@@ -611,7 +611,7 @@ public class IssueManager
         {
             if (singularName.length() == 0)
                 return "";
-            char first = singularName.toLowerCase().charAt(0);
+            char first = Character.toLowerCase(singularName.charAt(0));
             if (first == 'a' || first == 'e' || first == 'i' || first == 'o' || first == 'u')
                 return "an";
             else
