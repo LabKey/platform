@@ -560,7 +560,10 @@ public class Table
         {
             return;
         }
-        else if (sql.getSQL().startsWith("INSERT") && SqlDialect.isConstraintException(e))
+
+        String trim = sql.getSQL().trim();
+
+        if (SqlDialect.isConstraintException(e) && (StringUtils.startsWithIgnoreCase(trim, "INSERT") || StringUtils.startsWithIgnoreCase(trim, "UPDATE")))
         {
             if (Level.WARN.isGreaterOrEqual(logLevel))
             {
@@ -914,11 +917,11 @@ public class Table
 
     public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals) throws SQLException
     {
-        return update(user, table, fieldsIn, pkVals, null);
+        return update(user, table, fieldsIn, pkVals, null, Level.WARN);
     }
 
 
-    public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter) throws SQLException
+    public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter, Level level) throws SQLException
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
         assert null != pkVals;
@@ -1041,7 +1044,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            logException(updateSQL, conn, e, Level.WARN);
+            logException(updateSQL, conn, e, level);
             throw(e);
         }
 

@@ -15,10 +15,16 @@
  */
 package org.labkey.api.data;
 
+import org.apache.log4j.Level;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.security.User;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +42,7 @@ public class AtomicDatabaseInteger
     private final Container _container;
     private final Object _rowId;
 
-    // Acts like an AtomicInteger, but uses the database for synchronization.  This is convenient for scenarios where
+    // Acts like an AtomicInteger, but uses the database for synchronization. This is convenient for scenarios where
     // multiple threads (eventually, even different servers) might attempt an update but only one should succeed.
     // Currently only implements compareAndSet(), but could add other methods from AtomicInteger.
     public AtomicDatabaseInteger(ColumnInfo targetColumn, User user, @Nullable Container container, Object rowId)
@@ -56,7 +62,7 @@ public class AtomicDatabaseInteger
         _rowId = rowId;
     }
 
-    // Atomically sets the value to the given updated value if the current value == the expected value.
+    // Atomically sets the value to the given update value if the current value == the expected value.
     public boolean compareAndSet(int expect, int update) throws SQLException
     {
         String targetColumnName = _targetColumn.getSelectName();
@@ -70,13 +76,116 @@ public class AtomicDatabaseInteger
 
         try
         {
-            Map<String, Object> out = Table.update(_user, _table, in, _rowId, filter);
+            // Optimistic concurrency exceptions are possible... don't log them as errors
+            Map<String, Object> out = Table.update(_user, _table, in, _rowId, filter, Level.ERROR);
             assert update == (Integer)out.get(targetColumnName);
             return true;
         }
         catch (Table.OptimisticConflictException e)
         {
             return false;
+        }
+    }
+
+    // Experimental... could use this technique for auto-increment row ids, issue ids, workbook ids, etc.
+    // TODO: Verify that the default transaction isolation levels for each database will work appropriately here (and
+    // verify assumptions via multi-thread, multi-transaction junit test).
+    public int incrementAndGet() throws SQLException
+    {
+        for (;;)
+        {
+            int current = get();
+            int next = current + 1;
+            if (compareAndSet(current, next))
+                return next;
+        }
+    }
+
+    // Experimental... see comment above.
+    public final int decrementAndGet() throws SQLException
+    {
+        for (;;)
+        {
+            int current = get();
+            int next = current - 1;
+            if (compareAndSet(current, next))
+                return next;
+        }
+    }
+
+    // Experimental... see comment above.
+    public final int addAndGet(int delta) throws SQLException
+    {
+        for (;;)
+        {
+            int current = get();
+            int next = current + delta;
+            if (compareAndSet(current, next))
+                return next;
+        }
+    }
+
+    public int get()
+    {
+        SimpleFilter filter = (null != _container ? new SimpleFilter("Container", _container) : null);
+        Integer currentValue = new TableSelector(_targetColumn, filter, null).getObject(_rowId, Integer.class);
+
+        if (null == currentValue)
+            throw new IllegalStateException("Can't find row " + _rowId);
+
+        return currentValue;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testBasics() throws SQLException
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            TableInfo table = TestSchema.getInstance().getTableInfoTestTable();
+
+            Map<String, Object> map = new HashMap<String, Object>();
+            map.put("Container", c);
+            map.put("IntNotNull", 0);
+            map.put("DateTimeNotNull", new Date());
+            map.put("BitNotNull", true);
+
+            Integer rowId = null;
+
+            try
+            {
+                map = Table.insert(user, table, map);
+
+                rowId = (Integer)map.get("RowId");
+                AtomicDatabaseInteger adi = new AtomicDatabaseInteger(table.getColumn("IntNotNull"), user, c, rowId);
+
+                assertEquals(0, adi.get());
+
+                assertTrue(adi.compareAndSet(0, 4));
+                assertTrue(adi.compareAndSet(4, 2));
+                assertFalse(adi.compareAndSet(0, 3));
+                assertFalse(adi.compareAndSet(3, 2));
+
+                assertEquals(3, adi.incrementAndGet());
+                assertEquals(4, adi.incrementAndGet());
+                assertEquals(5, adi.incrementAndGet());
+                assertEquals(4, adi.decrementAndGet());
+                assertEquals(5, adi.incrementAndGet());
+                assertEquals(6, adi.incrementAndGet());
+
+                assertEquals(6, adi.addAndGet(0));
+                assertEquals(12, adi.addAndGet(6));
+                assertEquals(24, adi.addAndGet(12));
+                assertEquals(14, adi.addAndGet(-10));
+                assertEquals(-4, adi.addAndGet(-18));
+                assertEquals(0, adi.addAndGet(4));
+            }
+            finally
+            {
+                if (null != rowId)
+                    Table.delete(table, rowId);
+            }
         }
     }
 }

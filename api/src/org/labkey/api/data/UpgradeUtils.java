@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
@@ -152,7 +153,7 @@ public class UpgradeUtils
                 for (String pkName : table.getPkColumnNames())
                     pkVals.add(map.get(pkName));
 
-                Table.update(null, table, PageFlowUtil.map(columnName, value), pkVals.toArray(), filter);
+                Table.update(null, table, PageFlowUtil.map(columnName, value), pkVals.toArray(), filter, Level.WARN);
             }
 
             newValues.add(value);

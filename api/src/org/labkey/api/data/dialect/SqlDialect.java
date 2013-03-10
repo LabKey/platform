@@ -275,6 +275,8 @@ public abstract class SqlDialect
 
     public static boolean isConstraintException(SQLException x)
     {
+        if (x instanceof Table.OptimisticConflictException)
+            return true;
         String sqlState = x.getSQLState();
         if (null == sqlState || !sqlState.startsWith("23"))
             return false;
