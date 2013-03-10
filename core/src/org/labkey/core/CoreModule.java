@@ -664,7 +664,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 PortalJUnitTest.class,
                 ContainerDisplayColumn.TestCase.class,
                 SimpleFilter.InClauseTestCase.class,
-                AliasManager.TestCase.class
+                AliasManager.TestCase.class,
+                AtomicDatabaseInteger.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 
