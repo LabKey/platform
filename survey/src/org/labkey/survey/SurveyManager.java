@@ -262,6 +262,16 @@ public class SurveyManager
         return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
     }
 
+    public SurveyDesign[] getSurveyDesigns(SimpleFilter filter)
+    {
+        TableInfo table = SurveySchema.getInstance().getSurveyDesignsTable();
+        DbSchema schema = SurveySchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "sd");
+        sql.append(" " + filter.getSQLFragment(table.getSqlDialect()));
+
+        return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
+    }
+
     public Survey getSurvey(Container container, User user, int rowId)
     {
         SimpleFilter filter = new SimpleFilter();

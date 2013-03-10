@@ -17,6 +17,7 @@ package org.labkey.survey.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.survey.SurveyService;
 import org.labkey.api.survey.model.Survey;
@@ -46,6 +47,12 @@ public class SurveyServiceImpl implements SurveyService.Interface
     public SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter)
     {
         return SurveyManager.get().getSurveyDesigns(container, filter);
+    }
+
+    @Override
+    public SurveyDesign[] getSurveyDesigns(SimpleFilter filter)
+    {
+        return SurveyManager.get().getSurveyDesigns(filter);
     }
 
     @Override
