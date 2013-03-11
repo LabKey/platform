@@ -69,7 +69,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 12.31;
+        return 12.32;
     }
 
     public boolean hasScripts()
@@ -163,6 +163,12 @@ public class SearchModule extends DefaultModule
     public void afterUpdate(ModuleContext moduleContext)
     {
         super.afterUpdate(moduleContext);
+
+        if (!moduleContext.isNewInstall() && moduleContext.getInstalledVersion() < 12.32)
+        {
+            SearchService ss = ServiceRegistry.get(SearchService.class);
+            ss.clear();
+        }
 
         // we want to clear the last indexed time on all documents so that failed attempts can be tried again
         final StartupListener l = new StartupListener()
