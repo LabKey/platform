@@ -126,6 +126,7 @@ public class DefaultAssayParser implements AssayParser
         try
         {
             String sb = readRawFile(context);
+            context.getErrors().confirmNoErrors();
             TabLoader loader = getTabLoader(sb);
             configureColumns(propertyNameToDescriptor, loader);
             List<Map<String, Object>> rows = loader.load();
@@ -330,6 +331,13 @@ public class DefaultAssayParser implements AssayParser
      */
     protected List<Map<String, Object>> processRowsFromJson(List<Map<String, Object>> rows, ImportContext context)
     {
+        ListIterator<Map<String, Object>> rowsIter = rows.listIterator();
+        while (rowsIter.hasNext())
+        {
+            Map<String, Object> row = rowsIter.next();
+            appendPromotedResultFields(row, context);
+        }
+
         return rows;
     }
 

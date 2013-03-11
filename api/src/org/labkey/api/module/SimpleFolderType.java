@@ -160,11 +160,14 @@ public class SimpleFolderType extends MultiPortalFolderType
         ArrayList<FolderTab> tabs = new ArrayList<FolderTab>();
         Set<String> tabNames = new CaseInsensitiveHashSet();
 
+        int idx = 0;
         for (FolderTabDocument.FolderTab tab : references)
         {
             if (tabNames.add(tab.getName()))
             {
-                FolderTab newTab = new SimpleFolderTab(tab);
+                FolderTab newTab = new SimpleFolderTab(tab, idx);
+                idx++;
+
                 if (newTab.getTabType() == FolderTab.TAB_TYPE.Container)
                     _hasContainerTabs = true;
 

@@ -61,9 +61,11 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         super(name, caption);
     }
 
-    public SimpleFolderTab(FolderTabDocument.FolderTab tab)
+    public SimpleFolderTab(FolderTabDocument.FolderTab tab, int defaultIndex)
     {
         super(tab.getName(), tab.getCaption());
+
+        _defaultIndex = defaultIndex;
 
         //initialize from XML:
         String tabTypeString = StringUtils.trimToNull(tab.getTabType());

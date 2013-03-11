@@ -52,7 +52,7 @@ import java.util.*;
 /**
  * Used for simple, entirely file-based modules
  */
-public class SimpleModule extends SpringModule implements ContainerManager.ContainerListener
+public class SimpleModule extends SpringModule
 {
     private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
 
@@ -182,6 +182,12 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
+        registerSchemas();
+        ContainerManager.addContainerListener(new SimpleModuleContainerListener(this));
+    }
+
+    protected void registerSchemas()
+    {
         for (final String schemaName : getSchemaNames())
         {
             final DbSchema dbschema = DbSchema.get(schemaName);
@@ -198,9 +204,7 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
                 }
             });
         }
-        ContainerManager.addContainerListener(this);
     }
-
     protected String getResourcePath()
     {
         return null;
@@ -209,83 +213,5 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     public ActionURL getTabURL(Container c, User user)
     {
         return SimpleController.getBeginViewUrl(this, c);
-    }
-
-    public void containerCreated(Container c, User user)
-    {
-    }
-
-    public void containerDeleted(Container c, User user)
-    {
-        for (final String schemaName : getSchemaNames())
-        {
-            purgeSchema(schemaName, c, user);
-        }
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {        
-    }
-
-    private void purgeSchema(String schemaName, Container c, User user)
-    {
-        UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
-        if (schema == null)
-        {
-            return;
-        }
-        
-        try
-        {
-            List<TableInfo> sorted = schema.getSortedTables();
-            Collections.reverse(sorted);
-            for (TableInfo table : sorted)
-            {
-                ColumnInfo containerCol = null;
-                for (ColumnInfo column : table.getColumns())
-                {
-                    if ("container".equalsIgnoreCase(column.getName()))
-                    {
-                        containerCol = column;
-                        break;
-                    }
-                }
-
-                if (containerCol != null)
-                    purgeTable(table, c, user);
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
-    private void purgeTable(TableInfo table, Container c, User u)
-            throws SQLException
-    {
-        if (table instanceof FilteredTable)
-        {
-            SimpleFilter filter = new SimpleFilter("Container", c);
-            TableInfo realTable = ((FilteredTable)table).getRealTable();
-            if (realTable.getTableType() == DatabaseTableType.TABLE)
-            {
-                Table.delete(realTable, filter);
-            }
-        }
-        
-        Domain domain = table.getDomain();
-        if (domain != null)
-        {
-            SQLFragment objectIds = domain.getDomainKind().sqlObjectIdsInDomain(domain);
-
-            Integer[] ids = new SqlSelector(table.getSchema(), objectIds).getArray(int.class);
-            OntologyManager.deleteOntologyObjects(c, true, ArrayUtils.toPrimitive(ids));
-        }
-    }
-
-    public void propertyChange(PropertyChangeEvent evt)
-    {
     }
 }

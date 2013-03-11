@@ -92,4 +92,5 @@ abstract public class EHRService
         }
     }
 
+    abstract public void registerHistoryDataSource(HistoryDataSource source);
 }

@@ -62,6 +62,8 @@ public interface ContainerContext
                 return (Container)o;
             if (o instanceof String)
                 return ContainerManager.getForId((String)o);
+            if (o instanceof Integer)
+                return ContainerManager.getForRowId((Integer)o);
             return null;
         }
 

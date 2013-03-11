@@ -322,6 +322,7 @@ LABKEY.Utils.convertToExcel(
          * @param {String} config.fileNamePrefix name to suggest to the browser for saving the file. The appropriate extension (either ".txt" or ".csv", will be appended based on the delim character used (see below).  Defaults to 'Export'
          * @param {String} config.delim The separator between fields.  Allowable values are 'COMMA' or 'TAB'.
          * @param {String} config.quoteChar The character that will be used to quote each field.  Allowable values are 'DOUBLE' (ie. double-quote character), 'SINLGE' (ie. single-quote character) or 'NONE' (ie. no character used).  Defaults to none.
+         * @param {String} config.newlineChar The character that will be used to separate each line.  Defaults to '\n'
          * @param {String} config.rows array of rows, which are arrays with values for each cell.
          * @example &lt;script type="text/javascript"&gt;
 LABKEY.Utils.convertToTable(

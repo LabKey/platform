@@ -121,6 +121,7 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         JSONObject batchMeta = new JSONObject();
         JSONObject importMethod = new JSONObject();
         importMethod.put("getInitialValue", "function(panel){if(panel.selectedMethod) {return panel.selectedMethod.name;}}");
+        importMethod.put("hidden", true);
         batchMeta.put("importMethod", importMethod);
         meta.put("Batch", batchMeta);
 

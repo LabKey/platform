@@ -346,7 +346,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
-        QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, result);
+        if (!isBulkLoad())
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, result);
 
         return result;
     }
@@ -473,7 +474,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
 
-        QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.UPDATE, oldRows, result);
+        if (!isBulkLoad())
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.UPDATE, oldRows, result);
 
         return result;
     }
@@ -522,7 +524,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
-        QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE, result);
+
+        if (!isBulkLoad())
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE, result);
 
         return result;
     }
