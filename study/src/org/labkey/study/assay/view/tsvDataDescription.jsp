@@ -23,29 +23,33 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.data.ColumnRenderProperties" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm bean = me.getModelBean();
 %>
-
-<strong>Expected Data Fields</strong>
-<table class="labkey-show-borders" cellpadding="3" cellspacing="0">
+<div id="showExpectedDataFieldsDiv"><%= textLink("Show Expected Data Fields", (URLHelper)null, "document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;", "showExpectedDataFieldsLink") %></div>
+<div id="expectedDataFields" style="display: none">
+    <strong>Expected Data Fields</strong>
+    <table class="labkey-show-borders" cellpadding="3" cellspacing="0">
+        <tr>
+            <td><strong>Name</strong></td>
+            <td><strong>Type</strong></td>
+            <td><strong>Required</strong></td>
+            <td><strong>Description</strong></td>
+        </tr>
+    <%
+    for (DomainProperty pd : bean.getRunDataProperties()) { %>
     <tr>
-        <td><strong>Name</strong></td>
-        <td><strong>Type</strong></td>
-        <td><strong>Required</strong></td>
-        <td><strong>Description</strong></td>
-    </tr>
-<%
-for (DomainProperty pd : bean.getRunDataProperties()) { %>
-<tr>
-    <td><%= h(pd.getName()) %></td>
-    <td><%= h(ColumnRenderProperties.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())) %></td>
-    <td><%= text(pd.isRequired() ? "yes" : "no") %></td>
-    <td><%=h(pd.getDescription())%></td></tr>
-<% } %>
-</table>
+        <td><%= h(pd.getName()) %></td>
+        <td><%= h(ColumnRenderProperties.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())) %></td>
+        <td><%= text(pd.isRequired() ? "yes" : "no") %></td>
+        <td><%=h(pd.getDescription())%></td></tr>
+    <% } %>
+    </table>
+</div>
 <% if (PipelineDataCollector.getFileQueue(bean).isEmpty())
 { %>
     <%= textLink("download spreadsheet template",

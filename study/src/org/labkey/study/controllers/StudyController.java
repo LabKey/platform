@@ -2397,7 +2397,12 @@ public class StudyController extends BaseStudyController
                 Map<String,Object>[] data = StudyService.get().getDatasetRows(getUser(), getContainer(), form.getDatasetId(), allLsids);
                 for (Map<String,Object> row : data)
                 {
-                    sourceLsid2datasetLsid.put(row.get("sourcelsid").toString(), row.get("lsid").toString());
+                    Object sourceLSID = row.get("sourcelsid");
+                    Object lsid = row.get("lsid");
+                    if (sourceLSID != null && lsid != null)
+                    {
+                        sourceLsid2datasetLsid.put(sourceLSID.toString(), lsid.toString());
+                    }
                 }
             }
 

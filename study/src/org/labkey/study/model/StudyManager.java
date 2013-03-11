@@ -453,7 +453,6 @@ public class StudyManager
 
     public void createDataSetDefinition(User user, Container container, int dataSetId) throws SQLException
     {
-        String name = Integer.toString(dataSetId);
         createDataSetDefinition(user, new DataSetDefinition(getStudy(container), dataSetId));
     }
 
@@ -469,6 +468,10 @@ public class StudyManager
 
             ensureViewCategory(user, dataSetDefinition);
             _datasetHelper.create(user, dataSetDefinition);
+            // This method call has the side effect of ensuring that we have a domain. If we don't create it here,
+            // we're open to a race condition if another thread tries to do something with the dataset's table
+            // and ends up attempting to create the domain as well
+            dataSetDefinition.getStorageTableInfo();
 
             scope.commitTransaction();
             indexDataset(null, dataSetDefinition);
@@ -2839,13 +2842,6 @@ public class StudyManager
                 p.setRequired(ipd.pd.isRequired());
                 p.setDescription(ipd.pd.getDescription());
             }
-        }
-
-        // Temporary logging to help track down failure on TeamCity with uq_domaindescriptor constraint violation
-        for (Map.Entry<String, Domain> entry : domainsMap.entrySet())
-        {
-            boolean same = entry.getKey().equals(entry.getValue().getTypeURI());
-            _log.info("About to insert dataset domain entry. Matching: " + same + " (" + entry.getKey() + ", " + entry.getValue().getTypeURI() + ")");
         }
 
         for (Domain d : domainsMap.values())
