@@ -1485,7 +1485,7 @@ public class PageFlowUtil
 
     public static String textLink(String text, URLHelper url, String id)
     {
-        return textLink(text, url.getLocalURIString(), null, id);
+        return textLink(text, url == null ? null : url.getLocalURIString(), null, id);
     }
 
     public static String helpPopup(String title, String helpText)

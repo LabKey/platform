@@ -52,23 +52,6 @@ LABKEY.Utils = new function()
         LABKEY.Utils.displayAjaxErrorResponse(arg, e);
     }
 
-    function mapQueryParameters(store, options)
-    {
-        // map all parameters from ext names to labkey names:
-        for (var param in options)
-        {
-            if (_extParamMapping[param])
-                options[_extParamMapping[param]] = options[param];
-        }
-
-        // fix up any necessary parameter values:
-        if ("DESC" == options['query.sortdir'])
-        {
-            var sortCol = options['query.sort'];
-            options['query.sort'] = "-" + sortCol;
-        }
-    }
-
     function isObject(v)
     {
         return typeof v == "object" && Object.prototype.toString.call(v) === '[object Object]';

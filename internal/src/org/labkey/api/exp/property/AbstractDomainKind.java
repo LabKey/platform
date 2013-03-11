@@ -161,10 +161,11 @@ public abstract class AbstractDomainKind extends DomainKind
                 totalRowCountSQL = new SQLFragment("SELECT COUNT(*) AS value FROM " + getStorageSchemaName() + "." + table);
                 nonBlankRowCountSQL = new SQLFragment("SELECT COUNT(*) AS value FROM " + getStorageSchemaName() + "." + table + " x WHERE ");
                 SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-                nonBlankRowCountSQL.append("x." + dialect.makeLegalIdentifier(prop.getName()) + " IS NOT NULL");
+                // Issue 17183 - Postgres uses lower case column names when quoting is required
+                nonBlankRowCountSQL.append("x." + dialect.makeLegalIdentifier(prop.getName().toLowerCase()) + " IS NOT NULL");
                 if (prop.isMvEnabled())
                 {
-                    nonBlankRowCountSQL.append(" OR x." + dialect.makeLegalIdentifier(PropertyStorageSpec.getMvIndicatorColumnName(prop.getName())) + " IS NOT NULL");
+                    nonBlankRowCountSQL.append(" OR x." + dialect.makeLegalIdentifier(PropertyStorageSpec.getMvIndicatorColumnName(prop.getName()).toLowerCase()) + " IS NOT NULL");
                 }
             }
             else
