@@ -1652,6 +1652,7 @@ public class ExperimentController extends SpringActionController
                 TSVWriter.QUOTE quoteType = (rootObject.getString("quoteChar") != null ? TSVWriter.QUOTE.valueOf(rootObject.getString("quoteChar")) : TSVWriter.QUOTE.NONE);
                 String filenamePrefix = (rootObject.getString("fileNamePrefix") != null ? rootObject.getString("fileNamePrefix") : "Export" );
                 String filename = filenamePrefix + "." + delimType.extension;
+                String newlineChar = rootObject.getString("newlineChar") != null ? rootObject.getString("newlineChar") : "\n";
 
                 String exportAsWebPage = StringUtils.trimToNull(rootObject.getString("exportAsWebPage"));
                 if(exportAsWebPage != null && !"false".equalsIgnoreCase(exportAsWebPage))
@@ -1665,7 +1666,7 @@ public class ExperimentController extends SpringActionController
                 }
 
                 //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
-                CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar);
+                CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar, newlineChar);
                 for (int i=0; i < rowsArray.length(); i++)
                 {
                     Object[] oa = ((JSONArray)rowsArray.get(i)).toArray();
