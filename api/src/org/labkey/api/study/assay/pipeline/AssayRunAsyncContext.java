@@ -37,6 +37,7 @@ import org.labkey.api.view.ActionURL;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -48,7 +49,7 @@ import java.util.Set;
  * User: jeckels
  * Date: Feb 13, 2012
  */
-public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements AssayRunUploadContext<ProviderType>
+public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements AssayRunUploadContext<ProviderType>, Serializable
 {
     // Store the RowIds, etc of objects so that we can safely serialize and deserialize them
     private int _userId;
