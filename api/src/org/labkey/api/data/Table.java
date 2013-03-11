@@ -554,7 +554,7 @@ public class Table
 
 
     // Standard SQLException catch block: log exception, query SQL, and params
-    static void logException(SQLFragment sql, Connection conn, SQLException e, Level logLevel)
+    static void logException(SQLFragment sql, @Nullable Connection conn, SQLException e, Level logLevel)
     {
         if (SqlDialect.isCancelException(e))
         {
@@ -1021,16 +1021,11 @@ public class Table
                 "SET " + setSQL + "\n\t" +
                 whereSQL);
 
-        DbSchema schema = table.getSchema();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-
         updateSQL.addAll(parametersSet);
         updateSQL.addAll(parametersWhere);
 
         try
         {
-            conn = schema.getScope().getConnection();
             int count = new SqlExecutor(table.getSchema()).execute(updateSQL);
 
             // check for concurrency problem
@@ -1042,15 +1037,10 @@ public class Table
             _copyUpdateSpecialFields(table, fieldsIn, fields);
             notifyTableUpdate(table);
         }
-        catch(SQLException e)
+        catch(OptimisticConflictException e)
         {
-            logException(updateSQL, conn, e, level);
+            logException(updateSQL, null, e, level);
             throw(e);
-        }
-
-        finally
-        {
-            doClose(null, stmt, conn, schema.getScope());
         }
 
         return (fieldsIn instanceof Map && !(fieldsIn instanceof BoundMap)) ? (K)fields : fieldsIn;
@@ -1257,7 +1247,7 @@ public class Table
     }
 
 
-    private static void _logQuery(Level level, SQLFragment sqlFragment, Connection conn)
+    private static void _logQuery(Level level, SQLFragment sqlFragment, @Nullable Connection conn)
     {
         if (!_log.isEnabledFor(level))
             return;

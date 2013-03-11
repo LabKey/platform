@@ -62,6 +62,23 @@ public class AtomicDatabaseInteger
         _rowId = rowId;
     }
 
+    // TODO: Need to explicitly pass in a Connection (in both get() and compareAndSet()) that is NOT involved in the
+    // current thread's transaction; this will protect against race conditions between transactions and issues with
+    // rollbacks. This also allows us to mimic the behavior of database sequences (e.g., incrementing a sequence
+    // inside a transaction always survives a rollback), which is one of the possible use cases.
+
+    // Get the current value
+    public int get()
+    {
+        SimpleFilter filter = (null != _container ? new SimpleFilter("Container", _container) : null);
+        Integer currentValue = new TableSelector(_targetColumn, filter, null).getObject(_rowId, Integer.class);
+
+        if (null == currentValue)
+            throw new IllegalStateException("Can't find row " + _rowId);
+
+        return currentValue;
+    }
+
     // Atomically sets the value to the given update value if the current value == the expected value.
     public boolean compareAndSet(int expect, int update) throws SQLException
     {
@@ -87,9 +104,6 @@ public class AtomicDatabaseInteger
         }
     }
 
-    // Experimental... could use this technique for auto-increment row ids, issue ids, workbook ids, etc.
-    // TODO: Verify that the default transaction isolation levels for each database will work appropriately here (and
-    // verify assumptions via multi-thread, multi-transaction junit test).
     public int incrementAndGet() throws SQLException
     {
         for (;;)
@@ -101,8 +115,7 @@ public class AtomicDatabaseInteger
         }
     }
 
-    // Experimental... see comment above.
-    public final int decrementAndGet() throws SQLException
+    public int decrementAndGet() throws SQLException
     {
         for (;;)
         {
@@ -113,8 +126,7 @@ public class AtomicDatabaseInteger
         }
     }
 
-    // Experimental... see comment above.
-    public final int addAndGet(int delta) throws SQLException
+    public int addAndGet(int delta) throws SQLException
     {
         for (;;)
         {
@@ -123,17 +135,6 @@ public class AtomicDatabaseInteger
             if (compareAndSet(current, next))
                 return next;
         }
-    }
-
-    public int get()
-    {
-        SimpleFilter filter = (null != _container ? new SimpleFilter("Container", _container) : null);
-        Integer currentValue = new TableSelector(_targetColumn, filter, null).getObject(_rowId, Integer.class);
-
-        if (null == currentValue)
-            throw new IllegalStateException("Can't find row " + _rowId);
-
-        return currentValue;
     }
 
     public static class TestCase extends Assert
