@@ -15,6 +15,7 @@
  */
 package org.labkey.api.defaults;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.ExperimentException;
@@ -54,13 +55,13 @@ public abstract class DefaultValueService
 
     public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user);
 
-    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, String scope);
+    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, @Nullable String scope);
 
     public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values) throws ExperimentException;
 
     public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user) throws ExperimentException;
 
-    public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user, String scope) throws ExperimentException;
+    public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user, @Nullable String scope) throws ExperimentException;
 
     public abstract void clearDefaultValues(Container container, Domain domain);
 
