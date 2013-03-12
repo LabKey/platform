@@ -89,6 +89,20 @@ public class EmailServiceImpl implements EmailService.I
     }
 
     @Override
+    public EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message)
+    {
+        EmailMessageImpl msg = new EmailMessageImpl(from, to, subject);
+
+        if (message != null)
+            msg.addContent(message);
+
+        if (cc.length > 0)
+            msg.setRecipients(Message.RecipientType.CC, cc);
+
+        return msg;
+    }
+
+    @Override
     public void setEmailPref(User user, Container container, EmailPref pref, String value)
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(user, container, EmailService.EMAIL_PREF_CATEGORY, true);
@@ -157,15 +171,16 @@ public class EmailServiceImpl implements EmailService.I
     private static class EmailMessageImpl implements EmailMessage
     {
         private String _from;
-        private String[] _to = new String[0];
         private String _subject;
         private Map<contentType, String> _contentMap = new HashMap<contentType, String>();
         private Map<String, String> _headers = new HashMap<String, String>();
+        private Map<Message.RecipientType, String[]> _recipients = new HashMap<Message.RecipientType, String[]>();
 
         public EmailMessageImpl(String from, String[] to, String subject)
         {
             _from = from;
-            _to = to;
+
+            _recipients.put(Message.RecipientType.TO, to);
             _subject = subject;
         }
 
@@ -176,7 +191,16 @@ public class EmailServiceImpl implements EmailService.I
 
         public String[] getTo()
         {
-            return _to;
+            if (_recipients.containsKey(Message.RecipientType.TO))
+            {
+                return _recipients.get(Message.RecipientType.TO);
+            }
+            return new String[0];
+        }
+
+        public void setRecipients(Message.RecipientType type, String[] emails)
+        {
+            _recipients.put(type, emails);
         }
 
         public String getSubject()
@@ -228,15 +252,14 @@ public class EmailServiceImpl implements EmailService.I
 
             msg.setFrom(new InternetAddress(_from));
 
-            if (_to.length != 0)
+            for (Map.Entry<Message.RecipientType, String[]> entry : _recipients.entrySet())
             {
-                InternetAddress[] recipients = new InternetAddress[_to.length];
-                int i=0;
+                List<InternetAddress> addresses = new ArrayList<InternetAddress>();
 
-                for (String user : _to)
-                    recipients[i++] = new InternetAddress(user);
+                for (String email : entry.getValue())
+                    addresses.add(new InternetAddress(email));
 
-                msg.setRecipients(Message.RecipientType.TO, recipients);
+                msg.setRecipients(entry.getKey(), addresses.toArray(new InternetAddress[addresses.size()]));
             }
 
             if (!_headers.isEmpty())
