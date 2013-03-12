@@ -40,6 +40,7 @@ public class EmailService
     {
         EmailMessage createMessage(String from, String[] to, String subject);
         EmailMessage createMessage(String from, String[] to, String subject, String message);
+        EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message);
 
         /**
          * Send the email message synchronously from the caller thread
