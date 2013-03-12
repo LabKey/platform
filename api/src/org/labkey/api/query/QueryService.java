@@ -275,8 +275,8 @@ abstract public class QueryService
      *
      * @param comment Comment to log.
      */
-    abstract public void addAuditEvent(QueryView queryView, String comment);
-    abstract public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment);
+    abstract public void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
+    abstract public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
     abstract public void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>> ... params);
 
     /**

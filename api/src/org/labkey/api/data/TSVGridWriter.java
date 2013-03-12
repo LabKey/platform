@@ -30,8 +30,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class TSVGridWriter extends TSVColumnWriter
+public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 {
+    protected int _dataRowCount;
 
     private Results _rs;
     protected List<DisplayColumn> _displayColumns;
@@ -153,6 +154,13 @@ public class TSVGridWriter extends TSVColumnWriter
     protected void writeRow(RenderContext ctx, List<DisplayColumn> displayColumns)
     {
         writeLine(getValues(ctx, displayColumns));
+        _dataRowCount++;
+    }
+
+    @Override
+    public int getDataRowCount()
+    {
+        return _dataRowCount;
     }
 
 }

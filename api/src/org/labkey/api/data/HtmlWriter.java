@@ -37,8 +37,9 @@ import java.util.List;
  * Date: Mar 7, 2008
  * Time: 4:09:58 PM
  */
-public class HtmlWriter
+public class HtmlWriter implements ExportWriter
 {
+    private int _dataRowCount;
     private ResultSet _rs = null;
     private List<DisplayColumn> _columns = null;
     private HttpServletResponse _response = null;
@@ -201,10 +202,17 @@ public class HtmlWriter
             }
         }
         out.write(getCloseRow());
+        _dataRowCount++;
     }
 
     protected PrintWriter prepare(HttpServletResponse response) throws IOException
     {
         return response.getWriter();
+    }
+
+    @Override
+    public int getDataRowCount()
+    {
+        return _dataRowCount;
     }
 }

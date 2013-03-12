@@ -330,9 +330,13 @@ public class TabLoader extends DataLoader
                     {
                         // XXX: limit number of lines we read
                         String nextLine = readLine(r, false);
-                        if (nextLine == null)
-                            throw new IllegalArgumentException("Can't parse line: " + buf);
                         end = buf.length();
+                        if (nextLine == null)
+                        {
+                            // We've reached the end of the input, so there's nothing else to append
+                            break;
+                        }
+
                         buf.append('\n');
                         buf.append(nextLine);
                         continue;
@@ -576,6 +580,10 @@ public class TabLoader extends DataLoader
 
     public static class TabLoaderTestCase extends Assert
     {
+        String malformedCsvData =
+                "\"Header1\",\"Header2\", \"Header3\"\n" +
+                        "\"test1a\", \"testb";
+
         String csvData =
                 "# algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters\n" +
                         "# date=Mon May 22 13:25:28 PDT 2006\n" +
@@ -626,8 +634,26 @@ public class TabLoader extends DataLoader
 
 
         @Test
-        public void testTSV() throws IOException
+        public void testMalformedCsv() throws IOException
         {
+            File csv = _createTempFile(malformedCsvData, ".csv");
+
+            TabLoader l = new TabLoader(csv);
+            l.parseAsCSV();
+            List<Map<String, Object>> maps = l.load();
+            assertEquals(l.getColumns().length, 3);
+            assertEquals(String.class, l.getColumns()[0].clazz);
+            assertEquals(String.class, l.getColumns()[1].clazz);
+            assertEquals(String.class, l.getColumns()[2].clazz);
+            assertEquals(2, maps.size());
+
+            assertEquals("Header1", maps.get(0).get("column0"));
+            assertEquals("Header2", maps.get(0).get("column1"));
+            assertEquals("Header3", maps.get(0).get("column2"));
+
+            assertEquals("test1a", maps.get(1).get("column0"));
+            assertEquals("testb", maps.get(1).get("column1"));
+            assertEquals(null, maps.get(1).get("column2"));
         }
 
         @Test

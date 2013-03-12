@@ -136,5 +136,4 @@ public abstract class TSVColumnWriter extends TSVWriter
             return (null == rawValue ? "" : String.valueOf(rawValue));
         }
     }
-
 }

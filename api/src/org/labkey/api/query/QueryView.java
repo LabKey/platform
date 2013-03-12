@@ -1995,7 +1995,7 @@ public class QueryView extends WebPartView<Object>
             ew.write(response);
 
             if (!templateOnly)
-                logAuditEvent("Exported to Excel");
+                logAuditEvent("Exported to Excel", ew.getDataRowCount());
         }
     }
 
@@ -2017,7 +2017,7 @@ public class QueryView extends WebPartView<Object>
                 stream.flush();
                 ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(ew.getFilenamePrefix() + ".xls", byteStream.toByteArray(), "application/vnd.ms-excel");
 
-                logAuditEvent("Exported to Excel file");
+                logAuditEvent("Exported to Excel file", ew.getDataRowCount());
                 return byteArrayAttachmentFile;
             }
             finally
@@ -2040,6 +2040,9 @@ public class QueryView extends WebPartView<Object>
         _exportView = true;
         TableInfo table = getTable();
 
+        // Place for the anonymous inner class to store the return value
+        final int[] rowCount = new int[1];
+
         if (table != null)
         {
             DbScope scope = getSchema().getDbSchema().getScope();
@@ -2049,22 +2052,23 @@ public class QueryView extends WebPartView<Object>
                 @Override
                 public void execute() throws Exception
                 {
-                    doExport(response, isExportAsWebPage, delim, quote);
+                    rowCount[0] = doExport(response, isExportAsWebPage, delim, quote);
                 }
             });
 
-            logAuditEvent("Exported to TSV");
+            logAuditEvent("Exported to TSV", rowCount[0]);
         }
     }
 
 
-    private void doExport(HttpServletResponse response, boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws ServletException, IOException, SQLException
+    private int doExport(HttpServletResponse response, boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws ServletException, IOException, SQLException
     {
         TSVGridWriter tsv = getTsvWriter();
         tsv.setExportAsWebPage(isExportAsWebPage);
         tsv.setDelimiterCharacter(delim);
         tsv.setQuoteCharacter(quote);
         tsv.write(response);
+        return tsv.getDataRowCount();
     }
 
     public ByteArrayAttachmentFile exportToTsvFile() throws Exception
@@ -2080,7 +2084,7 @@ public class QueryView extends WebPartView<Object>
             tsvWriter.write(tsvBuilder);
             ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(), "text/tsv");
 
-            logAuditEvent("Exported to TSV file");
+            logAuditEvent("Exported to TSV file", tsvWriter.getDataRowCount());
             return byteArrayAttachmentFile;
         }
         else
@@ -2141,14 +2145,15 @@ public class QueryView extends WebPartView<Object>
         response.setHeader("Pragma", "private");
         response.setHeader("Cache-Control", "private");
 
-        new HtmlWriter().write(rs, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
+        HtmlWriter writer = new HtmlWriter();
+        writer.write(rs, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
 
-        logAuditEvent("Exported to Excel Web Query data");
+        logAuditEvent("Exported to Excel Web Query data", writer.getDataRowCount());
     }
 
-    protected void logAuditEvent(String comment)
+    protected void logAuditEvent(String comment, int dataRowCount)
     {
-        QueryService.get().addAuditEvent(this, comment);
+        QueryService.get().addAuditEvent(this, comment, dataRowCount);
     }
 
     public CustomView getCustomView()

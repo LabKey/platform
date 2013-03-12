@@ -54,7 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-public class ExcelWriter
+public class ExcelWriter implements ExportWriter
 {
     static
     {
@@ -170,6 +170,9 @@ public class ExcelWriter
     private CellStyle _nonWrappingTextFormat = null;
 
     private Map<ExcelColumn.ExcelFormatDescriptor, CellStyle> _formatters = new HashMap<ExcelColumn.ExcelFormatDescriptor, CellStyle>();
+
+    /** Total number of data rows exported so far, which may span multiple sheets */
+    private int _totalDataRows = 0;
 
     /** First row to write to when starting a new sheet */
     private int _currentRow = 0;
@@ -859,6 +862,7 @@ public class ExcelWriter
     protected void renderGridRow(Sheet sheet, RenderContext ctx, List<ExcelColumn> columns) throws SQLException, MaxRowsExceededException
     {
         int row = getCurrentRow();
+        _totalDataRows++;
 
         for (int column = 0; column < columns.size(); column++)
             columns.get(column).writeCell(sheet, column, row, ctx);
@@ -884,5 +888,11 @@ public class ExcelWriter
     public void setCommentLines(List<String> commentLines)
     {
         _commentLines = commentLines;
+    }
+
+    @Override
+    public int getDataRowCount()
+    {
+        return _totalDataRows;
     }
 }
