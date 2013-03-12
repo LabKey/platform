@@ -1,11 +1,14 @@
 package org.json;
 
+import org.labkey.api.util.SkipMothershipLogging;
+
 /**
  * The JSONException is thrown by the JSON.org classes then things are amiss.
  * @author JSON.org
  * @version 2
  */
-public class JSONException extends RuntimeException {
+public class JSONException extends RuntimeException implements SkipMothershipLogging
+{
     private Throwable cause;
 
     /**
