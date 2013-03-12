@@ -17,6 +17,7 @@ package org.labkey.experiment.defaults;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -87,7 +88,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         setDefaultValues(container, values, user, null);
     }
 
-    public void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user, String scope) throws ExperimentException
+    public void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user, @Nullable String scope) throws ExperimentException
     {
         if (values.isEmpty())
             return;
@@ -132,33 +133,39 @@ public class DefaultValueServiceImpl extends DefaultValueService
         replaceObject(container, domain, objectLSID, null, values);
     }
 
-    private void replaceObject(Container container, Domain domain, String objectLSID, String parentLSID, Map<DomainProperty, Object> values) throws ExperimentException
+    private void replaceObject(Container container, Domain domain, String objectLSID, @Nullable String parentLSID, Map<DomainProperty, Object> values) throws ExperimentException
     {
         try
         {
-            OntologyManager.deleteOntologyObject(objectLSID, container, true);
-            OntologyManager.ensureObject(container, objectLSID, parentLSID);
-            List<ObjectProperty> objectProperties = new ArrayList<ObjectProperty>();
+            OntologyManager.getExpSchema().getScope().ensureTransaction();
 
-            for (DomainProperty property : domain.getProperties())
+            synchronized (this)
             {
-                Object value = values.get(property);
-                // Leave it out if it's null, which will prevent it from failing validators
-                if (value != null)
+                OntologyManager.deleteOntologyObject(objectLSID, container, true);
+                OntologyManager.ensureObject(container, objectLSID, parentLSID);
+                List<ObjectProperty> objectProperties = new ArrayList<ObjectProperty>();
+
+                for (DomainProperty property : domain.getProperties())
                 {
-                    try
+                    Object value = values.get(property);
+                    // Leave it out if it's null, which will prevent it from failing validators
+                    if (value != null)
                     {
-                        ObjectProperty prop = new ObjectProperty(objectLSID, container, property.getPropertyURI(), value,
-                                property.getPropertyDescriptor().getPropertyType(), property.getName());
-                        objectProperties.add(prop);
-                    }
-                    catch (ConversionException e)
-                    {
-                        Logger.getLogger(DefaultValueServiceImpl.class).warn("Unable to convert default value '" + value + "' for property " + property.getName() + ", dropping it");
+                        try
+                        {
+                            ObjectProperty prop = new ObjectProperty(objectLSID, container, property.getPropertyURI(), value,
+                                    property.getPropertyDescriptor().getPropertyType(), property.getName());
+                            objectProperties.add(prop);
+                        }
+                        catch (ConversionException e)
+                        {
+                            Logger.getLogger(DefaultValueServiceImpl.class).warn("Unable to convert default value '" + value + "' for property " + property.getName() + ", dropping it");
+                        }
                     }
                 }
+                OntologyManager.insertProperties(container, objectLSID, objectProperties.toArray(new ObjectProperty[objectProperties.size()]));
             }
-            OntologyManager.insertProperties(container, objectLSID, objectProperties.toArray(new ObjectProperty[objectProperties.size()]));
+                OntologyManager.getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
@@ -167,6 +174,10 @@ public class DefaultValueServiceImpl extends DefaultValueService
         catch (ValidationException e)
         {
             throw new ExperimentException(e);
+        }
+        finally
+        {
+            OntologyManager.getExpSchema().getScope().closeConnection();
         }
     }
 
@@ -212,7 +223,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         return result;
     }
 
-    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, String scope)
+    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, @Nullable String scope)
     {
         Map<DomainProperty, Object> userValues = null;
         Container checkContainer = container;
