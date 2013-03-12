@@ -186,6 +186,8 @@ public class ContainerTable extends FilteredTable<UserSchema>
         idPrefixed.setDisplayColumnFactory(dcf);
 
         setTitleColumn("DisplayName");
+
+        setImportURL(LINK_DISABLER);
     }
 
     protected String getContainerFilterColumn()
