@@ -115,6 +115,12 @@ public class WorkbooksTableInfo extends ContainerTable
         }
 
         @Override
+        protected boolean hasPermission(User user, Class<? extends Permission> acl)
+        {
+            return getQueryTable().hasPermission(user, acl) && (DeletePermission.class.equals(acl) || ReadPermission.class.equals(acl));
+        }
+
+        @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             throw new UnsupportedOperationException();
