@@ -1808,7 +1808,7 @@ public class QueryServiceImpl extends QueryService
     }
 
     @Override
-    public void addAuditEvent(QueryView queryView, String comment)
+    public void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount)
     {
         QueryDefinition query = queryView.getQueryDef();
         if (query == null)
@@ -1817,11 +1817,11 @@ public class QueryServiceImpl extends QueryService
         String schemaName = query.getSchemaName();
         String queryName = query.getName();
         ActionURL sortFilter = queryView.getSettings().getSortFilterURL();
-        addAuditEvent(queryView.getUser(), queryView.getContainer(), schemaName, queryName, sortFilter, comment);
+        addAuditEvent(queryView.getUser(), queryView.getContainer(), schemaName, queryName, sortFilter, comment, dataRowCount);
     }
 
     @Override
-    public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment)
+    public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount)
     {
         AuditLogEvent event = new AuditLogEvent();
         event.setCreatedBy(user);
@@ -1832,6 +1832,7 @@ public class QueryServiceImpl extends QueryService
         event.setComment(comment);
         event.setKey1(schemaName);
         event.setKey2(queryName);
+        event.setIntKey1(dataRowCount);
 
         ActionURL url = sortFilter.clone();
         url.deleteParameter(ActionURL.Param.cancelUrl);

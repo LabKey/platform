@@ -1429,7 +1429,7 @@ public class QueryController extends SpringActionController
             writer.println("1");
             writer.println(url.getURIString());
 
-            QueryService.get().addAuditEvent(getUser(), getContainer(), form.getSchemaName(), form.getQueryName(), url, "Exported to Excel Web Query definition");
+            QueryService.get().addAuditEvent(getUser(), getContainer(), form.getSchemaName(), form.getQueryName(), url, "Exported to Excel Web Query definition", null);
             return null;
         }
 

@@ -105,6 +105,7 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
         columns.add(FieldKey.fromParts("ContainerId"));
         columns.add(FieldKey.fromParts("Key1"));
         columns.add(FieldKey.fromParts("Key2"));
+        columns.add(FieldKey.fromParts("IntKey1"));
         columns.add(FieldKey.fromParts("Comment"));
 
         return columns;
@@ -124,7 +125,7 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo sortFilterCol = table.getColumn("Key3");
         sortFilterCol.setLabel("URL");
 
-        table.getColumn("IntKey1").setHidden(true);
+        table.getColumn("IntKey1").setLabel("Data Row Count");
         table.getColumn("IntKey2").setHidden(true);
         table.getColumn("IntKey3").setHidden(true);
     }
