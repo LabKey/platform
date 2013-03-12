@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -33,6 +34,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -603,12 +605,12 @@ public class AssayPublishManager implements AssayPublishService.Service
         return false;
     }
 
-    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData, ExpProtocol protocol) throws SQLException
+    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, ExpProtocol protocol) throws SQLException
     {
         return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, DataSet.TYPE_STANDARD, null, protocol);
     }
 
-    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData, String type, Integer categoryId, ExpProtocol protocol) throws SQLException
+    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, String type, @Nullable Integer categoryId, ExpProtocol protocol) throws SQLException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         try
@@ -616,7 +618,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             schema.getScope().ensureTransaction();
 
             if (null == datasetId)
-                datasetId = Table.executeSingleton(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", new Object[] {study.getContainer().getId(), MIN_ASSAY_ID}, Integer.class);
+                datasetId = new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class);
             DataSetDefinition newDataSet = new DataSetDefinition(study, datasetId.intValue(), name, name, null, null, null);
             newDataSet.setShowByDefault(true);
             newDataSet.setType(type);
@@ -645,7 +647,7 @@ public class AssayPublishManager implements AssayPublishService.Service
      */
     private static String createUniqueDatasetName(Study study, String assayName)
     {
-        Set<String> inUseNames = new HashSet<String>();
+        Set<String> inUseNames = new CaseInsensitiveHashSet();
         for (DataSet def : study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}))
             inUseNames.add(def.getName());
 
