@@ -1349,6 +1349,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             return new ExpDataImpl(data[0]);
         }
+        // Issue 17202 - for directories, check if the path was stored in the database without a trailing slash
+        if (url.endsWith("/"))
+        {
+            return getExpDataByURL(url.substring(0, url.length() - 1), c);
+        }
         return null;
     }
 
