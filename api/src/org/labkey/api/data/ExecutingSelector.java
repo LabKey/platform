@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import net.sf.ehcache.transaction.DeadLockException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Table.TableResultSet;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -141,16 +142,31 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
     {
         ResultSetFactory rowCountResultSetFactory = new ExecutingResultSetFactory(new RowCountSqlFactory(factory));
 
-        return handleResultSet(rowCountResultSetFactory, new ResultSetHandler<Long>()
+        int retry = getScope().isTransactionActive() ? 0 : 1;
+
+        while (true)
         {
-            @Override
-            public Long handle(ResultSet rs, Connection conn) throws SQLException
+            try
             {
-                rs.next();
-                return rs.getLong(1);
+                return handleResultSet(rowCountResultSetFactory, new ResultSetHandler<Long>()
+                {
+                    @Override
+                    public Long handle(ResultSet rs, Connection conn) throws SQLException
+                    {
+                        rs.next();
+                        return rs.getLong(1);
+                    }
+                });
             }
-        });
+            catch (DeadLockException x)
+            {
+                if (retry-- > 0)
+                    continue;
+                throw x;
+            }
+        }
     }
+
 
     @Override
     public boolean exists()
