@@ -608,11 +608,11 @@ public class StudyManager
 
     public VisitImpl createVisit(Study study, User user, VisitImpl visit)
     {
-        return createVisit(study,user,visit,null);
+        return createVisit(study, user, visit, null);
     }
 
 
-    public VisitImpl createVisit(Study study, User user, VisitImpl visit, VisitImpl[] existingVisits)
+    public VisitImpl createVisit(Study study, User user, VisitImpl visit, @Nullable VisitImpl[] existingVisits)
     {
         if (visit.getContainer() != null && !visit.getContainer().getId().equals(study.getContainer().getId()))
             throw new VisitCreationException("Visit container does not match study");
@@ -1092,9 +1092,8 @@ public class StudyManager
         Study study = getStudy(container);
         List<LocationImpl> validLocations = new ArrayList<LocationImpl>();
         LocationImpl[] locations = getSites(container);
-        for (int i = 0; i < locations.length; i += 1)
+        for (LocationImpl location : locations)
         {
-            LocationImpl location = locations[i];
             if (isSiteValidRequestingLocation(study, location))
             {
                 validLocations.add(location);
@@ -1187,7 +1186,7 @@ public class StudyManager
 
     private VisitImpl[] EMPTY_VISIT_ARRAY = new VisitImpl[0];
 
-    public VisitImpl[] getVisits(Study study, CohortImpl cohort, User user, Visit.Order order)
+    public VisitImpl[] getVisits(Study study, @Nullable CohortImpl cohort, @Nullable User user, Visit.Order order)
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return EMPTY_VISIT_ARRAY;
@@ -1530,7 +1529,7 @@ public class StudyManager
         return first.equals(second);
     }
 
-    public boolean showCohorts(Container container, User user)
+    public boolean showCohorts(Container container, @Nullable User user)
     {
         if (user == null)
             return false;

@@ -1747,6 +1747,7 @@ pipeline/src/org/labkey/pipeline/api/properties/ApplicationPropertiesSiteSetting
 pipeline/src/org/labkey/pipeline/api/properties/ConfigPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/GlobusClientPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java -text
+pipeline/src/org/labkey/pipeline/checker/CheckerServiceImpl.java -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
 pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text

@@ -21,8 +21,10 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.checker.CheckerService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
+import org.labkey.pipeline.checker.CheckerServiceImpl;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -98,6 +100,10 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineServiceImpl ps = new PipelineServiceImpl();
         PipelineService.setInstance(ps);
 
+        CheckerServiceImpl checkerService = new CheckerServiceImpl();
+        ServiceRegistry.get().registerService(CheckerService.Interface.class, checkerService);
+        checkerService.startupQuartz();
+
         // Set up default PipelineJobServiceImpl, which may be overriden by Spring config.
         PipelineJobServiceImpl pjs = PipelineJobServiceImpl.initDefaults(PipelineJobService.LocationType.WebServer);
         pjs.setAppProperties(new ApplicationPropertiesSiteSettings());
@@ -112,6 +118,16 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineDigestJobFailed.class);
 
         PipelineQuerySchema.register();
+    }
+
+    @Override
+    public void destroy()
+    {
+        super.destroy();
+        if (CheckerServiceImpl.get() != null)
+        {
+            CheckerServiceImpl.get().shutdownQuartz();
+        }
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
