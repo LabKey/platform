@@ -38,6 +38,8 @@ public class ChildStudyDefinition
     private String[] _reports;
     private int[] _datasets = new int[0];
     private int _updateDelay;
+    private String[] _studyProps;
+    private String[] _folderProps;
 
     private int[] _groups = new int[0];
     private boolean _copyParticipantGroups;
@@ -96,6 +98,26 @@ public class ChildStudyDefinition
     public void setDatasets(int[] datasets)
     {
         _datasets = datasets;
+    }
+
+    public void setStudyProps(String[] props)
+    {
+        _studyProps = props;
+    }
+
+    public String[] getStudyProps()
+    {
+        return _studyProps;
+    }
+
+    public void setFolderProps(String[] props)
+    {
+        _folderProps = props;
+    }
+
+    public String[] getFolderProps()
+    {
+        return _folderProps;
     }
 
     public int[] getGroups()

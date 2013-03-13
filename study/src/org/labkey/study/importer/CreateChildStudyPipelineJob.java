@@ -195,6 +195,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
                 User user = getUser();
+                if(_form.getFolderProps() != null)
+                    _form.setFolderProps(_form.getFolderProps()[0].split(","));
+                if(_form.getStudyProps() != null)
+                    _form.setStudyProps(_form.getStudyProps()[0].split(","));
                 Set<String> dataTypes = getDataTypesToExport(_form);
 
                 FolderExportContext ctx = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new", false,
@@ -306,12 +310,31 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
     private Set<String> getDataTypesToExport(ChildStudyDefinition form)
     {
         Set<String> dataTypes = new HashSet<String>();
+        String[] folderProps = form.getFolderProps();
+        String[] studyProps = form.getStudyProps();
+
         dataTypes.add(StudyWriterFactory.DATA_TYPE);
         dataTypes.add(QcStateWriter.DATA_TYPE);
         dataTypes.add(VisitMapWriter.DATA_TYPE);
         dataTypes.add(DatasetWriter.SELECTION_TEXT);
         dataTypes.add(ViewCategoryWriter.DATA_TYPE);
         dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
+
+
+        if(folderProps != null)
+        {
+            for(int i = 0; i < folderProps.length; i++)
+            {
+                dataTypes.add(folderProps[i]);
+            }
+        }
+        if(studyProps != null)
+        {
+            for(int i = 0; i < studyProps.length; i++)
+            {
+                dataTypes.add(studyProps[i]);
+            }
+        }
 
         if (form.getReports() != null)
         {
@@ -361,6 +384,12 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
             // don't create dataset definitions for datasets we don't import
             visitImporter.setEnsureDataSets(false);
             visitImporter.process(importContext, studyDir, errors);
+
+            ProtocolDocumentImporter proImporter = new ProtocolDocumentImporter();
+            proImporter.process(importContext, studyDir, errors);
+
+            CohortImporter cohortImporter = new CohortImporter();
+            cohortImporter.process(importContext, studyDir, errors);
 
             if (errors.hasErrors())
                 throw new RuntimeException("Error importing study objects : " + errors.getMessage());

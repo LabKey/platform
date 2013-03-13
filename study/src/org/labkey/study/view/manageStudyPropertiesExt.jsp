@@ -24,9 +24,12 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.data.AbstractTableInfo" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
-
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
@@ -66,11 +69,11 @@ Ext4.QuickTips.init();
 
 (function(){/* All code */})();
 
-var canEdit = <%=canEdit?"true":"false"%>;
+var canEdit = <%=q(canEdit?"true":"false")%>;
 var editableFormPanel = canEdit;
 var studyPropertiesFormPanel = null;
-var emptyStudy = <%=emptyStudy?"true":"false"%>;
-var timepointType = "<%=timepointType%>";
+var emptyStudy = <%=q(emptyStudy?"true":"false")%>;
+var timepointType = "<%=h(timepointType)%>";
 
 function removeProtocolDocument(name, xid)
 {

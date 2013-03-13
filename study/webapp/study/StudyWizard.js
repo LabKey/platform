@@ -15,8 +15,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     {
         Ext.apply(this, config);
         this.pageOptions = this.initPages();
+        this.cutWriters();
         this.requestId = config.requestId;
-
         Ext.util.Observable.prototype.constructor.call(this, config);
         this.sideBarTemplate = new Ext.XTemplate(
                 '<div class="labkey-ancillary-wizard-background">',
@@ -36,7 +36,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 '</div>'
 
         );
-
         this.sideBarTemplate.compile();
 
     },
@@ -60,26 +59,67 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             active : (this.visitsPanel == false) ? false : this.mode == 'publish' || this.vistsPanel
         };
         pages[4] = {
+            panelType : 'specimens',
+            active : (this.specimensPanel == false) ? false : this.mode == 'publish' || this.specimensPanel
+        };
+        pages[5] = {
+            panelType : 'studyProps',
+            active : (this.studyPropertiesPanel == false) ? false : this.mode == 'publish' || this.studyPropertiesPanel
+        };
+        pages[6] = {
             panelType : 'lists',
             active : (this.listsPanel == false) ? false : this.mode == 'publish' || this.listsPanel
         };
-        pages[5] = {
+        pages[7] = {
             panelType : 'views',
             active : (this.viewsPanel == false) ? false : this.mode == 'publish' || this.viewsPanel
         };
-        pages[6] = {
+        pages[8] = {
             panelType : 'reports',
             active : (this.reportsPanel == false) ? false : this.mode == 'publish' || this.reportsPanel
         };
-        pages[7] = {
-            panelType : 'specimens',
-            active : (this.specimensPanel == false) ? false : this.mode == 'publish' || this.specimensPanel,
+        pages[9] = {
+            panelType : 'FolderProps',
+            active : (this.folderPropertiesPanel == false) ? false : this.mode == 'publish' || this.folderPropertiesPanel
         };
-        pages[8] = {
+        pages[10] = {
             panelType : 'publishOptions',
             active : (this.publishOptionsPanel == false) ? false : this.mode == 'publish' || this.publishOptionsPanel
         };
         return pages;
+    },
+
+    cutWriters : function() {
+        var modifiedWriters = [];
+        for (var i = 0; i < this.studyWriters.length; i++)
+        {
+            if (this.studyWriters[i] != 'Assay Datasets' &&
+                    this.studyWriters[i] != 'Categories' &&
+                    this.studyWriters[i] != 'CRF Datasets' &&
+                    this.studyWriters[i] != 'Participant Groups' &&
+                    this.studyWriters[i] != 'QC State Settings' &&
+                    this.studyWriters[i] != 'Specimens' &&
+                    this.studyWriters[i] != 'Visit Map')
+            {
+                modifiedWriters.push(this.studyWriters[i]);
+            }
+        }
+        this.studyWriters = modifiedWriters;
+
+        modifiedWriters = [];
+        for (var i = 0; i < this.folderWriters.length; i++)
+        {
+            if (this.folderWriters[i] != 'Custom Views' &&
+                    this.folderWriters[i] != 'Lists' &&
+                    this.folderWriters[i] != 'Notification Settings' &&
+                    this.folderWriters[i] != 'Queries' &&
+                    this.folderWriters[i] != 'Reports' &&
+                    this.folderWriters[i] != 'Study')
+            {
+                modifiedWriters.push(this.folderWriters[i]);
+            }
+        }
+        this.folderWriters = modifiedWriters;
     },
 
     show : function() {
@@ -94,11 +134,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         if(this.pageOptions[2].active == true) this.steps.push(this.getDatasetsPanel());
 
         if(this.pageOptions[3].active == true) this.steps.push(this.getVisitsPanel());
-        if(this.pageOptions[4].active == true) this.steps.push(this.getListsPanel());
-        if(this.pageOptions[5].active == true) this.steps.push(this.getViewsPanel());
-        if(this.pageOptions[6].active == true) this.steps.push(this.getReportsPanel());
-        if(this.pageOptions[7].active == true) this.steps.push(this.getSpecimensPanel());
-        if(this.pageOptions[8].active == true) this.steps.push(this.getPublishOptionsPanel());
+        if(this.pageOptions[4].active == true) this.steps.push(this.getSpecimensPanel());
+        if(this.pageOptions[5].active == true) this.steps.push(this.getStudyPropsPanel());
+        if(this.pageOptions[6].active == true) this.steps.push(this.getListsPanel());
+        if(this.pageOptions[7].active == true) this.steps.push(this.getViewsPanel());
+        if(this.pageOptions[8].active == true) this.steps.push(this.getReportsPanel());
+        if(this.pageOptions[9].active == true) this.steps.push(this.getFolderPropsPanel());
+        if(this.pageOptions[10].active == true) this.steps.push(this.getPublishOptionsPanel());
 
         this.prevBtn = new Ext.Button({text: 'Previous', disabled: true, scope: this, handler: function(){
             this.lastStep = this.currentStep;
@@ -147,11 +189,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         }
 
         setup.push(
-        {value: 'Lists', currentStep: false},
-        {value: 'Views', currentStep: false},
-        {value: 'Reports', currentStep: false},
-        {value: 'Specimens', currentStep: false},
-        {value: 'Publish Options', currentStep: false}
+                {value: 'Specimens', currentStep: false},
+                {value: 'Study Properties', currentStep: false},
+                {value: 'Lists', currentStep: false},
+                {value: 'Views', currentStep: false},
+                {value: 'Reports', currentStep: false},
+                {value: 'Folder Properties', currentStep: false},
+                {value: 'Publish Options', currentStep: false}
         );
 
         var steps = [];
@@ -160,7 +204,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 steps.push(setup[i]);
             }
         }
-
 
         this.sideBar = new Ext.Panel({
             //This is going to be where the sidebar content goes.
@@ -851,8 +894,45 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 return false;
             }, this);
         }, this);
-        this.pageOptions[5].value = this.selectedViews;
+        this.pageOptions[7].value = this.selectedViews;
         return panel;
+    },
+
+    getStudyPropsPanel : function(){
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Study Properties'})+
+            Ext.DomHelper.markup({tag:'div', html: '&nbsp'})+
+            Ext.DomHelper.markup({tag:'div', html: 'Select study properties to export:'})+
+            Ext.DomHelper.markup({tag:'hr'})+
+            Ext.DomHelper.markup({tag:'div', html: '&nbsp'});
+        var checkboxes = [];
+        for(var i = 0; i < this.studyWriters.length; i++)
+        {
+            checkboxes.push(new Ext.form.Checkbox({
+                name : this.studyWriters[i],
+                id : i,
+                inputValue : i,
+                boxLabel : this.studyWriters[i],
+                labelAlign : 'right',
+                labelWidth : '120px',
+                padding : '10px 0px'
+
+            }))
+        }
+        this.studyPropsPanel = new Ext.FormPanel({
+            name : 'Study Properties',
+            html : txt,
+            border : false,
+            layout : 'vbox',
+            defaults :
+            {
+                xtype : 'checkbox',
+                labelAlign : 'right',
+                labelWidth : '120px',
+                padding : '10px 0px'
+            },
+            items : checkboxes
+        });
+        return this.studyPropsPanel;
     },
 
     getReportsPanel: function(){
@@ -943,7 +1023,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
 
-        this.pageOptions[6].value = this.selectedReports;
+        this.pageOptions[8].value = this.selectedReports;
         return new Ext.Panel({
             border: false,
             name: "Reports",
@@ -1155,8 +1235,38 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             items: items
         });
-        this.pageOptions[4].value = this.selectedLists;
+        this.pageOptions[6].value = this.selectedLists;
         return panel;
+    },
+
+    getFolderPropsPanel : function(){
+        var checkboxes = [];
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Folder Properties'})+
+                Ext.DomHelper.markup({tag:'div', html: '&nbsp'})+
+                Ext.DomHelper.markup({tag:'div', html: 'Select folder properties to export:'})+
+                Ext.DomHelper.markup({tag:'hr'})+
+                Ext.DomHelper.markup({tag:'div', html: '&nbsp'});
+        for(var i = 0; i < this.folderWriters.length; i++)
+        {
+            checkboxes.push(new Ext.form.Checkbox({
+                name : this.folderWriters[i],
+                id : i,
+                inputValue : i,
+                boxLabel : this.folderWriters[i],
+                labelAlign : 'right',
+                labelWidth : '120px',
+                padding : '10px 0px'
+
+            }))
+        }
+        this.folderPropsPanel = new Ext.FormPanel({
+            name : 'Folder Properties',
+            html : txt,
+            border : false,
+            layout : 'vbox',
+            items : checkboxes
+        });
+        return this.folderPropsPanel;
     },
 
     getPublishOptionsPanel: function(){
@@ -1354,11 +1464,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.copyParticipantGroups = true;//this.copyParticipantGroups.checked;
 
         this.pageOptions[3].value = this.selectedVisits;
-        this.pageOptions[4].value = this.selectedLists;
-        this.pageOptions[5].value = this.selectedViews;
-        this.pageOptions[6].value = this.selectedReports;
+        this.pageOptions[6].value = this.selectedLists;
+        this.pageOptions[7].value = this.selectedViews;
+        this.pageOptions[8].value = this.selectedReports;
 
-        if(this.pageOptions[8].active){
+        if(this.pageOptions[10].active){
             id = Ext.id();
             hiddenFields.push(id);
             this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'publish', value: true});
@@ -1369,6 +1479,35 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             this.nameFormPanel.add({xtype: 'hidden', id : id, name : 'requestId', value : this.requestId});
         }
 
+
+        if (this.pageOptions[5].active)
+        {
+            var studyProps = [];
+            id = Ext.id();
+            var studyForm = this.studyPropsPanel.getForm();
+            for(var i = 0; i < studyForm.items.items.length; i++)
+            {
+                if(studyForm.items.items[i].checked == true)
+                {
+                    studyProps.push(studyForm.items.items[i].name);
+                }
+            }
+            this.nameFormPanel.add({xtype : 'hidden', id : id, name : 'studyProps', value : studyProps});
+        }
+        if (this.pageOptions[8].active)
+        {
+            var folderProps = [];
+            id = Ext.id();
+            var folderForm = this.folderPropsPanel.getForm();
+            for(var i = 0; i < folderForm.items.items.length; i++)
+            {
+                if(folderForm.items.items[i].checked == true)
+                {
+                    folderProps.push(folderForm.items.items[i].name);
+                }
+            }
+            this.nameFormPanel.add({xtype : 'hidden', id : id, name : 'folderProps', value : folderProps});
+        }
 
         //TODO:  Get rid of mode here, or at least make it work in the context.
         if(this.mode == 'publish'){
@@ -1381,7 +1520,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'visits', value: visit.data.RowId});
                 }
             }
-            if(this.pageOptions[4].active){
+            if(this.pageOptions[6].active){
                 for(i = 0; i < this.selectedLists.length; i++){
                     var list = this.selectedLists[i];
                     id = Ext.id();
@@ -1389,7 +1528,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'lists', value: list.data.id});
                 }
             }
-            if(this.pageOptions[5].active){
+            if(this.pageOptions[7].active){
                 for(i = 0; i < this.selectedViews.length; i++){
                     var view = this.selectedViews[i];
                     id = Ext.id();
@@ -1397,7 +1536,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'views', value: view.data.id});
                 }
             }
-            if(this.pageOptions[6].active){
+            if(this.pageOptions[8].active){
                 for(i = 0; i < this.selectedReports.length; i++){
                     var report = this.selectedReports[i];
                     id = Ext.id();

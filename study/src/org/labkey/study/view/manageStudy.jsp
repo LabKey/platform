@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -52,6 +51,14 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.writer.StudySerializationRegistryImpl" %>
+<%@ page import="org.labkey.api.admin.FolderSerializationRegistry" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.admin.FolderWriter" %>
+<%@ page import="org.labkey.api.admin.FolderImporter" %>
+<%@ page import="org.labkey.api.writer.Writer" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
 
@@ -106,6 +113,32 @@
     }
 
     int numDatasets = study.getDataSetsByType(new String[]{org.labkey.api.study.DataSet.TYPE_STANDARD, org.labkey.api.study.DataSet.TYPE_PLACEHOLDER}).size();
+
+    FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+    if (null == registry)
+    {
+        throw new RuntimeException();
+    }
+
+    Collection<FolderWriter> writers = registry.getRegisteredFolderWriters();
+
+    ArrayList<String> studyText = new ArrayList<String>();
+    ArrayList<String> folderText =  new ArrayList<String>();
+
+
+
+    for (FolderWriter writer : writers)
+    {
+        folderText.add(writer.getSelectionText());
+        if (writer.getChildren() != null)
+        {
+            for (Writer child : writer.getChildren())
+            {
+                studyText.add(child.getSelectionText());
+            }
+        }
+    }
+
 %>
 <table>
     <%
@@ -353,7 +386,31 @@
 <script>
     function showPublishStudyWizard()
     {
+
         var init = function(){
+            var folderList = [];
+            <%
+                for(String name : folderText)
+                {
+            %>
+                    folderList.push('<%=h(name)%>');
+            <%
+                }
+            %>
+            folderList.sort();
+
+            var studyList = [];
+            <%
+                for(String name : studyText)
+                {
+            %>
+                    if ('<%=h(name)%>' != "")
+                        studyList.push('<%=h(name)%>');
+            <%
+                }
+            %>
+            studyList.sort();
+
             var wizard = new LABKEY.study.CreateStudyWizard({
                 mode: 'publish',
                 studyName : <%=q(ancillaryStudyName)%>,
@@ -362,7 +419,9 @@
                     nounSingular: <%=q(study.getSubjectNounSingular())%>,
                     nounPlural: <%=q(study.getSubjectNounPlural())%>,
                     nounColumnName: <%=q(study.getSubjectColumnName())%>
-                }
+                },
+                folderWriters : folderList,
+                studyWriters : studyList
             });
 
             wizard.on('success', function(info){}, this);
