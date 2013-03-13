@@ -3696,30 +3696,17 @@ public class QueryController extends SpringActionController
 
         protected void initSources()
         {
-            Collection<DbScope> scopes = DbScope.getDbScopes();
-            for (DbScope scope : scopes)
+            for (DbScope scope : DbScope.getDbScopes())
             {
-                Connection con = null;
-                ResultSet rs = null;
                 SqlDialect dialect = scope.getSqlDialect();
 
                 try
                 {
-                    con = scope.getConnection();
-                    DatabaseMetaData dbmd = con.getMetaData();
-
-                    if (scope.getSqlDialect().treatCatalogsAsSchemas())
-                        rs = dbmd.getCatalogs();
-                    else
-                        rs = dbmd.getSchemas();
-
                     Collection<String> schemaNames = new LinkedList<String>();
                     Collection<String> schemaNamesIncludingSystem = new LinkedList<String>();
 
-                    while(rs.next())
+                    for (String schemaName : scope.getSchemaNames())
                     {
-                        String schemaName = rs.getString(1).trim();
-
                         schemaNamesIncludingSystem.add(schemaName);
 
                         if (dialect.isSystemSchema(schemaName))
@@ -3739,25 +3726,8 @@ public class QueryController extends SpringActionController
                 {
                     LOG.error("Exception retrieving schemas from DbScope '" + scope.getDataSourceName() + "'", e);
                 }
-                finally
-                {
-                    ResultSetUtil.close(rs);
-
-                    if (null != con)
-                    {
-                        try
-                        {
-                            con.close();
-                        }
-                        catch (SQLException e)
-                        {
-                            // ignore
-                        }
-                    }
-                }
             }
         }
-
     }
 
 

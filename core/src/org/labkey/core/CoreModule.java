@@ -43,7 +43,6 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
-import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AliasManager;
