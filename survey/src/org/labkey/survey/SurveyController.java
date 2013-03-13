@@ -1067,12 +1067,15 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                     if (table.getUpdateService() != null)
                     {
-                        Map<String, Object> query = new HashMap<String, Object>();
+                        if (table.getAuditRowPk() != null)
+                        {
+                            Map<String, Object> query = new HashMap<String, Object>();
 
-                        query.put("name", tableName);
-                        query.put("isUserDefined", false);
+                            query.put("name", tableName);
+                            query.put("isUserDefined", false);
 
-                        queries.add(query);
+                            queries.add(query);
+                        }
                     }
                 }
             }

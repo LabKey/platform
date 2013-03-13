@@ -42,6 +42,7 @@
     Container c = ctx.getContainer();
     SurveyController.SurveyDesignForm form = me.getModelBean();
 
+    String allSchemas = ctx.getActionURL().getParameter("allSchemas");
     String renderId = "survey-design-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 
@@ -56,7 +57,8 @@
             renderTo        : <%=q(renderId)%>,
             schemaName      : <%=q(form.getSchemaName())%>,
             queryName       : <%=q(form.getQueryName())%>,
-            returnUrl       : <%=q(form.getSrcURL().toString())%>
+            returnUrl       : <%=q(form.getSrcURL().toString())%>,
+            allSchemas      : <%=q(allSchemas)%>
         });
 
         var _resize = function(w,h) {

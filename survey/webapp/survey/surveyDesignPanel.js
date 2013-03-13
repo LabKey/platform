@@ -213,9 +213,21 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
             fieldLabel : 'Description'
         });
 
+        // by default filter out schemas that we know don't work
+        if (!this.allSchemas)
+        {
+            var regex = new RegExp('^core|^assay|^audit|^exp|^pipeline|^issues|^flow|^nab|' +
+                    '^samples|^announce|^plate|^wiki|^visc', 'i');
+            var storeConfig = {
+                filters : [function(item){
+                    return !item.data.schema.match(regex);
+                }]
+            };
+        }
         items.push(model.makeSchemaComboConfig({
             name    : 'schemaName',
             itemId  : 'schemaCombo',
+            storeConfig: storeConfig,
             allowBlank : false
         }));
         items.push(model.makeQueryComboConfig({
