@@ -427,6 +427,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             params[this.dataRegionName + ".maxRows"] = this.maxRows;
         if (this.offset)
             params[this.dataRegionName + ".offset"] = this.offset;
+        if (this.quickChartDisabled)
+            params[this.dataRegionName + ".quickChartDisabled"] = this.quickChartDisabled;
 
         // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
         if (this.userSort && this.userSort.length > 0)

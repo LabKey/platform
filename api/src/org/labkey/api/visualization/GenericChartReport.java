@@ -187,7 +187,7 @@ public abstract class GenericChartReport extends AbstractReport
     {
         if (settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
         {
-            boolean quickChartDisabled = BooleanUtils.toBoolean(context.getActionURL().getParameter(rgnName + ".param.quickChartDisabled"));
+            boolean quickChartDisabled = BooleanUtils.toBoolean(context.getActionURL().getParameter(rgnName + ".quickChartDisabled"));
 
             if (!quickChartDisabled)
             {

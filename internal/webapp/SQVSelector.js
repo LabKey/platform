@@ -155,7 +155,7 @@ Ext4.define('LABKEY.SQVModel', {
             xtype : 'combo',
             name : 'schemaCombo',
             queryMode : 'local',
-            store : this.getSchemaStore(config.store || {}),
+            store : this.getSchemaStore(config.storeConfig || {}),
             fieldLabel : 'Schema',
             valueField : 'schema',
             displayField : 'schema',
