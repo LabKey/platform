@@ -546,6 +546,40 @@ public class DbScope
     }
 
 
+    // Query the JDBC metadata for a list of all schemas in this database. Not used in the common case, but useful
+    // for testing and as a last resort when a requested schema can't be found.
+    public Collection<String> getSchemaNames() throws SQLException
+    {
+        Connection conn = null;
+        ResultSet rs = null;
+
+        try
+        {
+            SqlDialect dialect = getSqlDialect();
+            conn = getConnection();
+            DatabaseMetaData dbmd = conn.getMetaData();
+
+            if (dialect.treatCatalogsAsSchemas())
+                rs = dbmd.getCatalogs();
+            else
+                rs = dbmd.getSchemas();
+
+            Collection<String> schemaNames = new LinkedList<String>();
+
+            while (rs.next())
+                schemaNames.add(rs.getString(1).trim());
+
+            return schemaNames;
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+            if (null != conn && !isTransactionActive())
+                conn.close();
+        }
+    }
+
+
     // External data source case: no schema.xml file to check, no isStale() check (for now)
     protected @NotNull DbSchema loadSchema(String schemaName) throws Exception
     {
@@ -1116,61 +1150,34 @@ public class DbScope
 
             for (DbScope scope : DbScope.getDbScopes())
             {
-                ResultSet rs = null;
-                Connection conn = null;
+                SqlDialect dialect = scope.getSqlDialect();
+                Collection<String> schemaNames = new LinkedList<String>();
 
-                try
-                {
-                    SqlDialect dialect = scope.getSqlDialect();
-                    conn = scope.getConnection();
-                    DatabaseMetaData dbmd = conn.getMetaData();
-
-                    if (scope.getSqlDialect().treatCatalogsAsSchemas())
-                        rs = dbmd.getCatalogs();
-                    else
-                        rs = dbmd.getSchemas();
-
-                    Collection<String> schemaNames = new LinkedList<String>();
-
-                    while(rs.next())
-                    {
-                        String schemaName = rs.getString(1).trim();
-
-                        if (dialect.isSystemSchema(schemaName))
-                            continue;
-
+                for (String schemaName : scope.getSchemaNames())
+                    if (!dialect.isSystemSchema(schemaName))
                         schemaNames.add(schemaName);
-                    }
 
-                    if (schemaNames.isEmpty())
-                        continue;
+                if (schemaNames.isEmpty())
+                    continue;
 
-                    DbSchema schema = scope.getSchema(pickRandomElement(schemaNames));
-                    Collection<String> tableNames = schema.getTableNames();
-                    List<TableInfo> tables = new ArrayList<TableInfo>(tableNames.size());
+                DbSchema schema = scope.getSchema(pickRandomElement(schemaNames));
+                Collection<String> tableNames = schema.getTableNames();
+                List<TableInfo> tables = new ArrayList<TableInfo>(tableNames.size());
 
-                    for (String name : tableNames)
-                    {
-                        TableInfo table = schema.getTable(name);
-
-                        if (null == table)
-                            _log.error("Table is null: " + schema.getName() + "." + name);
-
-                        if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
-                            tables.add(table);
-                    }
-
-                    if (tables.isEmpty())
-                        continue;
-
-                    tablesToTest.add(pickRandomElement(tables));
-                }
-                finally
+                for (String name : tableNames)
                 {
-                    ResultSetUtil.close(rs);
-                    if (null != conn)
-                        conn.close();
+                    TableInfo table = schema.getTable(name);
+
+                    if (null == table)
+                        _log.error("Table is null: " + schema.getName() + "." + name);
+                    else if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
+                        tables.add(table);
                 }
+
+                if (tables.isEmpty())
+                    continue;
+
+                tablesToTest.add(pickRandomElement(tables));
             }
 
             DbScope labkeyScope = DbScope.getLabkeyScope();

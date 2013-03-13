@@ -111,10 +111,19 @@ public class LabKeyScope extends DbScope
         // Load from database meta data
         DbSchema schema = super.loadSchema(schemaName);
 
-        Resource resource = DbSchema.getSchemaResource(schemaName);
+        // Use the canonical schema name, not the requested name (which could differ in casing)
+        Resource resource = DbSchema.getSchemaResource(schema.getName());
 
-        if (resource == null)
-            resource = new DbSchemaResource(schema);
+        if (null == resource)
+        {
+            String lowerName = schemaName.toLowerCase();
+
+            if (!lowerName.equals(schemaName))
+                resource = DbSchema.getSchemaResource(lowerName);
+
+            if (null == resource)
+                resource = new DbSchemaResource(schema);
+        }
 
         schema.setResource(resource);
 

@@ -49,23 +49,23 @@ public class DbSchemaCache
 
     @NotNull DbSchema get(String schemaName)
     {
-        return _cache.get(schemaName);
+        return _cache.get(schemaName.toLowerCase(), schemaName);
     }
 
     void remove(String schemaName)
     {
-        _cache.remove(schemaName);
+        _cache.remove(schemaName.toLowerCase());
     }
 
 
     private class DbSchemaLoader implements CacheLoader<String, DbSchema>
     {
         @Override
-        public DbSchema load(String schemaName, Object argument)
+        public DbSchema load(String key, Object requestedSchemaName)
         {
             try
             {
-                return _scope.loadSchema(schemaName);
+                return _scope.loadSchema((String)requestedSchemaName);
             }
             catch (Exception e)
             {
