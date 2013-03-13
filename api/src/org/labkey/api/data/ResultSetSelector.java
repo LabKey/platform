@@ -138,7 +138,7 @@ public class ResultSetSelector extends BaseSelector
         _completionAction = action;
     }
 
-    public ResultSet getUnderlyingResultSet()
+    ResultSet getUnderlyingResultSet()
     {
         return _rs;
     }
