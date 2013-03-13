@@ -932,9 +932,10 @@ ul.x-tab-strip li.x-tab-edge {
     margin: 0 0 0 0;
 }
 
-.ext-webkit *:focus{
-    outline: none !important;
-}
+/* 13192: LK controls don't reflect focus */
+/*.ext-webkit *:focus{*/
+    /*outline: none !important;*/
+/*}*/
 
 /* ---- text fields ---- */
 .x-form-text, textarea.x-form-field{
