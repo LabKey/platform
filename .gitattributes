@@ -645,7 +645,6 @@ core/src/org/labkey/core/admin/lookAndFeelProperties.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelResources.jsp -text
 core/src/org/labkey/core/admin/manageFolders.jsp -text
 core/src/org/labkey/core/admin/memTracker.jsp -text
-core/src/org/labkey/core/admin/menuWebPartFolder.jsp -text
 core/src/org/labkey/core/admin/moduleErrors.jsp -text
 core/src/org/labkey/core/admin/moduleStatus.jsp -text
 core/src/org/labkey/core/admin/moveFolder.jsp -text
@@ -776,7 +775,6 @@ core/webapp/Security/window/UserInfoPopup.js -text
 core/webapp/SecurityAdmin.css -text
 core/webapp/SecurityAdmin.js -text
 core/webapp/admin/FolderManagementPanel.js -text
-core/webapp/admin/MenuWebPartFolder.js -text
 core/webapp/config.rb -text
 core/webapp/createFolder.css -text
 core/webapp/dropApplet.js -text

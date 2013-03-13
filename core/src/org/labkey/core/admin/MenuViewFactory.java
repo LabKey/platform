@@ -16,8 +16,6 @@
 package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -32,25 +30,31 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Created with IntelliJ IDEA.
+ * User: davebradlee
+ * Date: 10/17/12
+ * Time: 3:18 PM
+ * To change this template use File | Settings | File Templates.
+ */
 public class MenuViewFactory
 {
     private static final int MAX_PER_COLUMN = 15;
@@ -181,46 +185,107 @@ public class MenuViewFactory
         }
     }
 
-    private static String getNextUniqueId()
-    {
-        return ((Long)System.currentTimeMillis()).toString();
-    }
-
     public static WebPartView createMenuFolderView(final ViewContext context, String title, final CustomizeMenuForm form)
     {
         // If rootPath is "", then use current context's container
         String rootPath = form.getRootFolder();
-        MenuWebPartFolderForm menuWebPartFolderForm = new MenuWebPartFolderForm();
-        menuWebPartFolderForm.setRootPath(rootPath);
-        menuWebPartFolderForm.setIncludeChildren(form.isIncludeAllDescendants());
-        menuWebPartFolderForm.setFilterType(form.getFolderTypes());
-        menuWebPartFolderForm.setUrlBase(form.getUrl());
-        menuWebPartFolderForm.setUniqueId(getNextUniqueId());
-
-        JSONObject containerTree = getContainerTree(context, menuWebPartFolderForm);
-        if (containerTree.containsKey("children") && containerTree.getJSONArray("children").length() > 0)
+        Container rootFolder = (0 == rootPath.compareTo("")) ? context.getContainer() : ContainerManager.getForPath(rootPath);
+        final User user = context.getUser();
+        List<Container> containersTemp;
+        if (null != rootFolder)
         {
-            // Not empty
-            JspView<MenuWebPartFolderForm> menuView = new JspView<MenuWebPartFolderForm>("/org/labkey/core/admin/menuWebPartFolder.jsp", menuWebPartFolderForm);
-            VBox vbox = new VBox(menuView);
-            vbox.setTitle(title);
-            return vbox;
+            if (form.isIncludeAllDescendants())
+            {
+                containersTemp = ContainerManager.getAllChildren(rootFolder, user, ReadPermission.class, false);    // no workbooks
+                containersTemp.remove(rootFolder);      // getAllChildren adds root, which we don't want
+            }
+            else
+            {
+                containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class, false);   // no workbooks
+    //            containersTemp.add(rootFolder);      // Don't add root folder; later we may add a checkbox to allow it to be added, if so, check root's permissions
+            }
         }
         else
         {
-            WebPartView view = new WebPartView(title) {
-                @Override
-                protected void renderView(Object model, PrintWriter out) throws Exception
-                {
-                    out.write("<table style='width:50'>");
-                    out.write("<tr><td style='vertical-align:top;padding:4px'>No folders selected.</td></tr>");
-                    out.write("</table>");
-                }
-            };
-
-            view.setEmpty(true);
-            return view;
+            containersTemp = new ArrayList<Container>();
         }
+
+        if (!context.getContainer().getPolicy().hasPermission(user, AdminPermission.class))
+        {
+            // If user doesn't have Admin permission, don't show "_" containers
+            List<Container> adjustedContainers = new ArrayList<Container>();
+            for (Container container : containersTemp)
+            {
+                if (!container.getName().startsWith("_"))
+                    adjustedContainers.add(container);
+            }
+            containersTemp = adjustedContainers;
+        }
+
+        Collections.sort(containersTemp, new Comparator<Container>()
+        {
+            @Override
+            public int compare(Container container1, Container container2)
+            {
+                return container1.getName().compareToIgnoreCase(container2.getName());
+            }
+        });
+
+        final Collection<Container> containers = containersTemp;
+
+        WebPartView view = new WebPartView(title) {
+            @Override
+            protected void renderView(Object model, PrintWriter out) throws Exception
+            {
+                final String filterFolderName = form.getFolderTypes();
+                StringExpression expr = null;
+                String urlBase = form.getUrl();
+                if (null != StringUtils.trimToNull(urlBase))
+                {
+                    expr = StringExpressionFactory.createURL(form.getUrl());
+                }
+
+                boolean seenAtLeastOne = false;
+                out.write("<table style='width:50'>");
+                ArrayList<StringBuilder> cells = new ArrayList<StringBuilder>();
+                for (Container container : containers)
+                {
+                    if (null == StringUtils.trimToNull(filterFolderName) ||
+                            "[all]".equals(filterFolderName) ||
+                            container.getFolderType().getName().equals(filterFolderName))
+                    {
+                        ActionURL actionURL = null;
+                        if (null != expr)
+                        {
+                            actionURL = new ActionURL(expr.getSource());
+                            actionURL.setContainer(container);
+                        }
+                        else
+                        {
+                            actionURL = container.getStartURL(user);
+                        }
+
+                        String uri = actionURL.getLocalURIString();
+                        if (null != StringUtils.trimToNull(uri))
+                        {
+                            String name = null != StringUtils.trimToNull(container.getName()) ? container.getName() : "[root]";
+                            StringBuilder cell = new StringBuilder("<a href=\"" + uri + "\">" + name + "</a>");
+                            cells.add(cell);
+                            seenAtLeastOne = true;
+                        }
+                    }
+                }
+
+                writeCells(cells, out);
+
+                if (!seenAtLeastOne)
+                    out.write("<tr><td style='vertical-align:top;padding:4px'>No folders selected.</td></tr>");
+                out.write("</table>");
+            }
+        };
+
+        view.setEmpty(containers.isEmpty());
+        return view;
     }
 
     private static void writeCells(ArrayList<StringBuilder> cells, PrintWriter out)
@@ -248,163 +313,5 @@ public class MenuViewFactory
         }
     }
 
-    public static class MenuWebPartFolderForm
-    {
-        private String _rootPath;
-        private String _filterType;
-        private String _urlBase;
-        private boolean _includeChildren;
-        private String _uniqueId;
-
-        public String getRootPath()
-        {
-            return _rootPath;
-        }
-
-        public void setRootPath(String rootPath)
-        {
-            _rootPath = rootPath;
-        }
-
-        public String getFilterType()
-        {
-            return _filterType;
-        }
-
-        public void setFilterType(String filterType)
-        {
-            _filterType = filterType;
-        }
-
-        public boolean isIncludeChildren()
-        {
-            return _includeChildren;
-        }
-
-        public void setIncludeChildren(boolean includeChildren)
-        {
-            _includeChildren = includeChildren;
-        }
-
-        public String getUrlBase()
-        {
-            return _urlBase;
-        }
-
-        public void setUrlBase(String urlBase)
-        {
-            _urlBase = urlBase;
-        }
-
-        public String getUniqueId()
-        {
-            return _uniqueId;
-        }
-
-        public void setUniqueId(String uniqueId)
-        {
-            _uniqueId = uniqueId;
-        }
-    }
-
-    public static JSONObject getContainerTree(ViewContext context, MenuWebPartFolderForm form)
-    {
-        Container rootFolder = (0 == form.getRootPath().compareTo("")) ? context.getContainer() : ContainerManager.getForPath(form.getRootPath());
-
-        StringExpression expr = null;
-        String urlBase = form.getUrlBase();
-        if (null != StringUtils.trimToNull(urlBase))
-        {
-            expr = StringExpressionFactory.createURL(form.getUrlBase());
-        }
-
-        JSONObject props = null;
-        if (null != rootFolder)
-        {
-            props = getContainerProps(rootFolder, context, form.getFilterType(), expr, form.isIncludeChildren(), true);
-        }
-        if (null == props)
-            props = new JSONObject();
-
-        return props;
-    }
-
-    private static JSONObject getContainerProps(Container container, ViewContext context, String filterFolderName,
-                                                StringExpression urlBase, boolean includeChildren, boolean isRoot)
-    {
-        JSONObject props = null;
-
-        ActionURL actionURL = null;
-        if (null != urlBase)
-        {
-            actionURL = new ActionURL(urlBase.getSource());
-            actionURL.setContainer(container);
-        }
-        else
-        {
-            actionURL = container.getStartURL(context.getUser());
-        }
-
-        String uri = actionURL.getLocalURIString();
-        if (null != StringUtils.trimToNull(uri))
-        {
-            String name = null != StringUtils.trimToNull(container.getName()) ? container.getName() : "[root]";
-            String text = "<a href=\"" + uri + "\">" + PageFlowUtil.filter(name) + "</a>";
-            props = new JSONObject();
-            props.put("text", text);
-            props.put("isProject", container.isProject());
-
-            List<Container> containersTemp = null;
-            if (isRoot || includeChildren)
-            {
-                containersTemp = ContainerManager.getChildren(container, context.getUser(), ReadPermission.class, false);   // no workbooks
-            }
-
-            JSONArray childrenProps = new JSONArray();
-            if (null != containersTemp)
-            {
-                if (!context.getContainer().getPolicy().hasPermission(context.getUser(), AdminPermission.class))
-                {
-                    // If user doesn't have Admin permission, don't show "_" containers
-                    List<Container> adjustedContainers = new ArrayList<Container>();
-                    for (Container container1 : containersTemp)
-                    {
-                        if (!container.getName().startsWith("_"))
-                            adjustedContainers.add(container1);
-                    }
-                    containersTemp = adjustedContainers;
-                }
-
-                Collections.sort(containersTemp, new Comparator<Container>()
-                {
-                    @Override
-                    public int compare(Container container1, Container container2)
-                    {
-                        return container1.getName().compareToIgnoreCase(container2.getName());
-                    }
-                });
-
-                for (Container child : containersTemp)
-                {
-                    JSONObject childProps = getContainerProps(child, context, filterFolderName, urlBase, includeChildren, false);
-                    if (null != childProps)
-                        childrenProps.put(childProps);
-                }
-            }
-            props.put("children", childrenProps);
-
-            // Check folder filter here; keep node if it passes filter OR if it has children (because they've passed the filter already)
-            if (!(
-                    null == StringUtils.trimToNull(filterFolderName) ||
-                    "[all]".equals(filterFolderName) ||
-                    container.getFolderType().getName().equals(filterFolderName) ||
-                    props.getJSONArray("children").length() > 0))
-            {
-                props = null;
-            }
-        }
-
-        return props;
-    }
 
 }

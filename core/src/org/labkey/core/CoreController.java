@@ -106,7 +106,6 @@ import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.workbook.CreateWorkbookBean;
@@ -1507,20 +1506,7 @@ public class CoreController extends SpringActionController
             return props;
         }
     }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class GetMenuFolderTreeAction extends ApiAction<MenuViewFactory.MenuWebPartFolderForm>
-    {
-        public ApiResponse execute(MenuViewFactory.MenuWebPartFolderForm form, BindException errors) throws Exception
-        {
-            JSONObject containerTree = MenuViewFactory.getContainerTree(getViewContext(), form);
-            HttpServletResponse resp = getViewContext().getResponse();
-            resp.setContentType("application/json");
-            resp.getWriter().write(containerTree.toString());
-            return null;
-        }
-    }
-
+    
     public static class MoveWorkbookForm
     {
         public int _workbookId = -1;
