@@ -801,9 +801,11 @@ dataintegration/src/org/labkey/di/pipeline/ETLContext.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLManager.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
+dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJob.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformRun.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
+dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text
 demo/module.properties -text
 demo/resources/schemas/dbscripts/postgresql/demo-0.00-1.00.sql -text
 demo/resources/schemas/dbscripts/sqlserver/demo-0.00-1.00.sql -text

@@ -15,7 +15,9 @@
  */
 package org.labkey.di.pipeline;
 
+import org.labkey.api.util.Path;
 import org.labkey.etl.xml.EtlType;
+import org.quartz.ScheduleBuilder;
 
 /**
  * User: jeckels
@@ -24,6 +26,11 @@ import org.labkey.etl.xml.EtlType;
 public class ETLDescriptor
 {
     private String _name;
+
+    public ETLDescriptor(String name)
+    {
+        _name = name;
+    }
 
     public ETLDescriptor(EtlType etlType)
     {
@@ -35,9 +42,33 @@ public class ETLDescriptor
         return _name;
     }
 
+    public String getId()
+    {
+        // TODO
+        return new Path("module", "dataintegration", getName()).toString();
+    }
+
+    public String getModuleName()
+    {
+        // TODO
+        return "dataintegration";
+    }
+
     @Override
     public String toString()
     {
         return "ETLDescriptor: " + _name;
+    }
+
+    public ScheduleBuilder getScheduleBuilder()
+    {
+        // TODO
+        return null;
+    }
+
+    public String getScheduleDescription()
+    {
+        //return getScheduleBuilder().toString();
+        return "5m";
     }
 }
