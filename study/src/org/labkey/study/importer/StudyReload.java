@@ -23,7 +23,13 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.StaticLoggerGetter;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
@@ -49,7 +55,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /*
 * User: adam
@@ -239,6 +252,13 @@ public class StudyReload
             try
             {
                 attemptReload();    // Ignore success messages
+            }
+            catch (ImportException ie)
+            {
+                Container c = ContainerManager.getForId(_studyContainerId);
+                String message = null != c ? " in folder " + c.getPath() : "";
+
+                LOG.error("Study reload failed" + message, ie);
             }
             catch (Throwable t)
             {
