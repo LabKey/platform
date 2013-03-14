@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.di.view.DataIntegrationController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 ViewContext context = HttpView.currentContext();
@@ -34,9 +35,20 @@ for (TransformConfiguration c : configurationsList)
 
 %>
 <script>
+var X = Ext4 || Ext;
 function Transform_setProperty(transformId, property, value)
 {
-    alert(transformId + " " + property + "=" + value);
+//    alert(transformId + " " + property + "=" + value);
+    var params = {'transformId':transformId};
+    params[property] = value;
+
+    X.Ajax.request({
+        url : <%=q(buildURL(DataIntegrationController.UpdateTransformConfigurationAction.class))%>,
+        params : params,
+        method : "POST"
+//        ,success : onSuccess
+//        ,failure : onFailure
+    });
 }
 function Transform_setEnabled(transformId, enabled)
 {
@@ -45,6 +57,18 @@ function Transform_setEnabled(transformId, enabled)
 function Transform_setVerboseLogging(transformId, verbose)
 {
     Transform_setProperty(transformId, "verboseLogging", verbose);
+}
+
+function Transform_runNow(transformId)
+{
+    var params = {'transformId':transformId};
+    X.Ajax.request({
+        url : <%=q(buildURL(DataIntegrationController.RunTransformAction.class))%>,
+        params : params,
+        method : "POST"
+//        ,success : onSuccess
+//        ,failure : onFailure
+    });
 }
 
 
@@ -72,7 +96,7 @@ function onVerboseLoggingChanged()
 }
 function onRunNowClicked()
 {
-    alert("run " + getTransformId());
+    Transform_runNow(getTransformId());
 }
 </script>
 

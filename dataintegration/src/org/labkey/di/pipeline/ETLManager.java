@@ -51,7 +51,7 @@ public class ETLManager
     private static final Logger LOG = Logger.getLogger(ETLManager.class);
 
 
-    final boolean USETESTDESCRIPTORS = true;
+    final boolean USETESTDESCRIPTORS = false;
     private List<ETLDescriptor> TESTDESCRIPTORS = null;
     private List<TransformConfiguration> TESTCONFIGURATIONS = null;
     private AtomicInteger ROWID = new AtomicInteger(1);

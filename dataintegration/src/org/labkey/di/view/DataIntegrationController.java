@@ -16,14 +16,15 @@
 package org.labkey.di.view;
 
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.GUID;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -33,6 +34,7 @@ import org.labkey.di.pipeline.ETLManager;
 import org.labkey.di.pipeline.TransformConfiguration;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -114,7 +116,7 @@ public class DataIntegrationController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class UpdateTransformConfigurationAction extends ApiAction<TransformConfigurationForm>
+    public class UpdateTransformConfigurationAction extends MutatingApiAction<TransformConfigurationForm>
     {
         @Override
         public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
@@ -159,7 +161,7 @@ public class DataIntegrationController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class RunTransform extends ApiAction<TransformConfigurationForm>
+    public class RunTransformAction extends MutatingApiAction<TransformConfigurationForm>
     {
         @Override
         public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
@@ -181,13 +183,15 @@ public class DataIntegrationController extends SpringActionController
 
             Scheduler s = getScheduler();
             JobDetail job = JobBuilder.newJob(DummyJob.class)
-                    .withIdentity("dummyChecker")
+                    .withIdentity("dummyChecker " + GUID.makeHash())
+                    .usingJobData("transformId", form.getTransformId())
                     .build();
             Trigger trigger = TriggerBuilder.newTrigger()
-                    .withIdentity("runNow")
+                    .withIdentity("runNow " + GUID.makeHash())
                     .startNow()
                     .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                                        .withRepeatCount(1))
+                            .withIntervalInHours(24)
+                            .withRepeatCount(1))
                     .build();
             s.scheduleJob(job, trigger);
 
@@ -221,11 +225,12 @@ public class DataIntegrationController extends SpringActionController
 
 
     public static class DummyJob implements Job
-     {
-         @Override
-         public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
-         {
-             System.err.println("HELLO WORLD");
-         }
-     };
+    {
+        @Override
+        public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
+        {
+            JobDataMap map = jobExecutionContext.getJobDetail().getJobDataMap();
+            System.err.println("HELLO WORLD " + map.getString("transformId"));
+        }
+    }
 }
