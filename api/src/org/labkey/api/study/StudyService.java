@@ -159,7 +159,7 @@ public class StudyService
          * Returns the set of datasets which have ever had data copied from the provided protocol
          */
         public Set<? extends DataSet> getDatasetsForAssayProtocol(ExpProtocol protocol);
-
+        public Map<? extends DataSet, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol);
         /**
          * Returns the set of datasets which currently contain rows from the provided runs. The user may not have
          * permission to read or modify all of the datasets that are returned.
