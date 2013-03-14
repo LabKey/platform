@@ -673,6 +673,15 @@ public class StudyServiceImpl implements StudyService.Service
         return result;
     }
 
+    public Map<DataSetDefinition, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol)
+    {
+        Set<DataSetDefinition> dataSets = getDatasetsForAssayProtocol(protocol);
+        Map<DataSetDefinition, String> result = new HashMap<DataSetDefinition, String>();
+        for (DataSetDefinition dataSet : dataSets)
+            result.put(dataSet, dataSet.getStorageTableInfo().getSelectName());
+        return result;
+    }
+
     @Override
     public Set<DataSet> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user)
     {
