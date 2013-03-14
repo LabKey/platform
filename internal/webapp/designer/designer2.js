@@ -2578,7 +2578,7 @@ LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
             return;
 
         var crosstabColumnMember = columns[0].get('crosstabColumnMember');
-        if (crosstabColumnMember) {
+        if (crosstabColumnMember && columns.length > 1) {
             var n = this.createCrosstabMemberNode(crosstabColumnMember);
             node.appendChild(n);
             node = n;

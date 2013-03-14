@@ -439,7 +439,9 @@ public class QueryView extends WebPartView<Object>
         // The correct long term solution is to (a) create proper QueryView subclasses using UserSchema.createView()
         // and (b) use POST instead of GET for the export actions (or others) to match the QueryWebPart.js config behavior.
         // Using POST is necessary since the QueryWebPart.js config expresses other options (column lists, grid rendering options, etc) that can't be expressed on URLs.
-        if (_customView != null && _customView.hasFilterOrSort())
+        //
+        // Issue 17313: Exporting from a grid should respect "Apply View Filter" state
+        if (!ignoreUserFilter() && _customView != null && _customView.hasFilterOrSort())
         {
             _customView.applyFilterAndSortToURL(ret, DATAREGIONNAME_DEFAULT);
         }
