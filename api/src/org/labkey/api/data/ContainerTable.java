@@ -16,22 +16,17 @@
 
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
-
-import java.util.Set;
 
 /**
  * User: jeckels
@@ -39,24 +34,28 @@ import java.util.Set;
  */
 public class ContainerTable extends FilteredTable<UserSchema>
 {
-    @Nullable private ActionURL _url;
-
     public ContainerTable(UserSchema schema)
     {
-        super(CoreSchema.getInstance().getTableInfoContainers(), schema);
-        // Call this after having a chance to set _schema's value. It's invoked in the superclass constructor,
-        // but that's too early for this scenario
-        applyContainerFilter(getContainerFilter());
-        init();
+        this(schema, null);
     }
 
     public ContainerTable(UserSchema schema, ActionURL url)
     {
-        this(schema);
-        _url = url;
+        super(CoreSchema.getInstance().getTableInfoContainers(), schema);
+
+        // Call this after having a chance to set _schema's value. It's invoked in the superclass constructor,
+        // but that's too early for this scenario
+        applyContainerFilter(getContainerFilter());
+        init(url);
     }
 
-    private void init()
+    @Override
+    public FieldKey getContainerFieldKey()
+    {
+        return FieldKey.fromParts("ID");
+    }
+
+    private void init(ActionURL url)
     {
         SqlDialect dialect = getSchema().getSqlDialect();
         setDescription("Contains one row for every folder, workbook, or project");
@@ -68,31 +67,28 @@ public class ContainerTable extends FilteredTable<UserSchema>
         entityIdColumn.setKeyField(true);
         getColumn("RowId").setHidden(true);
 
-        getColumn("Parent").setFk(new LookupForeignKey("EntityId", "Name")
-        {
-           public TableInfo getLookupTableInfo()
-           {
-                return new ContainerTable(_userSchema);
-           }
-        });
+        ColumnInfo parentColumn = getColumn("Parent");
+        ContainerForeignKey.initColumn(parentColumn, _userSchema);
 
-        ActionURL projBegin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getRoot());
-        String wbURL = AppProps.getInstance().getContextPath() + "/" + projBegin.getController()
-                + "/__r${ID}/" + projBegin.getAction() + ".view";
-        StringExpression webURLExp = StringExpressionFactory.create(wbURL, true);
+        if (url == null)
+            url = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getRoot());
+        DetailsURL detailsURL = new DetailsURL(url);
+        setDetailsURL(detailsURL);
 
         ColumnInfo col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
         col.setReadOnly(true);
-        col.setURL(webURLExp);
+        col.setURL(detailsURL);
         this.addColumn(col);
 
-        getColumn("Name").setDisplayColumnFactory(new DisplayColumnFactory()
+        ColumnInfo name = getColumn("Name");
+        name.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(colInfo, false, _url);
+                return new ContainerDisplayColumn(colInfo, false);
             }
         });
+        name.setURL(detailsURL);
 
         PropertyManager.PropertySchema propertySchema = PropertyManager.PropertySchema.getInstance();
         SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM " + propertySchema.getTableInfoProperties() + " p, " +
@@ -107,6 +103,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         SQLFragment folderDisplaySQL = new SQLFragment("COALESCE("+ ExprColumn.STR_TABLE_ALIAS +".title, "+ ExprColumn.STR_TABLE_ALIAS +".name)");
         ExprColumn folderDisplayColumn = new ExprColumn(this, "DisplayName", folderDisplaySQL, JdbcType.VARCHAR);
         addColumn(folderDisplayColumn);
+        folderDisplayColumn.setURL(detailsURL);
         setTitleColumn(folderDisplayColumn.getName());
 
         final ColumnInfo folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("Name"));
@@ -115,10 +112,11 @@ public class ContainerTable extends FilteredTable<UserSchema>
             @Override
             public DisplayColumn createRenderer(final ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(colInfo, true, _url);
+                return new ContainerDisplayColumn(colInfo, true);
             }
         });
         addColumn(folderPathCol);
+        folderPathCol.setURL(detailsURL);
 
         SQLFragment containerTypeSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN 'workbook' " +
             "WHEN "+ExprColumn.STR_TABLE_ALIAS+".Type = 'tab' THEN 'tab' " +
@@ -139,6 +137,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
             "THEN " + getSqlDialect().concatenate("CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowid as varchar)", "'. '", ExprColumn.STR_TABLE_ALIAS + ".title") +
             " ELSE " + ExprColumn.STR_TABLE_ALIAS + ".name END");
         ExprColumn containerDisplayColumn = new ExprColumn(this, "IdPrefixedName", containerDisplaySQL, JdbcType.VARCHAR);
+        containerDisplayColumn.setURL(detailsURL);
         addColumn(containerDisplayColumn);
 
         col = getColumn("CreatedBy");
@@ -151,41 +150,8 @@ public class ContainerTable extends FilteredTable<UserSchema>
             }
         });
 
-        //NOTE: the string expression used above for the URL will not automatically include the correct field keys
-        //since it doesnt inherit from FieldKeyStringExpression.  see DisplayColumn.addQueryFieldKeys
-        //therefore we make sure the ID col is included below
-        DisplayColumnFactory dcf = new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(final ColumnInfo colInfo)
-            {
-                return new DataColumn(colInfo){
-                    @Override
-                    public void addQueryFieldKeys(Set<FieldKey> keys)
-                    {
-                        super.addQueryFieldKeys(keys);
-                        keys.add(FieldKey.fromString("ID"));
-                    }
-                };
-            }
-        };
-
-        ColumnInfo name = getColumn("Name");
-        name.setURL(webURLExp);
-
         ColumnInfo title = getColumn("Title");
-        title.setURL(webURLExp);
-        title.setDisplayColumnFactory(dcf);
-
-        ColumnInfo displayName = getColumn("DisplayName");
-        displayName.setURL(webURLExp);
-        displayName.setDisplayColumnFactory(dcf);
-
-        ColumnInfo idPrefixed = getColumn("IdPrefixedName");
-        idPrefixed.setURL(webURLExp);
-        idPrefixed.setDisplayColumnFactory(dcf);
-
-        setTitleColumn("DisplayName");
+        title.setURL(detailsURL);
 
         setImportURL(LINK_DISABLER);
     }

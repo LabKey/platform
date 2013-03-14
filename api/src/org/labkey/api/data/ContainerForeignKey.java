@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
 
@@ -25,11 +26,8 @@ import org.labkey.api.view.ActionURL;
  * User: Karl Lum
  * Date: Nov 2, 2007
  */
-public class ContainerForeignKey extends LookupForeignKey
+public class ContainerForeignKey extends QueryForeignKey
 {
-    private ActionURL _url;
-    private UserSchema _schema;
-
     static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema)
     {
         return initColumn(column, schema, null);
@@ -37,7 +35,7 @@ public class ContainerForeignKey extends LookupForeignKey
 
     static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema, final ActionURL url)
     {
-        column.setFk(new ContainerForeignKey(schema, url));
+        column.setFk(new ContainerForeignKey(schema));
         column.setUserEditable(false);
         column.setShownInInsertView(false);
         column.setShownInUpdateView(false);
@@ -46,26 +44,17 @@ public class ContainerForeignKey extends LookupForeignKey
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(colInfo, false, url, true);
+                return new ContainerDisplayColumn(colInfo, false, true);
             }
         });
+        if (url != null)
+            column.setURL(new DetailsURL(url));
         return column;
     }
 
     public ContainerForeignKey(UserSchema schema)
     {
-        this(schema, null);
+        super("core", schema.getContainer(), schema.getUser(), "Containers", "EntityId", "DisplayName");
     }
 
-    public ContainerForeignKey(UserSchema schema, ActionURL url)
-    {
-        super(null, null, "core", "Containers", "EntityId", "DisplayName");
-        _schema = schema;
-        _url = url;
-    }
-
-    public TableInfo getLookupTableInfo()
-    {
-        return new ContainerTable(_schema, _url);
-    }
 }

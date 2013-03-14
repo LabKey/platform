@@ -26,7 +26,6 @@ import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.gwt.client.util.StringUtils;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -35,12 +34,10 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -54,8 +51,6 @@ import java.util.Set;
  */
 public class ContainerDisplayColumn extends DataColumn
 {
-    private Container _c;
-    private ActionURL _url;
     private final boolean _showPath;
     private final boolean _boundColHasEntityId;
 
@@ -64,61 +59,39 @@ public class ContainerDisplayColumn extends DataColumn
      */
     public ContainerDisplayColumn(ColumnInfo col, boolean showPath)
     {
-        this(col, showPath, null);
-    }
-
-    /**
-     * @param showPath if true, show the container's full path. If false, show just its name
-     */
-    public ContainerDisplayColumn(ColumnInfo col, boolean showPath, ActionURL actionURL)
-    {
-        this(col, showPath, actionURL, false);
+        this(col, showPath, false);
     }
 
     /**
      * @param showPath if true, show the container's full path. If false, show just its name
      * @param boundColHasEntityId if true, the value of this column will be used as the entityId.  If not, it will resolve to the containers table (for example, container/EntityId)
      */
-    public ContainerDisplayColumn(ColumnInfo col, boolean showPath, ActionURL actionURL, boolean boundColHasEntityId)
+    public ContainerDisplayColumn(ColumnInfo col, boolean showPath, boolean boundColHasEntityId)
     {
         super(col);
         _showPath = showPath;
         _boundColHasEntityId = boundColHasEntityId;
-        if (actionURL == null)
-        {
-            _url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(ContainerManager.getRoot());
-        }
-        else
-        {
-            _url = actionURL.clone();
-        }
     }
 
     @Override
     public Object getJsonValue(RenderContext ctx)
     {
-        Object result = ctx.get(getBoundColumn().getFieldKey());
-        if (result == null)
-        {
-            // If we couldn't find it by FieldKey, check by alias as well
-            result = getBoundColumn().getValue(ctx);
-        }
-
-        _c = getContainer(ctx);
-
-        if(_c == null)
+        Container c = getContainer(ctx);
+        if (c == null)
             return null;
 
-        return _showPath ? _c.getPath() : result;
+        Object result = super.getJsonValue(ctx);
+
+        return _showPath ? c.getPath() : result;
     }
 
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        // Get the container for this row; stash the path in the context so urls can use it
-        _c = getContainer(ctx);
+        // Get the container for this row
+        Container c = getContainer(ctx);
 
-        if (_c == null)
+        if (c == null)
         {
             String id = getEntityIdValue(ctx);
             if(id != null)
@@ -128,7 +101,7 @@ public class ContainerDisplayColumn extends DataColumn
             else
                 return "<could not resolve container>";
         }
-        return _showPath ? _c.getPath() : _c.getTitle();
+        return _showPath ? c.getPath() : c.getTitle();
     }
 
     //NOTE: custom SQL statements may not container a column named entityId, so we fall back to container if entityId is absent
@@ -175,8 +148,7 @@ public class ContainerDisplayColumn extends DataColumn
     {
         String id = getEntityIdValue(ctx);
 
-        _c = id == null ? null : ContainerManager.getForId(id);
-        return _c;
+        return id == null ? null : ContainerManager.getForId(id);
     }
 
 
@@ -187,25 +159,6 @@ public class ContainerDisplayColumn extends DataColumn
         keys.addAll(getEntityIdFieldKeys());
     }
 
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-    {
-        // Do this first to make sure we've looked up the container if needed
-        getDisplayValue(ctx);
-        // Don't render link if container is deleted
-        if (null == _c)
-        {
-            out.write(getFormattedValue(ctx));
-        }
-        else
-        {
-            if (_url != null)
-            {
-                _url.setContainer(_c);
-            }
-            super.renderGridCellContents(ctx, out);
-        }
-    }
-
     @Override
     public String renderURL(RenderContext ctx)
     {
@@ -214,27 +167,15 @@ public class ContainerDisplayColumn extends DataColumn
         if(c == null)
             return null;
 
-        return c.getStartURL(ctx.getViewContext().getUser()).toString();
+        return super.renderURL(ctx);
     }
 
     public String getFormattedValue(RenderContext ctx)
     {
-        // Do this before outputting the URL as it makes sure that we've looked up the container object
         String displayValue = getDisplayValue(ctx).toString();
-
-        StringBuilder sb = new StringBuilder();
-        if (_c != null && _url != null)
-        {
-            sb.append("<a href=\"");
-            sb.append(_url.getLocalURIString());
-            sb.append("\">");
-        }
-        sb.append(PageFlowUtil.filter(displayValue));
-        if (_c != null && _url != null)
-        {
-            sb.append("</a>");
-        }
-        return sb.toString();
+        if (isHtmlFiltered())
+            displayValue = PageFlowUtil.filter(displayValue);
+        return displayValue;
     }
 
     public boolean isFilterable()
