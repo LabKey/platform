@@ -1,8 +1,11 @@
 package org.labkey.di.pipeline;
 
+import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -76,5 +79,17 @@ public class TransformConfiguration extends Entity
     public void setLastChecked(Date lastChecked)
     {
         this.lastChecked = lastChecked;
+    }
+
+    public Map<String, Object> toJSON(@Nullable Map<String,Object> map)
+    {
+        if (null == map)
+            map = new JSONObject();
+        map.put("rowId", getRowId());
+        map.put("transformId", getTransformId());
+        map.put("enabled", isEnabled());
+        map.put("verboseLogging", isVerboseLogging());
+        map.put("lastChecked", getLastChecked());
+        return map;
     }
 }

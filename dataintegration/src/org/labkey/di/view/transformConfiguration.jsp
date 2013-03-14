@@ -28,7 +28,7 @@
 <%
 ViewContext context = HttpView.currentContext();
 List<ETLDescriptor> descriptors = ETLManager.get().getETLs();
-List<TransformConfiguration> configurationsList = ETLManager.get().getTransformConfigutaions(context.getContainer());
+List<TransformConfiguration> configurationsList = ETLManager.get().getTransformConfigurations(context.getContainer());
 Map<String,TransformConfiguration> configurationsMap = new HashMap<String, TransformConfiguration>(configurationsList.size()*2);
 for (TransformConfiguration c : configurationsList)
     configurationsMap.put(c.getTransformId(), c);
@@ -105,27 +105,36 @@ function onRunNowClicked()
  TODO: consider ext rendering for table (grid, or dataview)
 --%>
 
-<table><tr><th>Name</th><th>Source Module</th><th>Schedule</th><th>Enabled</th><th>Verbose Logging</th><th>&nbsp;</th></tr><%
+<div class="labkey-data-region-wrap">
+<table class="labkey-data-region labkey-show-borders">
+    <tr><td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">Source Module</td>
+        <td class="labkey-column-header">Schedule</td>
+        <td class="labkey-column-header">Enabled</td>
+        <td class="labkey-column-header">Verbose Logging</td>
+        <td class="labkey-column-header">&nbsp;</td>
+    </tr><%
 
+int row = 0;
 for (ETLDescriptor descriptor : descriptors)
 {
+    row++;
     String id = descriptor.getTransformId();
     TransformConfiguration configuration = configurationsMap.get(descriptor.getTransformId());
-    boolean isNewConfiguration = false;
     if (null == configuration)
     {
-        isNewConfiguration = true;
         configuration = new TransformConfiguration();
         configuration.setContainer(context.getContainer().getId());
         configuration.setTransformId(id);
     }
-    %><tr transformId="<%=h(descriptor.getTransformId())%>">
+    %><tr transformId="<%=h(descriptor.getTransformId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox onchange="onEnabledChanged()" <%=checked(configuration.isEnabled())%>></td>
         <td><input type=checkbox onchange="onVerboseLoggingChanged()" <%=checked(configuration.isVerboseLogging())%>></td>
-        <td><%=generateButton("run now", "#", "onRunNowClicked()")%></td>
+        <td><%=generateButton("run now", "#", "onRunNowClicked(); return false;")%></td>
     </tr><%
 }
 %></table>
+</div>

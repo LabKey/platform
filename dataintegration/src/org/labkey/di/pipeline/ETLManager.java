@@ -17,7 +17,9 @@ package org.labkey.di.pipeline;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -41,6 +43,7 @@ import org.quartz.impl.StdSchedulerFactory;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -135,7 +138,8 @@ public class ETLManager
         }
     }
 
-    public List<TransformConfiguration> getTransformConfigutaions(Container c)
+
+    public List<TransformConfiguration> getTransformConfigurations(Container c)
     {
         DbScope scope = DbSchema.get("dataintegration").getScope();
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE container=?", c.getId());
@@ -143,19 +147,44 @@ public class ETLManager
     }
 
 
-    public void saveTransformConfiguration(User user, TransformConfiguration config)
+    public TransformConfiguration saveTransformConfiguration(User user, TransformConfiguration config)
     {
         try
         {
             TableInfo t = DbSchema.get("dataintegration").getTable("TransformConfiguration");
             if (-1 == config.rowId)
-                Table.insert(user, t, config);
+                return Table.insert(user, t, config);
             else
-                Table.update(user, t, config, new Object[] {config.rowId});
+                return Table.update(user, t, config, new Object[] {config.rowId});
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
+        }
+    }
+
+
+
+    /* Should only be called once at startup */
+    public void startAllConfigurations()
+    {
+        DbScope scope = DbSchema.get("dataintegration").getScope();
+
+        CaseInsensitiveHashMap<ETLDescriptor> etls = new CaseInsensitiveHashMap<ETLDescriptor>();
+        for (ETLDescriptor etl : getETLs())
+            etls.put(etl.getTransformId(), etl);
+
+        SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
+        ArrayList<TransformConfiguration> configs = new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
+        for (TransformConfiguration config : configs)
+        {
+            ETLDescriptor etl = etls.get(config.getTransformId());
+            if (null == etl)
+                continue;
+            Container c = ContainerManager.getForId(config.getContainerId());
+            if (null == c)
+                continue;
+            schedule(etl, c, null);
         }
     }
 }

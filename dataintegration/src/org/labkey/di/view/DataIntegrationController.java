@@ -122,6 +122,7 @@ public class DataIntegrationController extends SpringActionController
         public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
         {
             ViewContext context = getViewContext();
+            boolean shouldStartStop = false;
 
             ETLDescriptor etl = null;
             List<ETLDescriptor> etls = ETLManager.get().getETLs();
@@ -137,7 +138,7 @@ public class DataIntegrationController extends SpringActionController
                 throw new NotFoundException(form.getTransformId());
 
             TransformConfiguration config = null;
-            List<TransformConfiguration> configs = ETLManager.get().getTransformConfigutaions(context.getContainer());
+            List<TransformConfiguration> configs = ETLManager.get().getTransformConfigurations(context.getContainer());
             for (TransformConfiguration c : configs)
             {
                 if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
@@ -149,12 +150,30 @@ public class DataIntegrationController extends SpringActionController
             if (null == config)
                 config = new TransformConfiguration(etl, context.getContainer());
             if (null != form.isEnabled())
+            {
+                shouldStartStop = (form.isEnabled() != config.isEnabled());
                 config.setEnabled(form.isEnabled());
+            }
             if (null != form.isVerboseLogging())
                 config.setVerboseLogging(form.isVerboseLogging());
-            ETLManager.get().saveTransformConfiguration(context.getUser(), config);
+            config = ETLManager.get().saveTransformConfiguration(context.getUser(), config);
+
+            if (shouldStartStop)
+            {
+                if (config.isEnabled())
+                {
+                    ETLManager.get().schedule(etl, getContainer(), getUser());
+                }
+                else
+                {
+                    // TODO: unschedule();
+                    System.err.println("STOP ME");
+                }
+            }
+
             JSONObject ret = new JSONObject();
             ret.put("success",true);
+            ret.put("result", config.toJSON(null));
             return new ApiSimpleResponse(ret);
         }
     }
@@ -181,6 +200,7 @@ public class DataIntegrationController extends SpringActionController
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 
+            // TODO ETLManager.runNow();
             Scheduler s = getScheduler();
             JobDetail job = JobBuilder.newJob(DummyJob.class)
                     .withIdentity("dummyChecker " + GUID.makeHash())

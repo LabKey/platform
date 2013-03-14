@@ -87,12 +87,7 @@ public class DataIntegrationModule extends DefaultModule
 
     private void scheduleEnabledTransforms()
     {
-        // TODO - drive this based on what an admin has enabled through the UI and is persisted in the database
-        for (ETLDescriptor etlDescriptor : ETLManager.get().getETLs())
-        {
-            // For now, just schedule them all in the /home container
-//            ETLManager.get().schedule(etlDescriptor, ContainerManager.getHomeContainer(), UserManager.getGuestUser());
-        }
+        ETLManager.get().startAllConfigurations();
     }
 
 

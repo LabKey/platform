@@ -18,6 +18,8 @@ package org.labkey.di.pipeline;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
@@ -30,6 +32,7 @@ import org.quartz.SimpleScheduleBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -202,5 +205,18 @@ public class ETLDescriptor implements Serializable
     {
         //return getScheduleBuilder().toString();
         return "5m";
+    }
+
+    public Map<String, Object> toJSON(@Nullable Map<String,Object> map)
+    {
+        if (null == map)
+            map = new JSONObject();
+        map.put("transformId", getTransformId());
+        map.put("description", getDescription());
+        map.put("name", getName());
+        map.put("moduleName", getModuleName());
+        map.put("scheduleDescription", getScheduleDescription());
+        map.put("transformVersion", getTransformVersion());
+        return map;
     }
 }
