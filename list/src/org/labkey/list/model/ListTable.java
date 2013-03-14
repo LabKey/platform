@@ -402,7 +402,7 @@ public class ListTable extends FilteredTable<ListSchema> implements UpdateableTa
             if (0 != keyColumnOutput && (context.isForImport() || _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger))
             {
                 ValidatorIterator vi = new ValidatorIterator(ret, context, _list.getContainer(), null);
-                vi.addUniqueValidator(keyColumnOutput, DbSchema.get("lists").getSqlDialect().isCaseSensitive());
+                vi.addUniqueValidator(keyColumnOutput, DbSchema.get("exp").getSqlDialect().isCaseSensitive());
                 ret = vi;
             }
             return ret;
