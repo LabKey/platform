@@ -18,7 +18,9 @@ package org.labkey.study;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections15.comparators.ComparableComparator;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -30,7 +32,9 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.*;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -64,6 +68,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SampleManager implements ContainerManager.ContainerListener
 {
@@ -79,6 +84,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     private final QueryHelper<SampleRequestStatus> _requestStatusHelper;
     private final RequirementProvider<SampleRequestRequirement, SampleRequestActor> _requirementProvider =
             new SpecimenRequestRequirementProvider();
+    private final Map<String, Resource> _moduleExtendedSpecimenRequestViews = new ConcurrentHashMap<String, Resource>();
 
     private SampleManager()
     {
@@ -3127,4 +3133,36 @@ public class SampleManager implements ContainerManager.ContainerListener
         url.addParameter("SpecimenDetail." + urlColumnName + "~eq", label);
     }
 
+    public void registerExtendedSpecimenRequestView(Module module, Resource requestView)
+    {
+        _moduleExtendedSpecimenRequestViews.put(module.getName(), requestView);
+    }
+
+    @Nullable
+    public ExtendedSpecimenRequestView getExtendedSpecimenRequestView(Container container)
+    {
+        if (container == null)
+            return null;
+
+        Set<String> activeModuleNames = new HashSet<String>();
+        for (Module module : container.getActiveModules())
+            activeModuleNames.add(module.getName());
+        for (Map.Entry<String, Resource> entry : _moduleExtendedSpecimenRequestViews.entrySet())
+        {
+            if (activeModuleNames.contains(entry.getKey()) && entry.getValue().exists())
+            {
+                try
+                {
+                    String body = IOUtils.toString(entry.getValue().getInputStream());
+                    return ExtendedSpecimenRequestView.createView(body);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException("Unable to load extended specimen request view from " + entry.getValue().getPath(), e);
+                }
+            }
+        }
+
+        return null;
+    }
 }

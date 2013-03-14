@@ -35,6 +35,7 @@
     ViewContext context = me.getViewContext();
     List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(context.getContainer());
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
+    boolean hasExtendedRequestView = SampleManager.getInstance().getExtendedSpecimenRequestView(context.getContainer()) != null;
     Specimen[] specimens = bean.getSamples();
     SampleManager.SpecimenRequestInput[] inputs = bean.getInputs();
 %>
@@ -173,17 +174,29 @@ function setDefaults()
         <tr>
             <td>
                 <input type="hidden" name="<%= h(SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name()) %>" value="false">
+                <input type="hidden" name="<%= h(SpecimenController.CreateSampleRequestForm.PARAMS.extendedRequestUrl.name()) %>" value="false">
                 <%
                     boolean hasReturnURL = bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty();
-                    if (hasReturnURL)
+                    if (hasExtendedRequestView)
                     {
-                %>
-                <%= generateSubmitButton((shoppingCart ? "Create" : "Submit") + " and Return to Specimens")%>
+                        %>
+                        <%= text(buttonImg("Save & Continue", "document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.extendedRequestUrl.name() + ".value='true'; return true;"))%>
+                        <%
+                    }
+                    else
+                    {
+                        if (hasReturnURL)
+                        {
+                            %>
+                            <%= generateSubmitButton((shoppingCart ? "Create" : "Submit") + " and Return to Specimens")%>
+                            <%
+                        }
+                     %>
+                     <%= text(buttonImg((shoppingCart ? "Create" : "Submit") + " and View Details",
+                            "document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;"))%>
                 <%
                     }
                 %>
-                <%= text(buttonImg((shoppingCart ? "Create" : "Submit") + " and View Details",
-                        "document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;"))%>
                 <%= text(hasReturnURL ? generateButton("Cancel", bean.getReturnUrl()) : generateButton("Cancel", SpecimenController.ViewRequestsAction.class))%>
             </td>
         </tr>

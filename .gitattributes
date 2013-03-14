@@ -3112,6 +3112,7 @@ study/src/org/labkey/study/model/DatasetManager.java -text
 study/src/org/labkey/study/model/DatasetReorderer.java -text
 study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
+study/src/org/labkey/study/model/ExtendedSpecimenRequestView.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/LocationImpl.java -text
 study/src/org/labkey/study/model/Participant.java -text

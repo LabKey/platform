@@ -117,6 +117,7 @@ import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.ExtendedSpecimenRequestView;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.SampleRequest;
@@ -292,6 +293,15 @@ public class SpecimenController extends BaseStudyController
     private ActionURL getManageRequestURL(int requestID, ReturnURLString returnUrl)
     {
         ActionURL url = new ActionURL(ManageRequestAction.class, getContainer());
+        url.addParameter(IdForm.PARAMS.id, Integer.toString(requestID));
+        if (returnUrl != null)
+            url.addParameter(ManageRequestForm.PARAMS.returnUrl, returnUrl);
+        return url;
+    }
+
+    private ActionURL getExtendedRequestURL(int requestID, ReturnURLString returnUrl)
+    {
+        ActionURL url = new ActionURL(ExtendedSpecimenRequestAction.class, getContainer());
         url.addParameter(IdForm.PARAMS.id, Integer.toString(requestID));
         if (returnUrl != null)
             url.addParameter(ManageRequestForm.PARAMS.returnUrl, returnUrl);
@@ -1432,6 +1442,7 @@ public class SpecimenController extends BaseStudyController
         public enum PARAMS
         {
             returnUrl,
+            extendedRequestUrl,
             ignoreReturnUrl
         }
 
@@ -1443,6 +1454,7 @@ public class SpecimenController extends BaseStudyController
         private Integer _preferredLocation;
         private ReturnURLString _returnUrl;
         private boolean _ignoreReturnUrl;
+        private boolean _extendedRequestUrl;
         private String[] _sampleIds;
 
         public String getHiddenFormInputs(ViewContext ctx)
@@ -1572,6 +1584,16 @@ public class SpecimenController extends BaseStudyController
         public void setIgnoreReturnUrl(boolean ignoreReturnUrl)
         {
             _ignoreReturnUrl = ignoreReturnUrl;
+        }
+
+        public boolean isExtendedRequestUrl()
+        {
+            return _extendedRequestUrl;
+        }
+
+        public void setExtendedRequestUrl(boolean extendedRequestUrl)
+        {
+            _extendedRequestUrl = extendedRequestUrl;
         }
 
         public String[] getSampleIds()
@@ -1825,6 +1847,10 @@ public class SpecimenController extends BaseStudyController
         public ActionURL getSuccessURL(CreateSampleRequestForm createSampleRequestForm)
         {
             ActionURL modifiedReturnURL = null;
+            if (createSampleRequestForm.isExtendedRequestUrl())
+            {
+                return getExtendedRequestURL(_sampleRequest.getRowId(), modifiedReturnURL != null ? new ReturnURLString(modifiedReturnURL.getLocalURIString()) : null);
+            }
             if (createSampleRequestForm.getReturnUrl() != null)
             {
                 modifiedReturnURL = createSampleRequestForm.getReturnUrl().getActionURL();
@@ -1913,6 +1939,32 @@ public class SpecimenController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendSpecimenRequestsNavTrail(root).addChild("New Specimen Request");
+        }
+    }
+
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    public class ExtendedSpecimenRequestAction extends SimpleViewAction<CreateSampleRequestForm>
+    {
+        public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
+        {
+            VBox vbox = new VBox();
+
+            ExtendedSpecimenRequestView view = SampleManager.getInstance().getExtendedSpecimenRequestView(getContainer());
+            if (view != null && view.isActive())
+            {
+                HtmlView requestView = new HtmlView(view.getBody());
+                vbox.addView(requestView);
+            }
+            else
+            {
+                vbox.addView(new HtmlView("An extended specimen request view has not been provided for this folder."));
+            }
+            return vbox;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendSpecimenRequestsNavTrail(root).addChild("Extended Specimen Request");
         }
     }
     
