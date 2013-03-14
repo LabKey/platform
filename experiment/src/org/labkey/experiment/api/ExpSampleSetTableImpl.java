@@ -50,7 +50,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         {
             case Folder:
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
-                columnInfo.setFk(new ContainerForeignKey(_userSchema, new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer())));
+                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()));
                 return columnInfo;
             case Description:
             case LSID:
