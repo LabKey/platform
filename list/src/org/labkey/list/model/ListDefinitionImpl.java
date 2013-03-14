@@ -813,6 +813,9 @@ public class ListDefinitionImpl implements ListDefinition
         DataIterator insertIt = null;
         DataIterator attach = null;
 
+        if (context.getErrors().hasErrors())
+            return 0;                           // if there are errors dib may be returned as null (bug #17286)
+
         try
         {
             ExperimentService.get().ensureTransaction();
