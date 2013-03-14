@@ -227,7 +227,7 @@ public class MenuViewFactory
             @Override
             public int compare(Container container1, Container container2)
             {
-                return container1.getName().compareToIgnoreCase(container2.getName());
+                return container1.compareTo(container2);
             }
         });
 
