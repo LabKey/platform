@@ -472,7 +472,7 @@ public class DatasetWriter implements InternalStudyWriter
             assertFalse(shouldExport(ci, true, false, false));
 
             ci = new ColumnInfo("test");
-            ci.setFk(new ContainerForeignKey(null));
+            ci.setFk(new ContainerForeignKey(null, null));
             assertFalse(shouldExport(ci, true, false, false));
 
             ci = new ColumnInfo("test");
