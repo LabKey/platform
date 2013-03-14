@@ -46,9 +46,9 @@
             var details = values[i];
             innerHTML += '<tr class="labkey-header">';
             if (details.group)
-                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/plus.gif"></a></td>';
+                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/plus.gif"></a></td>';
             else
-                innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=contextPath%>/_.gif"></td>';
+                innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=h(contextPath)%>/_.gif"></td>';
 
             var nextByGroup = '';
  //           if (details.group)
@@ -109,7 +109,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/minus.gif" alt="" />
+                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/minus.gif" alt="" />
                             <span>View All Specimens<a onmouseover="return showHelpDivDelay(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
                                onmouseout="return hideHelpDivDelay();"
                                onclick="return showHelpDiv(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
@@ -140,7 +140,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/minus.gif" alt="" />
+                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/minus.gif" alt="" />
                             <span>Search Specimens</span>
                         </a>
                     </td>
@@ -178,7 +178,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/plus.gif" alt="" />
                             <span>Specimen Reports</span>
                         </a>
                     </td>
@@ -206,7 +206,7 @@
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
-                            <img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                            <img src="<%=h(contextPath)%>/_images/plus.gif" alt="" />
                             <span>Specimen Requests</span>
                         </a>
                     </td>
@@ -249,7 +249,7 @@
                 <tr class="labkey-nav-tree-row labkey-header" >
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
-                            <img src="<%=contextPath%>/_images/minus.gif" alt="" />
+                            <img src="<%=h(contextPath)%>/_images/minus.gif" alt="" />
                             <span id="groupHeading1"></span>
                         </a>
                     </td>
@@ -268,7 +268,7 @@
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
-                            <img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                            <img src="<%=h(contextPath)%>/_images/plus.gif" alt="" />
                             <span id="groupHeading2"></span>
                         </a>
                     </td>
@@ -289,7 +289,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/plus.gif" alt="" />
                             <span>Administration</span>
                         </a>
                     </td>
