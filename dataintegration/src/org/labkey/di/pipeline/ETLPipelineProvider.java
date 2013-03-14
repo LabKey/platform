@@ -15,10 +15,13 @@
  */
 package org.labkey.di.pipeline;
 
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.view.ViewContext;
 import org.labkey.di.DataIntegrationModule;
 
@@ -33,6 +36,14 @@ public class ETLPipelineProvider extends PipelineProvider
     public ETLPipelineProvider(DataIntegrationModule module)
     {
         super(NAME, module);
+    }
+
+    @Override
+    public void preDeleteStatusFile(PipelineStatusFile sf)
+    {
+        // Delete the our own records that point to the pipeline job record
+        SQLFragment sql = new SQLFragment("DELETE FROM dataintegration.transformrun WHERE JobId = ?", sf.getRowId());
+        new SqlExecutor(DataIntegrationDbSchema.getSchema()).execute(sql);
     }
 
     @Override

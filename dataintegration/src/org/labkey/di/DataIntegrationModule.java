@@ -17,10 +17,15 @@
 package org.labkey.di;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.di.pipeline.DataIntegrationDbSchema;
+import org.labkey.di.pipeline.ETLDescriptor;
+import org.labkey.di.pipeline.ETLManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
 
@@ -43,7 +48,7 @@ public class DataIntegrationModule extends DefaultModule
 
     public double getVersion()
     {
-        return 0.02;
+        return 0.03;
     }
 
     protected void init()
@@ -65,7 +70,7 @@ public class DataIntegrationModule extends DefaultModule
     @Override
     public Set<String> getSchemaNames()
     {
-        return Collections.singleton("dataintegration");
+        return Collections.singleton(DataIntegrationDbSchema.SCHEMA_NAME);
     }
 
     @Override
@@ -77,5 +82,17 @@ public class DataIntegrationModule extends DefaultModule
     public void doStartup(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new ETLPipelineProvider(this));
+
+        scheduleEnabledTransforms();
+    }
+
+    private void scheduleEnabledTransforms()
+    {
+        // TODO - drive this based on what an admin has enabled through the UI and is persisted in the database
+        for (ETLDescriptor etlDescriptor : ETLManager.get().getETLs())
+        {
+            // For now, just schedule them all in the /home container
+//            ETLManager.get().schedule(etlDescriptor, ContainerManager.getHomeContainer(), UserManager.getGuestUser());
+        }
     }
 }

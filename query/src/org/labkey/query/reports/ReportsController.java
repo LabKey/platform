@@ -930,7 +930,7 @@ public class ReportsController extends SpringActionController
         {
             Report report = bean.getReport(getViewContext());
             File logFile = new File(((RReport)report).getReportDir(), RReportJob.LOG_FILE_NAME);
-            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile.getAbsolutePath());
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
 
             VBox vbox = new VBox();
 

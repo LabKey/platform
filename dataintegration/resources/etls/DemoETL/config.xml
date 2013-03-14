@@ -3,7 +3,7 @@
     <name>Hello</name>
     <description>Test ETL!</description>
     <transforms></transforms>
-    <source schemaName="srcSchema" queryName="srcQuery" />
+    <source schemaName="core" queryName="users" />
     <destination schemaName="destSchema" queryName="destQuery" />
     <schedule><poll updateTimeColumn="none" createTimeColumn="none2"></poll></schedule>
 </etl>

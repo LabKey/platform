@@ -155,7 +155,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         String xmlJob = eventContext.getMessageAsString();
         PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xmlJob);
 
-        PipelineStatusFileImpl statusFile = PipelineStatusManager.getStatusFile(job.getLogFile().toString());
+        PipelineStatusFileImpl statusFile = PipelineStatusManager.getStatusFile(job.getLogFile());
         if (statusFile == null)
         {
             job.error("Could not find job in database");

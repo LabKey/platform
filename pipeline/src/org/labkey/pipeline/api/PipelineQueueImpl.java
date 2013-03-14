@@ -21,7 +21,6 @@ import org.junit.Test;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -71,13 +70,13 @@ public class PipelineQueueImpl implements PipelineQueue
         File logFile = job.getLogFile();
         if (logFile != null)
         {
-            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile.getAbsolutePath());
+            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile);
             if (pipelineStatusFile == null)
             {
                 PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
             }
 
-            PipelineStatusManager.resetJobId(job.getLogFile().getAbsolutePath(), job.getJobGUID());
+            PipelineStatusManager.resetJobId(job.getLogFile(), job.getJobGUID());
         }
 
         if (job.setQueue(this, PipelineJob.WAITING_STATUS))

@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.JobRunner;
@@ -35,7 +34,6 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
 import java.io.File;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -247,7 +245,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         if (logFile != null)
         {
             // Check if we have an existing entry in the database
-            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile.getAbsolutePath());
+            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile);
             if (pipelineStatusFile == null)
             {
                 // Insert it if we don't
@@ -255,7 +253,7 @@ public class EPipelineQueueImpl implements PipelineQueue
             }
 
             // Reset the ID in case this was a resubmit
-            PipelineStatusManager.resetJobId(job.getLogFile().getAbsolutePath(), job.getJobGUID());
+            PipelineStatusManager.resetJobId(job.getLogFile(), job.getJobGUID());
         }
 
         if (job.setQueue(this, PipelineJob.WAITING_STATUS))

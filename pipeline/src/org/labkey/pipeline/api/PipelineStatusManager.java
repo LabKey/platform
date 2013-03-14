@@ -17,6 +17,7 @@
 package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
@@ -29,6 +30,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -68,10 +70,10 @@ public class PipelineStatusManager
      * @return the corresponding <code>PipelineStatusFileImpl</code>
      * @throws SQLException database error
      */
-    public static PipelineStatusFileImpl getStatusFile(String path)
+    public static PipelineStatusFileImpl getStatusFile(File path)
     {
         return (path == null ? null :
-                getStatusFile(new SimpleFilter(FieldKey.fromParts("FilePath"), PipelineJobService.statusPathOf(path))));
+                getStatusFile(new SimpleFilter(FieldKey.fromParts("FilePath"), PipelineJobService.statusPathOf(path.getAbsolutePath()))));
     }
 
     /**
@@ -110,7 +112,7 @@ public class PipelineStatusManager
         }
     }
 
-    public static boolean setStatusFile(PipelineJob job, User user, String status, String info, boolean allowInsert)
+    public static boolean setStatusFile(PipelineJob job, User user, String status, @Nullable String info, boolean allowInsert)
     {
         try
         {
@@ -118,7 +120,7 @@ public class PipelineStatusManager
             if (sfExist == null)
             {
                 // Then try based on file path
-                sfExist = getStatusFile(job.getLogFile().toString());
+                sfExist = getStatusFile(job.getLogFile());
             }
             PipelineStatusFileImpl sfSet = new PipelineStatusFileImpl(job, status, info);
 
@@ -220,7 +222,7 @@ public class PipelineStatusManager
      * If there is an existing status entry for this file, make sure it has the
      * right job GUID, updating children as needed
      */
-    public static void resetJobId(String path, String jobId)
+    public static void resetJobId(File path, String jobId)
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         boolean active = scope.isTransactionActive();

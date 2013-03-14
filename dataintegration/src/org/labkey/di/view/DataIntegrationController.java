@@ -127,7 +127,7 @@ public class DataIntegrationController extends SpringActionController
             List<ETLDescriptor> etls = ETLManager.get().getETLs();
             for (ETLDescriptor e : etls)
             {
-                if (e.getId().equalsIgnoreCase(form.getTransformId()))
+                if (e.getTransformId().equalsIgnoreCase(form.getTransformId()))
                 {
                     etl = e;
                     break;
@@ -172,7 +172,7 @@ public class DataIntegrationController extends SpringActionController
             List<ETLDescriptor> etls = ETLManager.get().getETLs();
             for (ETLDescriptor e : etls)
             {
-                if (e.getId().equalsIgnoreCase(form.getTransformId()))
+                if (e.getTransformId().equalsIgnoreCase(form.getTransformId()))
                 {
                     etl = e;
                     break;

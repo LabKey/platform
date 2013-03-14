@@ -204,7 +204,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             }
 
             // Check if we've been cancelled. If so, delete any newly created runs from the database
-            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getLogFile().getPath());
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getLogFile());
             if (statusFile != null && (PipelineJob.CANCELLED_STATUS.equals(statusFile.getStatus()) || PipelineJob.CANCELLING_STATUS.equals(statusFile.getStatus())))
             {
                 for (ExpRun importedRun : importedRuns)

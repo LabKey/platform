@@ -795,14 +795,19 @@ dataintegration/resources/etls/DemoETL/config.xml -text
 dataintegration/resources/schemas/dataintegration.xml -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-0.01.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.01-0.02.sql -text
+dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.02-0.03.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.00-0.01.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.01-0.02.sql -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.02-0.03.sql -text
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
+dataintegration/src/org/labkey/di/pipeline/DataIntegrationDbSchema.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLContext.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLManager.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
+dataintegration/src/org/labkey/di/pipeline/ETLUpdateChecker.java -text
+dataintegration/src/org/labkey/di/pipeline/ETLUpdateCheckerInfo.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJob.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformRun.java -text
@@ -1751,7 +1756,6 @@ pipeline/src/org/labkey/pipeline/api/properties/ApplicationPropertiesSiteSetting
 pipeline/src/org/labkey/pipeline/api/properties/ConfigPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/GlobusClientPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java -text
-pipeline/src/org/labkey/pipeline/checker/CheckerServiceImpl.java -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
 pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text

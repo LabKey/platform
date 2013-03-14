@@ -24,7 +24,7 @@ public class TransformConfiguration extends Entity
 
     public TransformConfiguration(ETLDescriptor etl, Container container)
     {
-        setTransformId(etl.getId());
+        setTransformId(etl.getTransformId());
         setContainer(container.getId());
     }
 

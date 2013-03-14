@@ -15,11 +15,21 @@
  */
 package org.labkey.di.pipeline;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.quartz.JobExecutionException;
+
+import java.io.File;
+import java.sql.SQLException;
+import java.util.Date;
 
 /**
  * User: jeckels
@@ -27,20 +37,64 @@ import org.labkey.api.view.ViewBackgroundInfo;
  */
 public class TransformJob extends PipelineJob
 {
-    public TransformJob(@Nullable String provider, ViewBackgroundInfo info, PipeRoot root)
+    private final ETLDescriptor _etlDescriptor;
+    private int _runId;
+
+    public TransformJob(ViewBackgroundInfo info, ETLDescriptor etlDescriptor)
     {
-        super(provider, info, root);
+        super(ETLPipelineProvider.NAME, info, PipelineService.get().findPipelineRoot(info.getContainer()));
+        _etlDescriptor = etlDescriptor;
+        File etlLogDir = getPipeRoot().resolvePath("etlLogs");
+        File etlLogFile = new File(etlLogDir, DateUtil.formatDateTime(new Date(), "yyyy-MM-dd HH-mm-ss") + ".etl.log");
+        setLogFile(etlLogFile);
+    }
+
+    @Override
+    public void run()
+    {
+        setStatus("RUNNING ETL");
+        TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("RowId"), _runId), null).getObject(TransformRun.class);
+        if (run == null)
+        {
+            getLogger().error("Unable to find database record for run with RowId " + _runId);
+            setStatus(ERROR_STATUS);
+            return;
+        }
+        try
+        {
+            // Mark that the job has started
+            run.setStartTime(new Date());
+            Table.update(getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run, run.getRowId());
+
+            // TODO - run the real transform here!
+
+
+            // Mark that the job has finished successfully
+            run.setEndTime(new Date());
+            run.setRecordCount(0);
+            Table.update(getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run, run.getRowId());
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        setStatus(COMPLETE_STATUS);
     }
 
     @Override
     public URLHelper getStatusHref()
     {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public String getDescription()
     {
-        throw new UnsupportedOperationException();
+        return "ETL job, extracting from " + _etlDescriptor.getSourceSchema() + "." + _etlDescriptor.getSourceQuery();
+    }
+
+    public void setRunId(int runId)
+    {
+        _runId = runId;
     }
 }

@@ -109,8 +109,8 @@ function onRunNowClicked()
 
 for (ETLDescriptor descriptor : descriptors)
 {
-    String id = descriptor.getId();
-    TransformConfiguration configuration = configurationsMap.get(descriptor.getId());
+    String id = descriptor.getTransformId();
+    TransformConfiguration configuration = configurationsMap.get(descriptor.getTransformId());
     boolean isNewConfiguration = false;
     if (null == configuration)
     {
@@ -119,7 +119,7 @@ for (ETLDescriptor descriptor : descriptors)
         configuration.setContainer(context.getContainer().getId());
         configuration.setTransformId(id);
     }
-    %><tr transformId="<%=h(descriptor.getId())%>">
+    %><tr transformId="<%=h(descriptor.getTransformId())%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>

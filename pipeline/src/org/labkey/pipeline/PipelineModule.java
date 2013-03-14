@@ -21,10 +21,9 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.checker.CheckerService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
-import org.labkey.pipeline.checker.CheckerServiceImpl;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -66,6 +65,8 @@ import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.mule.MuleManager;
+import org.quartz.SchedulerException;
+import org.quartz.impl.StdSchedulerFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -100,9 +101,15 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineServiceImpl ps = new PipelineServiceImpl();
         PipelineService.setInstance(ps);
 
-        CheckerServiceImpl checkerService = new CheckerServiceImpl();
-        ServiceRegistry.get().registerService(CheckerService.Interface.class, checkerService);
-        checkerService.startupQuartz();
+        // Start up a Quartz scheduler
+        try
+        {
+            StdSchedulerFactory.getDefaultScheduler().start();
+        }
+        catch (SchedulerException e)
+        {
+            throw new UnexpectedException(e);
+        }
 
         // Set up default PipelineJobServiceImpl, which may be overriden by Spring config.
         PipelineJobServiceImpl pjs = PipelineJobServiceImpl.initDefaults(PipelineJobService.LocationType.WebServer);
@@ -124,9 +131,15 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     public void destroy()
     {
         super.destroy();
-        if (CheckerServiceImpl.get() != null)
+
+        // Shut down the Quartz scheduler
+        try
         {
-            CheckerServiceImpl.get().shutdownQuartz();
+            StdSchedulerFactory.getDefaultScheduler().shutdown();
+        }
+        catch (SchedulerException e)
+        {
+            throw new UnexpectedException(e);
         }
     }
 

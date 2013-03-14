@@ -15,6 +15,7 @@
  */
 package org.labkey.di.pipeline;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.util.Date;
@@ -36,6 +37,8 @@ public class TransformRun
     private User _createdBy;
     private Date _modified;
     private User _modifiedBy;
+    private Container _container;
+    private int _jobId;
 
     public int getRowId()
     {
@@ -145,5 +148,25 @@ public class TransformRun
     public void setModifiedBy(User modifiedBy)
     {
         _modifiedBy = modifiedBy;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
+    }
+
+    public void setJobId(int jobId)
+    {
+        _jobId = jobId;
+    }
+
+    public int getJobId()
+    {
+        return _jobId;
     }
 }

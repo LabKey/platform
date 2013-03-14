@@ -446,9 +446,9 @@ public class PipelineServiceImpl extends PipelineService
     }
 
 
-    public PipelineStatusFile getStatusFile(String path)
+    public PipelineStatusFile getStatusFile(File logFile)
     {
-        return PipelineStatusManager.getStatusFile(path);
+        return PipelineStatusManager.getStatusFile(logFile);
     }
 
     public PipelineStatusFile[] getQueuedStatusFiles() throws SQLException

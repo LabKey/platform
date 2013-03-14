@@ -17,10 +17,10 @@ package org.labkey.di.pipeline;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -30,15 +30,18 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
-import org.labkey.etl.xml.EtlDocument;
-import org.labkey.etl.xml.EtlType;
+import org.labkey.api.util.UnexpectedException;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.impl.StdSchedulerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: jeckels
@@ -50,36 +53,18 @@ public class ETLManager
 
     private static final Logger LOG = Logger.getLogger(ETLManager.class);
 
-
-    final boolean USETESTDESCRIPTORS = false;
-    private List<ETLDescriptor> TESTDESCRIPTORS = null;
-    private List<TransformConfiguration> TESTCONFIGURATIONS = null;
-    private AtomicInteger ROWID = new AtomicInteger(1);
-
-
-    private ETLManager()
-    {
-        if (USETESTDESCRIPTORS)
-        {
-            TESTDESCRIPTORS = new ArrayList<ETLDescriptor>();
-            for (int i=1 ; i<=3 ; i++)
-            {
-                TESTDESCRIPTORS.add(new ETLDescriptor("test" + i));
-            }
-            TESTCONFIGURATIONS = new ArrayList<TransformConfiguration>();
-        }
-    }
-
+    private static final String JOB_GROUP_NAME = "ETL";
 
     public static ETLManager get()
     {
         return INSTANCE;
     }
 
+    private final List<ETLDescriptor> _etls;
 
-    public List<ETLDescriptor> getETLs()
+    private ETLManager()
     {
-        List<ETLDescriptor> result = new ArrayList<ETLDescriptor>();
+        _etls = new ArrayList<ETLDescriptor>();
 
         Path etlsDirPath = new Path("etls");
 
@@ -90,36 +75,23 @@ public class ETLManager
             {
                 for (Resource etlDir : etlsDir.list())
                 {
-                    ETLDescriptor descriptor = parseETL(etlDir.find("config.xml"));
+                    ETLDescriptor descriptor = parseETL(etlDir.find("config.xml"), module.getName());
                     if (descriptor != null)
                     {
-                        result.add(descriptor);
+                        _etls.add(descriptor);
                     }
                 }
             }
         }
-
-        if (USETESTDESCRIPTORS && null != TESTDESCRIPTORS)
-            return TESTDESCRIPTORS;
-
-        return result;
     }
 
-    private ETLDescriptor parseETL(Resource resource)
+    private ETLDescriptor parseETL(Resource resource, String moduleName)
     {
         if (resource != null && resource.isFile())
         {
-            InputStream inputStream = null;
             try
             {
-                inputStream = resource.getInputStream();
-                if (inputStream != null)
-                {
-                    XmlOptions options = new XmlOptions();
-                    options.setValidateStrict();
-                    EtlDocument document = EtlDocument.Factory.parse(inputStream, options);
-                    return new ETLDescriptor(document.getEtl());
-                }
+                return new ETLDescriptor(resource, moduleName);
             }
             catch (IOException e)
             {
@@ -129,22 +101,42 @@ public class ETLManager
             {
                 LOG.warn("Unable to parse " + resource, e);
             }
-            finally
-            {
-                if (inputStream != null) { try { inputStream.close(); } catch (IOException ignored) {} }
-            }
         }
         return null;
     }
 
+    public List<ETLDescriptor> getETLs()
+    {
+        return _etls;
+    }
+
+    public void schedule(ETLDescriptor etlDescriptor, Container container, User user)
+    {
+        ETLUpdateCheckerInfo info = new ETLUpdateCheckerInfo(etlDescriptor, container, user);
+        JobDetail job = JobBuilder.newJob(ETLUpdateChecker.class)
+            .withIdentity(info.getName(), JOB_GROUP_NAME).build();
+        info.setOnJobDetails(job);
+
+
+          // Trigger the job to run now, and then every 60 seconds
+          Trigger trigger = TriggerBuilder.newTrigger()
+              .withIdentity(info.getName(), JOB_GROUP_NAME)
+              .startNow()
+              .withSchedule(etlDescriptor.getScheduleBuilder())
+              .build();
+
+        try
+        {
+            StdSchedulerFactory.getDefaultScheduler().scheduleJob(job, trigger);
+        }
+        catch (SchedulerException e)
+        {
+            throw new UnexpectedException(e);
+        }
+    }
 
     public List<TransformConfiguration> getTransformConfigutaions(Container c)
     {
-        if (USETESTDESCRIPTORS && null != TESTCONFIGURATIONS)
-        {
-            return TESTCONFIGURATIONS;
-        }
-
         DbScope scope = DbSchema.get("dataintegration").getScope();
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE container=?", c.getId());
         return new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
@@ -153,16 +145,6 @@ public class ETLManager
 
     public void saveTransformConfiguration(User user, TransformConfiguration config)
     {
-        if (USETESTDESCRIPTORS)
-        {
-            if (-1 == config.rowId)
-                config.rowId = ROWID.incrementAndGet();
-            if (!TESTCONFIGURATIONS.contains(config))
-                TESTCONFIGURATIONS.add(config);
-            return;
-        }
-
-
         try
         {
             TableInfo t = DbSchema.get("dataintegration").getTable("TransformConfiguration");
@@ -173,7 +155,7 @@ public class ETLManager
         }
         catch (SQLException x)
         {
-            throw new RuntimeException(x);
+            throw new RuntimeSQLException(x);
         }
     }
 }
