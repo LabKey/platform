@@ -169,7 +169,7 @@ public class ETLManager
             if (-1 == config.rowId)
                 Table.insert(user, t, config);
             else
-                Table.update(user, t, config, config.rowId);
+                Table.update(user, t, config, new Object[] {config.rowId});
         }
         catch (SQLException x)
         {

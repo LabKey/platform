@@ -794,7 +794,9 @@ dataintegration/module.properties -text
 dataintegration/resources/etls/DemoETL/config.xml -text
 dataintegration/resources/schemas/dataintegration.xml -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-0.01.sql -text
+dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.01-0.02.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.00-0.01.sql -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.01-0.02.sql -text
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLContext.java -text

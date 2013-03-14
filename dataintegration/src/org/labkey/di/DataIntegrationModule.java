@@ -43,7 +43,7 @@ public class DataIntegrationModule extends DefaultModule
 
     public double getVersion()
     {
-        return 0.01;
+        return 0.02;
     }
 
     protected void init()
