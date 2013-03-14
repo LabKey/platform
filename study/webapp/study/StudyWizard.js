@@ -15,7 +15,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     {
         Ext.apply(this, config);
         this.pageOptions = this.initPages();
-        this.cutWriters();
+        if (this.studyWriters && this.folderWriters)
+        {
+            this.cutWriters();
+        }
         this.requestId = config.requestId;
         Ext.util.Observable.prototype.constructor.call(this, config);
         this.sideBarTemplate = new Ext.XTemplate(
