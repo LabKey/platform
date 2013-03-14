@@ -17,18 +17,22 @@
 package org.labkey.di;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Container;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.SimpleWebPartFactory;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.di.pipeline.DataIntegrationDbSchema;
 import org.labkey.di.pipeline.ETLDescriptor;
 import org.labkey.di.pipeline.ETLManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -54,11 +58,6 @@ public class DataIntegrationModule extends DefaultModule
     protected void init()
     {
         addController("dataintegration", DataIntegrationController.class);
-    }
-
-    protected Collection<WebPartFactory> createWebPartFactories()
-    {
-        return Collections.emptyList();
     }
 
     public boolean hasScripts()
@@ -93,6 +92,32 @@ public class DataIntegrationModule extends DefaultModule
         {
             // For now, just schedule them all in the /home container
 //            ETLManager.get().schedule(etlDescriptor, ContainerManager.getHomeContainer(), UserManager.getGuestUser());
+        }
+    }
+
+
+    /** web parts **/
+
+    protected Collection<WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(
+                (WebPartFactory)new SimpleWebPartFactory("Data Transforms", WebPartFactory.LOCATION_BODY, TransFormsWebPart.class, null)
+        );
+    }
+
+    public static class TransFormsWebPart extends JspView<Object>
+    {
+        public TransFormsWebPart(ViewContext portalCtx) throws Exception
+        {
+            this(portalCtx.getContainer());
+        }
+
+        public TransFormsWebPart(Container c)
+        {
+            super(DataIntegrationController.class, "transformConfiguration.jsp", null);
+            setTitle("Data Transforms");
+            setFrame(WebPartView.FrameType.PORTAL);
+            setModelBean(this);
         }
     }
 }
