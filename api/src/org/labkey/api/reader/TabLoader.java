@@ -242,7 +242,11 @@ public class TabLoader extends DataLoader
             catch (NumberFormatException nfe)
             {
                 // Issue 16691: OctalUnescaper or UnicodeUnescaper translators will throw NumberFormatException for illegal sequences such as '\' followed by octal '9' or unicode 'zzzz'.
-                throw new IllegalArgumentException("Can't unescape value '" + value + "'.  Number format error " + nfe.getMessage());
+                String msg = "Can't unescape value '" + value + "'.  Number format error " + nfe.getMessage();
+                if (isThrowOnErrors())
+                    throw new IllegalArgumentException(msg);
+                else
+                    _log.warn(msg);
             }
         }
         return value;
