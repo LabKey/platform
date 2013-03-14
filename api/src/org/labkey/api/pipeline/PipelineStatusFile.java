@@ -18,6 +18,7 @@ package org.labkey.api.pipeline;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Date;
@@ -31,7 +32,7 @@ public interface PipelineStatusFile
 {
     public interface StatusReader
     {
-        PipelineStatusFile getStatusFile(String path);
+        PipelineStatusFile getStatusFile(File logFile);
 
         PipelineStatusFile[] getQueuedStatusFiles() throws SQLException;
 

@@ -33,7 +33,7 @@
     ViewContext context = HttpView.currentContext();
 
     File logFile = new File(bean.getReportDir(), RReportJob.LOG_FILE_NAME);
-    PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile.getAbsolutePath());
+    PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
     boolean autoRefresh = statusFile != null &&
             (statusFile.getStatus().equals(PipelineJob.WAITING_STATUS) || statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS));
 

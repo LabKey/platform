@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +29,7 @@ import java.util.List;
  * Base class of FieldKey and SchemaKey.
  * The only difference between the two is the default divider.
  */
-/*package*/ abstract class QueryKey<T extends QueryKey<T>> implements Comparable<T>
+/*package*/ abstract class QueryKey<T extends QueryKey<T>> implements Comparable<T>, Serializable
 {
     // Abstracts the constructor of QueryKey subclasses so we can reuse the static factory
     // methods in QueryKey instead of duplicating them in both FieldKey and SchemaKey.

@@ -49,7 +49,7 @@ public class RenderBackgroundRReportView extends HttpView
             File logFile = new File(_report.getReportDir(), RReportJob.LOG_FILE_NAME);
             if (logFile.exists())
             {
-                PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile.getAbsolutePath());
+                PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
                 if (statusFile != null)
                 {
                     File filePath = new File(statusFile.getFilePath());

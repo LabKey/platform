@@ -673,8 +673,6 @@ api/src/org/labkey/api/pipeline/WorkDirFactory.java -text
 api/src/org/labkey/api/pipeline/WorkDirectory.java -text
 api/src/org/labkey/api/pipeline/WorkDirectoryTask.java -text
 api/src/org/labkey/api/pipeline/browse/PipelinePathForm.java -text
-api/src/org/labkey/api/pipeline/checker/Checker.java -text
-api/src/org/labkey/api/pipeline/checker/CheckerService.java -text
 api/src/org/labkey/api/pipeline/cmd/AbstractValueToNamedSwitch.java -text
 api/src/org/labkey/api/pipeline/cmd/BooleanToCommandArgs.java -text
 api/src/org/labkey/api/pipeline/cmd/BooleanToSwitch.java -text
