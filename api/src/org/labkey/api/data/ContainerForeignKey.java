@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -54,7 +55,12 @@ public class ContainerForeignKey extends QueryForeignKey
 
     public ContainerForeignKey(UserSchema schema)
     {
-        super("core", schema.getContainer(), schema.getUser(), "Containers", "EntityId", "DisplayName");
+        this(schema.getContainer(), schema.getUser());
+    }
+
+    public ContainerForeignKey(Container c, User user)
+    {
+        super("core", c, user, "Containers", "EntityId", "DisplayName");
     }
 
 }
