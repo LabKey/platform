@@ -31,6 +31,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.quartz.JobBuilder;
@@ -121,7 +122,7 @@ public class ETLManager
     }
 
 
-    public void runNow(ETLDescriptor etlDescriptor, Container container, User user)
+    public synchronized void runNow(ETLDescriptor etlDescriptor, Container container, User user)
     {
         try
         {
@@ -130,15 +131,26 @@ public class ETLManager
 
             // find job
             JobKey jobKey = JobKey.jobKey(info.getName(), JOB_GROUP_NAME);
-            JobDetail job = scheduler.getJobDetail(jobKey);
-            if (null == job)
+            JobDetail job = null;
+            if (!scheduler.checkExists(jobKey))
             {
                 job = JobBuilder.newJob(ETLUpdateChecker.class)
-                    .withIdentity(jobKey).build();
-                scheduler.addJob(job,false);
+                    .withIdentity(jobKey)
+                    .build();
             }
 
-            scheduler.triggerJob(jobKey, info.getJobDataMap());
+            TriggerKey triggerKey = TriggerKey.triggerKey(info.getName()+ GUID.makeHash(), JOB_GROUP_NAME);
+            Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity(triggerKey)
+                .forJob(jobKey)
+                .startNow()
+                .usingJobData(info.getJobDataMap())
+                .build();
+
+            if (null != job)
+                scheduler.scheduleJob(job, trigger);
+            else
+                scheduler.scheduleJob(trigger);
         }
         catch (SchedulerException e)
         {
@@ -151,7 +163,7 @@ public class ETLManager
     }
 
 
-    public void schedule(ETLDescriptor etlDescriptor, Container container, User user)
+    public synchronized void schedule(ETLDescriptor etlDescriptor, Container container, User user)
     {
         try
         {
@@ -160,14 +172,13 @@ public class ETLManager
 
             // find job
             JobKey jobKey = JobKey.jobKey(info.getName(), JOB_GROUP_NAME);
-            JobDetail job = scheduler.getJobDetail(jobKey);
-            if (null == job)
+            JobDetail job = null;
+            if (!scheduler.checkExists(jobKey))
             {
                 job = JobBuilder.newJob(ETLUpdateChecker.class)
                     .withIdentity(jobKey).build();
+                info.setOnJobDetails(job);
             }
-            // synchronization?
-            info.setOnJobDetails(job);
 
             // find trigger
             // Trigger the job to run now, and then every 60 seconds
@@ -176,12 +187,16 @@ public class ETLManager
             if (null != trigger)
                 return;
             trigger = TriggerBuilder.newTrigger()
+                .forJob(jobKey)
                 .withIdentity(triggerKey)
                 .startNow()
                 .withSchedule(etlDescriptor.getScheduleBuilder())
                 .build();
 
-            StdSchedulerFactory.getDefaultScheduler().scheduleJob(job, trigger);
+            if (null != job)
+                scheduler.scheduleJob(job, trigger);
+            else
+                scheduler.scheduleJob(trigger);
         }
         catch (SchedulerException e)
         {
@@ -194,7 +209,7 @@ public class ETLManager
     }
 
 
-    public void unschedule(ETLDescriptor etlDescriptor, Container container, User user)
+    public synchronized void unschedule(ETLDescriptor etlDescriptor, Container container, User user)
     {
         try
         {
