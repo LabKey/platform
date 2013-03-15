@@ -242,8 +242,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             SortTab: 2
         };
 
-        if (config.activeGroup)
-            config.activeGroup = this.translateGroupName(config.activeGroup);
+        config.activeGroup = this.translateGroupName(config.activeGroup);
 
         var footerBar = [{
                 text: "Delete",
@@ -379,7 +378,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     // group may be true, group index, group name, or the group tab instance.
     translateGroupName : function (group) {
         // translate group tab name into index.
-        if (Ext.isBoolean(group))
+        if (group === null || group === undefined || Ext.isBoolean(group))
             return 0;
         if (Ext.isNumber(group))
             return group;
@@ -697,7 +696,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     {
         if (this.dataRegion)
         {
-            this.dataRegion.hideCustomizeView();
+            this.dataRegion.hideCustomizeView(true);
         }
         else
         {

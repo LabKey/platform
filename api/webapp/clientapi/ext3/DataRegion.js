@@ -1566,7 +1566,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
             var showCustomizeViewEl = el.child(".labkey-button.unsavedview-edit");
             if (showCustomizeViewEl)
-                showCustomizeViewEl.on('click', function () { this.showCustomizeView(undefined, true); }, this);
+                showCustomizeViewEl.on('click', function () { this.showCustomizeView(undefined, true, true); }, this);
 
             var saveEl = el.child(".labkey-button.unsavedview-save");
             if (saveEl)
@@ -1749,14 +1749,22 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         h = this.headerSpacer.getHeight();
                     }
 
-                    panelToShow.getEl().slideIn('t',{
-                        callback : function() {
-                            this.fireEvent('afterpanelshow');
-                        },
-                        concurrent : true,
-                        duration   : _duration,
-                        scope      : this
-                    });
+                    if (animate)
+                    {
+                        panelToShow.getEl().slideIn('t',{
+                            callback : function() {
+                                this.fireEvent('afterpanelshow');
+                            },
+                            concurrent : true,
+                            duration   : _duration,
+                            scope      : this
+                        });
+                    }
+                    else
+                    {
+                        panelToShow.getEl().setVisible(true);
+                        this.fireEvent('afterpanelshow');
+                    }
 
                     if (this.headerLock()) {
                         this.headerSpacer.setHeight(h+panelToShow.getHeight());
@@ -1780,15 +1788,24 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     h = this.headerSpacer.getHeight();
                 }
 
-                panelToHide.getEl().slideOut('t',{
-                    callback: function() {
-                        this.fireEvent('afterpanelhide');
-                        callback.call(this);
-                    },
-                    concurrent : true,
-                    duration   : _duration,
-                    scope      : this
-                });
+                if (animate)
+                {
+                    panelToHide.getEl().slideOut('t',{
+                        callback: function() {
+                            this.fireEvent('afterpanelhide');
+                            callback.call(this);
+                        },
+                        concurrent : true,
+                        duration   : _duration,
+                        scope      : this
+                    });
+                }
+                else
+                {
+                    panelToHide.getEl().setVisible(false);
+                    this.fireEvent('afterpanelhide');
+                    callback.call(this);
+                }
 
                 if (this.headerLock()) {
                     this.headerSpacer.setHeight(h-panelToHide.getHeight());
@@ -1906,10 +1923,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     /**
      * Hide the customize view interface if it is showing.
      */
-    hideCustomizeView : function ()
+    hideCustomizeView : function (animate)
     {
         if (this.customizeView && this.customizeView.getEl() && this.customizeView.getEl().dom && this.customizeView.isVisible()) {
-            this._showButtonPanel(this.header || this.footer, "~~customizeView~~", true, null);
+            this._showButtonPanel(this.header || this.footer, "~~customizeView~~", animate, null);
         }
     },
 
@@ -1917,9 +1934,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     toggleShowCustomizeView : function ()
     {
         if (this.customizeView && this.customizeView.getEl() && this.customizeView.getEl().dom && this.customizeView.isVisible())
-            this.hideCustomizeView();
+            this.hideCustomizeView(true);
         else
-            this.showCustomizeView();
+            this.showCustomizeView(undefined, null, true);
     },
 
     // private
@@ -2066,7 +2083,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     onViewSave : function (designer, savedViewsInfo, urlParameters) {
         if (savedViewsInfo && savedViewsInfo.views.length > 0)
         {
-            this.hideCustomizeView();
+            this.hideCustomizeView(false);
             this.changeView({
                 type: 'view',
                 viewName:savedViewsInfo.views[0].name}, urlParameters);

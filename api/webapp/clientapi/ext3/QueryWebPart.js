@@ -545,7 +545,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                     var tab = dr.customizeView.getActiveDesignerTab();
                     customizeViewTab = tab ? tab.name : true;
                 }
-                dr.hideCustomizeView();
+                dr.hideCustomizeView(false);
             }
         }
 
