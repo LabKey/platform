@@ -56,6 +56,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -511,12 +512,13 @@ public class Query
     }
 
 
-    static QueryInternalException wrapRuntimeException(RuntimeException ex, String sql)
+    static RuntimeException wrapRuntimeException(RuntimeException ex, String sql)
     {
+        if (ex instanceof ConfigurationException)
+            return ex;
         if (ex instanceof QueryInternalException)
-            return (QueryInternalException)ex;
-        else
-            return new QueryInternalException(ex, sql);
+            return ex;
+        return new QueryInternalException(ex, sql);
     }
 
 

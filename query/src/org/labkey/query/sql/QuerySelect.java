@@ -1816,16 +1816,9 @@ groupByLoop:
             {
                 return ((QField)expr).getRelationColumn().isHidden();
             }
-            else
-            {
-                if (_colinfo == null)
-                {
-                    _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()));
-                }
-                _colinfo.isHidden();
-            }
             return false;
         }
+
 
         @Override
         void copyColumnAttributesTo(ColumnInfo to)
@@ -1834,6 +1827,12 @@ groupByLoop:
             if (expr instanceof QField)
             {
                 RelationColumn rc = ((QField)expr).getRelationColumn();
+                if (null == rc)
+                {
+                    // all columns should have been resolved by now
+                    parseError("Can't resolve column: " + expr.getSourceText(), expr);
+                    return;
+                }
                 rc.copyColumnAttributesTo(to);
                 if (_selectStarColumn)
                     to.setHidden(rc.isHidden());
