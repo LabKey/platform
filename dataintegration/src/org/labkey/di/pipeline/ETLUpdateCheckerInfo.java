@@ -2,6 +2,7 @@ package org.labkey.di.pipeline;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 
 import java.io.Serializable;
@@ -48,13 +49,32 @@ public class ETLUpdateCheckerInfo implements Serializable
         return (ETLUpdateCheckerInfo) result;
     }
 
+    protected void writeJobDataMap(JobDataMap map)
+    {
+        map.put(ETLUpdateCheckerInfo.class.getName(), this);
+    }
+
+    public JobDataMap getJobDataMap()
+    {
+        JobDataMap map = new JobDataMap();
+        writeJobDataMap(map);
+        return map;
+    }
+
     public void setOnJobDetails(JobDetail jobDetail)
     {
-        jobDetail.getJobDataMap().put(ETLUpdateCheckerInfo.class.getName(), this);
+        writeJobDataMap(jobDetail.getJobDataMap());
     }
+
 
     public String getName()
     {
         return "Container" + _container.getRowId() + ":" + _etlDescriptor.getTransformId();
+    }
+
+    @Override
+    public String toString()
+    {
+        return _etlDescriptor.getTransformId() + " " + _container.getPath() + " " + (null==_user?"-":_user.getEmail());
     }
 }

@@ -37,86 +37,86 @@ public class ETLUpdateChecker implements Job
     public void execute(JobExecutionContext context) throws JobExecutionException
     {
         ETLUpdateCheckerInfo info = ETLUpdateCheckerInfo.getFromJobDetail(context.getJobDetail());
+        LOG.debug("Running ETLUpdateChecker " + this.toString());
 
         UserSchema schema = QueryService.get().getUserSchema(info.getUser(), info.getContainer(), info.getETLDescriptor().getSourceSchema());
         if (schema == null)
         {
             LOG.warn("Unable to find schema " + info.getETLDescriptor().getSourceSchema() + " in " + info.getContainer().getPath());
+            return;
+        }
+
+        TableInfo tableInfo = schema.getTable(info.getETLDescriptor().getSourceQuery());
+        if (tableInfo == null)
+        {
+            LOG.warn("Unable to find query " + info.getETLDescriptor().getSourceQuery() + " in schema " + info.getETLDescriptor().getSourceSchema() + " in " + info.getContainer().getPath());
+            return;
+        }
+
+        FieldKey modifiedFieldKey = FieldKey.fromParts("modified");
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, Collections.singleton(modifiedFieldKey));
+        if (columns.isEmpty())
+        {
+            LOG.warn("Could not find Modified column on query " + info.getETLDescriptor().getSourceQuery() + " in schema " + info.getETLDescriptor().getSourceSchema() + " in " + info.getContainer().getPath());
         }
         else
         {
-            TableInfo tableInfo = schema.getTable(info.getETLDescriptor().getSourceQuery());
-            if (tableInfo == null)
+            SimpleFilter filter = new SimpleFilter();
+            Date mostRecentRun = getMostRecentRun(info);
+            if (mostRecentRun != null)
             {
-                LOG.warn("Unable to find query " + info.getETLDescriptor().getSourceQuery() + " in schema " + info.getETLDescriptor().getSourceSchema() + " in " + info.getContainer().getPath());
+                filter.addCondition(modifiedFieldKey, mostRecentRun, CompareType.GTE);
             }
-            else
+            long updatedRows = new TableSelector(tableInfo, columns.values(), filter, null).getRowCount();
+
+            if (updatedRows > 0)
             {
-                FieldKey modifiedFieldKey = FieldKey.fromParts("modified");
-                Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, Collections.singleton(modifiedFieldKey));
-                if (columns.isEmpty())
+                ViewBackgroundInfo backgroundInfo = new ViewBackgroundInfo(info.getContainer(), info.getUser(), null);
+                TransformJob job = new TransformJob(backgroundInfo, info.getETLDescriptor());
+                try
                 {
-                    LOG.warn("Could not find Modified column on query " + info.getETLDescriptor().getSourceQuery() + " in schema " + info.getETLDescriptor().getSourceSchema() + " in " + info.getContainer().getPath());
+                    PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
                 }
-                else
+                catch (Exception e)
                 {
-                    SimpleFilter filter = new SimpleFilter();
-                    Date mostRecentRun = getMostRecentRun(info);
-                    if (mostRecentRun != null)
-                    {
-                        filter.addCondition(modifiedFieldKey, mostRecentRun, CompareType.GTE);
-                    }
-                    long updatedRows = new TableSelector(tableInfo, columns.values(), filter, null).getRowCount();
+                    LOG.error("Unable to queue ETL job", e);
+                    return;
+                }
 
-                    if (updatedRows > 0)
-                    {
-                        ViewBackgroundInfo backgroundInfo = new ViewBackgroundInfo(info.getContainer(), info.getUser(), null);
-                        TransformJob job = new TransformJob(backgroundInfo, info.getETLDescriptor());
-                        try
-                        {
-                            PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
-                        }
-                        catch (Exception e)
-                        {
-                            LOG.error("Unable to queue ETL job", e);
-                            return;
-                        }
+                TransformRun run = new TransformRun();
+                run.setStartTime(new Date());
+                run.setTransformId(info.getETLDescriptor().getTransformId());
+                run.setTransformVersion(info.getETLDescriptor().getTransformVersion());
+                run.setContainer(info.getContainer());
 
-                        TransformRun run = new TransformRun();
-                        run.setStartTime(new Date());
-                        run.setTransformId(info.getETLDescriptor().getTransformId());
-                        run.setTransformVersion(info.getETLDescriptor().getTransformVersion());
-                        run.setContainer(info.getContainer());
+                PipelineStatusFile statusFile = PipelineService.get().getStatusFile(job.getLogFile());
+                run.setJobId(statusFile.getRowId());
 
-                        PipelineStatusFile statusFile = PipelineService.get().getStatusFile(job.getLogFile());
-                        run.setJobId(statusFile.getRowId());
+                try
+                {
+                    run = Table.insert(info.getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run);
+                }
+                catch (SQLException e)
+                {
+                    throw new JobExecutionException(e);
+                }
 
-                        try
-                        {
-                            run = Table.insert(info.getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run);
-                        }
-                        catch (SQLException e)
-                        {
-                            throw new JobExecutionException(e);
-                        }
+                job.setRunId(run.getRowId());
 
-                        job.setRunId(run.getRowId());
+                try
+                {
+                    PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
 
-                        try
-                        {
-                            PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
-
-                            PipelineService.get().queueJob(job);
-                        }
-                        catch (Exception e)
-                        {
-                            LOG.error("Unable to queue ETL job", e);
-                        }
-                    }
+                    PipelineService.get().queueJob(job);
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Unable to queue ETL job", e);
                 }
             }
         }
     }
+
 
     public Date getMostRecentRun(ETLUpdateCheckerInfo info)
     {

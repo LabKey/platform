@@ -35,16 +35,20 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.impl.matchers.GroupMatcher;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -56,7 +60,7 @@ public class ETLManager
 
     private static final Logger LOG = Logger.getLogger(ETLManager.class);
 
-    private static final String JOB_GROUP_NAME = "ETL";
+    private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
 
     public static ETLManager get()
     {
@@ -64,6 +68,7 @@ public class ETLManager
     }
 
     private final List<ETLDescriptor> _etls;
+
 
     private ETLManager()
     {
@@ -88,6 +93,7 @@ public class ETLManager
         }
     }
 
+
     private ETLDescriptor parseETL(Resource resource, String moduleName)
     {
         if (resource != null && resource.isFile())
@@ -108,34 +114,131 @@ public class ETLManager
         return null;
     }
 
+
     public List<ETLDescriptor> getETLs()
     {
         return _etls;
     }
 
-    public void schedule(ETLDescriptor etlDescriptor, Container container, User user)
+
+    public void runNow(ETLDescriptor etlDescriptor, Container container, User user)
     {
-        ETLUpdateCheckerInfo info = new ETLUpdateCheckerInfo(etlDescriptor, container, user);
-        JobDetail job = JobBuilder.newJob(ETLUpdateChecker.class)
-            .withIdentity(info.getName(), JOB_GROUP_NAME).build();
-        info.setOnJobDetails(job);
-
-
-          // Trigger the job to run now, and then every 60 seconds
-          Trigger trigger = TriggerBuilder.newTrigger()
-              .withIdentity(info.getName(), JOB_GROUP_NAME)
-              .startNow()
-              .withSchedule(etlDescriptor.getScheduleBuilder())
-              .build();
-
         try
         {
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+            ETLUpdateCheckerInfo info = new ETLUpdateCheckerInfo(etlDescriptor, container, user);
+
+            // find job
+            JobKey jobKey = JobKey.jobKey(info.getName(), JOB_GROUP_NAME);
+            JobDetail job = scheduler.getJobDetail(jobKey);
+            if (null == job)
+            {
+                job = JobBuilder.newJob(ETLUpdateChecker.class)
+                    .withIdentity(jobKey).build();
+                scheduler.addJob(job,false);
+            }
+
+            scheduler.triggerJob(jobKey, info.getJobDataMap());
+        }
+        catch (SchedulerException e)
+        {
+            throw new UnexpectedException(e);
+        }
+        finally
+        {
+            assert dumpScheduler();
+        }
+    }
+
+
+    public void schedule(ETLDescriptor etlDescriptor, Container container, User user)
+    {
+        try
+        {
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+            ETLUpdateCheckerInfo info = new ETLUpdateCheckerInfo(etlDescriptor, container, user);
+
+            // find job
+            JobKey jobKey = JobKey.jobKey(info.getName(), JOB_GROUP_NAME);
+            JobDetail job = scheduler.getJobDetail(jobKey);
+            if (null == job)
+            {
+                job = JobBuilder.newJob(ETLUpdateChecker.class)
+                    .withIdentity(jobKey).build();
+            }
+            // synchronization?
+            info.setOnJobDetails(job);
+
+            // find trigger
+            // Trigger the job to run now, and then every 60 seconds
+            TriggerKey triggerKey = TriggerKey.triggerKey(info.getName(), JOB_GROUP_NAME);
+            Trigger trigger = scheduler.getTrigger(triggerKey);
+            if (null != trigger)
+                return;
+            trigger = TriggerBuilder.newTrigger()
+                .withIdentity(triggerKey)
+                .startNow()
+                .withSchedule(etlDescriptor.getScheduleBuilder())
+                .build();
+
             StdSchedulerFactory.getDefaultScheduler().scheduleJob(job, trigger);
         }
         catch (SchedulerException e)
         {
             throw new UnexpectedException(e);
         }
+        finally
+        {
+            assert dumpScheduler();
+        }
+    }
+
+
+    public void unschedule(ETLDescriptor etlDescriptor, Container container, User user)
+    {
+        try
+        {
+            ETLUpdateCheckerInfo info = new ETLUpdateCheckerInfo(etlDescriptor, container, user);
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+            TriggerKey triggerKey = TriggerKey.triggerKey(info.getName(), JOB_GROUP_NAME);
+            scheduler.unscheduleJob(triggerKey);
+        }
+        catch (SchedulerException e)
+        {
+            throw new UnexpectedException(e);
+        }
+        finally
+        {
+            assert dumpScheduler();
+        }
+    }
+
+
+    boolean dumpScheduler()
+    {
+        try
+        {
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+
+            {
+            LOG.debug("Jobs");
+            Set<JobKey> keys = scheduler.getJobKeys((GroupMatcher<JobKey>)GroupMatcher.groupEquals(JOB_GROUP_NAME));
+            for (JobKey key : keys)
+                LOG.debug("\t" + key.toString());
+            }
+
+            {
+            LOG.debug("Triggers");
+            Set<TriggerKey> keys = scheduler.getTriggerKeys((GroupMatcher<TriggerKey>) GroupMatcher.groupEquals(JOB_GROUP_NAME));
+            for (TriggerKey key : keys)
+                LOG.debug("\t" + key.toString());
+            }
+        }
+        catch(SchedulerException x)
+        {
+            LOG.warn(x);
+        }
+        return true;
     }
 
 
@@ -172,7 +275,9 @@ public class ETLManager
 
         CaseInsensitiveHashMap<ETLDescriptor> etls = new CaseInsensitiveHashMap<ETLDescriptor>();
         for (ETLDescriptor etl : getETLs())
+        {
             etls.put(etl.getTransformId(), etl);
+        }
 
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
         ArrayList<TransformConfiguration> configs = new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);

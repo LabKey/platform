@@ -166,8 +166,7 @@ public class DataIntegrationController extends SpringActionController
                 }
                 else
                 {
-                    // TODO: unschedule();
-                    System.err.println("STOP ME");
+                    ETLManager.get().unschedule(etl, getContainer(), getUser());
                 }
             }
 
@@ -200,20 +199,7 @@ public class DataIntegrationController extends SpringActionController
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 
-            // TODO ETLManager.runNow();
-            Scheduler s = getScheduler();
-            JobDetail job = JobBuilder.newJob(DummyJob.class)
-                    .withIdentity("dummyChecker " + GUID.makeHash())
-                    .usingJobData("transformId", form.getTransformId())
-                    .build();
-            Trigger trigger = TriggerBuilder.newTrigger()
-                    .withIdentity("runNow " + GUID.makeHash())
-                    .startNow()
-                    .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                            .withIntervalInHours(24)
-                            .withRepeatCount(1))
-                    .build();
-            s.scheduleJob(job, trigger);
+            ETLManager.get().runNow(etl, getContainer(), getUser());
 
             JSONObject ret = new JSONObject();
             ret.put("success",true);
