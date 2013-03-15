@@ -42,6 +42,7 @@ public class RunListDetailsQueryView extends RunListQueryView
     private Class<? extends Controller> _detailsActionClass;
     private String _detailsIdColumn;
     private String _dataIdColumn;
+    private Map<String, Object> _extraDetailsUrlParams = new HashMap<String, Object>();
 
     public RunListDetailsQueryView(AssayProtocolSchema schema, QuerySettings settings, Class<? extends Controller> detailsActionClass,
                                    String detailsIdColumn, String dataIdColumn)
@@ -64,6 +65,9 @@ public class RunListDetailsQueryView extends RunListQueryView
                 if (runId != null)
                 {
                     ActionURL url = new ActionURL(_detailsActionClass, ctx.getContainer()).addParameter(_detailsIdColumn, "" + runId);
+                    if (!_extraDetailsUrlParams.isEmpty())
+                        url.addParameters(_extraDetailsUrlParams);
+
                     Map<String, String> map = new HashMap<String, String>();
                     map.put("title", "View run details");
                     out.write(PageFlowUtil.textLink("run details", url, null, null, map));
@@ -71,5 +75,10 @@ public class RunListDetailsQueryView extends RunListQueryView
             }
         });
         return view;
+    }
+
+    public void setExtraDetailsUrlParams(Map<String, Object> extraDetailsUrlParams)
+    {
+        _extraDetailsUrlParams = extraDetailsUrlParams;
     }
 }
