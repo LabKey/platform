@@ -16,7 +16,9 @@
 
 package org.labkey.api.data.dialect;
 
+import junit.framework.Assert;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
@@ -229,5 +231,47 @@ public class StandardDialectStringHandler implements DialectStringHandler
     private String booleanValue(Boolean value)
     {
         return CoreSchema.getInstance().getSqlDialect().getBooleanLiteral(value);
+    }
+
+
+    // ParameterSubstitutionTest tests the full substitution process; this tests edge conditions in the parser.
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testSqlParserMethods()
+        {
+            StandardDialectStringHandler handler = new StandardDialectStringHandler();
+            assertEquals(14, handler.findEndOfStringLiteral("'foo bar blick", 1));      // Non-terminated should be end of string
+            assertEquals(15, handler.findEndOfStringLiteral("'foo bar blick'", 1));     // Terminated at end of string should be end of string
+            assertEquals(15, handler.findEndOfStringLiteral("'foo bar blick''", 1));    // Terminated should be at character after ending quote
+            assertEquals(8, handler.findEndOfStringLiteral("'foo ba''r blick''", 1));   // Escaped quotes are treated as two strings in a row
+            assertEquals(17, handler.findEndOfStringLiteral("'foo ba''r blick''", 9));  // Second string should be at charater after ending quote
+            assertEquals(16, handler.findEndOfStringLiteral("'foo ba''r blick", 9));    // Non-terminated should be end of string
+
+            assertEquals(7, handler.findEndOfQuotedIdentifier("\"foobar", 1));                  // Non-terminated should be end of string
+            assertEquals(8, handler.findEndOfQuotedIdentifier("\"foobar\"", 1));                // Terminated at end of string should be end of string
+            assertEquals(8, handler.findEndOfQuotedIdentifier("\"foobar\"\"", 1));              // Terminated should be at character after ending quote
+            assertEquals(8, handler.findEndOfQuotedIdentifier("\"foobar\"\"rblick\"", 1));      // Escaped quotes are treated as two strings in a row
+            assertEquals(15, handler.findEndOfQuotedIdentifier("\"foobar\"\"blick\"''", 9));    // Second string should be at charater after ending quote
+            assertEquals(14, handler.findEndOfQuotedIdentifier("\"foobar\"\"blick", 9));        // Non-terminated should be end of string
+
+            assertEquals(16, handler.findEndOfBlockComment("/* foo bar blick", 1));
+            assertEquals(27, handler.findEndOfBlockComment("/* foo bar\nblick\nblue blood", 1));
+            assertEquals(27, handler.findEndOfBlockComment("/* foo bar\nblick\nblue blood", 1));
+            assertEquals(30, handler.findEndOfBlockComment("/* foo bar\nblick\nblue blood */ more stuff at the end", 1));
+            assertEquals(4, handler.findEndOfBlockComment("/**/ a very short comment", 1));
+            assertEquals(5, handler.findEndOfBlockComment("/*\n*/ another short comment", 1));
+            assertEquals(6, handler.findEndOfBlockComment("/*\n**/ double *", 1));
+            assertEquals(42, handler.findEndOfBlockComment("/**lot's*of*stars*in*the* /comment/******/ double *", 1));
+            assertEquals(1, handler.findEndOfBlockComment("/- not a valid comment", 1));
+            assertEquals(1, handler.findEndOfBlockComment("//- not a valid comment", 1));
+
+            assertEquals(16, handler.findEndOfLineComment("-- foo bar blick", 1));
+            assertEquals(17, handler.findEndOfLineComment("-- foo bar blick\n", 1));
+            assertEquals(7, handler.findEndOfLineComment("-- foo\nline feed", 1));
+            assertEquals(7, handler.findEndOfLineComment("-- foo\rcarriage return", 1));
+            assertEquals(7, handler.findEndOfLineComment("-- foo\n-- bar blick", 1));
+            assertEquals(1, handler.findEndOfLineComment("- not a valid comment", 1));
+        }
     }
 }

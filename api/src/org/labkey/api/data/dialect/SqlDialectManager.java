@@ -83,7 +83,9 @@ public class SqlDialectManager
         for (SqlDialectFactory factory : _factories)
             classes.addAll(factory.getJUnitTests());
 
+        // TODO: Why don't we register these directly in the module?
         classes.add(ParameterSubstitutionTest.class);
+        classes.add(StandardDialectStringHandler.TestCase.class);
 
         return classes;
     }
