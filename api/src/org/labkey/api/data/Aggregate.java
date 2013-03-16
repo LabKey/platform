@@ -251,13 +251,23 @@ public class Aggregate
     public String getSQL(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
     {
         ColumnInfo col = columns.get(getFieldKey());
-        String aggregateColumnName = getAggregateName(col);
+        String alias = getAliasName(col);
+        String aggregateColumnName = getAggregateName(alias);
         JdbcType jdbcType = col == null ? null : col.getJdbcType();
 
-        return _type.getSQLColumnFragment(dialect, getColumnName(), aggregateColumnName, jdbcType, _distinct);
+        return _type.getSQLColumnFragment(dialect, alias, aggregateColumnName, jdbcType, _distinct);
     }
 
-    private String getAggregateName(ColumnInfo col)
+    private String getAliasName(ColumnInfo col)
+    {
+        String alias = getColumnName();
+        if (col != null)
+            alias = col.getAlias();
+
+        return alias;
+    }
+
+    private String getAggregateName(String alias)
     {
         if (isCountStar())
         {
@@ -265,10 +275,6 @@ public class Aggregate
         }
         else
         {
-            String alias = getColumnName();
-            if (col != null)
-                alias = col.getAlias();
-
             return _type.name() + (_distinct ? "Distinct" : "") + alias;
         }
     }
@@ -318,7 +324,7 @@ public class Aggregate
         if (col != null && !_type.isLegal(col.getJdbcType()))
             return new Result(this, 0L);
 
-        String aggregateColumnName = getAggregateName(col);
+        String aggregateColumnName = getAggregateName(getAliasName(col));
 
         Object o;
         JdbcType returnType = col == null ? null : _type.returnType(col.getJdbcType());

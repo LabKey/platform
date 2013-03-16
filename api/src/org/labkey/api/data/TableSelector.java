@@ -444,7 +444,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
                     if (sql != null)
                     {
                         if (validAggregates > 0)
-                            aggregateSql.append(", ");
+                            aggregateSql.append(",\n");
 
                         aggregateSql.append(sql);
                         validAggregates++;

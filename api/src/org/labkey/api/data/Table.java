@@ -1591,6 +1591,7 @@ public class Table
             aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MAX));
             aggregates.add(new Aggregate(tinfo.getColumn("Parent"), Aggregate.Type.COUNT));
             aggregates.add(new Aggregate(tinfo.getColumn("Parent").getFieldKey(), Aggregate.Type.COUNT, null, true));
+            aggregates.add(new Aggregate(FieldKey.fromParts("Parent", "Parent"), Aggregate.Type.COUNT));
             aggregates.add(new Aggregate(tinfo.getColumn("SortOrder"), Aggregate.Type.SUM));
             aggregates.add(new Aggregate(tinfo.getColumn("SortOrder").getFieldKey(), Aggregate.Type.SUM, null, true));
             aggregates.add(new Aggregate(tinfo.getColumn("CreatedBy"), Aggregate.Type.COUNT));
@@ -1601,20 +1602,22 @@ public class Table
 
             String sql =
                     "SELECT " +
-                        "CAST(COUNT(*) AS BIGINT) AS CountStar,\n" +
-                        "CAST(COUNT(RowId) AS BIGINT) AS CountRowId,\n" +
-                        "CAST(SUM(RowId) AS BIGINT) AS SumRowId,\n" +
-                        "AVG(RowId) AS AvgRowId,\n" +
-                        "CAST(MIN(RowId) AS BIGINT) AS MinRowId,\n" +
-                        "CAST(MAX(RowId) AS BIGINT) AS MaxRowId,\n" +
-                        "CAST(COUNT(Parent) AS BIGINT) AS CountParent,\n" +
-                        "CAST(COUNT(DISTINCT Parent) AS BIGINT) AS CountDistinctParent,\n" +
-                        "CAST(SUM(SortOrder) AS BIGINT) AS SumSortOrder,\n" +
-                        "CAST(SUM(DISTINCT SortOrder) AS BIGINT) AS SumDistinctSortOrder,\n" +
-                        "CAST(COUNT(CreatedBy) AS BIGINT) AS CountCreatedBy,\n" +
-                        "MIN(Created) AS MinCreated,\n" +
-                        "MIN(Name) AS MinName\n" +
-                    "FROM core.Containers";
+                        "CAST(COUNT(C.*) AS BIGINT) AS CountStar,\n" +
+                        "CAST(COUNT(C.RowId) AS BIGINT) AS CountRowId,\n" +
+                        "CAST(SUM(C.RowId) AS BIGINT) AS SumRowId,\n" +
+                        "AVG(C.RowId) AS AvgRowId,\n" +
+                        "CAST(MIN(C.RowId) AS BIGINT) AS MinRowId,\n" +
+                        "CAST(MAX(C.RowId) AS BIGINT) AS MaxRowId,\n" +
+                        "CAST(COUNT(C.Parent) AS BIGINT) AS CountParent,\n" +
+                        "CAST(COUNT(DISTINCT C.Parent) AS BIGINT) AS CountDistinctParent,\n" +
+                        "CAST(COUNT(P.Parent) AS BIGINT) AS CountParent_fs_Parent,\n" +
+                        "CAST(SUM(C.SortOrder) AS BIGINT) AS SumSortOrder,\n" +
+                        "CAST(SUM(DISTINCT C.SortOrder) AS BIGINT) AS SumDistinctSortOrder,\n" +
+                        "CAST(COUNT(C.CreatedBy) AS BIGINT) AS CountCreatedBy,\n" +
+                        "MIN(C.Created) AS MinCreated,\n" +
+                        "MIN(C.Name) AS MinName\n" +
+                    "FROM core.Containers C\n" +
+                    "LEFT OUTER JOIN core.Containers P ON C.parent = P.entityid\n";
             Map expected = new SqlSelector(tinfo.getSchema(), sql).getObject(Map.class);
 
             verifyAggregates(expected, aggregateMap);
@@ -1633,6 +1636,8 @@ public class Table
 
             verifyAggregate(expected.get("CountParent"), aggregateMap.get("Parent").get(0).getValue());
             verifyAggregate(expected.get("CountDistinctParent"), aggregateMap.get("Parent").get(1).getValue());
+
+            verifyAggregate(expected.get("CountParent_fs_Parent"), aggregateMap.get("Parent/Parent").get(0).getValue());
 
             verifyAggregate(expected.get("SumSortOrder"), aggregateMap.get("SortOrder").get(0).getValue());
             verifyAggregate(expected.get("SumDistinctSortOrder"), aggregateMap.get("SortOrder").get(1).getValue());
