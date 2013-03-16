@@ -1602,7 +1602,7 @@ public class Table
 
             String sql =
                     "SELECT " +
-                        "CAST(COUNT(C.*) AS BIGINT) AS CountStar,\n" +
+                        "CAST(COUNT(*) AS BIGINT) AS CountStar,\n" +
                         "CAST(COUNT(C.RowId) AS BIGINT) AS CountRowId,\n" +
                         "CAST(SUM(C.RowId) AS BIGINT) AS SumRowId,\n" +
                         "AVG(C.RowId) AS AvgRowId,\n" +
