@@ -44,13 +44,11 @@ public class StandardDialectStringHandler implements DialectStringHandler
 
 
     @Override
-    // Substitute the parameters into the SQL string, following all the rules of quoted identifiers, string literals, etc.
+    // Substitute the parameters into the SQL string, following the rules for quoted identifiers, string literals, comments, etc.
 
     // Previously, we used regular expressions to find (and ignore) string literals and quoted identifiers while doing
     // parameter substitution, but the first attempt exploded with long string literals (#12866) and the second attempt
     // occasionally failed to return. So, we wrote this dumb little parser instead.
-
-    // TODO: Skip over comments... ? inside comments currently don't behave correctly
     public String substituteParameters(SQLFragment frag)
     {
         CharSequence sql = frag.getSqlCharSequence();
