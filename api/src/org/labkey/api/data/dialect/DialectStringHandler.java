@@ -29,8 +29,6 @@ import java.util.regex.Pattern;
 // Methods for escaping and parsing SQL identifiers and string literals, based on a particular database's rules.
 public interface DialectStringHandler
 {
-    public Pattern getStringLiteralPattern();
-    public Pattern getQuotedIdentifierPattern();
     public String quoteStringLiteral(String str);
     public String substituteParameters(SQLFragment frag);
 }

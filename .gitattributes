@@ -355,8 +355,8 @@ api/src/org/labkey/api/data/dialect/JdbcHelper.java -text
 api/src/org/labkey/api/data/dialect/JdbcHelperTest.java -text
 api/src/org/labkey/api/data/dialect/KeywordCandidates.java -text
 api/src/org/labkey/api/data/dialect/MockSqlDialect.java -text
+api/src/org/labkey/api/data/dialect/ParameterSubstitutionTest.java -text
 api/src/org/labkey/api/data/dialect/PkMetaDataReader.java -text
-api/src/org/labkey/api/data/dialect/RegularExpressionTest.java -text
 api/src/org/labkey/api/data/dialect/SimpleSqlDialect.java -text
 api/src/org/labkey/api/data/dialect/SqlDialect.java -text
 api/src/org/labkey/api/data/dialect/SqlDialectFactory.java -text

@@ -83,7 +83,7 @@ public class SqlDialectManager
         for (SqlDialectFactory factory : _factories)
             classes.addAll(factory.getJUnitTests());
 
-        classes.add(RegularExpressionTest.class);
+        classes.add(ParameterSubstitutionTest.class);
 
         return classes;
     }

@@ -20,14 +20,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.SQLFragment;
 
-import java.util.regex.Pattern;
-
 /*
 * User: adam
 * Date: Aug 17, 2011
 * Time: 6:52:39 AM
 */
-public class RegularExpressionTest extends Assert
+public class ParameterSubstitutionTest extends Assert
 {
     @Test
     public void testAllDialects()
@@ -78,15 +76,17 @@ public class RegularExpressionTest extends Assert
         testParameterSubstitution(dialect, new SQLFragment("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST 937 TEST 'this' TEST 1.234");
         testParameterSubstitution(dialect, new SQLFragment("'????' ? '???''????' ? ?", 937, "this", 1.234), "'????' 937 '???''????' 'this' 1.234");
         testParameterSubstitution(dialect, new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234), "\"identifier\" 937 \"iden?tif?ier\" '????' 123 '???''????' \"iden?tifi?er\" 'this' 'that' 1.234");
+        testParameterSubstitution(dialect, new SQLFragment("-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -? - ? ?", 937, 123, "this"), "-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -937 - 123 'this'");
+        testParameterSubstitution(dialect, new SQLFragment("/* ?? ?? ?, ? */ ? ?", 937, 123), "/* ?? ?? ?, ? */ 937 123");
+        testParameterSubstitution(dialect,
+                new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234),
+                                "\"identifier\" 937 \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ 123 '???''????' \"iden?tifi?er\" 'this' 'that' 1.234");
 
-        // String literal escaping rules vary by dialect and database settings.  Make sure quoting and parsing are consistent.
+        // String literal escaping rules vary by dialect and database settings.  Make sure this dialect's quoting and
+        // parameter substitution are consistent.
         String lit1 = dialect.getStringHandler().quoteStringLiteral("th?is'th?at");
         String lit2 = dialect.getStringHandler().quoteStringLiteral("th?is\\'th?at");
         String lit3 = dialect.getStringHandler().quoteStringLiteral("th'?'is\\?\\th\\'\\'at");
-        Pattern litPattern = dialect.getStringHandler().getStringLiteralPattern();
-        assertTrue(lit1 + " doesn't match string literal pattern " + litPattern.pattern(), litPattern.matcher(lit1).matches());
-        assertTrue(lit2 + " doesn't match string literal pattern " + litPattern.pattern(), litPattern.matcher(lit2).matches());
-        assertTrue(lit3 + " doesn't match string literal pattern " + litPattern.pattern(), litPattern.matcher(lit3).matches());
         String prefix = lit1 + " " + lit2 + " " + lit3 + " ";
 
         testParameterSubstitution(dialect, new SQLFragment(prefix + "? ? ?", 456, "this", 7.8748), prefix + "456 'this' 7.8748");

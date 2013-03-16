@@ -26,8 +26,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /*
 * User: adam
@@ -36,93 +34,158 @@ import java.util.regex.Pattern;
 */
 public class StandardDialectStringHandler implements DialectStringHandler
 {
-    // Pattern that captures a single quoted string literal, handling embedded single quotes that are escaped ('').  For
-    // the record, here's a bad previous pattern that attempted to do the same thing: '([^']|(''))*'  This one explodes
-    // with StackOverflowError when it encounters a long string literal.  See #12866.
-    // English version: any number of non-quote characters followed by escaped quotes followed by any number of non-quote
-    // characters... repeated any number of times... and all of it enclosed in quotes
-    private static final Pattern _stringLiteralPattern = Pattern.compile("'[^']*(?:''[^']*)*'");
-    private static final Pattern _quotedIdentifierPattern = Pattern.compile("\"[^\"]*(?:\"\"[^\"]*)*\"");
-    private static final Pattern _parameterPattern = Pattern.compile("\\?");
-
-    @Override
-    public Pattern getStringLiteralPattern()
-    {
-        return _stringLiteralPattern;
-    }
-
-    @Override
-    public Pattern getQuotedIdentifierPattern()
-    {
-        return _quotedIdentifierPattern;
-    }
-
     @Override
     public String quoteStringLiteral(String str)
     {
         return "'" + StringUtils.replace(str, "'", "''") + "'";
     }
 
-    @Override
-    /**
-     * Substitute the parameter values into the SQL statement.
-     * Iterates through the SQL string
-     */
 
-    // TODO: Ignore question marks inside comments... these currently cause the code below to blow up
+    @Override
+    // Substitute the parameters into the SQL string, following all the rules of quoted identifiers, string literals, etc.
+
+    // Previously, we used regular expressions to find (and ignore) string literals and quoted identifiers while doing
+    // parameter substitution, but the first attempt exploded with long string literals (#12866) and the second attempt
+    // occasionally failed to return. So, we wrote this dumb little parser instead.
+
+    // TODO: Skip over comments... ? inside comments currently don't behave correctly
     public String substituteParameters(SQLFragment frag)
     {
         CharSequence sql = frag.getSqlCharSequence();
-        Matcher matchIdentifier = getQuotedIdentifierPattern().matcher(sql);
-        Matcher matchStringLiteral = getStringLiteralPattern().matcher(sql);
-        Matcher matchParam = _parameterPattern.matcher(sql);
-
         StringBuilder ret = new StringBuilder();
         List<Object> params = new LinkedList<Object>(frag.getParams());
-        int ich = 0;
 
-        while (ich < sql.length())
+        int begin = 0;
+        int current = 0;
+
+        while (current < sql.length())
         {
-            int ichSkipTo = sql.length();
-            int ichSkipPast = sql.length();
+            char c = sql.charAt(current);
 
-            if (matchIdentifier.find(ich))
+            switch(c)
             {
-                if (matchIdentifier.start() < ichSkipTo)
-                {
-                    ichSkipTo = matchIdentifier.start();
-                    ichSkipPast = matchIdentifier.end();
-                }
-            }
-
-            if (matchStringLiteral.find(ich))
-            {
-                if (matchStringLiteral.start() < ichSkipTo)
-                {
-                    ichSkipTo = matchStringLiteral.start();
-                    ichSkipPast = matchStringLiteral.end();
-                }
-            }
-
-            if (matchParam.find(ich))
-            {
-                if (matchParam.start() < ichSkipTo)
-                {
-                    ret.append(frag.getSqlCharSequence().subSequence(ich, matchParam.start()));
+                case('?'):
+                    ret.append(sql.subSequence(begin, current));
                     if (params.isEmpty())
                         ret.append("NULL /*?missing?*/");
                     else
                         ret.append(formatParameter(params.remove(0)));
-                    ich = matchParam.start() + 1;
-                    continue;
-                }
+                    current++;
+                    begin = current;
+                    break;
+                case('\''):
+                    current = findEndOfStringLiteral(sql, current + 1);
+                    break;
+                case('"'):
+                    current = findEndOfQuotedIdentifier(sql, current + 1);
+                    break;
+                case('/'):
+                    current = findEndOfBlockComment(sql, current + 1);
+                    break;
+                case('-'):
+                    current = findEndOfLineComment(sql, current + 1);
+                    break;
+                default:
+                    current++;
             }
-
-            ret.append(frag.getSqlCharSequence().subSequence(ich, ichSkipPast));
-            ich = ichSkipPast;
         }
 
+        ret.append(sql.subSequence(begin, current));
+
         return ret.toString();
+    }
+
+    // Note: we don't bother looking for escaped single quotes ('') inside the string... the parser will just treat this
+    // as two single quoted strings in a row, which is fine for parameter substitution purposes
+    protected int findEndOfStringLiteral(CharSequence sql, int current)
+    {
+        while (current < sql.length())
+        {
+            char c = sql.charAt(current++);
+            if (c == '\'')
+                break;
+        }
+
+        return current;
+    }
+
+
+    // Note: we don't bother looking for escaped double quotes ("") inside the identifier... the parser will just treat
+    // this as two quoted identifiers in a row, which is fine for parameter substitution purposes
+    private int findEndOfQuotedIdentifier(CharSequence sql, int current)
+    {
+        while (current < sql.length())
+        {
+            char c = sql.charAt(current++);
+            if (c == '"')
+                break;
+        }
+
+        return current;
+    }
+
+
+    enum Previous {firstSlash, star, somethingElse}
+
+    // We just hit a slash character... probably a block comment, but maybe not.
+    private int findEndOfBlockComment(CharSequence sql, int current)
+    {
+        Previous prev = Previous.firstSlash;
+
+        while (current < sql.length())
+        {
+            char c = sql.charAt(current++);
+
+            switch(prev)
+            {
+                case firstSlash:
+                    if (c == '*')
+                        prev = Previous.somethingElse;
+                    else
+                        return --current;  // Not a comment after all, back it up so we don't lose this character
+                    break;
+                case star:
+                    if (c == '/')
+                        return current;   // End of comment... we're done
+
+                    prev = Previous.somethingElse;
+                    current--;  // Not the end of comment, back it up so we don't lose this character
+                    break;
+                case somethingElse:
+                    if (c == '*')
+                        prev = Previous.star;
+                    break;
+            }
+        }
+
+        return current;
+    }
+
+
+    // We just hit a dash character... check if it's a line comment and skip to the end of the line if it is.
+    private int findEndOfLineComment(CharSequence sql, int current)
+    {
+        boolean firstDash = true;
+
+        while (current < sql.length())
+        {
+            char c = sql.charAt(current++);
+
+            if (firstDash)
+            {
+                if ('-' == c)
+                    firstDash = false;
+                else
+                    return --current;  // Not a comment after all, back it up so we don't lose this character
+            }
+            else
+            {
+                if (10 == c || 13 == c)
+                    return current;
+            }
+        }
+
+        return current;
     }
 
 
