@@ -790,6 +790,7 @@ class PostgreSql83Dialect extends SqlDialect
     @Override
     protected DialectStringHandler createStringHandler()
     {
+        // TODO: Isn't this the wrong setting?  Should we be looking at the "backslash_quote" setting instead?
         if (_standardConformingStrings)
             return super.createStringHandler();
         else

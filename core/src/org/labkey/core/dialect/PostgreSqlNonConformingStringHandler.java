@@ -19,27 +19,51 @@ package org.labkey.core.dialect;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 
-import java.util.regex.Pattern;
-
 /*
 * User: adam
 * Date: Aug 13, 2011
 * Time: 4:10:10 PM
 */
+
+// Adds support for backslash escaping in string literals
 public class PostgreSqlNonConformingStringHandler extends StandardDialectStringHandler
 {
-    // Supports '' and backslash escaping.  Previous pattern '([^\\\\']|('')|(\\\\.))*' would explode with long string literals.
-    private static final Pattern _stringLiteralPattern = Pattern.compile("'[^\\\\']*(?:(?:''[^'\\\\]*)*(?:\\\\.[^'\\\\]*)*)*'");
-
-    @Override
-    public Pattern getStringLiteralPattern()
-    {
-        return _stringLiteralPattern;
-    }
-
+    // TODO: I don't think this is necessary... non-conforming strings and backslash_quote settings still allow '' for quote escaping;
+    // they don't require \'
     @Override
     public String quoteStringLiteral(String str)
     {
         return "'" + StringUtils.replace(StringUtils.replace(str, "\\", "\\\\"), "'", "''") + "'";
+    }
+
+
+    @Override
+    protected int findEndOfStringLiteral(CharSequence sql, int current)
+    {
+        boolean skipNext = false;
+
+        while (current < sql.length())
+        {
+            char c = sql.charAt(current++);
+
+            if (skipNext)
+            {
+                skipNext = false;
+            }
+            else
+            {
+                if (c == '\\')
+                {
+                    skipNext = true;
+                    continue;
+                }
+                else if (c == '\'')
+                {
+                    break;
+                }
+            }
+        }
+
+        return current;
     }
 }
