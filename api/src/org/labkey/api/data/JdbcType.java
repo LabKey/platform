@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.util.DateUtil;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -298,6 +299,21 @@ public enum JdbcType
     public boolean isNumeric()
     {
         return Number.class.isAssignableFrom(this.cls);
+    }
+
+    public boolean isInteger()
+    {
+        return isNumeric() &&
+                this.cls == Byte.class ||
+                this.cls == Short.class ||
+                this.cls == Long.class ||
+                this.cls == Integer.class ||
+                this.cls == BigInteger.class;
+    }
+
+    public boolean isReal()
+    {
+        return isNumeric() && !isInteger();
     }
 
     public boolean isDateOrTime()

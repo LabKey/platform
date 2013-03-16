@@ -215,7 +215,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     // TODO: Convert to return Map<FieldKey, List<Aggregate.Result>>
     public Map<String, List<Aggregate.Result>> getAggregates(final List<Aggregate> aggregates)
     {
-        AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, _columns);
+        final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, _columns);
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
         return handleResultSet(resultSetFactory, new ResultSetHandler<Map<String, List<Aggregate.Result>>>()
@@ -237,7 +237,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
                         if (!results.containsKey(agg.getColumnName()))
                             results.put(agg.getColumnName(), new ArrayList<Aggregate.Result>());
 
-                        results.get(agg.getColumnName()).add(agg.getResult(rs));
+                        results.get(agg.getColumnName()).add(agg.getResult(rs, sqlFactory._columnMap));
                     }
                 }
 
@@ -415,11 +415,15 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     protected class AggregateSqlFactory extends PreventSortTableSqlFactory
     {
         private final List<Aggregate> _aggregates;
+        private final Map<FieldKey, ColumnInfo> _columnMap;
 
         public AggregateSqlFactory(Filter filter, List<Aggregate> aggregates, Collection<ColumnInfo> columns)
         {
             super(filter, ensureAggregates(_table, columns, aggregates));
             _aggregates = aggregates;
+
+            // We want a column map that only includes the inner selected columns, so pass null for table
+            _columnMap = Table.createColumnMap(null, getSelectedColumns());
         }
 
         @Override
@@ -429,26 +433,27 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
 
             SQLFragment aggregateSql = new SQLFragment();
             aggregateSql.append("SELECT ");
-            boolean first = true;
+            int validAggregates = 0;
 
-            // We want a column map that only includes the inner selected columns, so pass null for table
-            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(null, getSelectedColumns());
 
             for (Aggregate agg : _aggregates)
             {
-                if (agg.isCountStar() || columnMap.containsKey(agg.getFieldKey()))
+                if (agg.isCountStar() || _columnMap.containsKey(agg.getFieldKey()))
                 {
-                    if (first)
-                        first = false;
-                    else
-                        aggregateSql.append(", ");
+                    String sql = agg.getSQL(_table.getSqlDialect(), _columnMap);
+                    if (sql != null)
+                    {
+                        if (validAggregates > 0)
+                            aggregateSql.append(", ");
 
-                    aggregateSql.append(agg.getSQL(_table.getSqlDialect(), columnMap));
+                        aggregateSql.append(sql);
+                        validAggregates++;
+                    }
                 }
             }
 
             // if we didn't find any columns, then skip the SQL call completely... we'll return an empty map
-            if (first)
+            if (validAggregates == 0)
                 return null;
 
             return aggregateSql.append(" FROM (").append(innerSql).append(") S");

@@ -1310,7 +1310,7 @@ public class DataRegion extends AbstractDataRegion
                     {
                         out.write("<table class='labkey-noborder'>");
                         String delim = "";
-                        for(Aggregate.Result r : result)
+                        for (Aggregate.Result r : result)
                         {
                             out.write(delim);
                             Format formatter = renderer.getFormat();
@@ -1320,7 +1320,17 @@ public class DataRegion extends AbstractDataRegion
                                 out.write(":&nbsp;</td>");
                             }
                             out.write("<td>");
-                            if (formatter != null)
+
+                            // Issue 16570: Formatter is only applicable if the aggregate return type is
+                            // similar to the input jdbcType.  For example, don't apply a date format
+                            // to COUNT aggregates but do apply a string or double format to a MIN/MAX aggregate.
+                            Aggregate.Type type = r.getAggregate().getType();
+                            JdbcType inputType = col.getJdbcType();
+                            JdbcType returnType = type.returnType(inputType);
+                            if (formatter != null &&
+                                    (inputType == returnType ||
+                                    (inputType.isInteger() && returnType.isInteger()) ||
+                                    (inputType.isReal() && returnType.isReal())))
                                 out.write(formatter.format(r.getValue()));
                             else
                                 out.write(r.getValue().toString());

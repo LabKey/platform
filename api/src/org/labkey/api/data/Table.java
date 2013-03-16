@@ -117,13 +117,13 @@ public class Table
 
     // ================== These methods are no longer used by core Labkey code ==================
 
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static <K> K selectObject(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, select, filter, sort).getObject(clss);
     }
 
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     @NotNull
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int maxRows, long offset)
             throws SQLException
@@ -132,7 +132,7 @@ public class Table
     }
 
     @NotNull
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
             throws SQLException
     {
@@ -146,7 +146,7 @@ public class Table
      * This is a shortcut method that can be used for two-column ResultSets
      * The first column is key, the second column is the value
      */
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, @Nullable Map<Object, Object> m)
             throws SQLException
     {
@@ -157,34 +157,34 @@ public class Table
     }
 
     // return a result from a one column resultset. K should be a string or number type
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
     {
         return new LegacyTableSelector(col, filter, sort).getArray(c);
     }
 
     // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
     }
 
     // return an array from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).getArray(c);
     }
 
-    @Deprecated // Use SqlSelector    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
+    @Deprecated /** Use SqlSelector */   // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
             throws SQLException
     {
         return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(cache);
     }
 
-    @Deprecated // Use SqlSelector    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
+    @Deprecated /** Use SqlSelector */    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
@@ -202,7 +202,7 @@ public class Table
         return selector.getArray(clss);
     }
 
-    @Deprecated // Use SqlExecutor
+    @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, SQLFragment f) throws SQLException
     {
         return new LegacySqlExecutor(schema).execute(f);
@@ -214,14 +214,14 @@ public class Table
 
     // 7 usages
     // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
     {
         return new LegacyTableSelector(table.getColumn(column), filter, sort).getArray(c);
     }
 
     // 6 usages
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
         LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort);
@@ -232,7 +232,7 @@ public class Table
 
 
     // 12 usages
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, filter, sort).getObject(clss);
@@ -241,7 +241,7 @@ public class Table
 
     // 87 usages
     @NotNull
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, select, filter, sort).getArray(clss);
@@ -250,7 +250,7 @@ public class Table
 
     // 10 usages
     @NotNull
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, columns, filter, sort).getArray(clss);
@@ -267,7 +267,7 @@ public class Table
 
 
     // 24 usages
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
     {
         return new TableSelector(table).getObject(pk, clss);
@@ -275,7 +275,7 @@ public class Table
 
 
     // 5 usages
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
     {
         return new TableSelector(table).getObject(c, pk, clss);
@@ -283,7 +283,7 @@ public class Table
 
 
     // 35 usages
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
         return new LegacyTableSelector(table, select, filter, sort).getResultSet();
@@ -291,14 +291,14 @@ public class Table
 
 
     // 16 usages
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
         return new LegacyTableSelector(table, columns, filter, sort).getResults();
     }
 
     // 6 usages
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
             throws SQLException
     {
@@ -310,7 +310,7 @@ public class Table
 
 
     // 7 usages
-    @Deprecated // Use TableSelector
+    @Deprecated /** Use TableSelector */
     public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
             throws SQLException
     {
@@ -323,7 +323,7 @@ public class Table
     // ===== SqlExecutor methods below =====
 
     // 194 usages
-    @Deprecated // Use SqlExecutor
+    @Deprecated /** Use SqlExecutor */
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
         return new LegacySqlExecutor(schema).execute(sql, parameters);
@@ -334,7 +334,7 @@ public class Table
 
     // 21 usages
     @NotNull
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
     {
         return new LegacySqlSelector(schema, sqlf).getArray(clss);
@@ -342,7 +342,7 @@ public class Table
 
     // 42 usages
     @NotNull
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
@@ -350,35 +350,35 @@ public class Table
 
     // 82 usages
     /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
     }
 
     // 62 usages
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
     }
 
     // 41 usages
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).getResultSet();
     }
 
     // 10 usages
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, boolean cache, boolean scrollable) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).getResultSet(cache, scrollable);
     }
 
     // 5 usages
-    @Deprecated // Use SqlSelector
+    @Deprecated /** Use SqlSelector */
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, boolean cache)
             throws SQLException
     {
@@ -525,17 +525,46 @@ public class Table
 
     static enum Getter
     {
-        STRING(String.class) { String getObject(ResultSet rs, int i) throws SQLException { return rs.getString(i); }},
-        INTEGER(Integer.class) { Integer getObject(ResultSet rs, int i) throws SQLException { int n = rs.getInt(i); return rs.wasNull() ? null : n ; }},
-        DOUBLE(Double.class) { Double getObject(ResultSet rs, int i) throws SQLException { double d = rs.getDouble(i); return rs.wasNull() ? null : d ; }},
-        BOOLEAN(Boolean.class) { Boolean getObject(ResultSet rs, int i) throws SQLException { boolean f = rs.getBoolean(i); return rs.wasNull() ? null : f ; }},
-        LONG(Long.class) { Long getObject(ResultSet rs, int i) throws SQLException { long l = rs.getLong(i); return rs.wasNull() ? null : l; }},
-        UTIL_DATE(Date.class) { Date getObject(ResultSet rs, int i) throws SQLException { return rs.getTimestamp(i); }},
-        BYTES(byte[].class) { Object getObject(ResultSet rs, int i) throws SQLException { return rs.getBytes(i); }},
-        TIMESTAMP(Timestamp.class) { Object getObject(ResultSet rs, int i) throws SQLException { return rs.getTimestamp(i); }},
-        OBJECT(Object.class) { Object getObject(ResultSet rs, int i) throws SQLException { return rs.getObject(i); }};
+        STRING(String.class) {
+            String getObject(ResultSet rs, int i) throws SQLException { return rs.getString(i); }
+            String getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getString(columnLabel); }
+        },
+        INTEGER(Integer.class) {
+            Integer getObject(ResultSet rs, int i) throws SQLException { int n = rs.getInt(i); return rs.wasNull() ? null : n ; }
+            Integer getObject(ResultSet rs, String columnLabel) throws SQLException { int n = rs.getInt(columnLabel); return rs.wasNull() ? null : n ; }
+        },
+        DOUBLE(Double.class) {
+            Double getObject(ResultSet rs, int i) throws SQLException { double d = rs.getDouble(i); return rs.wasNull() ? null : d ; }
+            Double getObject(ResultSet rs, String columnLabel) throws SQLException { double d = rs.getDouble(columnLabel); return rs.wasNull() ? null : d ; }
+        },
+        BOOLEAN(Boolean.class) {
+            Boolean getObject(ResultSet rs, int i) throws SQLException { boolean f = rs.getBoolean(i); return rs.wasNull() ? null : f ; }
+            Boolean getObject(ResultSet rs, String columnLabel) throws SQLException { boolean f = rs.getBoolean(columnLabel); return rs.wasNull() ? null : f ; }
+        },
+        LONG(Long.class) {
+            Long getObject(ResultSet rs, int i) throws SQLException { long l = rs.getLong(i); return rs.wasNull() ? null : l; }
+            Long getObject(ResultSet rs, String columnLabel) throws SQLException { long l = rs.getLong(columnLabel); return rs.wasNull() ? null : l; }
+        },
+        UTIL_DATE(Date.class) {
+            Date getObject(ResultSet rs, int i) throws SQLException { return rs.getTimestamp(i); }
+            Date getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getTimestamp(columnLabel); }
+        },
+        BYTES(byte[].class) {
+            Object getObject(ResultSet rs, int i) throws SQLException { return rs.getBytes(i); }
+            Object getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getBytes(columnLabel); }
+        },
+        TIMESTAMP(Timestamp.class) {
+            Object getObject(ResultSet rs, int i) throws SQLException { return rs.getTimestamp(i); }
+            Object getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getTimestamp(columnLabel); }
+        },
+        OBJECT(Object.class) {
+            Object getObject(ResultSet rs, int i) throws SQLException { return rs.getObject(i); }
+            Object getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getObject(columnLabel); }
+        };
 
         abstract Object getObject(ResultSet rs, int i) throws SQLException;
+        abstract Object getObject(ResultSet rs, String columnName) throws SQLException;
+
         Object getObject(ResultSet rs) throws SQLException
         {
             return getObject(rs, 1);
@@ -1560,21 +1589,31 @@ public class Table
             aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.AVG));
             aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MIN));
             aggregates.add(new Aggregate(tinfo.getColumn("RowId"), Aggregate.Type.MAX));
-            aggregates.add(new Aggregate(tinfo.getColumn("Parent"), Aggregate.Type.COUNT_DISTINCT));
+            aggregates.add(new Aggregate(tinfo.getColumn("Parent"), Aggregate.Type.COUNT));
+            aggregates.add(new Aggregate(tinfo.getColumn("Parent").getFieldKey(), Aggregate.Type.COUNT, null, true));
+            aggregates.add(new Aggregate(tinfo.getColumn("SortOrder"), Aggregate.Type.SUM));
+            aggregates.add(new Aggregate(tinfo.getColumn("SortOrder").getFieldKey(), Aggregate.Type.SUM, null, true));
             aggregates.add(new Aggregate(tinfo.getColumn("CreatedBy"), Aggregate.Type.COUNT));
+            aggregates.add(new Aggregate(tinfo.getColumn("Created"), Aggregate.Type.MIN));
+            aggregates.add(new Aggregate(tinfo.getColumn("Name"), Aggregate.Type.MIN));
 
             aggregateMap = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
 
             String sql =
                     "SELECT " +
-                        "CAST(COUNT(*) AS BIGINT) AS CountStar, " +
-                        "CAST(COUNT(RowId) AS BIGINT) AS CountRowId, " +
-                        "CAST(SUM(RowId) AS BIGINT) AS SumRowId, " +
-                        "AVG(RowId) AS AvgRowId, " +
-                        "CAST(MIN(RowId) AS BIGINT) AS MinRowId, " +
-                        "CAST(MAX(RowId) AS BIGINT) AS MaxRowId, " +
-                        "CAST(COUNT(DISTINCT Parent) AS BIGINT) AS CountDistinctParent, " +
-                        "CAST(COUNT(CreatedBy) AS BIGINT) AS CountCreatedBy " +
+                        "CAST(COUNT(*) AS BIGINT) AS CountStar,\n" +
+                        "CAST(COUNT(RowId) AS BIGINT) AS CountRowId,\n" +
+                        "CAST(SUM(RowId) AS BIGINT) AS SumRowId,\n" +
+                        "AVG(RowId) AS AvgRowId,\n" +
+                        "CAST(MIN(RowId) AS BIGINT) AS MinRowId,\n" +
+                        "CAST(MAX(RowId) AS BIGINT) AS MaxRowId,\n" +
+                        "CAST(COUNT(Parent) AS BIGINT) AS CountParent,\n" +
+                        "CAST(COUNT(DISTINCT Parent) AS BIGINT) AS CountDistinctParent,\n" +
+                        "CAST(SUM(SortOrder) AS BIGINT) AS SumSortOrder,\n" +
+                        "CAST(SUM(DISTINCT SortOrder) AS BIGINT) AS SumDistinctSortOrder,\n" +
+                        "CAST(COUNT(CreatedBy) AS BIGINT) AS CountCreatedBy,\n" +
+                        "MIN(Created) AS MinCreated,\n" +
+                        "MIN(Name) AS MinName\n" +
                     "FROM core.Containers";
             Map expected = new SqlSelector(tinfo.getSchema(), sql).getObject(Map.class);
 
@@ -1585,11 +1624,22 @@ public class Table
         private void verifyAggregates(Map expected, Map<String, List<Aggregate.Result>> aggregateMap)
         {
             verifyAggregate(expected.get("CountStar"), aggregateMap.get("*").get(0).getValue());
+
             verifyAggregate(expected.get("CountRowId"), aggregateMap.get("RowId").get(0).getValue());
             verifyAggregate(expected.get("SumRowId"), aggregateMap.get("RowId").get(1).getValue());
             verifyAggregate(expected.get("AvgRowId"), aggregateMap.get("RowId").get(2).getValue());
             verifyAggregate(expected.get("MinRowId"), aggregateMap.get("RowId").get(3).getValue());
             verifyAggregate(expected.get("MaxRowId"), aggregateMap.get("RowId").get(4).getValue());
+
+            verifyAggregate(expected.get("CountParent"), aggregateMap.get("Parent").get(0).getValue());
+            verifyAggregate(expected.get("CountDistinctParent"), aggregateMap.get("Parent").get(1).getValue());
+
+            verifyAggregate(expected.get("SumSortOrder"), aggregateMap.get("SortOrder").get(0).getValue());
+            verifyAggregate(expected.get("SumDistinctSortOrder"), aggregateMap.get("SortOrder").get(1).getValue());
+
+            verifyAggregate(expected.get("CountCreatedBy"), aggregateMap.get("CreatedBy").get(0).getValue());
+            verifyAggregate(expected.get("MinCreated"), aggregateMap.get("Created").get(0).getValue());
+            verifyAggregate(expected.get("MinName"), aggregateMap.get("Name").get(0).getValue());
         }
 
 
