@@ -326,7 +326,18 @@ public class Aggregate
         if (getter != null)
             o = getter.getObject(rs, aggregateColumnName);
         else
+        {
             o = rs.getObject(aggregateColumnName);
+            // TODO: Handle BigDecimal values
+            if (o instanceof Number)
+            {
+                double resultValue = ((Number)o).doubleValue();
+                if (resultValue == Math.floor(resultValue))
+                    o = new Long((long) resultValue);
+                else
+                    o = new Double(resultValue);
+            }
+        }
 
         return new Result(this, o);
     }
