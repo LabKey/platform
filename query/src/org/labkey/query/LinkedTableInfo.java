@@ -114,7 +114,13 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
                     (fk.getLookupContainer() == null || schema.getContainer().equals(fk.getLookupContainer())))
             {
                 // XXX: Do we need to set the container on the join to ensure the linked schema lookups aren't exposing too much data?
-                fixedFk = new QueryForeignKey(schema, fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName());
+                boolean useRawFKValue = false;
+                if (fk instanceof QueryForeignKey)
+                {
+                    useRawFKValue = ((QueryForeignKey)fk).isUseRawFKValue();
+                }
+
+                fixedFk = new QueryForeignKey(schema, fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName(), useRawFKValue);
 
                 if (fk instanceof MultiValuedForeignKey)
                 {
