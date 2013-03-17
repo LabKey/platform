@@ -222,19 +222,15 @@ LABKEY.Filter = new function()
                     // Create an array of filter values if there is more than one filter for the same column and filter type.
                     var paramName = filter.getURLParameterName(dataRegionName);
                     var paramValue = filter.getURLParameterValue();
-                    var currentValue = params[paramName];
-                    if (currentValue === undefined)
+                    if (params[paramName] !== undefined)
                     {
-                        currentValue = paramValue;
+                        var values = params[paramName];
+                        if (!LABKEY.ExtAdapter.isArray(values))
+                            values = [ values ];
+                        values.push(paramValue);
+                        paramValue = values;
                     }
-                    else
-                    {
-                        if (LABKEY.ExtAdapter.isArray(currentValue))
-                            currentValue.push(paramValue);
-                        else
-                            currentValue = [ currentValue, paramValue ];
-                    }
-                    params[paramName] = currentValue;
+                    params[paramName] = paramValue;
                 }
             }
             return params;
@@ -254,7 +250,22 @@ LABKEY.Filter = new function()
                     if (aggregate.label)
                         value = value + "&label=" + aggregate.label;
                     if (aggregate.type && aggregate.column)
-                        params[dataRegionName + '.agg.' + aggregate.column] = encodeURIComponent(value);
+                    {
+                        // Create an array of aggregate values if there is more than one aggregate for the same column.
+                        var paramName = dataRegionName + '.agg.' + aggregate.column;
+                        var paramValue = encodeURIComponent(value);
+                        var currentValue = params[paramName];
+                        if (params[paramName] !== undefined)
+                        {
+                            var values = params[paramName];
+                            if (!LABKEY.ExtAdapter.isArray(values))
+                                values = [ values ];
+                            values.push(paramValue);
+                            paramValue = values;
+                        }
+                        params[paramName] = paramValue;
+                    }
+
                 }
             }
             return params;
