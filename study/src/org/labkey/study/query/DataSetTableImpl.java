@@ -39,6 +39,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
@@ -532,7 +533,7 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             if (null != result)
             {
                 result.setFieldKey(new FieldKey(null,name));
-                result.setAlias("_DataSetTableImpl_resolvefield$" + result.getAlias());
+                result.setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect(), true));
             }
         }
         return result;
