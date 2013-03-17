@@ -286,7 +286,13 @@ public class SimpleUserSchema extends UserSchema
                         joinWithContainer = ((ColumnInfo.SchemaForeignKey)fk).isJoinWithContainer();
                     }
 
-                    ForeignKey wrapFk = new QueryForeignKey(fk.getLookupSchemaName(), getUserSchema().getContainer(), getUserSchema().getUser(), fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName());
+                    boolean useRawFKValue = false;
+                    if (fk instanceof QueryForeignKey)
+                    {
+                        useRawFKValue = ((QueryForeignKey)fk).isUseRawFKValue();
+                    }
+
+                    ForeignKey wrapFk = new QueryForeignKey(fk.getLookupSchemaName(), getUserSchema().getContainer(), getUserSchema().getUser(), fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName(), useRawFKValue);
                     if (fk instanceof MultiValuedForeignKey)
                     {
                         wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());

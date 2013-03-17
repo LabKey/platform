@@ -693,6 +693,15 @@ abstract public class AbstractTableInfo implements TableInfo
     public static ForeignKey makeForeignKey(QuerySchema fromSchema, ColumnType.Fk fk)
     {
         ForeignKey ret = null;
+
+        String displayColumnName = null;
+        boolean useRawFKValue = false;
+        if (fk.isSetFkDisplayColumnName())
+        {
+            displayColumnName = fk.getFkDisplayColumnName().getStringValue();
+            useRawFKValue = fk.getFkDisplayColumnName().getUseRawValue();
+        }
+
         if (fk.getFkDbSchema() != null)
         {
             Container targetContainer = fromSchema.getContainer();
@@ -705,14 +714,14 @@ abstract public class AbstractTableInfo implements TableInfo
             if (!fromSchema.getSchemaName().equals(fk.getFkDbSchema()) || !targetContainer.equals(fromSchema.getContainer()))
             {
                 // Let the QueryForeignKey lazily create the schema on demand
-                ret = new QueryForeignKey(fk.getFkDbSchema(), targetContainer, fromSchema.getUser(), fk.getFkTable(), fk.getFkColumnName(), fk.getFkDisplayColumnName());
+                ret = new QueryForeignKey(fk.getFkDbSchema(), targetContainer, fromSchema.getUser(), fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
             }
         }
 
         if (ret == null)
         {
             // We can reuse the same schema object
-            ret = new QueryForeignKey(fromSchema, fk.getFkTable(), fk.getFkColumnName(), fk.getFkDisplayColumnName());
+            ret = new QueryForeignKey(fromSchema, fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
         }
 
         if (fk.isSetFkMultiValued())

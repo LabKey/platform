@@ -778,7 +778,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             {
                 SchemaForeignKey sfk = (SchemaForeignKey) fk;
                 org.labkey.data.xml.ColumnType.Fk xmlFk = xmlCol.addNewFk();
-                xmlFk.setFkColumnName(sfk._lookupKey);
+                xmlFk.setFkColumnName(sfk.getLookupColumnName());
                 xmlFk.setFkTable(sfk._tableName);
                 DbSchema fkDbOwnerSchema = sfk.getLookupTableInfo().getSchema().getScope().getSchema(sfk._dbSchemaName);
 
@@ -850,7 +850,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
             if (!xfk.isSetFkMultiValued())
             {
-                fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false, xfk.getFkDisplayColumnName());
+                String displayColumnName = null;
+                boolean useRawFKValue = false;
+                if (xfk.isSetFkDisplayColumnName())
+                {
+                    displayColumnName = xfk.getFkDisplayColumnName().getStringValue();
+                    useRawFKValue = xfk.getFkDisplayColumnName().getUseRawValue();
+                }
+                fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false, displayColumnName, useRawFKValue);
             }
             else
             {
@@ -1098,16 +1105,17 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         private final DbScope _scope;
         private final String _dbSchemaName;
         private final String _tableName;
-        private final String _lookupKey;
+        private String _lookupKey;
         private final String _displayColumnName;
         private final boolean _joinWithContainer;
+        private final boolean _useRawFKValue;
 
-        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer)
+        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, @Nullable String lookupKey, boolean joinWithContainer)
         {
-            this(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer, null);
+            this(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer, null, false);
         }
 
-        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer, String displayColumnName)
+        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, @Nullable String lookupKey, boolean joinWithContainer, @Nullable String displayColumnName, boolean useRawFKValue)
         {
             _scope = foreignKey.getParentTable().getSchema().getScope();
             _dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
@@ -1115,6 +1123,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             _lookupKey = lookupKey;
             _joinWithContainer = joinWithContainer;
             _displayColumnName = displayColumnName;
+            _useRawFKValue = useRawFKValue;
         }
 
         public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
@@ -1137,6 +1146,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             {
                 lookupColumn = lookupTable.getColumn(displayField);
             }
+            else if (_useRawFKValue)
+            {
+                return foreignKey;
+            }
             else if (_displayColumnName != null)
             {
                 lookupColumn = lookupTable.getColumn(_displayColumnName);
@@ -1151,7 +1164,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 return null;
             }
 
-            LookupColumn result = LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupColumn, false);
+            LookupColumn result = LookupColumn.create(foreignKey, lookupTable.getColumn(getLookupColumnName(lookupTable)), lookupColumn, false);
             if (_joinWithContainer)
             {
                 ColumnInfo fkContainer = foreignKey.getParentTable().getColumn("Container");
@@ -1197,6 +1210,28 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         public String getLookupColumnName()
         {
+            return _lookupKey;
+        }
+
+        public String getLookupColumnName(@Nullable TableInfo tableInfo)
+        {
+            if (_lookupKey == null)
+            {
+                if (tableInfo == null)
+                {
+                    tableInfo = getLookupTableInfo();
+                }
+
+                if (tableInfo != null)
+                {
+                    List<String> pkColumnNames = tableInfo.getPkColumnNames();
+                    if (pkColumnNames.size() == 1)
+                    {
+                        _lookupKey = pkColumnNames.get(0);
+                    }
+                }
+                return null;
+            }
             return _lookupKey;
         }
 

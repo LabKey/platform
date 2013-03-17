@@ -15,9 +15,11 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -69,7 +71,7 @@ public class JsonWriter
 
     public static Map<String, Object> getMetaData(DisplayColumn dc, FieldKey fieldKeyPrefix, boolean useFriendlyAsType, boolean includeLookup, boolean includeDomainFormat)
     {
-        ColumnInfo cinfo = dc.getColumnInfo();
+        @Nullable ColumnInfo cinfo = dc.getColumnInfo();
         Map<String, Object> props = new LinkedHashMap<String, Object>();
         JSONObject ext = new JSONObject();
         props.put("ext",ext);
@@ -221,8 +223,17 @@ public class JsonWriter
 
             props.put("shortCaption", cinfo.getShortLabel());
 
-            if (cinfo.getFacetingBehaviorType() != null)
+            if (dc instanceof MultiValuedDisplayColumn)
+            {
+                // Disallow faceted filtering when the column is multi-valued, as the value that comes out of the
+                // database likely has a different delimeter compared to what the user wants to see and therefore
+                // doesn't work very well. See issue
+                props.put("facetingBehaviorType", FacetingBehaviorType.ALWAYS_OFF);
+            }
+            else if (cinfo.getFacetingBehaviorType() != null)
+            {
                 props.put("facetingBehaviorType", cinfo.getFacetingBehaviorType().name());
+            }
 
             if (cinfo.getCrosstabColumnMember() != null)
             {
