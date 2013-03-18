@@ -596,31 +596,41 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                 survey.setStatus(SurveyStatus.Submitted.name());
                             }
 
-                            Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
-
-                            if (survey.isNew())
+                            List<Throwable> updateErrors = SurveyManager.get().fireBeforeUpdateSurveyResponses(getContainer(), getUser(), survey);
+                            if (!updateErrors.isEmpty())
                             {
-                                if (!row.isEmpty())
+                                Throwable first = updateErrors.get(0);
+                                response.put("errorInfo", first.getMessage());
+                                response.put("success", false);
+                            }
+                            else
+                            {
+                                Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
+
+                                if (survey.isNew())
                                 {
-                                    // update the survey instance with the key for the answers so that existing answers can
-                                    // be updated.
-                                    Object key = row.get(pk.toString());
-                                    survey.setResponsesPk(String.valueOf(key));
+                                    if (!row.isEmpty())
+                                    {
+                                        // update the survey instance with the key for the answers so that existing answers can
+                                        // be updated.
+                                        Object key = row.get(pk.toString());
+                                        survey.setResponsesPk(String.valueOf(key));
+                                    }
+
+                                    // set the initial status to Pending
+                                    if (!form.isSubmitted())
+                                        survey.setStatus(SurveyStatus.Pending.name());
                                 }
 
-                                // set the initial status to Pending
-                                if (!form.isSubmitted())
-                                    survey.setStatus(SurveyStatus.Pending.name());
+                                survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
+                                SurveyManager.get().fireUpdateSurveyResponses(getContainer(), getUser(), survey, row);
+
+                                response.put("surveyResults", row);
+                                response.put("survey", new JSONObject(survey));
+
+                                dbschema.getScope().commitTransaction();
+                                response.put("success", true);
                             }
-
-                            survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
-                            SurveyManager.get().fireUpdateSurveyResponses(getContainer(), getUser(), survey, row);
-
-                            response.put("surveyResults", row);
-                            response.put("survey", new JSONObject(survey));
-
-                            dbschema.getScope().commitTransaction();
-                            response.put("success", true);
                         }
                     }
                     finally

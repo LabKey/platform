@@ -345,7 +345,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             style: "text-align: center;",
             hidden: !this.isSubmitted,
             value: "<span style='font-style: italic; font-size: 90%'>"
-                    + (this.submitted && this.submittedBy ? "This survey was submitted by " + this.submittedBy + " on " + this.submitted + ".<br/><br/>" : "")
+                    + (this.submitted && this.submittedBy ? "Submitted by " + this.submittedBy + "<br/>on " + this.submitted + ".<br/><br/>" : "")
                     + (this.canEdit ? "You are allowed to make changes to this form because you are a project/site administrator.<br/><br/>" : "")
                     + "</span>"
         });
@@ -612,7 +612,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         if (this.returnURL)
             window.location = this.returnURL;
         else
-            window.history.back();
+            window.location = LABKEY.ActionURL.buildURL('project', 'begin');
     },
 
     saveSurveyAttachments : function() {

@@ -461,6 +461,23 @@ public class SurveyManager
         return errors;
     }
 
+    public List<Throwable> fireBeforeUpdateSurveyResponses(Container c, User user, Survey survey)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (SurveyListener l : _surveyListeners)
+        {
+            try {
+                l.surveyResponsesBeforeUpdate(c, user, survey);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
     public List<Throwable> fireUpdateSurveyResponses(Container c, User user, Survey survey, Map<String, Object> rowData)
     {
         List<Throwable> errors = new ArrayList<Throwable>();
@@ -476,6 +493,16 @@ public class SurveyManager
             }
         }
         return errors;
+    }
+
+    public ArrayList<String> getSurveyLockedStates()
+    {
+        ArrayList<String> states = new ArrayList<String>();
+        for (SurveyListener l : _surveyListeners)
+        {
+            states.addAll(l.getSurveyLockedStates());
+        }
+        return states;
     }
 
     public static class TestCase extends Assert
