@@ -10,6 +10,7 @@ LABKEY.requiresScript("/survey/SurveyGridQuestion.js");
 LABKEY.requiresScript("/survey/AttachmentField.js");
 LABKEY.requiresScript("/survey/UsersCombo.js");
 LABKEY.requiresScript("/biotrust/AssociatedStudyQuestion.js");
+LABKEY.requiresScript("/biotrust/ContactsPanel.js");
 LABKEY.requiresScript("/biotrust/DiseaseTypeQuestion.js");
 LABKEY.requiresScript("/biotrust/LinkToDiscarded.js");
 LABKEY.requiresScript("/biotrust/ProtocolDocuments.js");
