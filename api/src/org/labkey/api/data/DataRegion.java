@@ -657,7 +657,12 @@ public class DataRegion extends AbstractDataRegion
 
             //Issue 14863: add null check
             if (result != null && result.size() > 0)
-                _totalRows = (Long)(result.get(0)).getValue();
+            {
+                Aggregate.Result countStarResult = result.get(0);
+                _totalRows = 0L;
+                if (countStarResult.getValue() instanceof Number)
+                    _totalRows = ((Number)countStarResult.getValue()).longValue();
+            }
         }
         else
         {
@@ -1327,13 +1332,22 @@ public class DataRegion extends AbstractDataRegion
                             Aggregate.Type type = r.getAggregate().getType();
                             JdbcType inputType = col.getJdbcType();
                             JdbcType returnType = type.returnType(inputType);
-                            if (formatter != null &&
-                                    (inputType == returnType ||
-                                    (inputType.isInteger() && returnType.isInteger()) ||
-                                    (inputType.isReal() && returnType.isReal())))
-                                out.write(formatter.format(r.getValue()));
+                            if (type.isLegal(inputType))
+                            {
+                                if (r.getValue() == null)
+                                    out.write("&lt;none&gt;");
+                                else if (formatter != null &&
+                                        (inputType == returnType ||
+                                        (inputType.isInteger() && returnType.isInteger()) ||
+                                        (inputType.isReal() && returnType.isReal())))
+                                    out.write(formatter.format(r.getValue()));
+                                else
+                                    out.write(r.getValue().toString());
+                            }
                             else
-                                out.write(r.getValue().toString());
+                            {
+                                out.write("<span class='labkey-error'>Not valid for type '" + col.getFriendlyTypeName() + "'</span>");
+                            }
                             out.write("</td></tr>");
 
                             delim = "";

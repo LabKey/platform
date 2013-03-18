@@ -178,6 +178,8 @@ public class Aggregate
             return _aggregate;
         }
 
+        /** Returns null for invalid aggregates or valid aggregates with no data (e.g., SUM over no rows). */
+        @Nullable
         public Object getValue()
         {
             return _value;
@@ -322,7 +324,7 @@ public class Aggregate
     {
         ColumnInfo col = columns.get(getFieldKey());
         if (col != null && !_type.isLegal(col.getJdbcType()))
-            return new Result(this, 0L);
+            return new Result(this, null);
 
         String aggregateColumnName = getAggregateName(getAliasName(col));
 
