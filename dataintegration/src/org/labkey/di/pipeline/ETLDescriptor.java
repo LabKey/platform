@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: jeckels
@@ -191,21 +193,29 @@ public class ETLDescriptor implements Serializable
     @Override
     public String toString()
     {
-        return "ETLDescriptor: " + _name;
+        return "ETLDescriptor: " + _name + " (" + getScheduleDescription() + ")";
     }
+
 
     public ScheduleBuilder getScheduleBuilder()
     {
         return SimpleScheduleBuilder.simpleSchedule()
-                              .withIntervalInSeconds(60)
+                              .withIntervalInMilliseconds(getInterval())
                               .repeatForever();
     }
 
+
+    long getInterval()
+    {
+        return TimeUnit.MINUTES.toMillis(1);
+    }
+
+
     public String getScheduleDescription()
     {
-        //return getScheduleBuilder().toString();
-        return "5m";
+        return DateUtil.formatDuration(getInterval());
     }
+
 
     public Map<String, Object> toJSON(@Nullable Map<String,Object> map)
     {

@@ -31,6 +31,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
@@ -237,14 +238,14 @@ public class ETLManager
 
             {
             LOG.debug("Jobs");
-            Set<JobKey> keys = scheduler.getJobKeys(GroupMatcher.<JobKey>groupEquals(JOB_GROUP_NAME));
+            Set<JobKey> keys = scheduler.getJobKeys((GroupMatcher<JobKey>)GroupMatcher.groupEquals(JOB_GROUP_NAME));
             for (JobKey key : keys)
                 LOG.debug("\t" + key.toString());
             }
 
             {
             LOG.debug("Triggers");
-            Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.<TriggerKey>groupEquals(JOB_GROUP_NAME));
+            Set<TriggerKey> keys = scheduler.getTriggerKeys((GroupMatcher<TriggerKey>)GroupMatcher.groupEquals(JOB_GROUP_NAME));
             for (TriggerKey key : keys)
                 LOG.debug("\t" + key.toString());
             }
@@ -298,13 +299,17 @@ public class ETLManager
         ArrayList<TransformConfiguration> configs = new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
         for (TransformConfiguration config : configs)
         {
+            // CONSIDER explicit runAs user
+            int runAsUserId = config.getModifiedBy();
+            User runAsUser = UserManager.getUser(runAsUserId);
+
             ETLDescriptor etl = etls.get(config.getTransformId());
             if (null == etl)
                 continue;
             Container c = ContainerManager.getForId(config.getContainerId());
             if (null == c)
                 continue;
-            schedule(etl, c, null);
+            schedule(etl, c, runAsUser);
         }
     }
 }

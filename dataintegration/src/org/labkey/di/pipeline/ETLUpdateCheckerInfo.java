@@ -2,6 +2,7 @@ package org.labkey.di.pipeline;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 
@@ -15,13 +16,16 @@ public class ETLUpdateCheckerInfo implements Serializable
 {
     private ETLDescriptor _etlDescriptor;
     private Container _container;
-    private User _user;
+    transient private User _user;
+    private int _userId = 0;
 
     public ETLUpdateCheckerInfo(ETLDescriptor etlDescriptor, Container container, User user)
     {
         _etlDescriptor = etlDescriptor;
         _container = container;
         _user = user;
+        if (null != user)
+            _userId = user.getUserId();
     }
 
     public ETLDescriptor getETLDescriptor()
@@ -36,7 +40,9 @@ public class ETLUpdateCheckerInfo implements Serializable
 
     public User getUser()
     {
-        return _user;
+        if (null != _user)
+            return _user;
+        return UserManager.getUser(_userId);
     }
 
     public static ETLUpdateCheckerInfo getFromJobDetail(JobDetail jobDetail)

@@ -24,6 +24,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 ViewContext context = HttpView.currentContext();
@@ -32,6 +33,8 @@ List<TransformConfiguration> configurationsList = ETLManager.get().getTransformC
 Map<String,TransformConfiguration> configurationsMap = new HashMap<String, TransformConfiguration>(configurationsList.size()*2);
 for (TransformConfiguration c : configurationsList)
     configurationsMap.put(c.getTransformId(), c);
+
+boolean isAdmin = context.hasPermission(AdminPermission.class);
 
 %>
 <script>
@@ -127,14 +130,29 @@ for (ETLDescriptor descriptor : descriptors)
         configuration.setContainer(context.getContainer().getId());
         configuration.setTransformId(id);
     }
-    %><tr transformId="<%=h(descriptor.getTransformId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
+
+    if (isAdmin)
+    {
+        %><tr transformId="<%=h(descriptor.getTransformId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox onchange="onEnabledChanged()" <%=checked(configuration.isEnabled())%>></td>
         <td><input type=checkbox onchange="onVerboseLoggingChanged()" <%=checked(configuration.isVerboseLogging())%>></td>
         <td><%=generateButton("run now", "#", "onRunNowClicked(); return false;")%></td>
-    </tr><%
+        </tr><%
+    }
+    else
+    {
+        %><tr transformId="<%=h(descriptor.getTransformId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
+        <td><%=h(descriptor.getName())%></td>
+        <td><%=h(descriptor.getModuleName())%></td>
+        <td><%=h(descriptor.getScheduleDescription())%></td>
+        <td><input type=checkbox disabled="true" <%=checked(configuration.isEnabled())%>></td>
+        <td><input type=checkbox disabled="true" onchange="onVerboseLoggingChanged()" <%=checked(configuration.isVerboseLogging())%>></td>
+        <td>&nbsp;</td>
+        </tr><%
+    }
 }
 %></table>
 </div>
