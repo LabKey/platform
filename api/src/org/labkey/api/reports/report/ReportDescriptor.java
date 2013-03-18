@@ -29,6 +29,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
@@ -454,6 +455,9 @@ public enum Prop implements ReportProperty
         ReportPropertyList props = descriptor.addNewProperties();
         for (Map.Entry<String, Object> entry : _props.entrySet())
         {
+            if (!shouldSerialize(entry.getKey()))
+                continue;
+
             final Object value = entry.getValue();
             if (value instanceof List)
             {
@@ -473,6 +477,15 @@ public enum Prop implements ReportProperty
         ReportPropsManager.get().exportProperties(getEntityId(), c, propList);
 
         return doc;
+    }
+
+    protected boolean shouldSerialize(String propName)
+    {
+        if (Prop.redirectUrl.name().equals(propName) ||
+            Prop.returnUrl.name().equals(propName))
+            return false;
+
+        return true;
     }
 
     private void addProperty(@Nullable ImportContext context, ReportPropertyList props, String key, Object value)
