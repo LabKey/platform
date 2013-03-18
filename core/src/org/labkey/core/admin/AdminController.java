@@ -3711,6 +3711,7 @@ public class AdminController extends SpringActionController
         private String _emailSubject;
         private String _emailMessage;
         private String _returnURL;
+        private String _templateDescription;
 
         public void setTemplateClass(String name){_templateClass = name;}
         public String getTemplateClass(){return _templateClass;}
@@ -3718,6 +3719,16 @@ public class AdminController extends SpringActionController
         public String getEmailSubject(){return _emailSubject;}
         public void setEmailMessage(String body){_emailMessage = body;}
         public String getEmailMessage(){return _emailMessage;}
+
+        public String getTemplateDescription()
+        {
+            return _templateDescription;
+        }
+
+        public void setTemplateDescription(String templateDescription)
+        {
+            _templateDescription = templateDescription;
+        }
     }
 
     private ActionURL getManageFoldersURL()

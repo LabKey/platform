@@ -75,6 +75,7 @@ import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
+import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
 
@@ -138,6 +139,7 @@ public class QueryModule extends DefaultModule
         QueryView.register(new PerlExportScriptFactory());
 //		WebdavService.addProvider(new QueryWebdavprovider());
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
+        DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
 
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
                 "This feature will turn on generating a generic [details] URL link in most grids.", false);

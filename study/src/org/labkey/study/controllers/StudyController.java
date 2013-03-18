@@ -6760,7 +6760,7 @@ public class StudyController extends BaseStudyController
             List<DataViewProvider.Type> visibleDataTypes = new ArrayList<DataViewProvider.Type>();
             for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
             {
-                boolean visible = getCheckedState(type.getName(), props, true);
+                boolean visible = getCheckedState(type.getName(), props, type.isShowByDefault());
                 types.put(type.getName(), visible);
 
                 if (visible)
@@ -7151,7 +7151,7 @@ public class StudyController extends BaseStudyController
 
             for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
             {
-                boolean visible = getCheckedState(type.getName(), props, true);
+                boolean visible = getCheckedState(type.getName(), props, type.isShowByDefault());
 
                 if (visible)
                     visibleDataTypes.add(type);

@@ -1,3 +1,4 @@
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%
 /*
  * Copyright (c) 2007-2012 LabKey Corporation
@@ -61,7 +62,7 @@
         }
 %>
         </select></td></tr>
-        <tr><td class="labkey-form-label">Description:</td><td><div id="emailDescription"></div></td><td></td></tr>
+        <tr><td class="labkey-form-label">Description:</td><td><div id="emailDescription"><%=h(bean.getTemplateDescription())%></div></td><td></td></tr>
         <tr><td class="labkey-form-label">Subject:</td><td><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=h(bean.getEmailSubject())%>"></td><td></td></tr>
         <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=h(bean.getEmailMessage())%></textarea></td></tr>
         <tr>
@@ -98,6 +99,7 @@
             the <a href="<%=urlProvider(AdminUrls.class).getProjectSettingsURL(c)%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
         </tr>
     </table>
+    <input id="emailDescriptionFF" type="hidden" name="templateDescription" value="<%=h(bean.getTemplateDescription())%>"/>
 </form><br/><br/>
 
 <script type="text/javascript">
@@ -145,6 +147,7 @@
         var subject = Ext.get('emailSubject').dom;
         var message = Ext.get('emailMessage').dom;
         var description = Ext.get('emailDescription').dom;
+        var descriptionFF = Ext.get('emailDescriptionFF').dom;
 
         for (var i=0; i < this.emailTemplates.length; i++)
         {
@@ -152,6 +155,7 @@
             {
                 subject.value = this.emailTemplates[i].subject;
                 description.innerHTML = this.emailTemplates[i].description;
+                descriptionFF.value = this.emailTemplates[i].description;
                 message.value = this.emailTemplates[i].message;
                 Ext.get("siteResetButton").dom.style.display = this.emailTemplates[i].showSiteReset ? "" : "none";
                 Ext.get("folderResetButton").dom.style.display = this.emailTemplates[i].showFolderReset ? "" : "none";

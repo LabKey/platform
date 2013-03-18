@@ -445,7 +445,7 @@ public class QueryServiceImpl extends QueryService
             List<CustomView> result = new ArrayList<CustomView>();
             Map<String, UserSchema> schemas = new HashMap<String, UserSchema>();
             Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<Pair<String, String>, QueryDefinition>();
-            for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schemaName, queryName, user, true))
+            for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schemaName, queryName, user, includeInherited))
             {
                 Pair<String, String> key = new Pair<String, String>(cstmView.getSchema(), cstmView.getQueryName());
                 QueryDefinition queryDef = queryDefs.get(key);

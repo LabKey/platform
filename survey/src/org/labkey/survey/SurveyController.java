@@ -437,7 +437,16 @@ public class SurveyController extends SpringActionController implements SurveyUr
                             if (!section.containsKey("title"))
                                 sb.append("Each section must contain a property named : 'title'\n");
                             else if (section.has("questions"))
-                                section.getJSONArray("questions");
+                            {
+                                for (JSONObject question : section.getJSONArray("questions").toJSONObjectArray())
+                                {
+                                    if (question == null)
+                                    {
+                                        sb.append("Each of the elements in the question array must be an object and cannot be null\n");
+                                        break;
+                                    }
+                                }
+                            }
                             else if (section.has("extAlias"))
                                 section.getString("extAlias");
                             else

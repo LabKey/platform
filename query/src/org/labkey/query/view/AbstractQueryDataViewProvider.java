@@ -1,0 +1,129 @@
+package org.labkey.query.view;
+
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.views.DataViewInfo;
+import org.labkey.api.data.views.DataViewProvider;
+import org.labkey.api.data.views.DefaultViewInfo;
+import org.labkey.api.data.views.ProviderType;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUrls;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: 3/17/13
+ */
+public abstract class AbstractQueryDataViewProvider implements DataViewProvider
+{
+    @Override
+    public void initialize(ContainerUser context)
+    {
+    }
+
+    @Override
+    public List<DataViewInfo> getViews(ViewContext context) throws Exception
+    {
+        List<DataViewInfo> dataViews = new ArrayList<DataViewInfo>();
+
+        for (CustomViewInfo view : getCustomViews(context))
+        {
+            DefaultViewInfo info = new DefaultViewInfo(getType(), view.getEntityId(), view.getName(), view.getContainer());
+
+            info.setType("Query");
+
+            ViewCategory vc = ReportUtil.getDefaultCategory(context.getContainer(), view.getSchemaName(), view.getQueryName());
+            info.setCategory(vc);
+
+            info.setCreatedBy(view.getCreatedBy());
+            info.setModified(view.getModified());
+            info.setShared(view.getOwner() == null);
+            info.setAccess(view.isShared() ? "public" : "private");
+
+            info.setSchemaName(view.getSchemaName());
+            info.setQueryName(view.getQueryName());
+
+            // run url and details url are the same for now
+            ActionURL runUrl = getViewRunURL(context.getUser(), context.getContainer(), view);
+
+            info.setRunUrl(runUrl);
+            info.setDetailsUrl(runUrl);
+
+            if (!StringUtils.isEmpty(view.getCustomIconUrl()))
+            {
+                URLHelper url = new URLHelper(view.getCustomIconUrl());
+                url.setContextPath(AppProps.getInstance().getParsedContextPath());
+                info.setIcon(url.toString());
+            }
+
+            info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(context.getContainer()));
+
+            dataViews.add(info);
+        }
+        return dataViews;
+    }
+
+    protected List<CustomViewInfo> getCustomViews(ViewContext context)
+    {
+        List<CustomViewInfo> views = new ArrayList<CustomViewInfo>();
+
+        for (CustomViewInfo view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), null, null, true))
+        {
+            if (view.isHidden())
+                continue;
+
+            if (view.getName() == null)
+                continue;
+
+            if (includeView(context, view))
+                views.add(view);
+        }
+        return views;
+    }
+
+    protected abstract boolean includeView(ViewContext context, CustomViewInfo view);
+
+    private ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
+    {
+        String dataregionName = QueryView.DATAREGIONNAME_DEFAULT;
+
+        if (StudyService.get().getStudy(c) != null)
+        {
+            dataregionName = "Dataset";
+        }
+        return QueryService.get().urlFor(user, c,
+                QueryAction.executeQuery, view.getSchemaName(), view.getQueryName()).
+                addParameter(dataregionName + "." + QueryParam.viewName.name(), view.getName());
+    }
+
+    @Override
+    public DataViewProvider.EditInfo getEditInfo()
+    {
+        return null;
+    }
+
+    @Override
+    public boolean isVisible(Container container, User user)
+    {
+        return true;
+    }
+}

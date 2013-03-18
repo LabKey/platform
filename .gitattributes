@@ -2368,9 +2368,11 @@ query/src/org/labkey/query/sql/SqlBuilder.java -text
 query/src/org/labkey/query/sql/SqlParser.java -text
 query/src/org/labkey/query/sql/SupportsAnnotations.java -text
 query/src/org/labkey/query/sql/UnionTableInfoImpl.java -text
+query/src/org/labkey/query/view/AbstractQueryDataViewProvider.java -text
 query/src/org/labkey/query/view/CustomViewSetKey.java -text
 query/src/org/labkey/query/view/EditQueryPage.java -text
 query/src/org/labkey/query/view/EditQueryView.java -text
+query/src/org/labkey/query/view/InheritedQueryDataViewProvider.java -text
 query/src/org/labkey/query/view/QueryDataViewProvider.java -text
 query/src/org/labkey/query/view/QueryWebPartFactory.java -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text

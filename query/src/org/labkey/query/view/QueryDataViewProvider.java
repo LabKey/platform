@@ -46,7 +46,7 @@ import java.util.List;
  * User: klum
  * Date: Apr 4, 2012
  */
-public class QueryDataViewProvider implements DataViewProvider
+public class QueryDataViewProvider extends AbstractQueryDataViewProvider
 {
     public static final DataViewProvider.Type TYPE = new ProviderType("queries", "Custom Views", true);
 
@@ -56,80 +56,8 @@ public class QueryDataViewProvider implements DataViewProvider
     }
 
     @Override
-    public void initialize(ContainerUser context)
+    protected boolean includeView(ViewContext context, CustomViewInfo view)
     {
-    }
-    
-    @Override
-    public List<DataViewInfo> getViews(ViewContext context) throws Exception
-    {
-        List<DataViewInfo> dataViews = new ArrayList<DataViewInfo>();
-
-        for (CustomViewInfo view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), null, null, false))
-        {
-            if (view.isHidden())
-                continue;
-
-            if (view.getName() == null)
-                continue;
-
-            DefaultViewInfo info = new DefaultViewInfo(TYPE, view.getEntityId(), view.getName(), view.getContainer());
-
-            info.setType("Query");
-
-            ViewCategory vc = ReportUtil.getDefaultCategory(context.getContainer(), view.getSchemaName(), view.getQueryName());
-            info.setCategory(vc);
-
-            info.setCreatedBy(view.getCreatedBy());
-            info.setModified(view.getModified());
-            info.setShared(view.getOwner() == null);
-            info.setAccess(view.isShared() ? "public" : "private");
-
-            info.setSchemaName(view.getSchemaName());
-            info.setQueryName(view.getQueryName());
-
-            // run url and details url are the same for now
-            ActionURL runUrl = getViewRunURL(context.getUser(), context.getContainer(), view);
-
-            info.setRunUrl(runUrl);
-            info.setDetailsUrl(runUrl);
-
-            if (!StringUtils.isEmpty(view.getCustomIconUrl()))
-            {
-                URLHelper url = new URLHelper(view.getCustomIconUrl());
-                url.setContextPath(AppProps.getInstance().getParsedContextPath());
-                info.setIcon(url.toString());
-            }
-
-            info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(context.getContainer()));
-
-            dataViews.add(info);
-        }
-        return dataViews;
-    }
-
-    private ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
-    {
-        String dataregionName = QueryView.DATAREGIONNAME_DEFAULT;
-
-        if (StudyService.get().getStudy(c) != null)
-        {
-            dataregionName = "Dataset";
-        }
-        return QueryService.get().urlFor(user, c,
-                QueryAction.executeQuery, view.getSchemaName(), view.getQueryName()).
-                addParameter(dataregionName + "." + QueryParam.viewName.name(), view.getName());
-    }
-
-    @Override
-    public EditInfo getEditInfo()
-    {
-        return null;
-    }
-
-    @Override
-    public boolean isVisible(Container container, User user)
-    {
-        return true;
+        return !ReportUtil.isInherited(view, context.getContainer());
     }
 }
