@@ -38,6 +38,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
@@ -59,21 +60,23 @@
     ViewContext context = me.getViewContext();
     if (comments == null)
         comments = "[No description provided]";
-    SampleRequestActor[] actors = SampleManager.getInstance().getRequirementsProvider().getActors(context.getContainer());
-    SampleRequestRequirement[] requirements = SampleManager.getInstance().getRequestRequirements(bean.getSampleRequest());
+    SampleManager manager = SampleManager.getInstance();
+    boolean hasExtendedRequestView = manager.getExtendedSpecimenRequestView(c) != null;
+    SampleRequestActor[] actors = manager.getRequirementsProvider().getActors(context.getContainer());
+    SampleRequestRequirement[] requirements = manager.getRequestRequirements(bean.getSampleRequest());
     Location destinationLocation = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSampleRequest().getCreatedBy());
     LocationImpl[] locations = StudyManager.getInstance().getSites(context.getContainer());
     boolean notYetSubmitted = false;
-    if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer()))
+    if (manager.isSpecimenShoppingCartEnabled(context.getContainer()))
     {
-        SampleRequestStatus cartStatus = SampleManager.getInstance().getRequestShoppingCartStatus(context.getContainer(), context.getUser());
+        SampleRequestStatus cartStatus = manager.getRequestShoppingCartStatus(context.getContainer(), context.getUser());
         notYetSubmitted = bean.getSampleRequest().getStatusId() == cartStatus.getRowId();
     }
 
-    String specimenSearchButton = SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
+    String specimenSearchButton = manager.hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
         generateButton("Specimen Search", buildURL(ShowSearchAction.class) + "showVials=true", null) : "";
-    String importVialIdsButton = SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
+    String importVialIdsButton = manager.hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
         generateButton("Upload Specimen Ids", buildURL(SpecimenController.ImportVialIdsAction.class,
                 "id=" + bean.getSampleRequest().getRowId()), null) : "";
 
@@ -316,7 +319,7 @@
         <tr>
             <td class="labkey-form-label"><span class="labkey-error"><b>This request has not been submitted.</b></span>
 <%
-        if (SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()))
+        if (manager.hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()))
         {
 %>
             <div style="padding-bottom: 0.5em">
@@ -401,6 +404,14 @@
     <td>
         <%= textLink("View History", buildURL(SpecimenController.RequestHistoryAction.class) + "id=" + bean.getSampleRequest().getRowId()) %>&nbsp;
         <%= bean.isRequestManager() ? textLink("Update Request", buildURL(SpecimenController.ManageRequestStatusAction.class) + "id=" + bean.getSampleRequest().getRowId()) : "" %>
+        <%
+            if (hasExtendedRequestView)
+            {
+        %>
+        <%= bean.isRequestManager() ? textLink("Update Extended Request", new ActionURL(SpecimenController.ExtendedSpecimenRequestAction.class, c).addParameter("id", bean.getSampleRequest().getRowId())) : "" %>
+        <%
+            }
+        %>
         <%= bean.isRequestManager() ? textLink("Originating Location Specimen Lists",
                 buildURL(SpecimenController.LabSpecimenListsAction.class) + "id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) : "" %>
         <%= bean.isRequestManager() ? textLink("Providing Location Specimen Lists",
