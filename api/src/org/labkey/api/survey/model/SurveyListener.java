@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,6 +49,15 @@ public interface SurveyListener
     void surveyUpdated(Container c, User user, Survey survey, @Nullable Map<String, Object> oldRow, Map<String, Object> rowData) throws Exception;
 
     /**
+     * Invoked before the responses associated with the specified survey are changed.
+     * @param c
+     * @param user
+     * @param survey
+     * @throws Exception
+     */
+    void surveyResponsesBeforeUpdate(Container c, User user, Survey survey) throws Exception;
+
+    /**
      * Invoked when the responses associated with the specified survey are changed.
      * @param c
      * @param user
@@ -56,4 +66,10 @@ public interface SurveyListener
      * @throws Exception
      */
     void surveyResponsesUpdated(Container c, User user, Survey survey, Map<String, Object> rowData) throws Exception;
+
+    /**
+     * Allow survey subclasses to define locked states
+     *
+     */
+    List<String> getSurveyLockedStates();
 }
