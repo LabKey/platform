@@ -145,7 +145,6 @@ abstract public class UserSchema extends AbstractSchema
         // see https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=15584
         assert null != t.getSchema();
         assert null != t.getName();
-        assert t.getColumns().size() > 0;
         return true;
     }
 
