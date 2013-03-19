@@ -240,14 +240,14 @@ public class ETLManager
 
             {
             LOG.debug("Jobs");
-            Set<JobKey> keys = scheduler.getJobKeys((GroupMatcher<JobKey>)GroupMatcher.groupEquals(JOB_GROUP_NAME));
+            Set<JobKey> keys = scheduler.getJobKeys(GroupMatcher.<JobKey>groupEquals(JOB_GROUP_NAME));
             for (JobKey key : keys)
                 LOG.debug("\t" + key.toString());
             }
 
             {
             LOG.debug("Triggers");
-            Set<TriggerKey> keys = scheduler.getTriggerKeys((GroupMatcher<TriggerKey>)GroupMatcher.groupEquals(JOB_GROUP_NAME));
+            Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.<TriggerKey>groupEquals(JOB_GROUP_NAME));
             for (TriggerKey key : keys)
                 LOG.debug("\t" + key.toString());
             }
