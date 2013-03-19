@@ -1,10 +1,10 @@
 package org.labkey.di.api;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 
 /**
@@ -15,36 +15,25 @@ import org.quartz.JobExecutionContext;
  */
 public class ScheduledPipelineJobContext
 {
-    ScheduledPipelineJobDescriptor _descriptor;
     String _key;
-    private Container _container;
-    transient private User _user;
+    private String _containerId = null;
     private int _userId = 0;
 
     public ScheduledPipelineJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
-        _descriptor = descriptor;
-        _container = container;
-        _user = user;
+        _containerId = container.getId();
         if (null != user)
             _userId = user.getUserId();
-        _key = "Container" + _container.getRowId() + ":" + _descriptor.getId();
-    }
-
-    public ScheduledPipelineJobDescriptor getDescriptor()
-    {
-        return _descriptor;
+        _key = "Container" + container.getRowId() + ":" + descriptor.getId();
     }
 
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(_containerId);
     }
 
     public User getUser()
     {
-        if (null != _user)
-            return _user;
         return UserManager.getUser(_userId);
     }
 
@@ -53,10 +42,11 @@ public class ScheduledPipelineJobContext
         return _key;
     }
 
+
     @Override
     public String toString()
     {
-        return _descriptor.getId() + " " + _container.getPath() + " " + (null==_user?"-":_user.getEmail());
+        return _key;
     }
 
 
@@ -87,10 +77,5 @@ public class ScheduledPipelineJobContext
         JobDataMap map = new JobDataMap();
         writeJobDataMap(map);
         return map;
-    }
-
-    public void setOnJobDetails(JobDetail jobDetail)
-    {
-        writeJobDataMap(jobDetail.getJobDataMap());
     }
 }

@@ -133,13 +133,11 @@ public class ETLManager
             ScheduledPipelineJobContext info = descriptor.getJobContext(container, user);
 
             // find job
-            JobKey jobKey = JobKey.jobKey(info.getKey(), JOB_GROUP_NAME);
+            JobKey jobKey = jobKeyFromDescriptor(descriptor);
             JobDetail job = null;
             if (!scheduler.checkExists(jobKey))
             {
-                job = JobBuilder.newJob(descriptor.getJobClass())
-                    .withIdentity(jobKey)
-                    .build();
+                job = jobFromDescriptor(descriptor);
             }
 
             TriggerKey triggerKey = TriggerKey.triggerKey(info.getKey() + GUID.makeHash(), JOB_GROUP_NAME);
@@ -174,12 +172,11 @@ public class ETLManager
             ScheduledPipelineJobContext info = descriptor.getJobContext(container, user);
 
             // find job
-            JobKey jobKey = JobKey.jobKey(info.getKey(), JOB_GROUP_NAME);
+            JobKey jobKey = jobKeyFromDescriptor(descriptor);
             JobDetail job = null;
             if (!scheduler.checkExists(jobKey))
             {
-                job = JobBuilder.newJob(descriptor.getJobClass())
-                    .withIdentity(jobKey).build();
+                job = jobFromDescriptor(descriptor);
             }
 
             // find trigger
@@ -229,6 +226,24 @@ public class ETLManager
         {
             assert dumpScheduler();
         }
+    }
+
+
+    private JobKey jobKeyFromDescriptor(ScheduledPipelineJobDescriptor descriptor)
+    {
+        return JobKey.jobKey(descriptor.getId(), JOB_GROUP_NAME);
+    }
+
+
+    private JobDetail jobFromDescriptor(ScheduledPipelineJobDescriptor descriptor)
+    {
+        JobKey jobKey = JobKey.jobKey(descriptor.getId(), JOB_GROUP_NAME);
+        JobDetail job = JobBuilder.newJob(descriptor.getJobClass())
+            .withIdentity(jobKey)
+            .storeDurably()
+            .build();
+        job.getJobDataMap().put(ScheduledPipelineJobDescriptor.class.getName(),descriptor);
+        return job;
     }
 
 

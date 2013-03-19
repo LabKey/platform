@@ -7,6 +7,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.di.api.ScheduledPipelineJobContext;
 import org.labkey.di.api.ScheduledPipelineJobDescriptor;
 import org.quartz.Job;
+import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
@@ -32,7 +33,7 @@ public class TransformJobRunner implements Job
     public void execute(JobExecutionContext context) throws JobExecutionException
     {
         ScheduledPipelineJobContext info = ScheduledPipelineJobContext.getFromJobDetail(context);
-        ScheduledPipelineJobDescriptor d = info.getDescriptor();
+        ScheduledPipelineJobDescriptor d = getDescriptorFromJobDetail(context);
 
         Callable c = d.getChecker(info);
         try
@@ -67,5 +68,20 @@ public class TransformJobRunner implements Job
         {
             throw new UnexpectedException(x);
         }
+    }
+
+
+    public static ScheduledPipelineJobDescriptor getDescriptorFromJobDetail(JobExecutionContext jobExecutionContext)
+    {
+        JobDataMap map = jobExecutionContext.getJobDetail().getJobDataMap();
+        Object result = map.get(ScheduledPipelineJobDescriptor.class.getName());
+        if (result == null)
+        {
+            map = jobExecutionContext.getJobDetail().getJobDataMap();
+            result = map.get(ScheduledPipelineJobDescriptor.class.getName());
+            if (result == null)
+                throw new IllegalArgumentException("No ScheduledPipelineJobDescriptor found!");
+        }
+        return (ScheduledPipelineJobDescriptor) result;
     }
 }
