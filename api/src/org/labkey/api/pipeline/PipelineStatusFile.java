@@ -43,7 +43,7 @@ public interface PipelineStatusFile
 
     public interface StatusWriter
     {
-        boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert) throws Exception;
+        boolean setStatus(PipelineJob job, String status, @Nullable String statusInfo, boolean allowInsert) throws Exception;
 
         void ensureError(PipelineJob job) throws Exception;
     }
