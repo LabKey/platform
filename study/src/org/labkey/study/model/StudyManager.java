@@ -2699,7 +2699,30 @@ public class StudyManager
         }
     }
 
-    
+    /** ensure that dataset_metadata.xml properties are respected*/
+    private void updateProperty(DomainProperty p, PropertyDescriptor pd)
+    {
+        // only change the value if the existing domain property is different
+        // most of the logic is encapsulated by the setter except for the
+        // case the import aliases which are checked in this function
+        p.setRequired(pd.isRequired());
+        p.setMvEnabled(pd.isMvEnabled());
+        p.setShownInDetailsView(pd.isShownInDetailsView());
+        p.setShownInUpdateView(pd.isShownInUpdateView());
+        p.setShownInInsertView(pd.isShownInInsertView());
+        p.setMeasure(pd.isMeasure());
+        p.setDimension(pd.isDimension());
+
+        String oldAliases = ColumnRenderProperties.convertToString(p.getImportAliasSet());
+        String newAliases = pd.getImportAliases();
+        if (!StringUtils.equalsIgnoreCase(oldAliases, newAliases))
+            p.setImportAliasSet(ColumnRenderProperties.convertToSet(newAliases));
+
+        p.setProtected(pd.isProtected());
+        p.setExcludeFromShifting(pd.isExcludeFromShifting());
+        p.setMeasure(pd.isMeasure());
+    }
+
     /** @Deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
     public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
@@ -2831,7 +2854,7 @@ public class StudyManager
             DomainProperty p = d.getPropertyByName(ipd.pd.getName());
             if (null != p)
             {
-                p.setRequired(ipd.pd.isRequired());
+                updateProperty(p, ipd.pd);
             }
             else
             {
