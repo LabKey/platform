@@ -237,6 +237,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
 
                     continue;
                 }
+
                 SimpleQueryNavItem qItem = new SimpleQueryNavItem(this, schema.getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + query.getTitle());
                 qItem.setVisible(nav.isVisible(c, u));
                 qItem.setOwnerKey(nav.getPropertyManagerKey());

@@ -563,6 +563,17 @@ abstract public class AbstractTableInfo implements TableInfo
             columns = s;
         }
 
+        //if the _detailsURL is null, it was never actually set so we return null
+        //if it is LINK_DISABLER, then it was explicitly turned off, so we respect that.
+        if (_detailsURL == null)
+        {
+            return null;
+        }
+        else if (_detailsURL == AbstractTableInfo.LINK_DISABLER)
+        {
+            return _detailsURL;
+        }
+
         if (columns == null || _detailsURL.validateFieldKeys(columns))
             return _detailsURL.copy(containerContext);
         return null;
@@ -582,7 +593,7 @@ abstract public class AbstractTableInfo implements TableInfo
     @Override
     public boolean hasDetailsURL()
     {
-        return _detailsURL != null;
+        return _detailsURL != null && _detailsURL != AbstractTableInfo.LINK_DISABLER;
     }
 
     public Set<FieldKey> getDetailsURLKeys()
@@ -841,9 +852,13 @@ abstract public class AbstractTableInfo implements TableInfo
         if (xmlTable.isSetTableUrl())
         {
             if (StringUtils.isBlank(xmlTable.getTableUrl()))
-                setDetailsURL(LINK_DISABLER);
+            {
+                _detailsURL = LINK_DISABLER;
+            }
             else
-                setDetailsURL(parseDetailsURL(schema.getContainer(), xmlTable.getTableUrl(), errors));
+            {
+                _detailsURL = parseDetailsURL(schema.getContainer(), xmlTable.getTableUrl(), errors);
+            }
         }
 
         if (xmlTable.isSetCacheSize())

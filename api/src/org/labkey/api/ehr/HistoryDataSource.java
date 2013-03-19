@@ -38,4 +38,6 @@ public interface HistoryDataSource
     public boolean isAvailable(Container c, User u);
 
     public List<HistoryRow> getRows(Container c, User u, String subjectId, Date minDate, Date maxDate);
+
+    public List<HistoryRow> getRows(Container c, User u, String subjectId, String caseId);
 }

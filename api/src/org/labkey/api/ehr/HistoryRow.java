@@ -25,6 +25,8 @@ import org.json.JSONObject;
  */
 public interface HistoryRow
 {
+    public String getSubjectId();
+
     public JSONObject toJSON();
 
     public void setShowTime(Boolean showTime);
