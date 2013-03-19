@@ -565,7 +565,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                             {
                                 if (primaryInputData != null)
                                 {
-                                    throw new IllegalStateException("More than one primary data file associated with run: " + context.getReRun().getRowId());
+                                    throw new IllegalStateException("More than one primary data file associated with run: " + context.getReRun().getRowId() + "(\"" + primaryInputData + "\" and \"" + inputData + "\")");
                                 }
                                 primaryInputData = inputData;
                             }
@@ -574,7 +574,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     if (primaryInputData != null)
                     {
                         Map<String, File> oldFiles = new HashMap<String, File>();
-                        oldFiles.put(AssayDataCollector.PRIMARY_FILE, inputDatas[0].getFile());
+                        oldFiles.put(AssayDataCollector.PRIMARY_FILE, primaryInputData.getFile());
                         result.add(new PreviouslyUploadedDataCollector(oldFiles));
                     }
                 }
