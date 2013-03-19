@@ -15,6 +15,7 @@
  */
 package org.labkey.api.laboratory.assay;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -61,6 +62,7 @@ import java.util.Set;
 abstract public class AbstractAssayDataProvider extends AbstractDataProvider implements AssayDataProvider
 {
     public static final String PROPERTY_CATEGORY = "laboratory.importMethodDefaults";
+    protected static final Logger _log = Logger.getLogger(AbstractDataProvider.class);
 
     protected String _providerName = null;
     protected Collection<AssayImportMethod> _importMethods = new LinkedHashSet<AssayImportMethod>();
@@ -223,7 +225,18 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();
             for (QueryDefinition qd : queries)
             {
-                TableInfo query = qd.getTable(new ArrayList<QueryException>(), true);
+                List<QueryException> errors = new ArrayList<QueryException>();
+                TableInfo query = qd.getTable(errors, true);
+                if (query == null || errors.size() > 0)
+                {
+                    _log.error("Unable to create table for query: " + qd.getSchema().getName() + "/" + qd.getName());
+                    for (QueryException error : errors)
+                    {
+                        _log.error(error.getMessage(), error);
+                    }
+
+                    continue;
+                }
                 SimpleQueryNavItem qItem = new SimpleQueryNavItem(this, schema.getSchemaName(), qd.getName(), _providerName, p.getName() + ": " + query.getTitle());
                 qItem.setVisible(nav.isVisible(c, u));
                 qItem.setOwnerKey(nav.getPropertyManagerKey());
