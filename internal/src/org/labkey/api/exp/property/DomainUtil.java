@@ -257,7 +257,7 @@ public class DomainUtil
     }
 
     @SuppressWarnings("unchecked")
-    public static List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update, Container container, User user)
+    public static List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
         List<String> errors = new ArrayList<String>();
@@ -280,9 +280,9 @@ public class DomainUtil
 
         // first delete properties
         Set<Integer> s = new HashSet<Integer>();
-        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) orig.getFields())
+        for (GWTPropertyDescriptor pd : orig.getFields())
             s.add(pd.getPropertyId());
-        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
+        for (GWTPropertyDescriptor pd : update.getFields())
         {
             String format = pd.getFormat();
             String type = "";
@@ -355,12 +355,12 @@ public class DomainUtil
         Map<DomainProperty, Object> defaultValues = new HashMap<DomainProperty, Object>();
 
         // and now update properties
-        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
+        for (GWTPropertyDescriptor pd : update.getFields())
         {
             if (pd.getPropertyId() <= 0)
                 continue;
             GWTPropertyDescriptor old = null;
-            for (GWTPropertyDescriptor t : (List<GWTPropertyDescriptor>) orig.getFields())
+            for (GWTPropertyDescriptor t : orig.getFields())
             {
                 if (t.getPropertyId() == pd.getPropertyId())
                 {
@@ -389,12 +389,12 @@ public class DomainUtil
         // Need to ensure that any new properties are given a unique PropertyURI.  See #8329
         Set<String> propertyUrisInUse = new HashSet<String>(update.getFields().size());
 
-        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
+        for (GWTPropertyDescriptor pd : update.getFields())
             if (!StringUtils.isEmpty(pd.getPropertyURI()))
                 propertyUrisInUse.add(pd.getPropertyURI());
 
         // now add properties
-        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
+        for (GWTPropertyDescriptor pd : update.getFields())
         {
             addProperty(d, pd, defaultValues, propertyUrisInUse, errors);
         }
@@ -410,7 +410,7 @@ public class DomainUtil
                     dps.put(dp.getPropertyURI(), dp);
                 }
                 int index = 0;
-                for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>)update.getFields())
+                for (GWTPropertyDescriptor pd : update.getFields())
                 {
                     DomainProperty dp = dps.get(pd.getPropertyURI());
                     d.setPropertyIndex(dp, index++);

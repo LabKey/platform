@@ -400,6 +400,11 @@ abstract public class PipelineJob extends Job implements Serializable
 
         if (NetworkDrive.exists(file))
         {
+            if (origFile.exists())
+            {
+                // Might be left over from some bad previous run
+                origFile.delete();
+            }
             // Don't use File.renameTo() because it doesn't always work depending on the underlying file system
             FileUtils.moveFile(file, origFile);
             FileUtils.moveFile(newFile, file);

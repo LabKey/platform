@@ -1670,6 +1670,7 @@ public class QueryView extends WebPartView<Object>
             //TableInfo and remove the * so that Query doesn't choke on it
             if (keys.contains(starKey))
             {
+                addDetailsAndUpdateColumns(rgn.getDisplayColumns(), table);
                 rgn.addColumns(table.getColumns());
                 keys.remove(starKey);
             }
@@ -2259,6 +2260,24 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table == null)
             return Collections.emptyList();
+        addDetailsAndUpdateColumns(ret, table);
+
+        if (null == _queryDefDisplayColumns)
+            _queryDefDisplayColumns = getQueryDef().getDisplayColumns(_customView, table);
+        ret.addAll(_queryDefDisplayColumns);
+
+        if (_linkTarget != null)
+        {
+            for (DisplayColumn displayColumn : ret)
+            {
+                displayColumn.setLinkTarget(_linkTarget);
+            }
+        }
+        return ret;
+    }
+
+    private void addDetailsAndUpdateColumns(List<DisplayColumn> ret, TableInfo table)
+    {
         if (_showDetailsColumn && !isPrintView() && !isExportView() && (table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
         {
             StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
@@ -2279,19 +2298,6 @@ public class QueryView extends WebPartView<Object>
                 ret.add(0, new UpdateColumn(urlUpdate));
             }
         }
-
-        if (null == _queryDefDisplayColumns)
-            _queryDefDisplayColumns = getQueryDef().getDisplayColumns(_customView, table);
-        ret.addAll(_queryDefDisplayColumns);
-
-        if (_linkTarget != null)
-        {
-            for (DisplayColumn displayColumn : ret)
-            {
-                displayColumn.setLinkTarget(_linkTarget);
-            }
-        }
-        return ret;
     }
 
     public QueryDefinition getQueryDef()
