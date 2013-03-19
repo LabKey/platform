@@ -17,7 +17,7 @@
 -- Remove check constraint to allow overriding the schema template,
 -- but continue to require NOT NULL SourceSchemaName and Tables when SchemaTemplate IS NULL.
 ALTER TABLE query.ExternalSchema
-   DROP CONSTRAINT ck_schematemplate;
+   DROP CONSTRAINT "CK_SchemaTemplate";
 
 ALTER TABLE query.ExternalSchema
     ADD CONSTRAINT "CK_SchemaTemplate"
