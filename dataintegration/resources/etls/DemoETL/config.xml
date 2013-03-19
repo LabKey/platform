@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <etl xmlns="http://labkey.org/etl/xml">
-    <name>Hello</name>
-    <description>Test ETL!</description>
+    <name>Hello World</name>
+    <description>Check for new Users</description>
     <transforms></transforms>
     <source schemaName="core" queryName="users" />
     <destination schemaName="destSchema" queryName="destQuery" />

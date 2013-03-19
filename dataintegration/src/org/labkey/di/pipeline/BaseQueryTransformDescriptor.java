@@ -104,6 +104,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             _sourceQuery = etlXML.getSource().getQueryName();
             _destinationSchema = SchemaKey.fromString(etlXML.getDestination().getSchemaName());
             _destinationQuery = etlXML.getDestination().getQueryName();
+            _description = etlXML.getDescription();
         }
         finally
         {

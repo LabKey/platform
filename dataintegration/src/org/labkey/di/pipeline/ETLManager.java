@@ -329,6 +329,4 @@ public class ETLManager
             schedule(etl, c, runAsUser);
         }
     }
-
-
 }
