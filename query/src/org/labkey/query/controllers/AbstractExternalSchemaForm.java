@@ -85,14 +85,15 @@ public abstract class AbstractExternalSchemaForm<T extends AbstractExternalSchem
             if (template == null)
                 errors.reject(SpringActionController.ERROR_MSG, "Template '" + bean.getSchemaTemplate() + "' not found in container");
 
-            if (bean.getSourceSchemaName() != null)
-                errors.reject(SpringActionController.ERROR_MSG, "Source schema name not allowed when using schema template");
-
-            if (bean.getTables() != null)
-                errors.reject(SpringActionController.ERROR_MSG, "Tables are not allowed when using a schema template");
-
-            if (bean.getMetaData() != null)
-                errors.reject(SpringActionController.ERROR_MSG, "Metadata not allowed when using a schema template");
+            // We allow overriding the template sourceSchemaName, tables, and metaData.
+//            if (bean.getSourceSchemaName() != null)
+//                errors.reject(SpringActionController.ERROR_MSG, "Source schema name not allowed when using schema template");
+//
+//            if (bean.getTables() != null)
+//                errors.reject(SpringActionController.ERROR_MSG, "Tables are not allowed when using a schema template");
+//
+//            if (bean.getMetaData() != null)
+//                errors.reject(SpringActionController.ERROR_MSG, "Metadata not allowed when using a schema template");
         }
     }
 }

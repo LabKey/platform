@@ -376,8 +376,9 @@ public class QueryManager
             if (template == null)
                 throw new IllegalArgumentException("Template '" + def.getSchemaTemplate() + "' not found in container");
 
-            if (def.getSourceSchemaName() != null || def.getTables() != null || def.getMetaData() != null)
-                throw new IllegalArgumentException("SourceSchemaName, Tables, and Metadata must not be provided when using a schema template");
+            // We allow overriding the template sourceSchemaName, tables, and metaData.
+//            if (def.getSourceSchemaName() != null || def.getTables() != null || def.getMetaData() != null)
+//                throw new IllegalArgumentException("SourceSchemaName, Tables, and Metadata must not be provided when using a schema template");
         }
     }
 

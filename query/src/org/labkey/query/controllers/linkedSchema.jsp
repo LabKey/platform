@@ -49,8 +49,8 @@
 
     boolean isExternal = def instanceof ExternalSchemaDef;
 
-    String initialTemplateName = bean.getSchemaDef().getSchemaTemplate();
-    TemplateSchemaType initialTemplate = bean.getSchemaDef().lookupTemplate(c);
+    String initialTemplateName = def.getSchemaTemplate();
+    TemplateSchemaType initialTemplate = def.lookupTemplate(c);
 %>
 
 <labkey:errors/>
@@ -84,6 +84,69 @@
                 {name: 'metadata', type: 'string'}
             ],
             idProperty: 'name'
+        });
+
+        Ext4.define('LABKEY.ext.OverrideField', {
+            extend: 'Ext.Component',
+
+            config: {
+                boundField: 'field-or-id',
+                resetValueFunction: null,
+                override: false
+            },
+
+            constructor: function (config) {
+                this.callParent(arguments);
+                this.initConfig(config);
+                return this;
+            },
+
+            initComponent: function () {
+                this.callParent(arguments);
+                // Add a click event to the DOM element
+                this.on('afterrender', function () {
+                    this.getEl().on('click', this.onOverrideClick, this);
+                }, this);
+            },
+
+            applyOverride: function (override) {
+                if (override) {
+                    console.log("override field");
+                    // make the bound field editable
+                    // render the html link
+                    this.update("<span class='labkey-link' style='font-size:smaller;'>Revert to template value</span>");
+                } else {
+                    console.log("reset field");
+                    // reset the bound field value to resetValueFunction
+                    // render the html link
+                    this.update("<span class='labkey-link' style='font-size:smaller;'>Override template value</span>");
+
+                    var value = this.resetValueFunction();
+                    if (value !== undefined)
+                        this.boundField.setValue(value);
+                }
+                return override;
+            },
+
+            onOverrideClick: function () {
+                console.log("on override click");
+                if (this.getOverride())
+                {
+                    this.setOverride(false);
+                    this.boundField.setDisabled(true);
+                    var fieldContainer = this.boundField.up('fieldcontainer');
+                    if (fieldContainer)
+                        fieldContainer.setDisabled(true);
+                }
+                else
+                {
+                    this.setOverride(true);
+                    this.boundField.setDisabled(false);
+                    var fieldContainer = this.boundField.up('fieldcontainer');
+                    if (fieldContainer)
+                        fieldContainer.setDisabled(false);
+                }
+            }
         });
 
         var sqvModel = Ext4.create('LABKEY.SQVModel', {});
@@ -122,27 +185,28 @@
             }
         });
 
-        sqvModel.on('beforeschemaload', function (field, newValue, oldValue) {
-            // cancel changing the schema combo if a template is selected
-            var templateName = schemaTemplateCombo.getValue();
-            if (templateName) {
-                var templateRecord = schemaTemplateCombo.store.getById(templateName);
-                return false;
-            }
-        });
-
-        sqvModel.on('beforequeryload', function (field, newValue, oldValue) {
-            // cancel changing the query combo if a template is selected
-            var templateName = schemaTemplateCombo.getValue();
-            if (templateName) {
-                var templateRecord = schemaTemplateCombo.store.getById(templateName);
-                return false;
-            }
-        });
+//        sqvModel.on('beforeschemaload', function (field, newValue, oldValue) {
+//            // cancel changing the schema combo if a template is selected
+//            var templateName = schemaTemplateCombo.getValue();
+//            if (templateName) {
+//                var templateRecord = schemaTemplateCombo.store.getById(templateName);
+//                return false;
+//            }
+//        });
+//
+//        sqvModel.on('beforequeryload', function (field, newValue, oldValue) {
+//            // cancel changing the query combo if a template is selected
+//            var templateName = schemaTemplateCombo.getValue();
+//            if (templateName) {
+//                var templateRecord = schemaTemplateCombo.store.getById(templateName);
+//                return false;
+//            }
+//        });
 
         var schemaTemplateCombo = Ext4.create('Ext.form.field.ComboBox', {
             name: 'schemaTemplate',
             fieldLabel: 'Schema Template',
+            width: 395,
             displayField: 'name',
             valueField: 'name',
             editable: true,
@@ -184,13 +248,19 @@
                                 sourceSchemaField.setDisabled(false);
                                 sourceSchemaCombo.setDisabled(false);
                             }
+                            sourceSchemaOverride.setOverride(false);
+                            sourceSchemaOverride.setVisible(true);
 
                             tablesField.setDisabled(true);
                             tablesCombo.setDisabled(true);
                             tablesCombo.setValue(record.get('tables'));
+                            tablesOverride.setOverride(false);
+                            tablesOverride.setVisible(true);
 
                             metadataField.setDisabled(true);
-                            metadataField.setValue(record.get('metadata'));
+                            metadataTextArea.setValue(record.get('metadata'));
+                            metadataOverride.setOverride(false);
+                            metadataOverride.setVisible(true);
                         }
                     } else {
                         if (sourceSchemaField.isDisabled() || sourceSchemaCombo.isDisabled()) {
@@ -198,13 +268,19 @@
                             sourceSchemaCombo.setDisabled(false);
                             sourceSchemaCombo.clearValue();
                         }
+                        sourceSchemaOverride.setOverride(false);
+                        sourceSchemaOverride.setVisible(false);
 
                         tablesField.setDisabled(false);
                         tablesCombo.setDisabled(false);
                         tablesCombo.clearValue();
+                        tablesOverride.setOverride(false);
+                        tablesOverride.setVisible(false);
 
                         metadataField.setDisabled(false);
-                        metadataField.setValue(null);
+                        metadataTextArea.setValue(null);
+                        metadataOverride.setOverride(false);
+                        metadataOverride.setVisible(false);
                     }
                 }
             },
@@ -246,8 +322,8 @@
             fieldLabel: false,
             editable: true,
             width: 200,
-            disabled: <%=def.getDataSource() == null || initialTemplate != null%>,
-            value: <%=q(def.getSourceSchemaName())%>,
+            disabled: <%=def.getSourceSchemaName() == null && initialTemplate != null%>,
+            value: <%=q(def.getSourceSchemaName() != null ? def.getSourceSchemaName() : (initialTemplate != null ? initialTemplate.getSourceSchemaName() : ""))%>,
             listeners: {
                 change: function (field, value) {
                     console.log("source schema changed: " + value);
@@ -276,13 +352,31 @@
             }
         });
 
+        var sourceSchemaOverride = Ext4.create('LABKEY.ext.OverrideField', {
+            boundField: sourceSchemaCombo,
+            override: <%=def.getSourceSchemaName() != null && initialTemplate != null%>,
+            hidden: <%=initialTemplate == null%>,
+            resetValueFunction: function () {
+                var schemaTemplateName = schemaTemplateCombo.getValue();
+                var schemaTemplateRecord = schemaTemplateCombo.store.getById(schemaTemplateName);
+                if (schemaTemplateRecord) {
+                    var sourceSchemaName = schemaTemplateRecord.get('sourceSchemaName');
+                    return sourceSchemaName;
+                }
+            }
+        });
+
         var sourceSchemaField = Ext4.create('Ext.form.FieldContainer', {
             fieldLabel: 'Source Schema',
-            layout: 'hbox',
-            disabled: <%=def.getDataSource() == null%>,
+            layout: 'vbox',
+            disabled: <%=def.getSourceSchemaName() == null && initialTemplate != null%>,
             items: [
-                sourceSchemaCombo,
-                systemSchemaCheckbox
+                {
+                    xtype: 'container',
+                    layout: 'hbox',
+                    items: [ sourceSchemaCombo, systemSchemaCheckbox ]
+                },
+                sourceSchemaOverride
             ],
             helpPopup: <%=qh(bean.getHelpHTML("SourceSchemaName"))%>
         });
@@ -294,19 +388,18 @@
             } else if (tablesCombo.store.getCount() > 0) {
                 tablesMessage.setValue("All " + tablesCombo.store.getCount() + " tables in this schema will be published.");
             }
+            tablesMessage.setVisible(true);
         }
 
         <%
         ArrayList<String> tables = new ArrayList<String>();
-        if (initialTemplate == null)
+        if (def.getTables() != null && def.getTables().length() > 0)
         {
-            if (def.getTables() != null && def.getTables().length() > 0)
-                tables.addAll(Arrays.asList(def.getTables().split(",")));
+            tables.addAll(Arrays.asList(def.getTables().split(",")));
         }
-        else
+        else if (initialTemplate != null && initialTemplate.isSetTables())
         {
-            if (initialTemplate.isSetTables())
-                tables.addAll(Arrays.asList(initialTemplate.getTables().getTableNameArray()));
+            tables.addAll(Arrays.asList(initialTemplate.getTables().getTableNameArray()));
         }
         %>
         var tablesCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
@@ -314,38 +407,91 @@
             fieldLabel: false,
             width: 395,
             value: <%=text(new JSONArray(tables).toString())%>,
+            disabled: <%=def.getTables() == null && initialTemplate != null%>,
             multiSelect: true,
-            allowBlank: true
+            allowBlank: true,
+            getTablesValueForSubmit : function () {
+                var tablesValue = "*";
+                var tables = tablesCombo.getValue();
+                if (!tables) {
+                    tablesValue = "*";
+                } else if (tables.length == 0 || tables.length == tablesCombo.store.getCount()) {
+                    tablesValue = "*";
+                } else {
+                    tablesValue = tables.join(",");
+                }
+                return tablesValue;
+            }
         }));
         tablesCombo.on('change', updateTablesMessage);
         tablesCombo.on('dataloaded', updateTablesMessage);
 
         var tablesMessage = Ext4.create('Ext.form.field.Display', {
             width: 400,
-            value: '&nbsp;'
+            value: '&nbsp;',
+            hidden: true
+        });
+
+        var tablesOverride = Ext4.create('LABKEY.ext.OverrideField', {
+            boundField: tablesCombo,
+            override: <%=def.getTables() != null && initialTemplate != null%>,
+            hidden: <%=initialTemplate == null%>,
+            resetValueFunction: function () {
+                var schemaTemplateName = schemaTemplateCombo.getValue();
+                var schemaTemplateRecord = schemaTemplateCombo.store.getById(schemaTemplateName);
+                if (schemaTemplateRecord) {
+                    var tables = schemaTemplateRecord.get('tables');
+                    return tables;
+                }
+            }
         });
 
         var tablesField = Ext4.create('Ext.form.FieldContainer', {
             fieldLabel: 'Published Tables',
             layout: 'vbox',
+            disabled: <%=def.getTables() == null && initialTemplate != null%>,
             items: [
                 tablesCombo,
-                tablesMessage
+                tablesMessage,
+                tablesOverride
             ],
             helpPopup: <%=qh(bean.getHelpHTML("Tables"))%>
         });
 
-        var metadataField = Ext4.create('Ext.form.field.TextArea', {
+        var metadataTextArea = Ext4.create('Ext.form.field.TextArea', {
             name: 'metaData',
-            fieldLabel: 'Meta Data',
             grow: true,
             width: 800,
             height: 400,
-            value: <%=q(initialTemplate == null ? def.getMetaData() : (initialTemplate.getMetadata() == null ? "" : initialTemplate.getMetadata().toString()))%>,
-            disabled: <%=initialTemplate != null%>,
-            helpPopup: <%=qh(bean.getHelpHTML("MetaData"))%>
+            value: <%=q(def.getMetaData() != null ? def.getMetaData() : (initialTemplate != null && initialTemplate.getMetadata() != null ? initialTemplate.getMetadata().toString() : ""))%>,
+            disabled: <%=def.getMetaData() == null && initialTemplate != null%>
         });
 
+        var metadataOverride = Ext4.create('LABKEY.ext.OverrideField', {
+            boundField: metadataTextArea,
+            override: <%=def.getMetaData() != null && initialTemplate != null%>,
+            hidden: <%=initialTemplate == null%>,
+            resetValueFunction : function () {
+                var schemaTemplateName = schemaTemplateCombo.getValue();
+                var schemaTemplateRecord = schemaTemplateCombo.store.getById(schemaTemplateName);
+                if (schemaTemplateRecord) {
+                    var metaData = schemaTemplateRecord.get('metadata');
+                    return metaData;
+                }
+            }
+        });
+
+        var metadataField = Ext4.create('Ext.form.FieldContainer', {
+            fieldLabel: 'Metadata',
+            layout: 'vbox',
+            width: 800,
+            disabled: <%=def.getMetaData() == null && initialTemplate != null%>,
+            items: [
+                metadataTextArea,
+                metadataOverride
+            ],
+            helpPopup: <%=qh(bean.getHelpHTML("MetaData"))%>
+        });
 
         var f = new Ext4.create("Ext.form.Panel", {
             renderTo: 'form',
@@ -369,38 +515,40 @@
                 text: <%=q(bean.isInsert() ? "Create" : "Update")%>,
                 type: 'submit',
                 handler: function () {
-                    var tablesValue;
+                    var sourceSchemaValue = sourceSchemaCombo.getValue();
+                    var tablesValue = tablesCombo.getTablesValueForSubmit();
+                    var metadataValue = metadataTextArea.getValue();
+
+                    // If a schema template is set, null the values for any fields that haven't been manually overridden.
                     var templateName = schemaTemplateCombo.getValue();
                     var templateRecord = templateName ? schemaTemplateCombo.store.getById(templateName) : undefined;
                     if (templateRecord) {
-                        if (!templateRecord.get('sourceSchemaName')) {
-                            sourceSchemaCombo.setValue(null);
-                            sourceSchemaField.setDisabled(false);
-                            sourceSchemaCombo.setDisabled(false);
+                        if (!sourceSchemaOverride.getOverride()) {
+                            sourceSchemaValue = null;
                         }
 
-                        tablesCombo.setValue(null);
-                        tablesField.setDisabled(true);
-                        tablesValue = null;
+                        if (!tablesOverride.getOverride()) {
+                            tablesValue = null;
+                        }
 
-                        metadataField.setValue(null);
-                        metadataField.setDisabled(true);
-                    } else {
-                        var tables = tablesCombo.getValue();
-                        tablesCombo.setDisabled(true);
-
-                        if (!tables) {
-                            tablesValue = "*";
-                        } else if (tables.length == 0 || tables.length == tablesCombo.store.getCount()) {
-                            tablesValue = "*";
-                        } else {
-                            tablesValue = tables.join(",");
+                        if (!metadataOverride.getOverride()) {
+                            metadataValue = null;
                         }
                     }
 
+                    // Always disable the fields and submit the values manually
+                    sourceSchemaField.setDisabled(true);
+                    sourceSchemaCombo.setDisabled(true);
+                    tablesField.setDisabled(true);
+                    tablesCombo.setDisabled(true);
+                    metadataField.setDisabled(true);
+                    metadataTextArea.setDisabled(true);
+
                     f.getForm().submit({
                         params: {
-                            tables: tablesValue
+                            sourceSchemaName: sourceSchemaValue,
+                            tables: tablesValue,
+                            metaData: metadataValue
                         }
                     });
                 }
