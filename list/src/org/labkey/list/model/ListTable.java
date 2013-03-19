@@ -352,6 +352,9 @@ public class ListTable extends FilteredTable<ListSchema> implements UpdateableTa
         {
             _context = context;
             DataIterator input = _in.getDataIterator(context);
+            if (null == input)
+                return null;           // Can happen if context has errors
+
             final SimpleTranslator it = new SimpleTranslator(input, context);
 
             int keyColumnInput = 0;
