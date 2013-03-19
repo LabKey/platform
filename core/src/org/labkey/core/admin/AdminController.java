@@ -5510,9 +5510,10 @@ public class AdminController extends SpringActionController
 
         public ActionURL getSuccessURL(AddTabForm form)
         {
-            if (form.getReturnActionURL() != null && !form.getReturnActionURL().getAction().equals("addTab"))
+            ActionURL actionURL = form.getReturnActionURL();
+            if (null != actionURL && !actionURL.getAction().equals("addTab"))
             {
-                return form.getReturnActionURL();
+                return actionURL.replaceParameter("pageId", form.getTabName());
             }
 
             return new ActionURL(ProjectController.BeginAction.class, getContainer());
