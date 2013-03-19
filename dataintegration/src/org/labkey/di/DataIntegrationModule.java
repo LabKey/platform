@@ -27,7 +27,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.di.pipeline.DataIntegrationDbSchema;
-import org.labkey.di.pipeline.ETLDescriptor;
 import org.labkey.di.pipeline.ETLManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
@@ -100,6 +99,7 @@ public class DataIntegrationModule extends DefaultModule
         );
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public static class TransFormsWebPart extends JspView<Object>
     {
         public TransFormsWebPart(ViewContext portalCtx) throws Exception

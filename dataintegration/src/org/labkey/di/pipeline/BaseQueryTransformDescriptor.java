@@ -20,29 +20,41 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Table;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.di.api.ScheduledPipelineJobDescriptor;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
+import org.quartz.JobExecutionException;
 import org.quartz.ScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.sql.SQLException;
+import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
  * User: jeckels
  * Date: 2/20/13
  */
-public class ETLDescriptor implements Serializable
+public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescriptor<TransformJobContext>, Serializable
 {
-    private static final Logger LOG = Logger.getLogger(ETLDescriptor.class);
+    private static final Logger LOG = Logger.getLogger(BaseQueryTransformDescriptor.class);
 
     /** How often to check if the definition has changed */
     private static final int UPDATE_CHECK_FREQUENCY = 2000;
@@ -60,7 +72,8 @@ public class ETLDescriptor implements Serializable
     private String _destinationQuery;
     private String _moduleName;
 
-    public ETLDescriptor(Resource resource, String moduleName) throws XmlException, IOException
+
+    public BaseQueryTransformDescriptor(Resource resource, String moduleName) throws XmlException, IOException
     {
         _resource = resource;
         _resourcePath = resource.getPath();
@@ -129,12 +142,12 @@ public class ETLDescriptor implements Serializable
         return _moduleName;
     }
 
-    public String getTransformId()
+    public String getId()
     {
         return _resourcePath.toString();
     }
 
-    public int getTransformVersion()
+    public int getVersion()
     {
         checkForUpdates();
         // TODO - add config for real version number
@@ -153,12 +166,14 @@ public class ETLDescriptor implements Serializable
         return _sourceQuery;
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public SchemaKey getDestinationSchema()
     {
         checkForUpdates();
         return _destinationSchema;
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public String getDestinationQuery()
     {
         checkForUpdates();
@@ -204,8 +219,7 @@ public class ETLDescriptor implements Serializable
                               .repeatForever();
     }
 
-
-    long getInterval()
+    public long getInterval()
     {
         return TimeUnit.MINUTES.toMillis(1);
     }
@@ -217,16 +231,75 @@ public class ETLDescriptor implements Serializable
     }
 
 
+    @Override
+    public Class getJobClass()
+    {
+        return TransformJobRunner.class;
+    }
+
+    @Override
+    public TransformJobContext getJobContext(Container c, User user)
+    {
+        return new TransformJobContext(this, c, user);
+    }
+
+    @Override
+    public Callable<Boolean> getChecker(TransformJobContext context)
+    {
+        return new UpdatedRowsChecker(this, context.getContainer(), context.getUser(),
+                _sourceSchema, _sourceQuery);
+    }
+
+
+    @Override
+    public PipelineJob getPipelineJob(TransformJobContext info) throws JobExecutionException
+    {
+        ViewBackgroundInfo backgroundInfo = new ViewBackgroundInfo(info.getContainer(), info.getUser(), null);
+        TransformJob job = new TransformJob(backgroundInfo, this);
+        try
+        {
+            PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
+        }
+        catch (Exception e)
+        {
+            LOG.error("Unable to queue ETL job", e);
+            return null;
+        }
+
+        TransformRun run = new TransformRun();
+        run.setStartTime(new Date());
+        run.setTransformId(getId());
+        run.setTransformVersion(getVersion());
+        run.setContainer(info.getContainer());
+
+        PipelineStatusFile statusFile = PipelineService.get().getStatusFile(job.getLogFile());
+        run.setJobId(statusFile.getRowId());
+
+        try
+        {
+            run = Table.insert(info.getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run);
+        }
+        catch (SQLException e)
+        {
+            throw new JobExecutionException(e);
+        }
+
+        job.setRunId(run.getRowId());
+        return job;
+    }
+
+
+
     public Map<String, Object> toJSON(@Nullable Map<String,Object> map)
     {
         if (null == map)
             map = new JSONObject();
-        map.put("transformId", getTransformId());
+        map.put("id", getId());
         map.put("description", getDescription());
         map.put("name", getName());
         map.put("moduleName", getModuleName());
         map.put("scheduleDescription", getScheduleDescription());
-        map.put("transformVersion", getTransformVersion());
+        map.put("version", getVersion());
         return map;
     }
 }

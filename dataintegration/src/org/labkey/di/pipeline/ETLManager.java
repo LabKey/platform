@@ -35,6 +35,8 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.di.api.ScheduledPipelineJobContext;
+import org.labkey.di.api.ScheduledPipelineJobDescriptor;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -69,12 +71,12 @@ public class ETLManager
         return INSTANCE;
     }
 
-    private final List<ETLDescriptor> _etls;
+    private final List<ScheduledPipelineJobDescriptor> _etls;
 
 
     private ETLManager()
     {
-        _etls = new ArrayList<ETLDescriptor>();
+        _etls = new ArrayList<ScheduledPipelineJobDescriptor>();
 
         Path etlsDirPath = new Path("etls");
 
@@ -85,7 +87,7 @@ public class ETLManager
             {
                 for (Resource etlDir : etlsDir.list())
                 {
-                    ETLDescriptor descriptor = parseETL(etlDir.find("config.xml"), module.getName());
+                    BaseQueryTransformDescriptor descriptor = parseETL(etlDir.find("config.xml"), module.getName());
                     if (descriptor != null)
                     {
                         _etls.add(descriptor);
@@ -96,13 +98,13 @@ public class ETLManager
     }
 
 
-    private ETLDescriptor parseETL(Resource resource, String moduleName)
+    private BaseQueryTransformDescriptor parseETL(Resource resource, String moduleName)
     {
         if (resource != null && resource.isFile())
         {
             try
             {
-                return new ETLDescriptor(resource, moduleName);
+                return new BaseQueryTransformDescriptor(resource, moduleName);
             }
             catch (IOException e)
             {
@@ -117,30 +119,30 @@ public class ETLManager
     }
 
 
-    public List<ETLDescriptor> getETLs()
+    public List<ScheduledPipelineJobDescriptor> getETLs()
     {
         return _etls;
     }
 
 
-    public synchronized void runNow(ETLDescriptor etlDescriptor, Container container, User user)
+    public synchronized void runNow(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            ETLUpdateCheckerInfo info = new ETLUpdateCheckerInfo(etlDescriptor, container, user);
+            ScheduledPipelineJobContext info = descriptor.getJobContext(container, user);
 
             // find job
-            JobKey jobKey = JobKey.jobKey(info.getName(), JOB_GROUP_NAME);
+            JobKey jobKey = JobKey.jobKey(info.getKey(), JOB_GROUP_NAME);
             JobDetail job = null;
             if (!scheduler.checkExists(jobKey))
             {
-                job = JobBuilder.newJob(ETLUpdateChecker.class)
+                job = JobBuilder.newJob(descriptor.getJobClass())
                     .withIdentity(jobKey)
                     .build();
             }
 
-            TriggerKey triggerKey = TriggerKey.triggerKey(info.getName()+ GUID.makeHash(), JOB_GROUP_NAME);
+            TriggerKey triggerKey = TriggerKey.triggerKey(info.getKey() + GUID.makeHash(), JOB_GROUP_NAME);
             Trigger trigger = TriggerBuilder.newTrigger()
                 .withIdentity(triggerKey)
                 .forJob(jobKey)
@@ -164,26 +166,25 @@ public class ETLManager
     }
 
 
-    public synchronized void schedule(ETLDescriptor etlDescriptor, Container container, User user)
+    public synchronized void schedule(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            ETLUpdateCheckerInfo info = new ETLUpdateCheckerInfo(etlDescriptor, container, user);
+            ScheduledPipelineJobContext info = descriptor.getJobContext(container, user);
 
             // find job
-            JobKey jobKey = JobKey.jobKey(info.getName(), JOB_GROUP_NAME);
+            JobKey jobKey = JobKey.jobKey(info.getKey(), JOB_GROUP_NAME);
             JobDetail job = null;
             if (!scheduler.checkExists(jobKey))
             {
-                job = JobBuilder.newJob(ETLUpdateChecker.class)
+                job = JobBuilder.newJob(descriptor.getJobClass())
                     .withIdentity(jobKey).build();
-                info.setOnJobDetails(job);
             }
 
             // find trigger
             // Trigger the job to run now, and then every 60 seconds
-            TriggerKey triggerKey = TriggerKey.triggerKey(info.getName(), JOB_GROUP_NAME);
+            TriggerKey triggerKey = TriggerKey.triggerKey(info.getKey(), JOB_GROUP_NAME);
             Trigger trigger = scheduler.getTrigger(triggerKey);
             if (null != trigger)
                 return;
@@ -191,7 +192,8 @@ public class ETLManager
                 .forJob(jobKey)
                 .withIdentity(triggerKey)
                 .startNow()
-                .withSchedule(etlDescriptor.getScheduleBuilder())
+                .withSchedule(descriptor.getScheduleBuilder())
+                .usingJobData(info.getJobDataMap())
                 .build();
 
             if (null != job)
@@ -210,13 +212,13 @@ public class ETLManager
     }
 
 
-    public synchronized void unschedule(ETLDescriptor etlDescriptor, Container container, User user)
+    public synchronized void unschedule(ScheduledPipelineJobDescriptor etlDescriptor, Container container, User user)
     {
         try
         {
-            ETLUpdateCheckerInfo info = new ETLUpdateCheckerInfo(etlDescriptor, container, user);
+            TransformJobContext info = new TransformJobContext(etlDescriptor, container, user);
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            TriggerKey triggerKey = TriggerKey.triggerKey(info.getName(), JOB_GROUP_NAME);
+            TriggerKey triggerKey = TriggerKey.triggerKey(info.getKey(), JOB_GROUP_NAME);
             scheduler.unscheduleJob(triggerKey);
         }
         catch (SchedulerException e)
@@ -289,10 +291,10 @@ public class ETLManager
     {
         DbScope scope = DbSchema.get("dataintegration").getScope();
 
-        CaseInsensitiveHashMap<ETLDescriptor> etls = new CaseInsensitiveHashMap<ETLDescriptor>();
-        for (ETLDescriptor etl : getETLs())
+        CaseInsensitiveHashMap<ScheduledPipelineJobDescriptor> etls = new CaseInsensitiveHashMap<ScheduledPipelineJobDescriptor>();
+        for (ScheduledPipelineJobDescriptor etl : getETLs())
         {
-            etls.put(etl.getTransformId(), etl);
+            etls.put(etl.getId(), etl);
         }
 
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
@@ -303,7 +305,7 @@ public class ETLManager
             int runAsUserId = config.getModifiedBy();
             User runAsUser = UserManager.getUser(runAsUserId);
 
-            ETLDescriptor etl = etls.get(config.getTransformId());
+            ScheduledPipelineJobDescriptor etl = etls.get(config.getDescriptionId());
             if (null == etl)
                 continue;
             Container c = ContainerManager.getForId(config.getContainerId());
@@ -312,4 +314,6 @@ public class ETLManager
             schedule(etl, c, runAsUser);
         }
     }
+
+
 }

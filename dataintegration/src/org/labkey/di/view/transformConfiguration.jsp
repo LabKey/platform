@@ -18,21 +18,21 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.di.pipeline.ETLManager" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.di.pipeline.ETLDescriptor" %>
 <%@ page import="org.labkey.di.pipeline.TransformConfiguration" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.di.api.ScheduledPipelineJobDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 ViewContext context = HttpView.currentContext();
-List<ETLDescriptor> descriptors = ETLManager.get().getETLs();
+List<ScheduledPipelineJobDescriptor> descriptors = ETLManager.get().getETLs();
 List<TransformConfiguration> configurationsList = ETLManager.get().getTransformConfigurations(context.getContainer());
 Map<String,TransformConfiguration> configurationsMap = new HashMap<String, TransformConfiguration>(configurationsList.size()*2);
 for (TransformConfiguration c : configurationsList)
-    configurationsMap.put(c.getTransformId(), c);
+    configurationsMap.put(c.getDescriptionId(), c);
 
 boolean isAdmin = context.hasPermission(AdminPermission.class);
 
@@ -119,21 +119,21 @@ function onRunNowClicked()
     </tr><%
 
 int row = 0;
-for (ETLDescriptor descriptor : descriptors)
+for (ScheduledPipelineJobDescriptor descriptor : descriptors)
 {
     row++;
-    String id = descriptor.getTransformId();
-    TransformConfiguration configuration = configurationsMap.get(descriptor.getTransformId());
+    String id = descriptor.getId();
+    TransformConfiguration configuration = configurationsMap.get(descriptor.getId());
     if (null == configuration)
     {
         configuration = new TransformConfiguration();
         configuration.setContainer(context.getContainer().getId());
-        configuration.setTransformId(id);
+        configuration.setDescriptionId(id);
     }
 
     if (isAdmin)
     {
-        %><tr transformId="<%=h(descriptor.getTransformId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
+        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
@@ -144,7 +144,7 @@ for (ETLDescriptor descriptor : descriptors)
     }
     else
     {
-        %><tr transformId="<%=h(descriptor.getTransformId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
+        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=text(1==row%2?"labkey-alternate-row":"labkey-row")%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>

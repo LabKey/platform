@@ -24,27 +24,13 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.GUID;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.di.pipeline.ETLDescriptor;
+import org.labkey.di.api.ScheduledPipelineJobDescriptor;
 import org.labkey.di.pipeline.ETLManager;
 import org.labkey.di.pipeline.TransformConfiguration;
-import org.quartz.Job;
-import org.quartz.JobBuilder;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SchedulerFactory;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
-import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -63,13 +49,14 @@ public class DataIntegrationController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView(DataIntegrationController.class, "transformConfiguration.jsp", null);
+            return new JspView<Object>(DataIntegrationController.class, "transformConfiguration.jsp", null);
         }
 
         @Override
@@ -81,6 +68,7 @@ public class DataIntegrationController extends SpringActionController
     }
 
 
+    @SuppressWarnings("UnusedDeclaration")
     public static class TransformConfigurationForm
     {
         String transformId = null;
@@ -125,11 +113,11 @@ public class DataIntegrationController extends SpringActionController
             ViewContext context = getViewContext();
             boolean shouldStartStop = false;
 
-            ETLDescriptor etl = null;
-            List<ETLDescriptor> etls = ETLManager.get().getETLs();
-            for (ETLDescriptor e : etls)
+            ScheduledPipelineJobDescriptor etl = null;
+            List<ScheduledPipelineJobDescriptor> etls = ETLManager.get().getETLs();
+            for (ScheduledPipelineJobDescriptor e : etls)
             {
-                if (e.getTransformId().equalsIgnoreCase(form.getTransformId()))
+                if (e.getId().equalsIgnoreCase(form.getTransformId()))
                 {
                     etl = e;
                     break;
@@ -142,7 +130,7 @@ public class DataIntegrationController extends SpringActionController
             List<TransformConfiguration> configs = ETLManager.get().getTransformConfigurations(context.getContainer());
             for (TransformConfiguration c : configs)
             {
-                if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
+                if (c.getDescriptionId().equalsIgnoreCase(form.getTransformId()))
                 {
                     config = c;
                     break;
@@ -185,13 +173,11 @@ public class DataIntegrationController extends SpringActionController
         @Override
         public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
         {
-            ViewContext context = getViewContext();
-
-            ETLDescriptor etl = null;
-            List<ETLDescriptor> etls = ETLManager.get().getETLs();
-            for (ETLDescriptor e : etls)
+            ScheduledPipelineJobDescriptor etl = null;
+            List<ScheduledPipelineJobDescriptor> etls = ETLManager.get().getETLs();
+            for (ScheduledPipelineJobDescriptor e : etls)
             {
-                if (e.getTransformId().equalsIgnoreCase(form.getTransformId()))
+                if (e.getId().equalsIgnoreCase(form.getTransformId()))
                 {
                     etl = e;
                     break;
@@ -205,39 +191,6 @@ public class DataIntegrationController extends SpringActionController
             JSONObject ret = new JSONObject();
             ret.put("success",true);
             return new ApiSimpleResponse(ret);
-        }
-    }
-
-
-    final static Object lock = new Object();
-    static Scheduler shared;
-    Scheduler local;
-
-    Scheduler getScheduler() throws SchedulerException
-    {
-        if (null == local)
-        {
-            synchronized (lock)
-            {
-                if (null == shared)
-                {
-                    SchedulerFactory sf = new StdSchedulerFactory();
-                    shared = sf.getScheduler();
-                }
-            }
-            local = shared;
-        }
-        return local;
-    }
-
-
-    public static class DummyJob implements Job
-    {
-        @Override
-        public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
-        {
-            JobDataMap map = jobExecutionContext.getJobDetail().getJobDataMap();
-            System.err.println("HELLO WORLD " + map.getString("transformId"));
         }
     }
 }

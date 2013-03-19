@@ -25,7 +25,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.quartz.JobExecutionException;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -37,10 +36,10 @@ import java.util.Date;
  */
 public class TransformJob extends PipelineJob
 {
-    private final ETLDescriptor _etlDescriptor;
+    private final BaseQueryTransformDescriptor _etlDescriptor;
     private int _runId;
 
-    public TransformJob(ViewBackgroundInfo info, ETLDescriptor etlDescriptor)
+    public TransformJob(ViewBackgroundInfo info, BaseQueryTransformDescriptor etlDescriptor)
     {
         super(ETLPipelineProvider.NAME, info, PipelineService.get().findPipelineRoot(info.getContainer()));
         _etlDescriptor = etlDescriptor;

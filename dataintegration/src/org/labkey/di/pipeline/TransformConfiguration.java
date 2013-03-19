@@ -4,6 +4,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
+import org.labkey.di.api.ScheduledPipelineJobDescriptor;
+
 import java.util.Date;
 import java.util.Map;
 
@@ -16,7 +18,7 @@ import java.util.Map;
 public class TransformConfiguration extends Entity
 {
     int rowId = -1;
-    String transformId;
+    String descriptionId;
     boolean enabled = false;
     boolean verboseLogging = false;
     Date lastChecked = null;
@@ -25,9 +27,9 @@ public class TransformConfiguration extends Entity
     {
     }
 
-    public TransformConfiguration(ETLDescriptor etl, Container container)
+    public TransformConfiguration(ScheduledPipelineJobDescriptor etl, Container container)
     {
-        setTransformId(etl.getTransformId());
+        setDescriptionId(etl.getId());
         setContainer(container.getId());
     }
 
@@ -36,19 +38,21 @@ public class TransformConfiguration extends Entity
         return rowId;
     }
 
+
+    @SuppressWarnings("UnusedDeclaration")
     public void setRowId(int rowId)
     {
         this.rowId = rowId;
     }
 
-    public String getTransformId()
+    public String getDescriptionId()
     {
-        return transformId;
+        return descriptionId;
     }
 
-    public void setTransformId(String transformId)
+    public void setDescriptionId(String descriptionId)
     {
-        this.transformId = transformId;
+        this.descriptionId = descriptionId;
     }
 
     public boolean isEnabled()
@@ -76,6 +80,7 @@ public class TransformConfiguration extends Entity
         return lastChecked;
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public void setLastChecked(Date lastChecked)
     {
         this.lastChecked = lastChecked;
@@ -86,7 +91,7 @@ public class TransformConfiguration extends Entity
         if (null == map)
             map = new JSONObject();
         map.put("rowId", getRowId());
-        map.put("transformId", getTransformId());
+        map.put("descriptionId", getDescriptionId());
         map.put("enabled", isEnabled());
         map.put("verboseLogging", isVerboseLogging());
         map.put("lastChecked", getLastChecked());

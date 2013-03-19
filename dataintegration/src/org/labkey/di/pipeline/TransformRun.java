@@ -24,6 +24,7 @@ import java.util.Date;
  * User: jeckels
  * Date: 2/20/13
  */
+@SuppressWarnings("UnusedDeclaration")
 public class TransformRun
 {
     private int _rowId;
