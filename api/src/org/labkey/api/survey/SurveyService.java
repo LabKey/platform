@@ -47,6 +47,7 @@ public class SurveyService
     {
         Survey[] getSurveys(Container container, User user);
         Survey getSurvey(Container container, User user, int surveyId);
+        Survey getSurvey(Container container, User user, String schema, String query, String responsePk);
         Survey saveSurvey(Container container, User user, Survey survey);
 
         SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter);
