@@ -2550,11 +2550,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    private static final int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
-    private static final int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
-    private static final int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
-    private static final int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
-
     public ExpRun saveSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
                                             Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
     {
