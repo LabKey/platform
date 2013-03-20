@@ -35,6 +35,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -2513,6 +2514,50 @@ public class OntologyManager
         }
 
         return ret;
+    }
+
+    /**
+     * Updates an existing domain property with an import property descriptor generated
+     * by _propertyDescriptorFromRowMap below.  Properties we don't set are explicitly
+     * called out
+     */
+    public static void updateDomainPropertyFromDescriptor(DomainProperty p, PropertyDescriptor pd)
+    {
+        // don't setPropertyURI
+        // don't setName
+        p.setLabel(pd.getLabel());
+        p.setConceptURI(pd.getConceptURI());
+        p.setRangeURI(pd.getRangeURI());
+        // don't setContainer
+        p.setDescription(pd.getDescription());
+        p.setURL((pd.getURL() != null) ? pd.getURL().toString() : null);
+        p.setImportAliasSet(ColumnRenderProperties.convertToSet(pd.getImportAliases()));
+        p.setRequired(pd.isRequired());
+        p.setHidden(pd.isHidden());
+        p.setShownInInsertView(pd.isShownInInsertView());
+        p.setShownInUpdateView(pd.isShownInUpdateView());
+        p.setShownInDetailsView(pd.isShownInDetailsView());
+        p.setDimension(pd.isDimension());
+        p.setMeasure(pd.isMeasure());
+        p.setFormat(pd.getFormat());
+        p.setMvEnabled(pd.isMvEnabled());
+
+        Lookup lookup = new Lookup();
+        lookup.setQueryName(pd.getLookupQuery());
+        lookup.setSchemaName(pd.getLookupSchema());
+        String lookupContainerId = pd.getLookupContainer();
+        if (lookupContainerId != null)
+        {
+            Container container = ContainerManager.getForId(lookupContainerId);
+            if (container == null)
+                lookup = null;
+            else
+                lookup.setContainer(container);
+        }
+        p.setLookup(lookup);
+        p.setFacetingBehavior(pd.getFacetingBehaviorType());
+        p.setProtected(pd.isProtected());
+        p.setExcludeFromShifting(pd.isExcludeFromShifting());
     }
 
     private static PropertyDescriptor _propertyDescriptorFromRowMap(Container container, String domainURI, String propertyURI, String name,

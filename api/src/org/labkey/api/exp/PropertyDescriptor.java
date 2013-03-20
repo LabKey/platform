@@ -190,6 +190,11 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         return propertyType;
     }
 
+    public void clearPropertyType()
+    {
+        this.propertyType = null;
+    }
+
     @Override
     public String getInputType()
     {
