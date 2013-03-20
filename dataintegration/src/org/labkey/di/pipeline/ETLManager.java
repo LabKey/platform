@@ -17,6 +17,8 @@ package org.labkey.di.pipeline;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -29,19 +31,26 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.di.api.ScheduledPipelineJobContext;
 import org.labkey.di.api.ScheduledPipelineJobDescriptor;
+import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
+import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
+import org.quartz.ScheduleBuilder;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
@@ -53,6 +62,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: jeckels
@@ -229,7 +240,7 @@ public class ETLManager
     }
 
 
-    private JobKey jobKeyFromDescriptor(ScheduledPipelineJobDescriptor descriptor)
+    private static JobKey jobKeyFromDescriptor(ScheduledPipelineJobDescriptor descriptor)
     {
         return JobKey.jobKey(descriptor.getId(), JOB_GROUP_NAME);
     }
@@ -329,4 +340,137 @@ public class ETLManager
             schedule(etl, c, runAsUser);
         }
     }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void scheduler() throws Exception
+        {
+            final AtomicInteger counter = new AtomicInteger(0);
+            final String id = GUID.makeHash();
+            final User user = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+
+            ScheduledPipelineJobDescriptor d = new ScheduledPipelineJobDescriptor()
+            {
+                @Override
+                public String getId()
+                {
+                    return id;
+                }
+
+                @Override
+                public String getName()
+                {
+                    return "TestCase";
+                }
+
+                @Override
+                public String getDescription()
+                {
+                    return null;
+                }
+
+                @Override
+                public String getModuleName()
+                {
+                    return "dataintegration";
+                }
+
+                @Override
+                public int getVersion()
+                {
+                    return 0;
+                }
+
+                @Override
+                public ScheduleBuilder getScheduleBuilder()
+                {
+                    return SimpleScheduleBuilder.repeatSecondlyForever();
+                }
+
+                @Override
+                public String getScheduleDescription()
+                {
+                    return "1s";
+                }
+
+                @Override
+                public Class<? extends Job> getJobClass()
+                {
+                    return TransformJobRunner.class;
+                }
+
+                @Override
+                public ScheduledPipelineJobContext getJobContext(Container c, User user)
+                {
+                    return new ScheduledPipelineJobContext(this, c, user);
+                }
+
+                @Override
+                public Callable<Boolean> getChecker(ScheduledPipelineJobContext context)
+                {
+                    return new Callable<Boolean>()
+                    {
+                        @Override
+                        public Boolean call() throws Exception
+                        {
+                            counter.incrementAndGet();
+                            return false;
+                        }
+                    };
+                }
+
+                @Override
+                public PipelineJob getPipelineJob(ScheduledPipelineJobContext context) throws JobExecutionException
+                {
+                    return null;
+                }
+            };
+
+
+            assertEquals(0, counter.get());
+            ETLManager.get().runNow(d, c, user);
+            for (int i=0 ; i<10 && counter.get()<1 ; i++)
+                sleep(1);
+            assertEquals(1, counter.get());
+            ETLManager.get().runNow(d, c, user);
+            for (int i=0 ; i<10 && counter.get()<2 ; i++)
+                sleep(2);
+            assertEquals(2, counter.get());
+
+            ETLManager.get().schedule(d, c, user);
+            sleep(5);
+            assertTrue(counter.get() <= 10);
+            for (int i=0 ; i<10 && counter.get() < 12 ; i++)
+                sleep(1);
+            assertTrue(counter.get() >= 12);
+
+            ETLManager.get().unschedule(d, c, user);
+            sleep(1);
+            int count = counter.get();
+            sleep(2);
+            assertEquals(count, counter.get());
+
+            // TODO don't have an official way to unregister a job
+            // and we're currently adding them as durable
+            JobKey jobKey = jobKeyFromDescriptor(d);
+            assertTrue(StdSchedulerFactory.getDefaultScheduler().checkExists(jobKey));
+            StdSchedulerFactory.getDefaultScheduler().deleteJob(jobKey);
+            assertFalse(StdSchedulerFactory.getDefaultScheduler().checkExists(jobKey));
+        }
+
+        void sleep(int sec)
+        {
+            try
+            {
+                Thread.sleep(2*1000);
+            }
+            catch (InterruptedException x)
+            {
+            }
+        }
+    }
+
 }

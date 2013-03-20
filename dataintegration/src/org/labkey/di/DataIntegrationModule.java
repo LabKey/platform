@@ -89,6 +89,12 @@ public class DataIntegrationModule extends DefaultModule
         ETLManager.get().startAllConfigurations();
     }
 
+    @NotNull
+    @Override
+    public Set<Class> getUnitTests()
+    {
+        return Collections.singleton((Class)ETLManager.TestCase.class);
+    }
 
     /** web parts **/
 
