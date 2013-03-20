@@ -142,7 +142,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.callParent([config]);
 
         // add the listener for when to enable/disable the submit button
-        this.addListener('validitychange', this.toggleSubmitBtn, this);
+        this.addListener('validitychange', this.updateSubmitInfo, this);
 
         // add listener for when to enable/disable the save button based on the form dirty state
         this.addListener('dirtychange', function(cmp, isDirty){
@@ -567,11 +567,6 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             enable ? this.saveDisabledInfo.hide() : this.saveDisabledInfo.show();
     },
 
-    toggleSubmitBtn : function(form, isValid) {
-        this.submitBtn.setDisabled(!isValid);
-        this.updateSubmitInfo();
-    },
-
     updateSubmitInfo : function() {
         var msg = "";
         for (var name in this.validStatus)
@@ -593,6 +588,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         }
 
         this.submitInfo.update(msg);
+        this.submitBtn.setDisabled(msg.length != 0);
     },
 
     isSurveyDirty : function() {

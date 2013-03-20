@@ -44,6 +44,12 @@ public class SurveyServiceImpl implements SurveyService.Interface
     }
 
     @Override
+    public Survey getSurvey(Container container, User user, String schema, String query, String responsePk)
+    {
+        return SurveyManager.get().getSurvey(container, user, schema, query, responsePk);
+    }
+
+    @Override
     public SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter)
     {
         return SurveyManager.get().getSurveyDesigns(container, filter);

@@ -279,6 +279,15 @@ public class SurveyManager
         return new TableSelector(SurveySchema.getInstance().getSurveysTable(), filter, null).getObject(Survey.class);
     }
 
+    public Survey getSurvey(Container container, User user, String schema, String query, String responsePk)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("SurveyDesignId", "SchemaName"), schema);
+        filter.addCondition(FieldKey.fromParts("SurveyDesignId", "QueryName"), query);
+        filter.addCondition(FieldKey.fromParts("ResponsesPK"), responsePk);
+        return new TableSelector(SurveySchema.getInstance().getSurveysTable(), filter, null).getObject(Survey.class);
+    }
+
     public Survey[] getSurveys(Container container)
     {
         return new TableSelector(SurveySchema.getInstance().getSurveysTable(), new SimpleFilter(FieldKey.fromParts("container"), container), null).getArray(Survey.class);
