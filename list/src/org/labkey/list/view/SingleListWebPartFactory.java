@@ -42,29 +42,39 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
     {
         Map<String, String> props = webPart.getPropertyMap();
 
+        String listNameParam = props.get("listName");
         String listIdParam = props.get("listId");
         String viewName = props.get("viewName");
         String title = (null == props.get("title") ? "List" : props.get("title"));
 
-        if (null == listIdParam)
+        if (null == listNameParam && null == listIdParam)
             return new HtmlView(title, "There is no list selected to be displayed in this webpart");
 
-        try
+        ListQueryForm form = null;
+        if (listNameParam != null)
         {
-            ListQueryForm form = new ListQueryForm(Integer.parseInt(listIdParam), portalCtx);
-            form.setDataRegionName("list" + webPart.getIndex());
-            form.bindParameters(portalCtx.getBindPropertyValues());
-
-            if (null == form.getList())
-                return new HtmlView(title, "List does not exist");
-
-            form.setViewName(viewName);
-            return new SingleListWebPart(form, webPart, props);
+            form = new ListQueryForm(listNameParam, portalCtx);
         }
-        catch (NumberFormatException e)
+        else if (listIdParam != null)
         {
-            return new HtmlView(title, "List id is invalid");
+            try
+            {
+                form = new ListQueryForm(Integer.parseInt(listIdParam), portalCtx);
+            }
+            catch (NumberFormatException e)
+            {
+                return new HtmlView(title, "List id is invalid");
+            }
         }
+
+        form.setDataRegionName("list" + webPart.getIndex());
+        form.bindParameters(portalCtx.getBindPropertyValues());
+
+        if (null == form.getList())
+            return new HtmlView(title, "List does not exist");
+
+        form.setViewName(viewName);
+        return new SingleListWebPart(form, webPart, props);
     }
 
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)

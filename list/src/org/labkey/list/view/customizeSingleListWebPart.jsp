@@ -45,21 +45,21 @@
     ViewContext ctx = me.getViewContext();
     Map<String, String> props = part.getPropertyMap();
 
-    final TreeMap<String, String> listOptions = new TreeMap<String, String>();
-
-    Map<String, ListDefinition> lists = ListService.get().getLists(ctx.getContainer());
-    for (String name : lists.keySet())
+    String listName = props.get("listName");
+    if (listName == null)
     {
-        listOptions.put(String.valueOf(lists.get(name).getListId()), name);
-    }
-
-    //to sort on values
-    TreeMap<String, String> sortedListOptions = new TreeMap<String, String>(new Comparator<String>() {
-        public int compare(String s1, String s2) {
-            return listOptions.get(s1).compareTo(listOptions.get(s2));
+        String listIdStr = props.get("listId");
+        try
+        {
+            if (listIdStr != null)
+            {
+                int listId = Integer.parseInt(listIdStr);
+                ListDefinition list = ListService.get().getList(ctx.getContainer(), listId);
+                listName = list.getName();
+            }
         }
-    });
-    sortedListOptions.putAll(listOptions);
+        catch (NumberFormatException ex) { }
+    }
 
 %>
 
@@ -78,10 +78,11 @@ If you want to let users change the list that's displayed or customize the view 
         });
         var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
             defaultSchema : 'lists',
+            // Only include actual lists -- no custom queries
+            includeUserQueries: false,
             fieldLabel : 'List',
-            name : 'listId',
-            valueField : 'listId',
-            initialValue : <%=PageFlowUtil.jsString(props.get("listId"))%>
+            name: 'listName',
+            initialValue : <%=PageFlowUtil.jsString(listName)%>
         }));
 
         var viewCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({

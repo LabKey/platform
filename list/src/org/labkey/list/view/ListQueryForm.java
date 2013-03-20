@@ -41,6 +41,13 @@ public class ListQueryForm extends QueryForm
         _def = getListDef(listId);
     }
 
+    public ListQueryForm(String listName, ViewContext context)
+    {
+        this();
+        setViewContext(context);
+        setName(listName);
+    }
+
     // Set by spring binding reflection
     @SuppressWarnings({"UnusedDeclaration"})
     public void setListId(int listId)

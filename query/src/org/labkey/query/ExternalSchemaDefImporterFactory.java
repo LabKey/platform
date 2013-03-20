@@ -150,39 +150,33 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
             form.setTypedValue("userSchemaName", exportedXml.getUserSchemaName());
 
             if (exportedXml.isSetSchemaTemplate())
-            {
                 form.setTypedValue("schemaTemplate", exportedXml.getSchemaTemplate());
-            }
-            else
+
+            String sourceSchemaName = null;
+            if (exportedXml.isSetSourceSchemaName())
+                sourceSchemaName = exportedXml.getSourceSchemaName();
+            else if (exportedXml instanceof ExternalSchemaType && ((ExternalSchemaType)exportedXml).isSetDbSchemaName())
+                sourceSchemaName = ((ExternalSchemaType)exportedXml).getDbSchemaName();
+
+            form.setTypedValue("sourceSchemaName", sourceSchemaName);
+
+            String schemaTables = "*";
+            if (exportedXml.isSetTables())
             {
-                String sourceSchemaName = null;
-                if (exportedXml.isSetSourceSchemaName())
-                    sourceSchemaName = exportedXml.getSourceSchemaName();
-                else if (exportedXml instanceof ExternalSchemaType && ((ExternalSchemaType)exportedXml).isSetDbSchemaName())
-                    sourceSchemaName = ((ExternalSchemaType)exportedXml).getDbSchemaName();
-
-                form.setTypedValue("sourceSchemaName", sourceSchemaName);
-
-                String schemaTables = "*";
-                if (exportedXml.isSetTables())
+                String[] tables = exportedXml.getTables().getTableNameArray();
+                StringBuilder tablesSb = new StringBuilder();
+                String sep = "";
+                for (String table : tables)
                 {
-                    String[] tables = exportedXml.getTables().getTableNameArray();
-                    StringBuilder tablesSb = new StringBuilder();
-                    String sep = "";
-                    for (String table : tables)
-                    {
-                        tablesSb.append(sep).append(table);
-                        sep = ",";
-                    }
-                    schemaTables = tablesSb.toString();
+                    tablesSb.append(sep).append(table);
+                    sep = ",";
                 }
-                form.setTypedValue("tables", schemaTables);
-
-                if (exportedXml.isSetMetadata())
-                {
-                    form.setTypedValue("metaData", exportedXml.getMetadata().xmlText());
-                }
+                schemaTables = tablesSb.toString();
             }
+            form.setTypedValue("tables", schemaTables);
+
+            if (exportedXml.isSetMetadata())
+                form.setTypedValue("metaData", exportedXml.getMetadata().xmlText());
         }
 
 

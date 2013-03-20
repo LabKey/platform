@@ -111,14 +111,8 @@
 
             applyOverride: function (override) {
                 if (override) {
-                    console.log("override field");
-                    // make the bound field editable
-                    // render the html link
                     this.update("<span class='labkey-link' style='font-size:smaller;'>Revert to template value</span>");
                 } else {
-                    console.log("reset field");
-                    // reset the bound field value to resetValueFunction
-                    // render the html link
                     this.update("<span class='labkey-link' style='font-size:smaller;'>Override template value</span>");
 
                     var value = this.resetValueFunction();
@@ -185,23 +179,6 @@
             }
         });
 
-//        sqvModel.on('beforeschemaload', function (field, newValue, oldValue) {
-//            // cancel changing the schema combo if a template is selected
-//            var templateName = schemaTemplateCombo.getValue();
-//            if (templateName) {
-//                var templateRecord = schemaTemplateCombo.store.getById(templateName);
-//                return false;
-//            }
-//        });
-//
-//        sqvModel.on('beforequeryload', function (field, newValue, oldValue) {
-//            // cancel changing the query combo if a template is selected
-//            var templateName = schemaTemplateCombo.getValue();
-//            if (templateName) {
-//                var templateRecord = schemaTemplateCombo.store.getById(templateName);
-//                return false;
-//            }
-//        });
 
         var schemaTemplateCombo = Ext4.create('Ext.form.field.ComboBox', {
             name: 'schemaTemplate',
@@ -240,6 +217,13 @@
                     if (templateName) {
                         var record = field.store.getById(templateName);
                         if (record) {
+                            // Set the tables before setting the schema otherwise the previous tableCombo value may be used once the schemas then the schema's tables have been loaded.
+                            tablesField.setDisabled(true);
+                            tablesCombo.setDisabled(true);
+                            tablesCombo.setValue(record.get('tables'));
+                            tablesOverride.setOverride(false);
+                            tablesOverride.setVisible(true);
+
                             if (record.get('sourceSchemaName')) {
                                 sourceSchemaField.setDisabled(true);
                                 sourceSchemaCombo.setDisabled(true);
@@ -250,12 +234,6 @@
                             }
                             sourceSchemaOverride.setOverride(false);
                             sourceSchemaOverride.setVisible(true);
-
-                            tablesField.setDisabled(true);
-                            tablesCombo.setDisabled(true);
-                            tablesCombo.setValue(record.get('tables'));
-                            tablesOverride.setOverride(false);
-                            tablesOverride.setVisible(true);
 
                             metadataField.setDisabled(true);
                             metadataTextArea.setValue(record.get('metadata'));
@@ -323,7 +301,8 @@
             editable: true,
             width: 200,
             disabled: <%=def.getSourceSchemaName() == null && initialTemplate != null%>,
-            value: <%=q(def.getSourceSchemaName() != null ? def.getSourceSchemaName() : (initialTemplate != null ? initialTemplate.getSourceSchemaName() : ""))%>,
+            //value: <%=q(def.getSourceSchemaName() != null ? def.getSourceSchemaName() : (initialTemplate != null ? initialTemplate.getSourceSchemaName() : ""))%>,
+            initialValue: <%=q(def.getSourceSchemaName() != null ? def.getSourceSchemaName() : (initialTemplate != null ? initialTemplate.getSourceSchemaName() : ""))%>,
             listeners: {
                 change: function (field, value) {
                     console.log("source schema changed: " + value);
@@ -406,7 +385,8 @@
             name: 'tables',
             fieldLabel: false,
             width: 395,
-            value: <%=text(new JSONArray(tables).toString())%>,
+            //value: <%=text(new JSONArray(tables).toString())%>,
+            initialValue: <%=text(new JSONArray(tables).toString())%>,
             disabled: <%=def.getTables() == null && initialTemplate != null%>,
             multiSelect: true,
             allowBlank: true,

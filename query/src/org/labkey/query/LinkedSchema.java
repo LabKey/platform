@@ -126,10 +126,13 @@ public class LinkedSchema extends ExternalSchema
 
     private static UserSchema getSourceSchema(LinkedSchemaDef def, TemplateSchemaType template, Container sourceContainer, User user)
     {
-        SchemaKey sourceSchemaName = SchemaKey.fromString(template != null ? template.getSourceSchemaName() : def.getSourceSchemaName());
+        String sourceSchemaName = def.getSourceSchemaName();
+        if (sourceSchemaName == null && template != null)
+            sourceSchemaName = template.getSourceSchemaName();
+        SchemaKey sourceSchemaKey = SchemaKey.fromString(sourceSchemaName);
 
         User sourceSchemaUser = new LinkedSchemaUserWrapper(user, sourceContainer);
-        return QueryService.get().getUserSchema(sourceSchemaUser, sourceContainer, sourceSchemaName);
+        return QueryService.get().getUserSchema(sourceSchemaUser, sourceContainer, sourceSchemaKey);
     }
 
     private LinkedSchema(User user, Container container, LinkedSchemaDef def, TemplateSchemaType template, UserSchema sourceSchema,

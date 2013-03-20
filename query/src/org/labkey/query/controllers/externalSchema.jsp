@@ -28,6 +28,8 @@
 <%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainer();
@@ -157,7 +159,7 @@ var sourceSchemaCombo = new Ext.form.ComboBox({
     triggerAction:'all',
     helpPopup:{title:'Source Schema Name',
     html:<%=PageFlowUtil.qh(bean.getHelpHTML("SourceSchemaName"))%>},
-    value:<%=q(initialTemplate == null ? def.getSourceSchemaName() : initialTemplate.getSourceSchemaName())%>,
+    value:<%=q(def.getSourceSchemaName() != null ? def.getSourceSchemaName() : (initialTemplate != null ? initialTemplate.getSourceSchemaName() : ""))%>,
     disabled:<%=initialTemplate != null%>,
     tpl: '<tpl for="."><div class="x-combo-list-item">{field1:htmlEncode}</div></tpl>'
 });
@@ -175,7 +177,7 @@ var metaDataTextArea = new Ext.form.TextArea({
     resizable:true,
     autoCreate:{tag:"textarea", style:"font-family:'Courier'", autocomplete:"off", wrap:"off"},
     helpPopup:{title:'Meta Data', html:<%=PageFlowUtil.qh(bean.getHelpHTML("MetaData"))%>},
-    value:<%=q(initialTemplate == null ? def.getMetaData() : (initialTemplate.getMetadata() == null ? "" : initialTemplate.getMetadata().toString()))%>,
+    value: <%=q(def.getMetaData() != null ? def.getMetaData() : (initialTemplate != null && initialTemplate.getMetadata() != null ? initialTemplate.getMetadata().toString() : ""))%>,
     disabled:<%=initialTemplate != null%>
 });
 
@@ -185,7 +187,18 @@ var selModel = new Ext.grid.CheckboxSelectionModel();
 selModel.addListener('rowselect', updateTableTitle);
 selModel.addListener('rowdeselect', updateTableTitle);
 
-var initialTables = <%=PageFlowUtil.jsString(initialTemplate == null ? def.getTables() : (initialTemplate.getTables() == null ? "*" : StringUtils.join(initialTemplate.getTables().getTableNameArray(), ",")))%>;
+<%
+ArrayList<String> tables = new ArrayList<String>();
+if (def.getTables() != null && def.getTables().length() > 0)
+{
+    tables.addAll(Arrays.asList(def.getTables().split(",")));
+}
+else if (initialTemplate != null && initialTemplate.isSetTables())
+{
+    tables.addAll(Arrays.asList(initialTemplate.getTables().getTableNameArray()));
+}
+%>
+var initialTables = <%=text(new JSONArray(tables).toString())%>;
 
 // create the table grid
 var grid = new Ext.grid.GridPanel({

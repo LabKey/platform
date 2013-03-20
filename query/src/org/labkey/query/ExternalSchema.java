@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -135,16 +136,15 @@ public class ExternalSchema extends SimpleUserSchema
         if (scope == null)
             return null;
 
-        String sourceSchemaName = template != null ? template.getSourceSchemaName() : def.getSourceSchemaName();
+        String sourceSchemaName = def.getSourceSchemaName();
+        if (sourceSchemaName == null && template != null)
+            sourceSchemaName = template.getSourceSchemaName();
         return scope.getSchema(sourceSchemaName);
     }
 
     @Nullable
     protected static TablesType parseTablesType(AbstractExternalSchemaDef def, TemplateSchemaType template)
     {
-        if (template != null && template.getMetadata() != null)
-            return template.getMetadata().getTables();
-
         String metadata = def.getMetaData();
         if (metadata != null)
         {
@@ -157,9 +157,13 @@ public class ExternalSchema extends SimpleUserSchema
             }
             catch (XmlException e)
             {
-                // TODO: Throw or log or display this exception?
+                Logger.getLogger(ExternalSchema.class).warn("Error loading schema metadata", e);
+                return null;
             }
         }
+
+        if (template != null && template.getMetadata() != null)
+            return template.getMetadata().getTables();
 
         return null;
     }
@@ -189,7 +193,15 @@ public class ExternalSchema extends SimpleUserSchema
             return Collections.emptySet();
 
         Set<String> allowed = null;
-        if (template != null)
+        String allowedTableNames = def.getTables();
+        if (allowedTableNames != null)
+        {
+            if ("*".equals(allowedTableNames))
+                return tableSource.getTableNames();
+            else
+                allowed = new CsvSet(allowedTableNames);
+        }
+        else if (template != null)
         {
             TemplateSchemaType.Tables tables = template.getTables();
             if (tables != null)
@@ -203,14 +215,6 @@ public class ExternalSchema extends SimpleUserSchema
                         allowed = new HashSet<String>(Arrays.asList(tableNames));
                 }
             }
-        }
-        else
-        {
-            String allowedTableNames = def.getTables();
-            if ("*".equals(allowedTableNames))
-                return tableSource.getTableNames();
-            else
-                allowed = new CsvSet(allowedTableNames);
         }
 
         if (allowed == null || allowed.size() == 0)
@@ -231,7 +235,15 @@ public class ExternalSchema extends SimpleUserSchema
             return Collections.emptySet();
 
         Collection<String> allowed = null;
-        if (template != null)
+        String allowedTableNames = def.getTables();
+        if (allowedTableNames != null)
+        {
+            if ("*".equals(allowedTableNames))
+                allowed = tableSource.getQueryNames();
+            else
+                allowed = new CsvSet(allowedTableNames);
+        }
+        else if (template != null)
         {
             TemplateSchemaType.Tables tables = template.getTables();
             if (tables != null)
@@ -245,14 +257,6 @@ public class ExternalSchema extends SimpleUserSchema
                         allowed = Arrays.asList(tableNames);
                 }
             }
-        }
-        else
-        {
-            String allowedTableNames = def.getTables();
-            if ("*".equals(allowedTableNames))
-                allowed = tableSource.getQueryNames();
-            else
-                allowed = new CsvSet(allowedTableNames);
         }
 
         if (allowed == null || allowed.size() == 0)
