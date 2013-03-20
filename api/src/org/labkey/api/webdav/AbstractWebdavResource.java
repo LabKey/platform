@@ -427,7 +427,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public boolean shouldIndex()
     {
-        // would be nice to call DavController.isTempFile()
+        // TODO would be nice to call DavController.isTempFile()
         String name = getName();
         if (name.startsWith(".part"))
             return false;

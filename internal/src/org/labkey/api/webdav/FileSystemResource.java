@@ -709,15 +709,28 @@ public class FileSystemResource extends AbstractWebdavResource
         return ContainerManager.getForId(id);
     }
 
+
     @Override
     public boolean shouldIndex()
     {
-        if (null != _shouldIndex)
-            return _shouldIndex.booleanValue();
-        if (null != _folder)
-            return _folder.shouldIndex();
-        return super.shouldIndex();
+        boolean shouldIndexFolder = true;
+        FileType ft = getType();
+        if (FileType.directory == ft)
+        {
+            if (null != _shouldIndex)
+                shouldIndexFolder = _shouldIndex;
+        }
+        else if (FileType.file == ft)
+        {
+            if (null != _folder)
+                shouldIndexFolder = _folder.shouldIndex();
+        }
+        else
+            return false;
+
+        return shouldIndexFolder && super.shouldIndex();
     }
+
 
     @Override
     public Map<String, String> getCustomProperties(User user)

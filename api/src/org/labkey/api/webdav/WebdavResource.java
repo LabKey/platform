@@ -180,8 +180,12 @@ public interface WebdavResource extends Resource
     String getContainerId();
 
     /**
-     * return false to skip this collection/resource and children
-     * TODO: is this always recursive????
+     * For a collection, this indicates whether this resource should be scanned for children to index
+     * For a file, this indicates whether this individual object should be skipped
+     *
+     * Note there are other checks that can cause an object to be skipped.
+     * see LuceneSearchService.accept()
+     *
      * @return
      */
     boolean shouldIndex();
