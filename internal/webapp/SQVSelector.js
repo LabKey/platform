@@ -8,7 +8,6 @@
  * User: Rylan
  * Date: 10/31/12
  * Time: 10:51 AM
- * To change this template use File | Settings | File Templates.
  */
 
 LABKEY.requiresExt4ClientAPI(true);
@@ -199,15 +198,10 @@ Ext4.define('LABKEY.SQVModel', {
         };
         config.listeners['dataloaded'] = {
             fn : function (cb) {
-                if (!this.initiallyLoaded) {
-                    this.initiallyLoaded = true;
+                if (!cb.initiallyLoaded) {
+                    cb.initiallyLoaded = true;
                     if (cb.initialValue) {
-                        var record = cb.findRecord(cb.valueField, cb.initialValue);
-                        if (record) {
-                            cb.select(record);
-                            cb.setValue(cb.initialValue);
-                            cb.fireEvent('select', cb);
-                        }
+                        this.setComboValues(cb, cb.initialValue);
                     }
                 }
             },
@@ -262,15 +256,10 @@ Ext4.define('LABKEY.SQVModel', {
         };
         config.listeners['dataloaded'] = {
             fn : function (cb) {
-                if (!this.initiallyLoaded) {
-                    this.initiallyLoaded = true;
+                if (!cb.initiallyLoaded) {
+                    cb.initiallyLoaded = true;
                     if (cb.initialValue) {
-                        var record = cb.findRecord(cb.valueField, cb.initialValue);
-                        if (record) {
-                            cb.select(record);
-                            cb.setValue(cb.initialValue);
-                            cb.fireEvent('select', cb);
-                        }
+                        this.setComboValues(cb, cb.initialValue);
                     }
                 }
             },
@@ -315,12 +304,7 @@ Ext4.define('LABKEY.SQVModel', {
                 if (!cb.initiallyLoaded) {
                     cb.initiallyLoaded = true;
                     if (cb.initialValue) {
-                        var record = cb.findRecord(cb.displayField, cb.initialValue);
-                        if (record) {
-                            cb.select(record);
-                            cb.setValue(cb.initialValue);
-                            cb.fireEvent('select', cb);
-                        }
+                        this.setComboValues(cb, cb.initialValue);
                     }
                 }
             },
@@ -396,6 +380,7 @@ Ext4.define('LABKEY.SQVModel', {
                     this.schemaStore.loadData(arrayedData);
                     this.setComboValues(this.schemaCombo, currentSchema);
                     this.schemaCombo.setDisabled(false);
+                    this.schemaCombo.fireEvent('dataloaded', this.schemaCombo);
                     this.fireEvent('schemaload', this, selectedContainerId);
                 },
                 scope: this
@@ -412,19 +397,24 @@ Ext4.define('LABKEY.SQVModel', {
             this.queryCombo.setDisabled(true);
             this.queryCombo.clearValue();
 
+            var includeUserQueries = true;
+            if (this.queryCombo.includeUserQueries === false)
+                includeUserQueries = false;
+
+            var includeSystemQueries = true;
+            if (this.queryCombo.includeSystemQueries === false)
+                includeSystemQueries = false;
+
             this.queryCombo.setLoading(true);
             LABKEY.Query.getQueries({
                 containerPath: selectedContainerId,
                 schemaName : selectedSchema,
+                includeUserQueries: includeUserQueries,
+                includeSystemQueries: includeSystemQueries,
+                includeColumns: false,
                 success : function (details) {
                     this.queryCombo.setLoading(false);
                     var newQueries = details.queries;
-                    for (var q=0; q < newQueries.length; q++) {
-                        var params = LABKEY.ActionURL.getParameters(newQueries[q].viewDataUrl);
-                        if (params[this.queryCombo.valueField]) {
-                            newQueries[q][this.queryCombo.valueField] = params.listId;
-                        }
-                    }
                     this.queryStore.loadData(newQueries);
                     this.setComboValues(this.queryCombo, currentQuery);
                     this.queryCombo.setDisabled(false);
@@ -490,10 +480,12 @@ Ext4.define('LABKEY.SQVModel', {
                             records.push(record);
                     }
                     combo.setValue(records);
+                    //combo.fireEvent('select', combo);
                 }
             }
             else if (combo.store.getById(values)) {
                 combo.setValue(values);
+                //combo.fireEvent('select', combo);
             }
         }
     }
