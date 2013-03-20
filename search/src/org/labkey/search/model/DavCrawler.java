@@ -312,6 +312,9 @@ public class DavCrawler implements ShutdownListener
                     if (null != errorInfo && errorInfo.modified.getTime() == lastModified)
                         continue;
 
+                    if (!child.shouldIndex())
+                        continue;
+
                     if (skipFile(child))
                     {
                         // just index the name and that's all
