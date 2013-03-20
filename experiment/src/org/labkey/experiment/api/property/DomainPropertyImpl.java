@@ -16,7 +16,9 @@
 
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -52,6 +54,7 @@ public class DomainPropertyImpl implements DomainProperty
     PropertyDescriptor _pdOld;
     PropertyDescriptor _pd;
     boolean _deleted;
+    boolean _schemaChanged;
     List<PropertyValidatorImpl> _validators;
     List<ConditionalFormat> _formats;
 
@@ -184,6 +187,8 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setDescription(String description)
     {
+        if (StringUtils.equalsIgnoreCase(description, getDescription()))
+            return;
         edit().setDescription(description);
     }
 
@@ -199,7 +204,9 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setRangeURI(String rangeURI)
     {
-        edit().setRangeURI(rangeURI);
+        if (StringUtils.equalsIgnoreCase(rangeURI, getRangeURI()))
+            return;
+        editSchema().setRangeURI(rangeURI);
     }
 
     public String getRangeURI()
@@ -209,16 +216,22 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setFormat(String s)
     {
+        if (StringUtils.equalsIgnoreCase(s, getFormat()))
+            return;
         edit().setFormat(s);
     }
 
     public void setLabel(String caption)
     {
+        if (StringUtils.equalsIgnoreCase(caption, getLabel()))
+            return;
         edit().setLabel(caption);
     }
 
     public void setConceptURI(String conceptURI)
     {
+        if (StringUtils.equalsIgnoreCase(conceptURI, getConceptURI()))
+            return;
         edit().setConceptURI(conceptURI);
     }
 
@@ -314,6 +327,10 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setImportAliasSet(Set<String> aliases)
     {
+        String current = getImportAliases();
+        String newAliases = ColumnRenderProperties.convertToString(aliases);
+        if (StringUtils.equalsIgnoreCase(current, newAliases))
+            return;
         edit().setImportAliasesSet(aliases);
     }
 
@@ -324,6 +341,9 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setURL(String url)
     {
+        if (StringUtils.equalsIgnoreCase(getURL(), url))
+            return;
+
         if (null == url)
             edit().setURL(null);
         else
@@ -338,6 +358,14 @@ public class DomainPropertyImpl implements DomainProperty
     private boolean isEdited()
     {
         return null != _pdOld;
+    }
+
+    private PropertyDescriptor editSchema()
+    {
+        PropertyDescriptor pd = edit();
+        _schemaChanged = true;
+        _pd.clearPropertyType();
+        return pd;
     }
 
     private PropertyDescriptor edit()
@@ -408,6 +436,20 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setLookup(Lookup lookup)
     {
+        Lookup current = getLookup();
+
+        if (current == lookup)
+            return;
+
+        // current will return null if the schema or query is null so check
+        // for this case in the passed in lookup
+        if (current == null)
+            if (lookup.getQueryName() == null || lookup.getSchemaName() == null)
+                return;
+
+        if (current != null && current.equals(lookup))
+            return;
+
         if (lookup == null)
         {
             edit().setLookupContainer(null);
@@ -442,6 +484,11 @@ public class DomainPropertyImpl implements DomainProperty
     public boolean isNew()
     {
         return _pd.getPropertyId() == 0;
+    }
+
+    public boolean isSchemaChanged()
+    {
+        return _schemaChanged;
     }
 
     public boolean isDirty()
@@ -495,13 +542,13 @@ public class DomainPropertyImpl implements DomainProperty
                     renames.put(this, _pdOld.getName());
                     StorageProvisioner.renameProperties(this.getDomain(), renames);
                 }
-
             }
         }
         else
             OntologyManager.ensurePropertyDomain(_pd, _domain._dd, sortOrder);
 
         _pdOld = null;
+        _schemaChanged = false;
 
         for (PropertyValidatorImpl validator : ensureValidators())
         {
@@ -597,7 +644,10 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setFacetingBehavior(FacetingBehaviorType type)
     {
-        _pd.setFacetingBehaviorType(type);
+        if (getFacetingBehavior() == type)
+            return;
+
+        edit().setFacetingBehaviorType(type);
     }
 
     @Override

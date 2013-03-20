@@ -2699,30 +2699,6 @@ public class StudyManager
         }
     }
 
-    /** ensure that dataset_metadata.xml properties are respected*/
-    private void updateProperty(DomainProperty p, PropertyDescriptor pd)
-    {
-        // only change the value if the existing domain property is different
-        // most of the logic is encapsulated by the setter except for the
-        // case the import aliases which are checked in this function
-        p.setRequired(pd.isRequired());
-        p.setMvEnabled(pd.isMvEnabled());
-        p.setShownInDetailsView(pd.isShownInDetailsView());
-        p.setShownInUpdateView(pd.isShownInUpdateView());
-        p.setShownInInsertView(pd.isShownInInsertView());
-        p.setMeasure(pd.isMeasure());
-        p.setDimension(pd.isDimension());
-
-        String oldAliases = ColumnRenderProperties.convertToString(p.getImportAliasSet());
-        String newAliases = pd.getImportAliases();
-        if (!StringUtils.equalsIgnoreCase(oldAliases, newAliases))
-            p.setImportAliasSet(ColumnRenderProperties.convertToSet(newAliases));
-
-        p.setProtected(pd.isProtected());
-        p.setExcludeFromShifting(pd.isExcludeFromShifting());
-        p.setMeasure(pd.isMeasure());
-    }
-
     /** @Deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
     public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
@@ -2839,8 +2815,9 @@ public class StudyManager
                 ReportPropsManager.get().importProperties(def.getEntityId(), study.getContainer(), user, d.tags);
         }
 
-        /** now that we actually have datasets, create/update the domains */
+        // now that we actually have datasets, create/update the domains
         Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<Domain>();
+        Map<String, List<DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<List<DomainProperty>>();
         for (OntologyManager.ImportPropertyDescriptor ipd : list.properties)
         {
             Domain d = domainsMap.get(ipd.domainURI);
@@ -2850,11 +2827,26 @@ public class StudyManager
                 if (null == d)
                     d = PropertyService.get().createDomain(study.getContainer(), ipd.domainURI, ipd.domainName);
                 domainsMap.put(d.getTypeURI(), d);
+                // add all the properties that exist for the domain
+                DomainProperty[] existingProperties = d.getProperties();
+                List<DomainProperty> l = new ArrayList<DomainProperty>(existingProperties.length);
+                for (DomainProperty p : existingProperties)
+                {
+                    l.add(p);
+                }
+                domainsPropertiesMap.put(d.getTypeURI(), l);
             }
+            // Issue 14569:  during study reimport be sure to look for a column has been deleted.
+            // Look at the existing properties for this dataset's domain and
+            // remove them as we find them in schema.  If there are any properties left after we've
+            // iterated over all the import properties then we need to delete them
+            List<DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
             DomainProperty p = d.getPropertyByName(ipd.pd.getName());
+            propertiesToDel.remove(p);
+
             if (null != p)
             {
-                updateProperty(p, ipd.pd);
+                OntologyManager.updateDomainPropertyFromDescriptor(p, ipd.pd);
             }
             else
             {
@@ -2866,8 +2858,15 @@ public class StudyManager
             }
         }
 
+        // see if we need to delete any columns from an existing domain
         for (Domain d : domainsMap.values())
         {
+            List<DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
+            for (DomainProperty p : propertiesToDel)
+            {
+                p.delete();
+            }
+
             try
             {
                 d.save(user);

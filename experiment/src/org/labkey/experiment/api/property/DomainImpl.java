@@ -281,6 +281,13 @@ public class DomainImpl implements Domain
                     else
                     {
                         propChanged |= impl.isDirty();
+                        if (impl.isSchemaChanged())
+                        {
+                            // Our column had a schema change (type change, for example) so we should drop
+                            // and re-add it.
+                            propsDropped.add(impl);
+                            propsAdded.add(impl);
+                        }
 
                         if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
                             newlyRequiredProps.add(impl);
