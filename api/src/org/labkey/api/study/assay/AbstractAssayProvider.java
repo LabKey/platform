@@ -560,8 +560,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         for (ExpData inputData : inputDatas)
                         {
                             // Look for a file that was created by the "core" step in the protocol. Transformed files
-                            // are created by the ExperimentRunOutput step.
-                            if (inputData.getSourceApplication().getApplicationType() == ExpProtocol.ApplicationType.ProtocolApplication)
+                            // are created by the ExperimentRunOutput step, and will have a different ActionSequence
+                            if (inputData.getSourceApplication().getApplicationType() == ExpProtocol.ApplicationType.ProtocolApplication && inputData.getSourceApplication().getActionSequence() == ExperimentService.Interface.SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE && inputData.getSourceApplication().getActionSequence() == ExperimentService.Interface.SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                             {
                                 if (primaryInputData != null)
                                 {

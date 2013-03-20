@@ -61,6 +61,11 @@ public class ExperimentService
     {
         public static final String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
 
+        public static final int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
+        public static final int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
+        public static final int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
+        public static final int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
+
         @Nullable
         ExpObject findObjectFromLSID(String lsid);
 
