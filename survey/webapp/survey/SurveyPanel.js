@@ -258,6 +258,9 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.labelCaption = 'Survey Label';
         if (surveyConfig.survey && surveyConfig.survey.labelCaption)
             this.labelCaption = surveyConfig.survey.labelCaption;
+
+        if (surveyConfig.survey && surveyConfig.survey.labelWidth)
+            this.labelWidth = surveyConfig.survey.labelWidth;
     },
 
     setShowCounts : function(surveyConfig) {
@@ -308,8 +311,9 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             submitValue: false, // this field applies to the surveys table not the responses
             fieldLabel: this.labelCaption + '*',
             labelStyle: 'font-weight: bold;',
-            labelWidth: 350,
+            labelWidth: this.labelWidth || 350,
             labelSeparator: '',
+            maxLength: 200,
             allowBlank: false,
             readOnly: !this.canEdit,
             width: 800,
@@ -441,7 +445,6 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     },
 
     saveSurvey : function(btn, evt, toSubmit, successUrl, idParamName) {
-        //console.log('Attempting save at ' + new Date().format('g:i:s A'));
 
         // check to make sure the survey label is not null, it is required
         if (!this.surveyLabel)
@@ -569,11 +572,6 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         this.updateSubmitInfo();
     },
 
-    fieldValidityChanged : function(cmp, isValid) {
-        this.callParent([cmp, isValid]);
-        this.updateSubmitInfo();
-    },
-
     updateSubmitInfo : function() {
         var msg = "";
         for (var name in this.validStatus)
@@ -581,7 +579,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
             if (!this.validStatus[name])
             {
                 var cmp = this.down('[name=' + name + ']');
-                if (cmp)
+                // conditional validStatus for hidden fields
+                if (cmp && !cmp.isHidden())
                     msg += "-" + (cmp.shortCaption ? cmp.shortCaption : name) + "<br/>";
             }
         }

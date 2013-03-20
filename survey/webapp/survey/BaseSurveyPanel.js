@@ -434,6 +434,12 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             name = cmp.findParentByType("radiogroup").getName();
 
         this.validStatus[name] = isValid;
+
+        this.updateSubmitInfo();
+    },
+
+    updateSubmitInfo : function() {
+        // do nothing
     },
 
     questionChangeHandler : function(cmp, newValue, oldValue) {
@@ -461,6 +467,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
         if (this.showCounts)
             this.udpateSectionCount(cmp, newValue, oldValue);
+
+        this.updateSubmitInfo();
     },
 
     clearHiddenFieldValues : function(cmp) {
