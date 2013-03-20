@@ -481,8 +481,7 @@ public enum Prop implements ReportProperty
 
     protected boolean shouldSerialize(String propName)
     {
-        if (Prop.redirectUrl.name().equals(propName) ||
-            Prop.returnUrl.name().equals(propName))
+        if (Prop.returnUrl.name().equals(propName))
             return false;
 
         return true;
