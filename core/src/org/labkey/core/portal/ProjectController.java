@@ -489,7 +489,10 @@ public class ProjectController extends SpringActionController
         {
             // UNDONE: this is used as a link, fix to make POST
             handlePost(form, errors);
-            return HttpView.redirect(getSuccessURL(form));
+            URLHelper successURL = getSuccessURL(form);
+            if (null != successURL)
+                return HttpView.redirect(successURL);
+            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
         }
 
         @Override
@@ -564,11 +567,14 @@ public class ProjectController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(AddWebPartForm addWebPartForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(AddWebPartForm form, boolean reshow, BindException errors) throws Exception
         {
             // UNDONE: this seems to be used a link, fix to make POST
-            handlePost(addWebPartForm, errors);
-            return HttpView.redirect(getSuccessURL(addWebPartForm));
+            handlePost(form, errors);
+            URLHelper successURL = getSuccessURL(form);
+            if (null != successURL)
+                return HttpView.redirect(successURL);
+            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
         }
 
         public boolean handlePost(AddWebPartForm form, BindException errors) throws Exception
@@ -812,7 +818,10 @@ public class ProjectController extends SpringActionController
         {
             // UNDONE: this seems to be used a link, fix to make POST
             handlePost(customizePortletForm, errors);
-            return HttpView.redirect(getSuccessURL(customizePortletForm));
+            URLHelper successURL = getSuccessURL(customizePortletForm);
+            if (null != successURL)
+                return HttpView.redirect(successURL);
+            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
         }
 
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
