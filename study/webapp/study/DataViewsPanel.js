@@ -1049,11 +1049,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             1000 : 'large'
         };
 
-        if (data.types) {
-            for (var type in data.types) {
-                if(data.types.hasOwnProperty(type)) {
-                    cbItems.push({boxLabel : type, name : type, checked : data.types[type], width: 150, uncheckedValue : '0'});
-                }
+        if (Ext4.isArray(data.types)) {
+            for (var i=0; i < data.types.length; i++) {
+                cbItems.push({boxLabel : data.types[i].name, name : data.types[i].name, checked : data.types[i].visible, width: 150, uncheckedValue : '0'});
             }
         }
 

@@ -13,7 +13,7 @@ import org.labkey.api.view.ViewContext;
  */
 public class InheritedQueryDataViewProvider extends AbstractQueryDataViewProvider
 {
-    public static final DataViewProvider.Type TYPE = new ProviderType("inherited queries", "Inherited Custom Views", false);
+    public static final DataViewProvider.Type TYPE = new ProviderType("queries (inherited)", "Inherited Custom Views", false);
 
     public DataViewProvider.Type getType()
     {

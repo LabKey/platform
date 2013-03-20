@@ -6733,7 +6733,7 @@ public class StudyController extends BaseStudyController
     {
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
-            Map<String, Boolean> types = new HashMap<String, Boolean>();
+            Map<String, Map<String, Object>> types = new TreeMap<String, Map<String, Object>>();
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
@@ -6760,13 +6760,19 @@ public class StudyController extends BaseStudyController
             List<DataViewProvider.Type> visibleDataTypes = new ArrayList<DataViewProvider.Type>();
             for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
             {
+                Map<String, Object> info = new HashMap<String, Object>();
                 boolean visible = getCheckedState(type.getName(), props, type.isShowByDefault());
-                types.put(type.getName(), visible);
+
+                info.put("name", type.getName());
+                info.put("visible", visible);
+
+                types.put(type.getName(), info);
 
                 if (visible)
                     visibleDataTypes.add(type);
             }
-            response.put("types", new JSONObject(types));
+
+            response.put("types", new JSONArray(types.values()));
 
             String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
             if (dateFormat == null)
