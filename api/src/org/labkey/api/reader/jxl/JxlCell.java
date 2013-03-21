@@ -116,7 +116,15 @@ public class JxlCell implements Cell
     @Override
     public int getCachedFormulaResultType()
     {
-        throw new UnsupportedOperationException("method not yet supported");
+        CellType type = _cell.getType();
+        if (type.equals(CellType.BOOLEAN_FORMULA))
+            return Cell.CELL_TYPE_BOOLEAN;
+        else if (type.equals(CellType.DATE_FORMULA) || type.equals(CellType.NUMBER_FORMULA))
+            return Cell.CELL_TYPE_NUMERIC;
+        else if (type.equals(CellType.STRING_FORMULA))
+            return Cell.CELL_TYPE_STRING;
+
+        throw new IllegalStateException("Only formula cells have cached results");
     }
 
     @Override
