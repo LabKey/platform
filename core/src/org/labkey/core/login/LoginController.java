@@ -358,6 +358,14 @@ public class LoginController extends SpringActionController
                                     "Note: Passwords are case sensitive; make sure your Caps Lock is off.";
                         }
                         break;
+                    case LoginPaused:
+                        if (null != form.getEmail() || null != form.getPassword())
+                        {
+                            new ValidEmail(form.getEmail());
+                            form.errorHtml = "Due to the number of recent failed login attempts, authentication has been temporarily paused.<br><br>\n" +
+                                    "Try again in one minute.";
+                        }
+                        break;
                     default:
                         throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
                 }
@@ -756,6 +764,7 @@ public class LoginController extends SpringActionController
         {
         }
     }
+
 
     public static final String PASSWORD1_TEXT_FIELD_NAME = "password";
     public static final String PASSWORD2_TEXT_FIELD_NAME = "password2";

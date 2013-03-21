@@ -61,65 +61,39 @@
         {
             for (ListDefinition list : new TreeSet<ListDefinition>(lists.values()))
             {
-    %>
-        <tr><td>
-            <a href="<%=PageFlowUtil.filter(list.urlShowData())%>"><%=PageFlowUtil.filter(list.getName())%></a>
-            <%
                 links = new NavTree("");
-
                 links.addChild("View Data", list.urlShowData());
                 if (c.hasPermission(user, DesignListPermission.class))
                 {
-                    if (!isBegin)
-                    {
-%>
-                        <span style="margin-right: -8px;">|</span>
-<%
-                        links.addChild("View Design", list.urlShowDefinition());
-                    }
-                    else
-                    {
-%>
-                        <td><labkey:link href="<%=list.urlShowDefinition()%>" text="view design" /></td>
-<%
-                    }
+                    links.addChild("View Design", list.urlShowDefinition());
                 }
                 if (AuditLogService.get().isViewable())
                 {
-                    if (!isBegin)
-                    {
-                        links.addChild("View History", list.urlShowHistory());
-                    }
-                    else
-                    {
-%>
-                        <td><labkey:link href="<%=list.urlShowHistory()%>" text="view history" /></td>
-<%
-                    }
+                    links.addChild("View History", list.urlShowHistory());
                 }
                 if (c.hasPermission(user, DesignListPermission.class))
                 {
-                    if (!isBegin)
-                    {
-                        links.addChild("Delete List", list.urlFor(ListController.DeleteListDefinitionAction.class));
-                    }
-                    else
-                    {
-%>
-                        <td><labkey:link href="<%=list.urlFor(ListController.DeleteListDefinitionAction.class)%>" text="delete list" /></td>
-<%
-                    }
+                    links.addChild("Delete List", list.urlFor(ListController.DeleteListDefinitionAction.class));
                 }
-
+                %><tr><%
                 if (!isBegin && links.getChildren().length > 1)
                 {
                     pmw = new PopupMenuView(links);
                     pmw.setButtonStyle(PopupMenu.ButtonStyle.TEXT);
+                    %><td><%
                     include(pmw, out);
+                    %></td><%
                 }
-            %>
-        </td></tr>
-    <%
+                %><td><a href="<%=PageFlowUtil.filter(list.urlShowData())%>"><%=PageFlowUtil.filter(list.getName())%></a></td><%
+                if (isBegin)
+                {
+                    for (NavTree link : links.getChildren())
+                    {
+                        // the toLowerCase() is just for the ListTest, fix the test
+                        %><td><labkey:link href="<%=text(link.getHref())%>" text="<%=text(link.getText().toLowerCase())%>" /></td><%
+                    }
+                }
+                %></tr><%
             }
         }
     %>

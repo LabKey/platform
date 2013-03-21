@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.reports.ExternalScriptEngine" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -33,7 +32,7 @@
 <style type="text/css">
 
     .bmenu {
-        background-image: url(<%=context.getContextPath() + "/_icons/exe.png"%>) !important;
+        background-image: url(<%=h(context.getContextPath() + "/_icons/exe.png")%>) !important;
     }
 
 </style>
@@ -86,15 +85,15 @@
                 name: R_ENGINE_NAME,
                 extensions: R_EXTENSIONS,
                 <% if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING)) { %>
-                    machine:'<%=RReport.DEFAULT_R_MACHINE%>',
+                    machine:'<%=text(RReport.DEFAULT_R_MACHINE)%>',
                     port:<%=RReport.DEFAULT_R_PORT%>,
                 <% } else { %>
-                    exeCommand:'<%=RReport.DEFAULT_R_CMD%>',
+                    exeCommand:'<%=text(RReport.DEFAULT_R_CMD)%>',
                     <% if (!StringUtils.isEmpty(RReport.getDefaultRPath())) { %>
-                        exePath: '<%=RReport.getDefaultRPath()%>',
+                        exePath: <%=q(RReport.getDefaultRPath())%>,
                     <% } %>
                 <% }%>
-                outputFileName: <%= org.labkey.api.util.PageFlowUtil.jsString(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
+                outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
                 external: true,
                 enabled: true,
                 languageName:'R'});}}}
@@ -108,7 +107,7 @@
                 extensions: PERL_EXTENSIONS,
                 external: true,
                 <% if (!StringUtils.isEmpty(ExternalScriptEngineReport.getDefaultPerlPath())) { %>
-                    exePath: '<%=ExternalScriptEngineReport.getDefaultPerlPath()%>',
+                    exePath: <%=q(ExternalScriptEngineReport.getDefaultPerlPath())%>,
                 <% } %>
                 enabled: true,
                 languageName:'Perl'});}}}
@@ -116,7 +115,7 @@
 
 
         var con = new Ext.data.HttpProxy(new Ext.data.Connection({
-                url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSummary", '<%=context.getContainer().getPath()%>'),
+                url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSummary", <%=q(context.getContainer().getPath())%>),
                 method: 'GET'
             }));
 
