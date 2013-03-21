@@ -568,7 +568,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     },
 
     updateSubmitInfo : function() {
-        var msg = "";
+        var msg = this.surveyLabel == null ? "-" + this.labelCaption : "";
         for (var name in this.validStatus)
         {
             if (!this.validStatus[name])
