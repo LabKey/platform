@@ -1358,6 +1358,7 @@ issues/resources/schemas/dbscripts/postgresql/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-11.20-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-12.30-12.31.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-12.31-12.32.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-12.32-12.33.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-1.00.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-10.10.sql -text
@@ -1384,6 +1385,7 @@ issues/resources/schemas/dbscripts/sqlserver/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-11.20-11.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-12.30-12.31.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-12.31-12.32.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-12.32-12.33.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.81.sql -text

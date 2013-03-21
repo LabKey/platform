@@ -132,6 +132,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scope: this
         });
 
+        this.helpBtn = Ext4.create('Ext.button.Button', {
+            text: "help",
+            handler: function(){
+                this.helpWindow.show();
+            },
+            scope: this
+        });
+
         this.saveBtn = Ext4.create('Ext.button.Button', {
             text: "Save",
             hidden: this.hideSave,
@@ -158,6 +166,25 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             cls: 'data-window',
             layout: 'fit',
             items: [this.getSavePanel()],
+            listeners: {
+                scope: this,
+                show: function(){
+                    this.viewPanel.getEl().mask();
+                },
+                hide: function(){
+                    this.viewPanel.getEl().unmask();
+                }
+            }
+        });
+
+        this.helpWindow = Ext4.create('Ext.window.Window', {
+            title: 'Help',
+            width: 300,
+            autoHeight : true,
+            closeAction: 'hide',
+            cls: 'data-window',
+            layout: 'fit',
+            items: [this.getHelpPanel()],
             listeners: {
                 scope: this,
                 show: function(){
@@ -227,8 +254,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             }
 
+            tbarItems.push('->');
+            tbarItems.push(this.helpBtn);
+
             if(this.canEdit){
-                tbarItems.push('->');
                 tbarItems.push(this.saveBtn);
             }
             
@@ -963,6 +992,31 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
 
         return this.savePanel;
+    },
+
+    getHelpPanel: function(){
+        var helpHtml = '<ul>';
+        helpHtml += '<li>- <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reportsAndViews">Reports, Views, and Charts</a></li>';
+        helpHtml += '<li>- <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=boxplot">Box Plots</a></li>';
+        helpHtml += '<li>- <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=scatterplot">Scatter Plots</a></li>';
+        helpHtml += '</ul>';
+
+        this.helpPanel = Ext4.create('Ext.panel.Panel', {
+            html        : helpHtml,
+            hidden      : false,
+            preventHeader : true,
+            border      : false,
+            frame       : false,
+            buttons     : [{
+                text: 'close',
+                handler: function(){
+                    this.helpWindow.hide();
+                },
+                scope: this
+            }]
+        });
+
+        return this.helpPanel;
     },
 
     renderDataGrid : function(renderTo) {

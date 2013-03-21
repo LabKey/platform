@@ -33,7 +33,7 @@ public class ManageWebPart extends FilesWebPart
 
     public ManageWebPart(Container c, String fileSet)
     {
-        super(c, fileSet);
+        super(c, fileSet, null);
     }
 
 }
