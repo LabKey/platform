@@ -15,6 +15,7 @@
  */
 package org.labkey.query.audit;
 
+import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.data.DataMapColumn;
@@ -70,7 +71,16 @@ public class QueryUpdateAuditViewFactory extends SimpleAuditViewFactory
 
     private static final QueryUpdateAuditViewFactory INSTANCE = new QueryUpdateAuditViewFactory();
 
-    private QueryUpdateAuditViewFactory() {}
+    private QueryUpdateAuditViewFactory()
+    {
+        AuditLogEvent event = new AuditLogEvent();
+
+        event.setContainerId(ContainerManager.getRoot().getId());
+        event.setEventType(QUERY_UPDATE_AUDIT_EVENT);
+        event.setComment("Service startup");
+
+        AuditLogService.get().addEvent(event);
+    }
 
     public static QueryUpdateAuditViewFactory getInstance()
     {
