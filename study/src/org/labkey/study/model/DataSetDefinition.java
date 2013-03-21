@@ -1673,6 +1673,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             String keyColumnName = getKeyPropertyName();
             ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
             ColumnInfo lsidColumn = table.getColumn("lsid");
+            ColumnInfo seqnumColumn = table.getColumn("sequenceNum");
 
             if (null == input && null != builder)
                 input = builder.getDataIterator(context);
@@ -1687,21 +1688,22 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // select all columns except those we explicity calculate (e.g. lsid)
             for (int in=1 ; in<=input.getColumnCount() ; in++)
             {
+                ColumnInfo inputColumn = input.getColumnInfo(in);
                 ColumnInfo match = inputMatches.get(in);
 
                 if (null != match)
                 {
-                    if (match == lsidColumn)
+                    inputColumn.setPropertyURI(match.getPropertyURI());
+
+                    if (match == lsidColumn || match==seqnumColumn)
                         continue;
+
                     if (match == keyColumn && isManagedKey && !allowImportManagedKey)
                     {
                         // TODO silently ignore or add error?
-                            continue;
+                        continue;
                     }
-                }
 
-                if (null != match)
-                {
                     int out;
                     if (match == keyColumn && getKeyManagementType() == KeyManagementType.None)
                     {
@@ -1726,17 +1728,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
             }
 
-            Map<String,Integer> fromMap = DataIteratorUtil.createColumnAndPropertyMap(it);
+            Map<String,Integer> inputMap = DataIteratorUtil.createColumnAndPropertyMap(input);
+            Map<String,Integer> outputMap = DataIteratorUtil.createColumnAndPropertyMap(it);
 
             // find important columns in the input (CONSIDER: use standard etl alt
-            Integer indexPTID = fromMap.get(DataSetDefinition.getParticipantIdURI());
-            Integer indexKeyProperty = null==keyColumn ? null : fromMap.get(keyColumn.getPropertyURI());
-            Integer indexVisitDate = fromMap.get(DataSetDefinition.getVisitDateURI());
-            Integer indexReplace = fromMap.get("replace");
+            Integer indexPTID = outputMap.get(DataSetDefinition.getParticipantIdURI());
+            Integer indexKeyProperty = null==keyColumn ? null : outputMap.get(keyColumn.getPropertyURI());
+            Integer indexVisitDate = outputMap.get(DataSetDefinition.getVisitDateURI());
+            Integer indexReplace = outputMap.get("replace");
 
             // For now, just specify null for sequence num index... we'll add it below
-            // TODO: clean this up
-            it.setSpecialInputColumns(indexPTID, null, indexVisitDate, indexKeyProperty);
+            it.setSpecialOutputColumns(indexPTID, null, indexVisitDate, indexKeyProperty);
             it.setTimepointType(timetype);
 
             /* NOTE: these columns must be added in dependency order
@@ -1767,15 +1769,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // SequenceNum
             //
 
-            Integer indexSequenceNum = fromMap.get(DataSetDefinition.getSequenceNumURI());
-            Integer indexVisitDateColumn = indexVisitDate;
-            if (null == indexVisitDateColumn)
-            {
-                String name = getVisitDateColumnName();
-                if (null != name)
-                    indexVisitDateColumn = fromMap.get(name);
-            }
-            it.indexSequenceNumOutput = it.translateSequenceNum(indexSequenceNum, indexVisitDateColumn);
+            Integer indexVisitDateColumnInput = null;
+            String visitDateColumnName = getVisitDateColumnName();
+            if (null != visitDateColumnName)
+                indexVisitDateColumnInput = inputMap.get(visitDateColumnName);
+            Integer indexSequenceNumColumnInput = inputMap.get("sequencenum");
+            it.indexSequenceNumOutput = it.translateSequenceNum(indexSequenceNumColumnInput, indexVisitDateColumnInput);
 
 
             if (null == indexKeyProperty)
@@ -1832,20 +1831,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             it.addParticipantSequenceNum();
             
-            // QCSTATE
-
-            if (needsQC)
-            {
-                String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
-                Integer indexInputQCState = fromMap.get(qcStatePropertyURI);
-                Integer indexInputQCText = fromMap.get(DataSetTableImpl.QCSTATE_LABEL_COLNAME);
-                if (null == indexInputQCState)
-                {
-                    int indexText = null==indexInputQCText ? -1 : indexInputQCText;
-                    it.addQCStateColumn(indexText, qcStatePropertyURI, defaultQC);
-                }
-            }
-
 
             //
             // LSID
@@ -1853,6 +1838,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // NOTE have to add LSID after columns it depends on
             int indexLSID = it.addLSID();
+
+
+            // QCSTATE
+
+            if (needsQC)
+            {
+                String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
+                Integer indexInputQCState = inputMap.get(qcStatePropertyURI);
+                Integer indexInputQCText = inputMap.get(DataSetTableImpl.QCSTATE_LABEL_COLNAME);
+                if (null == indexInputQCState)
+                {
+                    int indexText = null==indexInputQCText ? -1 : indexInputQCText;
+                    it.addQCStateColumn(indexText, qcStatePropertyURI, defaultQC);
+                }
+            }
 
 
             //
@@ -1925,7 +1925,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             _maxPTIDLength = getTableInfo(this.user, false).getColumn("ParticipantID").getScale();
         }
 
-        void setSpecialInputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty)
+        void setSpecialOutputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty)
         {
             this.indexPtidOutput = indexPTID;
             this.indexSequenceNumOutput = indexSequenceNum;
@@ -2047,14 +2047,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 //            return replaceOrAddColumn(index, existing, remapColumn);
 //        }
 
-        int translateSequenceNum(Integer indexSeq, Integer indexDate)
+        int translateSequenceNum(Integer indexSequenceNumInput, Integer indexVisitDateInput)
         {
-            ColumnInfo col = null!=indexSeq ? getColumnInfo(indexSeq) : null;
-            if (null == col)
-                col = new ColumnInfo("SequenceNum", JdbcType.DOUBLE);
+            ColumnInfo col = new ColumnInfo("SequenceNum", JdbcType.DOUBLE);
             SequenceNumImportHelper snih = new SequenceNumImportHelper(_study, DataSetDefinition.this);
-            Callable call = snih.getCallable(getInput(), indexSeq, indexDate);
-            return replaceOrAddColumn(indexSeq, col, call);
+            Callable call = snih.getCallable(getInput(), indexSequenceNumInput, indexVisitDateInput);
+            return addColumn(col, call);
         }
 
         int addLSID()
