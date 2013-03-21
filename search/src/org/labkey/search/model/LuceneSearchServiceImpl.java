@@ -21,9 +21,11 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -620,6 +622,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return null;
     }
 
+
+    // We were using StringField.TYPE_NOT_STORED for identifiers, but that resulted in exceptions with phrase queries,
+    // see #17174. This alternate approach indexes identifiers WITH postion information. There must be a way to index
+    // identifiers without postition info but exclude them from phrase queries, but it all makes my head hurt too much.
+    private final static FieldType INDEXED_IDENTIFIER = new FieldType();
+
+    static
+    {
+        INDEXED_IDENTIFIER.setIndexed(true);
+        INDEXED_IDENTIFIER.setOmitNorms(true);
+        INDEXED_IDENTIFIER.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
+        INDEXED_IDENTIFIER.setTokenized(false);
+    }
 
     private void addIdentifiers(Document doc, Map<String, ?> props, PROPERTY property, FIELD_NAME fieldName, @Nullable String standardIdentifiers)
     {
