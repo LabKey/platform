@@ -19,6 +19,7 @@ package org.labkey.api.files.view;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
@@ -80,9 +81,9 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         this(c, JSP);
     }
 
-    public FilesWebPart(Container c, String jspPath)
+    public FilesWebPart(Container c, @Nullable String jspPath)
     {
-        super(jspPath);
+        super(jspPath == null ? JSP : jspPath);
         container = c;
         setModelBean(new FilesForm());
         setFileSet(null);
@@ -97,7 +98,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         createConfig();
     }
 
-    protected FilesWebPart(Container c, String fileSet, String jspPath)
+    protected FilesWebPart(Container c, String fileSet, @Nullable String jspPath)
     {
         this(c, jspPath);
 
