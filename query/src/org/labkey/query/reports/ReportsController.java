@@ -738,6 +738,14 @@ public class ReportsController extends SpringActionController
                 throw new IllegalArgumentException("The specified report is not based upon a script and therefore cannot be executed.");
 
             //
+            // used a shared sesssion if specfied and the feature is turned on
+            //
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            {
+                getViewContext().put(Report.renderParam.reportSessionId.name(), form.getReportSessionId());
+            }
+
+            //
             // execute the script
             //
             Report.ScriptExecutor exec = (Report.ScriptExecutor) report;
