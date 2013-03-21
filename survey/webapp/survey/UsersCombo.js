@@ -10,6 +10,9 @@ Ext4.define('LABKEY.ext4.UsersCombo', {
     extend  : 'Ext.form.field.ComboBox',
     alias   : 'widget.lk-userscombo',
 
+    dirty   : false,
+    initialValue : null,
+
     constructor : function(config){
 
         Ext4.applyIf(config, {
@@ -34,10 +37,25 @@ Ext4.define('LABKEY.ext4.UsersCombo', {
 
         this.getStore().on('load', function() {
             if (this.initialValue)
-                this.setValue(this.initialValue);
+            {
+                this.setValue(this.initialValue, null);
+                this.dirty = false;
+            }
         }, this);
 
+        this.on('change', function(cmp, newValue, oldValue) {
+            this.dirty = true;
+        });
+
         this.callParent();
+    },
+
+    isDirty : function() {
+        return this.dirty;
+    },
+
+    resetOriginalValue : function() {
+        this.dirty = false;
     },
 
     setValue : function(value, doSelect) {

@@ -592,7 +592,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     },
 
     isSurveyDirty : function() {
-        //console.log(this.getFormDirtyValues());
+        console.log(this.getFormDirtyValues());
         return this.getForm().isDirty();
     },
 

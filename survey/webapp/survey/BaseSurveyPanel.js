@@ -46,7 +46,6 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                     border: false,
                     flex: 1,
                     autoScroll: true,
-                    cls : 'iScroll', // webkit custom scroll bars
                     header: this.surveyLayout == 'card' ? false : (section.header != undefined ? section.header : true),
                     sectionPanel: true, // marker for looking for a components parent section
                     completedQuestions: 0, // counter for the section header to show progress when a panel is collapsed
