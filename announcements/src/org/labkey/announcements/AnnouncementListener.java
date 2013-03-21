@@ -40,10 +40,12 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
 {
     private static Logger _log = Logger.getLogger(AnnouncementListener.class);
 
+    @Override
     public void containerCreated(Container c, User user)
     {
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
     }
@@ -54,6 +56,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
     }
     
     // Note: Attachments are purged by AttachmentServiceImpl.containerDeleted()
+    @Override
     public void containerDeleted(Container c, User user)
     {
         try
@@ -67,10 +70,12 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
     }
 
 
+    @Override
     public void userAddedToSite(User user)
     {
     }
 
+    @Override
     public void userDeletedFromSite(User user)
     {
         //when user is deleted from site, remove any corresponding record from EmailPrefs table.
@@ -85,11 +90,13 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
         }
     }
 
+    @Override
     public void userAccountDisabled(User user)
     {
         //TODO: what should go here?
     }
 
+    @Override
     public void userAccountEnabled(User user)
     {
         //TODO: what should go here?
@@ -99,6 +106,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
     {
     }
 
+    @Override
     public void principalDeletedFromGroup(Group g, UserPrincipal p)
     {
         if (g.isProjectGroup() && p instanceof User)

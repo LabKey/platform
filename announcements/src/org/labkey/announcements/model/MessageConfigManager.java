@@ -16,6 +16,7 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
@@ -198,7 +199,7 @@ public class MessageConfigManager
     }
 
     //delete all user records regardless of container
-    public static void deleteUserEmailPref(User user, List<Container> containerList)
+    public static void deleteUserEmailPref(User user, @Nullable List<Container> containerList)
     {
         try
         {
