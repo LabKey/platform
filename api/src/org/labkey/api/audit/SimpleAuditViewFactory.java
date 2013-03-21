@@ -227,7 +227,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
             properties.put(largest, "contents too large to display");
     }
 
-    protected void ensureProperties(User user, Domain domain, PropertyInfo[] properties) throws ChangePropertyDescriptorException
+    protected boolean ensureProperties(User user, Domain domain, PropertyInfo[] properties) throws ChangePropertyDescriptorException
     {
         if (domain != null)
         {
@@ -265,7 +265,9 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
             if (dirty)
                 domain.save(user);
 
+            return dirty;
         }
+        return false;
     }
 
     public static class PropertyInfo
