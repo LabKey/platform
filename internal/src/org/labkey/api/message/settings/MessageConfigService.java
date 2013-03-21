@@ -25,7 +25,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 18, 2011
  * Time: 2:51:40 PM
@@ -110,22 +109,9 @@ public class MessageConfigService
      */
     public interface UserPreference
     {
-        public String getLastModifiedByName();
-        public Integer getLastModifiedBy();
-        public String getEmail();
-        public String getContainer();
-        public String getEmailOption();
-        public String getFirstName();
-        public String getLastName();
-        public String getDisplayName();
-        public Integer getEmailFormatId();
+        public User getUser();
         public Integer getEmailOptionId();
         public void setEmailOptionId(Integer id);
-        public int getUserId();
-        public int getPageTypeId();
-        public boolean isProjectMember();
-        public User getUser();
-        public String getType();
         public String getSrcIdentifier();
     }
 
