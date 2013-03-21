@@ -94,22 +94,34 @@ public class MessageConfigManager
         }
     }
 
-    // Returns email preferences for all active users with read permissions to this container.  A user could have multiple
-    // preferences (one for each srcIdentifier).  If a user hasn't expressed any preferences they'll still get one preference
+    // Returns email preferences for all active users with read permissions to this container. A user could have multiple
+    // preferences (one for each srcIdentifier). If a user hasn't expressed any preferences they'll still get one preference
     // representing the container default.
     public static EmailPref[] getUserEmailPrefs(Container c, String type)
     {
         SQLFragment sql = new SQLFragment();
         List<EmailPref> prefs = new ArrayList<EmailPref>();
 
-        sql.append("SELECT u.userId, email, firstName, lastName, displayName, emailOptionId, emailFormatId, type, lastModifiedBy, container, COALESCE(srcIdentifier, ?) AS srcIdentifier FROM ");
+        // This query returns one row for every site user, left joined to that user's folder preference (null if no preference has been selected, in which case the caller will fill in the default)
+        sql.append("SELECT u.UserId, EmailOptionId, ? AS SrcIdentifier FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" LEFT JOIN ");
-        sql.append(_comm.getTableInfoEmailPrefs(), "prefs").append(" ON u.userId = prefs.userId ");
-        sql.append("AND type = ? AND container = ?");
+        sql.append(_comm.getTableInfoEmailPrefs(), "prefs").append(" ON u.UserId = prefs.UserId ");
+        sql.append("AND Type = ? AND Container = ? AND Container = SrcIdentifier");
         sql.add(c);
         sql.add(type);
         sql.add(c);
 
+        sql.append("\nUNION\n");
+
+        // This query returns one row for every thread preference
+        sql.append("SELECT u.UserId, EmailOptionId, SrcIdentifier FROM ");
+        sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" INNER JOIN ");
+        sql.append(_comm.getTableInfoEmailPrefs(), "prefs").append(" ON u.UserId = prefs.UserId ");
+        sql.append("AND Type = ? AND Container = ? AND Container <> SrcIdentifier");
+        sql.add(type);
+        sql.add(c);
+
+        // Only return preferences for active users with read permissions in this folder
         for (EmailPref ep : new SqlSelector(_comm.getSchema(), sql).getCollection(EmailPref.class))
         {
             User user = ep.getUser();
@@ -257,31 +269,12 @@ public class MessageConfigManager
     {
         String _container;
         int _userId;
-        String _email;
-        String _firstName;
-        String _lastName;
-        String _displayName;
         Integer _emailOptionId;
         Integer _emailFormatId;
-        String _emailOption;
         Integer _lastModifiedBy;
-        String _lastModifiedByName;
         String _srcIdentifier;
         String _type;
-
-        boolean _projectMember;
-
         int _pageTypeId;
-
-        public String getLastModifiedByName()
-        {
-            return _lastModifiedByName;
-        }
-
-        public void setLastModifiedByName(String lastModifiedByName)
-        {
-            _lastModifiedByName = lastModifiedByName;
-        }
 
         public Integer getLastModifiedBy()
         {
@@ -291,16 +284,6 @@ public class MessageConfigManager
         public void setLastModifiedBy(Integer lastModifiedBy)
         {
             _lastModifiedBy = lastModifiedBy;
-        }
-
-        public String getEmail()
-        {
-            return _email;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"}) public void setEmail(String email)
-        {
-            _email = email;
         }
 
         public String getContainer()
@@ -313,46 +296,7 @@ public class MessageConfigManager
             _container = container;
         }
 
-        public String getEmailOption()
-        {
-            return _emailOption;
-        }
-
-        public void setEmailOption(String emailOption)
-        {
-            _emailOption = emailOption;
-        }
-
-        public String getFirstName()
-        {
-            return _firstName;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"}) public void setFirstName(String firstName)
-        {
-            _firstName = firstName;
-        }
-
-        public String getLastName()
-        {
-            return _lastName;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"}) public void setLastName(String lastName)
-        {
-            _lastName = lastName;
-        }
-
-        public String getDisplayName()
-        {
-            return _displayName;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"}) public void setDisplayName(String displayName)
-        {
-            _displayName = displayName;
-        }
-
+        @SuppressWarnings({"UnusedDeclaration"})
         public Integer getEmailFormatId()
         {
             return _emailFormatId;
@@ -363,16 +307,19 @@ public class MessageConfigManager
             _emailFormatId = emailFormatId;
         }
 
+        @Override
         public Integer getEmailOptionId()
         {
             return _emailOptionId;
         }
 
+        @Override
         public void setEmailOptionId(Integer emailOptionId)
         {
             _emailOptionId = emailOptionId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public int getUserId()
         {
             return _userId;
@@ -393,16 +340,7 @@ public class MessageConfigManager
             _pageTypeId = pageTypeId;
         }
 
-        public boolean isProjectMember()
-        {
-            return _projectMember;
-        }
-
-        public void setProjectMember(boolean projectMember)
-        {
-            _projectMember = projectMember;
-        }
-
+        @Override
         public User getUser()
         {
             return UserManager.getUser(_userId);
@@ -418,6 +356,7 @@ public class MessageConfigManager
             _type = type;
         }
 
+        @Override
         public String getSrcIdentifier()
         {
             return _srcIdentifier;
@@ -431,7 +370,7 @@ public class MessageConfigManager
         @Override
         public String toString()
         {
-            return getEmail() + " " + _emailOptionId + " " + _srcIdentifier;
+            return getUser().getEmail() + " " + _emailOptionId + " " + _srcIdentifier;
         }
     }
 
