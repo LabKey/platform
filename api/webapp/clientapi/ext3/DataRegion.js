@@ -3482,7 +3482,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     tpl: new Ext.XTemplate('<tpl for=".">' +
                         '<span class="labkey-link" ext:qtip="Click the label to select only this row.  ' +
                         'Click the checkbox to toggle this row and preserve other selections.">' +
-                        '{[!Ext.isEmpty(values["displayValue"]) ? values["displayValue"] : "[Blank]"]}' +
+                        '{[!Ext.isEmpty(values["displayValue"]) ? Ext.util.Format.htmlEncode(values["displayValue"]) : "[Blank]"]}' +
                         '</span></tpl>')
                 }
             )],
