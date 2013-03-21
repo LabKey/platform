@@ -118,11 +118,14 @@ public class LabKeyScope extends DbScope
         {
             String lowerName = schemaName.toLowerCase();
 
-            if (!lowerName.equals(schemaName))
+            if (!lowerName.equals(schema.getName()))
                 resource = DbSchema.getSchemaResource(lowerName);
 
             if (null == resource)
+            {
+                LOG.warn("no schema metadata xml found for schema '" + schemaName + "'");
                 resource = new DbSchemaResource(schema);
+            }
         }
 
         schema.setResource(resource);
