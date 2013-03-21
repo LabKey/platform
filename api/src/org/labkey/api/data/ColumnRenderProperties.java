@@ -84,6 +84,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.tsvFormatString = tsvFormatString;
         to.label = label;
         to.shortLabel = shortLabel;
+        to.description = description;
         to.hidden = hidden;
         to.shownInInsertView = shownInInsertView;
         to.shownInUpdateView = shownInUpdateView;
