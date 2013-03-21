@@ -623,22 +623,26 @@ public class AssayController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
+            boolean duplicate = false;
             AssayFileWriter writer = new AssayFileWriter();
             try
             {
                 File targetDirectory = writer.ensureUploadDirectory(getContainer());
-                String fileName = form.getJsonObject().getString("fileName");
-                File f = new File(targetDirectory, fileName);
-                if (f.exists())
+                String fileName = form.getJsonObject() == null ? null : form.getJsonObject().getString("fileName");
+                if (fileName != null)
                 {
-                    return new ApiSimpleResponse("duplicate", true);
+                    File f = new File(targetDirectory, fileName);
+                    if (f.exists())
+                    {
+                        duplicate = true;
+                    }
                 }
             }
             catch (ExperimentException e)
             {
                 throw new AbstractFileUploadAction.UploadException(e.getMessage(), HttpServletResponse.SC_NOT_FOUND);
             }
-            return new ApiSimpleResponse("duplicate", false);
+            return new ApiSimpleResponse("duplicate", duplicate);
         }
     }
 
