@@ -56,6 +56,7 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainType;
+import org.labkey.experiment.api.property.DomainPropertyImpl;
 import org.labkey.experiment.api.property.LookupValidator;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RangeValidator;
@@ -324,7 +325,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public Set<Class> getIntegrationTests()
     {
         return new HashSet<Class>(Arrays.asList(
-            OntologyManager.TestCase.class));
+            OntologyManager.TestCase.class,
+            DomainPropertyImpl.TestCase.class));
     }
 
     @NotNull

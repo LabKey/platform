@@ -16,14 +16,17 @@
 
 package org.labkey.experiment.api.property;
 
+import junit.framework.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -673,5 +676,143 @@ public class DomainPropertyImpl implements DomainProperty
     public String toString()
     {
         return super.toString() + _pd.getPropertyURI();
+    }
+
+    public static class TestCase extends Assert
+    {
+        private PropertyDescriptor _pd;
+        private DomainPropertyImpl _dp;
+
+        @Test
+        public void testUpdateDomainPropertyFromDescriptor() throws Exception
+        {
+            Container c = ContainerManager.ensureContainer("/_DomainPropertyImplTest");
+            String domainURI = new Lsid("Junit", "DD", "Domain1").toString();
+            Domain d = PropertyService.get().createDomain(c, domainURI, "Domain1");
+
+            resetProperties(d, domainURI, c);
+
+            // verify no change
+            OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
+            assertFalse(_dp.isDirty());
+            assertFalse(_dp.isSchemaChanged());
+
+            // change a property
+            _pd.setProtected(true);
+            OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
+            assertTrue(_dp.isDirty());
+            assertFalse(_dp.isSchemaChanged());
+            assertTrue(_dp.isProtected() == _pd.isProtected());
+
+            // change the schema
+            resetProperties(d, domainURI, c);
+            _pd.setRangeURI("http://www.w3.org/2001/XMLSchema#double");
+            OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
+            assertTrue(_dp.isDirty());
+            assertTrue(_dp.isSchemaChanged());
+            assertTrue(StringUtils.equalsIgnoreCase(_dp.getRangeURI(), _pd.getRangeURI()));
+
+            // verify no change when setting value to the same value as it was
+            resetProperties(d, domainURI, c);
+            _pd.setRangeURI("http://www.w3.org/2001/XMLSchema#int");
+            _pd.setProtected(false);
+            OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
+            assertFalse(_dp.isDirty());
+            assertFalse(_dp.isSchemaChanged());
+
+            // verify Lookup is set to null with null schema
+            resetProperties(d, domainURI, c);
+            verifyLookup(null, "lkSchema", null, true);
+
+            // verify Lookup is set to null with null query
+            resetProperties(d, domainURI, c);
+            verifyLookup(null, null, "lkQuery",true);
+
+            // verify Lookup is set to null with invalid container
+            resetProperties(d, domainURI, c);
+            verifyLookup("bogus", null, "lkQuery",true);
+
+            // verify Lookup is set with valid schema and query
+            resetProperties(d, domainURI, c);
+            verifyLookup(null, "lkSchema", "lkQuery",true);
+
+            // verify Lookup is set with valid container, schema and query
+            resetProperties(d, domainURI, c);
+            verifyLookup(c.getId(), "lkSchema1", "lkQuery2",true);
+
+            // no cleanup as we never persisted anything
+        }
+
+        private void verifyLookup(String containerId, String schema, String query, Boolean expectedDirty)
+        {
+            _pd.setLookupContainer(containerId);
+            _pd.setLookupQuery(query);
+            _pd.setLookupSchema(schema);
+            OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
+            assertTrue(_dp.isDirty() == expectedDirty);
+            assertFalse(_dp.isSchemaChanged());
+
+            // verify the lookup object returned
+            Lookup l = _dp.getLookup();
+
+            if (l == null)
+            {
+                // lookup can be null if we specified a containerId that is invalid or
+                // we specified a valid containerId (including null) but schema or query is null
+                if (containerId != null && null == ContainerManager.getForId(containerId))
+                    assertTrue(true);
+                else if (query == null || schema == null)
+                    assertTrue(true);
+                else
+                    assertTrue(false);
+            }
+            else
+            {
+                if (containerId != null)
+                    assertTrue(l.getContainer().getId() == _pd.getLookupContainer());
+
+                assertTrue(l.getQueryName() == _pd.getLookupQuery());
+                assertTrue(l.getSchemaName() == _pd.getLookupSchema());
+            }
+        }
+
+        private void resetProperties(Domain d, String domainUri, Container c)
+        {
+            _pd = getPropertyDescriptor(c, domainUri);
+            _dp = (DomainPropertyImpl) d.addProperty();
+            _pd.copyTo(_dp.getPropertyDescriptor());
+        }
+
+
+        private PropertyDescriptor getPropertyDescriptor(Container c, String domainURI)
+        {
+            PropertyDescriptor pd = new PropertyDescriptor();
+            pd = new PropertyDescriptor();
+            pd.setPropertyURI(domainURI + ":column");
+            pd.setName("column");
+            pd.setLabel("label");
+            pd.setConceptURI(null);
+            pd.setRangeURI("http://www.w3.org/2001/XMLSchema#int");
+            pd.setContainer(c);
+            pd.setDescription("description");
+            pd.setURL(StringExpressionFactory.createURL((String)null));
+            pd.setImportAliases(null);
+            pd.setRequired(false);
+            pd.setHidden(false);
+            pd.setShownInInsertView(true);
+            pd.setShownInUpdateView(true);
+            pd.setShownInDetailsView(true);
+            pd.setDimension(false);
+            pd.setMeasure(true);
+            pd.setFormat(null);
+            pd.setMvEnabled(false);
+            pd.setLookupContainer(c.getId());
+            pd.setLookupSchema("lkSchema");
+            pd.setLookupQuery("lkQuery");
+            pd.setFacetingBehaviorType(FacetingBehaviorType.AUTOMATIC);
+            pd.setProtected(false);
+            pd.setExcludeFromShifting(false);
+            return pd;
+        }
     }
 }
