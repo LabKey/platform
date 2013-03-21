@@ -487,7 +487,19 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         if (assay.isAllowTransformationScript())
         {
             _transformScriptTable = new FlexTable();
-            final FlexTableRowDragController tableRowDragController = new FlexTableRowDragController(_rootPanel);
+            final FlexTableRowDragController tableRowDragController = new FlexTableRowDragController(_rootPanel)
+            {
+                @Override
+                public void dragEnd()
+                {
+                    super.dragEnd();
+                    // Update the object with the new ordering
+                    if (_assay != null)
+                    {
+                        syncTransformScripts(_assay);
+                    }
+                }
+            };
             
             for (String transformScriptPath : assay.getProtocolTransformScripts())
             {
