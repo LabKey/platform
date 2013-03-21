@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
+import java.security.SecureRandom;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -66,7 +67,7 @@ public class GUID implements Serializable
     private static final int time_hi_mask =   0x00000fff;
 
     private static final Object lock = new Object();
-    private static final Random rand = new Random(getSeed());
+    private static final Random rand = createRandom();
     private static final String clock_seq_and_node = genClockSeqAndReserved() + "-" + genNodeIdentifier();
     private static long msTimer = System.currentTimeMillis();
     private static int nanoCounter = 0xffffffff;
@@ -252,22 +253,12 @@ public class GUID implements Serializable
     }
 
 
-    private static long getSeed()
+    private static Random createRandom()
     {
-        long a = System.currentTimeMillis() * 104729L;
-        try {Thread.sleep(1);} catch(Exception x){;}
-        long b = 0;
-        long bit;
-        for (int i=0 ; i<64 ;i++)
-        {
-            try {Thread.sleep(1);} catch(Exception x){;}
-            b <<= 1;
-            bit = ((System.nanoTime() * 101873) % 60617) & 0x00000001;
-            b |= bit;
-        }
-        long seed;
-        seed = a ^ b;
-        return seed;
+        SecureRandom s = new SecureRandom();
+        s.setSeed(System.currentTimeMillis());
+        s.setSeed(System.nanoTime());
+        return s;
     }
 
 

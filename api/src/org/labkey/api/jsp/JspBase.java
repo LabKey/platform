@@ -659,7 +659,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
      * As an aside Java 7 claims to be very good at optimizing usages like this (avoiding the object allocation)
      * http://docs.oracle.com/javase/7/docs/technotes/guides/vm/performance-enhancements-7.html
      */
-    protected static class _HtmlString
+    final protected static class _HtmlString
     {
         final String s;
         _HtmlString(String s)

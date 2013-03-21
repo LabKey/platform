@@ -19,12 +19,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
@@ -34,10 +37,15 @@ import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationPro
 import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -277,7 +285,7 @@ public class AuthenticationManager
     }
 
 
-    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser}
+    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused}
 
     public static class AuthenticationResult
     {
@@ -331,6 +339,25 @@ public class AuthenticationManager
 
     public static @NotNull
     AuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws ValidEmail.InvalidEmailException
+    {
+        AuthenticationResult result = null;
+        try
+        {
+            result = _beforeAuthenticate(request, id, password);
+            if (null != result)
+                return result;
+            result = _authenticate(request, response,id,password,returnURL,logFailures);
+            return result;
+        }
+        finally
+        {
+            _afterAuthenticate(request, id, password, result);
+        }
+    }
+
+
+    private static @NotNull
+    AuthenticationResult _authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws ValidEmail.InvalidEmailException
     {
         AuthenticationResponse firstFailure = null;
 
@@ -454,6 +481,87 @@ public class AuthenticationManager
 
         return new AuthenticationResult(AuthenticationStatus.BadCredentials);
     }
+
+
+
+    // limit one bad login per second averaged out over 60sec
+    static final Cache<Integer,RateLimiter> addrLimiter = CacheManager.getCache(1001,TimeUnit.MINUTES.toMillis(5),"login limiter");
+    static final Cache<Integer,RateLimiter> userLimiter = CacheManager.getCache(1001,TimeUnit.MINUTES.toMillis(5),"user limiter");
+    static final Cache<Integer,RateLimiter> pwdLimiter = CacheManager.getCache(1001,TimeUnit.MINUTES.toMillis(5),"password limiter");
+    static final CacheLoader<Integer,RateLimiter> addrLoader = new CacheLoader<Integer,RateLimiter>()
+        {
+            @Override
+            public RateLimiter load(Integer key, @Nullable Object request)
+            {
+                return new RateLimiter("Addr limiter: " + String.valueOf(key), new RateLimiter.Rate(60,TimeUnit.MINUTES));
+            }
+        };
+    static final CacheLoader<Integer,RateLimiter> pwdLoader = new CacheLoader<Integer,RateLimiter>()
+        {
+            @Override
+            public RateLimiter load(Integer key, @Nullable Object request)
+            {
+                return new RateLimiter("Pwd limiter: " + String.valueOf(key), new RateLimiter.Rate(20,TimeUnit.MINUTES));
+            }
+        };
+    static final CacheLoader<Integer,RateLimiter> userLoader = new CacheLoader<Integer,RateLimiter>()
+        {
+            @Override
+            public RateLimiter load(Integer key, @Nullable Object request)
+            {
+                return new RateLimiter("User limiter: " + String.valueOf(key), new RateLimiter.Rate(20,TimeUnit.MINUTES));
+            }
+        };
+
+
+    private static Integer _toKey(String s)
+    {
+        return null==s ? 0 : s.toLowerCase().hashCode() % 1000;
+    }
+
+
+    private static AuthenticationResult _beforeAuthenticate(HttpServletRequest request, String id, String pwd)
+    {
+        if (null == id || null == pwd)
+            return null;
+        RateLimiter rl;
+        long delay = 0;
+
+        // slow down login attempts when we detect more than 20/minute bad attempts per user, password, or ip address
+        rl = addrLimiter.get(_toKey(request==null?null:request.getRemoteAddr()));
+        if (null != rl)
+            delay = Math.max(delay,rl.add(0, false));
+        rl = userLimiter.get(_toKey(id));
+        if (null != rl)
+            delay = Math.max(delay, rl.add(0, false));
+        rl = pwdLimiter.get(_toKey(pwd));
+        if (null != rl)
+            delay = Math.max(delay, rl.add(0, false));
+
+        if (delay > 15*1000)
+            return new AuthenticationResult(AuthenticationStatus.LoginPaused);
+        if (delay > 0)
+            try {Thread.sleep(delay);}catch(InterruptedException x){/* */}
+        return null;
+    }
+
+
+    private static void _afterAuthenticate(HttpServletRequest request, String id, String pwd, AuthenticationResult result)
+    {
+        if (null == result || null == id || null ==pwd)
+            return;
+        if (result.getStatus() ==  AuthenticationStatus.BadCredentials || result.getStatus() == AuthenticationStatus.InactiveUser)
+        {
+            RateLimiter rl;
+            rl = addrLimiter.get(_toKey(request.getRemoteAddr()),request, addrLoader);
+            rl.add(1, false);
+            rl = userLimiter.get(_toKey(id),request, userLoader);
+            rl.add(1, false);
+            rl = pwdLimiter.get(_toKey(pwd),request, pwdLoader);
+            rl.add(1, false);
+        }
+    }
+
 
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP).  This is for the case
@@ -811,6 +919,69 @@ public class AuthenticationManager
             }
 
             return (NO_LOGO.equals(img) ? null : img);
+        }
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void throttleLogin() throws Exception
+        {
+            final String[] remoteAddr = {null};
+            MockHttpServletRequest req = new MockHttpServletRequest("GET", "/project/home/begin.view")
+            {
+                @Override
+                public String getRemoteAddr()
+                {
+                    return remoteAddr[0];
+                }
+            };
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            long start, end, elapsed;
+            int i;
+
+            // test one user, different passwords, different locations
+            start = HeartBeat.currentTimeMillis();
+            for (i=0 ; i<20 ; i++)
+            {
+                remoteAddr[0] = "127.0.0.1" + (i%256);
+                AuthenticationResult r = AuthenticationManager.authenticate(req, res, "testA@localhost.test", "passwordA"+i, null, false);
+                if (r.getStatus() == AuthenticationStatus.LoginPaused)
+                    break;
+            }
+            end = HeartBeat.currentTimeMillis();
+            elapsed = end-start;
+            assertTrue("too fast: " + DateUtil.formatDuration(elapsed),
+                    i<20 || elapsed > 30*1000);
+
+            // test different users, same password, different locations
+            start = HeartBeat.currentTimeMillis();
+            for (i=0 ; i<20 ; i++)
+            {
+                remoteAddr[0] = "127.0.1.1" + (i%256);
+                AuthenticationResult r = AuthenticationManager.authenticate(req, res, "testB" + i + "@localhost.test", "passwordB", null, false);
+                if (r.getStatus() == AuthenticationStatus.LoginPaused)
+                    break;
+            }
+            end = HeartBeat.currentTimeMillis();
+            elapsed = end-start;
+            assertTrue("too fast: " + DateUtil.formatDuration(elapsed),
+                    i<20 || elapsed > 30*1000);
+
+            // test different users, different password, same location
+            start = HeartBeat.currentTimeMillis();
+            for (i=0 ; i<20 ; i++)
+            {
+                remoteAddr[0] = "127.0.2.1";
+                AuthenticationResult r = AuthenticationManager.authenticate(req, res, "testC@localhost.test", "passwordC", null, false);
+                if (r.getStatus() == AuthenticationStatus.LoginPaused)
+                    break;
+            }
+            end = HeartBeat.currentTimeMillis();
+            elapsed = end-start;
+            assertTrue("too fast: " + DateUtil.formatDuration(elapsed),
+                    i<20 || elapsed > 30*1000);
         }
     }
 }
