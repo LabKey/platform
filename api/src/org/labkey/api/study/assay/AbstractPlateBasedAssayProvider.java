@@ -27,6 +27,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
@@ -52,9 +53,9 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     public static final String ASSAY_DOMAIN_SAMPLE_WELLGROUP = ExpProtocol.ASSAY_DOMAIN_PREFIX + "SampleWellGroup";
     public static final String SAMPLE_METADATA_INPUT_ROLE = "Sample Metadata";
 
-    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType)
+    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataType);
+        super(protocolLSIDPrefix, runLSIDPrefix, dataType, declaringModule);
     }
 
     public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template)

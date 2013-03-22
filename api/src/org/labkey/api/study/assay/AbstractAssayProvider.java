@@ -62,6 +62,7 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.module.Module;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -146,15 +147,17 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
+    private final Module _declaringModule;
     protected final AssayDataType _dataType;
 
     public int _maxFileInputs = 1;
 
-    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType)
+    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
     {
         _dataType = dataType;
         _protocolLSIDPrefix = protocolLSIDPrefix;
         _runLSIDPrefix = runLSIDPrefix;
+        _declaringModule = declaringModule;
     }
 
     public AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy)
@@ -1291,5 +1294,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type)
     {
         return false;
+    }
+
+    public Module getDeclaringModule()
+    {
+        return _declaringModule;
     }
 }

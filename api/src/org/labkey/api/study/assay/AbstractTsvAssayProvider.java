@@ -21,6 +21,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -46,9 +47,9 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     public static final String ROW_ID_COLUMN_NAME = "RowId";
     public static final String DATA_ID_COLUMN_NAME = "DataId";
 
-    public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType)
+    public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataType);
+        super(protocolLSIDPrefix, runLSIDPrefix, dataType, declaringModule);
     }
 
     public ExpData getDataForDataRow(Object dataRowId, ExpProtocol protocol)
