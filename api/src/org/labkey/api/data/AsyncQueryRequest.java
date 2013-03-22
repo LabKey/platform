@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
@@ -49,12 +50,31 @@ public class AsyncQueryRequest<T>
     {
         _creationStackTrace = Thread.currentThread().getStackTrace();
 
-        while (response instanceof HttpServletResponseWrapper)
-        {
-            response = (HttpServletResponse) ((HttpServletResponseWrapper) response).getResponse();
-        }
+        _rootResponse = getRootResponse(response);
+    }
 
-        _rootResponse = response;
+    private HttpServletResponse getRootResponse(HttpServletResponse response)
+    {
+        // Look through the response objects to find the one that's closest to the "real" one. We can use it
+        // to write spaces back to the client to see if it's still listening, even if we're using a mock response
+        // object to buffer the response so we can transform it in some way.
+        // This should only be done when we're writing something back that's tolerant of extra spaces at the
+        // beginning of the output, like HTML and JSON, and not for things like TSV or Excel
+        while (true)
+        {
+            if (response instanceof HttpServletResponseWrapper)
+            {
+                response = (HttpServletResponse) ((HttpServletResponseWrapper) response).getResponse();
+            }
+            else if (response instanceof MockHttpResponseWithRealPassthrough)
+            {
+                response = ((MockHttpResponseWithRealPassthrough) response).getResponse();
+            }
+            else
+            {
+                return response;
+            }
+        }
     }
 
     synchronized public void setStatement(@Nullable Statement statement)

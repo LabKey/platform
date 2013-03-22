@@ -384,6 +384,9 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
             Results results = null;
             try
             {
+                // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
+                // can monitor if the client has stopped listening
+                _dataRegion.setAllowAsync(true);
                 results = _dataRegion.getResultSet(_ctx);
                 _ctx.setResults(results);
                 ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
