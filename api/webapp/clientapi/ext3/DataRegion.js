@@ -4107,8 +4107,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     {
         // Build up a SELECT DISTINCT query to get all of the values that are currently in use
         //NOTE: empty string will be treated as NULL, which is b/c Ext checkboxes can be set to empty string, but not null
-        var sql = 'SELECT CASE WHEN value IS NULL then \'\' ELSE cast(value as varchar) END as value, null as displayValue FROM (';
-        sql += 'SELECT DISTINCT t.';
+        var sql = 'SELECT CASE WHEN value IS NULL then \'\'';
+        if (this._jsonType == 'boolean') {
+            sql += ' WHEN value = \'true\' then \'true\' ELSE \'false\' '; // 16724
+        }
+        else {
+            sql += ' ELSE cast(value as varchar) ';
+        }
+        sql += 'END as value FROM (SELECT DISTINCT t.';
 
         var fieldKey;
         if (column.displayField) {
