@@ -85,6 +85,8 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("Ratio"));
         addWrapColumn(_rootTable.getColumn("Yield"));
         addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
+        addWrapColumn(_rootTable.getColumn("OtherSpecimenId"));
+        addWrapColumn(_rootTable.getColumn("ParentSpecimenId"));
         addContainerColumn();
     }
 
