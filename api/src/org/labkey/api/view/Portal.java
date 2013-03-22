@@ -949,13 +949,11 @@ public class Portal
         // Initialize content for non-default portal pages that are folder tabs
         if (parts.isEmpty() && !StringUtils.equalsIgnoreCase(DEFAULT_PORTAL_PAGE_ID,id))
         {
-            for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
+            FolderTab folderTab = getFolderTabFromId(context, id);
+            if (null != folderTab)
             {
-                if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
-                {
-                    folderTab.initializeContent(context.getContainer());
-                    parts = getParts(context.getContainer(), id, context);
-                }
+                folderTab.initializeContent(context.getContainer());
+                parts = getParts(context.getContainer(), id, context);
             }
         }
 
@@ -1018,6 +1016,24 @@ public class Portal
             addCustomizeDropdowns(context.getContainer(), template, id, locations);
     }
 
+    @Nullable
+    public static FolderTab getFolderTabFromId(ViewContext context, String id)
+    {
+        for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
+        {
+            if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
+            {
+                return folderTab;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static PortalPage getPortalPage(Container container, String pageId)
+    {
+        return WebPartCache.getPortalPage(container, pageId);
+    }
 
     public static String getCustomizeURL(ViewContext context, Portal.WebPart webPart)
     {
@@ -1219,8 +1235,7 @@ public class Portal
 
         try
         {
-            String customTab = page.getProperty(Portal.PROP_CUSTOMTAB);
-            if (null != customTab && customTab.equalsIgnoreCase("true"))
+            if (page.isCustomTab())
             {
                 // Custom (portal page) tab; Do actual delete
                 TableInfo tableInfo = getTableInfoPortalWebParts();
@@ -1492,6 +1507,14 @@ public class Portal
             {
                 throw new RuntimeException(x);
             }
+        }
+
+        public boolean isCustomTab()
+        {
+            String customTab = getProperty(Portal.PROP_CUSTOMTAB);
+            if (null != customTab && customTab.equalsIgnoreCase("true"))
+                return true;
+            return false;
         }
     }
 }
