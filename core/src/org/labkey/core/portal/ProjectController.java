@@ -58,6 +58,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -327,18 +328,6 @@ public class ProjectController extends SpringActionController
             boolean appendPath = true;
             String title;
             FolderType folderType = c.getFolderType();
-            if (!FolderType.NONE.equals(c.getFolderType()))
-            {
-                title = folderType.getStartPageLabel(getViewContext());
-            }
-            else if (c.equals(ContainerManager.getHomeContainer()))
-            {
-                title = LookAndFeelProperties.getInstance(c).getShortName();
-                appendPath = false;
-            }
-            else
-                title = c.getName();
-
             ActionURL url = getViewContext().getActionURL();
             if (null == url || url.getExtraPath().equals("/"))
                 return HttpView.redirect(homeURL());
@@ -360,8 +349,6 @@ public class ProjectController extends SpringActionController
             }
 
             PageConfig page = getPageConfig();
-            if (title != null)
-                page.setTitle(title, appendPath);
             page.setHelpTopic(folderType.getHelpTopic());
 
             HttpView template;
@@ -376,6 +363,43 @@ public class ProjectController extends SpringActionController
                 pageId = folderType.getDefaultPageId(getViewContext());
             }
             Portal.populatePortalView(getViewContext(), pageId, template);
+
+            // Figure out title
+            Portal.PortalPage portalPage = Portal.getPortalPage(c, pageId);
+            FolderTab folderTab = null;
+            if (!"DefaultDashboard".equalsIgnoreCase(pageId))
+                folderTab = Portal.getFolderTabFromId(getViewContext(), pageId);
+            if (null != portalPage && null != portalPage.getCaption())
+            {
+                title = portalPage.getCaption();
+            }
+            else if (null != portalPage && portalPage.isCustomTab())
+            {
+                title = portalPage.getPageId();
+            }
+            else if (null != folderTab && null != folderTab.getCaption(getViewContext()))
+            {
+                title = folderTab.getCaption(getViewContext());
+            }
+            else if ("Overview".equalsIgnoreCase(pageId))
+            {
+                title = "Overview";
+            }
+            else if (!FolderType.NONE.equals(folderType))
+            {
+                title = folderType.getStartPageLabel(getViewContext());
+            }
+            else if (c.equals(ContainerManager.getHomeContainer()))
+            {
+                title = LookAndFeelProperties.getInstance(c).getShortName();
+                appendPath = false;
+            }
+            else
+            {
+                title = c.getName();
+            }
+            if (title != null)
+                page.setTitle(title, appendPath);
 
             getPageConfig().setTemplate(PageConfig.Template.None);
             return template;
