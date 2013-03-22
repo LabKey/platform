@@ -769,10 +769,10 @@ public class DomainPropertyImpl implements DomainProperty
             else
             {
                 if (containerId != null)
-                    assertTrue(l.getContainer().getId() == _pd.getLookupContainer());
+                    assertTrue(StringUtils.equals(l.getContainer().getId(), _pd.getLookupContainer()));
 
-                assertTrue(l.getQueryName() == _pd.getLookupQuery());
-                assertTrue(l.getSchemaName() == _pd.getLookupSchema());
+                assertTrue(StringUtils.equals(l.getQueryName(), _pd.getLookupQuery()));
+                assertTrue(StringUtils.equals(l.getSchemaName(),_pd.getLookupSchema()));
             }
         }
 
