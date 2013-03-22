@@ -449,10 +449,9 @@ public class SpecimenController extends BaseStudyController
 
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
             SpecimenHeaderBean bean = new SpecimenHeaderBean(getViewContext(), view);
-            if (form.getSelectedRequest() >= 0)
-            {
-                bean.setSelectedRequest(form.getSelectedRequest());
-            }
+            // Get last selected request
+            if (null != getStudy().getLastSpecimenRequest())
+                bean.setSelectedRequest(getStudy().getLastSpecimenRequest());
             JspView<SpecimenHeaderBean> header = new JspView<SpecimenHeaderBean>("/org/labkey/study/view/samples/samplesHeader.jsp", bean);
             return new VBox(header, view);
         }
@@ -594,7 +593,6 @@ public class SpecimenController extends BaseStudyController
         }
 
         private boolean _showVials;
-        private int _selectedRequest = -1;
         private SpecimenQueryView.Mode _viewMode = SpecimenQueryView.Mode.DEFAULT;
 
         public boolean isShowVials()
@@ -621,16 +619,6 @@ public class SpecimenController extends BaseStudyController
         {
             if (viewMode != null)
                 _viewMode = SpecimenQueryView.Mode.valueOf(viewMode);
-        }
-
-        public int getSelectedRequest()
-        {
-            return _selectedRequest;
-        }
-
-        public void setSelectedRequest(int selectedRequest)
-        {
-            _selectedRequest = selectedRequest;
         }
     }
 
@@ -1841,6 +1829,7 @@ public class SpecimenController extends BaseStudyController
                 }
             }
 
+            getStudy().setLastSpecimenRequest(_sampleRequest.getRowId());
             return true;
         }
 

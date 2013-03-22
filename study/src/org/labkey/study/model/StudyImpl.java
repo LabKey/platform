@@ -138,6 +138,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Integer _participantAliasDatasetId;
     private String _participantAliasSourceProperty;
     private String _participantAliasProperty;
+    private Integer _lastSpecimenRequest = null;
 
     public StudyImpl()
     {
@@ -789,6 +790,16 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         verifyMutability();
         _allowReqLocEndpoint = allowReqLocEndpoint;
+    }
+
+    public Integer getLastSpecimenRequest()
+    {
+        return _lastSpecimenRequest;
+    }
+
+    public void setLastSpecimenRequest(Integer lastSpecimenRequest)
+    {
+        _lastSpecimenRequest = lastSpecimenRequest;
     }
 
     public static class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
