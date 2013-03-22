@@ -18,7 +18,6 @@ package org.labkey.api.gwt.client.ui;
 
 import com.extjs.gxt.ui.client.core.XTemplate;
 import com.extjs.gxt.ui.client.data.BaseModelData;
-import com.extjs.gxt.ui.client.event.BaseEvent;
 import com.extjs.gxt.ui.client.event.ComponentEvent;
 import com.extjs.gxt.ui.client.event.Events;
 import com.extjs.gxt.ui.client.event.FieldEvent;
@@ -139,6 +138,8 @@ public class LookupEditorPanel extends LayoutContainer
         if (!_empty(schema))
             populateTableStore(tableStore,folder, schema);
 
+        _comboTableName.updateTestMarker();
+
         updateEmptyText();
     }
 
@@ -215,6 +216,8 @@ public class LookupEditorPanel extends LayoutContainer
                 store.add(new ComboModelData(""));
                 for (String schema : l)
                     store.add(new ComboModelData(schema));
+
+                _comboContainer.updateTestMarker();
             }
         });
     }
@@ -277,6 +280,8 @@ public class LookupEditorPanel extends LayoutContainer
                     _comboTableName.setEmptyText(m.size()==0?"No tables found":"No matching tables found");
                 else
                     updateEmptyText();
+
+                _comboSchema.updateTestMarker();
             }
         });
     }
@@ -419,8 +424,7 @@ public class LookupEditorPanel extends LayoutContainer
             });
 //            setTemplate("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{" + getDisplayField() + "}\">{" + getDisplayField() + "}</div></tpl>");
             setTemplate(XTemplate.create("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{[fm.htmlEncode(values." + getDisplayField() + ")]}\">{[fm.htmlEncode(values." + getDisplayField() + ")]}</div></tpl>"));
-            _previousSelection = getStringValue();
-            addStyleName("test-marker-" + getStringValue());
+            updateTestMarker();
         }
 
         void setAutoSizeList(boolean b)
@@ -435,9 +439,28 @@ public class LookupEditorPanel extends LayoutContainer
             _listExpand();
         }
 
+        void clearTestMarker()
+        {
+            removeStyleName("test-marker-" + _previousSelection);
+        }
+
+        void updateTestMarker()
+        {
+            clearTestMarker();
+            _previousSelection = getStringValue();
+            addStyleName("test-marker-" + _previousSelection);
+        }
+
+        private void setPreviousSelection(String value)
+        {
+            clearTestMarker();
+            _previousSelection = value;
+        }
+
         void setStringValue(String value)
         {
             setValue(new ComboModelData(value));
+            updateTestMarker();
         }
         
         String getStringValue()
@@ -462,11 +485,9 @@ public class LookupEditorPanel extends LayoutContainer
         void _widgetChange()
         {
             _log("widgetChange(" + getName() + ") = " + getStringValue());
-            removeStyleName("test-marker-" + _previousSelection);
+            setPreviousSelection(getStringValue());
             updateUI();
             LookupEditorPanel.this.fireChange();
-            addStyleName("test-marker-" + getStringValue());
-            _previousSelection = getStringValue();
         }
 
 

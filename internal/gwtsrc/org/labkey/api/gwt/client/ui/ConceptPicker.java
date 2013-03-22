@@ -331,7 +331,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             if (null != type)
                 type.apply(pd);
 
-            // Be sure to set the new key type before calling setValue() so that it initializes correctly 
+            // Be sure to set the new key type before calling setValue() so that it initializes correctly
             _lookupEditorPanel.setKeyType(picker.isRangeEditable ? null : null==type ? null : type.getPropertyType());
             _lookupEditorPanel.setValue(pd);
 
