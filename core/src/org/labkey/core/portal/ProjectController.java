@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
@@ -60,6 +61,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
@@ -1253,8 +1255,8 @@ public class ProjectController extends SpringActionController
                 implicitCssScripts.addAll(d.getCssPaths(getContainer(), getUser(), !AppProps.getInstance().isDevMode()));
             }
 
-
-            MockHttpServletResponse mr = new MockHttpServletResponse();
+            getViewContext().getResponse().setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
+            MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
             view.render(request, mr);
 
             if (mr.getStatus() != HttpServletResponse.SC_OK){

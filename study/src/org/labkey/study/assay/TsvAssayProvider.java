@@ -36,6 +36,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
@@ -96,12 +98,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     public TsvAssayProvider()
     {
-        this("GeneralAssayProtocol", "GeneralAssayRun");
+        this("GeneralAssayProtocol", "GeneralAssayRun", ModuleLoader.getInstance().getModule(StudyModule.class));
     }
 
-    protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix)
+    protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, Module declaringModule)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE));
+        super(protocolLSIDPrefix, runLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE), declaringModule);
     }
 
     public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context)

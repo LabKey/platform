@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
@@ -116,7 +117,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
     public CBCAssayProvider()
     {
-        super("CBCAssayProtocol", "CBCAssayRun", (AssayDataType) ExperimentService.get().getDataType(CBCDataHandler.NAMESPACE));
+        super("CBCAssayProtocol", "CBCAssayRun", (AssayDataType) ExperimentService.get().getDataType(CBCDataHandler.NAMESPACE), ModuleLoader.getInstance().getModule(CBCAssayModule.class));
     }
 
     private final static class CBCAssayTableMetadata extends AssayTableMetadata
