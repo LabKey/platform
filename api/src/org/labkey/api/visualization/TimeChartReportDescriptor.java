@@ -18,6 +18,7 @@ package org.labkey.api.visualization;
 
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.exp.property.DomainProperty;
@@ -65,8 +66,18 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
         {
             Map<String, String> alternateIdMap = StudyService.get().getAlternateIdMap(context.getContainer()); // Gotta call into study land to translate the IDs
             JSONObject jsonObj = new JSONObject((String) value);
-            JSONArray participantsFromJson = jsonObj.getJSONObject("subject").getJSONArray("values");
-            JSONArray transformedPTIDs = new JSONArray();
+            convertSubjectPTIDs(jsonObj, alternateIdMap);
+            convertPTIDSInDimensions(jsonObj, alternateIdMap);
+            value  = jsonObj.toString();
+        }
+
+        return super.adjustPropertyValue(context, key, value);
+    }
+
+    private void convertSubjectPTIDs(JSONObject json, Map<String, String> alternateIdMap)
+    {
+        JSONArray participantsFromJson = json.getJSONObject("subject").getJSONArray("values");
+        JSONArray transformedPTIDs = new JSONArray();
 
             for (int i = 0; i < participantsFromJson.length(); i++)
             {
@@ -75,11 +86,46 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                     transformedPTIDs.put(altId);
             }
 
-            jsonObj.getJSONObject("subject").put("values", transformedPTIDs);
-            value  = jsonObj.toString();
-        }
+            json.getJSONObject("subject").put("values", transformedPTIDs);
+    }
 
-        return super.adjustPropertyValue(context, key, value);
+    private void convertPTIDSInDimensions(JSONObject json, Map<String, String> alternateIdMap)
+    {
+        JSONArray measures = json.getJSONArray("measures");
+
+        for(int i = 0; i < measures.length(); i++)
+        {
+            try
+            {
+                JSONObject dimension = measures.getJSONObject(i).getJSONObject("dimension");
+                JSONArray values = dimension.getJSONArray("values");
+                JSONArray transformedPTIDs = new JSONArray();
+
+                if(values != null)
+                {
+                    for(int j = 0; j < values.length(); j++)
+                    {
+                        if(alternateIdMap.containsKey(values.get(j)))
+                        {
+                            transformedPTIDs.put(alternateIdMap.get(values.get(j)));
+                        }
+                    }
+
+                    dimension.put("values", transformedPTIDs);
+                }
+            }
+            catch(JSONException e)
+            {
+                if(e.getMessage().contains("is not a JSONArray"))
+                {
+                    // no-op, values is not always defined so this is an acceptable failure.
+                }
+                else
+                {
+                    throw e;
+                }
+            }
+        }
     }
 
     public String getViewClass()
