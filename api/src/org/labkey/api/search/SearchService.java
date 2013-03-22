@@ -222,6 +222,8 @@ public interface SearchService
         public String navtrail;
     }
 
+    public String getIndexFormatDescription();
+
     public DbSchema getSchema();
 
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
