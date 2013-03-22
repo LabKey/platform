@@ -100,6 +100,12 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 
     }
 
+    @Override
+    public String getIndexFormatDescription()
+    {
+        return "Solr Index";
+    }
+
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return null;

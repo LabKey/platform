@@ -152,6 +152,12 @@ public class NoopSearchService implements SearchService
 
 
     @Override
+    public String getIndexFormatDescription()
+    {
+        return "No-op implementation";
+    }
+
+    @Override
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return null;

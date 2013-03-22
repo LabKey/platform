@@ -164,6 +164,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     @Override
+    public String getIndexFormatDescription()
+    {
+        return _indexManager.getIndexFormatDescription();
+    }
+
+    @Override
     public void updatePrimaryIndex()
     {
         super.updatePrimaryIndex();

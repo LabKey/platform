@@ -34,7 +34,7 @@ SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 %><labkey:errors /><%
     if (!StringUtils.isEmpty(form.getMessage()))
     { %>
-        <table><tr><td><span style="color:green;"><br><%=form.getMessage()%><br></span></td></tr></table><%
+        <table><tr><td><span style="color:green;"><br><%=h(form.getMessage())%><br></span></td></tr></table><%
     }
 
 if (null == ss)
@@ -45,6 +45,9 @@ else
 {
     %><p><form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table>
+            <tr>
+                <td colspan="2">Index Format: <%=h(ss.getIndexFormatDescription())%></td>
+            </tr>
             <tr>
                 <td>Path to primary full-text search index:</td>
                 <td><input name="primaryIndexPath" size="80" value="<%=h(SearchPropertyManager.getPrimaryIndexDirectory().getPath())%>"></td>

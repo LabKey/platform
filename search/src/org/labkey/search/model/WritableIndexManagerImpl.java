@@ -18,6 +18,7 @@ package org.labkey.search.model;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexGate;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -48,6 +49,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
     private final Object _writerLock = new Object();
     private final IndexWriter _iw;
+    private final String _formatDescription;
 
 
     static WritableIndexManager get(File indexPath, Analyzer analyzer) throws IOException
@@ -96,6 +98,22 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     {
         super(new SearcherManager(iw, true, factory), directory);
         _iw = iw;
+        _formatDescription = getIndexFormatDescription(directory);
+    }
+
+
+    private static String getIndexFormatDescription(Directory directory)
+    {
+        try
+        {
+            IndexGate.FormatDetails formatDetails = IndexGate.getIndexFormat(directory);
+            return formatDetails.genericName;
+        }
+        catch (Exception e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+            return "Unknown";
+        }
     }
 
 
@@ -237,5 +255,12 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     {
         // We removed the call to IndexWriter.optimize() in 12.1.  Lucene deprecated this method and strongly dis-recommends
         // calling its replacement (forceMerge()).  Let's see what happens if we just leave it out.
+    }
+
+
+    @Override
+    public String getIndexFormatDescription()
+    {
+        return _formatDescription;
     }
 }
