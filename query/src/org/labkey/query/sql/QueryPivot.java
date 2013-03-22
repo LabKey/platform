@@ -369,6 +369,13 @@ public class QueryPivot extends QueryRelation
 
 
     @Override
+    protected void resolveFields()
+    {
+        _inQuery.resolveFields();
+    }
+
+
+    @Override
     TableInfo getTableInfo()
     {
         QueryTableInfo qti = new PivotTableInfo();

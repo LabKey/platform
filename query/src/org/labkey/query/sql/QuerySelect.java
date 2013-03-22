@@ -17,6 +17,7 @@ package org.labkey.query.sql;
 
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -61,6 +62,8 @@ import java.util.Set;
 
 public class QuerySelect extends QueryRelation implements Cloneable
 {
+    private static final Logger _log = Logger.getLogger(QuerySelect.class);
+
     private String _queryText = null;
     private Map<FieldKey, SelectColumn> _columns;
 
@@ -639,34 +642,57 @@ groupByLoop:
     @Override
     protected QField getField(FieldKey key, QNode expr, Object referant)
     {
-        return getField(key, expr, referant, false);
+        return getFieldInternal(key, expr, referant, false);
     }
 
-    private QField getField(FieldKey key, QNode expr, Object referant, boolean methodName)
-    {
-        if (!methodName)
-        {
-            RelationColumn column = _declaredFields.get(key);
-            if (column != null)
-            {
-                if (null != referant)
-                    column.addRef(referant);
-                return new QField(column, expr);
-            }
-        }
 
-        if (key.getTable() == null)
+    private QField getFieldInternal(FieldKey key, QNode expr, Object referant, boolean methodName)
+    {
+        String debugMsg = "";
+        boolean isDebugEnabled = _log.isDebugEnabled();
+
+        try
         {
-            return new QField(null, key.getName(), expr);
-        }
-        else
-        {
-            QueryRelation table = getTable(key.getTable());
-            if (table != null)
+            if (isDebugEnabled)
             {
-                return new QField(table, key.getName(), expr);
+                debugMsg = "getField( " + this.toStringDebug() + ", " + key.toDisplayString() + " )\n        referant: " + referant;
+                _log.debug(">>" + debugMsg);
             }
-            return super.getField(key, expr, referant);
+
+
+            if (!methodName)
+            {
+                RelationColumn column = _declaredFields.get(key);
+                if (column != null)
+                {
+                    if (null != referant)
+                        column.addRef(referant);
+                    if (isDebugEnabled)
+                        debugMsg += "\n        resolvedTo: " + column.getDebugString();
+                    return new QField(column, expr);
+                }
+            }
+
+            if (isDebugEnabled)
+                debugMsg += "\n        resolvedTo: /NOT FOUND/";
+            if (key.getTable() == null)
+            {
+                return new QField(null, key.getName(), expr);
+            }
+            else
+            {
+                QueryRelation table = getTable(key.getTable());
+                if (table != null)
+                {
+                    return new QField(table, key.getName(), expr);
+                }
+                return super.getField(key, expr, referant);
+
+            }
+        }
+        finally
+        {
+            _log.debug("<<" + debugMsg);
         }
     }
 
@@ -909,8 +935,9 @@ groupByLoop:
     {
         if (expr instanceof QQuery)
         {
-            QueryRelation subquery = createSubquery((QQuery) expr, false, null);
-            return new QQuery(subquery);
+            QueryRelation subquery = ((QQuery)expr)._select;
+            subquery.resolveFields();
+            return expr;
         }
         if (expr instanceof QRowStar)
         {
@@ -930,7 +957,7 @@ groupByLoop:
                 if (null != param)
                     return param;
             }
-            QField ret = getField(key, expr, referant);
+            QField ret = getFieldInternal(key, expr, referant, false);
             QueryParseException error = ret.fieldCheck(parent, getSqlDialect());
             if (error != null)
                 getParseErrors().add(error);
@@ -953,7 +980,7 @@ groupByLoop:
         {
             //
             if (child == methodName)
-                ret.appendChild(getField(((QExpr)child).getFieldKey(), expr, true));
+                ret.appendChild(getFieldInternal(((QExpr) child).getFieldKey(), expr, referant, true));
             else
                 ret.appendChild(resolveFields((QExpr)child, expr, referant));
         }
@@ -1214,9 +1241,16 @@ groupByLoop:
             markAllSelected(_distinct);
 
         int count = 0;
+        boolean isDebugEnabled = _log.isDebugEnabled();
+        if (isDebugEnabled)
+            _log.debug("SELECT COLUMN LIST: " + this.toStringDebug());
         for (SelectColumn col : _columns.values())
+        {
+            if (isDebugEnabled)
+                _log.debug("    " + col.getDebugString() + " ref=" + col.ref.count());
             if (0 < col.ref.count())
                 count++;
+        }
         if (count == 0)
             markAllSelected(_query);
 
@@ -1912,7 +1946,8 @@ groupByLoop:
         {
             if (null == _resolved)
             {
-                _resolved = resolveFields(getField(), null, null);
+                // if this is select is not in a from, let's be conservative and ref count all fields
+                _resolved = resolveFields(getField(), null, !_inFromClause ? this : null);
                 if (0 < ref.count())
                     _resolved.addFieldRefs(this);
             }
@@ -1939,7 +1974,7 @@ groupByLoop:
         }
 
         @Override
-        public int addRef(Object refer)
+        public int addRef(@NotNull Object refer)
         {
             if (0 == ref.count())
             {

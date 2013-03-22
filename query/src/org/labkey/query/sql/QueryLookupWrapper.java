@@ -57,7 +57,7 @@ public class QueryLookupWrapper extends QueryRelation
     {
         super(query);
         _aliasManager = new AliasManager(query.getSchema().getDbSchema());
-        _alias = relation.getAlias();
+        _alias = "qlw" + relation.getAlias();
         _source = relation;
         _inFromClause = relation._inFromClause;
         relation._parent = this;
@@ -106,6 +106,13 @@ public class QueryLookupWrapper extends QueryRelation
     void declareFields()
     {
         _source.declareFields();
+    }
+
+
+    @Override
+    protected void resolveFields()
+    {
+        _source.resolveFields();
     }
 
 

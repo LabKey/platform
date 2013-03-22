@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -45,6 +46,8 @@ import java.util.Set;
  */
 public abstract class QueryRelation
 {
+    private static final Logger _log = Logger.getLogger(QuerySelect.class);
+
     protected String _savedName = null;
     protected Query _query;
     protected QuerySchema _schema;
@@ -100,6 +103,11 @@ public abstract class QueryRelation
 
     abstract void declareFields();
 
+
+    /** actually bind all field references */
+    abstract protected void resolveFields();
+
+
     abstract TableInfo getTableInfo();
 
     /**
@@ -143,7 +151,7 @@ public abstract class QueryRelation
     {
         return _alias;
     }
-    
+
 
     /** declare that this FieldKey is referenced somewhere in this query (or subquery) */
     protected RelationColumn declareField(FieldKey key, QExpr location)
@@ -247,7 +255,9 @@ public abstract class QueryRelation
 
         public int addRef(@NotNull Object refer)
         {
-            return ref.increment(refer);
+            int i = ref.increment(refer);
+            _log.debug("addRef( " + this.getDebugString() + ", " + refer + " ) = " + i);
+            return i;
         }
 
         public int releaseRef(@NotNull Object refer)
@@ -261,6 +271,16 @@ public abstract class QueryRelation
             if (count == 1)
                 return !ref.isReferencedBy(refer);
             return count != 0;
+        }
+
+
+        public String getDebugString()
+        {
+            QueryRelation r = getTable();
+            if (null == r)
+                return getAlias();
+            else
+                return r.toStringDebug() + "." + getAlias();
         }
     }
 
@@ -283,5 +303,15 @@ public abstract class QueryRelation
         {
             return new SQLFragment(tableAlias + "." + getParentTable().getSqlDialect().makeLegalIdentifier(getAlias()));
         }
+    }
+
+
+
+    public String toStringDebug()
+    {
+        if (null == _parent)
+            return getClass().getSimpleName() + ":" +getAlias();
+        else
+            return _parent.toStringDebug() + "/" + getClass().getSimpleName() + ":" +getAlias();
     }
 }

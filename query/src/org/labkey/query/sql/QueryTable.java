@@ -72,13 +72,21 @@ public class QueryTable extends QueryRelation
     }
 
 
+    @Override
     public TableInfo getTableInfo()
     {
         return _tableInfo;
     }
 
 
+    @Override
     void declareFields()
+    {
+    }
+
+
+    @Override
+    protected void resolveFields()
     {
     }
 

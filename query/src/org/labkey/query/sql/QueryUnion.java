@@ -107,6 +107,7 @@ public class QueryUnion extends QueryRelation
     }
 
 
+    @Override
     void declareFields()
     {
         for (QueryRelation term : _termList)
@@ -123,6 +124,14 @@ public class QueryUnion extends QueryRelation
                 resolveFields(entry.getKey());
             }
         }
+    }
+
+
+    @Override
+    protected void resolveFields()
+    {
+        for (QueryRelation r : _termList)
+            r.resolveFields();
     }
 
 
