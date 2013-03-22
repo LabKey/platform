@@ -1678,6 +1678,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (null == input && null != builder)
                 input = builder.getDataIterator(context);
 
+            input = LoggingDataIterator.wrap(input);
+
             _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, context, user);
 
             ValidationException matchError = new ValidationException();
@@ -1769,11 +1771,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // SequenceNum
             //
 
-            Integer indexVisitDateColumnInput = null;
-            String visitDateColumnName = getVisitDateColumnName();
-            if (null != visitDateColumnName)
-                indexVisitDateColumnInput = inputMap.get(visitDateColumnName);
-            Integer indexSequenceNumColumnInput = inputMap.get("sequencenum");
+            Integer indexVisitDateColumnInput = inputMap.get(getVisitDateURI());
+            Integer indexSequenceNumColumnInput = inputMap.get(DataSetDefinition.getSequenceNumURI());
             it.indexSequenceNumOutput = it.translateSequenceNum(indexSequenceNumColumnInput, indexVisitDateColumnInput);
 
 
