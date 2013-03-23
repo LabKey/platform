@@ -49,7 +49,6 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
     private final Object _writerLock = new Object();
     private final IndexWriter _iw;
-    private final String _formatDescription;
 
 
     static WritableIndexManager get(File indexPath, Analyzer analyzer) throws IOException
@@ -98,22 +97,6 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     {
         super(new SearcherManager(iw, true, factory), directory);
         _iw = iw;
-        _formatDescription = getIndexFormatDescription(directory);
-    }
-
-
-    private static String getIndexFormatDescription(Directory directory)
-    {
-        try
-        {
-            IndexGate.FormatDetails formatDetails = IndexGate.getIndexFormat(directory);
-            return formatDetails.genericName;
-        }
-        catch (Exception e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-            return "Unknown";
-        }
     }
 
 
@@ -261,6 +244,15 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     @Override
     public String getIndexFormatDescription()
     {
-        return _formatDescription;
+        try
+        {
+            IndexGate.FormatDetails formatDetails = IndexGate.getIndexFormat(_directory);
+            return formatDetails.genericName;
+        }
+        catch (Exception e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+            return "Unknown";
+        }
     }
 }
