@@ -16,9 +16,12 @@
 
 package org.labkey.api.module;
 
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.util.DotRunner;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 
 import java.io.File;
@@ -58,6 +61,9 @@ public class ModuleDependencySorter
                 }
             }
         }
+
+//  Uncomment this to generate an SVG graph of all module dependencies
+//        graphModuleDependencies(dependencies, "all");
 
         List<Module> result = new ArrayList<Module>(modules.size());
         while (!dependencies.isEmpty())
@@ -115,7 +121,60 @@ public class ModuleDependencySorter
             sb.append(dependencyInfo.getKey().getName());
         }
 
+        // Generate an SVG diagram that shows all remaining dependencies
+        graphModuleDependencies(dependencies, "involved");
+
         throw new IllegalArgumentException("Unable to resolve module dependencies. The following modules are somehow involved: " + sb.toString());
+    }
+
+
+    private void graphModuleDependencies(List<Pair<Module, Set<String>>> dependencies, String adjective)
+    {
+        Logger log = Logger.getLogger(ModuleDependencySorter.class);
+
+        try
+        {
+            File dir = FileUtil.getTempDirectory();
+            String dot = buildDigraph(dependencies);
+            File svgFile = File.createTempFile("modules", ".svg", dir);
+            DotRunner runner = new DotRunner(dir, dot);
+            runner.addSvgOutput(svgFile);
+            runner.execute();
+
+            log.info("For a diagram of " + adjective + " module dependencies, see " + svgFile.getAbsolutePath());
+        }
+        catch (Exception e)
+        {
+            log.error("Error running dot", e);
+        }
+    }
+
+
+    private String buildDigraph(List<Pair<Module, Set<String>>> dependencies)
+    {
+        StringBuilder dot = new StringBuilder("digraph modules {\n");
+
+        for (Pair<Module, Set<String>> dependencyInfo : dependencies)
+        {
+            String parent = dependencyInfo.getKey().getName().toLowerCase();
+            Set<String> children = dependencyInfo.getValue();
+
+            if (children.isEmpty())
+            {
+                dot.append("\t").append(parent).append(";\n");
+            }
+            else
+            {
+                for (String child : dependencyInfo.getValue())
+                {
+                    dot.append("\t").append(child.toLowerCase()).append(" -> ").append(parent).append(" [dir=back];\n");
+                }
+            }
+        }
+
+        dot.append("}");
+
+        return dot.toString();
     }
 
 

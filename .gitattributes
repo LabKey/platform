@@ -1245,6 +1245,7 @@ api/src/org/labkey/api/util/ContainerUtil.java -text
 api/src/org/labkey/api/util/ContextListener.java -text
 api/src/org/labkey/api/util/DOMUtil.java -text
 api/src/org/labkey/api/util/DemoMode.java -text
+api/src/org/labkey/api/util/DotRunner.java -text
 api/src/org/labkey/api/util/ErrorRenderer.java -text
 api/src/org/labkey/api/util/ErrorRendererProperties.java -text
 api/src/org/labkey/api/util/ErrorView.java -text
@@ -4953,7 +4954,6 @@ internal/src/org/labkey/api/security/UserEmailComparator.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text
 internal/src/org/labkey/api/util/ContainerTreeSelected.java -text
 internal/src/org/labkey/api/util/DiffMatchPatch.java -text
-internal/src/org/labkey/api/util/DotRunner.java -text
 internal/src/org/labkey/api/util/FTPUtil.java -text
 internal/src/org/labkey/api/util/HashHelpers.java -text
 internal/src/org/labkey/api/util/LogPrintWriter.java -text
