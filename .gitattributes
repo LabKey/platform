@@ -550,6 +550,7 @@ api/src/org/labkey/api/jsp/taglib/HelpPopupTag.java -text
 api/src/org/labkey/api/jsp/taglib/LinkTag.java -text
 api/src/org/labkey/api/jsp/taglib/OptionsTag.java -text
 api/src/org/labkey/api/jsp/taglib/RadioTag.java -text
+api/src/org/labkey/api/jsp/taglib/ScriptDependenciesTag.java -text
 api/src/org/labkey/api/jsp/taglib/SelectAll.java -text
 api/src/org/labkey/api/jsp/taglib/SimpleTagBase.java -text
 api/src/org/labkey/api/laboratory/AbstractDataProvider.java -text

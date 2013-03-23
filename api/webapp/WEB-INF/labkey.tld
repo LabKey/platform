@@ -238,4 +238,14 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>
+    <tag>
+        <name>scriptDependency</name>
+        <tag-class>org.labkey.api.jsp.taglib.ScriptDependenciesTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>ajaxOnly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
 </taglib>
