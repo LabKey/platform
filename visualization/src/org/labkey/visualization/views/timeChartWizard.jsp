@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
@@ -69,6 +70,7 @@
 
     String elementId = "vis-wizard-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
+<labkey:scriptDependency/>
 <div id="<%=h(elementId)%>" class="extContainer"></div>
 <script type="text/javascript">
     Ext4.onReady(function(){
