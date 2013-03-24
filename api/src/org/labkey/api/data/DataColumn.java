@@ -31,6 +31,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -599,27 +602,47 @@ public class DataColumn extends DisplayColumn
             ; //do nothing. Used 
         else
         {
-            out.write("<input type='text' size='");
-            out.write(Integer.toString(_inputLength));
-            out.write("'");
-            outputName(ctx, out, formFieldName);
-            if (disabledInput)
-                out.write(" DISABLED");
-            out.write(" value=\"");
-            out.write(PageFlowUtil.filter(strVal));
-            out.write("\"");
-            String autoCompletePrefix = getAutoCompleteURLPrefix();
-            if (autoCompletePrefix != null)
+            if (getAutoCompleteURLPrefix() != null)
             {
-                out.write(" onKeyDown=\"return ctrlKeyCheck(event);\"");
-                out.write(" onBlur=\"hideCompletionDiv();\"");
-                out.write(" autocomplete=\"off\"");
-                out.write(" onKeyUp=\"return handleChange(this, event, '" + autoCompletePrefix + "');\"");
+                String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+                StringBuilder sb = new StringBuilder();
+
+                sb.append("<script type=\"text/javascript\">");
+                sb.append("Ext4.onReady(function(){\n" +
+                    "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
+                    "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
+                    "            completionUrl   : " + PageFlowUtil.jsString(getAutoCompleteURLPrefix()) + ",\n" +
+                    "            sharedStore     : true,\n" +
+                    "            tagConfig   : {\n" +
+                    "                tag     : 'input',\n" +
+                    "                type    : 'text',\n" +
+                    "                name    : " + PageFlowUtil.jsString(formFieldName) + ",\n" +
+                    "                size    : " + _inputLength + ",\n" +
+                    "                value   : " + PageFlowUtil.jsString(strVal) + ",\n" +
+                    "                autocomplete : 'off'\n" +
+                    "            }\n" +
+                    "        });\n" +
+                    "      });\n");
+                sb.append("</script>\n");
+                sb.append("<div id='").append(renderId).append("'></div>");
+                out.write(sb.toString());
             }
-            out.write(">");
-            // disabled inputs are not posted with the form, so we output a hidden form element:
-            if (disabledInput)
-                renderHiddenFormInput(ctx, out, formFieldName, value);
+            else
+            {
+                out.write("<input type='text' size='");
+                out.write(Integer.toString(_inputLength));
+                out.write("'");
+                outputName(ctx, out, formFieldName);
+                if (disabledInput)
+                    out.write(" DISABLED");
+                out.write(" value=\"");
+                out.write(PageFlowUtil.filter(strVal));
+                out.write("\"");
+                out.write(">");
+                // disabled inputs are not posted with the form, so we output a hidden form element:
+                if (disabledInput)
+                    renderHiddenFormInput(ctx, out, formFieldName, value);
+            }
         }
     }
 

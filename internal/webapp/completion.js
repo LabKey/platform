@@ -43,6 +43,9 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
         this.listeners = {
             render  :  {fn : function(cmp){
 
+                var wrapper = this.getEl().up('div.' + Ext4.resetCls);
+                if (wrapper)
+                    wrapper.removeCls(Ext4.resetCls);
                 this.completionDiv = Ext.get(completionDiv);
                 this.completionBody = Ext.get(completionBodyDiv);
                 this.completionField = Ext.get(this.fieldId);

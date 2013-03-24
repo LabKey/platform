@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.exp.property.DomainProperty"%>
+<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
+<%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
-<%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
-<%@ page import="org.labkey.api.study.assay.AssayRunUploadContext" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
-<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
+
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
