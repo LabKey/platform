@@ -393,7 +393,7 @@
                 for(String name : folderText)
                 {
             %>
-                    folderList.push('<%=h(name)%>');
+                    folderList.push(['<%=h(name)%>']);
             <%
                 }
             %>
@@ -405,7 +405,7 @@
                 {
             %>
                     if ('<%=h(name)%>' != "")
-                        studyList.push('<%=h(name)%>');
+                        studyList.push(['<%=h(name)%>']);
             <%
                 }
             %>

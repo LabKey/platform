@@ -902,25 +902,49 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     getStudyPropsPanel : function(){
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Study Properties'})+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Study Objects'})+
             Ext.DomHelper.markup({tag:'div', html: '&nbsp'})+
-            Ext.DomHelper.markup({tag:'div', html: 'Select study properties to export:'})+
-            Ext.DomHelper.markup({tag:'hr'})+
+            Ext.DomHelper.markup({tag:'div', html: 'Choose additional study objects to export:'})+
             Ext.DomHelper.markup({tag:'div', html: '&nbsp'});
-        var checkboxes = [];
-        for(var i = 0; i < this.studyWriters.length; i++)
-        {
-            checkboxes.push(new Ext.form.Checkbox({
-                name : this.studyWriters[i],
-                id : i,
-                inputValue : i,
-                boxLabel : this.studyWriters[i],
-                labelAlign : 'right',
-                labelWidth : '120px',
-                padding : '10px 0px'
 
-            }))
-        }
+        var selectionModel = new Ext.grid.CheckboxSelectionModel({
+            moveEditorOnEnter: false,
+            listeners: {
+                selectionChange: function(selModel){
+                    this.selectedFolderObjects = selModel.getSelections();
+                },
+                scope: this
+            }
+        });
+
+        var folderStore = new Ext.data.ArrayStore({
+            fields : [{name : 'name', type : 'string'}],
+            data : this.studyWriters
+        });
+
+        var selectionGrid = new Ext.grid.EditorGridPanel({
+            store: folderStore,
+            selModel: selectionModel,
+            columns: [
+                selectionModel,
+                {header: 'Study Object', width: 300, sortable: true, dataIndex: 'name'}
+            ],
+            loadMask:{msg:"Loading, please wait..."},
+            editable: false,
+            stripeRows: true,
+            pageSize: 300000,
+            cls: 'studyWizardListList',
+            flex: 1,
+            bbar: [{hidden:true}],
+            tbar: [{hidden:true}]
+        });
+
+        selectionGrid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+
         this.studyPropsPanel = new Ext.FormPanel({
             name : 'Study Properties',
             html : txt,
@@ -933,7 +957,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 labelWidth : '120px',
                 padding : '10px 0px'
             },
-            items : checkboxes
+            items : selectionGrid
         });
         return this.studyPropsPanel;
     },
@@ -1207,8 +1231,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             selModel: selectionModel,
             columns: [
                 selectionModel,
-                {header: 'Name', width: 300, sortable: true, dataIndex: 'name'},
-                {header: 'Description', width: 300, sortable: true, dataIndex: 'description'}
+                {header: 'Name', width: 300, sortable: true, dataIndex: 'name'}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
@@ -1244,30 +1267,55 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     getFolderPropsPanel : function(){
         var checkboxes = [];
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Folder Properties'})+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Folder Objects'})+
                 Ext.DomHelper.markup({tag:'div', html: '&nbsp'})+
-                Ext.DomHelper.markup({tag:'div', html: 'Select folder properties to export:'})+
-                Ext.DomHelper.markup({tag:'hr'})+
+                Ext.DomHelper.markup({tag:'div', html: 'Choose additional folder objects to export:'})+
                 Ext.DomHelper.markup({tag:'div', html: '&nbsp'});
-        for(var i = 0; i < this.folderWriters.length; i++)
-        {
-            checkboxes.push(new Ext.form.Checkbox({
-                name : this.folderWriters[i],
-                id : i,
-                inputValue : i,
-                boxLabel : this.folderWriters[i],
-                labelAlign : 'right',
-                labelWidth : '120px',
-                padding : '10px 0px'
 
-            }))
-        }
+        var selectionModel = new Ext.grid.CheckboxSelectionModel({
+            moveEditorOnEnter: false,
+            listeners: {
+                selectionChange: function(selModel){
+                    this.selectedStudyObjects = selModel.getSelections();
+                },
+                scope: this
+            }
+        });
+
+        var folderStore = new Ext.data.ArrayStore({
+            fields : [{name : 'name', type : 'string'}],
+            data : this.folderWriters
+        });
+
+        var selectionGrid = new Ext.grid.EditorGridPanel({
+            store: folderStore,
+            selModel: selectionModel,
+            columns: [
+                selectionModel,
+                {header: 'Folder Object', width: 300, sortable: true, dataIndex: 'name'}
+            ],
+            loadMask:{msg:"Loading, please wait..."},
+            editable: false,
+            stripeRows: true,
+            pageSize: 300000,
+            cls: 'studyWizardListList',
+            flex: 1,
+            bbar: [{hidden:true}],
+            tbar: [{hidden:true}]
+        });
+
+        selectionGrid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+
         this.folderPropsPanel = new Ext.FormPanel({
             name : 'Folder Properties',
             html : txt,
             border : false,
             layout : 'vbox',
-            items : checkboxes
+            items : selectionGrid
         });
         return this.folderPropsPanel;
     },
@@ -1482,32 +1530,24 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             this.nameFormPanel.add({xtype: 'hidden', id : id, name : 'requestId', value : this.requestId});
         }
 
-
-        if (this.pageOptions[5].active)
+        if (this.pageOptions[5].active && this.selectedStudyObjects)
         {
             var studyProps = [];
             id = Ext.id();
-            var studyForm = this.studyPropsPanel.getForm();
-            for(var i = 0; i < studyForm.items.items.length; i++)
+            for(var i = 0; i < this.selectedStudyObjects.length; i++)
             {
-                if(studyForm.items.items[i].checked == true)
-                {
-                    studyProps.push(studyForm.items.items[i].name);
-                }
+                studyProps.push(this.selectedStudyObjects[i].json[0]);
             }
             this.nameFormPanel.add({xtype : 'hidden', id : id, name : 'studyProps', value : studyProps});
         }
-        if (this.pageOptions[8].active)
+        if (this.pageOptions[8].active && this.selectedFolderObjects)
         {
             var folderProps = [];
             id = Ext.id();
-            var folderForm = this.folderPropsPanel.getForm();
-            for(var i = 0; i < folderForm.items.items.length; i++)
+            for(var i = 0; i < this.selectedFolderObjects.length; i++)
             {
-                if(folderForm.items.items[i].checked == true)
-                {
-                    folderProps.push(folderForm.items.items[i].name);
-                }
+                folderProps.push(this.selectedFolderObjects[i].json[0]);
+
             }
             this.nameFormPanel.add({xtype : 'hidden', id : id, name : 'folderProps', value : folderProps});
         }
