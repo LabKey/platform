@@ -2946,6 +2946,11 @@ public class DavController extends SpringActionController
                 dest.moveFrom(getUser(),src);
             }
 
+            // FileSystemResource caches file/directory/exists status, we need to reload the object
+            WebdavResource destReload = resolvePath(destinationPath, true);
+            if (null != destReload)
+                dest = destReload;
+
             if (rmTempFile(src))
             {
                 fireFileCreatedEvent(dest);
@@ -3699,7 +3704,12 @@ public class DavController extends SpringActionController
 
     @Nullable WebdavResource resolvePath(Path path) throws DavException
     {
-        WebdavResource resource = resourceCache.get(path);
+        return resolvePath(path,false);
+    }
+
+    @Nullable WebdavResource resolvePath(Path path, boolean reload) throws DavException
+    {
+        WebdavResource resource = reload ? null : resourceCache.get(path);
 
         if (resource == null)
         {
@@ -4950,8 +4960,14 @@ public class DavController extends SpringActionController
 
     private void addToIndex(WebdavResource r)
     {
+        _log.debug("addToIndex: " + r.getPath());
+
         if (!r.shouldIndex())
+        {
+            _log.debug("!shouldIndex(): " + r.getPath());
             return;
+        }
+
 
         boolean isFile = r.isFile();
         // UNDONE: FileSystemResource.isFile() may not be correct after MoveAction
@@ -4987,6 +5003,7 @@ public class DavController extends SpringActionController
 
     private void removeFromIndex(WebdavResource r)
     {
+        _log.debug("removeFromIndex: " + r.getPath());
         SearchService ss = ServiceRegistry.get(SearchService.class);
         if (null != ss)
             ss.deleteResource(r.getDocumentId());
