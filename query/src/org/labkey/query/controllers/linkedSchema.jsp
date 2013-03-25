@@ -32,6 +32,7 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="org.labkey.query.persist.LinkedSchemaDef" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -43,14 +44,21 @@
   }
 %>
 <%
-    Container c = getViewContext().getContainer();
     BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
     AbstractExternalSchemaDef def = bean.getSchemaDef();
 
-    boolean isExternal = def instanceof ExternalSchemaDef;
+    Container targetContainer = getViewContext().getContainer();
+    Container sourceContainer = targetContainer;
+
+    boolean isExternal = true;
+    if (def instanceof LinkedSchemaDef)
+    {
+        isExternal = false;
+        sourceContainer = ((LinkedSchemaDef)def).lookupSourceContainer();
+    }
 
     String initialTemplateName = def.getSchemaTemplate();
-    TemplateSchemaType initialTemplate = def.lookupTemplate(c);
+    TemplateSchemaType initialTemplate = def.lookupTemplate(sourceContainer);
 %>
 
 <labkey:errors/>
