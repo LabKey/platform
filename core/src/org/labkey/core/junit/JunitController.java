@@ -400,14 +400,7 @@ public class JunitController extends SpringActionController
             JSONObject json = new JSONObject(map);
 
             HttpServletResponse response = getViewContext().getResponse();
-            try{
-                response.reset();
-            }
-            catch (IllegalStateException ex)
-            {
-                //TODO: Remove. It is temporary logging to investigate failure from ContainerDisplayColumn
-                logger.error(json.toString(2));
-            }
+            response.reset();
             response.setStatus(status);
 
             PrintWriter out = response.getWriter();
