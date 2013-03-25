@@ -13,7 +13,7 @@ LABKEY.requiresScript("/biotrust/AssociatedStudyQuestion.js");
 LABKEY.requiresScript("/biotrust/ContactsPanel.js");
 LABKEY.requiresScript("/biotrust/DiseaseTypeQuestion.js");
 LABKEY.requiresScript("/biotrust/LinkToDiscarded.js");
-LABKEY.requiresScript("/biotrust/ProtocolDocuments.js");
+LABKEY.requiresScript("/biotrust/DocumentUploadQuestion.js");
 LABKEY.requiresScript("/biotrust/StudySampleRequestPanel.js");
 LABKEY.requiresScript("/biotrust/TissueRecordPanel.js");
 LABKEY.requiresCss("/survey/Survey.css");
@@ -172,6 +172,14 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                                 }
                             }
                         }
+
+                        // allow section panels to fire save events back to the parent
+                        config.listeners = {
+                            scope : this,
+                            saveSurvey : function(successUrl, idParamName) {
+                                this.saveSurvey(null, null, false, successUrl, idParamName);
+                            }
+                        };
 
                         sectionPanel.add(config);
                     }

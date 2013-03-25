@@ -449,7 +449,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         // check to make sure the survey label is not null, it is required
         if (!this.surveyLabel)
         {
-            if (successUrl)
+            if (successUrl || idParamName)
                 Ext4.MessageBox.alert('Error', 'The ' + this.labelCaption + ' is required.');
 
             return;
