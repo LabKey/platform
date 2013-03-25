@@ -36,6 +36,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 
 import java.io.StringWriter;
@@ -237,6 +238,9 @@ public class ContainerDisplayColumn extends DataColumn
 
             QueryView view = new QueryView(us, qs, errors);
             ViewContext vc = new ViewContext();
+            // Use a mock request so that we don't end up writing to the "real" output when we write
+            // out spaces to see if the client is still listening during an async query
+            vc.setResponse(new MockHttpServletResponse());
             ExtendedApiQueryResponse resp = new ExtendedApiQueryResponse(view, vc, false, false, "auditLog", "ContainerAuditEvent", 0, fieldKeys, false, false, false);
             Writer writer = new StringWriter();
             ApiResponseWriter apiWriter = new ApiJsonWriter(writer);
