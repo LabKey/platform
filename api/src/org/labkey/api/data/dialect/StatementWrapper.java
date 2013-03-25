@@ -260,10 +260,10 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         return ((CallableStatement)_stmt).getTimestamp(parameterIndex, cal);
     }
 
-    public void registerOutParameter(int paramIndex, int sqlType, String typeName)
+    public void registerOutParameter(int parameterIndex, int sqlType, String typeName)
             throws SQLException
     {
-        ((CallableStatement)_stmt).registerOutParameter(paramIndex, sqlType, typeName);
+        ((CallableStatement)_stmt).registerOutParameter(parameterIndex, sqlType, typeName);
     }
 
     public void registerOutParameter(String parameterName, int sqlType)
@@ -623,7 +623,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
-    private boolean _set(int i, Object o)
+    private boolean _set(int i, @Nullable Object o)
     {
         if (null == _parameters)
             _parameters = new OneBasedList<Object>(10);
@@ -637,104 +637,105 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ((PreparedStatement)_stmt).setNull(parameterIndex, sqlType);
+        _set(parameterIndex, null);
     }
 
     public void setBoolean(int parameterIndex, boolean x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setBoolean(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setByte(int parameterIndex, byte x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setByte(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setShort(int parameterIndex, short x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setShort(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setInt(int parameterIndex, int x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setInt(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setLong(int parameterIndex, long x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setLong(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setFloat(int parameterIndex, float x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setFloat(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setDouble(int parameterIndex, double x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setDouble(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setBigDecimal(int parameterIndex, BigDecimal x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setBigDecimal(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setString(int parameterIndex, String x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setString(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setBytes(int parameterIndex, byte[] x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setBytes(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setDate(int parameterIndex, Date x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setDate(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setTime(int parameterIndex, Time x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setTime(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setTimestamp(int parameterIndex, Timestamp x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setTimestamp(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setAsciiStream(int parameterIndex, InputStream x, int length)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setAsciiStream(parameterIndex, x, length);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setUnicodeStream(int parameterIndex, InputStream x, int length)
@@ -742,14 +743,14 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         //noinspection deprecation
         ((PreparedStatement)_stmt).setUnicodeStream(parameterIndex, x, length);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setBinaryStream(int parameterIndex, InputStream x, int length)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setBinaryStream(parameterIndex, x, length);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void clearParameters()
@@ -763,21 +764,21 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ((PreparedStatement)_stmt).setObject(parameterIndex, x, targetSqlType, scale);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setObject(int parameterIndex, Object x, int targetSqlType)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setObject(parameterIndex, x, targetSqlType);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public void setObject(int parameterIndex, Object x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setObject(parameterIndex, x);
-        assert _set(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public boolean execute()
@@ -806,6 +807,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         ((PreparedStatement)_stmt).addBatch();
     }
 
+    // NOTE: We intentionally do not store potentially large paramters (reader, blob, etc.)
+
     public void setCharacterStream(int parameterIndex, Reader reader, int length)
             throws SQLException
     {
@@ -816,6 +819,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ((PreparedStatement)_stmt).setRef(i, x);
+        _set(i, x);
     }
 
     public void setBlob(int i, Blob x)
@@ -834,6 +838,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ((PreparedStatement)_stmt).setArray(i, x);
+        _set(i, x);
     }
 
     public ResultSetMetaData getMetaData()
@@ -848,30 +853,35 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ((PreparedStatement)_stmt).setDate(parameterIndex, x, cal);
+        _set(parameterIndex, x);
     }
 
     public void setTime(int parameterIndex, Time x, Calendar cal)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setTime(parameterIndex, x, cal);
+        _set(parameterIndex, x);
     }
 
     public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setTimestamp(parameterIndex, x, cal);
+        _set(parameterIndex, x);
     }
 
-    public void setNull(int paramIndex, int sqlType, String typeName)
+    public void setNull(int parameterIndex, int sqlType, String typeName)
             throws SQLException
     {
-        ((PreparedStatement)_stmt).setNull(paramIndex, sqlType, typeName);
+        ((PreparedStatement)_stmt).setNull(parameterIndex, sqlType, typeName);
+        _set(parameterIndex, null);
     }
 
     public void setURL(int parameterIndex, URL x)
             throws SQLException
     {
         ((PreparedStatement)_stmt).setURL(parameterIndex, x);
+        _set(parameterIndex, x);
     }
 
     public ParameterMetaData getParameterMetaData()
