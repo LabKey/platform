@@ -20,7 +20,6 @@ import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.study.SampleManager;
-import org.labkey.study.StudyModule;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
@@ -39,10 +38,7 @@ public class StudyViewLoader implements ModuleResourceLoader
     @Override
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
-        // NOTE: Can't use Module's resource resolver yet since the module hasn't been initialized.
-        File viewsDir = new File(explodedModuleDir, VIEWS_DIR_NAME);
-        if (!StudyModule.MODULE_NAME.equalsIgnoreCase(module.getName()) && viewsDir.exists())
-            return Collections.singleton(StudyModule.MODULE_NAME);
+        // We used to return any mdoule with a "views" directory... but that made 41 modules study dependencies
         return Collections.emptySet();
     }
 
