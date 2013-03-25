@@ -189,7 +189,7 @@
 <%
    if(!aliasMap.isEmpty()){
        %>
-        <h3>Alises:</h3>
+        <h3>Aliases:</h3>
         <%
         StringBuilder builder = new StringBuilder();
         for(Map.Entry<String, String> entry : aliasMap.entrySet()){
@@ -197,7 +197,7 @@
         }
         String aliasString = builder.toString().substring(0, builder.toString().length()-2);
         %>
-        <p><%=aliasString%></p>
+        <p><%=h(aliasString)%></p>
 <%
    }
 %>
@@ -216,8 +216,8 @@
 <table class="labkey-data-region">
 
     <tr class="labkey-alternate-row">
-        <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=contextPath%>/_.gif"></td>
-        <td class="labkey-participant-view-header"><img alt="" width=20 height=1 src="<%=contextPath%>/_.gif"></td><%
+        <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=h(contextPath)%>/_.gif"></td>
+        <td class="labkey-participant-view-header"><img alt="" width=20 height=1 src="<%=h(contextPath)%>/_.gif"></td><%
 
             for (VisitImpl visit : visits)
             {
@@ -234,8 +234,8 @@
     </tr>
 
     <tr class="labkey-alternate-row">
-        <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=contextPath%>/_.gif"></td>
-        <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=contextPath%>/_.gif"></td><%
+        <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=h(contextPath)%>/_.gif"></td>
+        <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=h(contextPath)%>/_.gif"></td><%
 
         for (VisitImpl visit : visits)
         {
@@ -246,7 +246,7 @@
                 Integer keyCount = countKeysForSequence.get(seqNum);
                 if (null == keyCount)
                     keyCount = 1;
-                %><td class="labkey-participant-view-header" colspan="<%=keyCount%>"><%= null==date ? "&nbsp;" : ConvertUtils.convert(date) %></td><%
+                %><td class="labkey-participant-view-header" colspan="<%=keyCount%>"><%= text(null==date ? "&nbsp;": h(ConvertUtils.convert(date))) %></td><%
             }
         }
         %>
@@ -307,7 +307,7 @@
             <tr class="labkey-header">
             <th nowrap align="left" class="labkey-expandable-row-header">
                 <a title="Click to expand/collapse" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return toggleIfReady(this, true);">
-                    <img src="<%= context.getContextPath() %>/_images/<%= expanded ? "minus.gif" : "plus.gif" %>" alt="Click to expand/collapse">
+                    <img src="<%= h(context.getContextPath()) %>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>" alt="Click to expand/collapse">
                     <%=h(dataset.getDisplayString())%>
                 </a><%
             if (null != StringUtils.trimToNull(dataset.getDescription()))
