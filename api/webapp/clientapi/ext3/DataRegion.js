@@ -1253,7 +1253,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.ensurePaginationVisible();
 
         // 17422 - match only against default QWP instances
-        this.headerAsQWP = this.name && this.name.indexOf('aqwp') > -1;
+//        this.headerAsQWP = this.name && this.name.indexOf('aqwp') > -1;
 
         // check if the header row is being used
         this.includeHeader = this.headerRow.isDisplayed();
@@ -1350,10 +1350,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             s = {width: src.getWidth(), height: el.getHeight()}; // note: width coming from data row not header
 
             // See Ext.Element.adjustWidth for how numeric vs string widths are initialzied
-            if (this.headerAsQWP) {
-                s.width = s.width + 'px';
-                s.height = s.height + 'px';
-            }
+//            if (this.headerAsQWP) {
+//                s.width = s.width + 'px';
+//                s.height = s.height + 'px';
+//            }
             el.setWidth(s.width); // 15420
 
             z = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
