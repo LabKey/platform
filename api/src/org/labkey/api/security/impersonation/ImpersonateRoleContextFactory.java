@@ -34,6 +34,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
+import javax.management.relation.RoleStatus;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashSet;
 import java.util.Set;
@@ -86,15 +87,11 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     public ImpersonationContext getImpersonationContext()
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
-        Set<Role> roles = new HashSet<Role>();
 
         synchronized (_roleNames)
         {
-            for (String name : _roleNames)
-                roles.add(RoleManager.getRole(name));
+            return new ImpersonateRoleContext(project, getAdminUser(), new HashSet<String>(_roleNames), _returnURL);
         }
-
-        return new ImpersonateRoleContext(project, getAdminUser(), roles, _returnURL);
     }
 
     @Override
@@ -157,15 +154,17 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     public class ImpersonateRoleContext implements ImpersonationContext
     {
         private final @Nullable Container _project;
-        private final Set<Role> _roles;
+        /** Hold on to the role names and not the Roles themselves for serialization purposes. See issue 15660 */
+        private final Set<String> _roleNames;
+        private transient Set<Role> _roles;
         private final URLHelper _returnURL;
         private final User _adminUser;
 
-        private ImpersonateRoleContext(@Nullable Container project, User user, Set<Role> roles, URLHelper returnURL)
+        private ImpersonateRoleContext(@Nullable Container project, User user, Set<String> roleNames, URLHelper returnURL)
         {
             verifyPermissions(project, user);
             _project = project;
-            _roles = roles;
+            _roleNames = roleNames;
             _returnURL = returnURL;
             _adminUser = user;
         }
@@ -237,16 +236,27 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
             return ImpersonateRoleContextFactory.this;
         }
 
+        private synchronized Set<Role> getRoles()
+        {
+            if (_roles == null)
+            {
+                _roles = new HashSet<Role>();
+                for (String name : _roleNames)
+                    _roles.add(RoleManager.getRole(name));
+            }
+            return _roles;
+        }
+
         @Override
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
-            return new HashSet<Role>(_roles);
+            return new HashSet<Role>(getRoles());
         }
 
         @Override
         public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
         {
-            ImpersonateRoleContextFactory.addMenu(menu, c, currentURL, _roles);
+            ImpersonateRoleContextFactory.addMenu(menu, c, currentURL, getRoles());
         }
     }
 }
