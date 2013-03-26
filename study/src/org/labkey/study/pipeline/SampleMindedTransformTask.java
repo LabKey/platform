@@ -197,6 +197,11 @@ public class SampleMindedTransformTask
             _job.warn(msg);
     }
 
+    private void error(String msg)
+    {
+        if (null != _job)
+            _job.error(msg);
+    }
 
 
 
@@ -229,7 +234,10 @@ public class SampleMindedTransformTask
             List<Map<String, Object>> inputRows = loader.load();
             List<Map<String, Object>> outputRows = transformRows(inputRows);
 
-            info("After removing duplicates, there are " + outputRows.size() + " rows of data");
+            if (outputRows.size() > 0)
+                info("After removing duplicates, there are " + outputRows.size() + " rows of data");
+            else
+                error("There are no rows of data");
 
             // Create a ZIP archive with the appropriate TSVs
             ZipOutputStream zOut = null;
