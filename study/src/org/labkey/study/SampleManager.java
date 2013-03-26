@@ -33,6 +33,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.query.*;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -45,6 +46,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.model.*;
@@ -3139,13 +3141,13 @@ public class SampleManager implements ContainerManager.ContainerListener
     }
 
     @Nullable
-    public ExtendedSpecimenRequestView getExtendedSpecimenRequestView(Container container)
+    public ExtendedSpecimenRequestView getExtendedSpecimenRequestView(ViewContext context)
     {
-        if (container == null)
+        if (context == null || context.getContainer() == null)
             return null;
 
         Set<String> activeModuleNames = new HashSet<String>();
-        for (Module module : container.getActiveModules())
+        for (Module module : context.getContainer().getActiveModules())
             activeModuleNames.add(module.getName());
         for (Map.Entry<String, Resource> entry : _moduleExtendedSpecimenRequestViews.entrySet())
         {
@@ -3154,6 +3156,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                 try
                 {
                     String body = IOUtils.toString(entry.getValue().getInputStream());
+                    body = ModuleHtmlView.replaceTokens(body, context);
                     return ExtendedSpecimenRequestView.createView(body);
                 }
                 catch (IOException e)

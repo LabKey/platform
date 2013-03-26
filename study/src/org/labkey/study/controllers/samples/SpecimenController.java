@@ -1938,7 +1938,7 @@ public class SpecimenController extends BaseStudyController
         {
             VBox vbox = new VBox();
 
-            ExtendedSpecimenRequestView view = SampleManager.getInstance().getExtendedSpecimenRequestView(getContainer());
+            ExtendedSpecimenRequestView view = SampleManager.getInstance().getExtendedSpecimenRequestView(getViewContext());
             if (view != null && view.isActive())
             {
                 HtmlView requestView = new HtmlView(view.getBody());

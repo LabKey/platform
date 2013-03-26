@@ -61,7 +61,7 @@
     if (comments == null)
         comments = "[No description provided]";
     SampleManager manager = SampleManager.getInstance();
-    boolean hasExtendedRequestView = manager.getExtendedSpecimenRequestView(c) != null;
+    boolean hasExtendedRequestView = manager.getExtendedSpecimenRequestView(context) != null;
     SampleRequestActor[] actors = manager.getRequirementsProvider().getActors(context.getContainer());
     SampleRequestRequirement[] requirements = manager.getRequestRequirements(bean.getSampleRequest());
     Location destinationLocation = bean.getDestinationSite();

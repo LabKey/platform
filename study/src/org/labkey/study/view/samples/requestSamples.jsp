@@ -35,7 +35,7 @@
     ViewContext context = me.getViewContext();
     List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(context.getContainer());
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
-    boolean hasExtendedRequestView = SampleManager.getInstance().getExtendedSpecimenRequestView(context.getContainer()) != null;
+    boolean hasExtendedRequestView = SampleManager.getInstance().getExtendedSpecimenRequestView(context) != null;
     Specimen[] specimens = bean.getSamples();
     SampleManager.SpecimenRequestInput[] inputs = bean.getInputs();
 %>
