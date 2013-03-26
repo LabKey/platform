@@ -33,7 +33,7 @@ import java.util.Map;
 public class TransformConfiguration extends Entity
 {
     int rowId = -1;
-    String descriptionId;
+    String transformId;
     boolean enabled = false;
     boolean verboseLogging = false;
     Date lastChecked = null;
@@ -44,7 +44,7 @@ public class TransformConfiguration extends Entity
 
     public TransformConfiguration(ScheduledPipelineJobDescriptor etl, Container container)
     {
-        setDescriptionId(etl.getId());
+        setTransformId(etl.getId());
         setContainer(container.getId());
     }
 
@@ -60,14 +60,15 @@ public class TransformConfiguration extends Entity
         this.rowId = rowId;
     }
 
-    public String getDescriptionId()
+    // corresponds to ScheduledPipelineJobDescriptor.getId()
+    public String getTransformId()
     {
-        return descriptionId;
+        return transformId;
     }
 
-    public void setDescriptionId(String descriptionId)
+    public void setTransformId(String descriptionId)
     {
-        this.descriptionId = descriptionId;
+        this.transformId = descriptionId;
     }
 
     public boolean isEnabled()
@@ -106,7 +107,7 @@ public class TransformConfiguration extends Entity
         if (null == map)
             map = new JSONObject();
         map.put("rowId", getRowId());
-        map.put("descriptionId", getDescriptionId());
+        map.put("descriptionId", getTransformId());
         map.put("enabled", isEnabled());
         map.put("verboseLogging", isVerboseLogging());
         map.put("lastChecked", getLastChecked());

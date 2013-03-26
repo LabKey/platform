@@ -331,7 +331,7 @@ public class ETLManager
             int runAsUserId = config.getModifiedBy();
             User runAsUser = UserManager.getUser(runAsUserId);
 
-            ScheduledPipelineJobDescriptor etl = etls.get(config.getDescriptionId());
+            ScheduledPipelineJobDescriptor etl = etls.get(config.getTransformId());
             if (null == etl)
                 continue;
             Container c = ContainerManager.getForId(config.getContainerId());

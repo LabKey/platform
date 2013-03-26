@@ -130,7 +130,7 @@ public class DataIntegrationController extends SpringActionController
             List<TransformConfiguration> configs = ETLManager.get().getTransformConfigurations(context.getContainer());
             for (TransformConfiguration c : configs)
             {
-                if (c.getDescriptionId().equalsIgnoreCase(form.getTransformId()))
+                if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
                 {
                     config = c;
                     break;

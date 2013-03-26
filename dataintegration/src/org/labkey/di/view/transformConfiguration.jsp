@@ -32,16 +32,27 @@ List<ScheduledPipelineJobDescriptor> descriptors = ETLManager.get().getETLs();
 List<TransformConfiguration> configurationsList = ETLManager.get().getTransformConfigurations(context.getContainer());
 Map<String,TransformConfiguration> configurationsMap = new HashMap<String, TransformConfiguration>(configurationsList.size()*2);
 for (TransformConfiguration c : configurationsList)
-    configurationsMap.put(c.getDescriptionId(), c);
+    configurationsMap.put(c.getTransformId(), c);
 
 boolean isAdmin = context.hasPermission(AdminPermission.class);
 
 %>
 <script>
 var X = Ext4 || Ext;
+
+function onFailedConfigurationUpdate(response,config)
+{
+    X.MessageBox.show({
+        modal:true,
+        title:response.statusText,
+        msg:"There was an error updating the configuration",
+        icon:Ext.MessageBox.ERROR,
+        buttons: Ext.MessageBox.OK,
+        fn: function(){window.location.reload(true);}
+    });
+}
 function Transform_setProperty(transformId, property, value)
 {
-//    alert(transformId + " " + property + "=" + value);
     var params = {'transformId':transformId};
     params[property] = value;
 
@@ -49,8 +60,7 @@ function Transform_setProperty(transformId, property, value)
         url : <%=q(buildURL(DataIntegrationController.UpdateTransformConfigurationAction.class))%>,
         params : params,
         method : "POST"
-//        ,success : onSuccess
-//        ,failure : onFailure
+        ,failure : onFailedConfigurationUpdate
     });
 }
 function Transform_setEnabled(transformId, enabled)
@@ -128,7 +138,7 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptors)
     {
         configuration = new TransformConfiguration();
         configuration.setContainer(context.getContainer().getId());
-        configuration.setDescriptionId(id);
+        configuration.setTransformId(id);
     }
 
     if (isAdmin)
