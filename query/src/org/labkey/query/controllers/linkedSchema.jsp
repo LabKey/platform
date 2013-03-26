@@ -340,6 +340,7 @@
         });
 
         var sourceSchemaOverride = Ext4.create('LABKEY.ext.OverrideField', {
+            id: 'sourceSchemaOverride',
             boundField: sourceSchemaCombo,
             override: <%=def.getSourceSchemaName() != null && initialTemplate != null%>,
             hidden: <%=initialTemplate == null%>,
@@ -421,6 +422,7 @@
         });
 
         var tablesOverride = Ext4.create('LABKEY.ext.OverrideField', {
+            id: 'tablesOverride',
             boundField: tablesCombo,
             override: <%=def.getTables() != null && initialTemplate != null%>,
             hidden: <%=initialTemplate == null%>,
@@ -456,6 +458,7 @@
         });
 
         var metadataOverride = Ext4.create('LABKEY.ext.OverrideField', {
+            id: 'metadataOverride',
             boundField: metadataTextArea,
             override: <%=def.getMetaData() != null && initialTemplate != null%>,
             hidden: <%=initialTemplate == null%>,

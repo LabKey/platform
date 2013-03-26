@@ -175,6 +175,8 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
 
             addFilters(xmlFilters.getFilterArray());
         }
+
+        super.loadAllButCustomizerFromXML(schema, xmlTable, filtersArray, errors);
     }
 
     /** @return true if match was found, false if it's not in the array */
