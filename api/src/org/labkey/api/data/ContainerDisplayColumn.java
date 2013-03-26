@@ -34,6 +34,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -236,12 +237,23 @@ public class ContainerDisplayColumn extends DataColumn
             QuerySettings qs = us.getSettings(mpv, "query");
             qs.setBaseFilter(new SimpleFilter(FieldKey.fromString("projectId"), project.getEntityId()));
 
-            ViewContext vc = new ViewContext();
-            QueryView view = new QueryView(us, qs, errors);
-            view.setViewContext(vc);
             // Use a mock request so that we don't end up writing to the "real" output when we write
             // out spaces to see if the client is still listening during an async query
-            vc.setResponse(new MockHttpServletResponse());
+            final ViewContext vc = new ViewContext();
+            final MockHttpServletResponse response = new MockHttpServletResponse();
+            vc.setResponse(response);
+            QueryView view = new QueryView(us, qs, errors)
+            {
+                @Override
+                public DataView createDataView()
+                {
+                    DataView dataView = super.createDataView();
+                    dataView.getViewContext().setResponse(response);
+                    dataView.getRenderContext().getViewContext().setResponse(response);
+                    return dataView;
+                }
+            };
+            view.setViewContext(vc);
             ExtendedApiQueryResponse resp = new ExtendedApiQueryResponse(view, vc, false, false, "auditLog", "ContainerAuditEvent", 0, fieldKeys, false, false, false);
             Writer writer = new StringWriter();
             ApiResponseWriter apiWriter = new ApiJsonWriter(writer);
@@ -256,7 +268,7 @@ public class ContainerDisplayColumn extends DataColumn
                 {
                     assertEquals("Incorrect display value for ProjectId column", row.getJSONObject("ProjectId").getString("displayValue"), project.getName());
                     assertEquals("Incorrect json value for for ProjectId column", row.getJSONObject("ProjectId").getString("value"), project.getEntityId().toString());
-                    assertEquals("Incorrect json value for ProjectId/Name column", row.getJSONObject("ProjectId/Name").getString("value"), project.getName().toString());
+                    assertEquals("Incorrect json value for ProjectId/Name column", row.getJSONObject("ProjectId/Name").getString("value"), project.getName());
 
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("value"), project.getEntityId().toString());
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("displayValue"), project.getName());
@@ -271,7 +283,7 @@ public class ContainerDisplayColumn extends DataColumn
                 {
                     assertEquals("Incorrect display value for ProjectId column", row.getJSONObject("ProjectId").getString("displayValue"), subFolder1.getName());
                     assertEquals("Incorrect json value for for ProjectId column", row.getJSONObject("ProjectId").getString("value"), subFolder1.getEntityId().toString());
-                    assertEquals("Incorrect json value for ProjectId/Name column", row.getJSONObject("ProjectId/Name").getString("value"), subFolder1.getName().toString());
+                    assertEquals("Incorrect json value for ProjectId/Name column", row.getJSONObject("ProjectId/Name").getString("value"), subFolder1.getName());
 
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("value"), subFolder1.getEntityId().toString());
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("displayValue"), subFolder1.getName());
