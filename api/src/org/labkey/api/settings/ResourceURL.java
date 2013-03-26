@@ -16,7 +16,6 @@
 package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 
@@ -40,7 +39,7 @@ public class ResourceURL extends URLHelper
     {
         setContextPath(AppProps.getInstance().getParsedContextPath());
         _path = c.getParsedPath().append(resource,false);
-        addParameter("revision", String.valueOf(PageFlowUtil.getServerSessionHash()) + String.valueOf(AppProps.getInstance().getLookAndFeelRevision()));
+        addParameter("revision", String.valueOf(AppProps.getInstance().getLookAndFeelRevision()));
     }
 
 
