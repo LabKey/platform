@@ -148,7 +148,7 @@ public class ImageOutput extends AbstractParamReplacement
                     out.write("<tr style=\"display:none\"><td>");
                 else
                     out.write("<tr><td>");
-                out.write("<img id=\"resultImage\" src=\"");
+                out.write("<img id=\"" + getUniqueId("resultImage") + "\" src=\"");
                 out.write(imgUrl);
                 out.write("\">");
                 out.write("</td></tr>");

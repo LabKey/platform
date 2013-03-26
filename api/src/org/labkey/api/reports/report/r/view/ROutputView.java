@@ -22,6 +22,7 @@ import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 
 import java.io.File;
@@ -96,6 +97,11 @@ public class ROutputView extends HttpView
     public void setProperties(Map<String, String> properties)
     {
         _properties = properties;
+    }
+
+    protected String getUniqueId(String id)
+    {
+        return id.concat(String.valueOf(UniqueID.getServerSessionScopedUID()));
     }
 
     protected String renderInternalAsString() throws Exception
