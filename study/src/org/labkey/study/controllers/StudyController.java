@@ -6399,12 +6399,12 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(ReloadForm form, boolean reshow, BindException errors) throws Exception
         {
-            ReloadTask task = new ReloadTask(getContainer().getId());
+            ReloadTask task = new ReloadTask();
             String message;
 
             try
             {
-                ReloadStatus status = task.attemptReload();
+                ReloadStatus status = task.attemptReload(getContainer().getId());
 
                 if (status.isReloadQueued() && form.isUi())
                     return HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
