@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -130,6 +131,13 @@ public class LinkedSchema extends ExternalSchema
         if (sourceSchemaName == null && template != null)
             sourceSchemaName = template.getSourceSchemaName();
         SchemaKey sourceSchemaKey = SchemaKey.fromString(sourceSchemaName);
+
+        // Disallow recursive linked schema
+        if (def.lookupContainer() == sourceContainer && def.getUserSchemaName().equals(sourceSchemaName))
+        {
+            Logger.getLogger(LinkedSchema.class).warn("Disallowed recursive linked schema definition '" + sourceSchemaName + "' in container '" + sourceContainer.getPath() + "'");
+            return null;
+        }
 
         User sourceSchemaUser = new LinkedSchemaUserWrapper(user, sourceContainer);
         return QueryService.get().getUserSchema(sourceSchemaUser, sourceContainer, sourceSchemaKey);
