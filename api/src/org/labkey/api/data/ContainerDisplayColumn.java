@@ -236,8 +236,9 @@ public class ContainerDisplayColumn extends DataColumn
             QuerySettings qs = us.getSettings(mpv, "query");
             qs.setBaseFilter(new SimpleFilter(FieldKey.fromString("projectId"), project.getEntityId()));
 
-            QueryView view = new QueryView(us, qs, errors);
             ViewContext vc = new ViewContext();
+            QueryView view = new QueryView(us, qs, errors);
+            view.setViewContext(vc);
             // Use a mock request so that we don't end up writing to the "real" output when we write
             // out spaces to see if the client is still listening during an async query
             vc.setResponse(new MockHttpServletResponse());
