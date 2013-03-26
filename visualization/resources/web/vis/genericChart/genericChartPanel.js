@@ -1762,13 +1762,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // Check if y axis actually has data first, if not show error message and have user select new measure.
         var yDataIsNull = true;
+        var measureUndefined = true;
         var invalidYLogValues = false;
         var yHasZeroes = false;
 
         for(var i = 0; i < this.chartData.rows.length; i++){
             var yValue = measures.y.acc(this.chartData.rows[i]);
-            if(yValue != null){
+            if(yValue !== null){
                 yDataIsNull = false;
+            }
+
+            if(yValue !== undefined){
+                measureUndefined = false;
             }
 
             if(yValue < 0 || yValue === null || yValue === undefined){
@@ -1783,6 +1788,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if(yDataIsNull){
             this.viewPanel.getEl().unmask();
             Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label) + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
+            this.setRenderRequested(false);
+            return;
+        }
+
+        if(measureUndefined){
+            this.viewPanel.getEl().unmask();
+            Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showYMeasureWindow, this);
+            this.setRenderRequested(false);
             return;
         }
 
@@ -1838,7 +1851,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // TODO: make line charts render if this.xAxisMeasure.type == "date"
         if(!this.xAxisMeasure || this.isBoxPlot(this.renderType, this.xAxisMeasure.normalizedType)) {
-            this.configureBoxPlotAxes(chartOptions, measures, scales);
+            if(!this.configureBoxPlotAxes(chartOptions, measures, scales)){
+                return;
+            }
             
             geom = new LABKEY.vis.Geom.Boxplot({
                 lineWidth: chartOptions.lineWidth,
@@ -1849,7 +1864,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 fill: '#' + chartOptions.fillColor
             });
         } else if(this.isScatterPlot(this.renderType, this.xAxisMeasure.normalizedType)){
-            this.configureAxes(chartOptions, measures, scales);
+            if(!this.configureAxes(chartOptions, measures, scales)){
+                return;
+            }
 
             geom = new LABKEY.vis.Geom.Point({
                 opacity: chartOptions.opacity,
@@ -1859,9 +1876,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         } else {
             if(customRenderType){
                 if(customRenderType.configureAxes){
-                    customRenderType.configureAxes(this, chartOptions, measures, scales);
+                    if(!customRenderType.configureAxes(this, chartOptions, measures, scales)){
+                        return;
+                    }
                 } else {
-                    this.configureAxes(chartOptions, measures, scales);
+                    if(!this.configureAxes(chartOptions, measures, scales)){
+                        return;
+                    }
                 }
             } else {
                 // If the render type is not found it's probably a custom one that is no longer supported.
@@ -2015,6 +2036,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if(valueObj){
                 value = valueObj.displayValue ? valueObj.displayValue : valueObj.value;
+            } else {
+                return undefined;
             }
 
             if(value === null){
@@ -2035,9 +2058,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 if(Math.abs(value) === Infinity){
                     value = null;
                 }
-            }
 
-            return value;
+                return value;
+            } else {
+                return undefined;
+            }
         }
     },
 
@@ -2048,13 +2073,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             var hasNegative = false;
             var hasZero = false;
             var allXDataIsNull = true;
+            var measureUndefined = true;
 
             // Check for values < 0, if log scale show error accordingly.
             for(var i = 0; i < this.chartData.rows.length; i++){
                 var value = measures.x.acc(this.chartData.rows[i]);
 
-                if(value != null){
+                if(value !== null){
                     allXDataIsNull = false;
+                }
+
+                if(value !== undefined){
+                    measureUndefined = false;
                 }
 
                 if(value < 0 || value === null){
@@ -2066,8 +2096,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if(allXDataIsNull){
                 this.viewPanel.getEl().unmask();
+                this.setRenderRequested(false);
                 Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' are null. Please choose a different measure', this.showXMeasureWindow, this);
-                return;
+                return false;
+            }
+
+            if(measureUndefined){
+                this.viewPanel.getEl().unmask();
+                this.setRenderRequested(false);
+                Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
+                return false;
             }
 
             if(scales.x.trans === 'log'){
@@ -2087,6 +2125,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         scales.y = {scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
+
+        return true;
     },
 
     configureBoxPlotAxes: function(chartOptions, measures, scales){
@@ -2097,9 +2137,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         scales.x = {scaleType: 'discrete'};
-        yMin = d3.min(this.chartData.rows, measures.y.acc);
-        yMax = d3.max(this.chartData.rows, measures.y.acc);
-        yPadding = ((yMax - yMin) * .1);
+        var yMin = d3.min(this.chartData.rows, measures.y.acc);
+        var yMax = d3.max(this.chartData.rows, measures.y.acc);
+        var yPadding = ((yMax - yMin) * .1);
+        var measureUndefined = true;
 
         if (chartOptions.yAxis.scaleType == "log"){
             // Issue 15760: Quick Chart -- Log Data Renders Incorrectly
@@ -2114,6 +2155,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         scales.y = {min: yMin, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
+
+        for(var i = 0; i < this.chartData.rows.length; i++){
+            var value = measures.x.acc(this.chartData.rows[i]);
+
+            if(value !== undefined){
+                measureUndefined = false;
+            }
+        }
+
+        if(measureUndefined){
+            this.viewPanel.getEl().unmask();
+            this.setRenderRequested(false);
+            Ext.MessageBox.alert('Error', 'The measure ' + Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) + ' was not found. It may have been renamed or removed.', this.showXMeasureWindow, this);
+            return false;
+        }
+
+        return true;
     },
 
     clearChartPanel: function(){
@@ -2213,9 +2271,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     if(value === false || value === true){
                         value = value.toString();
                     }
-                }
 
-                return value;
+                    return value;
+                } else {
+                    return undefined;
+                }
             }
         };
 
