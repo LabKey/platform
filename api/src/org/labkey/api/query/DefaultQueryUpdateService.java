@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
@@ -165,9 +166,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return row;
     }
 
-    protected Map<String, Object> _select(Container container, Object[] keys) throws SQLException
+    protected Map<String, Object> _select(Container container, Object[] keys) throws SQLException, ConversionException
     {
-        Map<String, Object> row = ((Map<String,Object>)Table.selectObject(getDbTable(), keys, Map.class));
+        TableInfo table = getDbTable();
+        Object[] typedParameters = convertToTypedValues(keys, table.getPkColumns());
+
+        Map<String, Object> row = ((Map<String,Object>)Table.selectObject(table, typedParameters, Map.class));
 
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
@@ -194,6 +198,28 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
 
         return row;
+    }
+
+
+    private Object[] convertToTypedValues(Object[] keys, List<ColumnInfo> cols)
+    {
+        Object[] typedParameters = new Object[keys.length];
+        int t=0;
+        for (int i=0 ; i<keys.length ; i++)
+        {
+            if (i >= cols.size() || keys[i] instanceof Parameter.TypedValue)
+            {
+                typedParameters[t++] = keys[i];
+                continue;
+            }
+            Object v = keys[i];
+            JdbcType type = cols.get(i).getJdbcType();
+            if (v instanceof String)
+                v = type.convert(v);
+            Parameter.TypedValue tv = new Parameter.TypedValue(v,type);
+            typedParameters[t++] = tv;
+        }
+        return typedParameters;
     }
 
 
@@ -265,7 +291,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow)
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         Map<String,Object> rowStripped = new CaseInsensitiveHashMap<Object>(row.size());
