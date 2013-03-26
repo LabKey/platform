@@ -54,6 +54,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -258,7 +259,14 @@ public class FileSystemResource extends AbstractWebdavResource
         if (!file.exists())
         {
             file.getParentFile().mkdirs();
-            file.createNewFile();
+            try
+            {
+                file.createNewFile();
+            }
+            catch (IOException x)
+            {
+                throw new ConfigurationException("Couldn't create file on server", x);
+            }
             resetMetadata();
         }
 
@@ -275,6 +283,15 @@ public class FileSystemResource extends AbstractWebdavResource
             IOUtils.closeQuietly(fos);
         }
     }
+
+
+    @Override
+    public void moveFrom(User user, WebdavResource src) throws IOException
+    {
+        super.moveFrom(user, src);
+        resetMetadata();
+    }
+
 
     private void resetMetadata()
     {
