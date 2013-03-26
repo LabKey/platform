@@ -431,7 +431,7 @@ public class StudyManager
         return study;
     }
 
-    public void updateStudy(User user, StudyImpl study) throws SQLException
+    public void updateStudy(@Nullable User user, StudyImpl study) throws SQLException
     {
         Study oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();

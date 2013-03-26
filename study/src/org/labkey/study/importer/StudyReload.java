@@ -28,10 +28,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
@@ -40,6 +41,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.folder.xml.FolderDocument;
@@ -47,6 +49,18 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.quartz.Job;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
+import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletContextEvent;
@@ -54,15 +68,11 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 /*
 * User: adam
@@ -72,19 +82,19 @@ import java.util.concurrent.TimeUnit;
 public class StudyReload
 {
     private static final Logger LOG = Logger.getLogger(StudyReload.class);
-    private static final Map<String, Future> FUTURES = new ConcurrentHashMap<String, Future>();
-    private static final ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(1, new ReloadThreadFactory());
     private static final BlockingQueue<Container> QUEUE = new ArrayBlockingQueue<Container>(100);       // Container IDs instead?
     private static final Thread RELOAD_THREAD = new ReloadThread();
+
+    private static final String JOB_GROUP_NAME = "org.labkey.study.importer.StudyReload";
 
     static
     {
         RELOAD_THREAD.start();
 
-        ContextListener.addShutdownListener(new ShutdownListener() {
+        ContextListener.addShutdownListener(new ShutdownListener()
+        {
             public void shutdownPre(ServletContextEvent servletContextEvent)
             {
-                SCHEDULER.shutdown();
                 RELOAD_THREAD.interrupt();
             }
 
@@ -168,14 +178,14 @@ public class StudyReload
     {
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudy();
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("AllowReload", true);
-        filter.addCondition("ReloadInterval", 0, CompareType.GT);
+        filter.addCondition(FieldKey.fromParts("AllowReload"), true);
+        filter.addCondition(FieldKey.fromParts("ReloadInterval"), 0, CompareType.GT);
 
         ResultSet rs = null;
 
         try
         {
-            rs = Table.select(tinfo, tinfo.getColumns("Container, ReloadInterval"), filter, null);
+            rs = new TableSelector(tinfo, tinfo.getColumns("Container", "ReloadInterval"), filter, null).getResults();
 
             while (rs.next())
             {
@@ -207,19 +217,61 @@ public class StudyReload
 
     private static void initializeTimer(String containerId, boolean allowReload, Integer secondsInterval)
     {
-        Future future = FUTURES.get(containerId);
-
-        if (null != future)
+        try
         {
-            future.cancel(true);
-            FUTURES.remove(containerId);
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+
+            TriggerKey triggerKey = TriggerKey.triggerKey(containerId, JOB_GROUP_NAME);
+            JobKey jobKey = JobKey.jobKey(containerId, JOB_GROUP_NAME);
+
+            // Unschedule any existing triggers
+            if (scheduler.checkExists(triggerKey))
+            {
+                scheduler.unscheduleJob(triggerKey);
+            }
+
+            // Check if we should schedule a new trigger
+            if (allowReload && null != secondsInterval && 0 != secondsInterval.intValue())
+            {
+                int reasonableInterval = Math.max(secondsInterval.intValue(), 10);
+
+                // Reuse the existing detail object if we've already submitted it in the past
+                JobDetail job = scheduler.getJobDetail(jobKey);
+                boolean existingJob = job != null;
+                if (!existingJob)
+                {
+                    job = JobBuilder.newJob(ReloadTask.class).
+                            withIdentity(jobKey).
+                            storeDurably().
+                            build();
+                    job.getJobDataMap().put(CONTAINER_ID_KEY, containerId);
+                }
+
+                // Run it on the user-specified schedule
+                Trigger trigger = TriggerBuilder.newTrigger()
+                    .withIdentity(triggerKey)
+                    .forJob(jobKey)
+//                    .startNow()
+                    .withSchedule(SimpleScheduleBuilder.simpleSchedule()
+                            .withIntervalInSeconds(reasonableInterval)
+                            .repeatForever())
+                    .usingJobData(job.getJobDataMap())
+                    .build();
+
+                // Submit it
+                if (existingJob)
+                {
+                    scheduler.scheduleJob(trigger);
+                }
+                else
+                {
+                    scheduler.scheduleJob(job, trigger);
+                }
+            }
         }
-
-        if (allowReload && null != secondsInterval && 0 != secondsInterval.intValue())
+        catch (SchedulerException e)
         {
-            int reasonableInterval = Math.max(secondsInterval.intValue(), 10);
-            future = SCHEDULER.scheduleAtFixedRate(new ReloadTask(containerId), reasonableInterval /* TODO: Randomize this? */, reasonableInterval, TimeUnit.SECONDS);
-            FUTURES.put(containerId, future);
+            throw new UnexpectedException(e);
         }
     }
 
@@ -235,27 +287,22 @@ public class StudyReload
         return root;
     }
 
+    private static final String CONTAINER_ID_KEY = "StudyContainerId";
 
-    public static class ReloadTask implements Runnable
+    public static class ReloadTask implements Job
     {
         private static final String STUDY_LOAD_FILENAME = "studyload.txt";
 
-        private final String _studyContainerId;
-
-        public ReloadTask(String studyContainerId)
+        public void execute(JobExecutionContext context)
         {
-            _studyContainerId = studyContainerId;
-        }
-
-        public void run()
-        {
+            String studyContainerId = (String)context.getJobDetail().getJobDataMap().get(CONTAINER_ID_KEY);
             try
             {
-                attemptReload();    // Ignore success messages
+                attemptReload(studyContainerId);    // Ignore success messages
             }
             catch (ImportException ie)
             {
-                Container c = ContainerManager.getForId(_studyContainerId);
+                Container c = ContainerManager.getForId(studyContainerId);
                 String message = null != c ? " in folder " + c.getPath() : "";
 
                 LOG.error("Study reload failed" + message, ie);
@@ -267,15 +314,15 @@ public class StudyReload
             }
         }
 
-        public ReloadStatus attemptReload() throws SQLException, ImportException
+        public ReloadStatus attemptReload(String studyContainerId) throws SQLException, ImportException
         {
-            Container c = ContainerManager.getForId(_studyContainerId);
+            Container c = ContainerManager.getForId(studyContainerId);
 
             if (null == c)
             {
                 // Container must have been deleted
-                cancelTimer(_studyContainerId);
-                throw new ImportException("Container " + _studyContainerId + " does not exist");
+                cancelTimer(studyContainerId);
+                throw new ImportException("Container " + studyContainerId + " does not exist");
             }
             else
             {
@@ -284,7 +331,7 @@ public class StudyReload
                 if (null == study)
                 {
                     // Study must have been deleted
-                    cancelTimer(_studyContainerId);
+                    cancelTimer(studyContainerId);
                     throw new ImportException("Study does not exist in folder " + c.getPath());
                 }
                 else
