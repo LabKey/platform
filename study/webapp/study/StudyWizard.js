@@ -193,11 +193,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         setup.push(
                 {value: 'Specimens', currentStep: false},
-                {value: 'Study Properties', currentStep: false},
+                {value: 'Study Objects', currentStep: false},
                 {value: 'Lists', currentStep: false},
                 {value: 'Views', currentStep: false},
                 {value: 'Reports', currentStep: false},
-                {value: 'Folder Properties', currentStep: false},
+                {value: 'Folder Objects', currentStep: false},
                 {value: 'Publish Options', currentStep: false}
         );
 
@@ -946,7 +946,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         this.studyPropsPanel = new Ext.FormPanel({
-            name : 'Study Properties',
+            name : 'Study Objects',
             html : txt,
             border : false,
             layout : 'vbox',
@@ -1311,7 +1311,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         this.folderPropsPanel = new Ext.FormPanel({
-            name : 'Folder Properties',
+            name : 'Folder Objects',
             html : txt,
             border : false,
             layout : 'vbox',
