@@ -745,10 +745,26 @@ public abstract class VisitManager
                         StudyImpl study = StudyManager.getInstance().getStudy(container);
                         if (study != null)
                         {
-                            int deleted = performParticipantPurge(study, potentiallyDeletedParticipants);
-                            if (deleted > 0)
+                            try
                             {
-                                StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null);
+                                int deleted = performParticipantPurge(study, potentiallyDeletedParticipants);
+                                if (deleted > 0)
+                                {
+                                    StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null);
+                                }
+                            }
+                            catch (RuntimeSQLException x)
+                            {
+                                if (SqlDialect.isTransactionException(x))
+                                {
+                                    synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
+                                    {
+                                    }
+                                    // throw them back
+                                    VisitManager vm = StudyManager.getInstance().getVisitManager(study);
+                                    if (null != vm)
+                                        vm.scheduleParticipantPurge(potentiallyDeletedParticipants);
+                                }
                             }
                         }
                     }

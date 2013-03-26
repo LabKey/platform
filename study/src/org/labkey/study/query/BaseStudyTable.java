@@ -128,7 +128,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return LookupForeignKey.getDetailsURL(parent, table, _columnName);
             }
         };
-        lfk.addJoin(new FieldKey(null, "Container"), "Container", false);
+        // 17036: ParticipantLookup broken when used with query
+        // target table is already scoped to container, don't need to add this join
+//        lfk.addJoin(new FieldKey(null, "Container"), "Container", false);
         participantColumn.setFk(lfk);
 
         // Don't setKeyField. Use addQueryFieldKeys where needed
