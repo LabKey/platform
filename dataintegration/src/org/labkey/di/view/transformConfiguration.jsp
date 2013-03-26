@@ -87,29 +87,29 @@ function Transform_runNow(transformId)
 
 
 // UI GLUE
-function getTransformId()
+function getTransformId(srcEl)
 {
     var transformId = null;
-    var e = event.srcElement;
+    var e = srcEl;
     while (e && e.tagName != "TR")
         e = e.parentElement;
     if (e && e.tagName == "TR")
         transformId = e.getAttribute("transformid");
     return transformId;
 }
-function onEnabledChanged()
+function onEnabledChanged(el,id)
 {
-    var checked = event.srcElement.checked;
-    Transform_setEnabled(getTransformId(), checked);
+    var checked = el.checked;
+    Transform_setEnabled(id, checked);
 }
-function onVerboseLoggingChanged()
+function onVerboseLoggingChanged(el,id)
 {
-    var checked = event.srcElement.checked;
-    Transform_setVerboseLogging(getTransformId(), checked);
+    var checked = el.checked;
+    Transform_setVerboseLogging(id, checked);
 }
-function onRunNowClicked()
+function onRunNowClicked(el,id)
 {
-    Transform_runNow(getTransformId());
+    Transform_runNow(id);
 }
 </script>
 
@@ -147,9 +147,9 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptors)
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
-        <td><input type=checkbox onchange="onEnabledChanged()" <%=checked(configuration.isEnabled())%>></td>
-        <td><input type=checkbox onchange="onVerboseLoggingChanged()" <%=checked(configuration.isVerboseLogging())%>></td>
-        <td><%=generateButton("run now", "#", "onRunNowClicked(); return false;")%></td>
+        <td><input type=checkbox onchange="onEnabledChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isEnabled())%>></td>
+        <td><input type=checkbox onchange="onVerboseLoggingChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isVerboseLogging())%>></td>
+        <td><%=generateButton("run now", "#", "onRunNowClicked(this," + q(descriptor.getId()) + "); return false;")%></td>
         </tr><%
     }
     else
