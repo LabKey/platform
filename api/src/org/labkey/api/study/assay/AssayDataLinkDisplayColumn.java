@@ -17,6 +17,8 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ContainerFilter;
@@ -42,6 +44,7 @@ public class AssayDataLinkDisplayColumn extends DataColumn
     private Map<Number, ExpProtocol> _protocols = new HashMap<Number, ExpProtocol>();
     private ColumnInfo _runIdColumnInfo;
     private ContainerFilter _containerFilter;
+    private ColumnInfo _containerColumnInfo;
 
     public AssayDataLinkDisplayColumn(ColumnInfo colInfo, ContainerFilter containerFilter)
     {
@@ -54,7 +57,8 @@ public class AssayDataLinkDisplayColumn extends DataColumn
         // RunId and ProtocolId may not be available if we are in a custom query
         Number runId = _runIdColumnInfo == null ? null : (Number)_runIdColumnInfo.getValue(ctx);
         Number protocolId = _protocolColumnInfo == null ? null : (Number)_protocolColumnInfo.getValue(ctx);
-        if (runId != null && protocolId != null)
+        String containerId = (null != _containerColumnInfo) ? (String)_containerColumnInfo.getValue(ctx) : null;
+        if (runId != null && protocolId != null && containerId != null)
         {
             ExpProtocol protocol = _protocols.get(protocolId);
             if (protocol == null)
@@ -62,10 +66,18 @@ public class AssayDataLinkDisplayColumn extends DataColumn
                 protocol = ExperimentService.get().getExpProtocol(protocolId.intValue());
                 _protocols.put(protocolId, protocol);
             }
-            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(ctx.getContainer(), protocol, _containerFilter, runId.intValue());
+            Container container = ContainerManager.getContainerService().getForId(containerId);
+            if (null != container)
+            {
+                ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, protocol, _containerFilter, runId.intValue());
 
-            out.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
-                    PageFlowUtil.filter(getDisplayColumn().getValue(ctx)) + "</a>");
+                out.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
+                        PageFlowUtil.filter(getDisplayColumn().getValue(ctx)) + "</a>");
+            }
+            else
+            {
+                out.write(PageFlowUtil.filter(getDisplayColumn().getValue(ctx)));
+            }
         }
         else
         {
@@ -82,9 +94,11 @@ public class AssayDataLinkDisplayColumn extends DataColumn
             FieldKey parentColKey = thisColKey.getParent();
             FieldKey protocolIdKey = new FieldKey(new FieldKey(parentColKey, ExpRunTable.Column.Protocol.name()), ExpProtocolTable.Column.RowId.name());
             FieldKey runIdKey = new FieldKey(parentColKey, ExpRunTable.Column.RowId.name());
-            Map<FieldKey,ColumnInfo> extraCols = QueryService.get().getColumns(getColumnInfo().getParentTable(), Arrays.asList(protocolIdKey, runIdKey));
+            FieldKey containerColKey = new FieldKey(parentColKey, ExpRunTable.Column.Folder.name());
+            Map<FieldKey,ColumnInfo> extraCols = QueryService.get().getColumns(getColumnInfo().getParentTable(), Arrays.asList(protocolIdKey, runIdKey, containerColKey));
             _protocolColumnInfo = extraCols.get(protocolIdKey);
             _runIdColumnInfo = extraCols.get(runIdKey);
+            _containerColumnInfo = extraCols.get(containerColKey);
         }
         // RunId and ProtocolId may not be available if we are in a custom query
         if (_protocolColumnInfo != null)
@@ -94,6 +108,10 @@ public class AssayDataLinkDisplayColumn extends DataColumn
         if (_runIdColumnInfo != null)
         {
             columns.add(_runIdColumnInfo);
+        }
+        if (null != _containerColumnInfo)
+        {
+            columns.add(_containerColumnInfo);
         }
     }
 }
