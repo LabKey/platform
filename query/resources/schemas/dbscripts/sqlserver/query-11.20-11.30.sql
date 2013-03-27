@@ -29,15 +29,6 @@ ALTER TABLE query.QuerySnapshotDef ADD ParticipantGroups TEXT;
 
 /* query-11.22-11.23.sql */
 
--- Issue 13594: Remove 'inherit' bit from custom view flags for list and dataset views known to only exist in a single container
-UPDATE query.customview SET flags = flags & ~1
-WHERE customviewid IN (
-	SELECT cv.customviewid
-	FROM query.customview cv
-	WHERE
-	((cv.flags & 1) != 0) AND
-	(
-	  cv.[schema] = 'lists' OR
-	  (cv.[schema] = 'study' AND LOWER(cv.queryname) IN (SELECT LOWER(ds.name) FROM study.dataset ds))
-	)
-);
+-- Originally an UPDATE statement to address #13594; removed in 13.1 due to issue #17498
+
+;
