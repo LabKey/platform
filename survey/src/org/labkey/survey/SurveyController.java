@@ -556,7 +556,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
             if (surveyDesign != null)
             {
-                TableInfo table = getSurveyAnswersTableInfo(surveyDesign, getContainer());
+                TableInfo table = SurveyManager.get().getSurveyResponsesTableInfo(getContainer(), getUser(), surveyDesign);
                 if (table == null)
                 {
                     response.put("errorInfo", "Table " + surveyDesign.getSchemaName() + "." + surveyDesign.getQueryName() + " could not be found in this container.");
@@ -689,21 +689,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    protected TableInfo getSurveyAnswersTableInfo(SurveyDesign survey, Container container)
-    {
-        //Container container = ContainerManager.getForId(survey.getContainerId());
-        if (container != null)
-        {
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), container, survey.getSchemaName());
-
-            if (schema != null)
-            {
-                return schema.getTable(survey.getQueryName());
-            }
-        }
-        return null;
-    }
-
     protected Map<String, Object> doInsertUpdate(TableViewForm form, BindException errors, boolean insert) throws Exception
     {
         TableInfo table = form.getTable();
@@ -780,7 +765,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                 if (surveyDesign != null)
                 {
-                    TableInfo table = getSurveyAnswersTableInfo(surveyDesign, getContainer());
+                    TableInfo table = SurveyManager.get().getSurveyResponsesTableInfo(getContainer(), getUser(), surveyDesign);
                     if (table == null)
                     {
                         errors.reject(ERROR_MSG, "The survey responses table could not be found and may have been deleted.");
@@ -898,7 +883,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                     if (surveyDesign != null)
                     {
-                        TableInfo table = getSurveyAnswersTableInfo(surveyDesign, getContainer());
+                        TableInfo table = SurveyManager.get().getSurveyResponsesTableInfo(getContainer(), getUser(), surveyDesign);
                         FieldKey pk = table.getAuditRowPk();
 
                         if (table != null && pk != null)

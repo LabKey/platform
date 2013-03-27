@@ -25,6 +25,7 @@ import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -42,6 +43,7 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.model.ViewCategory;
@@ -343,18 +345,8 @@ public class SurveyManager
 
             if (deleteSurveyInstances)
             {
-                // no listeners, do the quick delete
-                if (_surveyListeners.isEmpty())
-                {
-                    SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
-                    deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE SurveyDesignId = ?").add(surveyDesignId);
-                    executor.execute(deleteSurveysSql);
-                }
-                else
-                {
-                    for (Survey survey : getSurveys(c, user, surveyDesignId))
-                        deleteSurvey(c, user, survey.getRowId());
-                }
+                for (Survey survey : getSurveys(c, user, surveyDesignId))
+                    deleteSurvey(c, user, survey.getRowId());
             }
             SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
             deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE RowId = ?").add(surveyDesignId);
@@ -422,10 +414,13 @@ public class SurveyManager
     public static List<Throwable> fireDeleteSurvey(Container c, User user, Survey survey)
     {
         List<Throwable> errors = new ArrayList<Throwable>();
+        SurveyDesign design = SurveyManager.get().getSurveyDesign(c, user, survey.getSurveyDesignId());
 
         for (SurveyListener l : _surveyListeners)
         {
             try {
+                // delete the row in the responses table
+                deleteSurveyResponse(c, user, design, survey);
                 l.surveyDeleted(c, user, survey);
             }
             catch (Throwable t)
@@ -434,6 +429,29 @@ public class SurveyManager
             }
         }
         return errors;
+    }
+
+    private static void deleteSurveyResponse(Container c, User user, SurveyDesign design, Survey survey)
+    {
+        TableInfo table = SurveyManager.get().getSurveyResponsesTableInfo(c, user, design);
+        QueryUpdateService qus = table.getUpdateService();
+        FieldKey pk = table.getAuditRowPk();
+        if (qus != null && pk != null)
+        {
+            try {
+                List<Map<String, Object>> keys = new ArrayList<Map<String, Object>>();
+
+                if (survey.getResponsesPk() != null)
+                {
+                    keys.add(Collections.<String, Object>singletonMap(pk.getName(), survey.getResponsesPk()));
+                    qus.deleteRows(user, ContainerManager.getForId(survey.getContainerId()), keys, null);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public List<Throwable> fireUpdateSurvey(Container c, User user, Survey survey, Map<String, Object> oldRow, Map<String, Object> row)
@@ -512,6 +530,20 @@ public class SurveyManager
             states.addAll(l.getSurveyLockedStates());
         }
         return states;
+    }
+
+    public TableInfo getSurveyResponsesTableInfo(Container container, User user, SurveyDesign survey)
+    {
+        if (container != null)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, container, survey.getSchemaName());
+
+            if (schema != null)
+            {
+                return schema.getTable(survey.getQueryName());
+            }
+        }
+        return null;
     }
 
     public static class TestCase extends Assert
