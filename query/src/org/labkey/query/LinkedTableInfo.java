@@ -157,11 +157,11 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     private static final NamedFiltersType[] NO_FILTERS = new NamedFiltersType[0];
 
     @Override
-    protected void loadAllButCustomizerFromXML(QuerySchema schema, TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
+    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
     {
         filtersArray = filtersArray == null ? NO_FILTERS : filtersArray;
 
-        if (xmlTable.isSetFilters())
+        if (xmlTable != null && xmlTable.isSetFilters())
         {
             LocalOrRefFiltersType xmlFilters = xmlTable.getFilters();
             if (xmlFilters.isSetRef())

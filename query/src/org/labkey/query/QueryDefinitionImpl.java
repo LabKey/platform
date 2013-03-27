@@ -285,16 +285,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
 
-    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors)
-    {
-        return getQuery(schema, errors, null);
-    }
-
     /*
      * I find it very strange that only the xml errors get added to the "errors" list, while
      * the parse errors remain in the getParseErrors() list
      */
-    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent)
+    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata)
     {
         Query query = new Query(schema, parent);
         query.setName(getSchemaName() + "." + getName());
@@ -305,8 +300,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             log.debug("Parsing query " + schema.getSchemaName() + "." + getName());
             query.parse(sql);
         }
-        TablesDocument doc = getTablesDocument(errors);
-        query.setTablesDocument(doc);
+        if (includeMetadata)
+        {
+            TablesDocument doc = getTablesDocument(errors);
+            query.setTablesDocument(doc);
+        }
         return query;
     }
 
@@ -338,7 +336,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
 
     @Nullable
-    private TablesDocument getTablesDocument(List<QueryException> errors)
+    protected TablesDocument getTablesDocument(List<QueryException> errors)
     {
         String xml = getMetadataXml();
         if (xml != null)
@@ -405,26 +403,20 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             errors = new ArrayList<QueryException>();
         }
-        Query query = getQuery(schema, errors);
-        if (!includeMetadata)
-            query.setTablesDocument(null);
+        Query query = getQuery(schema, errors, null, includeMetadata);
         TableInfo ret = query.getTableInfo();
         if (null != ret)
         {
             QueryTableInfo queryTable = (QueryTableInfo)ret;
             queryTable.setDescription(getDescription());
             queryTable.setName(getName());
-        }
-
-        if (null != ret)
-        {
-            TableType xmlTable = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getTableArray(0);
-            NamedFiltersType[] xmlFilters = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getFiltersArray();
-            ((AbstractTableInfo)ret).loadFromXML(schema, xmlTable, xmlFilters, errors);
 
             if (includeMetadata)
             {
-                // Lookup any XML metadata that has been stored in the database, which won't have been applied
+                // First, apply metadata associated with the query (e.g., .query.xml files)
+                applyQueryMetadata(schema, errors, query, (AbstractTableInfo) ret);
+
+                // Next, lookup any XML metadata that has been stored in the database, which won't have been applied
                 // if this is a file-based custom query
                 ret.overlayMetadata(getName(), schema, errors);
             }
@@ -453,6 +445,21 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
 
         return ret;
+    }
+
+    /**
+     * Apply the metadata attached to the Query to the AbstractTableInfo
+     */
+    protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, Query query, AbstractTableInfo ret)
+    {
+        TableType xmlTable = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getTableArray(0);
+        NamedFiltersType[] xmlFilters = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getFiltersArray();
+        applyQueryMetadata(schema, errors, xmlTable, xmlFilters, ret);
+    }
+
+    protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, TableType xmlTable, NamedFiltersType[] xmlFilters, AbstractTableInfo ret)
+    {
+        ret.loadFromXML(schema, xmlTable, xmlFilters, errors);
     }
 
     @Nullable

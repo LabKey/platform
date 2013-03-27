@@ -16,18 +16,23 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.TableType;
 import org.labkey.query.persist.QueryDef;
+import org.labkey.query.sql.Query;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -71,6 +76,18 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     public Container getContainer()
     {
         return _schema.getContainer();
+    }
+
+    @Override
+    protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, Query query, AbstractTableInfo ret)
+    {
+        // First, apply wrapped query-def's metadata
+        super.applyQueryMetadata(schema, errors, query, ret);
+
+        // Next, apply linked schema metadata (either from template or from the linked schema instance)
+        TableType metadata = _schema.getXbTable(getName());
+        if (metadata != null || (_schema._namedFilters != null && _schema._namedFilters.length > 0))
+            super.applyQueryMetadata(schema, errors, metadata, _schema._namedFilters, ret);
     }
 
     @Override

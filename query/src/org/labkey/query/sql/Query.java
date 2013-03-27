@@ -626,7 +626,7 @@ public class Query
         {
             QueryDefinitionImpl def = (QueryDefinitionImpl)t;
             List<QueryException> tableErrors = new ArrayList<QueryException>();
-            Query query = def.getQuery(schema, tableErrors, this);
+            Query query = def.getQuery(schema, tableErrors, this, true);
 
             if (tableErrors.size() > 0 || query.getParseErrors().size() > 0)
             {

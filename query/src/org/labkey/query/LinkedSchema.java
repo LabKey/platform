@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -116,8 +117,12 @@ public class LinkedSchema extends ExternalSchema
 
         // Gathering the hidden tables requires looking at the original schema's hidden/visible tables
         // and then using the additional table metadata supplied.
-        Set<String> hiddenTables = new HashSet<String>(availableTables);
-        hiddenTables.removeAll(sourceSchema.getVisibleTableNames());
+        Set<String> hiddenTables = new CaseInsensitiveHashSet(availableTables);
+        //Issue 17492: CaseInsensitiveHashSet.removeAll fails to remove items
+        //hiddenTables.removeAll(sourceSchema.getVisibleTableNames());
+       for (String visibleTable : sourceSchema.getVisibleTableNames())
+            hiddenTables.remove(visibleTable);
+
         hiddenTables.addAll(getHiddenTables(tableTypes));
 
         Collection<String> availableQueries = getAvailableQueries(def, template, tableSource);
