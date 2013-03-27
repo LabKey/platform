@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 
 import java.util.LinkedHashMap;
@@ -178,12 +177,6 @@ public class MultiValuedLookupColumn extends LookupColumn
     protected boolean includeLookupJoins()
     {
         return false;
-    }
-
-    @Override
-    public String getTableAlias(String baseAlias)
-    {
-        return AliasManager.makeLegalName(baseAlias + "$" + this.getName(), getSqlDialect());
     }
 
     // By default, use GROUP_CONCAT aggregate function, which returns a comma-separated list of values.  Override this
