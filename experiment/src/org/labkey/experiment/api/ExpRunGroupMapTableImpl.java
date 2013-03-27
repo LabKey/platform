@@ -48,13 +48,6 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         super(name, ExperimentServiceImpl.get().getTinfoRunList(), schema, null);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(DeletePermission.class);
-
-        // Filter out hidden run groups
-        SQLFragment hiddenFilterSQL = new SQLFragment("ExperimentId IN (SELECT RowId FROM ");
-        hiddenFilterSQL.append(ExperimentServiceImpl.get().getTinfoExperiment(), "e");
-        hiddenFilterSQL.append(" WHERE Hidden = ?)");
-        hiddenFilterSQL.add(false);
-        addCondition(hiddenFilterSQL);
     }
 
     @Override
@@ -105,21 +98,35 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         return new RunGroupMapUpdateService(this);
     }
 
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        SQLFragment ret = new SQLFragment("(SELECT * FROM (SELECT rl.* FROM ");
+        ret.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
+        ret.append(", ");
+        ret.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
+        ret.append(", ");
+        ret.append(ExperimentServiceImpl.get().getTinfoExperiment(), "e");
+        // Filter out hidden run groups
+        ret.append(" WHERE e.Hidden = ? AND rl.ExperimentId = e.RowId AND rl.ExperimentRunId = er.RowId AND ");
+        ret.add(false);
+        ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), "er.Container", getExpSchema().getContainer()));
+        ret.append(") X ");
+        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        ret.append("\n").append(filterFrag).append(") ").append(alias);
+
+        return ret;
+    }
+
     /**
      * Use the Run's Container to filter the RunList table.
      */
     @Override
     protected void applyContainerFilter(ContainerFilter filter)
     {
-        FieldKey folderFieldKey = FieldKey.fromParts("FolderFilter");
-        clearConditions(folderFieldKey);
-
-        SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT er.Container FROM ");
-        sql.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
-        sql.append(" WHERE er.RowId = ExperimentRunId)");
-
-        addCondition(filter.getSQLFragment(getSchema(), sql, getContainer()), folderFieldKey);
+        // Handled inside of getFromSQL() for performance reasons
     }
 
 
