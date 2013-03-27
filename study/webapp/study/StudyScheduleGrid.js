@@ -407,7 +407,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
         if (this.canEdit) {
             columnItems.push({
-                text     : '',
+                text     : '&nbsp;',
                 width    : 40,
                 sortable : false,
                 renderer : function(view, meta, rec, idx, colIdx, store) {
