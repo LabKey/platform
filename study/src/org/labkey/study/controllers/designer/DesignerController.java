@@ -275,8 +275,10 @@ public class DesignerController extends SpringActionController
                 VaccineStudyWebPart.Model model = new VaccineStudyWebPart.Model();
                 Study study = BaseStudyController.getStudy(false, getContainer());
                 assert null != study;
-                StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(study);
-                assert null != info;
+                StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(getUser(), study, getContainer().hasPermission(getUser(), AdminPermission.class));
+                if (null == info)
+                    return new HtmlView("Study design information not available for this study.  Contact an administrator to configure the study design.");
+
                 model.setStudyId(info.getStudyId());
                 model.setEditMode(form.isEdit());
                 model.setPanel(form.getPanel());
