@@ -599,7 +599,7 @@ validNum:       {
             tz = _timezoneDefault;
         else
         {
-            tz = (TimeZone) tzCache.get(tzoffset);
+            tz = tzCache.get(tzoffset);
             if (null == tz)
             {
                 char sign = tzoffset < 0 ? '+' : '-'; // tzoffset seems to switched from TimeZone sense
@@ -649,10 +649,7 @@ validNum:       {
             }
             return ms;
         }
-        catch (Exception x)
-        {
-            ;
-        }
+        catch (Exception ignored) {}
         throw new ConversionException(s);
     }
 
@@ -663,29 +660,20 @@ validNum:       {
         {
             return parseStringJDBC(s);
         }
-        catch (Exception x)
-        {
-            ;
-        }
+        catch (Exception ignored) {}
 
         try
         {
             return DateFormat.getInstance().parse(s).getTime();
         }
-        catch (Exception x)
-        {
-            ;
-        }
+        catch (Exception ignored) {}
 
         try
         {
             //noinspection deprecation
             return Date.parse(s);
         }
-        catch (Exception x)
-        {
-            ;
-        }
+        catch (Exception ignored) {}
 
         try
         {
@@ -694,23 +682,26 @@ validNum:       {
             // non-US timezone:
             return parseDateTime(s, "EEE MMM dd HH:mm:ss zzz yyyy").getTime();
         }
-        catch (Exception x)
-        {
-            ;
-        }
+        catch (Exception ignored) {}
 
         try
         {
             return parseXMLDate(s);
         }
-        catch (IllegalArgumentException ignored2) {}
+        catch (IllegalArgumentException ignored) {}
+
+        try
+        {
+            return parseYYYYMMDD(s);
+        }
+        catch (ParseException ignored) {}
 
         return parseJsonDateTime(s);
     }
 
     private static long parseXMLDate(String s)
     {
-        if (s.indexOf(":") != -1 || s.indexOf("Z") != -1)
+        if (s.contains(":") || s.contains("Z"))
         {
             return DatatypeConverter.parseDateTime(s).getTimeInMillis();
         }
@@ -756,10 +747,7 @@ validNum:       {
             long time = parseDateTimeUS(s, DateTimeOption.DateTime, true);
             return time + ms;
         }
-        catch (ConversionException x)
-        {
-            ;
-        }
+        catch (ConversionException ignored) {}
 
         return parseStringJava(s) + ms;
     }
@@ -784,6 +772,12 @@ validNum:       {
         {
             try
             {
+                return parseYYYYMMDD(s);
+            }
+            catch (ParseException ignored) {}
+
+            try
+            {
                 // One final format to try - handles "2-3-01", "02-03-01", "02-03-2001", etc
                 DateFormat format = new SimpleDateFormat("M-d-yy");
                 format.setLenient(false);
@@ -800,6 +794,21 @@ validNum:       {
 
             throw e;
         }
+    }
+
+    private static long parseYYYYMMDD(String s) throws ParseException
+    {
+        DateFormat format = new SimpleDateFormat("yyyyMMdd");
+        format.setLenient(false);
+        Date date = format.parse(s);
+        Calendar cal = new GregorianCalendar();
+        cal.setTime(date);
+        int year = cal.get(Calendar.YEAR);
+        if (year >= 1800 && year <= 2200)
+        {
+            return date.getTime();
+        }
+        throw new ParseException("Year out of range from 1800-2200: " + year, 0);
     }
 
 
@@ -1224,6 +1233,11 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("February 3, 2001"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("20010203"));
+
+            // Only recognize years in the "recent" past/future with this all-digit format
+            assertIllegalDateTime("17000101");
+            assertIllegalDateTime("23000101");
 
             // Test XML date format
             assertXmlDateMatches(DateUtil.parseDate("2001-02-03+01:00"));
@@ -1305,11 +1319,16 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDate("3 Feb 2001"));
             assertEquals(dateExpected, DateUtil.parseDate("Feb 03 2001"));
             assertEquals(dateExpected, DateUtil.parseDate("February 3, 2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("20010203"));
 
             // Test XML date format
             assertXmlDateMatches(DateUtil.parseDate("2001-02-03+01:00"));
             assertXmlDateMatches(DateUtil.parseDate("2001-02-03Z"));
             assertIllegalDateTime("115468001");
+
+            // Only recognize years in the "recent" past/future with this all-digit format
+            assertIllegalDate("17000101");
+            assertIllegalDate("23000101");
 
             assertIllegalDate("2");
             assertIllegalDate("2/3");
