@@ -149,18 +149,18 @@ public class TabbedReportItem extends AbstractNavItem
         if (_sampleDateFieldKey != null)
             json.put("dateFieldName", _sampleDateFieldKey);
 
-        ColumnInfo overlappingCol = ti.getColumn("overlappingProjects");
+        ColumnInfo overlappingCol = ti.getColumn("overlappingProjectsPivot");
         if (overlappingCol != null)
         {
             json.put("overlappingProjectsFieldName", overlappingCol.getFieldKey().toString());
             json.put("overlappingProjectsFieldKeyArray", new JSONArray(overlappingCol.getFieldKey().getParts()));
         }
 
-        ColumnInfo allProjectsCol = ti.getColumn("allProjects");
+        ColumnInfo allProjectsCol = ti.getColumn("allProjectsPivot");
         if (allProjectsCol != null)
         {
-            json.put("allProjectsFieldName", overlappingCol.getFieldKey().toString());
-            json.put("allProjectsFieldKeyArray", new JSONArray(overlappingCol.getFieldKey().getParts()));
+            json.put("allProjectsFieldName", allProjectsCol.getFieldKey().toString());
+            json.put("allProjectsFieldKeyArray", new JSONArray(allProjectsCol.getFieldKey().getParts()));
         }
 
         json.put("schemaName", getSchemaName());

@@ -264,7 +264,19 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             List<QueryDefinition> queries = schema.getFileBasedAssayProviderScopedQueries();
             for (QueryDefinition qd : queries)
             {
-                TableInfo query = qd.getTable(new ArrayList<QueryException>(), true);
+                List<QueryException> errors = new ArrayList<QueryException>();
+                TableInfo query = qd.getTable(errors, true);
+                if (query == null || errors.size() > 0)
+                {
+                    _log.error("Unable to create table for query: " + qd.getSchema().getName() + "/" + qd.getName());
+                    for (QueryException error : errors)
+                    {
+                        _log.error(error.getMessage(), error);
+                    }
+
+                    continue;
+                }
+
                 TabbedReportItem qItem = new TabbedReportItem(this, schema.getSchemaName(), qd.getName(), p.getName() + ": " + query.getTitle(), _providerName);
                 qItem.setVisible(nav.isVisible(c, u));
                 qItem.setOwnerKey(nav.getPropertyManagerKey());
