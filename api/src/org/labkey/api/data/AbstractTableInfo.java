@@ -788,23 +788,21 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         checkLocked();
 
-        if (xmlTable == null)
-        {
-            return;
-        }
-
         loadAllButCustomizerFromXML(schema, xmlTable, filtersArray, errors);
 
         // This needs to happen AFTER all of the other XML-based config has been applied, so it should always
         // be at the end of this method
-        if (xmlTable.isSetJavaCustomizer())
+        if (xmlTable != null && xmlTable.isSetJavaCustomizer())
         {
             configureViaTableCustomizer(errors, xmlTable.getJavaCustomizer());
         }
     }
 
-    protected void loadAllButCustomizerFromXML(QuerySchema schema, TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
+    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
     {
+        if (xmlTable == null)
+            return;
+
         if (xmlTable.getTitleColumn() != null)
             setTitleColumn(xmlTable.getTitleColumn());
         if (xmlTable.getDescription() != null)
