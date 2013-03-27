@@ -43,7 +43,7 @@ Ext4.define('File.panel.FileProperties', {
                 scope: this,
                 change: function(radio, newValue){
                     this.fileConfig = newValue.fileConfig;
-                    if(this.fileConfig == 'custom'){
+                    if(this.fileConfig == 'useCustom'){
                         this.editPropertiesButton.setDisabled(false);
                     } else {
                         this.editPropertiesButton.setDisabled(true);
