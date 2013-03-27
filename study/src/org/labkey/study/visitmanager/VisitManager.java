@@ -757,9 +757,6 @@ public abstract class VisitManager
                             {
                                 if (SqlDialect.isTransactionException(x))
                                 {
-                                    synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
-                                    {
-                                    }
                                     // throw them back
                                     VisitManager vm = StudyManager.getInstance().getVisitManager(study);
                                     if (null != vm)
