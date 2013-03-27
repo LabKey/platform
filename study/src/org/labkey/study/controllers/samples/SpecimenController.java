@@ -391,12 +391,13 @@ public class SpecimenController extends BaseStudyController
             _vialView = form.isShowVials();
             Set<String> lsids = getSelectionLsids();
             SpecimenQueryView view;
+            CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), SpecimenQueryView.ViewType.SUMMARY.getQueryName());
             if (lsids != null)
             {
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, getFilterPds(), form.getViewModeEnum(), null);
+                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, getFilterPds(), form.getViewModeEnum(), cohortFilter);
             }
             else
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, form.getViewModeEnum(), null);
+                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, form.getViewModeEnum(), cohortFilter);
             view.setAllowExportExternalQuery(false);
             return view;
         }

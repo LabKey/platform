@@ -856,6 +856,7 @@ public class UserController extends SpringActionController
     public class ShowUpdateAction extends UserSchemaAction
     {
         Integer _userId;
+        Integer _pkVal;
 
         public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors) throws Exception
         {
@@ -864,7 +865,8 @@ public class UserController extends SpringActionController
             if (null == form.getPkVal())
                 form.setPkVal(_userId);
 
-            boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == _userId;
+            _pkVal = NumberUtils.toInt(form.getPkVal().toString());
+            boolean isOwnRecord = _pkVal.equals(_userId);
             HttpView view;
 
             if (user.isAdministrator() || isOwnRecord)
@@ -946,9 +948,9 @@ public class UserController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            addUserDetailsNavTrail(root, _userId);
+            addUserDetailsNavTrail(root, _pkVal);
             root.addChild("Update");
-            return root.addChild(UserManager.getEmailForId(_userId));
+            return root.addChild(UserManager.getEmailForId(_pkVal));
         }
     }
 
