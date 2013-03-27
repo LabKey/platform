@@ -24,7 +24,9 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
@@ -164,6 +166,23 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 SurveyManager.get().fireUpdateSurvey(c, user, survey, oldRow, ret);
 
             return ret;
+        }
+
+        @Override
+        protected Map<String, Object> deleteRow(User user, Container c, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        {
+            Object[] keys = getKeys(oldRowMap);
+            Survey survey = null;
+
+            if (keys.length >= 1 && (keys[0] instanceof Integer))
+                survey = SurveyManager.get().getSurvey(c, user, (Integer)keys[0]);
+
+            Map<String, Object> row = super.deleteRow(user, c, oldRowMap);
+
+            if (survey != null)
+                SurveyManager.get().fireDeleteSurvey(c, user, survey);
+
+            return row;
         }
     }
 }

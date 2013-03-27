@@ -419,7 +419,7 @@ public class SurveyManager
         }
     }
 
-    private static List<Throwable> fireDeleteSurvey(Container c, User user, Survey survey)
+    public static List<Throwable> fireDeleteSurvey(Container c, User user, Survey survey)
     {
         List<Throwable> errors = new ArrayList<Throwable>();
 
