@@ -646,6 +646,16 @@ public class Query
             // merge parameter lists
             mergeParameters(query);
 
+            // check for cases where we don't want to merge
+            QuerySelect s = query.getQuerySelect();
+            boolean simpleSelect = null != s && !s.isAggregate() && null == s._distinct;
+            boolean hasMetadata = query.getTablesDocument() != null && query.getTablesDocument().getTables().getTableArray().length > 0;
+            if (!simpleSelect || hasMetadata)
+            {
+                TableInfo ti = def.getTable(getParseErrors(), true);
+                return new QueryTable(this, schema, ti, alias);
+            }
+
             // move relation to new outer query
             QueryRelation ret = query._queryRoot;
             ret.setQuery(this);
