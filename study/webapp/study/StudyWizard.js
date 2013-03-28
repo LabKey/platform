@@ -923,6 +923,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var selectionGrid = new Ext.grid.EditorGridPanel({
+            cls : 'studyObjects',
             store: folderStore,
             selModel: selectionModel,
             columns: [
@@ -933,7 +934,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             editable: false,
             stripeRows: true,
             pageSize: 300000,
-            cls: 'studyWizardListList',
             flex: 1,
             bbar: [{hidden:true}],
             tbar: [{hidden:true}]
@@ -1288,17 +1288,17 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var selectionGrid = new Ext.grid.EditorGridPanel({
+            cls: 'folderObjects',
             store: folderStore,
             selModel: selectionModel,
             columns: [
                 selectionModel,
-                {header: 'Folder Object', width: 300, sortable: true, dataIndex: 'name'}
+                {header: 'Folder Object', width: 300, sortable: true, dataIndex: 'name', name: 'name'}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
             stripeRows: true,
             pageSize: 300000,
-            cls: 'studyWizardListList',
             flex: 1,
             bbar: [{hidden:true}],
             tbar: [{hidden:true}]
