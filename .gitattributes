@@ -385,6 +385,8 @@ api/src/org/labkey/api/defaults/SetDefaultValuesAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesAssayAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesDatasetAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesListAction.java -text
+api/src/org/labkey/api/di/ScheduledPipelineJobContext.java -text
+api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/ehr/EHRService.java -text
 api/src/org/labkey/api/ehr/HistoryDataSource.java -text
 api/src/org/labkey/api/ehr/HistoryRow.java -text
