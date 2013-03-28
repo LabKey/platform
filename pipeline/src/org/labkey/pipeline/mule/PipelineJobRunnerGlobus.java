@@ -382,6 +382,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             if (NetworkDrive.exists(serializedFile))
             {
                 job = PipelineJob.readFromFile(serializedFile);
+                job.getLogger().debug("Deleting serialized job file " + serializedFile);
                 serializedFile.delete();
             }
         }
