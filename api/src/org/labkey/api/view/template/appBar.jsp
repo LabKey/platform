@@ -140,11 +140,14 @@
 
 <script type="text/javascript">
     (function(){
-        var setMinWidth = function(tabs) {
-            var buttonBar = Ext4.get(Ext4.query('.labkey-folder-header .button-bar')[0]);
+        var setMinWidth = function() {
+            var tabs = Ext4.query('.labkey-app-bar ul li');
             var folderTitle = Ext4.get(Ext4.query('.labkey-folder-title')[0]);
-            var appBar = Ext4.get(Ext4.query('.labkey-app-bar')[0]);
-            var totalWidth = 0;
+            var folderHeader = Ext4.get(Ext4.query('.labkey-folder-header')[0]);
+            var appBar = Ext4.query('.labkey-app-bar')[0];
+            var viewportWidth = Ext4.Element.getViewportWidth();
+            var folderHeaderWidth = viewportWidth - appBar.getBoundingClientRect().left - 35; // 35 is for some extra padding between the + tab and right side of the screen.
+            var totalWidth = folderTitle.getWidth();
 
             for(var i = 0; i < tabs.length; i++){
                 var anchor = Ext4.get(tabs[i]);
@@ -154,15 +157,17 @@
                 }
             }
 
-            appBar.dom.setAttribute('style', 'min-width: ' + (totalWidth + folderTitle.getWidth()) + 'px;');
-
-            if(Ext4.isIE7){
-                // We add a few more px for IE7
-                buttonBar.setWidth(totalWidth + 10);
+            if(folderHeader){ // Why wouldn't it be there? Better safe than javascript errors.
+                if(folderHeaderWidth < totalWidth){
+                    folderHeader.setWidth(totalWidth);
+                } else {
+                    folderHeader.setWidth(folderHeaderWidth);
+                }
             }
         };
 
-        var addTabListeners = function(tabs) {
+        var addTabListeners = function() {
+            var tabs = Ext4.query('.labkey-app-bar ul li');
             var tab, i=0;
             for(; i < tabs.length; i++){
                 tab = Ext4.get(tabs[i]);
@@ -183,9 +188,9 @@
         };
 
         Ext4.onReady(function(){
-            var tabs = Ext4.query('.labkey-app-bar ul li');
-            setMinWidth(tabs);
-            addTabListeners(tabs);
+            setMinWidth();
+            addTabListeners();
+            Ext4.EventManager.onWindowResize(setMinWidth);
         });
     })();
 </script>
