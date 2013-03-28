@@ -3649,7 +3649,7 @@ input[type="checkbox"], input[type="radio"] {
 
 /* Used for the "App Bar" containing the main title and the application button bar */
 
-.labkey-app-bar div.labkey-folder-header { /* THIS IS A NEW COLOR */
+.labkey-app-bar { /* THIS IS A NEW COLOR */
     /*
         TODO: this will be overridden by the themeStylesheet.  We need to add another background color to the theme.
         This is included for now to allow the other changes to be added.
