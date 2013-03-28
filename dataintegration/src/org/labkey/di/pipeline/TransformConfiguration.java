@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
-import org.labkey.di.api.ScheduledPipelineJobDescriptor;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 
 import java.util.Date;
 import java.util.Map;

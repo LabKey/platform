@@ -21,6 +21,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -28,10 +29,11 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.di.api.ScheduledPipelineJobDescriptor;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.di.pipeline.ETLManager;
 import org.labkey.di.pipeline.TransformConfiguration;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
@@ -103,26 +105,32 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
+    static ScheduledPipelineJobDescriptor getDescriptor(TransformConfigurationForm form)
+    {
+        return ETLManager.get().getETLs().get(form.getTransformId());
+    }
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class UpdateTransformConfigurationAction extends MutatingApiAction<TransformConfigurationForm>
     {
+        @Override
+        public void validateForm(TransformConfigurationForm form, Errors errors)
+        {
+            super.validateForm(form, errors);
+            if (StringUtils.isEmpty(form.getTransformId()))
+                errors.rejectValue("transformId", SpringActionController.ERROR_REQUIRED);
+            if (null == getDescriptor(form))
+                throw new NotFoundException();
+        }
+
         @Override
         public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
         {
             ViewContext context = getViewContext();
             boolean shouldStartStop = false;
 
-            ScheduledPipelineJobDescriptor etl = null;
-            List<ScheduledPipelineJobDescriptor> etls = ETLManager.get().getETLs();
-            for (ScheduledPipelineJobDescriptor e : etls)
-            {
-                if (e.getId().equalsIgnoreCase(form.getTransformId()))
-                {
-                    etl = e;
-                    break;
-                }
-            }
+            ScheduledPipelineJobDescriptor etl = getDescriptor(form);
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 
@@ -151,7 +159,7 @@ public class DataIntegrationController extends SpringActionController
             {
                 if (config.isEnabled())
                 {
-                    ETLManager.get().schedule(etl, getContainer(), getUser());
+                    ETLManager.get().schedule(etl, getContainer(), getUser(), config.isVerboseLogging());
                 }
                 else
                 {
@@ -173,16 +181,7 @@ public class DataIntegrationController extends SpringActionController
         @Override
         public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
         {
-            ScheduledPipelineJobDescriptor etl = null;
-            List<ScheduledPipelineJobDescriptor> etls = ETLManager.get().getETLs();
-            for (ScheduledPipelineJobDescriptor e : etls)
-            {
-                if (e.getId().equalsIgnoreCase(form.getTransformId()))
-                {
-                    etl = e;
-                    break;
-                }
-            }
+            ScheduledPipelineJobDescriptor etl = getDescriptor(form);
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 

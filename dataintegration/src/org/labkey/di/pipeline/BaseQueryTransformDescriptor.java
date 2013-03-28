@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.query.SchemaKey;
@@ -32,10 +33,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.di.api.ScheduledPipelineJobDescriptor;
+import org.labkey.api.di.ScheduledPipelineJobContext;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
-import org.quartz.JobExecutionException;
 import org.quartz.ScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
 
@@ -52,7 +53,7 @@ import java.util.concurrent.TimeUnit;
  * User: jeckels
  * Date: 2/20/13
  */
-public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescriptor<TransformJobContext>, Serializable
+public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescriptor<ScheduledPipelineJobContext>, Serializable
 {
     private static final Logger LOG = Logger.getLogger(BaseQueryTransformDescriptor.class);
 
@@ -245,15 +246,15 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     }
 
     @Override
-    public Callable<Boolean> getChecker(TransformJobContext context)
+    public Callable<Boolean> getChecker(ScheduledPipelineJobContext context)
     {
-        return new UpdatedRowsChecker(this, context.getContainer(), context.getUser(),
+        return new UpdatedRowsChecker(this, context,
                 _sourceSchema, _sourceQuery);
     }
 
 
     @Override
-    public PipelineJob getPipelineJob(TransformJobContext info) throws JobExecutionException
+    public PipelineJob getPipelineJob(ScheduledPipelineJobContext info) throws PipelineJobException
     {
         ViewBackgroundInfo backgroundInfo = new ViewBackgroundInfo(info.getContainer(), info.getUser(), null);
         TransformJob job = new TransformJob(backgroundInfo, this);
@@ -282,7 +283,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         }
         catch (SQLException e)
         {
-            throw new JobExecutionException(e);
+            throw new PipelineJobException(e);
         }
 
         job.setRunId(run.getRowId());

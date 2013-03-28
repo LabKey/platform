@@ -24,11 +24,13 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.di.api.ScheduledPipelineJobDescriptor" %>
+<%@ page import="org.labkey.api.di.ScheduledPipelineJobDescriptor" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 ViewContext context = HttpView.currentContext();
-List<ScheduledPipelineJobDescriptor> descriptors = ETLManager.get().getETLs();
+Map<String,ScheduledPipelineJobDescriptor> descriptors = ETLManager.get().getETLs();
 List<TransformConfiguration> configurationsList = ETLManager.get().getTransformConfigurations(context.getContainer());
 Map<String,TransformConfiguration> configurationsMap = new HashMap<String, TransformConfiguration>(configurationsList.size()*2);
 for (TransformConfiguration c : configurationsList)
@@ -129,7 +131,7 @@ function onRunNowClicked(el,id)
     </tr><%
 
 int row = 0;
-for (ScheduledPipelineJobDescriptor descriptor : descriptors)
+for (ScheduledPipelineJobDescriptor descriptor : descriptors.values())
 {
     row++;
     String id = descriptor.getId();
@@ -166,3 +168,6 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptors)
 }
 %></table>
 </div>
+
+<br>
+<%=textLink("view completed jobs", PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(context.getContainer()))%>

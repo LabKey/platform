@@ -32,6 +32,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -40,12 +41,11 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.di.api.ScheduledPipelineJobContext;
-import org.labkey.di.api.ScheduledPipelineJobDescriptor;
+import org.labkey.api.di.ScheduledPipelineJobContext;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
-import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
 import org.quartz.ScheduleBuilder;
 import org.quartz.Scheduler;
@@ -61,7 +61,9 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -82,13 +84,11 @@ public class ETLManager
         return INSTANCE;
     }
 
-    private final List<ScheduledPipelineJobDescriptor> _etls;
+    private final Map<String,ScheduledPipelineJobDescriptor> _etls = new TreeMap<String, ScheduledPipelineJobDescriptor>();
 
 
     private ETLManager()
     {
-        _etls = new ArrayList<ScheduledPipelineJobDescriptor>();
-
         Path etlsDirPath = new Path("etls");
 
         for (Module module : ModuleLoader.getInstance().getModules())
@@ -101,7 +101,7 @@ public class ETLManager
                     BaseQueryTransformDescriptor descriptor = parseETL(etlDir.find("config.xml"), module.getName());
                     if (descriptor != null)
                     {
-                        _etls.add(descriptor);
+                        _etls.put(descriptor.getId(), descriptor);
                     }
                 }
             }
@@ -130,7 +130,7 @@ public class ETLManager
     }
 
 
-    public List<ScheduledPipelineJobDescriptor> getETLs()
+    public Map<String,ScheduledPipelineJobDescriptor> getETLs()
     {
         return _etls;
     }
@@ -141,7 +141,8 @@ public class ETLManager
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            ScheduledPipelineJobContext info = descriptor.getJobContext(container, user);
+            ScheduledPipelineJobContext info = (ScheduledPipelineJobContext)descriptor.getJobContext(container, user);
+            info.setVerbose(true);
 
             // find job
             JobKey jobKey = jobKeyFromDescriptor(descriptor);
@@ -175,12 +176,13 @@ public class ETLManager
     }
 
 
-    public synchronized void schedule(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
+    public synchronized void schedule(ScheduledPipelineJobDescriptor descriptor, Container container, User user, boolean verbose)
     {
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            ScheduledPipelineJobContext info = descriptor.getJobContext(container, user);
+            ScheduledPipelineJobContext info = (ScheduledPipelineJobContext)descriptor.getJobContext(container, user);
+            info.setVerbose(verbose);
 
             // find job
             JobKey jobKey = jobKeyFromDescriptor(descriptor);
@@ -318,10 +320,7 @@ public class ETLManager
         DbScope scope = DbSchema.get("dataintegration").getScope();
 
         CaseInsensitiveHashMap<ScheduledPipelineJobDescriptor> etls = new CaseInsensitiveHashMap<ScheduledPipelineJobDescriptor>();
-        for (ScheduledPipelineJobDescriptor etl : getETLs())
-        {
-            etls.put(etl.getId(), etl);
-        }
+        etls.putAll(getETLs());
 
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
         ArrayList<TransformConfiguration> configs = new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
@@ -337,7 +336,7 @@ public class ETLManager
             Container c = ContainerManager.getForId(config.getContainerId());
             if (null == c)
                 continue;
-            schedule(etl, c, runAsUser);
+            schedule(etl, c, runAsUser, config.isVerboseLogging());
         }
     }
 
@@ -352,7 +351,7 @@ public class ETLManager
             final User user = TestContext.get().getUser();
             final Container c = JunitUtil.getTestContainer();
 
-            ScheduledPipelineJobDescriptor d = new ScheduledPipelineJobDescriptor()
+            ScheduledPipelineJobDescriptor d = new ScheduledPipelineJobDescriptor<ScheduledPipelineJobContext>()
             {
                 @Override
                 public String getId()
@@ -423,7 +422,7 @@ public class ETLManager
                 }
 
                 @Override
-                public PipelineJob getPipelineJob(ScheduledPipelineJobContext context) throws JobExecutionException
+                public PipelineJob getPipelineJob(ScheduledPipelineJobContext context) throws PipelineJobException
                 {
                     return null;
                 }
@@ -440,7 +439,7 @@ public class ETLManager
                 sleep(2);
             assertEquals(2, counter.get());
 
-            ETLManager.get().schedule(d, c, user);
+            ETLManager.get().schedule(d, c, user, false);
             sleep(5);
             assertTrue(counter.get() <= 10);
             for (int i=0 ; i<10 && counter.get() < 12 ; i++)

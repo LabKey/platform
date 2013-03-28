@@ -24,12 +24,13 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.di.api.ScheduledPipelineJobDescriptor;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 
 import java.util.Collections;
 import java.util.Date;
@@ -49,14 +50,16 @@ public class UpdatedRowsChecker implements Callable<Boolean>
     final private User user;
     final private SchemaKey sourceSchemaName;
     final private String sourceQueryName;
+    final private boolean verbose;
 
-    public UpdatedRowsChecker(ScheduledPipelineJobDescriptor d, Container c, User user, SchemaKey sourceSchemaName, String sourceQueryName)
+    public UpdatedRowsChecker(ScheduledPipelineJobDescriptor d, ScheduledPipelineJobContext context, SchemaKey sourceSchemaName, String sourceQueryName)
     {
         this.d = d;
-        this.c = c;
-        this.user = user;
+        this.c = context.getContainer();
+        this.user = context.getUser();
         this.sourceSchemaName = sourceSchemaName;
         this.sourceQueryName = sourceQueryName;
+        this.verbose = context.isVerbose();
     }
 
     public Container getContainer()
@@ -114,6 +117,8 @@ public class UpdatedRowsChecker implements Callable<Boolean>
             filter.addCondition(modifiedFieldKey, mostRecentRun, CompareType.GTE);
         }
         long updatedRows = new TableSelector(tableInfo, columns.values(), filter, null).getRowCount();
+
+        // TODO log somewhere (if verbose log even if there is no work found)
 
         return updatedRows > 0;
     }

@@ -17,8 +17,9 @@ package org.labkey.di.pipeline;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.di.api.ScheduledPipelineJobContext;
-import org.labkey.di.api.ScheduledPipelineJobDescriptor;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.di.ScheduledPipelineJobContext;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 
 import java.io.Serializable;
 
@@ -26,7 +27,7 @@ import java.io.Serializable;
  * User: jeckels
  * Date: 3/13/13
  */
-public class TransformJobContext extends ScheduledPipelineJobContext implements Serializable
+public class TransformJobContext extends ScheduledPipelineJobContext implements ContainerUser, Serializable
 {
     public TransformJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
