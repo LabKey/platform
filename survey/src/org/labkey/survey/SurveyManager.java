@@ -224,8 +224,9 @@ public class SurveyManager
             }
             else
             {
+                Survey prev = getSurvey(container, user, survey.getRowId());
                 ret = Table.update(user, table, survey, survey.getRowId());
-                errors = fireUpdateSurvey(container, user, ret, objectFactory.toMap(survey, null), objectFactory.toMap(ret, null));
+                errors = fireUpdateSurvey(container, user, ret, objectFactory.toMap(prev, null), objectFactory.toMap(ret, null));
             }
 
             if (!errors.isEmpty())
