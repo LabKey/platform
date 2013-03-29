@@ -93,7 +93,7 @@ public abstract class Method
         labkeyMethod.put("asin", new JdbcMethod("asin", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("atan", new JdbcMethod("atan", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("atan2", new JdbcMethod("atan2", JdbcType.DOUBLE, 2, 2));
-        labkeyMethod.put("cast", new Method("convert", JdbcType.OTHER, 2, 2)
+        labkeyMethod.put("cast", new Method("convert", JdbcType.OTHER, 2, 3)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -387,6 +387,7 @@ public abstract class Method
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] fragments)
         {
             JdbcType jdbcType = _jdbcType;
+            SQLFragment length = null;
             if (fragments.length >= 2)
             {
                 String sqlEscapeTypeName = getTypeArgument(fragments);
@@ -395,6 +396,8 @@ public abstract class Method
                 {
                     jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
                     typeName = schema.getSqlDialect().sqlTypeNameFromSqlType(jdbcType.sqlType);
+                    if (fragments.length > 2)
+                        length = fragments[2];
                     fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
                 }
                 catch (IllegalArgumentException x)
@@ -411,6 +414,10 @@ public abstract class Method
             {
                 ret.append(" AS ");
                 ret.append(fragments[1]);
+                if (null != length)
+                {
+                    ret.append("(" + length + ")");
+                }
             }
             ret.append(")");                            
             return ret;

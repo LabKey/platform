@@ -207,7 +207,7 @@ declaration
 
 
 sqltype
-    : type=identifier
+    : type=identifier (OPEN! NUM_INT CLOSE!)?
     {
         if (!isSqlType($type.text))
             reportError(new MismatchedTokenException(DATATYPE, input));

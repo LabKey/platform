@@ -671,7 +671,7 @@ public class SqlParser
 
                 if (name.equals("convert") || name.equals("cast"))
                 {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() != 2)
+                    if (!(exprList instanceof QExprList) || (exprList.childList().size() != 2 && exprList.childList().size() != 3))
                     {
                         _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getCharPositionInLine()));
                         break;
@@ -679,8 +679,14 @@ public class SqlParser
                     LinkedList<QNode> args = new LinkedList<QNode>();
                     args.add(exprList.childList().get(0));
                     args.add(constantToStringNode(exprList.childList().get(1)));
+                    QNode qNodeLength = null;
+                    if (exprList.childList().size() > 2)
+                    {
+                        args.add(exprList.childList().get(2));
+                        qNodeLength = exprList.childList().get(2);
+                    }
                     exprList._replaceChildren(args);
-                    validateConvertConstant(args.get(1));
+                    validateConvertConstant(args.get(1), qNodeLength);
                 }
                 else if (name.equals("timestampadd") || name.equals("timestampdiff"))
                 {
@@ -756,7 +762,7 @@ public class SqlParser
 	}
 
 
-    private boolean validateConvertConstant(QNode n)
+    private boolean validateConvertConstant(QNode n, QNode length)
     {
         if (!(n instanceof QString))
         {
@@ -768,7 +774,14 @@ public class SqlParser
             s = s.substring(4);
         try
         {
-            ConvertType.valueOf(s);
+            ConvertType type = ConvertType.valueOf(s);
+            if (length != null)
+            {
+                if (type != ConvertType.VARCHAR)
+                {
+                    _parseErrors.add(new QueryParseException("Unexpected length modifier for '" + s + "'", null, length.getLine(), length.getColumn()));
+                }
+            }
             return true;
         }
         catch (IllegalArgumentException x)
