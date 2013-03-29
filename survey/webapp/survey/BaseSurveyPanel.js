@@ -496,12 +496,12 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         {
             if (field.clearValue != undefined)
                 field.clearValue();
-            else if (field.getXType() == 'radiogroup') // another special case for radio groups
-            {
-                Ext4.each(field.query('radio'), function(radio){
-                    radio.setValue(false);
-                });
-            }
+            //else if (field.getXType() == 'radiogroup') // another special case for radio groups
+            //{
+            //    Ext4.each(field.query('radio'), function(radio){
+            //        radio.setValue(false);
+            //    });
+            //}
             else
                 field.setValue(null);
         }
