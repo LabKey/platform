@@ -212,8 +212,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         if (question.required != undefined && question.required)
         {
             config.allowBlank = false;
-            config.labelStyle = "font-weight: bold;";
-            config.fieldLabel = config.fieldLabel + "*";
+            config.origFieldLabel = config.fieldLabel;
+            config.reqFieldLabel = "<span style='font-weight: bold;'>" + config.fieldLabel + "*</span>";
+            config.fieldLabel = config.reqFieldLabel;
 
             if (config.name)
                 this.requiredFieldNames.push(config.name);
@@ -495,6 +496,12 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         {
             if (field.clearValue != undefined)
                 field.clearValue();
+            else if (field.getXType() == 'radiogroup') // another special case for radio groups
+            {
+                Ext4.each(field.query('radio'), function(radio){
+                    radio.setValue(false);
+                });
+            }
             else
                 field.setValue(null);
         }
