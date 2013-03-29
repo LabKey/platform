@@ -15,248 +15,255 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.json.JSONObject"%>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
-<%@ page import="org.labkey.api.query.DefaultSchema" %>
-<%@ page import="org.labkey.api.query.QueryDefinition" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="java.util.Comparator" %>
-<%@ page import="java.util.List" %>
+
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.TreeMap" %>
-<%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.api.query.QueryService" %>
-<%@ page import="org.labkey.api.query.CustomView" %>
-<%@ page import="org.labkey.api.query.SchemaKey" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("SQVSelector.js"));
+        return resources;
+    }
+%>
+
 <%
-    Map<String, String> schemaOptions = new TreeMap<String, String>(new Comparator<String>(){
-        public int compare(String o1, String o2)
-        {
-            return o1.compareToIgnoreCase(o2);
+    Portal.WebPart part = getWebPart();
+    ViewContext ctx = getViewContext();
+    Map<String, String> props = part.getPropertyMap();
+%>
+
+<script>
+    LABKEY.requiresScript('SQVSelector.js');
+</script>
+<script type="text/javascript">
+    Ext4.onReady(function(){
+        console.log('<%=h(props)%>');
+
+        var webPartTitle = Ext4.create('Ext.form.field.Text', {
+            emptyText : 'Web Part Title',
+            fieldLabel: 'Web Part Title',
+            name : 'title',
+            value : <%=PageFlowUtil.jsString(props.get("title"))%>,
+            labelWidth : 200,
+            width : 500
+        });
+
+        var sqvModel = Ext4.create('LABKEY.SQVModel', {});
+        var schemaName = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig({
+            id : 'schemaName',
+            initialValue : <%=q(props.get("schemaName"))%>,
+            fieldLabel : 'Schema',
+            name : 'schemaName',
+            labelWidth : 200,
+            width : 500
+        }));
+
+
+        var queryName = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
+            id : 'queryName',
+            initialValue : <%=q(props.get("queryName"))%>,
+            name : 'queryName',
+            labelWidth : 200,
+            width : 500
+        }));
+        var viewName = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({
+            id : 'viewName',
+            initialValue : <%=q(props.get("viewName"))%>,
+            name : 'viewName',
+            labelWidth : 200,
+            width : 500
+        }));
+
+        var allowEnable = <%=PageFlowUtil.jsString(props.get("queryName"))%>;
+        queryName.on('enable', function(){if(!allowEnable) queryName.disable();}, this);
+
+        var showContentsRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+            xtype : 'radiogroup',
+            fieldLabel: 'Query and View',
+            labelWidth : 200,
+            columns : 1,
+            padding : 5,
+            items : [{
+                xtype : 'radio',
+                id : 'selectQueryList',
+                name : 'selectQuery',
+                boxLabel : 'Show the list of tables in this schema.',
+                value : false,
+                checked : !<%=PageFlowUtil.jsString(props.get("queryName"))%>,
+                listeners : {
+                    change : function(cb, nv, ov){
+                            if(nv){
+                                allowEnable = false;
+                                queryName.disable();
+                                viewName.disable();
+                            }
+                        }
+                    },
+                    scope : this
+            }, {
+                xtype : 'radio',
+                id : 'selectQueryContents',
+                name : 'selectQuery',
+                boxLabel : 'Show the contents of a specific table and view.',
+                value : true,
+                checked : <%=PageFlowUtil.jsString(props.get("queryName"))%>,
+                listeners : {
+                        change : function(cb, nv){
+                            if(nv){
+                                allowEnable = true;
+                            }
+                            if(schemaName.getRawValue() != '' && nv){
+                                queryName.setDisabled(false);
+                                if(queryName.getRawValue() != ''){
+                                    viewName.setDisabled(false);
+                                }
+                            }
+                        }
+                 }
+            }]
+        });
+
+        var ynStore = Ext4.create('Ext.data.Store', {
+            fields:['value', 'answer'],
+            data : [
+                {"value": false, "answer" : "No"},
+                {"value": true, "answer" : "Yes"}
+            ]
+        });
+
+        var buttonBarStore = Ext4.create('Ext.data.Store', {
+            fields : ['value', 'answer'],
+            data : [
+                {"value" : "BOTH", "answer" : "Both"},
+                {"value" : "TOP", "answer" : "Top"},
+                {"value" : "BOTTOM", "answer" : "Bottom"},
+                {"value" : "NONE", "answer" : "None"}
+            ]
+        });
+
+        var submitButton = Ext4.create('Ext.button.Button', {
+            text : 'Submit',
+            width : 70,
+            handler : function() {
+                if(queryForm){
+                    console.log(validate());
+                    if(validate()){
+
+                        console.log(<%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>);
+                        queryForm.getForm().submit({
+                            url : <%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>,
+                            success : function(){},
+                            failure : function(){}
+                        });
+                    }
+                    else
+                    {
+                        Ext4.MessageBox.alert("Error Saving", "There are errors in the form.");
+                    }
+                }
+            }
+        });
+
+        var queryForm = Ext4.create('Ext.form.Panel', {
+            defaults : {labelWidth: 200, width : 500, height : 30},
+            border : false,
+            padding : '5px',
+            width: 510,
+            standardSubmit: true,
+            bodyStyle : 'background-color: transparent;',
+            items : [webPartTitle, schemaName, showContentsRadioGroup, queryName, viewName, {
+                xtype : 'combo',
+                fieldLabel : 'Allow user to choose query?',
+                name : 'allowChooseQuery',
+                store : ynStore,
+                queryMode : 'local',
+                width : 275,
+                displayField : 'answer',
+                valueField : 'value',
+                listeners : {
+                    afterrender : function(cb){
+                        var value = <%=q(props.get("allowChooseQuery"))%>;
+                        if(value === 'true')
+                        {
+                            cb.select(cb.findRecord('answer', 'Yes'));
+                        }
+                        else
+                        {
+                            cb.select(cb.findRecord('answer', 'No'));
+                        }
+                    }
+                }
+            }, {
+                xtype : 'combo',
+                fieldLabel : 'Allow user to choose view?',
+                name : 'allowChooseView',
+                store : ynStore,
+                queryMode : 'local',
+                width : 275,
+                displayField : 'answer',
+                valueField : 'value',
+                listeners : {
+                    afterrender : function(cb){
+                        var value = <%=q(props.get("allowChooseView"))%>;
+                        if(value === 'true')
+                        {
+                            cb.select(cb.findRecord('answer', 'Yes'));
+                        }
+                        else
+                        {
+                            cb.select(cb.findRecord('answer', 'No'));
+                        }
+                    }
+                }
+            }, {
+                xtype : 'combo',
+                fieldLabel : 'Button bar position',
+                name : 'buttonBarPosition',
+                store : buttonBarStore,
+                queryMode : 'local',
+                width : 300,
+                displayField : 'answer',
+                valueField : 'value',
+                listeners : {
+                    afterrender : function(cb){
+                        if(<%=q(props.get("buttonBarPosition"))%>)
+                        {
+                            var value = <%=q(props.get("buttonBarPosition"))%>;
+                            value = value.substring(0, 1) + value.substring(1, value.length).toLowerCase();
+                            cb.select(cb.findRecord('answer', value));
+                        }
+                        else
+                        {
+                            cb.select(cb.findRecord('answer', 'Both'));
+                        }
+                    }
+                }
+            } , submitButton],
+            renderTo: 'extDiv'
+        });
+
+        var validate = function(){
+            if(webPartTitle.getRawValue() == ""){return false;}
+            if(schemaName.getValue() == null){return false;}
+            if(allowEnable){
+                if(queryName.getValue() == null){return false;}
+                if(viewName.getValue() == null){return false;}
+            }
+            return true;
         }
     });
 
-    Map<String, Map<String, List<String>>> schemaTableNames = new CaseInsensitiveHashMap<Map<String, List<String>>>();
-    DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
 
-    for (SchemaKey schemaKey : defSchema.getUserSchemaPaths())
-    {
-        schemaOptions.put(schemaKey.toString(), schemaKey.toString());
-        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaKey);
-        Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<List<String>>();
-
-        for (String tableName : new TreeSet<String>(schema.getTableAndQueryNames(true)))
-        {
-            List<String> viewNames = new ArrayList<String>();
-            viewNames.add(""); // default view
-
-            QueryDefinition queryDef = schema.getQueryDefForTable(tableName);
-
-            if (queryDef != null)
-            {
-                for (Map.Entry<String, CustomView> entry : queryDef.getCustomViews(getUser(), getViewContext().getRequest(), false).entrySet())
-                {
-                    String viewName = entry.getKey();
-                    // Filter out hidden views
-                    if (viewName != null)
-                        viewNames.add(viewName);
-                }
-            }
-
-            Collections.sort(viewNames, new Comparator<String>(){
-                public int compare(String o1, String o2)
-                {
-                    return o1.compareToIgnoreCase(o2);
-                }
-            });
-
-            tableNames.put(tableName, viewNames);
-        }
-
-        schemaTableNames.put(schemaKey.toString(), tableNames);
-    }
-
-    Map<String, String> pm = getWebPart().getPropertyMap();
-    String strAllowChooseQuery = pm.get("allowChooseQuery");
-    boolean allowChooseQuery = false;
-    if (strAllowChooseQuery != null)
-    {
-        allowChooseQuery = Boolean.valueOf(strAllowChooseQuery);
-    }
-    String strAllowChooseView = pm.get("allowChooseView");
-    boolean allowChooseView = true;
-    if (strAllowChooseView != null)
-    {
-        allowChooseView = Boolean.valueOf(strAllowChooseView);
-    }
-
-    boolean querySelected = pm.get("queryName") != null && !"".equals(pm.get("queryName").trim());
-
-    String btnBarPosition = StringUtils.defaultString(pm.get("buttonBarPosition"), "BOTH");
-    
-%>
-<script type="text/javascript">
-    var schemaInfos = <%= new JSONObject(schemaTableNames).toString() %>;
-    function updateQueries(schemaName)
-    {
-        var tableNames = schemaInfos[schemaName];
-        var querySelect = document.getElementById('queryName');
-
-        querySelect.options.length = 0;
-
-        var names = [];
-        for (var opt in tableNames)
-        {
-            names.push(opt);
-        }
-        names.sort(function(a,b){
-          var a1 = a.toString().toLowerCase();
-          var b1 = b.toString().toLowerCase();
-
-          if (a1 > b1)
-             return 1
-          if (a1 < b1)
-             return -1
-          return 0;
-        });
-        for (var i = 0; i <names.length; i++)
-        {
-            querySelect.options[querySelect.options.length] = new Option(names[i], names[i]);
-        }
-
-        updateViews();
-    }
-    function updateViews()
-    {
-        var schemaName = document.getElementById('schemaName').value;
-        var queryName = document.getElementById('queryName').value;
-        var viewNames = schemaInfos[schemaName][queryName];
-        var viewSelect = document.getElementById('viewName');
-
-        viewSelect.options.length = 0;
-
-        if (viewNames == undefined)
-            return;
-
-        for (var i = 0; i < viewNames.length; i++)
-        {
-            var opt = viewNames[i];
-            viewSelect.options[i] = new Option(opt == "" ? "<default view>" : opt, opt);
-        }
-    }
-    function disableQuerySelect(disable)
-    {
-        document.getElementById('queryName').disabled = disable;
-        document.getElementById('viewName').disabled = disable;
-    }
 
 </script>
 
-<form name="frmCustomize" method="post" action="<%=h(_part.getCustomizePostURL(getViewContext()))%>">
-    <table>
-        <tr>
-            <td class="labkey-form-label">Web Part Title:</td>
-            <td><input type="text" name="title" size="40" value="<%=h(pm.get("title"))%>"></td>
-        </tr>
-        <tr>
-            <td class="labkey-form-label">Schema:</td>
-            <td>
-                <select name="schemaName" id="schemaName"
-                        title="Select a Schema Name"
-                        onchange="updateQueries(this.value)">
-                    <labkey:options value='<%=pm.get("schemaName")%>' map="<%=schemaOptions%>" />
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td class="labkey-form-label" valign="top">Query and View:</td>
-            <td>
-                <table>
-                    <tr>
-                        <td><input type="radio" id="selectQueryList" name="selectQuery" value="false" <% if (!querySelected) { %> checked <% } %> onchange="disableQuerySelect(this.value == 'false');"/></td>
-                        <td><label for="selectQueryList">Show the list of tables in this schema.</label></td>
-                    </tr>
-                    <tr>
-                        <td><input type="radio" id="selectQueryContents" name="selectQuery" value="true" <% if (querySelected) { %> checked <% } %>  onchange="disableQuerySelect(this.value == 'false');"/></td>
-                        <td><label for="selectQueryContents">Show the contents of a specific table and view.</label></td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>
-                            <select name="queryName" id="queryName"
-                                    title="Select a Table Name" onchange="updateViews()"
-                                    <% if (!querySelected) { %> disabled="true" <% } %>>
-                                <%
-                                Map<String, List<String>> tableNames = schemaTableNames.get(pm.get("schemaName"));
-                                if (tableNames != null)
-                                {
-                                    for (String queryName : new TreeSet<String>(tableNames.keySet()))
-                                    {
-                                        %><option value="<%=h(queryName)%>" <%=queryName.equals(pm.get("queryName")) ? "selected" : ""%>><%=h(queryName)%></option><%
-                                    }
-                                }
-                                %>
-                            </select>
-                            <br/>
-                            <select name="viewName" id="viewName" title="Select a View Name" <%= querySelected ? "" : "disabled=true" %>>
-                                <%
-                                if (tableNames != null)
-                                {
-                                    List<String> viewNames = tableNames.get(pm.get("queryName"));
-                                    if (viewNames != null)
-                                    {
-                                        for (String viewName : viewNames)
-                                        {
-                                            viewName = StringUtils.trimToEmpty(viewName);
-                                            String value = StringUtils.defaultIfEmpty(viewName, "<default view>");
-                                            %><option value="<%=h(viewName)%>" <%=viewName.equals(pm.get("viewName")) ? "selected" : ""%>><%=h(value)%></option><%
-                                        }
-                                    }
-                                }
-                                %>
-                            </select>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-        <tr>
-            <td class="labkey-form-label">Allow user to choose query?</td>
-            <td>
-                <select name="allowChooseQuery">
-                    <option value="true"<%=allowChooseQuery ? " selected" : ""%>>Yes</option>
-                    <option value="false"<%=allowChooseQuery ? "" : " selected"%>>No</option>
-                </select>                
-            </td>
-        </tr>
-        <tr>
-            <td class="labkey-form-label">Allow user to choose view?</td>
-            <td>
-                <select name="allowChooseView">
-                    <option value="true"<%=allowChooseView ? " selected" : ""%>>Yes</option>
-                    <option value="false"<%=allowChooseView ? "" : " selected"%>>No</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td class="labkey-form-label">Button bar position:</td>
-            <td>
-                <select name="buttonBarPosition">
-                    <option value="BOTH"<%="BOTH".equalsIgnoreCase(btnBarPosition) ? " selected" : ""%>>Both</option>
-                    <option value="TOP"<%="TOP".equalsIgnoreCase(btnBarPosition) ? " selected" : ""%>>Top</option>
-                    <option value="BOTTOM"<%="BOTTOM".equalsIgnoreCase(btnBarPosition) ? " selected" : ""%>>Bottom</option>
-                    <option value="NONE"<%="NONE".equalsIgnoreCase(btnBarPosition) ? " selected" : ""%>>None</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td/>
-            <td><labkey:button text="Submit" /></td>
-        </tr>
-    </table>
-</form>
+<div id='extDiv'></div>
