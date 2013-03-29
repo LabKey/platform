@@ -17,7 +17,9 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
@@ -139,8 +141,11 @@ public class AtomicDatabaseInteger
 
     public static class TestCase extends Assert
     {
-        @Test
-        public void testBasics() throws SQLException
+        private AtomicDatabaseInteger _adi;
+        private Integer _rowId = null;
+
+        @Before
+        public void setup() throws SQLException
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
@@ -152,40 +157,59 @@ public class AtomicDatabaseInteger
             map.put("DateTimeNotNull", new Date());
             map.put("BitNotNull", true);
 
-            Integer rowId = null;
+            map = Table.insert(user, table, map);
 
-            try
+            _rowId = (Integer)map.get("RowId");
+            _adi = new AtomicDatabaseInteger(table.getColumn("IntNotNull"), user, c, _rowId);
+        }
+
+        @Test
+        public void testBasics() throws SQLException
+        {
+            assertEquals(0, _adi.get());
+
+            assertTrue(_adi.compareAndSet(0, 4));
+            assertTrue(_adi.compareAndSet(4, 2));
+            assertFalse(_adi.compareAndSet(0, 3));
+            assertFalse(_adi.compareAndSet(3, 2));
+
+            assertEquals(3, _adi.incrementAndGet());
+            assertEquals(4, _adi.incrementAndGet());
+            assertEquals(5, _adi.incrementAndGet());
+            assertEquals(4, _adi.decrementAndGet());
+            assertEquals(5, _adi.incrementAndGet());
+            assertEquals(6, _adi.incrementAndGet());
+
+            assertEquals(6, _adi.addAndGet(0));
+            assertEquals(12, _adi.addAndGet(6));
+            assertEquals(24, _adi.addAndGet(12));
+            assertEquals(14, _adi.addAndGet(-10));
+            assertEquals(-4, _adi.addAndGet(-18));
+            assertEquals(0, _adi.addAndGet(4));
+        }
+
+        private final int n = 1000;
+
+        @Test
+        public void testPerformance() throws SQLException
+        {
+            long start = System.currentTimeMillis();
+
+            for (int i = 0; i < n; i++)
+                _adi.incrementAndGet();
+
+            long elapsed = System.currentTimeMillis() - start;
+
+            double perSecond = n / (elapsed / 1000.0);
+        }
+
+        @After
+        public void tearDown() throws SQLException
+        {
+            if (null != _rowId)
             {
-                map = Table.insert(user, table, map);
-
-                rowId = (Integer)map.get("RowId");
-                AtomicDatabaseInteger adi = new AtomicDatabaseInteger(table.getColumn("IntNotNull"), user, c, rowId);
-
-                assertEquals(0, adi.get());
-
-                assertTrue(adi.compareAndSet(0, 4));
-                assertTrue(adi.compareAndSet(4, 2));
-                assertFalse(adi.compareAndSet(0, 3));
-                assertFalse(adi.compareAndSet(3, 2));
-
-                assertEquals(3, adi.incrementAndGet());
-                assertEquals(4, adi.incrementAndGet());
-                assertEquals(5, adi.incrementAndGet());
-                assertEquals(4, adi.decrementAndGet());
-                assertEquals(5, adi.incrementAndGet());
-                assertEquals(6, adi.incrementAndGet());
-
-                assertEquals(6, adi.addAndGet(0));
-                assertEquals(12, adi.addAndGet(6));
-                assertEquals(24, adi.addAndGet(12));
-                assertEquals(14, adi.addAndGet(-10));
-                assertEquals(-4, adi.addAndGet(-18));
-                assertEquals(0, adi.addAndGet(4));
-            }
-            finally
-            {
-                if (null != rowId)
-                    Table.delete(table, rowId);
+                TableInfo table = TestSchema.getInstance().getTableInfoTestTable();
+                Table.delete(table, _rowId);
             }
         }
     }
