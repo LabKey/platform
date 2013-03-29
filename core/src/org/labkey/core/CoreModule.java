@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.etl.CachingDataIterator;
@@ -710,7 +711,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ReplacedRunFilter.TestCase.class,
                 MultiValuedRenderContext.TestCase.class,
                 SubfolderWriter.TestCase.class,
-                Aggregate.TestCase.class
+                Aggregate.TestCase.class,
+                CaseInsensitiveHashSet.TestCase.class
         ));
     }
 
