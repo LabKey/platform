@@ -917,14 +917,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         });
 
-        var folderStore = new Ext.data.ArrayStore({
+        var studyStore = new Ext.data.ArrayStore({
             fields : [{name : 'name', type : 'string'}],
             data : this.studyWriters
         });
 
         var selectionGrid = new Ext.grid.EditorGridPanel({
             cls : 'studyObjects',
-            store: folderStore,
+            store: studyStore,
             selModel: selectionModel,
             columns: [
                 selectionModel,
@@ -950,13 +950,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             html : txt,
             border : false,
             layout : 'vbox',
-            defaults :
-            {
-                xtype : 'checkbox',
-                labelAlign : 'right',
-                labelWidth : '120px',
-                padding : '10px 0px'
-            },
             items : selectionGrid
         });
         return this.studyPropsPanel;
