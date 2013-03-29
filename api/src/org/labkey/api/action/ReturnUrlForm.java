@@ -77,7 +77,15 @@ public class ReturnUrlForm
     @Nullable
     public ActionURL getReturnActionURL()
     {
-        return (null == _returnUrl ? null : new ActionURL(_returnUrl));
+        try
+        {
+            // 17526
+            return (null == _returnUrl ? null : new ActionURL(_returnUrl));
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
+        }
     }
 
     // Return the passed-in default URL if returnURL param is missing or unparseable
