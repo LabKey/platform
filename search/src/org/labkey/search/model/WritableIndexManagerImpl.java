@@ -251,7 +251,6 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
         catch (Exception e)
         {
-            ExceptionUtil.logExceptionToMothership(null, e);
             return "Unknown";
         }
     }
