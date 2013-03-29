@@ -15,8 +15,14 @@
  */
 package org.labkey.api.collections;
 
+import junit.framework.Assert;
+import org.junit.Test;
+import org.labkey.api.util.PageFlowUtil;
+
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Simple case-insensitive version of HashSet --
@@ -66,5 +72,58 @@ public class CaseInsensitiveHashSet extends HashSet<String>
     public boolean contains(Object o)
     {
         return super.contains(o == null ? null : ((String) o).toLowerCase());
+    }
+
+    @Override   // Always iterate over passed in collection, see #17492
+    public boolean removeAll(Collection<?> c)
+    {
+        boolean modified = false;
+
+        for (Iterator<?> i = c.iterator(); i.hasNext(); )
+            modified |= remove(i.next());
+
+        return modified;
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test()
+        {
+            Set<String> set = new CaseInsensitiveHashSet("This", "that", "TOTHER");
+            assertTrue(set.contains("This"));
+            assertTrue(set.contains("this"));
+            assertTrue(set.contains("THIS"));
+            assertTrue(set.contains("ThIs"));
+            assertTrue(set.contains("That"));
+            assertTrue(set.contains("that"));
+            assertTrue(set.contains("THAT"));
+            assertTrue(set.contains("tHaT"));
+            assertTrue(set.contains("Tother"));
+            assertTrue(set.contains("tother"));
+            assertTrue(set.contains("TOTHER"));
+            assertTrue(set.contains("tOtHeR"));
+
+            assertFalse(set.contains("flip"));
+            assertFalse(set.contains("FLAP"));
+            assertFalse(set.contains("flop"));
+
+            set.addAll(PageFlowUtil.set("flip", "FLAP", "fLoP"));
+            assertTrue(set.contains("flip"));
+            assertTrue(set.contains("FLIP"));
+            assertTrue(set.contains("flap"));
+            assertTrue(set.contains("FLAP"));
+            assertTrue(set.contains("flop"));
+            assertTrue(set.contains("FLOP"));
+
+            assertEquals(6, set.size());
+            set.removeAll(PageFlowUtil.set("FLIP", "FLAp"));
+            assertEquals(4, set.size());
+            set.removeAll(PageFlowUtil.set("foo", "BAR"));
+            assertEquals(4, set.size());
+            set.removeAll(PageFlowUtil.set("foo", "BAR", "FLIP", "FLAP", "FLOP", "THIS", "ThAt"));
+            assertEquals(1, set.size());
+        }
     }
 }
