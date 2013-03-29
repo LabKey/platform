@@ -3190,7 +3190,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     if(!Ext.isEmpty(pair.value)){
                         var values = pair.value.split(';');
                         Ext.each(values, function(v){
-                            if(store.findExact('value', v) == -1){
+                            if(store.findExact('strValue', v) == -1){
                                 shouldShow = false;
                                 return false;
                             }
@@ -3276,7 +3276,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             Ext.each(filterArray, function(filter){
                 var allowable = [];
                 this.getLookupStore().each(function(rec){
-                    allowable.push(rec.get('value'));
+                    allowable.push(rec.get('strValue'));
                 });
                 filterDef = LABKEY.Filter.getFilterTypeForURLSuffix(filter.operator);
                 optimized = this.optimizeFilter(filterDef, filter.value, allowable);
@@ -3390,7 +3390,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
         var val;
         store.each(function(rec) {
-            val = rec.get('value');
+            val = rec.get('strValue');
             if(values.indexOf(val) == -1){
                 newValues.push(val);
             }
@@ -3516,7 +3516,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     sels   = this.getSelectionModel().getSelections();
 
                 Ext.each(sels, function(rec){
-                    values.push(rec.get('value'));
+                    values.push(rec.get('strValue'));
                 }, this);
 
                 if(values.indexOf('') != -1 && values.length == 1)
@@ -3557,7 +3557,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 // Iterate each value and record the index to be stored
                 Ext.each(values, function(val) {
                     recIdx = this.store.findBy(function(rec){
-                        return rec.get('value') === val;
+                        return rec.get('strValue') === val;
                     });
                     if (recIdx != -1) {
                         records.push(recIdx);
@@ -4049,24 +4049,40 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     // technically this is probably better done with a convert() function on the field, but
                     // LABKEY.ext.Store doesnt make that very easy
                     var valMap = {};
-                    store.each(function(rec){
-                        rec.set('displayValue', this.formatValue(rec.get('value')));
+                    var hasBlank = false;
+                    store.each(function(rec) {
+
+                        var formattedValue = this.formatValue(rec.get('value'));
+                        if (formattedValue == null || (!Ext.isString(formattedValue) && isNaN(formattedValue))) {
+                            hasBlank = rec;
+                            rec.set('value', '');
+                            rec.set('strValue', '');
+                            formattedValue = '';
+                        }
+
+                        rec.set('displayValue', formattedValue);
                         rec.commit(true); //mark dirty = false
 
-                        if(valMap[rec.data.displayValue]){
+                        if (valMap[rec.data.displayValue]) {
                             var dup = valMap[rec.data.displayValue];
                             // NOTE: because formatting the value could result in 2 distinct raw values having the
                             // same display value (ie. datetime), we track and save these
-                            if(rec.get('value') !== dup.get('value'))
-                                dup.get('valueArray').push(rec.get('value'));
+                            if(rec.get('strValue') !== dup.get('strValue'))
+                                dup.get('valueArray').push(rec.get('strValue'));
 
                             store.remove(rec);
                         }
                         else {
-                            rec.data.valueArray = [rec.get('value')];
+                            rec.data.valueArray = [rec.get('strValue')];
                             valMap[rec.get('displayValue')] = rec;
                         }
                     }, this);
+
+                    if (hasBlank) {
+                        store.remove(hasBlank);
+                        store.insert(0, new Ext.data.Record({value : '', strValue : '', displayValue : ''}));
+                    }
+
                     store.isLoading = false;
                     this.preparePanelTask.delay(50);
                 },
@@ -4082,16 +4098,16 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     formatValue: function(val)
     {
-        if(this.boundColumn){
-            if (this.boundColumn.extFormatFn){
+        if(this.boundColumn) {
+            if (this.boundColumn.extFormatFn) {
                 try {
                     this.boundColumn.extFormatFn = eval(this.boundColumn.extFormatFn);
                 }
-                catch (error){
+                catch (error) {
                     console.log('improper extFormatFn: ' + this.boundColumn.extFormatFn);
                 }
 
-                if(Ext.isFunction(this.boundColumn.extFormatFn)){
+                if (Ext.isFunction(this.boundColumn.extFormatFn)) {
                     val = this.boundColumn.extFormatFn(val);
                 }
             }
@@ -4099,7 +4115,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 val = parseInt(val);
             }
         }
-        return val
+        return val;
     },
 
     // TODO: Migrate to use LABKEY.Query.selectDistinctRows
@@ -4107,14 +4123,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     {
         // Build up a SELECT DISTINCT query to get all of the values that are currently in use
         //NOTE: empty string will be treated as NULL, which is b/c Ext checkboxes can be set to empty string, but not null
-        var sql = 'SELECT CASE WHEN value IS NULL then \'\'';
+        var sql = '';
         if (this._jsonType == 'boolean') {
-            sql += ' WHEN value = \'true\' then \'true\' ELSE \'false\' '; // 16724
+            sql += 'SELECT CASE WHEN value IS NULL then \'\' WHEN value = \'true\' then \'true\' ELSE \'false\' END as value'; // 16724
         }
         else {
-            sql += ' ELSE cast(value as varchar) ';
+            sql += 'SELECT value AS value, CAST(value AS VARCHAR) AS strValue';
         }
-        sql += 'END as value FROM (SELECT DISTINCT t.';
+        sql += ' FROM (SELECT DISTINCT t.';
 
         var fieldKey;
         if (column.displayField) {
@@ -4169,7 +4185,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     inputFieldValidator: function(input, cb)
     {
-        var rec = cb.getStore().getAt(cb.getStore().find('value', cb.getValue()));
+        var rec = cb.getStore().getAt(cb.getStore().find('strValue', cb.getValue()));
         var filter = LABKEY.Filter.getFilterTypeForURLSuffix(cb.getValue());
 
         if(rec){
