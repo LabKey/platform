@@ -1,8 +1,12 @@
 /*
     IndexGate inspects the capabilities of the provided Lucene index directory to determine the index format. This file
     was extracted from a preliminary version of Luke (a Lucene index inspection tool) 4.2.0 and subsetted to the single
-    public method that we care about. Luke source does not appear to be copyrighted, but Andrzej Bialecki is apparently
-    the primary author and the tool is clearly distributed under the Apache 2.0 license.
+    public method that we care about. Andrzej Bialecki is apparently the primary author and the tool is clearly
+    distributed under the Apache 2.0 license.
+
+    Copyright Andrzej Bialecki
+
+    Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 package org.apache.lucene.index;
 
