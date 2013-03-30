@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.apache.commons.io.input.ReaderInputStream;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -54,6 +55,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -328,7 +330,7 @@ public class AnalysisController extends SpringActionController
                 protocol.put("description", pipelineProtocol.getDescription());
                 protocol.put("xmlParameters", pipelineProtocol.getXml());
                 ParamParser parser = PipelineJobService.get().createParamParser();
-                parser.parse(pipelineProtocol.getXml());
+                parser.parse(new ReaderInputStream(new StringReader(pipelineProtocol.getXml())));
                 if (parser.getErrors() == null || parser.getErrors().length == 0)
                 {
                     protocol.put("jsonParameters", new JSONObject(parser.getInputParameters()));

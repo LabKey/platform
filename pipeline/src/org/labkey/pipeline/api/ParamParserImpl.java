@@ -108,7 +108,7 @@ public class ParamParserImpl implements ParamParser
         _errors.add(error);
     }
 
-    public void parse(String xml)
+    public void parse(InputStream inputStream)
     {
         try
         {
@@ -116,7 +116,7 @@ public class ParamParserImpl implements ParamParser
             dbf.setValidating(false);
             DocumentBuilder db = dbf.newDocumentBuilder();
 
-            InputSource source = new InputSource(new StringReader(xml));
+            InputSource source = new InputSource(new InputStreamReader(inputStream));
             _doc = db.parse(source);
             _doc.setXmlStandalone(true);  // Added to help with new Transformer-based getXML()
             validateDocument();
@@ -129,6 +129,10 @@ public class ParamParserImpl implements ParamParser
         catch (Exception e)
         {
             addError(new ErrorImpl(e.toString()));
+        }
+        finally
+        {
+            try { inputStream.close(); } catch (IOException ignored) {}
         }
     }
 
@@ -359,7 +363,7 @@ public class ParamParserImpl implements ParamParser
         String xmlEmpty = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
                 "<bioml>\n" +
                 "</bioml>";
-        parse(xmlEmpty);
+        parse(new ByteArrayInputStream(xmlEmpty.getBytes()));
         String[] keys = params.keySet().toArray(new String[params.size()]);
         Arrays.sort(keys);
         for (String key : keys)
