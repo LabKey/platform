@@ -466,7 +466,7 @@ public class DbScope
         Transaction t = getCurrentTransaction();
 
         if (null != t)
-            assert t.getConnection() == conn; //Should release same conn we handed out
+            assert t.getConnection() == conn : "Attempting to close a different connection from the one associated with this thread: " + conn + " vs " + t.getConnection(); //Should release same conn we handed out
         else
             try
             {

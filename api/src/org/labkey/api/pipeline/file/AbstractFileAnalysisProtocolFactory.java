@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.*;
@@ -194,35 +195,8 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
     public T loadInstance(File file) throws IOException
     {
-        BufferedReader inputReader = null;
-        StringBuffer xmlBuffer = new StringBuffer();
-        try
-        {
-            inputReader = new BufferedReader(new FileReader(file));
-            String line;
-            while ((line = inputReader.readLine()) != null)
-                xmlBuffer.append(line).append("\n");
-        }
-        catch (IOException eio)
-        {
-            throw new IOException("Failed to load protocol file '" + file + "'. " + (eio.getMessage() == null ? "" : eio.getMessage()), eio);
-        }
-        finally
-        {
-            if (inputReader != null)
-            {
-                try
-                {
-                    inputReader.close();
-                }
-                catch (IOException eio)
-                {
-                }
-            }
-        }
-
         ParamParser parser = createParamParser();
-        parser.parse(xmlBuffer.toString());
+        parser.parse(new FileInputStream(file));
         if (parser.getErrors() != null)
         {
             ParamParser.Error err = parser.getErrors()[0];
@@ -309,7 +283,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             throw new IllegalArgumentException("You must supply default parameters for " + getName() + ".");
 
         ParamParser parser = createParamParser();
-        parser.parse(xml);
+        parser.parse(new ReaderInputStream(new StringReader(xml)));
         if (parser.getErrors() != null)
         {
             ParamParser.Error err = parser.getErrors()[0];

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
+import java.io.InputStream;
 import java.util.Map;
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +25,7 @@ import java.io.IOException;
  */
 public interface ParamParser
 {
-    void parse(String xml);
+    void parse(InputStream inputStream);
 
     void setValidator(Validator validator);
 

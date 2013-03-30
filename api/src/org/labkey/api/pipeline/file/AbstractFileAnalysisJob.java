@@ -27,6 +27,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -232,31 +233,8 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     public ParamParser getInputParameters(File parametersFile) throws IOException
     {
-        BufferedReader inputReader = null;
-        StringBuffer xmlBuffer = new StringBuffer();
-        try
-        {
-            inputReader = new BufferedReader(new FileReader(parametersFile));
-            String line;
-            while ((line = inputReader.readLine()) != null)
-                xmlBuffer.append(line).append("\n");
-        }
-        finally
-        {
-            if (inputReader != null)
-            {
-                try
-                {
-                    inputReader.close();
-                }
-                catch (IOException eio)
-                {
-                }
-            }
-        }
-
         ParamParser parser = createParamParser();
-        parser.parse(xmlBuffer.toString());
+        parser.parse(new FileInputStream(parametersFile));
         if (parser.getErrors() != null)
         {
             ParamParser.Error err = parser.getErrors()[0];

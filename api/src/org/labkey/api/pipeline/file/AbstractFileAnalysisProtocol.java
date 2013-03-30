@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.ParamParser;
@@ -27,6 +28,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -129,7 +131,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         }
 
         ParamParser parser = getFactory().createParamParser();
-        parser.parse(xml);
+        parser.parse(new ReaderInputStream(new StringReader(xml)));
         if (parser.getErrors() != null)
         {
             ParamParser.Error err = parser.getErrors()[0];
