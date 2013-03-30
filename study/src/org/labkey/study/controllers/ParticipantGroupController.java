@@ -1129,14 +1129,14 @@ public class ParticipantGroupController extends BaseStudyController
         private int _categoryId;
         private String _categoryLabel;
         private String _categoryType;
-        private Boolean _categoryShared;
+        private boolean _categoryShared;
 
-        public Boolean getCategoryShared()
+        public boolean getCategoryShared()
         {
             return _categoryShared;
         }
 
-        public void setCategoryShared(Boolean shared)
+        public void setCategoryShared(boolean shared)
         {
             _categoryShared = shared;
         }
