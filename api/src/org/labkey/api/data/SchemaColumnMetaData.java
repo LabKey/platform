@@ -93,6 +93,11 @@ public class SchemaColumnMetaData
         if (null == xmlTable)
             return;
 
+        TableType.Columns columns = xmlTable.getColumns();
+
+        if (null == columns)
+            return;
+
         // Don't overwrite pk
         if (_pkColumnNames.isEmpty())
         {
@@ -104,7 +109,7 @@ public class SchemaColumnMetaData
             }
         }
 
-        ColumnType[] xmlColumnArray = xmlTable.getColumns().getColumnArray();
+        ColumnType[] xmlColumnArray = columns.getColumnArray();
         List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
 
         for (ColumnType xmlColumn : xmlColumnArray)
