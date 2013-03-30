@@ -110,11 +110,6 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         delete config.sort; //important...otherwise the base Ext.data.Store interprets it
 
-        if (config.sql)
-            LABKEY.Filter.appendFilterParams(qsParams, config.filterArray);
-        else
-            LABKEY.Filter.appendFilterParams(baseParams, config.filterArray);
-
         if (config.viewName && !config.sql)
             baseParams['query.viewName'] = config.viewName;
 
@@ -143,13 +138,25 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             updatable: true
         });
 
+        // Set of parameters that are reserved for query
+        this.queryParamSet = {
+            columns : true,
+            containerFilterName : true,
+            ignoreFilter : true,
+            maxRows : true,
+            param   : true,
+            queryName : true,
+            sort    : true,
+            viewName: true
+        };
+
         this.isLoading = false;
 
         LABKEY.ext.Store.superclass.constructor.call(this, {
             reader: new LABKEY.ext.ExtendedJsonReader(),
             proxy: this.proxy ||
                     new Ext.data.HttpProxy(new Ext.data.Connection({
-                        method: (config.sql ? 'POST' : 'GET'),
+                        method: 'POST',
                         url: (config.sql ? LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams)
                                 : LABKEY.ActionURL.buildURL("query", "selectRows", config.containerPath)),
                         listeners: {
@@ -159,13 +166,6 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                     })),
             baseParams: baseParams,
             autoLoad: false
-            //Moved below to allow user to supply listeners on creation
-//            listeners: {
-//                'beforeload': {fn: this.onBeforeLoad, scope: this},
-//                'load': {fn: this.onLoad, scope: this},
-//                'loadexception' : {fn: this.onLoadException, scope: this},
-//                'update' : {fn: this.onUpdate, scope: this}
-//            }
         });
 
         this.on('beforeload', this.onBeforeLoad, this);
@@ -175,9 +175,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         //Add this here instead of using Ext.store to make sure above listeners are added before 1st load
         if(config.autoLoad){
-            this.load.defer(10, this, [
-                typeof this.autoLoad == 'object' ?
-                    this.autoLoad : undefined]);
+            this.load.defer(10, this, [ Ext.isObject(this.autoLoad) ? this.autoLoad : undefined ]);
         }
 
         /**
@@ -204,9 +202,6 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
          * @param {String} message The exception message.
          */
         this.addEvents("beforecommit", "commitcomplete", "commitexception");
-
-        //subscribe to the proxy's beforeload event so that we can map parameter names
-        this.proxy.on("beforeload", this.onBeforeProxyLoad, this);
     },
 
     /**
@@ -468,13 +463,35 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         format = format || "excel";
         if (this.sql)
         {
-            LABKEY.Query.exportSql({
+            var exportCfg = {
                 schemaName: this.schemaName,
                 sql: this.sql,
                 format: format,
                 containerPath: this.containerPath,
                 containerFilter: this.containerFilter
-            });
+            };
+
+            // TODO: Enable filtering on exportData
+//            var filters = [];
+//
+//            // respect base filters
+//            if (Ext.isArray(this.filterArray)) {
+//                filters = this.filterArray;
+//            }
+//
+//            // respect user/view filters
+//            if (this.getUserFilters().length > 0) {
+//                var userFilters = this.getUserFilters();
+//                for (var f=0; f < userFilters.length; f++) {
+//                    filters.push(userFilters[f]);
+//                }
+//            }
+//
+//            if (filters.length > 0) {
+//                exportCfg['filterArray'] = filters;
+//            }
+
+            LABKEY.Query.exportSql(exportCfg);
         }
         else
         {
@@ -484,16 +501,18 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 "query.containerFilterName": this.containerFilter
             };
 
-            if (this.columns)
+            if (this.columns) {
                 params['query.columns'] = this.columns;
+            }
 
             // These are filters that are custom created (aka not from a defined view).
             LABKEY.Filter.appendFilterParams(params, this.filterArray);
             
-            if (this.sortInfo)
+            if (this.sortInfo) {
                 params['query.sort'] = "DESC" == this.sortInfo.direction
                         ? "-" + this.sortInfo.field
                         : this.sortInfo.field;
+            }
 
             // These are filters that are defined by the view.
             LABKEY.Filter.appendFilterParams(params, this.getUserFilters());
@@ -507,13 +526,13 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
     onCommitSuccess : function(response, options) {
         var json = this.getJson(response);
-        if(!json || !json.result)
+        if(!json || !json.result) {
             return;
+        }
 
-        var idCol = this.reader.jsonData.metaData.id;
-        for(var commandIdx = 0; commandIdx < json.result.length; ++commandIdx)
+        for (var cmdIdx = 0; cmdIdx < json.result.length; ++cmdIdx)
         {
-            this.processResponse(json.result[commandIdx].rows);
+            this.processResponse(json.result[cmdIdx].rows);
         }
         this.fireEvent("commitcomplete");
     },
@@ -611,29 +630,60 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             if (options.params['query.sort'])
                 qsParams['query.sort'] = options.params['query.sort'];
 
-            LABKEY.Filter.appendFilterParams(qsParams, this.getUserFilters());
-
             options.url = LABKEY.ActionURL.buildURL("query", "executeSql.api", this.containerPath, qsParams);
         }
     },
 
-    onBeforeProxyLoad: function(proxy, options)
-    {
+    onBeforeLoad : function(store, options) {
+        this.isLoading = true;
+
         //the selectRows.api can't handle the 'sort' and 'dir' params
         //sent by Ext, so translate them into the expected form
-        if(options.sort)
+        if(options.sort) {
             options['query.sort'] = "DESC" == options.dir
                     ? "-" + options.sort
                     : options.sort;
+        }
 
-        LABKEY.Filter.appendFilterParams(options, this.getUserFilters());
+        // respect base filters
+        var baseFilters = {};
+        if (Ext.isArray(this.filterArray)) {
+            LABKEY.Filter.appendFilterParams(baseFilters, this.filterArray);
+        }
+
+        // respect user filters
+        var userFilters = {};
+        LABKEY.Filter.appendFilterParams(userFilters, this.getUserFilters());
+
+        Ext.applyIf(baseFilters, userFilters);
+
+        // remove all query filters in base parameters
+        for (var param in this.baseParams) {
+            if (this.isFilterParam(param)) {
+                delete this.baseParams[param];
+            }
+        }
+
+        for (param in baseFilters) {
+            if (baseFilters.hasOwnProperty(param)) {
+                this.setBaseParam(param, baseFilters[param]);
+            }
+        }
 
         delete options.dir;
         delete options.sort;
     },
 
-    onBeforeLoad : function() {
-        this.isLoading = true;
+    isFilterParam : function(param) {
+        if (Ext.isString(param)) {
+            if (param.indexOf('query.') == 0) {
+                var chkParam = param.replace('query.', '');
+                if (!this.queryParamSet[chkParam]) {
+                    return true;
+                }
+            }
+        }
+        return false;
     },
 
     onLoad : function(store, records, options) {
