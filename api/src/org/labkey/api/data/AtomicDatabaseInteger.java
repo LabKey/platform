@@ -188,20 +188,40 @@ public class AtomicDatabaseInteger
             assertEquals(0, _adi.addAndGet(4));
         }
 
-        private final int n = 1000;
-
         @Test
         public void testPerformance() throws SQLException
         {
-            long start = System.currentTimeMillis();
+            final int n = 1000;
+            final long start = System.currentTimeMillis();
 
             for (int i = 0; i < n; i++)
                 _adi.incrementAndGet();
 
-            long elapsed = System.currentTimeMillis() - start;
+            final long elapsed = System.currentTimeMillis() - start;
 
             double perSecond = n / (elapsed / 1000.0);
         }
+
+        // Mock up container-scoped sequences approach... PostgreSQL specific
+//        @Test
+//        public void testSequence() throws SQLException
+//        {
+//            final int n = 10000;
+//            final long start = System.currentTimeMillis();
+//
+//            final TableInfo tinfo = TestSchema.getInstance().getTableInfoTestTable();
+//            final SqlExecutor executor = new SqlExecutor(tinfo.getSchema());
+//            final SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET IntNotNull = IntNotNull + 1 WHERE RowId = ? RETURNING RowId");
+//            sql.add(_rowId);
+//
+//            for (int i = 0; i < n; i++)
+//                executor.execute(sql);
+//
+//            final long elapsed = System.currentTimeMillis() - start;
+//
+//            final double perSecond = n / (elapsed / 1000.0);
+//            perSecond = perSecond;
+//        }
 
         @After
         public void tearDown() throws SQLException
