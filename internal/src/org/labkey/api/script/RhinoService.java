@@ -30,6 +30,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
@@ -101,6 +102,7 @@ public final class RhinoService
         ServiceRegistry.get().registerService(ScriptService.class, new RhinoFactory());
     }
 
+    @TestTimeout
     public static class TestCase extends Assert
     {
         @Test
