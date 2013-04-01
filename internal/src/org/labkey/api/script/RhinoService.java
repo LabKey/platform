@@ -102,7 +102,6 @@ public final class RhinoService
         ServiceRegistry.get().registerService(ScriptService.class, new RhinoFactory());
     }
 
-    @TestTimeout
     public static class TestCase extends Assert
     {
         @Test
@@ -832,7 +831,7 @@ class SandboxContextFactory extends ContextFactory
     {
         SandboxContext ctx = (SandboxContext)cx;
         long currentTime = HeartBeat.currentTimeMillis();
-        final int timeout = 20;
+        final int timeout = 60;
         if (currentTime - ctx.startTime > timeout*1000)
             Context.reportError("Script execution exceeded " + timeout + " seconds.");
     }
