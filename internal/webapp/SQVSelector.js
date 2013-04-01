@@ -276,6 +276,7 @@ Ext4.define('LABKEY.SQVModel', {
             fieldLabel : 'View',
             valueField : 'name',
             displayField : 'name',
+            initialValue : '[default view]',
             disabled : true,
             editable : false,
             store : this.viewStore,
