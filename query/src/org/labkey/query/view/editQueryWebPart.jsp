@@ -77,7 +77,7 @@
         }));
         var viewName = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({
             id : 'viewName',
-            initialValue : <%=q(props.get("viewName"))%>,
+            initialValue : <%=q(props.get("viewName"))%> ? <%=q(props.get("viewName"))%> : '[default view]',
             name : 'viewName',
             labelWidth : 200,
             width : 500
