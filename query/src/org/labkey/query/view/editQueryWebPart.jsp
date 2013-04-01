@@ -113,7 +113,8 @@
                 xtype : 'radio',
                 id : 'selectQueryContents',
                 name : 'selectQuery',
-                boxLabel : 'Show the contents of a specific table and view.',
+                boxLabel : 'Show the contents of a specific query and view.',
+                width : 500,
                 value : true,
                 checked : <%=PageFlowUtil.jsString(props.get("queryName"))%>,
                 listeners : {
@@ -177,7 +178,7 @@
             defaults : {labelWidth: 200, width : 500, height : 30},
             border : false,
             padding : '5px',
-            width: 510,
+            width: 700,
             standardSubmit: true,
             bodyStyle : 'background-color: transparent;',
             items : [webPartTitle, schemaName, showContentsRadioGroup, queryName, viewName, {
