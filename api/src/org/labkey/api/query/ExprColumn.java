@@ -35,11 +35,14 @@ public class ExprColumn extends ColumnInfo
         super(key, parent);
         setJdbcType(type);
         _sql = sql;
-        for (ColumnInfo dependentColumn : dependentColumns)
+        if (dependentColumns != null)
         {
-            if (dependentColumn == null)
+            for (ColumnInfo dependentColumn : dependentColumns)
             {
-                throw new NullPointerException("Dependent columns may not be null");
+                if (dependentColumn == null)
+                {
+                    throw new NullPointerException("Dependent columns may not be null");
+                }
             }
         }
         // Since these are typically calculated columns, it doesn't make sense to show them in update or insert views
@@ -78,9 +81,12 @@ public class ExprColumn extends ColumnInfo
     @Override
     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
     {
-        for (ColumnInfo col : _dependentColumns)
+        if (_dependentColumns != null)
         {
-            col.declareJoins(parentAlias, map);
+            for (ColumnInfo col : _dependentColumns)
+            {
+                col.declareJoins(parentAlias, map);
+            }
         }
     }
 }
