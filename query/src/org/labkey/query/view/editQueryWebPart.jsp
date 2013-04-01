@@ -51,7 +51,7 @@
         var webPartTitle = Ext4.create('Ext.form.field.Text', {
             emptyText : 'Custom Query',
             fieldLabel: 'Web Part Title',
-            submitEmptyText: true,
+            submitEmptyText: false,
             name : 'title',
             value : <%=PageFlowUtil.jsString(props.get("title"))%>,
             labelWidth : 200,
@@ -63,7 +63,7 @@
             id : 'schemaName',
             editable : true,
             typeAhead : true,
-            typeAheadDelay : 0,
+            typeAheadDelay : 250,
             forceSelection : true,
             initialValue : <%=q(props.get("schemaName"))%>,
             fieldLabel : 'Schema',
@@ -77,7 +77,7 @@
             id : 'queryName',
             editable : true,
             typeAhead : true,
-            typeAheadDelay : 0,
+            typeAheadDelay : 250,
             forceSelection : true,
             initialValue : <%=q(props.get("queryName"))%>,
             name : 'queryName',
@@ -88,7 +88,7 @@
             id : 'viewName',
             editable : true,
             typeAhead : true,
-            typeAheadDelay : 0,
+            typeAheadDelay : 250,
             forceSelection : true,
             initialValue : <%=q(props.get("viewName"))%> ? <%=q(props.get("viewName"))%> : '[default view]',
             name : 'viewName',
@@ -170,8 +170,18 @@
             handler : function() {
                 if(queryForm){
                     if(validate()){
+                        if(webPartTitle.getValue() === '')
+                        {
 
-                        console.log(<%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>);
+                            if(queryName.isDisabled())
+                            {
+                                webPartTitle.setValue(schemaName.getRawValue() + ' Queries');
+                            }
+                            else
+                            {
+                                webPartTitle.setValue(queryName.getRawValue());
+                            }
+                        }
                         queryForm.getForm().submit({
                             url : <%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>,
                             success : function(){},
