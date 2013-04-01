@@ -3328,6 +3328,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
             if (pair.operator) {
                 var filter = LABKEY.Filter.getFilterTypeForURLSuffix(pair.operator);
+                var opposite = false;
 
                 //attempt to convert single-value filters into multi-value for faceting
                 if (this.filterType != 'default' && !filter.isMultiValued() && filter.getMultiValueFilter()) {
@@ -3337,6 +3338,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 if (this.filterType == 'include') {
                     if ('notin' == pair.operator || 'neqornull' == pair.operator || 'neq' == pair.operator) {
                         filter = filter.getOpposite();
+                        opposite = true;
                         pair.value = this.getInverse(this.getLookupStore(), pair.value);
                     }
                 }
@@ -3356,9 +3358,15 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                         input.setValue(pair.value);
                     }
                     else {
-                        if(filter.getURLSuffix() == 'in' && pair.value === '') {
+                        // problem with this is empty 'in' equals opposite of complete set 'notin' therefore we use opposite bit
+                        if (filter.getURLSuffix() == 'in' && pair.value === '') {
                             input.defaultValue = true;
-                            input.on('viewready', function(g) { g.selectAll(); }, this, {single: true});
+                            if (opposite) {
+                                input.on('viewready', function(g) { g.selectNone(); }, this, {single: true});
+                            }
+                            else {
+                                input.on('viewready', function(g) { g.selectAll(); }, this, {single: true});
+                            }
                         }
                         else {
                             input.defaultValue = false;
@@ -3509,7 +3517,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 }
             },
             getValue : function() {
-                return this.getValues().values;
+                var vals = this.getValues();
+                if (vals.length == vals.max) {
+                    return [];
+                }
+                return vals.values;
             },
             getValues : function() {
                 var values = [],
@@ -3844,7 +3856,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 if(tab.filterType != 'default'){
                     var allowable = [];
                     this.getLookupStore().each(function(rec){
-                        allowable.push(rec.get('value'))
+                        allowable.push(rec.get('strValue'));
                     });
                     filterArray = this.optimizeFilter(filter, value, allowable);
                 }
@@ -4125,10 +4137,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         //NOTE: empty string will be treated as NULL, which is b/c Ext checkboxes can be set to empty string, but not null
         var sql = '';
         if (this._jsonType == 'boolean') {
-            sql += 'SELECT CASE WHEN value IS NULL then \'\' WHEN value = \'true\' then \'true\' ELSE \'false\' END as value'; // 16724
+            var _case = 'CASE WHEN value IS NULL then \'\' WHEN value = \'true\' then \'true\' ELSE \'false\' END';
+            sql += 'SELECT ' + _case + ' as value, ' + _case + ' as strValue'; // 16724
         }
         else {
-            sql += 'SELECT value AS value, CAST(value AS VARCHAR) AS strValue';
+            sql += 'SELECT value AS value, CAST(value AS VARCHAR(1000)) AS strValue';
         }
         sql += ' FROM (SELECT DISTINCT t.';
 
@@ -4185,7 +4198,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     inputFieldValidator: function(input, cb)
     {
-        var rec = cb.getStore().getAt(cb.getStore().find('strValue', cb.getValue()));
+        var rec = cb.getStore().getAt(cb.getStore().find('value', cb.getValue()));
         var filter = LABKEY.Filter.getFilterTypeForURLSuffix(cb.getValue());
 
         if(rec){
