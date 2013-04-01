@@ -61,6 +61,10 @@
         var sqvModel = Ext4.create('LABKEY.SQVModel', {});
         var schemaName = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig({
             id : 'schemaName',
+            editable : true,
+            typeAhead : true,
+            typeAheadDelay : 0,
+            forceSelection : true,
             initialValue : <%=q(props.get("schemaName"))%>,
             fieldLabel : 'Schema',
             name : 'schemaName',
@@ -71,6 +75,10 @@
 
         var queryName = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
             id : 'queryName',
+            editable : true,
+            typeAhead : true,
+            typeAheadDelay : 0,
+            forceSelection : true,
             initialValue : <%=q(props.get("queryName"))%>,
             name : 'queryName',
             labelWidth : 200,
@@ -78,6 +86,10 @@
         }));
         var viewName = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({
             id : 'viewName',
+            editable : true,
+            typeAhead : true,
+            typeAheadDelay : 0,
+            forceSelection : true,
             initialValue : <%=q(props.get("viewName"))%> ? <%=q(props.get("viewName"))%> : '[default view]',
             name : 'viewName',
             labelWidth : 200,
