@@ -25,7 +25,7 @@ Ext4.define('LABKEY.SQVModel', {
         Ext4.define('schemaModel', {
             extend : 'Ext.data.Model',
             fields : [
-                {name: 'schema'}
+                {name: 'schema', sortType: 'asUCString'}
             ],
             idProperty: 'schema'
         });
@@ -35,7 +35,7 @@ Ext4.define('LABKEY.SQVModel', {
             extend : 'Ext.data.Model',
             fields : [
                 {name : 'isUserDefined', type : 'boolean'},
-                {name : 'name',          type : 'string'},
+                {name : 'name',          type : 'string', sortType: 'asUCString'},
                 {name : 'viewDataURL',   type : 'string'},
                 {name : 'listId',        type : 'string'}
             ],
@@ -52,7 +52,7 @@ Ext4.define('LABKEY.SQVModel', {
             extend : 'Ext.data.Model',
             fields : [
                 {name : 'default',      type : 'boolean'},
-                {name : 'name',         type : 'string'},
+                {name : 'name',         type : 'string', sortType: 'asUCString'},
                 {name : 'viewDataUrl',  type : 'string'}
             ],
             idProperty: 'name'
