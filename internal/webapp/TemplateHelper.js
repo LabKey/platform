@@ -340,6 +340,16 @@ X.define('LABKEY.TemplateReport',
             }
         }
 
+        var rowBreakMap = {};
+        if (X.isArray(this.rowBreakInfo))
+        {
+            for (i=0; i < this.rowBreakInfo.length; i++)
+            {
+                var rbi = this.rowBreakInfo[i];
+                if (rbi.rowspans)
+                    rowBreakMap[rbi.name] = rbi;
+            }
+        }
 
         for (var r=0 ; r < rows.length ; r++)
         {
@@ -358,6 +368,7 @@ X.define('LABKEY.TemplateReport',
                 arrayRow.push(value);
             }
 
+            parentRow.isEmpty = this.isEmptyRow(objectRow, gridFields ? gridFields : fields, rowBreakMap);
             parentRow.asArray = arrayRow;
             parentRow.asObject = objectRow;
             arrayrows.push(parentRow);
@@ -373,6 +384,16 @@ X.define('LABKEY.TemplateReport',
         return transformedResults;
     },
 
+    isEmptyRow : function(objectRow, gridFields, rowBreakMap)
+    {
+        for (var i=0; i < gridFields.length; i++)
+        {
+            var field = objectRow[gridFields[i].name];
+            if (field && !rowBreakMap[gridFields[i].name] && !X.isEmpty(field.value))
+                return false;
+        }
+        return true;
+    },
 
     /**
      * takes a transformed result (see transformSelectRowsResult) and tranforms the data
@@ -445,7 +466,10 @@ X.define('LABKEY.TemplateReport',
 
         var pages = [];
         var currentPage = [];
+        var rowSpanStart = null;
+        var prevBreakLevel = undefined;
 
+        // need to make a pass through to coalesce empty rowspan rows
         for (var r=0 ; r < rows.length ; r++)
         {
             var parentRow = rows[r];
@@ -458,6 +482,46 @@ X.define('LABKEY.TemplateReport',
                 var obj = arrayRow[breakFields[b].index];
                 var v = (obj && X.isDefined(obj.value)) ? obj.value : "" ;
                 var prev = breakValues[b];
+                if (v != prev)
+                    breakLevel = b;
+                breakValues[b] = v;
+            }
+            //console.log(r, breakLevel, breakValues);
+
+            if (breakLevel == breakFields.length && prevBreakLevel != breakFields.length)
+                rowSpanStart = r-1;
+            else if (prevBreakLevel == breakFields.length && breakLevel != prevBreakLevel)
+            {
+                var isEmpty = true;
+                for (var idx = rowSpanStart; idx < r; idx++)
+                {
+                    var row = rows[idx];
+
+                    if (row && row.isEmpty && (!isEmpty || (idx+1 < r)))
+                        row.isHidden = true;
+                    else
+                        isEmpty = false;
+                }
+            }
+            prevBreakLevel = breakLevel;
+        }
+        breakValues = [];
+
+        for (r=0 ; r < rows.length ; r++)
+        {
+            parentRow = rows[r];
+            arrayRow = parentRow.asArray;
+
+            if (parentRow.isHidden)
+                continue;
+
+            // compute breakLevel for this row
+            breakLevel = breakFields.length;
+            for (b=breakFields.length-1; b >=0 ; b--)
+            {
+                obj = arrayRow[breakFields[b].index];
+                v = (obj && X.isDefined(obj.value)) ? obj.value : "" ;
+                prev = breakValues[b];
                 if (v != prev)
                     breakLevel = b;
                 breakValues[b] = v;
