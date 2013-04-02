@@ -15,6 +15,7 @@
  */
 package org.labkey.query.persist;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -47,7 +48,16 @@ public class LinkedSchemaDef extends AbstractExternalSchemaDef
         return false;
     }
 
+    @NotNull
+    @Override
+    public String getDataSource()
+    {
+        String datasource = super.getDataSource();
+        return datasource != null ? datasource : getContainerId();
+    }
+
     // Source container id is an alias for data source.
+    @NotNull
     public String getSourceContainerId()
     {
         return getDataSource();

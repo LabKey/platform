@@ -157,7 +157,12 @@ public class ExternalSchema extends SimpleUserSchema
             }
             catch (XmlException e)
             {
-                Logger.getLogger(ExternalSchema.class).warn("Error loading schema metadata", e);
+                StringBuilder sb = new StringBuilder();
+                sb.append("Ignoring invalid schema metadata xml for '").append(def.getUserSchemaName()).append("'");
+                String containerPath = def.getContainerPath();
+                if (containerPath != null && !"".equals(containerPath))
+                    sb.append(" in container '").append(containerPath).append("'");
+                Logger.getLogger(ExternalSchema.class).warn(sb, e);
                 return null;
             }
         }

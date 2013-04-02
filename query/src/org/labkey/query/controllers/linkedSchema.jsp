@@ -40,6 +40,8 @@
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
       resources.add(ClientDependency.fromFilePath("Ext4"));
       resources.add(ClientDependency.fromFilePath("SQVSelector.js"));
+      resources.add(ClientDependency.fromFilePath("ux/CheckCombo/CheckCombo.js"));
+      resources.add(ClientDependency.fromFilePath("ux/CheckCombo/CheckCombo.css"));
       return resources;
   }
 %>
@@ -170,7 +172,7 @@
         var sourceContainerCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeContainerComboConfig({
             name: 'dataSource',
             fieldLabel: 'Source Container',
-            value: <%=q(def.getDataSource())%>
+            value: <%=q(def.getDataSource())%>,
             <%--helpPopup: <%=qh(bean.getHelpHTML("DataSource"))%>--%>
         }));
 
@@ -390,7 +392,7 @@
             tables.addAll(Arrays.asList(initialTemplate.getTables().getTableNameArray()));
         }
         %>
-        var tablesCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
+        var tablesCombo = Ext4.create('Ext.ux.CheckCombo', sqvModel.makeQueryComboConfig({
             name: 'tables',
             fieldLabel: false,
             width: 395,
@@ -506,6 +508,10 @@
                 text: <%=q(bean.isInsert() ? "Create" : "Update")%>,
                 type: 'submit',
                 handler: function () {
+                    var sourceContainerValue = sourceContainerCombo.getValue();
+                    if (!sourceContainerValue)
+                        sourceContainerValue = LABKEY.container.id;
+                    
                     var sourceSchemaValue = sourceSchemaCombo.getValue();
                     var tablesValue = tablesCombo.getTablesValueForSubmit();
                     var metadataValue = metadataTextArea.getValue();
@@ -528,6 +534,7 @@
                     }
 
                     // Always disable the fields and submit the values manually
+                    sourceContainerCombo.setDisabled(true);
                     sourceSchemaField.setDisabled(true);
                     sourceSchemaCombo.setDisabled(true);
                     tablesField.setDisabled(true);
@@ -537,6 +544,7 @@
 
                     f.getForm().submit({
                         params: {
+                            dataSource: sourceContainerValue,
                             sourceSchemaName: sourceSchemaValue,
                             tables: tablesValue,
                             metaData: metadataValue
