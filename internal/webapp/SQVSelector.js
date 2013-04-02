@@ -203,6 +203,7 @@ Ext4.define('LABKEY.SQVModel', {
                     if (cb.initialValue) {
                         this.setComboValues(cb, cb.initialValue);
                     }
+                    cb.addCls('schema-loaded-marker');
                 }
             },
             scope : this
@@ -262,6 +263,7 @@ Ext4.define('LABKEY.SQVModel', {
                         this.setComboValues(cb, cb.initialValue);
                     }
                 }
+                cb.addCls('query-loaded-marker');
             },
             scope : this
         };
@@ -307,6 +309,7 @@ Ext4.define('LABKEY.SQVModel', {
                     if (cb.initialValue) {
                         this.setComboValues(cb, cb.initialValue);
                     }
+                    cb.addCls('view-loaded-marker');
                 }
             },
             scope : this
@@ -363,6 +366,8 @@ Ext4.define('LABKEY.SQVModel', {
             if (false === this.fireEvent('beforeschemaload', this, selectedContainerId))
                 return;
 
+            this.schemaCombo.removeCls('schema-loaded-marker');
+
             var currentSchema = this.schemaCombo.getValue();
             this.schemaCombo.setDisabled(true);
             this.schemaCombo.clearValue();
@@ -393,6 +398,8 @@ Ext4.define('LABKEY.SQVModel', {
         if (this.queryCombo) {
             if (false === this.fireEvent('beforequeryload', this, selectedContainerId, selectedSchema))
                 return;
+
+            this.queryCombo.removeCls('query-loaded-marker');
 
             var currentQuery = this.queryCombo.getValue();
             this.queryCombo.setDisabled(true);
@@ -431,6 +438,8 @@ Ext4.define('LABKEY.SQVModel', {
         if (this.viewCombo) {
             if (false === this.fireEvent('beforeviewload', this, selectedContainerId, selectedSchema, selectedQuery))
                 return;
+
+            this.viewCombo.removeCls('view-loaded-marker');
 
             var currentView = this.viewCombo.getValue();
             this.viewCombo.setDisabled(true);
