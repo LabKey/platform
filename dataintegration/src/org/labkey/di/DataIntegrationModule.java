@@ -18,9 +18,14 @@ package org.labkey.di;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.security.User;
+import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.SimpleWebPartFactory;
 import org.labkey.api.view.ViewContext;
@@ -31,6 +36,8 @@ import org.labkey.di.pipeline.ETLManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
 
+import java.beans.PropertyChangeEvent;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +47,7 @@ import java.util.Set;
  * User: matthewb
  * Date: 12 Jan 2013
  */
-public class DataIntegrationModule extends DefaultModule
+public class DataIntegrationModule extends DefaultModule implements ContainerManager.ContainerListener
 {
     public static final String NAME = "DataIntegration";
 
@@ -51,7 +58,7 @@ public class DataIntegrationModule extends DefaultModule
 
     public double getVersion()
     {
-        return 0.03;
+        return 0.04;
     }
 
     protected void init()
@@ -63,6 +70,8 @@ public class DataIntegrationModule extends DefaultModule
     {
         return true;
     }
+
+
 
     @NotNull
     @Override
@@ -76,12 +85,12 @@ public class DataIntegrationModule extends DefaultModule
     {
     }
 
-
     public void doStartup(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new ETLPipelineProvider(this));
 
         scheduleEnabledTransforms();
+        ContainerManager.addContainerListener(this);
     }
 
     private void scheduleEnabledTransforms()
@@ -120,5 +129,48 @@ public class DataIntegrationModule extends DefaultModule
             setFrame(WebPartView.FrameType.PORTAL);
             setModelBean(this);
         }
+    }
+
+
+        //
+    // ContainerListener
+    //
+
+    @Override
+    public void containerCreated(Container c, User user)
+    {
+    }
+
+    @Override
+    public void containerDeleted(Container c, User user)
+    {
+        DbSchema di = null;
+        try
+        {
+            di = DbSchema.get("dataintegration");
+            di.getScope().ensureTransaction();
+            ContainerUtil.purgeTable(di.getTable("TransformRun"), c, null);
+            ContainerUtil.purgeTable(di.getTable("TransformConfiguration"), c, null);
+            di.getScope().commitTransaction();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            if (null != di)
+                di.getScope().closeConnection();
+        }
+    }
+
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt)
+    {
     }
 }

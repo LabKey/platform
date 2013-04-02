@@ -20,10 +20,12 @@ import org.apache.log4j.Logger;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;
@@ -196,6 +198,16 @@ public class PipelineManager
             {
                 DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
                 Table.execute(PipelineSchema.getInstance().getSchema(), sql.toString(), params.toArray());
+
+                // TODO: purge methods aren't called in reverse module depedency order
+                DbSchema di = null;
+                try {di = DbSchema.get("dataintegration");} catch (Exception x) {}
+                if (null != di)
+                {
+                    TableInfo t =  di.getTable("TransformRun");
+                    if (null != t)
+                        ContainerUtil.purgeTable(t , container, null);
+                }
 
                 DbCache.clear(pipeline.getTableInfoPipelineRoots());
                 ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
