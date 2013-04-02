@@ -79,6 +79,9 @@ public class ETLManager
 
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
 
+    private static boolean _shuttingDown = false;
+
+
     public static ETLManager get()
     {
         return INSTANCE;
@@ -138,6 +141,9 @@ public class ETLManager
 
     public synchronized void runNow(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
+        if (_shuttingDown)
+            return;
+
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
@@ -178,6 +184,9 @@ public class ETLManager
 
     public synchronized void schedule(ScheduledPipelineJobDescriptor descriptor, Container container, User user, boolean verbose)
     {
+        if (_shuttingDown)
+            return;
+
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
@@ -240,6 +249,31 @@ public class ETLManager
             assert dumpScheduler();
         }
     }
+
+
+    public synchronized void unscheduleAll(Container container)
+    {
+        try
+        {
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+            Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.<TriggerKey>groupEquals(JOB_GROUP_NAME));
+            String containerPrefix = "" + container.getRowId() + "/";
+            for (TriggerKey key : keys)
+            {
+                if (key.getName().startsWith(containerPrefix))
+                    scheduler.unscheduleJob(key);
+            }
+        }
+        catch (SchedulerException e)
+        {
+            throw new UnexpectedException(e);
+        }
+        finally
+        {
+            assert dumpScheduler();
+        }
+    }
+
 
 
     private static JobKey jobKeyFromDescriptor(ScheduledPipelineJobDescriptor descriptor)
@@ -337,6 +371,33 @@ public class ETLManager
             if (null == c)
                 continue;
             schedule(etl, c, runAsUser, config.isVerboseLogging());
+        }
+    }
+
+
+    public void shutdownPre()
+    {
+        _shuttingDown = true;
+        try
+        {
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+            scheduler.standby();
+        }
+        catch (SchedulerException x)
+        {
+        }
+    }
+
+
+    public void shutdownStarted()
+    {
+        try
+        {
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+            scheduler.shutdown(true);
+        }
+        catch (SchedulerException x)
+        {
         }
     }
 
@@ -452,8 +513,6 @@ public class ETLManager
             sleep(2);
             assertEquals(count, counter.get());
 
-            // TODO don't have an official way to unregister a job
-            // and we're currently adding them as durable
             JobKey jobKey = jobKeyFromDescriptor(d);
             assertTrue(StdSchedulerFactory.getDefaultScheduler().checkExists(jobKey));
             StdSchedulerFactory.getDefaultScheduler().deleteJob(jobKey);
@@ -471,5 +530,4 @@ public class ETLManager
             }
         }
     }
-
 }

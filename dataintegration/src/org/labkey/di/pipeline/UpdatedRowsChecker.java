@@ -88,17 +88,21 @@ public class UpdatedRowsChecker implements Callable<Boolean>
     {
         LOG.debug("Running" + this.getClass().getSimpleName() + " " + this.toString());
 
-        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), getSourceSchemaName());
+        Container c = getContainer();
+        if (null == c)
+            return false;
+
+        UserSchema schema = QueryService.get().getUserSchema(getUser(), c, getSourceSchemaName());
         if (schema == null)
         {
-            LOG.warn("Unable to find schema " + getSourceSchemaName() + " in " + getContainer().getPath());
+            LOG.warn("Unable to find schema " + getSourceSchemaName() + " in " + c.getPath());
             return false;
         }
 
         TableInfo tableInfo = schema.getTable(getSourceQueryName());
         if (tableInfo == null)
         {
-            LOG.warn("Unable to find query " + getSourceQueryName() + " in schema " + getSourceSchemaName() + " in " + getContainer().getPath());
+            LOG.warn("Unable to find query " + getSourceQueryName() + " in schema " + getSourceSchemaName() + " in " + c.getPath());
             return false;
         }
 
@@ -106,7 +110,7 @@ public class UpdatedRowsChecker implements Callable<Boolean>
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, Collections.singleton(modifiedFieldKey));
         if (columns.isEmpty())
         {
-            LOG.warn("Could not find Modified column on query " + getSourceQueryName() + " in schema " + getSourceSchemaName() + " in " + getContainer().getPath());
+            LOG.warn("Could not find Modified column on query " + getSourceQueryName() + " in schema " + getSourceSchemaName() + " in " + c.getPath());
             return false;
         }
 
@@ -129,7 +133,7 @@ public class UpdatedRowsChecker implements Callable<Boolean>
         SQLFragment sql = new SQLFragment("SELECT MAX(StartTime) FROM ");
         sql.append(DataIntegrationDbSchema.getTransformRunTableInfo(), "tr");
         sql.append(" WHERE Container = ? AND TransformId = ? AND TransformVersion = ?");
-        sql.add(getContainer().getId());
+        sql.add(getContainer());
         sql.add(d.getId());
         sql.add(d.getVersion());
         return new SqlSelector(DataIntegrationDbSchema.getSchema(), sql).getObject(Date.class);

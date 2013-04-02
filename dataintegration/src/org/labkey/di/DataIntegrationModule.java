@@ -26,6 +26,8 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.SimpleWebPartFactory;
 import org.labkey.api.view.ViewContext;
@@ -36,6 +38,7 @@ import org.labkey.di.pipeline.ETLManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
 
+import javax.servlet.ServletContextEvent;
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -47,7 +50,7 @@ import java.util.Set;
  * User: matthewb
  * Date: 12 Jan 2013
  */
-public class DataIntegrationModule extends DefaultModule implements ContainerManager.ContainerListener
+public class DataIntegrationModule extends DefaultModule implements ContainerManager.ContainerListener, ShutdownListener
 {
     public static final String NAME = "DataIntegration";
 
@@ -85,18 +88,22 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     {
     }
 
+
     public void doStartup(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new ETLPipelineProvider(this));
 
         scheduleEnabledTransforms();
         ContainerManager.addContainerListener(this);
+        ContextListener.addShutdownListener(this);
     }
+
 
     private void scheduleEnabledTransforms()
     {
         ETLManager.get().startAllConfigurations();
     }
+
 
     @NotNull
     @Override
@@ -131,8 +138,23 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         }
     }
 
+    //
+    // ShutdownListener
+    //
 
-        //
+    public void shutdownPre(ServletContextEvent servletContextEvent)
+    {
+        ETLManager.get().shutdownPre();
+    }
+
+
+    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    {
+        ETLManager.get().shutdownStarted();
+    }
+
+
+    //
     // ContainerListener
     //
 
@@ -141,12 +163,15 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     {
     }
 
+
     @Override
     public void containerDeleted(Container c, User user)
     {
         DbSchema di = null;
         try
         {
+            ETLManager.get().unscheduleAll(c);
+
             di = DbSchema.get("dataintegration");
             di.getScope().ensureTransaction();
             ContainerUtil.purgeTable(di.getTable("TransformRun"), c, null);
