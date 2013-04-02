@@ -110,46 +110,57 @@ public class AsyncQueryRequest<T>
         };
 
         Thread thread = new Thread(runnable, "AsyncQueryRequest: " + Thread.currentThread().getName());
-        thread.start();
-
-        while(true)
+        // We want the async thread to use the same database connection, in case we have a transaction open, and
+        // so that when the original thread finishes processing the results it ends up closing the right connection
+        DbScope.shareConnections(thread);
+        try
         {
-            if (_result == null && _exception == null)
-            {
-                try
-                {
-                    wait(2000);
-                }
-                catch (InterruptedException ie)
-                {
-                    throw UnexpectedException.wrap(ie);
-                }
-            }
+            thread.start();
 
-            if (_result != null)
+            while(true)
             {
-                return _result;
-            }
-
-            if (_exception != null)
-            {
-                if (_exception instanceof QueryService.NamedParameterNotProvided)
-                    throw (QueryService.NamedParameterNotProvided)_exception;
-
-                if (_exception instanceof RuntimeSQLException)
-                    _exception = ((RuntimeSQLException)_exception).getSQLException();
-                if (_exception instanceof SQLException)
+                if (_result == null && _exception == null)
                 {
-                    SQLException sqlE = (SQLException) _exception;
-                    SQLException sqlE2 = new SQLException(sqlE.getMessage(), sqlE.getSQLState(), sqlE.getErrorCode());
-                    sqlE2.setNextException(sqlE);
-                    throw sqlE2;
+                    try
+                    {
+                        wait(2000);
+                    }
+                    catch (InterruptedException ie)
+                    {
+                        throw UnexpectedException.wrap(ie);
+                    }
                 }
 
-                throw new UnexpectedException(_exception);
-            }
+                if (_result != null)
+                {
+                    return _result;
+                }
 
-            checkCancelled();
+                if (_exception != null)
+                {
+                    if (_exception instanceof QueryService.NamedParameterNotProvided)
+                        throw (QueryService.NamedParameterNotProvided)_exception;
+
+                    if (_exception instanceof RuntimeSQLException)
+                        _exception = ((RuntimeSQLException)_exception).getSQLException();
+                    if (_exception instanceof SQLException)
+                    {
+                        SQLException sqlE = (SQLException) _exception;
+                        SQLException sqlE2 = new SQLException(sqlE.getMessage(), sqlE.getSQLState(), sqlE.getErrorCode());
+                        sqlE2.setNextException(sqlE);
+                        throw sqlE2;
+                    }
+
+                    throw new UnexpectedException(_exception);
+                }
+
+                checkCancelled();
+            }
+        }
+        finally
+        {
+            // The async thread is finished using the connection, so stop sharing it
+            DbScope.stopSharingConnections(thread);
         }
     }
 

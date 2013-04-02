@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * User: migra
@@ -83,7 +84,9 @@ public class DbScope
     private final String _driverVersion;
     private final DbSchemaCache _schemaCache;
     private final SchemaTableInfoCache _tableCache;
-    private final ThreadLocal<Transaction> _transaction = new ThreadLocal<Transaction>();
+    private final Map<Thread, Transaction> _transaction = new WeakHashMap<Thread, Transaction>();
+
+    private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<Thread, Thread>();
 
     private SqlDialect _dialect;
 
@@ -245,7 +248,12 @@ public class DbScope
         finally
         {
             if (null != conn)
-                _transaction.set(new Transaction(conn));
+            {
+                synchronized (_transaction)
+                {
+                    _transaction.put(getEffectiveThread(), new Transaction(conn));
+                }
+            }
         }
 
         return conn;
@@ -271,8 +279,24 @@ public class DbScope
             conn.commit();
             conn.setAutoCommit(true);
             conn.close();
-            _transaction.remove();
+            synchronized (_transaction)
+            {
+                _transaction.remove(getEffectiveThread());
+            }
             t.runCommitTasks();
+        }
+    }
+
+    private Thread getEffectiveThread()
+    {
+        synchronized (_sharedConnections)
+        {
+            Thread result = _sharedConnections.get(Thread.currentThread());
+            if (result == null)
+            {
+                return Thread.currentThread();
+            }
+            return result;
         }
     }
 
@@ -285,7 +309,10 @@ public class DbScope
 
     public @Nullable Transaction getCurrentTransaction()
     {
-        return _transaction.get();
+        synchronized (_transaction)
+        {
+            return _transaction.get(getEffectiveThread());
+        }
     }
 
 
@@ -493,7 +520,10 @@ public class DbScope
 
                 t.closeConnection();
 
-                _transaction.remove();
+                synchronized (_transaction)
+                {
+                    _transaction.remove(getEffectiveThread());
+                }
             }
             else
             {
@@ -872,6 +902,36 @@ public class DbScope
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Causes any connections associated with the current thread to be used by the passed-in thread. This allows
+     * an async thread to participate in the same transaction as the original HTTP request processing thread, for
+     * example
+     * @param asyncThread the thread that should use the database connections of the current thread
+     */
+    public static void shareConnections(Thread asyncThread)
+    {
+        synchronized (_sharedConnections)
+        {
+            if (_sharedConnections.containsKey(asyncThread))
+            {
+                throw new IllegalStateException("Thread '" + asyncThread.getName() + "' is already sharing the connections of thread '" + _sharedConnections.get(asyncThread) + "'");
+            }
+            _sharedConnections.put(asyncThread, Thread.currentThread());
+        }
+    }
+
+    /**
+     * Stops sharing any connections associated with the current thread with the passed-in thread.
+     * @param asyncThread the thread that should stop using the database connections of the current thread
+     */
+    public static void stopSharingConnections(Thread asyncThread)
+    {
+        synchronized (_sharedConnections)
+        {
+            _sharedConnections.remove(asyncThread);
         }
     }
 
