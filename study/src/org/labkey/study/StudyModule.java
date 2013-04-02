@@ -112,7 +112,6 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
-import org.labkey.study.importer.DefaultImportStrategyFactory;
 import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
@@ -335,7 +334,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());
-        SpecimenService.get().registerImportFilterFactory(new DefaultImportStrategyFactory());
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         if(null != wikiService)
