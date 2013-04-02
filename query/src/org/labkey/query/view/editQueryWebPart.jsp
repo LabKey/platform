@@ -49,9 +49,7 @@
         console.log('<%=h(props)%>');
 
         var webPartTitle = Ext4.create('Ext.form.field.Text', {
-            emptyText : 'Custom Query',
             fieldLabel: 'Web Part Title',
-            submitEmptyText: false,
             name : 'title',
             value : <%=PageFlowUtil.jsString(props.get("title"))%>,
             labelWidth : 200,
@@ -170,18 +168,6 @@
             handler : function() {
                 if(queryForm){
                     if(validate()){
-                        if(webPartTitle.getValue() === '')
-                        {
-
-                            if(queryName.isDisabled())
-                            {
-                                webPartTitle.setValue(schemaName.getRawValue() + ' Queries');
-                            }
-                            else
-                            {
-                                webPartTitle.setValue(queryName.getRawValue());
-                            }
-                        }
                         queryForm.getForm().submit({
                             url : <%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>,
                             success : function(){},
