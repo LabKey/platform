@@ -112,6 +112,7 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
+import org.labkey.study.importer.DefaultImportStrategyFactory;
 import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
@@ -222,7 +223,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 12.37;
+        return 12.38;
     }
 
     protected void init()
@@ -308,7 +309,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             long participants = StudyManager.getInstance().getParticipantCount(study);
             if (0 < participants)
                 list.add("" + participants + " " + StudyService.get().getSubjectNounPlural(c));
-            int datasets = study.getDataSets().size();
+            int datasets = study.getDatasets().size();
             if (0 < datasets)
                 list.add("" + datasets + " datasets");
             return list;
@@ -334,6 +335,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());
+        SpecimenService.get().registerImportFilterFactory(new DefaultImportStrategyFactory());
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         if(null != wikiService)
@@ -414,8 +416,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addExperimentalFeatureFlag(CreateChildStudyAction.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
-        AdminConsole.addExperimentalFeatureFlag(SpecimenImporter.EXPERIMENTAL_PERFORMANCE_IMPROVEMENTS, "Specimen Load Performance Improvements",
-            "Invokes prototype specimen archive loading code that attempts to determine differences in the specimen events and optimize the import process accordingly", false);
     }
 
 

@@ -1423,30 +1423,31 @@
       <ns:column columnName="TubeType">
         <ns:description>The type of vial.</ns:description>
       </ns:column>
-        <ns:column columnName="QualityComments">
-            <ns:description>Additional comments on processing quality.</ns:description>
-        </ns:column>
-        <ns:column columnName="DeviationCode1">
-            <ns:description>Site-defined deviation code.</ns:description>
-        </ns:column>
-        <ns:column columnName="DeviationCode2">
-            <ns:description>Site-defined deviation code.</ns:description>
-        </ns:column>
-        <ns:column columnName="DeviationCode3">
-            <ns:description>Site-defined deviation code.</ns:description>
-        </ns:column>
-        <ns:column columnName="Concentration">
-            <ns:description>Processing concentration value.</ns:description>
-        </ns:column>
-        <ns:column columnName="Integrity">
-            <ns:description>Processing integrity value.</ns:description>
-        </ns:column>
-        <ns:column columnName="Ratio">
-            <ns:description>Processing ratio value.</ns:description>
-        </ns:column>
-        <ns:column columnName="Yield">
-            <ns:description>Processing yield value.</ns:description>
-        </ns:column>
+      <ns:column columnName="QualityComments">
+        <ns:description>Additional comments on processing quality.</ns:description>
+      </ns:column>
+      <ns:column columnName="DeviationCode1">
+        <ns:description>Site-defined deviation code.</ns:description>
+      </ns:column>
+      <ns:column columnName="DeviationCode2">
+        <ns:description>Site-defined deviation code.</ns:description>
+      </ns:column>
+      <ns:column columnName="DeviationCode3">
+        <ns:description>Site-defined deviation code.</ns:description>
+      </ns:column>
+      <ns:column columnName="Concentration">
+        <ns:description>Processing concentration value.</ns:description>
+      </ns:column>
+      <ns:column columnName="Integrity">
+        <ns:description>Processing integrity value.</ns:description>
+      </ns:column>
+      <ns:column columnName="Ratio">
+        <ns:description>Processing ratio value.</ns:description>
+      </ns:column>
+      <ns:column columnName="Yield">
+        <ns:description>Processing yield value.</ns:description>
+      </ns:column>
+      <ns:column columnName="InputHash"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">
