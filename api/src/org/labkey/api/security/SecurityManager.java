@@ -1024,7 +1024,9 @@ public class SecurityManager
 
     public static boolean matchPassword(String password, String hash)
     {
-        if (Crypt.BCrypt.acceptPrefix(hash))
+        if (StringUtils.isEmpty(hash) || hash.startsWith("disabled:"))
+            return false;
+        else if (Crypt.BCrypt.acceptPrefix(hash))
             return Crypt.BCrypt.matchesWithPrefix(password, hash);
         else if (Crypt.SaltMD5.acceptPrefix(hash))
             return Crypt.SaltMD5.matchesWithPrefix(password, hash);
