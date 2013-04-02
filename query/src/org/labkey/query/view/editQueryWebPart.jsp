@@ -223,13 +223,13 @@
                 listeners : {
                     afterrender : function(cb){
                         var value = <%=q(props.get("allowChooseView"))%>;
-                        if(value === 'true')
+                        if(value === 'false')
                         {
-                            cb.select(cb.findRecord('answer', 'Yes'));
+                            cb.select(cb.findRecord('answer', 'No'));
                         }
                         else
                         {
-                            cb.select(cb.findRecord('answer', 'No'));
+                            cb.select(cb.findRecord('answer', 'Yes'));
                         }
                     }
                 }
