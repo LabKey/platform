@@ -16,23 +16,18 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.data.xml.externalSchema.TemplateSchemaType" %>
 <%@ page import="org.labkey.query.controllers.QueryController.BaseExternalSchemaBean" %>
-<%@ page import="org.labkey.query.controllers.QueryController.DataSourceInfo" %>
 <%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef" %>
 <%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef.SchemaType" %>
-<%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
-<%@ page import="org.json.JSONArray" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.ArrayList" %>
 <%@ page import="org.labkey.query.persist.LinkedSchemaDef" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -62,28 +57,16 @@
     String initialTemplateName = def.getSchemaTemplate();
     TemplateSchemaType initialTemplate = def.lookupTemplate(sourceContainer);
 %>
-
 <labkey:errors/>
 <div id="form"></div>
 
-<script>
+<script type="text/javascript">
     Ext4.onReady(function () {
 
         var schemaType = <%=q(isExternal ? SchemaType.external.name() : SchemaType.linked.name())%>;
         var external = <%=isExternal%>;
 
         Ext4.QuickTips.init();
-
-        Ext4.define('LABKEY.Query.FolderTreeStore', {
-            extend: 'Ext.data.Model',
-            fields: [
-                {name: 'containerPath', type: 'string'},
-                {name: 'text', type: 'string'},
-                {name: 'expanded', type: 'boolean'},
-                {name: 'isProject', type: 'boolean'},
-                {name: 'id'}
-            ]
-        });
 
         Ext4.define('LABKEY.Query.SchemaTemplate', {
             extend: 'Ext.data.Model',
@@ -133,17 +116,14 @@
             },
 
             onOverrideClick: function () {
-                console.log("on override click");
-                if (this.getOverride())
-                {
+                if (this.getOverride()) {
                     this.setOverride(false);
                     this.boundField.setDisabled(true);
                     var fieldContainer = this.boundField.up('fieldcontainer');
                     if (fieldContainer)
                         fieldContainer.setDisabled(true);
                 }
-                else
-                {
+                else {
                     this.setOverride(true);
                     this.boundField.setDisabled(false);
                     var fieldContainer = this.boundField.up('fieldcontainer');
@@ -164,6 +144,7 @@
             name: 'userSchemaName',
             fieldLabel: 'Schema Name',
             allowBlank: false,
+            validateOnBlur: false,
             maxLength: 50,
             value: <%=q(def.getUserSchemaName())%>,
             helpPopup: <%=qh(bean.getHelpHTML("UserSchemaName"))%>
@@ -371,7 +352,7 @@
             helpPopup: <%=qh(bean.getHelpHTML("SourceSchemaName"))%>
         });
 
-        function updateTablesMessage() {
+        var updateTablesMessage = function() {
             var tables = tablesCombo.getValue();
             if (tables && tables.length > 0 && tables[0] != '*') {
                 tablesMessage.setValue("The " + tables.length + " selected tables will be published");
@@ -379,7 +360,7 @@
                 tablesMessage.setValue("All " + tablesCombo.store.getCount() + " tables in this schema will be published.");
             }
             tablesMessage.setVisible(true);
-        }
+        };
 
         <%
         ArrayList<String> tables = new ArrayList<String>();
@@ -453,7 +434,7 @@
         var metadataTextArea = Ext4.create('Ext.form.field.TextArea', {
             name: 'metaData',
             grow: true,
-            width: 800,
+            width: 600,
             height: 400,
             value: <%=q(def.getMetaData() != null ? def.getMetaData() : (initialTemplate != null && initialTemplate.getMetadata() != null ? initialTemplate.getMetadata().toString() : ""))%>,
             disabled: <%=def.getMetaData() == null && initialTemplate != null%>
@@ -490,10 +471,12 @@
             renderTo: 'form',
             width: 955,
             border: false,
+            frame: false,
+            bodyStyle: 'background-color: transparent;',
             standardSubmit: true,
             fieldDefaults: {
                 labelWidth: 150,
-                width: 150+400
+                width: 600
             },
             items: [
                 schemaTypeField,
@@ -504,65 +487,70 @@
                 tablesField,
                 metadataField
             ],
-            buttons:[{
-                text: <%=q(bean.isInsert() ? "Create" : "Update")%>,
-                type: 'submit',
-                handler: function () {
-                    var sourceContainerValue = sourceContainerCombo.getValue();
-                    if (!sourceContainerValue)
-                        sourceContainerValue = LABKEY.container.id;
-                    
-                    var sourceSchemaValue = sourceSchemaCombo.getValue();
-                    var tablesValue = tablesCombo.getTablesValueForSubmit();
-                    var metadataValue = metadataTextArea.getValue();
+            dockedItems: [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                ui: 'footer',
+                style : 'background-color: transparent;',
+                items: [{
+                    text: <%=q(bean.isInsert() ? "Create" : "Update")%>,
+                    type: 'submit',
+                    handler: function () {
+                        var sourceContainerValue = sourceContainerCombo.getValue();
+                        if (!sourceContainerValue)
+                            sourceContainerValue = LABKEY.container.id;
 
-                    // If a schema template is set, null the values for any fields that haven't been manually overridden.
-                    var templateName = schemaTemplateCombo.getValue();
-                    var templateRecord = templateName ? schemaTemplateCombo.store.getById(templateName) : undefined;
-                    if (templateRecord) {
-                        if (!sourceSchemaOverride.getOverride()) {
-                            sourceSchemaValue = null;
+                        var sourceSchemaValue = sourceSchemaCombo.getValue();
+                        var tablesValue = tablesCombo.getTablesValueForSubmit();
+                        var metadataValue = metadataTextArea.getValue();
+
+                        // If a schema template is set, null the values for any fields that haven't been manually overridden.
+                        var templateName = schemaTemplateCombo.getValue();
+                        var templateRecord = templateName ? schemaTemplateCombo.store.getById(templateName) : undefined;
+                        if (templateRecord) {
+                            if (!sourceSchemaOverride.getOverride()) {
+                                sourceSchemaValue = null;
+                            }
+
+                            if (!tablesOverride.getOverride()) {
+                                tablesValue = null;
+                            }
+
+                            if (!metadataOverride.getOverride()) {
+                                metadataValue = null;
+                            }
                         }
 
-                        if (!tablesOverride.getOverride()) {
-                            tablesValue = null;
-                        }
+                        // Always disable the fields and submit the values manually
+                        sourceContainerCombo.setDisabled(true);
+                        sourceSchemaField.setDisabled(true);
+                        sourceSchemaCombo.setDisabled(true);
+                        tablesField.setDisabled(true);
+                        tablesCombo.setDisabled(true);
+                        metadataField.setDisabled(true);
+                        metadataTextArea.setDisabled(true);
 
-                        if (!metadataOverride.getOverride()) {
-                            metadataValue = null;
-                        }
+                        f.getForm().submit({
+                            params: {
+                                dataSource: sourceContainerValue,
+                                sourceSchemaName: sourceSchemaValue,
+                                tables: tablesValue,
+                                metaData: metadataValue
+                            }
+                        });
                     }
-
-                    // Always disable the fields and submit the values manually
-                    sourceContainerCombo.setDisabled(true);
-                    sourceSchemaField.setDisabled(true);
-                    sourceSchemaCombo.setDisabled(true);
-                    tablesField.setDisabled(true);
-                    tablesCombo.setDisabled(true);
-                    metadataField.setDisabled(true);
-                    metadataTextArea.setDisabled(true);
-
-                    f.getForm().submit({
-                        params: {
-                            dataSource: sourceContainerValue,
-                            sourceSchemaName: sourceSchemaValue,
-                            tables: tablesValue,
-                            metaData: metadataValue
-                        }
-                    });
-                }
-            },{
-                <% if (bean.isInsert()) { %>
-                text: 'Delete',
-                handler: function() { document.location = <%=q(bean.getDeleteURL().toString())%>; }
-            },{
-                <% } %>
-                text: 'Cancel',
-                handler: function() { document.location = <%=q(bean.getReturnURL().toString())%>; }
-            }],
-            buttonAlign:'left'
+                },{
+                    <% if (bean.isInsert()) { %>
+                    text: 'Delete',
+                    handler: function() { document.location = <%=q(bean.getDeleteURL().toString())%>; }
+                },{
+                    <% } %>
+                    text: 'Cancel',
+                    handler: function() { document.location = <%=q(bean.getReturnURL().toString())%>; }
+                }]
+            }]
         });
 
-    })
+    });
 </script>
 
