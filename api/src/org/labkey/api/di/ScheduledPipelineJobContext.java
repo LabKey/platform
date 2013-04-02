@@ -41,7 +41,7 @@ public class ScheduledPipelineJobContext implements ContainerUser
         _containerId = container.getId();
         if (null != user)
             _userId = user.getUserId();
-        _key = "Container" + container.getRowId() + ":" + descriptor.getId();
+        _key = container.getRowId() + "/" + descriptor.getId();
     }
 
     public Container getContainer()
