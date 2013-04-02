@@ -109,12 +109,13 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/minus.gif" alt="" />
-                            <span>View All Specimens<a onmouseover="return showHelpDivDelay(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
+                        <a  style="color:#000000;width:auto" onclick="return toggleLink(this, false);" href="#"><img src="<%=h(contextPath)%>/_images/minus.gif" alt="" />
+                            <span>View All Specimens</span></a><a style="width:auto"
+                               onmouseover="return showHelpDivDelay(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
                                onmouseout="return hideHelpDivDelay();"
                                onclick="return showHelpDiv(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
                                tabindex="-1"
-                               href="#"><span class="labkey-help-pop-up">?</span></a></span>
+                               href="#"><span class="labkey-help-pop-up">?</span>
                         </a>
                     </td>
                 </tr>
