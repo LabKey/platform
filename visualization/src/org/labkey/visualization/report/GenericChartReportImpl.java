@@ -24,6 +24,7 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
@@ -77,7 +78,15 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
     {
         // SVG is provided by the client code at save time and then stashed in the report by the save action. That's
         // the only way thumbnails can be generated from these reports.
-        return ThumbnailUtil.getThumbnailFromSvg(_svg);
+        try
+        {
+            _svg = VisualizationController.filterSVGSource(_svg);
+            return ThumbnailUtil.getThumbnailFromSvg(_svg);
+        }
+        catch (NotFoundException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

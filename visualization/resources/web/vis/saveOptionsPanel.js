@@ -180,10 +180,12 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                     });
 
                     // store the update report properties
-                    this.reportInfo.name = formVals.reportName;
-                    this.reportInfo.description = formVals.reportDescription;
-                    this.currentlyShared = shared;
-                    this.thumbnailType = formVals.reportThumbnailType;
+                    if(this.reportInfo){
+                        this.reportInfo.name = formVals.reportName;
+                        this.reportInfo.description = formVals.reportDescription;
+                        this.currentlyShared = shared;
+                        this.thumbnailType = formVals.reportThumbnailType;
+                    }
 
                     this.fireEvent('closeOptionsWindow', false);
                 },
@@ -305,5 +307,31 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         // update the html contents of the thumbnail preview div
         this.down('#autoGenerate').thumbnailPreview = chartSVGStr;
         this.setThumbnailPreview();
+    },
+
+    setNoneThumbnail: function(url){
+        this.down('#none').thumbnailPreview = '<img src="' + url +'" />';
+    },
+
+    setReportInfo: function(config){
+        // This is really just used for GenericCharts since they don't have the reportInfo
+        // available when they new up the save panel.
+        this.reportInfo = Ext4.apply({}, config);
+
+        this.down('#reportName').setValue(config.name);
+        this.down('#reportNameDisplay').setValue(config.name);
+        this.down('#reportDescription').setValue(config.description);
+        this.down('#reportDescriptionDisplay').setValue(config.description);
+        this.down('#reportShared').setValue(config.shared);
+
+        if(config.reportProps && config.reportProps.thumbnailType){
+            this.thumbnailType = config.reportProps.thumbnailType;
+            if(this.thumbnailType === 'CUSTOM' && this.reportInfo.thumbnailURL){
+                this.down('#keepCustom').thumbnailPreview = '<img src="' + this.reportInfo.thumbnailURL +'" />';
+            }
+            this.down('#none').setValue(config.reportProps.thumbnailType);
+        } else {
+            this.down('#autoGenerate').setValue('AUTO');
+        }
     }
 });

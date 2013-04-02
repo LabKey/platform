@@ -140,11 +140,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scope: this
         });
 
-        this.saveBtn = Ext4.create('Ext.button.Button', {
+        this.saveBtn =  Ext4.create('Ext.button.Button', {
             text: "Save",
             hidden: this.hideSave,
             handler: function(){
-                this.saveWindow.show();
+                this.onSaveBtnClicked(false)
             },
             scope: this
         });
@@ -153,29 +153,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             text: "Save As",
             hidden  : this.isNew() || this.hideSave,
             handler: function(){
-                this.onSaveAs();
+                this.onSaveBtnClicked(true);
             },
             scope: this
         });
 
-        this.saveWindow = Ext4.create('Ext.window.Window', {
-            title: 'Save Chart',
-            width: 500,
-            autoHeight : true,
-            closeAction: 'hide',
-            cls: 'data-window',
-            layout: 'fit',
-            items: [this.getSavePanel()],
-            listeners: {
-                scope: this,
-                show: function(){
-                    this.viewPanel.getEl().mask();
-                },
-                hide: function(){
-                    this.viewPanel.getEl().unmask();
-                }
-            }
-        });
+        this.initSavePanel();
 
         this.helpWindow = Ext4.create('Ext.window.Window', {
             title: 'Help',
@@ -899,101 +882,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return !this.reportId;
     },
 
-    getSavePanel : function() {
-
-        var formItems = [];
-
-        this.reportName = Ext4.create('Ext.form.field.Text', {
-            fieldLabel : 'Report Name',
-            allowBlank : false,
-            listeners : {
-                change : function() {this.markDirty(true);},
-                scope : this
-            }
-        });
-
-        this.reportDescription = Ext4.create('Ext.form.field.TextArea', {
-            fieldLabel : 'Report Description',
-            listeners : {
-                change : function() {this.markDirty(true);},
-                scope : this
-            }
-        });
-
-        this.reportPermission = Ext4.create('Ext.form.RadioGroup', {
-            xtype      : 'radiogroup',
-            width      : 300,
-            hidden     : !this.allowShare,
-            fieldLabel : 'Viewable By',
-            items      : [
-                {boxLabel : 'All readers',  width : 100, name : 'public', checked : this.allowShare, inputValue : true},
-                {boxLabel : 'Only me',   width : 100, name : 'public', inputValue : false}]
-        });
-        formItems.push(this.reportName, this.reportDescription, this.reportPermission);
-
-        this.formPanel = Ext4.create('Ext.form.Panel', {
-            bodyPadding : 20,
-            itemId      : 'selectionForm',
-            hidden      : this.hideSave,
-            flex        : 1,
-            items       : formItems,
-            border      : false, frame : false,
-            fieldDefaults : {
-                anchor  : '100%',
-                maxWidth : 650,
-                labelWidth : 150,
-                labelSeparator : ''
-            }
-        });
-
-        this.saveButton = Ext4.create('Ext.button.Button', {
-            text    : 'Save',
-            hidden  : this.hideSave,
-            handler : function() {
-                var form = this.savePanel.getComponent('selectionForm').getForm();
-
-                if (form.isValid()) {
-                    var data = this.getCurrentReportConfig();
-                    this.saveReport(data);
-                }
-                else {
-                    var msg = 'Please enter all the required information.';
-
-                    if (!this.reportName.getValue()) {
-                        msg = 'Report name must be specified.';
-                    }
-                    Ext4.Msg.show({
-                         title: "Error",
-                         msg: msg,
-                         buttons: Ext4.MessageBox.OK,
-                         icon: Ext4.MessageBox.ERROR
-                    });
-                }
-            },
-            scope   : this
-        });
-
-        this.savePanel = Ext4.create('Ext.panel.Panel', {
-            hidden      : false,
-            preventHeader : true,
-            border      : false,
-            frame       : false,
-            items       : this.formPanel,
-            buttons  : [
-                this.saveButton, this.saveAsButton,
-                {
-                    text    : 'Cancel',
-                    handler : function() {
-                        this.saveWindow.hide();
-                    },
-                    scope   : this
-                }
-            ]
-        });
-
-        return this.savePanel;
-    },
-
     getHelpPanel: function(){
         var helpHtml = '<ul>';
         helpHtml += '<li>- <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reportsAndViews">Reports, Views, and Charts</a></li>';
@@ -1403,10 +1291,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     getCurrentReportConfig : function() {
 
         var config = {
-            name        : this.reportName.getValue(),
             reportId    : this.reportId,
-            description : this.reportDescription.getValue(),
-            "public"    : this.reportPermission.getValue()["public"] || false,
             schemaName  : this.schemaName,
             queryName   : this.queryName,
             viewName    : this.viewName,
@@ -1422,11 +1307,25 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     saveReport : function(data) {
+        var reportConfig = this.getCurrentReportConfig();
+        reportConfig.name = data.reportName;
+        reportConfig.description = data.reportDescription;
+        console.log('Shared: ', data.shared);
+        reportConfig["public"] = data.shared;
+        reportConfig.thumbnailType =  data.thumbnailType;
+        reportConfig.svg = this.chartSVG;
+
+        if(data.isSaveAs){
+            reportConfig.reportId = null;
+        }
 
         Ext4.Ajax.request({
             url     : LABKEY.ActionURL.buildURL('visualization', 'saveGenericReport.api'),
             method  : 'POST',
-            jsonData: data,
+            headers : {
+                'Content-Type' : 'application/json'
+            },
+            jsonData: reportConfig,
             success : function(resp){
                 // if you want to stay on page, you need to refresh anyway to update attachments
                 var msgbox = Ext4.create('Ext.window.Window', {
@@ -1444,7 +1343,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                 var o = Ext4.decode(resp.responseText);
 
-                this.updateWebpartTitle(data.name);
+                this.updateWebpartTitle(reportConfig.name);
 
                 this.reportId = o.reportId;
                 this.loadReport(this.reportId);
@@ -1482,95 +1381,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
-    onSaveAs : function() {
-        var formItems = [];
-
-        formItems.push(Ext4.create('Ext.form.field.Text', {name : 'name', fieldLabel : 'Report Name', allowBlank : false}));
-        formItems.push(Ext4.create('Ext.form.field.TextArea', {name : 'description', fieldLabel : 'Report Description'}));
-
-        var permissions = Ext4.create('Ext.form.RadioGroup', {
-            xtype      : 'radiogroup',
-            width      : 300,
-            hidden     : !this.allowShare,
-            fieldLabel : 'Viewable By',
-            items      : [
-                {boxLabel : 'All readers',  width : 100, name : 'public', checked : this.allowShare, inputValue : true},
-                {boxLabel : 'Only me',   width : 100, name : 'public', inputValue : false}]
-        });
-        formItems.push(permissions);
-
-        var saveAsWindow = Ext4.create('Ext.window.Window', {
-            width  : 500,
-            autoHeight : true,
-            cls: 'data-window',
-            layout : 'fit',
-            draggable : false,
-            title  : 'Save As',
-            defaults: {
-                border: false, frame: false
-            },
-            items  : [{
-                xtype : 'form',
-                bodyPadding: 20,
-                fieldDefaults : {
-                    anchor  : '100%',
-                    maxWidth : 450,
-                    labelWidth : 150,
-                    labelSeparator : ''
-                },
-                items       : formItems,
-                buttonAlign : 'right',
-                buttons     : [
-                    {
-                        text : 'Save',
-                        formBind: true,
-                        handler : function(btn) {
-                            var form = btn.up('form').getForm();
-
-                            if (form.isValid()) {
-                                var data = this.getCurrentReportConfig();
-                                var values = form.getValues();
-
-                                data.name = values.name;
-                                data.description = values.description;
-                                data["public"] = values["public"] || false;
-                                data.reportId = null;
-
-                                this.saveReport(data);
-                            }
-                            else {
-                                Ext4.Msg.show({
-                                    title: "Error",
-                                    msg: 'Report name must be specified.',
-                                    buttons: Ext4.MessageBox.OK,
-                                    icon: Ext4.MessageBox.ERROR
-                                });
-                            }
-                            saveAsWindow.close();
-                        },
-                        scope   : this
-                    }, {
-                        text: 'Cancel',
-                        handler: function(btn) {
-                            saveAsWindow.close();
-                        },
-                        scope: this
-                    }]
-            }],
-            listeners: {
-                scope: this,
-                show: function(){
-                    this.viewPanel.getEl().mask();
-                },
-                close: function(){
-                    this.viewPanel.getEl().unmask();
-                }
-            },
-            scope : this
-        });
-        saveAsWindow.show();
-    },
-
     loadReport : function(reportId) {
 
         this.reportLoaded = false;
@@ -1605,6 +1415,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (this.reportPermission)
             this.reportPermission.setValue({"public" : config["public"]});
+
+        this.editorSavePanel.setReportInfo({
+            name: config.name,
+            description: config.description,
+            shared: config["public"],
+            reportProps: config.reportProps,
+            thumbnailURL: config.thumbnailURL
+        });
 
         var json = Ext4.decode(config.jsonData);
         if (json.queryConfig.filterArray)
@@ -2011,6 +1829,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         this.setRenderRequested(false); // We just rendered the plot, we don't need to request another render.
+
+        if(!forExport && this.editMode){
+            // Update the SVG thumbnail
+            var thumbnail = this.renderPlot(true);
+            this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(Ext4.get(thumbnail).child('svg').dom);
+            this.editorSavePanel.updateCurrentChartThumbnail(this.chartSVG, Ext4.get(thumbnail).getSize());
+        }
     },
 
     isScatterPlot: function(renderType, xAxisType){
@@ -2633,5 +2458,50 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         } else {
             this.renderPlot(forExport);
         }
+    },
+
+    onSaveBtnClicked: function(isSaveAs){
+//        var thumbnail = this.renderPlot(true);
+//        this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(Ext4.get(thumbnail).child('svg').dom);
+//        this.editorSavePanel.updateCurrentChartThumbnail(this.chartSVG, Ext4.get(thumbnail).getSize());
+        this.editorSavePanel.setNoneThumbnail(this.getNoneThumbnailURL());
+        this.editorSavePanel.setSaveAs(isSaveAs);
+        this.saveWindow.setTitle(isSaveAs ? "Save As" : "Save");
+        this.saveWindow.show();
+    },
+
+    initSavePanel: function(){
+         this.editorSavePanel = Ext4.create('LABKEY.vis.SaveOptionsPanel', {
+            canEdit: this.canEdit,
+            canShare: this.allowShare,
+            listeners: {
+                scope: this,
+                'closeOptionsWindow': function(){this.saveWindow.close()},
+                'saveChart': this.saveReport
+            }
+        });
+
+        this.saveWindow = Ext4.create('Ext.window.Window', {
+            title: "Save",
+            width  : 500,
+            autoHeight : true,
+            cls: 'data-window',
+            layout : 'fit',
+            draggable : false,
+            closeAction: 'hide',
+            items: [this.editorSavePanel]
+        });
+    },
+
+    getNoneThumbnailURL: function(){
+        if(!this.xAxisMeasure || this.isBoxPlot(this.renderType, this.xAxisMeasure.normalizedType)){
+            return LABKEY.contextPath + '/visualization/report/box_plot.png';
+        }
+
+        if(this.xAxisMeasure && this.isScatterPlot(this.renderType, this.xAxisMeasure.normalizedType)){
+            return LABKEY.contextPath + '/visualization/report/scatter_plot.png';
+        }
+
+        return LABKEY.contextPath + '/visualization/report/box_plot.png';
     }
 });

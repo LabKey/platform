@@ -3824,13 +3824,13 @@ visualization/resources/web/vis/genericChart/genericChartOptionsPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartPanel.js -text
 visualization/resources/web/vis/genericOptionsPanel.js -text
 visualization/resources/web/vis/mainTitleOptionsPanel.js -text
+visualization/resources/web/vis/saveOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/aestheticOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/groupSelector.js -text
 visualization/resources/web/vis/timeChart/groupingOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/initialMeasurePanel.js -text
 visualization/resources/web/vis/timeChart/measureOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/participantSelector.js -text
-visualization/resources/web/vis/timeChart/saveOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/timeChartPanel.js -text
 visualization/resources/web/vis/timeChart/xAxisOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/yAxisOptionsPanel.js -text
@@ -3855,7 +3855,9 @@ visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -te
 visualization/src/org/labkey/visualization/views/genericChartWizard.jsp -text
 visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
 visualization/webapp/visualization/report/box_plot.gif -text
+visualization/webapp/visualization/report/box_plot.png -text
 visualization/webapp/visualization/report/scatter_plot.gif -text
+visualization/webapp/visualization/report/scatter_plot.png -text
 visualization/webapp/visualization/report/timechart.gif -text
 visualization/webapp/visualization/report/timechart.png -text
 wiki/lib/radeox-api.jar -text

@@ -1346,27 +1346,7 @@ public class VisualizationController extends SpringActionController
 
             if (report instanceof SvgThumbnailGenerator)
             {
-                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-                if (null != svc)
-                {
-                    SvgThumbnailGenerator tcReport = (SvgThumbnailGenerator)report;
-                    String svg = form.getSvg();
-
-                    if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.NONE.name()))
-                    {
-                        // User checked the "no thumbnail" checkbox... need to proactively delete the thumbnail
-                        svc.deleteThumbnail(tcReport);
-                        ReportPropsManager.get().setPropertyValue(tcReport.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
-                    }
-                    else if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()) && svg != null)
-                    {
-                        // Generate and save the thumbnail (in the background)
-                        tcReport.setSvg(form.getSvg());
-                        svc.queueThumbnailRendering(tcReport);
-                        ReportPropsManager.get().setPropertyValue(tcReport.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
-                    }
-                }
+                saveSVGThumbnail((SvgThumbnailGenerator)report, form.getSvg(), form.getThumbnailType());
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -1533,7 +1513,8 @@ public class VisualizationController extends SpringActionController
 
             int rowId = ReportService.get().saveReport(getViewContext(), key, report);
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
-
+            report = ReportService.get().getReport(rowId);
+            saveSVGThumbnail((SvgThumbnailGenerator) report, form.getSvg(), form.getThumbnailType());
             response.put("success", true);
             response.put("reportId", reportId);
 
@@ -1711,6 +1692,8 @@ public class VisualizationController extends SpringActionController
         private String _jsonData;
         private String _autoColumnYName;
         private String _autoColumnXName;
+        private String _svg;
+        private String _thumbnailType;
         private boolean _allowToggleMode = false; // view vs. edit mode
 
         public String getRenderType()
@@ -1763,6 +1746,28 @@ public class VisualizationController extends SpringActionController
             _autoColumnXName = autoColumnXName;
         }
 
+        public String getSvg()
+        {
+            return _svg;
+        }
+
+        public void setSvg(String svg)
+        {
+            _svg = svg;
+        }
+
+        public String getThumbnailType()
+        {
+            if (_thumbnailType == null)
+                _thumbnailType = DataViewProvider.EditInfo.ThumbnailType.AUTO.name();
+            return _thumbnailType;
+        }
+
+        public void setThumbnailType(String thumbnailType)
+        {
+            _thumbnailType = thumbnailType;
+        }
+
         public boolean allowToggleMode()
         {
             return _allowToggleMode;
@@ -1780,6 +1785,8 @@ public class VisualizationController extends SpringActionController
 
             _renderType = (String)props.get("renderType");
             _dataRegionName = (String)props.get("dataRegionName");
+            _svg = (String)props.get("svg");
+            _thumbnailType = (String)props.get("thumbnailType");
 
             Object json = props.get("jsonData");
             if (json != null)
@@ -1789,13 +1796,45 @@ public class VisualizationController extends SpringActionController
         public static JSONObject toJSON(User user, Container container, Report report)
         {
             JSONObject json = ReportUtil.JsonReportForm.toJSON(user, container, report);
-            ReportDescriptor descriptor = report.getDescriptor();
+            GenericChartReportDescriptor descriptor = (GenericChartReportDescriptor) report.getDescriptor();
 
             json.put("renderType", descriptor.getProperty(GenericChartReportDescriptor.Prop.renderType));
             json.put("dataRegionName", descriptor.getProperty(ReportDescriptor.Prop.dataRegionName));
             json.put("jsonData", descriptor.getProperty(ReportDescriptor.Prop.json));
+            json.put("thumbnailURL", PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(container, report));
+
+            try
+            {
+                json.put("reportProps", descriptor.getReportProps());
+            }
+            catch (Exception e)
+            {
+                json.put("reportProps", new JSONObject());
+            }
 
             return json;
+        }
+    }
+
+    private void saveSVGThumbnail(SvgThumbnailGenerator generator, String svg, String thumbnailType) throws Exception
+    {
+        ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+        if (null != svc)
+        {
+            if (thumbnailType.equals(DataViewProvider.EditInfo.ThumbnailType.NONE.name()))
+            {
+                // User checked the "no thumbnail" checkbox... need to proactively delete the thumbnail
+                svc.deleteThumbnail(generator);
+                ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
+            }
+            else if (thumbnailType.equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()) && svg != null)
+            {
+                // Generate and save the thumbnail (in the background)
+                generator.setSvg(svg);
+                svc.queueThumbnailRendering(generator);
+                ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
+            }
         }
     }
 }
