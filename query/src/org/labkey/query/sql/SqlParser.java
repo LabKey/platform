@@ -928,8 +928,21 @@ public class SqlParser
                 q = new QIfDefined(node);
                 break;
             case DOT:
-                q = new QDot();
-				break;
+                // NOTE: the rule for atom is stranger (fix this), so we need toc check that the left hand side is actually an identifier
+                // atom: primaryExpression ( DOT^ (identifier | starAtom) )*;
+                {
+                    CommonTree left = (CommonTree)node.getChild(0);
+                    if (left.getType() == DOT || left.getType() == IDENT || left.getType() == QUOTED_IDENTIFIER)
+                    {
+                        q = new QDot();
+    				    break;
+                    }
+                    if (left.getType() == QUOTED_STRING)
+                        _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "' after string literal", null, node.getLine(), node.getCharPositionInLine()));
+                    else
+                        _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
+                    return null;
+                }
             case QUOTED_STRING:
                 q = new QString();
 				break;
@@ -1110,19 +1123,19 @@ public class SqlParser
 
         "SELECT R.a, S.\"b\" FROM R LEFT JOIN S ON R.x = S.x",
 
-        "SELECT 'R'.a, S.b FROM R FULL JOIN S ON R.x = S.x",
+        "SELECT \"R\".a, S.b FROM R FULL JOIN S ON R.x = S.x",
 
-		"SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
+		"SELECT \"R\".a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
 
-        "SELECT 'R'.a, S.b FROM R, S WHERE R.x = S.x",
+        "SELECT \"R\".a, S.b FROM R, S WHERE R.x = S.x",
 
-        "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN (S INNER JOIN T ON S.y = T.y) ON R.x = S.x",
+        "SELECT \"R\".a, S.b FROM R FULL OUTER JOIN (S INNER JOIN T ON S.y = T.y) ON R.x = S.x",
 
-        "SELECT 'R'.a, S.b FROM (R INNER JOIN S ON R.x=S.x) FULL OUTER JOIN (T INNER JOIN U ON T.y = U.y) ON S.q=T.q WHERE R.z = U.z",
+        "SELECT \"R\".a, S.b FROM (R INNER JOIN S ON R.x=S.x) FULL OUTER JOIN (T INNER JOIN U ON T.y = U.y) ON S.q=T.q WHERE R.z = U.z",
 
-        "SELECT 'R'.a, S.b FROM R INNER JOIN S ON R.x=S.x, (T INNER JOIN U ON T.y = U.y) WHERE R.z = U.z",
+        "SELECT \"R\".a, S.b FROM R INNER JOIN S ON R.x=S.x, (T INNER JOIN U ON T.y = U.y) WHERE R.z = U.z",
 
-        "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
+        "SELECT \"R\".a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
 
         "SELECT CASE WHEN R.a=R.b THEN 'same' WHEN R.c IS NULL THEN 'different' ELSE R.c END FROM R",
         "SELECT CASE R.a WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'few' END FROM R",

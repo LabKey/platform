@@ -226,6 +226,8 @@ public class Query
             }
             SqlParser parser = new SqlParser(getSchema().getDbSchema().getSqlDialect());
             parser.parseQuery(queryText, _parseErrors);
+            if (!_parseErrors.isEmpty())
+                return;
             _parameters = parser.getParameters();
 
 			QNode root = parser.getRoot();
