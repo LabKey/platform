@@ -31,7 +31,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         '<tr style="border-top: solid 1px #DDDDDD;padding-bottom: 10px;"><td colspan=2>&nbsp;</td></tr>',
         // note nested <tpl>, this will make values==datavalue and parent==field
                         '<tpl for="this.data.pageFields">' +
-                            '<tpl for="this.data.pages[this.data.pageIndex].first.asArray[values.index]">',
+                            '<tpl for="this.data.pages[this.data.pageIndex].pageFieldData.asArray[values.index]">',
                             '   <tr><td align=left class="lk-report-column-header" data-qtip="{[parent.qtip]}">{[this.getPageField(parent)]}:&nbsp;</td><td class="lk-report-cell" "align=left style="{parent.style}">{[this.getPageFieldHtml(values)]}</td></tr>',
                             '</tpl>',
                         '</tpl>',
@@ -150,6 +150,26 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
                 // we don't want the subject id showing in the page break list (since it's already on the header)
                 data.pageFields.shift();
+
+                // for the remaining pageFields, find the row in the page that has data to be pulled up to the page level
+                if (data.pageFields.length > 0)
+                {
+                    idx = data.pageFields[0].index;
+                    for (var i=0; i < data.pages.length; i++)
+                    {
+                        page = data.pages[i];
+                        page['pageFieldData'] = page.first;
+                        for (var r=0; r < page.rows.length; r++)
+                        {
+                            var row = page.rows[r];
+                            if (row.asArray[idx].value)
+                            {
+                                page['pageFieldData'] = row;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
     },
