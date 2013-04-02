@@ -23,6 +23,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     updateHandler: null,
     emptyText: null,
     updateConfig: null,
+    enterCompletesEdit: true,
 
     constructor: function(config){
 
@@ -161,18 +162,23 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         if (this.multiLine)
             this.editor.on("keyup", this.autoSize, this);
 
-        this.editor.addKeyMap([
-            {
+        var keyMap = [
+        {
+            key: Ext.EventObject.ESC,
+            fn: this.cancelEdit,
+            scope: this
+        }];
+
+        if (this.enterCompletesEdit)
+        {
+            keyMap.push({
                 key: Ext.EventObject.ENTER,
                 fn: this.completeEdit,
                 scope: this
-            },
-            {
-                key: Ext.EventObject.ESC,
-                fn: this.cancelEdit,
-                scope: this
-            }
-        ]);
+            });
+        }
+
+        this.editor.addKeyMap(keyMap);
     },
 
     autoSize: function(){
