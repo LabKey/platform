@@ -185,6 +185,11 @@ public class ContainerDisplayColumn extends DataColumn
         return !_showPath;
     }
 
+    public boolean isSortable()
+    {
+        return !_showPath;
+    }
+
     public static class TestCase extends Assert
     {
         private TestContext _ctx;

@@ -11,6 +11,8 @@
  */
 
 LABKEY.requiresExt4ClientAPI(true);
+LABKEY.requiresScript("ux/CheckCombo/CheckCombo.js");
+LABKEY.requiresCss("ux/CheckCombo/CheckCombo.css");
 
 Ext4.define('LABKEY.SQVModel', {
     extend : 'Ext.Component',
@@ -85,9 +87,18 @@ Ext4.define('LABKEY.SQVModel', {
             schemaName: 'core',
             queryName: 'containers',
             columns: 'Name,Path,EntityId',
-            sort: 'Path',
+            // Server-side sorting on 'Path' isn't currently supported so sort in the store instead.
+            //sort: 'Path',
+            remoteSort: false,
+            sorters: [{
+                property: 'Path',
+                root: 'data'
+            }],
             containerFilter: LABKEY.Query.containerFilter.allFolders,
-            filterArray: [ LABKEY.Filter.create('ContainerType', 'workbook', LABKEY.Filter.Types.NEQ) ],
+            filterArray: [
+                LABKEY.Filter.create('ContainerType', 'workbook', LABKEY.Filter.Types.NEQ),
+                LABKEY.Filter.create('Name', '/', LABKEY.Filter.Types.NEQ)
+            ],
             autoLoad: true
         });
 
@@ -213,6 +224,13 @@ Ext4.define('LABKEY.SQVModel', {
     },
 
     makeQueryComboConfig : function (config) {
+        if (config.multiSelect) {
+            Ext4.applyIf(config, {
+                xtype: 'checkcombo',
+                delim: ','
+            });
+        }
+
         Ext4.applyIf(config, {
             xtype:'combo',
             name: 'queryCombo',
