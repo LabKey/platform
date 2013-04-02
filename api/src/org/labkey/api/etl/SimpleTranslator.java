@@ -634,7 +634,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         for (int i=1 ; i<_outputColumns.size() ; i++)
             outputCols.put(_outputColumns.get(i).getKey().getName(), i);
 
-        addBuiltinColumn(SpecialColumn.Container,  allowPassThrough, target, inputCols, outputCols, containerCallable);
+        addBuiltinColumn(SpecialColumn.Container,  false, target, inputCols, outputCols, containerCallable);
 //        addBuiltinColumn(SpecialColumn.Owner,      allowPassThrough, target, inputCols, outputCols, userCallable);
         addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable);
         addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable);
