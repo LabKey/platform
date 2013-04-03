@@ -35,6 +35,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
 import org.quartz.ScheduleBuilder;
@@ -68,11 +69,11 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     private String _id;
     private String _name;
     private String _description;
-    private SchemaKey _sourceSchema;
-    private String _sourceQuery;
-    private SchemaKey _destinationSchema;
-    private String _destinationQuery;
     private String _moduleName;
+
+    // steps
+    // TODO generalize into a list/graph of *StepMeta of different types
+    private SimpleQueryTransformStepMeta _stepMetaData;
 
 
     public BaseQueryTransformDescriptor(Resource resource, String moduleName) throws XmlException, IOException
@@ -103,11 +104,13 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             EtlType etlXML = document.getEtl();
 
             _name = etlXML.getName();
-            _sourceSchema = SchemaKey.fromString(etlXML.getSource().getSchemaName());
-            _sourceQuery = etlXML.getSource().getQueryName();
-            _destinationSchema = SchemaKey.fromString(etlXML.getDestination().getSchemaName());
-            _destinationQuery = etlXML.getDestination().getQueryName();
             _description = etlXML.getDescription();
+
+            _stepMetaData = new SimpleQueryTransformStepMeta();
+            _stepMetaData.setSourceSchema(SchemaKey.fromString(etlXML.getSource().getSchemaName()));
+            _stepMetaData.setSourceQuery(etlXML.getSource().getQueryName());
+            _stepMetaData.setDestinationSchema(SchemaKey.fromString(etlXML.getDestination().getSchemaName()));
+            _stepMetaData.setDestinationQuery(etlXML.getDestination().getQueryName());
         }
         finally
         {
@@ -156,32 +159,6 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         checkForUpdates();
         // TODO - add config for real version number
         return 1;
-    }
-
-    public SchemaKey getSourceSchema()
-    {
-        checkForUpdates();
-        return _sourceSchema;
-    }
-
-    public String getSourceQuery()
-    {
-        checkForUpdates();
-        return _sourceQuery;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public SchemaKey getDestinationSchema()
-    {
-        checkForUpdates();
-        return _destinationSchema;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public String getDestinationQuery()
-    {
-        checkForUpdates();
-        return _destinationQuery;
     }
 
     private void checkForUpdates()
@@ -250,8 +227,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     @Override
     public Callable<Boolean> getChecker(ScheduledPipelineJobContext context)
     {
-        return new UpdatedRowsChecker(this, context,
-                _sourceSchema, _sourceQuery);
+        return new UpdatedRowsChecker(this, context, _stepMetaData.getSourceSchema(), _stepMetaData.getSourceQuery());
     }
 
 

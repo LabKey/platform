@@ -89,7 +89,7 @@ public class TransformJob extends PipelineJob
     @Override
     public String getDescription()
     {
-        return "ETL job, extracting from " + _etlDescriptor.getSourceSchema() + "." + _etlDescriptor.getSourceQuery();
+        return "ETL Job: " + _etlDescriptor.getDescription();
     }
 
     public void setRunId(int runId)
