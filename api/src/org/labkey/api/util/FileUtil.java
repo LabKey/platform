@@ -54,6 +54,10 @@ public class FileUtil
         if (dir.isDirectory())
         {
             String[] children = dir.list();
+
+            if (null == children) // 17562
+                return false;
+
             for (String aChildren : children)
             {
                 boolean success = deleteDir(new File(dir, aChildren));
