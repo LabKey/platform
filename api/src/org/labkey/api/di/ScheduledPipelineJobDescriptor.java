@@ -42,8 +42,11 @@ public interface ScheduledPipelineJobDescriptor<C extends ContainerUser>
     public ScheduleBuilder getScheduleBuilder();
     public String getScheduleDescription();
 
+    // these are used to create a job that can be scheduled in Quartz
     Class<? extends org.quartz.Job> getJobClass();
     C getJobContext(Container c, User user);
+
+    // these methods actually implement the Job
     Callable<Boolean> getChecker(C context);
     PipelineJob getPipelineJob(C context) throws PipelineJobException;
 }
