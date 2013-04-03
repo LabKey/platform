@@ -808,12 +808,12 @@ dataintegration/src/org/labkey/di/api/ScheduledPipelineJobContext.java -text
 dataintegration/src/org/labkey/di/api/ScheduledPipelineJobDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/BaseQueryTransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/DataIntegrationDbSchema.java -text
-dataintegration/src/org/labkey/di/pipeline/ETLManager.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJob.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJobContext.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJobRunner.java -text
+dataintegration/src/org/labkey/di/pipeline/TransformManager.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformRun.java -text
 dataintegration/src/org/labkey/di/pipeline/UpdatedRowsChecker.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text

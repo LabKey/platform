@@ -71,18 +71,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  * User: jeckels
  * Date: 2/20/13
  */
-public class ETLManager
+public class TransformManager
 {
-    private static final ETLManager INSTANCE = new ETLManager();
+    private static final TransformManager INSTANCE = new TransformManager();
 
-    private static final Logger LOG = Logger.getLogger(ETLManager.class);
+    private static final Logger LOG = Logger.getLogger(TransformManager.class);
 
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
 
     private static boolean _shuttingDown = false;
 
 
-    public static ETLManager get()
+    public static TransformManager get()
     {
         return INSTANCE;
     }
@@ -90,7 +90,7 @@ public class ETLManager
     private final Map<String,ScheduledPipelineJobDescriptor> _etls = new TreeMap<String, ScheduledPipelineJobDescriptor>();
 
 
-    private ETLManager()
+    private TransformManager()
     {
         Path etlsDirPath = new Path("etls");
 
@@ -491,23 +491,23 @@ public class ETLManager
 
 
             assertEquals(0, counter.get());
-            ETLManager.get().runNow(d, c, user);
+            TransformManager.get().runNow(d, c, user);
             for (int i=0 ; i<10 && counter.get()<1 ; i++)
                 sleep(1);
             assertEquals(1, counter.get());
-            ETLManager.get().runNow(d, c, user);
+            TransformManager.get().runNow(d, c, user);
             for (int i=0 ; i<10 && counter.get()<2 ; i++)
                 sleep(2);
             assertEquals(2, counter.get());
 
-            ETLManager.get().schedule(d, c, user, false);
+            TransformManager.get().schedule(d, c, user, false);
             sleep(5);
             assertTrue(counter.get() <= 10);
             for (int i=0 ; i<10 && counter.get() < 12 ; i++)
                 sleep(1);
             assertTrue(counter.get() >= 12);
 
-            ETLManager.get().unschedule(d, c, user);
+            TransformManager.get().unschedule(d, c, user);
             sleep(1);
             int count = counter.get();
             sleep(2);

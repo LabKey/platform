@@ -30,7 +30,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
-import org.labkey.di.pipeline.ETLManager;
+import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.TransformConfiguration;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -107,7 +107,7 @@ public class DataIntegrationController extends SpringActionController
 
     static ScheduledPipelineJobDescriptor getDescriptor(TransformConfigurationForm form)
     {
-        return ETLManager.get().getETLs().get(form.getTransformId());
+        return TransformManager.get().getETLs().get(form.getTransformId());
     }
 
 
@@ -135,7 +135,7 @@ public class DataIntegrationController extends SpringActionController
                 throw new NotFoundException(form.getTransformId());
 
             TransformConfiguration config = null;
-            List<TransformConfiguration> configs = ETLManager.get().getTransformConfigurations(context.getContainer());
+            List<TransformConfiguration> configs = TransformManager.get().getTransformConfigurations(context.getContainer());
             for (TransformConfiguration c : configs)
             {
                 if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
@@ -153,17 +153,17 @@ public class DataIntegrationController extends SpringActionController
             }
             if (null != form.isVerboseLogging())
                 config.setVerboseLogging(form.isVerboseLogging());
-            config = ETLManager.get().saveTransformConfiguration(context.getUser(), config);
+            config = TransformManager.get().saveTransformConfiguration(context.getUser(), config);
 
             if (shouldStartStop)
             {
                 if (config.isEnabled())
                 {
-                    ETLManager.get().schedule(etl, getContainer(), getUser(), config.isVerboseLogging());
+                    TransformManager.get().schedule(etl, getContainer(), getUser(), config.isVerboseLogging());
                 }
                 else
                 {
-                    ETLManager.get().unschedule(etl, getContainer(), getUser());
+                    TransformManager.get().unschedule(etl, getContainer(), getUser());
                 }
             }
 
@@ -185,7 +185,7 @@ public class DataIntegrationController extends SpringActionController
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 
-            ETLManager.get().runNow(etl, getContainer(), getUser());
+            TransformManager.get().runNow(etl, getContainer(), getUser());
 
             JSONObject ret = new JSONObject();
             ret.put("success",true);

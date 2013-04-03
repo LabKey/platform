@@ -34,7 +34,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.di.pipeline.DataIntegrationDbSchema;
-import org.labkey.di.pipeline.ETLManager;
+import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
 
@@ -101,7 +101,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
     private void scheduleEnabledTransforms()
     {
-        ETLManager.get().startAllConfigurations();
+        TransformManager.get().startAllConfigurations();
     }
 
 
@@ -109,7 +109,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @Override
     public Set<Class> getUnitTests()
     {
-        return Collections.singleton((Class)ETLManager.TestCase.class);
+        return Collections.singleton((Class)TransformManager.TestCase.class);
     }
 
     /** web parts **/
@@ -144,13 +144,13 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
     public void shutdownPre(ServletContextEvent servletContextEvent)
     {
-        ETLManager.get().shutdownPre();
+        TransformManager.get().shutdownPre();
     }
 
 
     public void shutdownStarted(ServletContextEvent servletContextEvent)
     {
-        ETLManager.get().shutdownStarted();
+        TransformManager.get().shutdownStarted();
     }
 
 
@@ -170,7 +170,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         DbSchema di = null;
         try
         {
-            ETLManager.get().unscheduleAll(c);
+            TransformManager.get().unscheduleAll(c);
 
             di = DbSchema.get("dataintegration");
             di.getScope().ensureTransaction();

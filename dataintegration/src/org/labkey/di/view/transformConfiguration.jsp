@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.di.pipeline.ETLManager" %>
+<%@ page import="org.labkey.di.pipeline.TransformManager" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.di.pipeline.TransformConfiguration" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -30,8 +30,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 ViewContext context = HttpView.currentContext();
-Map<String,ScheduledPipelineJobDescriptor> descriptors = ETLManager.get().getETLs();
-List<TransformConfiguration> configurationsList = ETLManager.get().getTransformConfigurations(context.getContainer());
+Map<String,ScheduledPipelineJobDescriptor> descriptors = TransformManager.get().getETLs();
+List<TransformConfiguration> configurationsList = TransformManager.get().getTransformConfigurations(context.getContainer());
 Map<String,TransformConfiguration> configurationsMap = new HashMap<String, TransformConfiguration>(configurationsList.size()*2);
 for (TransformConfiguration c : configurationsList)
     configurationsMap.put(c.getTransformId(), c);
