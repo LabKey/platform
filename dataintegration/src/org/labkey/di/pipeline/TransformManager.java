@@ -17,9 +17,11 @@ package org.labkey.di.pipeline;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -38,6 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
@@ -89,7 +92,9 @@ public class TransformManager implements DataIntegrationService
         return INSTANCE;
     }
 
-    private final Map<String,ScheduledPipelineJobDescriptor> _etls = Collections.synchronizedMap(new TreeMap<String, ScheduledPipelineJobDescriptor>());
+
+    private final Map<String,Pair<Module,ScheduledPipelineJobDescriptor>> _etls =
+            Collections.synchronizedMap(new CaseInsensitiveTreeMap<Pair<Module, ScheduledPipelineJobDescriptor>>());
 
 
     private TransformManager()
@@ -118,9 +123,41 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    public Map<String,ScheduledPipelineJobDescriptor> getETLs()
+    @NotNull
+    public Collection<ScheduledPipelineJobDescriptor> getRegisteredDescriptors()
     {
-        return _etls;
+        ArrayList<ScheduledPipelineJobDescriptor> list = new ArrayList<ScheduledPipelineJobDescriptor>(_etls.size());
+        synchronized (_etls)
+        {
+            for (Pair<Module,ScheduledPipelineJobDescriptor> d : _etls.values())
+                list.add(d.getValue());
+        }
+        return list;
+    }
+
+
+    @NotNull
+    public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
+    {
+        Set<Module> modules = c.getActiveModules();
+        ArrayList<ScheduledPipelineJobDescriptor> list = new ArrayList<ScheduledPipelineJobDescriptor>(_etls.size());
+        synchronized (_etls)
+        {
+            for (Pair<Module,ScheduledPipelineJobDescriptor> p : _etls.values())
+                if (modules.contains(p.getKey()))
+                    list.add(p.getValue());
+        }
+        return list;
+    }
+
+
+    @Nullable
+    public ScheduledPipelineJobDescriptor getDescriptor(String id)
+    {
+        Pair<Module,ScheduledPipelineJobDescriptor> p = _etls.get(id);
+        if (null == p)
+            return null;
+        return p.getValue();
     }
 
 
@@ -338,9 +375,6 @@ public class TransformManager implements DataIntegrationService
     {
         DbScope scope = DbSchema.get("dataintegration").getScope();
 
-        CaseInsensitiveHashMap<ScheduledPipelineJobDescriptor> etls = new CaseInsensitiveHashMap<ScheduledPipelineJobDescriptor>();
-        etls.putAll(getETLs());
-
         SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
         ArrayList<TransformConfiguration> configs = new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
         for (TransformConfiguration config : configs)
@@ -349,13 +383,13 @@ public class TransformManager implements DataIntegrationService
             int runAsUserId = config.getModifiedBy();
             User runAsUser = UserManager.getUser(runAsUserId);
 
-            ScheduledPipelineJobDescriptor etl = etls.get(config.getTransformId());
+            Pair<Module,ScheduledPipelineJobDescriptor> etl = _etls.get(config.getTransformId());
             if (null == etl)
                 continue;
             Container c = ContainerManager.getForId(config.getContainerId());
             if (null == c)
                 continue;
-            schedule(etl, c, runAsUser, config.isVerboseLogging());
+            schedule(etl.getValue(), c, runAsUser, config.isVerboseLogging());
         }
     }
 
@@ -399,9 +433,9 @@ public class TransformManager implements DataIntegrationService
     {
         if (null == descriptors || descriptors.isEmpty())
             return;
-        Map<String,ScheduledPipelineJobDescriptor> m = new TreeMap<String,ScheduledPipelineJobDescriptor>();
+        Map<String,Pair<Module,ScheduledPipelineJobDescriptor>> m = new TreeMap<String,Pair<Module,ScheduledPipelineJobDescriptor>>();
         for (ScheduledPipelineJobDescriptor d : descriptors)
-            m.put(d.getId(), d);
+            m.put(d.getId(), new Pair(module,d));
         _etls.putAll(m);
     }
 
@@ -411,7 +445,7 @@ public class TransformManager implements DataIntegrationService
     {
         Path etlsDirPath = new Path("etls");
         Resource etlsDir = module.getModuleResolver().lookup(etlsDirPath);
-        Map<String,ScheduledPipelineJobDescriptor> m = new TreeMap<String,ScheduledPipelineJobDescriptor>();
+        ArrayList<ScheduledPipelineJobDescriptor> l = new ArrayList<ScheduledPipelineJobDescriptor>();
 
         if (etlsDir != null && etlsDir.isCollection())
         {
@@ -420,14 +454,13 @@ public class TransformManager implements DataIntegrationService
                 BaseQueryTransformDescriptor descriptor = parseETL(etlDir.find("config.xml"), module.getName());
                 if (descriptor != null)
                 {
-                    m.put(descriptor.getId(), descriptor);
+                    l.add(descriptor);
+                    if (autoRegister)
+                        _etls.put(descriptor.getId(), new Pair<Module,ScheduledPipelineJobDescriptor>(module,descriptor));
                 }
             }
         }
-
-        if (!m.isEmpty() && autoRegister)
-            _etls.putAll(m);
-        return m.values();
+        return l;
     }
 
 

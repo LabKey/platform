@@ -107,7 +107,7 @@ public class DataIntegrationController extends SpringActionController
 
     static ScheduledPipelineJobDescriptor getDescriptor(TransformConfigurationForm form)
     {
-        return TransformManager.get().getETLs().get(form.getTransformId());
+        return TransformManager.get().getDescriptor(form.getTransformId());
     }
 
 

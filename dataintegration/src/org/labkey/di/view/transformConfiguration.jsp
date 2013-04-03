@@ -27,14 +27,33 @@
 <%@ page import="org.labkey.api.di.ScheduledPipelineJobDescriptor" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.TreeMap" %>
+<%@ page import="javassist.runtime.Desc" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 ViewContext context = HttpView.currentContext();
-Map<String,ScheduledPipelineJobDescriptor> descriptors = TransformManager.get().getETLs();
+
+
 List<TransformConfiguration> configurationsList = TransformManager.get().getTransformConfigurations(context.getContainer());
 Map<String,TransformConfiguration> configurationsMap = new HashMap<String, TransformConfiguration>(configurationsList.size()*2);
 for (TransformConfiguration c : configurationsList)
     configurationsMap.put(c.getTransformId(), c);
+
+// It's possible to have configurations for transforms whose modules are in active, so make sure we get those
+Collection<ScheduledPipelineJobDescriptor> descriptorsList = TransformManager.get().getDescriptors(context.getContainer());
+TreeMap<String,ScheduledPipelineJobDescriptor> descriptorsMap = new TreeMap<String, ScheduledPipelineJobDescriptor>();
+for (ScheduledPipelineJobDescriptor d : descriptorsList)
+    descriptorsMap.put(d.getId(), d);
+for (TransformConfiguration c : configurationsList)
+{
+    if (!descriptorsMap.containsKey(c.getTransformId()))
+    {
+        ScheduledPipelineJobDescriptor d = TransformManager.get().getDescriptor(c.getTransformId());
+        if (null != d)
+            descriptorsMap.put(d.getId(), d);
+    }
+}
 
 boolean isAdmin = context.hasPermission(AdminPermission.class);
 
@@ -131,7 +150,7 @@ function onRunNowClicked(el,id)
     </tr><%
 
 int row = 0;
-for (ScheduledPipelineJobDescriptor descriptor : descriptors.values())
+for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
 {
     row++;
     String id = descriptor.getId();
