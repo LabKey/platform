@@ -29,8 +29,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.resource.Resource;
@@ -60,6 +60,8 @@ import org.quartz.impl.matchers.GroupMatcher;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,7 +73,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * User: jeckels
  * Date: 2/20/13
  */
-public class TransformManager
+public class TransformManager implements DataIntegrationService
 {
     private static final TransformManager INSTANCE = new TransformManager();
 
@@ -87,28 +89,11 @@ public class TransformManager
         return INSTANCE;
     }
 
-    private final Map<String,ScheduledPipelineJobDescriptor> _etls = new TreeMap<String, ScheduledPipelineJobDescriptor>();
+    private final Map<String,ScheduledPipelineJobDescriptor> _etls = Collections.synchronizedMap(new TreeMap<String, ScheduledPipelineJobDescriptor>());
 
 
     private TransformManager()
     {
-        Path etlsDirPath = new Path("etls");
-
-        for (Module module : ModuleLoader.getInstance().getModules())
-        {
-            Resource etlsDir = module.getModuleResolver().lookup(etlsDirPath);
-            if (etlsDir != null)
-            {
-                for (Resource etlDir : etlsDir.list())
-                {
-                    BaseQueryTransformDescriptor descriptor = parseETL(etlDir.find("config.xml"), module.getName());
-                    if (descriptor != null)
-                    {
-                        _etls.put(descriptor.getId(), descriptor);
-                    }
-                }
-            }
-        }
     }
 
 
@@ -401,6 +386,55 @@ public class TransformManager
         }
     }
 
+
+
+
+    //
+    // DataIntegrationService
+    //
+
+
+    @Override
+    public void registerDescriptors(Module module, Collection<ScheduledPipelineJobDescriptor> descriptors)
+    {
+        if (null == descriptors || descriptors.isEmpty())
+            return;
+        Map<String,ScheduledPipelineJobDescriptor> m = new TreeMap<String,ScheduledPipelineJobDescriptor>();
+        for (ScheduledPipelineJobDescriptor d : descriptors)
+            m.put(d.getId(), d);
+        _etls.putAll(m);
+    }
+
+
+    @Override
+    public Collection<ScheduledPipelineJobDescriptor> loadDescriptorsFromFiles(Module module, boolean autoRegister)
+    {
+        Path etlsDirPath = new Path("etls");
+        Resource etlsDir = module.getModuleResolver().lookup(etlsDirPath);
+        Map<String,ScheduledPipelineJobDescriptor> m = new TreeMap<String,ScheduledPipelineJobDescriptor>();
+
+        if (etlsDir != null && etlsDir.isCollection())
+        {
+            for (Resource etlDir : etlsDir.list())
+            {
+                BaseQueryTransformDescriptor descriptor = parseETL(etlDir.find("config.xml"), module.getName());
+                if (descriptor != null)
+                {
+                    m.put(descriptor.getId(), descriptor);
+                }
+            }
+        }
+
+        if (!m.isEmpty() && autoRegister)
+            _etls.putAll(m);
+        return m.values();
+    }
+
+
+
+    //
+    // Tests
+    //
 
     public static class TestCase extends Assert
     {

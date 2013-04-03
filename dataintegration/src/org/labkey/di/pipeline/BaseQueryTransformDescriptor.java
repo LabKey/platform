@@ -65,6 +65,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     private long _lastUpdateCheck;
     private long _lastModified;
 
+    private String _id;
     private String _name;
     private String _description;
     private SchemaKey _sourceSchema;
@@ -79,6 +80,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         _resource = resource;
         _resourcePath = resource.getPath();
         _moduleName = moduleName;
+        _id = "{" + moduleName + "}/" + _resourcePath.toString();
         parse();
     }
 
@@ -146,7 +148,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
     public String getId()
     {
-        return _resourcePath.toString();
+        return _id;
     }
 
     public int getVersion()

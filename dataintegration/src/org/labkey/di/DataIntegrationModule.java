@@ -21,13 +21,16 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.SimpleWebPartFactory;
 import org.labkey.api.view.ViewContext;
@@ -38,6 +41,7 @@ import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
@@ -50,9 +54,16 @@ import java.util.Set;
  * User: matthewb
  * Date: 12 Jan 2013
  */
-public class DataIntegrationModule extends DefaultModule implements ContainerManager.ContainerListener, ShutdownListener
+public class DataIntegrationModule extends DefaultModule implements ContainerManager.ContainerListener, StartupListener, ShutdownListener
 {
     public static final String NAME = "DataIntegration";
+
+
+    public DataIntegrationModule()
+    {
+        ServiceRegistry.get().registerService(DataIntegrationService.class, TransformManager.get());
+    }
+
 
     public String getName()
     {
@@ -93,15 +104,8 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     {
         PipelineService.get().registerPipelineProvider(new ETLPipelineProvider(this));
 
-        scheduleEnabledTransforms();
         ContainerManager.addContainerListener(this);
         ContextListener.addShutdownListener(this);
-    }
-
-
-    private void scheduleEnabledTransforms()
-    {
-        TransformManager.get().startAllConfigurations();
     }
 
 
@@ -137,6 +141,18 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
             setModelBean(this);
         }
     }
+
+    //
+    // StartupListener
+    //
+
+
+    @Override
+    public void moduleStartupComplete(ServletContext servletContext)
+    {
+        TransformManager.get().startAllConfigurations();
+    }
+
 
     //
     // ShutdownListener
