@@ -574,7 +574,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
             else if ((topMessage.startsWith("Invalid Image Resource Block Signature Found") || topMessage.startsWith("PSD/PSB magic signature invalid") /* test.fasta.psd */) && StringUtils.endsWithIgnoreCase(r.getName(), ".psd"))
             {
-                // Tika doesn't like some .psd files (e.g., files included in ExtJs 3.4.0)
+                // Tika doesn't like some .psd files (e.g., files included in ExtJs 3.4.1)
                 logAsWarning(r, "Can't parse this PSD file", rootMessage);
             }
             else if (topMessage.startsWith("Unsupported AutoCAD drawing version"))

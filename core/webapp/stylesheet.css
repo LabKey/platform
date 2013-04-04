@@ -1223,13 +1223,13 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
 
 .labkey-sort-asc .x-grid3-sort-icon
 {
-    background-image:url(ext-3.4.0/resources/images/default/grid/sort_asc.gif);
+    background-image:url(ext-3.4.1/resources/images/default/grid/sort_asc.gif);
     display:inline;
 }
 
 .labkey-sort-desc .x-grid3-sort-icon
 {
-    background-image:url(ext-3.4.0/resources/images/default/grid/sort_desc.gif);
+    background-image:url(ext-3.4.1/resources/images/default/grid/sort_desc.gif);
     display:inline;
 }
 
@@ -1295,7 +1295,7 @@ img.labkey-grid-filter-icon
 /** Unortunately, gtheme doesn't include some of the x-tool-* styles, so I'm redefining them here. */
 
 .labkey-tool {
-    background: url(./ext-3.4.0/resources/images/default/panel/tool-sprites.gif);
+    background: url(./ext-3.4.1/resources/images/default/panel/tool-sprites.gif);
     width: 15px;
     height: 15px;
 }
@@ -2127,7 +2127,7 @@ a.labkey-text-link:hover, a.labkey-text-link-noarrow:hover {
 
 div.x-tree-node-leaf IMG.x-tree-node-icon.labkey-tree-error-icon
 {
-    background-image: url(./ext-3.4.0/resources/images/default/form/exclamation.gif)
+    background-image: url(./ext-3.4.1/resources/images/default/form/exclamation.gif)
 }
 
 /* Module Specific */

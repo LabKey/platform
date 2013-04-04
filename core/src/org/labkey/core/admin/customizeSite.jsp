@@ -218,9 +218,9 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="text" name="maxBLOBSize" size="10" value="<%= h(appProps.getMaxBLOBSize()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Require ExtJS v3.4.0 be loaded on each page</td>
+    <td class="labkey-form-label">Require ExtJS v3.4.1 be loaded on each page</td>
     <td><input type="checkbox" name="ext3Required" <%=(appProps.isExt3Required() ? "checked=\"true\"" : "")%>>
-    <b>WARNING:</b> Not requiring v3.4.0 may cause some pages to load incorrectly. It is advised this only be disabled in non-production environments in 12.3.</td>
+    <b>WARNING:</b> Not requiring v3.4.1 may cause some pages to load incorrectly. It is advised this only be disabled in non-production environments in 12.3.</td>
 </tr>
 <tr>
     <td>&nbsp;</td>
