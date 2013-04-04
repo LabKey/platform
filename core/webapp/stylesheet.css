@@ -1600,6 +1600,20 @@ table.labkey-main-search img:hover {
     width: 200px;
 }
 
+.lk-input input {
+    border-radius: 2px;
+    box-shadow: 0 0 0 black, inset 0px 3px 3px #EEE;
+    border: 1px solid #BFBFBF;
+    height: 20px;
+    width : 200px;
+    padding-left: 5px;
+    padding-right: 22px;
+}
+
+.lk-input input:hover {
+    border:  1px solid #A0A0A0;
+}
+
 .labkey-main-search input
 {
     height:16px; font-size:8pt;
