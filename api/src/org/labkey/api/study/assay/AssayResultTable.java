@@ -243,6 +243,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             // Insert a folder/container column so that we can build up the right URL for links to this row of data 
             SQLFragment folderSQL = new SQLFragment("(SELECT Container FROM exp.Data d WHERE d.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)");
             folderCol = new ExprColumn(this, "Folder", folderSQL, JdbcType.VARCHAR);
+            // This can usually be treated as a normal VARCHAR, but remember that it's actually a custom type
+            // for places like multi valued columns
+            folderCol.setSqlTypeName("entityid");
             folderCol.setHidden(true);
             folderCol.setUserEditable(false);
             folderCol.setShownInInsertView(false);
