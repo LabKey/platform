@@ -16,6 +16,7 @@
 
 package org.labkey.study.importer;
 
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;
@@ -61,6 +62,11 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         try
         {
             StudyDocument.Study studyXml = ctx.getXml();
+
+            // verify the archiveVersion
+            double currVersion = ModuleLoader.getInstance().getCoreModule().getVersion();
+            if (studyXml.isSetArchiveVersion() && studyXml.getArchiveVersion() > currVersion)
+                throw new PipelineJobException("Can't import study archive. The archive version " + studyXml.getArchiveVersion() + " is newer than the server version " + currVersion + ".");
 
             // Check if a delay has been requested for testing purposes, to make it easier to cancel the job in a reliable way
             if (studyXml.isSetImportDelay() && studyXml.getImportDelay() > 0)

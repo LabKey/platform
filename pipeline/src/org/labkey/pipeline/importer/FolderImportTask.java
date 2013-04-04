@@ -16,9 +16,11 @@
 package org.labkey.pipeline.importer;
 
 import org.labkey.api.admin.FolderImporterImpl;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.FileType;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument;
 
 import java.util.*;
 
@@ -41,6 +43,12 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         try
         {
             VirtualFile vf = support.getRoot();
+
+            // verify the archiveVersion
+            FolderDocument.Folder folderXml = support.getImportContext().getXml();
+            double currVersion = ModuleLoader.getInstance().getCoreModule().getVersion();
+            if (folderXml.isSetArchiveVersion() && folderXml.getArchiveVersion() > currVersion)
+                throw new PipelineJobException("Can't import folder archive. The archive version " + folderXml.getArchiveVersion() + " is newer than the server version " + currVersion + ".");
 
             FolderImporterImpl importer = new FolderImporterImpl(job);
             importer.process(job, support.getImportContext(), vf);
