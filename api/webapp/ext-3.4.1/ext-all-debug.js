@@ -21686,7 +21686,7 @@ Ext.dd.DragDropMgr = function() {
                 zIndex = -1;
 
             element = Ext.getDom(element);
-            while (element !== body) {
+            while (element !== body && element !== null) { // LABKEY: while (element !== body)
                 if (!isNaN(z = Number(Ext.fly(element).getStyle('zIndex')))) {
                     zIndex = z;
                 }

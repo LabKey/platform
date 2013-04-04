@@ -214,3 +214,9 @@ Ext.override(Ext.Element, (function(){
         }
     };
 })());
+
+// Fix for improper ZIndex calculation
+// Ext.dd.DragDropMgr.getZIndex in ext-all-debug.js line #21689
+// added in ext-all.js as well.
+// - while(element !== body) {
+// + while(element !== body && element !== null) {
