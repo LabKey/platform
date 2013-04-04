@@ -27,7 +27,7 @@ LABKEY.initExtAdapter = function(LABKEY, Ext){
         /**
          * Returns a boolean
          * WARNING: Different method signatures in Ext JS 3.4 vs Ext JS 4.1.0
-         * 3.4.0 - ( iterable, fn, scope )
+         * 3.4.1 - ( iterable, fn, scope )
          * 4.1.0 - ( iterable, fn, [scope], [reverse] )
          */
         each: Ext.each,

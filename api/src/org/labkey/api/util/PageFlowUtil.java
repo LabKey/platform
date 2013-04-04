@@ -1748,7 +1748,7 @@ public class PageFlowUtil
         }
     }
 
-    static final String extJsRoot = "ext-3.4.0";
+    static final String extJsRoot = "ext-3.4.1";
     static final String ext4ThemeRoot = "labkey-ext-theme";
 
     public static String extJsRoot()
