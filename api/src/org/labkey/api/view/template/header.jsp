@@ -37,8 +37,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -64,34 +64,44 @@
     if ("search".equalsIgnoreCase(currentURL.getController()) && "search".equalsIgnoreCase(currentURL.getAction()))
         showSearchForm = false;
 if ("true".equals(request.getParameter("testFont"))) {
-%><script>
+%>
+<script type="text/javascript">
     function changeFontEl(el, themeFontClass)
     {
-        el = Ext4.get(el);
-        if (!el) return;
+        var _el = LABKEY.ExtAdapter.get(el);
+        if (!_el) return;
         <%for (ThemeFont tf : ThemeFont.getThemeFonts()){%>
-            el.removeClass(<%=PageFlowUtil.jsString(tf.getClassName())%>);
+            _el.removeClass ? _el.removeClass(<%=PageFlowUtil.jsString(tf.getClassName())%>) : _el.removeCls(<%=PageFlowUtil.jsString(tf.getClassName())%>);
         <%}%>
-        el.addClass(themeFontClass);
+        _el.addClass ? _el.addClass(themeFontClass) : _el.addCls(themeFontClass);
     }
     function changeFont(themeFontName)
     {
-        var className = event.target.className;
-        var body = Ext4.getBody();
-        changeFontEl(Ext4.getBody(),className);
-        changeFontEl('bodyTableElement',className);
+        var clsName = event.target.className;
+        var body = document.getElementByTagName('body');
+        if (body && body.length > 0) {
+            changeFontEl(body,clsName);
+            changeFontEl('bodyTableElement',clsName);
+        }
     }
-</script><%}%>
+</script>
+<%}%>
+<style type="text/css">
+
+    .lk-input input.hdr-search-input {
+        padding-left: 22px;
+        background: #FFFFFF url(<%=contextPath%>/_images/search.png) 2% center no-repeat;
+    }
+
+</style>
 <div id="headerDiv"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 width="auto">
   <tr>
       <td style="padding-right: 1em;">
           <form id="headerSearchForm" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
-            <table cellspacing=0 cellpadding=0 class="labkey-main-search">
-              <tr>
-                <td><input id="headerSearchInput" name="q" type="text"></td>
-                <td><img src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
-              </tr>
-            </table>
+              <div id="hdr-search" class="lk-input">
+                  <input placeholder="<%=h("Search " + laf.getShortName())%>" id="search-input" type="text" name="q" class="hdr-search-input" value="">
+                  <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;">
+              </div>
           </form>
       </td>
       <td valign="top" align="right" class="labkey-main-nav">
@@ -143,124 +153,61 @@ if ("true".equals(request.getParameter("testFont"))) {
 </table></div>
 
 <table id="header">
-<tr>
-  <td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>"></a></td>
-  <td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= AppProps.getInstance().getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span></td>
-  <%if (hasWarnings) {%>
-  <td width="16" valign="bottom"><span id="labkey-warning-message-icon" <%=me.isUserHidingWarningMessages() ? "" : "style=display:none;"%>><img src="<%=getViewContext().getContextPath()%>/_images/warning-small.png" alt="!" title="Click to view warning messages." style="cursor: pointer;" onclick="labkeyShowWarningMessages(true);"/></span></td>
-  <%}%>
-</tr>
-<%
-    if (hasWarnings)
-    {
-%>
-<tr id="labkey-warning-messages-area" <%=me.isUserHidingWarningMessages() ? "style=display:none;" : ""%>>
-    <td colspan="4" style="padding: 2px;">
-        <div class="labkey-warning-messages">
-            <img src="<%=getViewContext().getContextPath()%>/_images/partdelete.gif" alt="x"
-                 style="float: right;cursor:pointer;" onclick="labkeyShowWarningMessages(false);">
-            <ul>
-            <% for(String warningMessage : me.getWarningMessages()) { %>
-                <li><%=warningMessage%></li>
-            <% } //for each warning message %>
-            </ul>
-        </div>
-    </td>
-</tr>
-<%  } //if warning messages %>
-</table>
-<script type="text/javascript">
+    <tr>
+      <td class="labkey-main-icon">
+          <a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>"></a>
+      </td>
+      <td class="labkey-main-title-area">
+          <span>
+              <a id="labkey-main-title" class="labkey-main-title" href="<%= AppProps.getInstance().getHomePageUrl() %>"><%=h(laf.getShortName())%></a>
+          </span>
+      </td>
+
 <% if (hasWarnings) { %>
-function labkeyShowWarningMessages(show)
-{
-    if (undefined === show)
-        show = true;
-    var elem = Ext4.get("labkey-warning-messages-area");
-    if (elem)
-        elem.setDisplayed(show, true);
-    elem = Ext4.get("labkey-warning-message-icon");
-    if (elem)
-        elem.setDisplayed(!show, true);
-    Ext4.Ajax.request({
-        url    : LABKEY.ActionURL.buildURL('user', 'setShowWarningMessages.api'),
-        method : 'GET',
-        params : {showMessages: show}
-    });
-}
-<% } %>
 
-// Function called when search is requested
-var submit_onClick;
+        <td width="16" valign="bottom">
+            <span id="labkey-warning-message-icon" <%=me.isUserHidingWarningMessages() ? "" : "style=display:none;"%>>
+                <img src="<%=getViewContext().getContextPath()%>/_images/warning-small.png" alt="!" title="Click to view warning messages." style="cursor: pointer;" onclick="labkeyShowWarningMessages(true);"/>
+            </span>
+        </td>
+    </tr>
+    <tr id="labkey-warning-messages-area" <%=me.isUserHidingWarningMessages() ? "style=display:none;" : ""%>>
+        <td colspan="4" style="padding: 2px;">
+            <div class="labkey-warning-messages">
+                <img src="<%=getViewContext().getContextPath()%>/_images/partdelete.gif" alt="x"
+                     style="float: right;cursor:pointer;" onclick="labkeyShowWarningMessages(false);">
+                <ul>
+                    <% for(String warningMessage : me.getWarningMessages()) { %>
+                    <li><%=warningMessage%></li>
+                    <% } //for each warning message %>
+                </ul>
+            </div>
+        </td>
+    </tr>
+    </table>
+    <script type="text/javascript">
+    function labkeyShowWarningMessages(show)
+    {
+        if (undefined === show) {
+            show = true;
+        }
 
-(function(){
-
-    var hdrSearch; // Ext.form.TextField
-
-    submit_onClick = function() {
-
-        if (hdrSearch && hdrSearch.el.hasCls(hdrSearch.emptyClass) && hdrSearch.el.dom.value == hdrSearch.emptyText)
-            hdrSearch.setRawValue('');
-        document.forms["headerSearchForm"].submit();
-        return true;
+        LABKEY.ExtAdapter.onReady(function() {
+            var elem = LABKEY.ExtAdapter.get("labkey-warning-messages-area");
+            if (elem)
+                elem.setDisplayed(show, true);
+            elem = LABKEY.ExtAdapter.get("labkey-warning-message-icon");
+            if (elem)
+                elem.setDisplayed(!show, true);
+            LABKEY.ExtAdapter.Ajax.request({
+                url    : LABKEY.ActionURL.buildURL('user', 'setShowWarningMessages.api'),
+                params : {showMessages: show}
+            });
+        });
     }
+    </script>
 
-    Ext4.onReady(function() {
-
-        if (Ext4.isSafari || Ext4.isWebKit)
-            Ext4.get("headerNav").applyStyles({height:Ext4.get("header").getSize().height});
-
-        var serverDescription = <%=PageFlowUtil.jsString(LookAndFeelProperties.getInstance(c).getShortName())%> || LABKEY.serverName;
-        var inputEl = Ext4.get('headerSearchInput');
-        var parentEl = inputEl.parent();
-        inputEl.remove();
-        hdrSearch = Ext4.create('Ext.form.field.Text', {
-            renderTo   : parentEl,
-            id         : 'headerSearchInput',
-            name       : 'q',
-            emptyText  : 'Search ' + serverDescription,
-            cls        : 'labkey-main-search',
-            focusClass : 'labkey-main-search',
-            width      : 235
-        });
-
-        var handler = function(item)
-        {
-            var form = Ext4.get('headerSearchForm');
-            form.dom.action = item.action;
-            form.dom.target = item.target || '_self';
-            if (hdrSearch.getEl().dom.value) {
-                form.dom.submit();
-            }
-            hdrSearch.emptyText = item.emptyText;
-        };
-
-        var items = [{
-            text        : serverDescription,
-            emptyText   : 'Search ' + serverDescription,
-            containerId : '',
-            action      : LABKEY.ActionURL.buildURL("search", "search"),
-            target      : '',
-            handler     : handler
-        }];
-
-        if (LABKEY.project) {
-            items.push({text:LABKEY.project.name, emptyText:('Search ' + LABKEY.project.name), containerId:LABKEY.project.id, action:LABKEY.ActionURL.buildURL("search", "search", LABKEY.project.path), target:'', handler:handler});
-        }
-        if (window.location.hostname.toLowerCase() != 'labkey.org') {
-            items.push({text:'labkey.org', emptyText:'Search labkey.org', containerId:'', action:'http://www.labkey.org/search/home/search.view', target:'_blank', handler:handler});
-        }
-
-        items.push({text:'Google', emptyText:'Search google.com', containerId:'', action:'http://www.google.com/search', target:'_blank', handler:handler});
-
-        Ext4.create('Ext.menu.Menu', {
-            cls   : 'extContainer',
-            id    : 'headerSearchMenu',
-            items : items
-        });
-
-        handler(items[0]);
-
-    });
-
-})();
-</script>
+<%  } else { %>
+    </tr>
+</table>
+<%  } %>
