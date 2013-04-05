@@ -1070,11 +1070,17 @@ public class ParticipantGroupManager
             SQLFragment sqlGroup = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroup(), "").append(" WHERE RowId = ? ");
             Table.execute(StudySchema.getInstance().getSchema(), sqlGroup.getSQL(), group.getRowId());
 
+            // if this is a list type of group (we automatically create a category of the same name), clean up
+            // the associated category if it is not referenced
             if(cat.getType().equals("list"))
             {
-                // delete the participant category
-                SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").append(" WHERE RowId = ? ");
-                Table.execute(StudySchema.getInstance().getSchema(), sqlCat.getSQL(), cat.getRowId());
+                ParticipantGroup[] groups = getParticipantGroups(c, user, cat);
+                if (groups.length == 1 && groups[0].equals(group))
+                {
+                    // delete the participant category
+                    SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").append(" WHERE RowId = ? ");
+                    Table.execute(StudySchema.getInstance().getSchema(), sqlCat.getSQL(), cat.getRowId());
+                }
             }
 
             DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(cat));
