@@ -685,6 +685,7 @@ public class SpecimenApiController extends BaseStudyController
             // }
             // GROUP -->
             // { "name" : "<column name>",
+            //   "dummy" : bool,    (true means dummy so we have at least 1)
             //   "values" : [VALUE, ...]
             // }
             // GROUPINGS -- >
@@ -705,6 +706,15 @@ public class SpecimenApiController extends BaseStudyController
                     Map<String, Object> groupingJSON = sampleManager.getGroupedValuesForColumn(getContainer(), grouping);
                     groupingsJSON.add(groupingJSON);
                 }
+            }
+            if (groupingsJSON.isEmpty())
+            {
+                // no groupings; create default grouping
+                String[] dummyGrouping = new String[1];
+                dummyGrouping[0] = "Primary Type";
+                Map<String, Object> groupingJSON = sampleManager.getGroupedValuesForColumn(getContainer(), dummyGrouping);
+                groupingJSON.put("dummy", true);
+                groupingsJSON.add(groupingJSON);
             }
             response.put("groupings", groupingsJSON);
 

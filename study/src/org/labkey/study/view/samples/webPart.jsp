@@ -76,20 +76,29 @@
 
     function handleGroupings(resp)
     {
-        if (resp.groupings.length == 0)
+        if (resp.groupings.length == 0 || resp.groupings[0].values.length == 0)
         {
-            var html = '<i>No specimen groupings.</i>';
+            var html = '<i>No specimens found.</i>';
+            var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
+            html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
             document.getElementById('specimen-browse-webpart-content').innerHTML = html;
         }
-        else
+        else if (null == resp.groupings[0].dummy || !resp.groupings[0].dummy)
         {
             populateGrouping(resp.groupings[0], 'primaryTypes');
             if (resp.groupings.length > 1)
+            {
                 populateGrouping(resp.groupings[1], 'derivativeTypes');
+            }
             else
             {
                 document.getElementById('grouping2').innerHTML = '';
             }
+        }
+        else
+        {
+            document.getElementById('grouping1').innerHTML = '';
+            document.getElementById('grouping2').innerHTML = '';
         }
         document.getElementById('specimen-browse-webpart-content').setAttribute('style', 'display: inline');
     }
