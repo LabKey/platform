@@ -2536,25 +2536,23 @@ LABKEY.DataRegion.getParamValPairsFromString = function(queryString, skipPrefixe
 // private
 LABKEY.DataRegion.buildQueryString = function(pairs)
 {
-    if (pairs == null || pairs.length == 0)
+    if (pairs == null || pairs.length == 0) {
         return "";
+    }
 
-    var queryString = [];
-    for (var i = 0; i < pairs.length; i++)
-    {
-        var key = pairs[i][0];
-        var value = pairs[i].length > 1 ? pairs[i][1] : undefined;
+    var queryString = [], key, value, i=0;
+
+    for (; i < pairs.length; i++) {
+        key = pairs[i][0];
+        value = pairs[i].length > 1 ? pairs[i][1] : undefined;
 
         queryString.push(encodeURIComponent(key));
-        if (undefined != value)
-        {
-            if (Ext.isDate(value))
-            {
-                value = value.toISOString();
-                if (-1 != key.indexOf("~date"))
-                    value = value.substring(0,10);
-                if (LABKEY.Utils.endsWith(value,"Z"))
+        if (undefined != value) {
+            if (Ext.isDate(value)) {
+                value = Ext.util.Format.date(value, 'Y-m-d');
+                if (LABKEY.Utils.endsWith(value,"Z")) {
                     value = value.substring(0,value.length-1);
+                }
             }
             queryString.push("=");
             queryString.push(encodeURIComponent(value));
@@ -2562,8 +2560,9 @@ LABKEY.DataRegion.buildQueryString = function(pairs)
         queryString.push("&");
     }
 
-    if (queryString.length > 0)
+    if (queryString.length > 0) {
         queryString.pop();
+    }
 
     return queryString.join("");
 };

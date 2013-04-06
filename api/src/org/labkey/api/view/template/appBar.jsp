@@ -146,7 +146,7 @@
             var folderHeader = Ext4.get(Ext4.query('.labkey-folder-header')[0]);
             var appBar = Ext4.query('.labkey-app-bar')[0];
             var viewportWidth = Ext4.Element.getViewportWidth();
-            var folderHeaderWidth = viewportWidth - appBar.getBoundingClientRect().left - 35; // 35 is for some extra padding between the + tab and right side of the screen.
+            var folderHeaderWidth = viewportWidth - appBar.getBoundingClientRect().left - 60; // 60 is for some extra padding between the + tab and right side of the screen.
             var totalWidth = folderTitle.getWidth();
 
             for(var i = 0; i < tabs.length; i++){
@@ -163,6 +163,17 @@
                 } else {
                     folderHeader.setWidth(folderHeaderWidth);
                 }
+            }
+        };
+
+        var lastScrollLeft = Math.max(document.documentElement.scrollLeft, document.body.scrollLeft);
+
+        var scrollListener = function(){
+            // Some browsers keep the value in documentElement, some in body.
+            var scrollLeft = Math.max(document.documentElement.scrollLeft, document.body.scrollLeft);
+
+            if(scrollLeft != lastScrollLeft){
+                setMinWidth();
             }
         };
 
@@ -191,6 +202,14 @@
             setMinWidth();
             addTabListeners();
             Ext4.EventManager.onWindowResize(setMinWidth);
+
+            if(window.addEventListener) {
+                // Most browsers.
+                window.addEventListener('scroll', scrollListener, false);
+            } else if(window.attachEvent) {
+                // <= IE8
+                window.attachEvent('onscroll',scrollListener);
+            }
         });
     })();
 </script>
