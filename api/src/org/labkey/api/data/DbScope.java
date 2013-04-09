@@ -332,6 +332,13 @@ public class DbScope
     }
 
 
+    // Get a fresh connection directly from the pool... not part of the current transaction, etc.
+    public Connection getPooledConnection() throws SQLException
+    {
+        return _getConnection(null);
+    }
+
+
     public Connection getUnpooledConnection() throws SQLException
     {
         SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(_dsName, _dataSource);

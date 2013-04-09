@@ -160,13 +160,19 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException
+    public ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
     @Override
     public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName, @Nullable String variable)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

@@ -37,13 +37,18 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
     protected long _offset = Table.NO_OFFSET;
     protected @Nullable Map<String, Object> _namedParameters = null;
 
-    // SQL factory used for the duration of a single query. This allows reuse of instances, since query-specific
+    // SQL factory used for the duration of a single query execution. This allows reuse of instances, since query-specific
     // optimizations won't mutate the ExecutingSelector's externally set state.
     abstract protected FACTORY getSqlFactory(boolean isResultSet);
 
     protected ExecutingSelector(DbScope scope)
     {
-        super(scope, null);     // TODO: Constructor that takes a Connection?
+        this(scope, null);
+    }
+
+    protected ExecutingSelector(DbScope scope, Connection conn)
+    {
+        super(scope, conn);
     }
 
     @Override

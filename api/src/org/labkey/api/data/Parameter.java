@@ -492,7 +492,7 @@ public class Parameter
             try
             {
                 if (_selectRowId || _selectObjectIdIndex != null)
-                    rs = _dialect.executeInsertWithResults(_stmt);
+                    rs = _dialect.executeWithResults(_stmt);
                 else
                     _stmt.execute();
 

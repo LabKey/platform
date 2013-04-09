@@ -378,14 +378,23 @@ public abstract class SqlDialect
         appendSelectAutoIncrement(sql, table, columnName, null);
     }
 
+    // TODO: Switch appendSelectAutoIncrement usages to this
+    public abstract void addReselect(SQLFragment sql, String columnName, @Nullable String variable);
+
+    public void addReselect(SQLFragment sql, String columnName)
+    {
+        addReselect(sql, columnName, null);
+    }
+
+    // Could be INSERT, UPDATE, or DELETE statement
+    public abstract @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException;
+
     private static final InClauseGenerator GENERATOR = new ParameterMarkerInClauseGenerator();
 
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
     {
         return GENERATOR.appendInClauseSql(sql, params);
     }
-
-    public abstract @Nullable ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException;
 
     public abstract boolean requiresStatementMaxRows();
 

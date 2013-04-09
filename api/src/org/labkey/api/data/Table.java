@@ -909,7 +909,7 @@ public class Table
             }
             else
             {
-                rs = table.getSqlDialect().executeInsertWithResults(stmt);
+                rs = table.getSqlDialect().executeWithResults(stmt);
 
                 if (null != rs)
                 {

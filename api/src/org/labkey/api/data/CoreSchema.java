@@ -131,4 +131,9 @@ public class CoreSchema
     {
         return getSchema().getTable("MvIndicators");
     }
+
+    public TableInfo getTableInfoDbSequences()
+    {
+        return getSchema().getTable("DbSequences");
+    }
 }

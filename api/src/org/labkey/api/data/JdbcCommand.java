@@ -37,7 +37,7 @@ public abstract class JdbcCommand
     private final @Nullable Connection _conn;
     private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
     private Level _logLevel = Level.WARN;  // Log all warnings and errors by default
-    private Logger _log = LOG;   // Passed to getConnection(), can be customized via getLogger()
+    private Logger _log = LOG;   // Passed to getConnection(), can be customized via setLogger()
     private @Nullable AsyncQueryRequest _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
 

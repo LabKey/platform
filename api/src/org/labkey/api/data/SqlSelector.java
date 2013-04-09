@@ -16,17 +16,26 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.sql.Connection;
 import java.util.List;
 
 public class SqlSelector extends ExecutingSelector<SqlSelector.SimpleSqlFactory, SqlSelector>
 {
     private final SQLFragment _sql;
 
+    // Execute select SQL against a scope, with the ability to provide a connection
+    public SqlSelector(DbScope scope, @Nullable Connection conn, SQLFragment sql)
+    {
+        super(scope, conn);
+        _sql = sql;
+    }
+
     // Execute select SQL against a scope
     public SqlSelector(DbScope scope, SQLFragment sql)
     {
-        super(scope);
-        _sql = sql;
+        this(scope, null, sql);
     }
 
     // Execute select SQL against a scope
