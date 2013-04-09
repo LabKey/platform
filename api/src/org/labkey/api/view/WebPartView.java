@@ -433,7 +433,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 break;
 
             case DIV:
-                out.printf("<div class=\"%s\">", className);
+                if (className != null && className.length() > 0)
+                    out.printf("<div class=\"%s\">", className);
+                else
+                    out.printf("<div>");
                 break;
 
             case TITLE:

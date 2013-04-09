@@ -1406,6 +1406,7 @@ api/src/org/labkey/api/view/template/bodyTemplate.jsp -text
 api/src/org/labkey/api/view/template/dialogTemplate.jsp -text
 api/src/org/labkey/api/view/template/header.jsp -text
 api/src/org/labkey/api/view/template/menuBar.jsp -text
+api/src/org/labkey/api/view/template/menuBarDev.jsp -text
 api/src/org/labkey/api/view/template/wizardTemplate.jsp -text
 api/src/org/labkey/api/visualization/GenericChartReport.java -text
 api/src/org/labkey/api/visualization/GenericChartReportDescriptor.java -text
@@ -5114,6 +5115,8 @@ internal/webapp/_images/go-next.png -text
 internal/webapp/_images/go-previous-disabled.png -text
 internal/webapp/_images/go-previous.png -text
 internal/webapp/_images/grab.png -text
+internal/webapp/_images/icon_menu_folders.png -text
+internal/webapp/_images/icon_menu_projects.png -text
 internal/webapp/_images/icons.css -text
 internal/webapp/_images/info.png -text
 internal/webapp/_images/key.png -text

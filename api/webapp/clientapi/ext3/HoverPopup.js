@@ -36,37 +36,30 @@ LABKEY.HoverPopup = function(config)
     LABKEY.HoverPopup.superclass.constructor.call(this);
 
     this.extElem = Ext.get(config.hoverElem);
-    if (!this.extElem)
+    if (!this.extElem) {
         return;             // Custom Menu Bar may be hidden in which case element is null
+    }
 
-    var dh = Ext.DomHelper;
-    var popup = dh.insertAfter("menubar",
+    this.showDelay = 150;
+
+    var popup = Ext.DomHelper.insertAfter("menubar",
             {id:config.hoverElem + "_menu", tag:"div", cls:"labkey-webpart-menu",
-                children:[{tag:"div", cls:"loading-indicator", style:"width:100;height:100"}]});
+                children:[{tag:"div", cls:"loading-indicator", style:"width:100px;height:100px"}]});
     this.extPopup = new Ext.Layer({shadow:true,shadowOffset:8,zindex:1000},popup);
     this.webPartName = config.webPartName;
     this.partConfig = config.partConfig || {};
 
     this.extElem.hover(function(e) {
-            this.cancelHide();
-            if (LABKEY.HoverPopup._visiblePopup) //show immediately if we already have a menu up
-                this.showFn();
-            else //Otherwise make sure that someone hovers for a while
-                this.delayShow();
-        }, function (e) {
-            if (!this.extElem.getRegion().contains(e.getPoint()) && !this.extPopup.getRegion().contains(e.getPoint()))
-            {
-                this.delayHide();
-            }
-        }, this);
-    this.extPopup.hover(function(e) {
         this.cancelHide();
-    }, function (e) {
-        if (!this.extPopup.getRegion().contains(e.getPoint()) && !this.extElem.getRegion().contains(e.getPoint()))
-        {
-            this.delayHide();
-        }
-    }, this);
+
+        // show immediately if we already have a menu up
+        // Otherwise, make sure that someone hovers for a while
+        LABKEY.HoverPopup._visiblePopup ? this.showFn() : this.delayShow();
+
+    }, this.delayCheck, this);
+
+    this.extPopup.hover(this.cancelHide, this.delayCheck, this);
+
     //Update the shadow on click, since we sometimes cause the change of the inner div
     this.extPopup.on("click", function(e) {this.extPopup.enableShadow(true)}, this);
 };
@@ -74,19 +67,25 @@ LABKEY.HoverPopup = function(config)
 Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
     //private
     cancelHide: function() {
-        if (this.hideTimeout)
-        {
+        if (this.hideTimeout) {
             clearTimeout(this.hideTimeout);
             delete this.hideTimeout;
         }
     },
 
     //private
+    delayCheck : function(e) {
+        if (!this.extElem.getRegion().contains(e.getPoint()) && !this.extPopup.getRegion().contains(e.getPoint())) {
+            this.delayHide();
+        }
+    },
+
+    //private
     delayHide: function() {
-        if (this.hideTimeout)
+        if (this.hideTimeout) {
             clearTimeout(this.hideTimeout);
-        if (this.showTimeout)
-        {
+        }
+        if (this.showTimeout) {
             clearTimeout(this.showTimeout);
             delete this.showTimeout;
         }
@@ -95,18 +94,18 @@ Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
 
     //private
     delayShow: function() {
-        if (!this.showTimeout)
-            this.showTimeout = this.showFn.defer(400, this);
+        if (!this.showTimeout) {
+            this.showTimeout = this.showFn.defer(this.showDelay, this);
+        }
     },
 
     //private
     showFn: function() {
-        if (LABKEY.HoverPopup._visiblePopup)
-        {
-            if (LABKEY.HoverPopup._visiblePopup == this)
+        if (LABKEY.HoverPopup._visiblePopup) {
+            if (LABKEY.HoverPopup._visiblePopup == this) {
                 return;
-            else
-            {
+            }
+            else {
                 LABKEY.HoverPopup._visiblePopup.hideFn();
             }
         }
@@ -114,18 +113,20 @@ Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
         //console.log(this.extElem.id  + " extPopup.y: " + this.extPopup.getY());
         if (!this.rendered) {
             var p = new LABKEY.WebPart({
-            partName: this.webPartName,
-            renderTo: this.extPopup.id,
-            frame: 'none',
-            partConfig: this.partConfig,
-            failure:function(err) {if (window.console && window.console.log) { window.console.log(err);}},
-            success:function() {
-                        var x = function() {this.extPopup.enableShadow(true);};
-                        x.defer(100, this);},
-            scope:this
+                partName   : this.webPartName,
+                renderTo   :  this.extPopup.id,
+                frame      : 'none',
+                partConfig : this.partConfig,
+                failure : function(err) {if (window.console && window.console.log) { window.console.log(err);}},
+                success : function() {
+                    var x = function() {this.extPopup.enableShadow(true);};
+                    x.defer(100, this);
+                },
+                scope:this
             });
             p.render();
             this.rendered = true;
+            this.showDelay = 100; // show more quickly
         }
         this.extPopup.show();
         this.extPopup.constrain = false;
@@ -139,8 +140,9 @@ Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
     hideFn: function () {
         this.extElem.removeClass("selected");
         this.extPopup.hide();
-        if (LABKEY.HoverPopup._visiblePopup == this)
+        if (LABKEY.HoverPopup._visiblePopup == this) {
             LABKEY.HoverPopup._visiblePopup = null;
+        }
     }
 });
 

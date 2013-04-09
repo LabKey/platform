@@ -38,11 +38,12 @@ public class MenuBarView extends JspView<List<Portal.WebPart>>
     public MenuBarView(List<Portal.WebPart> menus)
     {
         super(MenuBarView.class,  "menuBar.jsp", menus);
+        setFrame(FrameType.NONE);
     }
 
     public MenuBarView(ViewContext ctx)
     {
-        super(MenuBarView.class, "menuBar.jsp", null);
+        this(Collections.<Portal.WebPart>emptyList());
         Container container = ctx.getContainer();
         Container project = container.getProject();
 
