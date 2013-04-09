@@ -205,7 +205,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         study.setStartDate(_sourceStudy.getStartDate());
         study.setSecurityType(securityType);
         Container sourceContainer = ContainerManager.getForPath(form.getSrcPath());
-        if (!form.isPublish())
+        if (!form.isPublish() || form.isUpdate())
         {
             study.setSourceStudyContainerId(sourceContainer.getId());
         }

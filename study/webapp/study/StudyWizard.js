@@ -749,7 +749,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             items: [
                 {xtype: 'hidden', name: 'updateDelay', value: 30},
                 {xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, items: [
-                    {name: 'autoRefresh', boxLabel: 'Automatic', inputValue: true, checked: true},
+                    {name: 'autoRefresh', boxLabel: this.mode == 'publish'? 'None' : 'Automatic', inputValue: true, checked: true},
                     {name: 'autoRefresh', boxLabel: 'Manual', inputValue: false}]
                 }
             ],
@@ -759,8 +759,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             width : 300
         });
 
-        if (this.mode != 'publish')
-            items.push(this.snapshotOptions);
+        items.push(this.snapshotOptions);
 
         var panel = new Ext.Panel({
             border: false,
@@ -1586,13 +1585,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
 
         this.nameFormPanel.doLayout();
-
-        //TODO:  Get rid of mode here, or at least make it work in the context.
-        if(this.mode != 'publish'){
-            var form = this.snapshotOptions.getForm();
-            var refreshOptions = form.getValues();
+        var form = this.snapshotOptions.getForm();
+        var refreshOptions = form.getValues();
+        if(refreshOptions.autoRefresh === 'true' && this.mode != 'publish'){
             if (refreshOptions.autoRefresh === 'true')
                 params.updateDelay = refreshOptions.updateDelay;
+        }
+        else if(refreshOptions.autoRefresh === 'false' && this.mode == 'publish')
+        {
+            params.update = true;
         }
 
         this.win.getEl().mask("creating study...");

@@ -414,7 +414,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
     {
         User user = getUser();
 
-        if (form.isPublish())
+        if (!form.isUpdate())
         {
             VirtualFile studyDir = vf.getDir("study");
             StudyDocument studyDoc = getStudyDocument(studyDir);

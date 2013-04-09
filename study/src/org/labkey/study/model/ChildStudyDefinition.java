@@ -37,6 +37,7 @@ public class ChildStudyDefinition
     private String[] _views;
     private String[] _reports;
     private int[] _datasets = new int[0];
+    private boolean update;
     private int _updateDelay;
     private String[] _studyProps;
     private String[] _folderProps;
@@ -128,6 +129,16 @@ public class ChildStudyDefinition
     public void setGroups(int[] groups)
     {
         _groups = groups;
+    }
+
+    public boolean isUpdate()
+    {
+        return update;
+    }
+
+    public void setUpdate(boolean update)
+    {
+        this.update = update;
     }
 
     public int getUpdateDelay()
