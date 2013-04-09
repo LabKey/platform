@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* dataintegration-0.00-0.01.sql */
+
 CREATE SCHEMA dataintegration
 GO
 
@@ -72,3 +74,18 @@ CREATE TABLE dataintegration.TransformConfiguration
 );
 
 CREATE INDEX IDX_TransformConfiguration_Container ON dataintegration.TransformRun(Container);
+
+/* dataintegration-0.01-0.02.sql */
+
+ALTER TABLE dataintegration.TransformConfiguration
+   ADD CONSTRAINT PK_TransformConfiguration PRIMARY KEY (RowId);
+
+/* dataintegration-0.02-0.03.sql */
+
+ALTER TABLE dataintegration.TransformRun ADD CONSTRAINT PK_TransformRun PRIMARY KEY (RowId);
+
+/* dataintegration-0.03-0.04.sql */
+
+DROP INDEX dataintegration.TransformRun.IDX_TransformConfiguration_Container;
+ALTER TABLE dataintegration.TransformConfiguration DROP CONSTRAINT UQ_TransformConfiguration_TransformId;
+ALTER TABLE dataintegration.TransformConfiguration ADD CONSTRAINT UQ_TransformConfiguration_TransformId UNIQUE (Container, TransformId);

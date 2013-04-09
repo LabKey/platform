@@ -81,7 +81,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 12.30;
+        return 13.10;
     }
 
     protected void init()

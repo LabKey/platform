@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* query-12.301-12.31.sql */
+
 ALTER TABLE query.ExternalSchema
     ADD SchemaType NVARCHAR(50) NOT NULL CONSTRAINT DF_ExternalSchema_SchemaType DEFAULT 'external';
 
@@ -34,3 +36,28 @@ ALTER TABLE query.ExternalSchema
     CHECK ((SchemaTemplate IS NULL     AND SourceSchemaName IS NOT NULL AND Tables IS NOT NULL) OR
            (SchemaTemplate IS NOT NULL AND SourceSchemaName IS NULL     AND Tables IS NULL    ))
 
+/* query-12.31-12.32.sql */
+
+-- Remove default '*' and allow null Tables column
+EXEC core.fn_dropifexists 'ExternalSchema', 'query', 'DEFAULT', 'Tables';
+ALTER TABLE query.ExternalSchema ALTER COLUMN Tables varchar(8000) NULL;
+
+/* query-12.32-12.33.sql */
+
+-- Also checked in as query-12.30-12.301 since it's safe to rerun.
+-- BE SURE TO CONSOLIDATE QUERY MODULE SCRIPTS STARTING WITH 12.301 for the 13.1 release.
+
+ALTER TABLE query.customview ALTER COLUMN "schema" NVARCHAR(200);
+
+/* query-12.33-12.34.sql */
+
+-- Remove check constraint to allow overriding the schema template,
+-- but continue to require NOT NULL SourceSchemaName and Tables when SchemaTemplate IS NULL.
+ALTER TABLE query.ExternalSchema
+   DROP CONSTRAINT "CK_SchemaTemplate";
+
+GO
+
+ALTER TABLE query.ExternalSchema
+    ADD CONSTRAINT "CK_SchemaTemplate"
+    CHECK (SchemaTemplate IS NOT NULL OR (SchemaTemplate IS NULL AND SourceSchemaName IS NOT NULL AND Tables IS NOT NULL));

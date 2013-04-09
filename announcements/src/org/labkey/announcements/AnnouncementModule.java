@@ -93,7 +93,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public double getVersion()
     {
-        return 12.32;
+        return 13.10;
     }
 
     @Override

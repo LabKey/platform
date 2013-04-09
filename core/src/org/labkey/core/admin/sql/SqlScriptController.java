@@ -238,7 +238,7 @@ public class SqlScriptController extends SpringActionController
             // and don't run during bootstrap.
             if (AppProps.getInstance().isDevMode())
             {
-                for (String name : new String[]{"luminex-11.31-12.10.sql", "study-11.101-11.20.sql"})    // TODO: Add "query-12.301-13.10.sql" at 13.1 rollup time
+                for (String name : new String[]{"luminex-11.31-12.10.sql", "study-11.101-11.20.sql", "query-12.301-13.10.sql"})
                 {
                     if (-1 == html.indexOf(name))
                         html.insert(0, "<span class=\"labkey-error\">Warning: " + PageFlowUtil.filter(name) + " did not appear!</span><br>\n");
@@ -419,10 +419,10 @@ public class SqlScriptController extends SpringActionController
         {
             // Ending version should be next 0.1 increment after last script in this batch, unless it's already a 0.1 multiple
             // or we're targeting something less
-            double adjustedTo = Math.min(Math.floor(_actualTo * 10 + .999)/10, _targetTo);
+//            double adjustedTo = Math.min(Math.floor(_actualTo * 10 + .999)/10, _targetTo);
 
             // TODO: Shouldn't provider assemble the filename?
-            return getSchemaName() + "-" + ModuleContext.formatVersion(_targetFrom) + "-" + ModuleContext.formatVersion(adjustedTo) + ".sql";
+            return getSchemaName() + "-" + ModuleContext.formatVersion(_targetFrom) + "-" + ModuleContext.formatVersion(_targetTo) + ".sql";
         }
 
         private String getModuleName()
