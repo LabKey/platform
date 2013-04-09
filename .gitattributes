@@ -708,6 +708,7 @@ core/src/org/labkey/core/portal/UtilController.java -text
 core/src/org/labkey/core/portal/customizeErrors.jsp -text
 core/src/org/labkey/core/portal/testsvg.jsp -text
 core/src/org/labkey/core/project/modulePropertiesAdmin.jsp -text
+core/src/org/labkey/core/project/projectNav.jsp -text
 core/src/org/labkey/core/project/projects.jsp -text
 core/src/org/labkey/core/query/AttachmentAuditViewFactory.java -text
 core/src/org/labkey/core/query/ContainerAuditViewFactory.java -text

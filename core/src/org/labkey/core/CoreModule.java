@@ -352,6 +352,22 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         return view;
                     }
                 },
+                new BaseWebPartFactory("ProjectNav")
+                {
+                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    {
+                        JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/core/project/projectNav.jsp", webPart);
+                        view.setTitle("Project Navigation");
+                        view.setFrame(WebPartView.FrameType.NONE);
+                        return view;
+                    }
+
+                    @Override
+                    public boolean isAvailable(Container c, String location)
+                    {
+                        return false;
+                    }
+                },
                 new AlwaysAvailableWebPartFactory("Custom Menu", WebPartFactory.LOCATION_MENUBAR, true, true) {
                     public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
