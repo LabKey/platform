@@ -4494,10 +4494,8 @@ public class StudyController extends BaseStudyController
         {
             String order = form.getOrder();
 
-            if (order != null && order.length() > 0)
+            if (order != null && order.length() > 0 && !form.isResetOrder())
             {
-                if (form.isResetOrder())
-                    throw new IllegalStateException("Cannot both set and reset order.");
                 String[] ids = order.split(",");
                 List<Integer> orderedIds = new ArrayList<Integer>(ids.length);
 
