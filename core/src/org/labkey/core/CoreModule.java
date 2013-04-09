@@ -196,7 +196,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public double getVersion()
     {
-        return 13.10;
+        return 13.11;
     }
 
     @Override
@@ -665,7 +665,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ContainerDisplayColumn.TestCase.class,
                 SimpleFilter.InClauseTestCase.class,
                 AliasManager.TestCase.class,
-                AtomicDatabaseInteger.TestCase.class
+                AtomicDatabaseInteger.TestCase.class,
+                DbSequenceManager.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 

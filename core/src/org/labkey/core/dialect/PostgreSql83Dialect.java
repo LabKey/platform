@@ -279,13 +279,22 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
+    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
+    {
+        if (null == variable)
+            sql.append("\nRETURNING ").append(columnName);
+        else
+            sql.append("\nRETURNING ").append(columnName).append(" INTO ").append(variable);
+    }
+
+    @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
     {
         return _inClauseGenerator.appendInClauseSql(sql, params);
     }
 
     @Override
-    public ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException
+    public ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
         return stmt.executeQuery();
     }

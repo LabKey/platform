@@ -214,7 +214,38 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
 
     @Override
-    public @Nullable ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException
+    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
+    {
+        String trimmed = sql.toString().trim();
+
+        if (StringUtils.startsWithIgnoreCase(trimmed, "INSERT") || StringUtils.startsWithIgnoreCase(trimmed, "UPDATE"))
+        {
+            StringBuilder outputSql = new StringBuilder("OUTPUT INSERTED.");
+            outputSql.append(columnName);
+            outputSql.append(" ");
+
+            if (null != variable)
+            {
+                outputSql.append("INTO ");
+                outputSql.append(variable);
+                outputSql.append(" ");
+            }
+
+            int idx = StringUtils.indexOfIgnoreCase(sql.getSqlCharSequence(), "WHERE");
+
+            if (idx > -1)
+                sql.insert(idx, outputSql.toString());
+            else
+                sql.append(outputSql);
+        }
+        else
+        {
+            throw new IllegalStateException("Can re-select only from INSERT or UPDATE statement");
+        }
+    }
+
+    @Override
+    public @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
         return stmt.executeQuery();
 //        stmt.execute();

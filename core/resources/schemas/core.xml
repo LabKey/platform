@@ -576,4 +576,13 @@
       <ns:column columnName="properties"/>
     </ns:columns>
   </ns:table>
+  <ns:table tableName="DbSequences" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="Id"/>
+      <ns:column columnName="Value"/>
+    </ns:columns>
+  </ns:table>
 </ns:tables>
