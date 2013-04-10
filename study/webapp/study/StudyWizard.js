@@ -1590,8 +1590,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         if(refreshOptions.autoRefresh === 'true' && this.mode != 'publish'){
             if (refreshOptions.autoRefresh === 'true')
                 params.updateDelay = refreshOptions.updateDelay;
+            params.update = true;
         }
-        else if(refreshOptions.autoRefresh === 'false' && this.mode == 'publish')
+        else if(refreshOptions.autoRefresh === 'true' && this.mode == 'publish')
+        {
+            params.update = false;
+        }
+        else
         {
             params.update = true;
         }
