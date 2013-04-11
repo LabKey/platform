@@ -42,7 +42,7 @@ public class ListService
         Map<String, ListDefinition> getLists(Container container);
         boolean hasLists(Container container);
         ListDefinition createList(Container container, String name);
-        ListDefinition getList(Container container, int id);
+        ListDefinition getList(Container container, int listId);
         @Nullable ListDefinition getList(Container container, String name);
         ListDefinition getList(Domain domain);
         ActionURL getManageListsURL(Container container);

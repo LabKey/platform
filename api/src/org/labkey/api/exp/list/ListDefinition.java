@@ -291,6 +291,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
         }
     }
 
+    @Deprecated  // Old, crufty global rowId... only used for item index tables. Remove completely on hard table conversion.
+    int getRowId();
     int getListId();
     Container getContainer();
     Domain getDomain();

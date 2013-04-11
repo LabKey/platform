@@ -111,7 +111,7 @@ public class FolderExportContext extends AbstractFolderContext
 
     public void setReportIds(String[] reportIds)
     {
-        _reportIds = new HashSet<String>(Arrays.asList(reportIds));
+        _reportIds = new HashSet<>(Arrays.asList(reportIds));
     }
 
     public Set<String> getViewIds()
@@ -121,7 +121,7 @@ public class FolderExportContext extends AbstractFolderContext
 
     public void setViewIds(String[] viewIds)
     {
-        _viewIds = new HashSet<String>(Arrays.asList(viewIds));
+        _viewIds = new HashSet<>(Arrays.asList(viewIds));
     }
 
     public Set<Integer> getListIds()
@@ -131,6 +131,6 @@ public class FolderExportContext extends AbstractFolderContext
 
     public void setListIds(Integer[] listIds)
     {
-        _listIds = new HashSet<Integer>(Arrays.asList(listIds));
+        _listIds = new HashSet<>(Arrays.asList(listIds));
     }
 }

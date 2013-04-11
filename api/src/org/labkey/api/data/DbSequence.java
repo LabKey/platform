@@ -7,16 +7,24 @@ package org.labkey.api.data;
  */
 public class DbSequence
 {
+    private final Container _c;
     private final int _rowId;
 
-    DbSequence(int rowId)
+    DbSequence(Container c, int rowId)
     {
+        _c = c;
         _rowId = rowId;
+
     }
 
     public int getRowId()
     {
         return _rowId;
+    }
+
+    public Container getContainer()
+    {
+        return _c;
     }
 
     public int current()

@@ -39,7 +39,7 @@ public class DbSequenceManager
 
     public static DbSequence get(Container c, String name, @NotNull Integer id)
     {
-        return new DbSequence(ensureSequence(c, name, id));
+        return new DbSequence(c, ensureSequence(c, name, id));
     }
 
 
@@ -70,7 +70,6 @@ public class DbSequenceManager
 
 
     // Always initializes to 0; use ensureMinimumValue() to set a higher starting point
-    // TODO: Non-transacted connection?
     private static int createSequence(Container c, String name, @NotNull Integer id)
     {
         TableInfo tinfo = getTableInfo();
@@ -85,58 +84,61 @@ public class DbSequenceManager
 
         tinfo.getSqlDialect().appendSelectAutoIncrement(insertSql, tinfo, "RowId");
 
-        SqlExecutor executor = new SqlExecutor(tinfo.getSchema().getScope());
-
-        return executor.executeWithResults(insertSql, INTEGER_RETURNING_HANDLER);
+        return executeAndReturnInteger(tinfo, insertSql);
     }
 
 
+    // Not typically needed... CoreContainerListener deletes all the sequences scoped to the container
     public static void deleteSequence(Container c, String name)
     {
         deleteSequence(c, name, 0);
     }
 
 
-    // TODO: Non-transacted connection?
+    // Useful for cases where multiple sequences are needed in a single folder, e.g., a sequence that generates row keys
+    // for a list or dataset. Like the other DbSequence operations, the delete executes outside of the current thread
+    // transaction; best practice is to commit the full object delete and then (on success) delete the associated sequence.
     public static void deleteSequence(Container c, String name, @NotNull Integer id)
     {
         Integer rowId = getRowId(c, name, id);
 
         if (null != rowId)
         {
-            try
-            {
-                Table.delete(getTableInfo(), rowId);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            TableInfo tinfo = getTableInfo();
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ? AND RowId = ?");
+            sql.add(c);
+            sql.add(rowId);
+
+            execute(tinfo, sql);
         }
+    }
+
+
+    // Used by container delete
+    // TODO: Currently called after all container listeners have successfully deleted... should this be transacted instead?
+    public static void deleteAllSequences(Container c)
+    {
+        TableInfo tinfo = getTableInfo();
+        SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ?");
+        sql.add(c);
+
+        execute(tinfo, sql);
     }
 
 
     static int current(DbSequence sequence)
     {
         TableInfo tinfo = getTableInfo();
-        SQLFragment sql = new SQLFragment("SELECT Value FROM ").append(tinfo.getSelectName()).append(" WHERE RowId = ?");
+        SQLFragment sql = new SQLFragment("SELECT Value FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ? AND RowId = ?");
+        sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
 
         DbScope scope = tinfo.getSchema().getScope();
 
-        try
+        // Separate connection that's not participating in the current transaction
+        try (Connection conn = scope.getPooledConnection())
         {
-            // Separate connection that's not participating in the current transaction
-            Connection conn = scope.getPooledConnection();
-
-            try
-            {
-                return new SqlSelector(scope, conn, sql).getObject(Integer.class);
-            }
-            finally
-            {
-                conn.close();
-            }
+            return new SqlSelector(scope, conn, sql).getObject(Integer.class);
         }
         catch (SQLException e)
         {
@@ -148,70 +150,66 @@ public class DbSequenceManager
     static int next(DbSequence sequence)
     {
         TableInfo tinfo = getTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = Value + 1 WHERE RowId = ?");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = Value + 1 WHERE Container = ? AND RowId = ?");
+        sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
 
         // Reselect the current value
         tinfo.getSqlDialect().addReselect(sql, "Value");
-        DbScope scope = tinfo.getSchema().getScope();
 
-        try
-        {
-            // Separate connection that's not participating in the current transaction
-            Connection conn = scope.getPooledConnection();
-
-            try
-            {
-                return new SqlExecutor(scope, conn).executeWithResults(sql, INTEGER_RETURNING_HANDLER);
-            }
-            finally
-            {
-                conn.close();
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return executeAndReturnInteger(tinfo, sql);
     }
 
 
-    // Sets the sequence value to requested minimum, unless it's already at or above this value. Returns the actual
-    // current value, which could be greater than the requested minimum
+    // Sets the sequence value to requested minimum, unless it's already at or above this value.
     static void ensureMinimum(DbSequence sequence, int minimum)
     {
         TableInfo tinfo = getTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE RowId = ? AND Value < ?");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE Container = ? AND RowId = ? AND Value < ?");
         sql.add(minimum);
+        sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
         sql.add(minimum);
 
-        DbScope scope = tinfo.getSchema().getScope();
-
-        try
-        {
-            // Separate connection that's not participating in the current transaction
-            Connection conn = scope.getPooledConnection();
-
-            try
-            {
-                new SqlExecutor(scope, conn).execute(sql);
-            }
-            finally
-            {
-                conn.close();
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        execute(tinfo, sql);
     }
 
 
     private static TableInfo getTableInfo()
     {
         return CoreSchema.getInstance().getTableInfoDbSequences();
+    }
+
+
+    // Executes in a separate connection that does NOT participate in the current transaction
+    private static int execute(TableInfo tinfo, SQLFragment sql)
+    {
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            return new SqlExecutor(scope, conn).execute(sql);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+
+    // Executes in a separate connection that does NOT participate in the current transaction
+    private static int executeAndReturnInteger(TableInfo tinfo, SQLFragment sql)
+    {
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            return new SqlExecutor(scope, conn).executeWithResults(sql, INTEGER_RETURNING_HANDLER);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 
