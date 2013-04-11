@@ -30,8 +30,6 @@ public class WrappedColumn extends ExprColumn
         super(col.getParentTable(), name, col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getJdbcType());
         // Need to propagate if this is a special kind of column, like "entityid" or "userid"
         setSqlTypeName(col.getSqlTypeName());
-        // Need to propagate if this is a special kind of column, like "entityid" or "userid"
-        setSqlTypeName(col.getSqlTypeName());
         setCalculated(true);
         _col = col;
     }
