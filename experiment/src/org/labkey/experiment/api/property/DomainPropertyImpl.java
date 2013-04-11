@@ -44,7 +44,6 @@ import org.labkey.api.util.StringExpressionFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -602,6 +601,43 @@ public class DomainPropertyImpl implements DomainProperty
                 break;
             }
         }
+    }
+
+    @Override
+    public void copyFrom(DomainProperty propSrc, Container targetContainer)
+    {
+        setDescription(propSrc.getDescription());
+        setFormat(propSrc.getFormat());
+        setLabel(propSrc.getLabel());
+        setName(propSrc.getName());
+        setDescription(propSrc.getDescription());
+        setConceptURI(propSrc.getConceptURI());
+        setType(propSrc.getType());
+        setDimension(propSrc.isDimension());
+        setMeasure(propSrc.isMeasure());
+        setRequired(propSrc.isRequired());
+        setExcludeFromShifting(propSrc.isExcludeFromShifting());
+        setFacetingBehavior(propSrc.getFacetingBehavior());
+        setImportAliasSet(propSrc.getImportAliasSet());
+        setProtected(propSrc.isProtected());
+        setURL(propSrc.getURL());
+        setHidden(propSrc.isHidden());
+        setShownInDetailsView(propSrc.isShownInDetailsView());
+        setShownInInsertView(propSrc.isShownInInsertView());
+        setShownInUpdateView(propSrc.isShownInUpdateView());
+        setMvEnabled(propSrc.isMvEnabled());
+        setDefaultValueTypeEnum(propSrc.getDefaultValueTypeEnum());
+        // check to see if we're moving a lookup column to another container:
+        Lookup lookup = propSrc.getLookup();
+        if (lookup != null && !getContainer().equals(targetContainer))
+        {
+            // we need to update the lookup properties if the lookup container is either the source or the destination container
+            if (lookup.getContainer() == null)
+                lookup.setContainer(propSrc.getContainer());
+            else if (lookup.getContainer().equals(targetContainer))
+                lookup.setContainer(null);
+        }
+        setLookup(lookup);
     }
 
     @Override
