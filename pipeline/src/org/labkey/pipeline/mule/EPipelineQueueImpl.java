@@ -17,6 +17,7 @@ package org.labkey.pipeline.mule;
 
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
@@ -88,15 +89,15 @@ public class EPipelineQueueImpl implements PipelineQueue
         return _factoryJms;
     }
 
-    public boolean cancelJob(Container c, PipelineStatusFile statusFile)
+    public boolean cancelJob(User user, Container c, PipelineStatusFile statusFile)
     {
         if (statusFile.getJobStore() != null)
         {
             PipelineJob job = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
             if (job != null)
             {
-                job.getLogger().info("Attempting to cancel job.");
-                PipelineJob.logStartStopInfo("Attempting to cancel job ID " + job.getJobGUID() + ", " + statusFile.getFilePath());
+                job.getLogger().info("Attempting to cancel job as requested by " + user + ".");
+                PipelineJob.logStartStopInfo("Attempting to cancel job ID " + job.getJobGUID() + ", " + statusFile.getFilePath() + " as requested by " + user);
             }
 
             // Connect to the queue to see if we can grab the job before it starts running

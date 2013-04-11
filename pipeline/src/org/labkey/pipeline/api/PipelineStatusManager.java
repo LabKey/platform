@@ -694,7 +694,7 @@ public class PipelineStatusManager
             {
                 throw new RuntimeSQLException(e);
             }
-            PipelineService.get().getPipelineQueue().cancelJob(jobContainer, statusFile);
+            PipelineService.get().getPipelineQueue().cancelJob(info.getUser(), jobContainer, statusFile);
             return true;
         }
         else

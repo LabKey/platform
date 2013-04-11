@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -174,15 +175,15 @@ public class PipelineQueueImpl implements PipelineQueue
         return c == null || c.getId().equals(job.getContainerId());
     }
 
-    public synchronized boolean cancelJob(Container c, PipelineStatusFile statusFile)
+    public synchronized boolean cancelJob(User user, Container c, PipelineStatusFile statusFile)
     {
         if (statusFile.getJobStore() != null)
         {
             PipelineJob job = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
             if (job != null)
             {
-                job.getLogger().info("Attempting to cancel");
-                PipelineJob.logStartStopInfo("Attempting to cancel job ID " + job.getJobGUID() + ", " + statusFile.getFilePath());
+                job.getLogger().info("Attempting to cancel as requested by " + user);
+                PipelineJob.logStartStopInfo("Attempting to cancel job ID " + job.getJobGUID() + ", " + statusFile.getFilePath() + " as requested by " + user);
             }
         }
 
