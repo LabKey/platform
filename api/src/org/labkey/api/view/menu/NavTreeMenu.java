@@ -43,7 +43,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
 {
     private NavTree[] _elements;
     private String _collapseId;
-    private boolean _highlightSelection = true;
+    protected boolean _highlightSelection = true;
 
     public NavTreeMenu(ViewContext context, String collapseId, String title, @Nullable ActionURL titleHref, boolean collapseByDefault, NavTree... elements)
     {

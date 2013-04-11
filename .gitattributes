@@ -1378,6 +1378,7 @@ api/src/org/labkey/api/view/WebTheme.java -text
 api/src/org/labkey/api/view/WebThemeManager.java -text
 api/src/org/labkey/api/view/menu/ContainerMenu.java -text
 api/src/org/labkey/api/view/menu/FolderAdminMenu.java -text
+api/src/org/labkey/api/view/menu/FolderMenu.java -text
 api/src/org/labkey/api/view/menu/FooterMenu.java -text
 api/src/org/labkey/api/view/menu/HomeLinkMenu.java -text
 api/src/org/labkey/api/view/menu/MenuService.java -text
@@ -5094,6 +5095,7 @@ internal/webapp/_images/editprops.png -text
 internal/webapp/_images/elipsis.gif -text
 internal/webapp/_images/email.png -text
 internal/webapp/_images/exclaim.gif -text
+internal/webapp/_images/expand-collapse.gif -text
 internal/webapp/_images/expand_folders.gif -text svneol=unset#unset
 internal/webapp/_images/favicon.ico -text
 internal/webapp/_images/filenew.png -text
@@ -5117,6 +5119,8 @@ internal/webapp/_images/go-previous.png -text
 internal/webapp/_images/grab.png -text
 internal/webapp/_images/icon_menu_folders.png -text
 internal/webapp/_images/icon_menu_projects.png -text
+internal/webapp/_images/icon_menu_projects_over.png -text
+internal/webapp/_images/icon_project.png -text
 internal/webapp/_images/icons.css -text
 internal/webapp/_images/info.png -text
 internal/webapp/_images/key.png -text
