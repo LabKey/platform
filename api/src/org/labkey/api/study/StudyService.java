@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -203,6 +204,8 @@ public class StudyService
         boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot);
 
         DataIteratorBuilder wrapSampleMindedTransform(DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target);
+
+        ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
     }
 
     public static void register(Service serviceImpl)
