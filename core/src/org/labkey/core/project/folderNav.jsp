@@ -1,8 +1,9 @@
+<%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%!
 
@@ -18,6 +19,8 @@
     FolderNavigationForm form = me.getModelBean();
     ViewContext ctx = me.getViewContext();
     String contextPath = ctx.getContextPath();
+    Path path = ctx.getContainer().getParsedPath();
+    int size = path.size();
 %>
 <style type="text/css">
 
@@ -36,9 +39,10 @@
     }
 
     .folder-trail {
-        padding: 3px 20px;
-        color: lightgray;
-        text-align: center;
+        padding: 3px 20px 7px 7px;
+        color: #a9a9a9;
+        white-space: nowrap;
+        border-bottom: 1px solid lightgray;
     }
 
     .folder-tree {
@@ -46,7 +50,6 @@
         max-height: 325px;
         overflow-x: hidden;
         overflow-y: auto;
-        border-top: 1px solid lightgray;
         padding-left: 7px;
     }
 
@@ -91,7 +94,40 @@
     }
 </style>
 <div>
-    <div class="folder-trail">---&nbsp;CRUMB TRAIL&nbsp;---</div>
+<%
+    if (size > 1)
+    {
+%>
+    <div class="folder-trail">
+        <%
+            if (size < 5)
+            {
+                for (int p=0; p < size-1; p++)
+                {
+                    %><a href="#"><%=path.get(p)%></a>&nbsp;&gt;&nbsp;<%
+                }
+                if (size > 0)
+                    %><span style="color: black;"><%=path.get(size-1)%></span><%
+            }
+            else
+            {
+                for (int p=0; p < 2; p++)
+                {
+                    %><a href="#"><%=path.get(p)%></a>&nbsp;&gt;&nbsp;<%
+                }
+                %><%="...&nbsp;&gt;&nbsp;"%><%
+                for (int p=(size-2); p < size-1 ; p++)
+                {
+                    %><a href="#"><%=path.get(p)%></a>&nbsp;&gt;&nbsp;<%
+                }
+                if (size > 0)
+                    %><span style="color: black;"><%=path.get(size-1)%></span><%
+            }
+        %>
+    </div>
+<%
+    }
+%>
     <div class="folder-tree">
         <% me.include(form.getFolderMenu(), out); %>
     </div>

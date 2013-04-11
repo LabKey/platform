@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
@@ -32,8 +34,16 @@
     JSONObject jsonProps = new JSONObject(me.getModelBean().getPropertyMap());
     String renderTarget = "project-" + me.getModelBean().getIndex();
     ViewContext ctx = me.getViewContext();
+    String contextPath = ctx.getContextPath();
     boolean isAdmin = ctx.getUser().isAdministrator();
     boolean hasPermission;
+
+    // Create Project URL
+    ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
+
+    // Permanent Link URL TODO: Establish correct URL for page, not for getWebPart
+//    ActionURL permaLinkURL = ctx.cloneActionURL();
+//    permaLinkURL.setExtraPath("__r" + Integer.toString(ctx.getContainer().getRowId()));
 
     Container target;
     String containerPath = (String)jsonProps.get("containerPath");
@@ -71,6 +81,8 @@
         cols = rowsPerCol;
         rowsPerCol = numProjects / cols;
     }
+    else
+        cols = MAX_COLS;
 
     if (rowsPerCol * cols != numProjects)
     {
@@ -88,7 +100,7 @@
 <style type="text/css">
 
     #projectBar_menu {
-        padding: 10px;
+        padding: 10px 10px 0 10px;
     }
 
     .project-nav {
@@ -115,6 +127,37 @@
         text-overflow: ellipsis;
         padding-right: 3px;
     }
+
+    .project-menu-buttons {
+        border-top: 1px solid #d5d5d5;
+        padding-top: 5px;
+        text-align: right;
+    }
+
+    .button-icon {
+        background-color: #126495;
+        opacity: 0.5;
+        display: inline-block;
+        width: 26px;
+        height: 20px;
+    }
+
+    .button-icon:hover {
+        opacity: 1.0;
+    }
+
+    .button-icon a {
+        display: inline-block;
+        width: 26px;
+        height: 20px;
+        margin-bottom: 0;
+    }
+
+    .button-icon img {
+        width: 26px;
+        height: 20px;
+        margin-bottom: 0;
+    }
 </style>
 <div class="project-nav">
     <ul>
@@ -137,6 +180,11 @@
         }
 %>
     </ul>
+
+</div>
+<div class="project-menu-buttons">
+    <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=contextPath%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
+    <span class="button-icon"><a href="#" title="Permalink Page (NYI)"><img src="<%=contextPath%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
 </div>
 <%
     }
