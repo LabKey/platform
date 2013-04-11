@@ -17,6 +17,7 @@
 package org.labkey.api.pipeline;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 
 import java.io.IOException;
 import java.util.List;
@@ -34,11 +35,12 @@ public interface PipelineQueue
      * Cancel a previously added <code>PipelineJob</code>.  The job may be still on the
      * queue or running.
      *
+     * @param user the user issuing the cancel request
      * @param c Filter for jobs started from this container.  Use null for any job.
      * @param statusFile The status object for the job
      * @return True if the job was successfully cancelled
      */
-    boolean cancelJob(Container c, PipelineStatusFile statusFile);
+    boolean cancelJob(User user, Container c, PipelineStatusFile statusFile);
 
     /**
      * This method is used to restore lost jobs, when the LabKey Server or a remote
