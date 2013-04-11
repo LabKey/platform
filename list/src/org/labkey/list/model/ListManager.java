@@ -22,9 +22,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.PkFilter;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
@@ -64,7 +65,9 @@ import java.util.Map;
 public class ListManager implements SearchService.DocumentProvider
 {
     private static final Logger LOG = Logger.getLogger(ListManager.class);
+    private static final String LIST_SEQUENCE_NAME = "org.labkey.list.Lists";
     private static final ListManager INSTANCE = new ListManager();
+
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
 
     public static ListManager get()
@@ -89,18 +92,23 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    public ListDef getList(Container container, int id)
+    public ListDef getList(Container container, int listId)
     {
-        SimpleFilter filter = new PkFilter(getTinfoList(), id);
-        filter.addCondition("Container", container);
+        SimpleFilter filter = new PkFilter(getTinfoList(), new Object[]{container, listId});
 
         return new TableSelector(getTinfoList(), filter, null).getObject(ListDef.class);
     }
 
-    
+
     // Note: callers must invoke indexer (can't invoke here since we may be in a transaction)
     public ListDef insert(User user, ListDef def) throws SQLException
     {
+        Container c = def.lookupContainer();
+        if (null == c)
+            throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+
+        DbSequence sequence = DbSequenceManager.get(c, LIST_SEQUENCE_NAME);
+        def.setListId(sequence.next());
         return Table.insert(user, getTinfoList(), def);
     }
 
@@ -108,7 +116,7 @@ public class ListManager implements SearchService.DocumentProvider
     // Note: callers must invoke indexer (can't invoke here since we may already be in a transaction)
     ListDef update(User user, ListDef def) throws SQLException
     {
-        Container c = ContainerManager.getForId(def.getContainerId());
+        Container c = def.lookupContainer();
         if (null == c)
             throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
@@ -118,8 +126,8 @@ public class ListManager implements SearchService.DocumentProvider
         try
         {
             scope.ensureTransaction();
-            ListDef old = getList(c, def.getRowId());
-            ret = Table.update(user, getTinfoList(), def, def.getRowId());
+            ListDef old = getList(c, def.getListId());
+            ret = Table.update(user, getTinfoList(), def, new Object[]{c, def.getListId()});
             if (!old.getName().equals(ret.getName()))
                 QueryService.get().updateCustomViewsAfterRename(c, ListSchema.NAME, old.getName(), def.getName());
 
@@ -265,6 +273,11 @@ public class ListManager implements SearchService.DocumentProvider
             return _list.getListId();
         }
 
+        private Container getContainer()
+        {
+            return _list.getContainer();
+        }
+
         @Override
         public void run()
         {
@@ -275,7 +288,7 @@ public class ListManager implements SearchService.DocumentProvider
         @Override
         public String toString()
         {
-            return "Indexing runnable for list " + getListId();
+            return "Indexing runnable for list " + getContainer().getPath() + ": " + getListId();
         }
 
         @Override
@@ -286,13 +299,18 @@ public class ListManager implements SearchService.DocumentProvider
 
             ListIndexRunnable that = (ListIndexRunnable) o;
 
-            return this.getListId() == that.getListId();
+            if (this.getListId() != that.getListId()) return false;
+            if (!this.getContainer().equals(that.getContainer())) return false;
+
+            return true;
         }
 
         @Override
         public int hashCode()
         {
-            return getListId();
+            int result = getContainer().hashCode();
+            result = 31 * result + getListId();
+            return result;
         }
     }
 
@@ -353,7 +371,7 @@ public class ListManager implements SearchService.DocumentProvider
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
         FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
-        FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
+        FieldKeyStringExpression bodyTemplate = createBodyTemplate(list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
 
         try
         {
@@ -478,7 +496,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (setting.indexItemData())
         {
             TableInfo ti = list.getTable(User.getSearchUser());
-            FieldKeyStringExpression template = createBodyTemplate(list, list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
+            FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
             StringBuilder data = new StringBuilder();
 
             try
@@ -567,7 +585,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private FieldKeyStringExpression createBodyTemplate(ListDefinition list, ListDefinition.BodySetting setting, @Nullable String customTemplate, TableInfo listTable)
+    private FieldKeyStringExpression createBodyTemplate(ListDefinition.BodySetting setting, @Nullable String customTemplate, TableInfo listTable)
     {
         String template;
 
@@ -612,7 +630,7 @@ public class ListManager implements SearchService.DocumentProvider
         // Using EXISTS query should be reasonably efficient.  This form (using case) seems to work on PostgreSQL and SQL Server
         SQLFragment sql = new SQLFragment("SELECT CASE WHEN EXISTS (SELECT 1 FROM " +
                 ((ListDefinitionImpl) list).getIndexTable().getSelectName() +
-                " WHERE ListId = ? AND Modified > ?) THEN 1 ELSE 0 END", list.getListId(), list.getLastIndexed());
+                " WHERE ListId = ? AND Modified > ?) THEN 1 ELSE 0 END", list.getRowId(), list.getLastIndexed());
 
         return new SqlSelector(getSchema(), sql).getObject(Boolean.class);
     }
@@ -621,7 +639,7 @@ public class ListManager implements SearchService.DocumentProvider
     public void setLastIndexed(ListDefinition list, long ms)
     {
         new SqlExecutor(getSchema()).execute("UPDATE " + getTinfoList().getSelectName() +
-                " SET LastIndexed = ? WHERE RowId = ?", new Timestamp(ms), list.getListId());
+                " SET LastIndexed = ? WHERE ListId = ?", new Timestamp(ms), list.getListId());
     }
 
 
@@ -630,7 +648,7 @@ public class ListManager implements SearchService.DocumentProvider
         TableInfo ti = ((ListDefinitionImpl) list).getIndexTable();
         String keySelectName = ti.getColumn("Key").getSelectName();   // Reserved word on sql server
         new SqlExecutor(getSchema()).execute("UPDATE " + ti.getSelectName() + " SET LastIndexed = ? WHERE ListId = ? AND " +
-                keySelectName + " = ?", new Timestamp(ms), list.getListId(), pk);
+                keySelectName + " = ?", new Timestamp(ms), list.getRowId(), pk);
     }
 
 

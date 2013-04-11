@@ -274,7 +274,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
-        Set<ModuleResourceLoader> loaders = new HashSet<ModuleResourceLoader>();
+        Set<ModuleResourceLoader> loaders = new HashSet<>();
         loaders.add(new ModuleAssayLoader());
         loaders.add(new StudyViewLoader());
         return loaders;
@@ -287,7 +287,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        return new ArrayList<>(Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory,
@@ -303,7 +303,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         if (study != null)
         {
-            Collection<String> list = new LinkedList<String>();
+            Collection<String> list = new LinkedList<>();
             list.add("Study: " + study.getLabel());
             long participants = StudyManager.getInstance().getParticipantCount(study);
             if (0 < participants)
@@ -347,7 +347,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             public Set<ExperimentRunType> getExperimentRunTypes(Container container)
             {
-                Set<ExperimentRunType> result = new HashSet<ExperimentRunType>();
+                Set<ExperimentRunType> result = new HashSet<>();
                 for (final ExpProtocol protocol : AssayService.get().getAssayProtocols(container))
                 {
                     result.add(new AssayRunType(protocol, container));
@@ -488,7 +488,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
-            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/dataViews.jsp", webPart);
+            JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/dataViews.jsp", webPart);
             view.setTitle("Data Views");
             view.setFrame(WebPartView.FrameType.PORTAL);
             Container c = portalCtx.getContainer();
@@ -543,11 +543,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
-            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/studySchedule.jsp", webPart);
+            JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/studySchedule.jsp", webPart);
             view.setTitle("Study Schedule");
             view.setFrame(WebPartView.FrameType.PORTAL);
             Container c = portalCtx.getContainer();
-            String timepointMenuName = null;
+            String timepointMenuName;
             if (StudyManager.getInstance().getStudy(c) != null && StudyManager.getInstance().getStudy(c).getTimepointType() == TimepointType.DATE)
             {
                 timepointMenuName = "Manage Timepoints";
@@ -716,7 +716,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        Set<Class> set = new HashSet<Class>();
+        Set<Class> set = new HashSet<>();
         set.add(SpecimenImporter.TestCase.class);
         set.add(StudyManager.DatasetImportTestCase.class);
         set.add(ParticipantGroupManager.ParticipantGroupTestCase.class);
@@ -731,7 +731,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getUnitTests()
     {
-        Set<Class> set = new HashSet<Class>();
+        Set<Class> set = new HashSet<>();
         set.add(SampleMindedTransformTask.TestCase.class);
         set.add(DatasetWriter.TestCase.class);
         set.add(SpecimenWriter.TestCase.class);

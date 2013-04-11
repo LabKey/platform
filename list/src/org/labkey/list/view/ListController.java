@@ -41,19 +41,15 @@ import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
@@ -65,7 +61,6 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -78,7 +73,6 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -645,7 +639,7 @@ public class ListController extends SpringActionController
     // TODO: Fix this... build into InsertView (or QueryInsertView or something)
     private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn)
     {
-        ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getViewContext()), (BindException)null);
+        ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getViewContext()), null);
         List<DisplayColumn> defaultGridColumns = lqv.getDisplayColumns();
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(defaultGridColumns.size());
 
@@ -1134,7 +1128,7 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<Object>(this.getClass(), "importLists.jsp", null, errors);
+            return new JspView<>(this.getClass(), "importLists.jsp", null, errors);
         }
 
         public boolean handlePost(Object o, BindException errors) throws Exception
@@ -1166,7 +1160,7 @@ public class ListController extends SpringActionController
 
                     ListImporter li = new ListImporter();
 
-                    List<String> errorList = new LinkedList<String>();
+                    List<String> errorList = new LinkedList<>();
 
                     try
                     {
@@ -1210,8 +1204,8 @@ public class ListController extends SpringActionController
         }
 
         private List<JSONObject> getJSONLists(Map<String, ListDefinition> lists){
-            List<JSONObject> listsJSON = new ArrayList<JSONObject>();
-            for(ListDefinition def : new TreeSet<ListDefinition>(lists.values())){
+            List<JSONObject> listsJSON = new ArrayList<>();
+            for(ListDefinition def : new TreeSet<>(lists.values())){
                 JSONObject listObj = new JSONObject();
                 listObj.put("name", def.getName());
                 listObj.put("id", def.getListId());

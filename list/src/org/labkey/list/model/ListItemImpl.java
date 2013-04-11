@@ -86,7 +86,7 @@ public class ListItemImpl implements ListItem
         _list = list;
         _itm = new ListItm();
         _itm.setEntityId(GUID.makeGUID());
-        _itm.setListId(list.getListId());
+        _itm.setListId(list.getRowId());
         _new = true;
     }
 
@@ -369,7 +369,7 @@ public class ListItemImpl implements ListItem
 
         public int getNextKey(ListDefinitionImpl list) throws SQLException
         {
-            Integer prevKey = _lastKeyByList.get(list.getListId());
+            Integer prevKey = _lastKeyByList.get(list.getRowId());
             Integer dbKey = null;
             if (prevKey == null)
             {
@@ -377,17 +377,17 @@ public class ListItemImpl implements ListItem
                 // make this query outside of any synchronization to avoid java/database deadlocks:
                 TableInfo tinfo = list.getIndexTable();
                 String keyName = tinfo.getColumn("Key").getSelectName();
-                dbKey = Table.executeSingleton(tinfo.getSchema(), "SELECT COALESCE(MAX(" + keyName + "), 0) FROM " + tinfo + " WHERE ListId = ?", new Object[]{list.getListId()}, Integer.class);
+                dbKey = Table.executeSingleton(tinfo.getSchema(), "SELECT COALESCE(MAX(" + keyName + "), 0) FROM " + tinfo + " WHERE ListId = ?", new Object[]{list.getRowId()}, Integer.class);
             }
 
             synchronized (INCREMENT_SYNC)
             {
                 // recheck the map within the synchronized block, just in case:
-                prevKey = _lastKeyByList.get(list.getListId());
+                prevKey = _lastKeyByList.get(list.getRowId());
                 if (prevKey == null)
                     prevKey = dbKey;
                 int newKey = prevKey.intValue() + 1;
-                _lastKeyByList.put(list.getListId(), newKey);
+                _lastKeyByList.put(list.getRowId(), newKey);
                 return newKey;
             }
         }
@@ -395,10 +395,6 @@ public class ListItemImpl implements ListItem
 
     private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
-        boolean ret = true;
-
-        // TODO: Get value and mvIndicator once (not once per loop iteration, etc.)
-
         //check for isRequired
         if (prop.isRequired())
         {
@@ -411,13 +407,19 @@ public class ListItemImpl implements ListItem
             }
         }
 
-        for (IPropertyValidator validator : prop.getValidators())
+        if (value instanceof ObjectProperty)
+            value = ((ObjectProperty)value).value();
+
+        if (null != value)
         {
-            if (value instanceof ObjectProperty)
-                value = ((ObjectProperty)value).value();
-            if (null != value && !validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
+            for (IPropertyValidator validator : prop.getValidators())
+            {
+                if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache))
+                    return false;
+            }
         }
-        return ret;
+
+        return true;
     }
 
     public void setProperty(DomainProperty property, Object value)

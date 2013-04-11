@@ -90,8 +90,8 @@ public class ListTable extends FilteredTable<ListSchema> implements UpdateableTa
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
-        addCondition(getRealTable().getColumn("ListId"), listDef.getListId());
-        List<ColumnInfo> defaultColumnsCandidates = new LinkedList<ColumnInfo>();
+        addCondition(getRealTable().getColumn("ListId"), listDef.getRowId());
+        List<ColumnInfo> defaultColumnsCandidates = new LinkedList<>();
 
         // All columns visible by default, except for auto-increment integer
         ColumnInfo colKey = wrapColumn(listDef.getKeyName(), getRealTable().getColumn("Key"));
@@ -308,7 +308,7 @@ public class ListTable extends FilteredTable<ListSchema> implements UpdateableTa
     {
         if (!_list.getKeyName().isEmpty() && !_list.getKeyName().equalsIgnoreCase("key"))
         {
-        CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<String>();
+            CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
             m.put("key", _list.getKeyName());
             return m;
         }
@@ -398,7 +398,7 @@ public class ListTable extends FilteredTable<ListSchema> implements UpdateableTa
 //            it.addColumn(containerCol, new SimpleTranslator.ConstantColumn(_list.getContainer().getId()));
 
             ColumnInfo listIdCol = new ColumnInfo("listid", JdbcType.INTEGER);
-            it.addColumn(listIdCol, new SimpleTranslator.ConstantColumn(_list.getListId()));
+            it.addColumn(listIdCol, new SimpleTranslator.ConstantColumn(_list.getRowId()));
 
             DataIterator ret = LoggingDataIterator.wrap(it);
 

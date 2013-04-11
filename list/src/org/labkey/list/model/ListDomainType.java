@@ -85,7 +85,7 @@ public class ListDomainType extends AbstractDomainKind
             return new SQLFragment("NULL");
         SQLFragment ret = new SQLFragment("SELECT IndexTable.ObjectId FROM ");
         ret.append(listDef.getIndexTable().getFromSQL("IndexTable"));
-        ret.append("\nWHERE IndexTable.listId = ").append(String.valueOf(listDef.getListId()));
+        ret.append("\nWHERE IndexTable.listId = ").append(String.valueOf(listDef.getRowId()));
         return ret;
     }
 

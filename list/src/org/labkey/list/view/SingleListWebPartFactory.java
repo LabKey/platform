@@ -50,12 +50,13 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
         if (null == listNameParam && null == listIdParam)
             return new HtmlView(title, "There is no list selected to be displayed in this webpart");
 
-        ListQueryForm form = null;
+        ListQueryForm form;
+
         if (listNameParam != null)
         {
             form = new ListQueryForm(listNameParam, portalCtx);
         }
-        else if (listIdParam != null)
+        else
         {
             try
             {
@@ -74,17 +75,17 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
             return new HtmlView(title, "List does not exist");
 
         form.setViewName(viewName);
-        return new SingleListWebPart(form, webPart, props);
+        return new SingleListWebPart(form, props);
     }
 
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<Portal.WebPart>("/org/labkey/list/view/customizeSingleListWebPart.jsp", webPart);
+        return new JspView<>("/org/labkey/list/view/customizeSingleListWebPart.jsp", webPart);
     }
 
     private static class SingleListWebPart extends ListQueryView
     {
-        private SingleListWebPart(ListQueryForm form, Portal.WebPart webPart, Map<String, String> props)
+        private SingleListWebPart(ListQueryForm form, Map<String, String> props)
         {
             super(form, null);
 
@@ -105,7 +106,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> serializedPropertyMap = new HashMap<>(propertyMap);
 
         // serialize the listName instead of listId, we'll try to resolve the listId on import based on the listName
         if (serializedPropertyMap.containsKey("listId"))
@@ -124,7 +125,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
     {
-        Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
+        Map<String, String> deserializedPropertyMap = new HashMap<>(propertyMap);
 
         // try to resolve the listId from the listName that was exported
         if (deserializedPropertyMap.containsKey("listName"))

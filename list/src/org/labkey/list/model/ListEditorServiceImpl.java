@@ -32,7 +32,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -128,17 +127,17 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     }
 
 
-    public GWTList getList(int id)
+    public GWTList getList(int listId)
     {
-        if (id == 0)
+        if (listId == 0)
             return null;
 
-        ListDefinition def =  ListService.get().getList(getContainer(), id); //ListManager.get().getList(getContainer(), id);
+        ListDefinition def =  ListService.get().getList(getContainer(), listId); //ListManager.get().getList(getContainer(), id);
         if (def == null)
             return null;
 
         GWTList gwt = new GWTList();
-        gwt._listId(id);
+        gwt._listId(listId);
         gwt.setName(def.getName());
         gwt.setAllowDelete(def.getAllowDelete());
         gwt.setAllowExport(def.getAllowExport());

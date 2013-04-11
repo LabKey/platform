@@ -95,10 +95,10 @@ public class ListWriter
                 {
                     // If we have a list of lists to export then we only want to export the ones in the list.
                     // If the list is null then we want to grab all of them, so we don't do anything the lists map.
-                    Iterator listIt = lists.keySet().iterator();
+                    Iterator<String> listIt = lists.keySet().iterator();
                     while (listIt.hasNext())
                     {
-                        Object key = listIt.next();
+                        String key = listIt.next();
                         ListDefinition list = lists.get(key);
                         if (!listsToExport.contains(list.getListId()))
                         {

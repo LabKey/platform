@@ -44,7 +44,9 @@ public class ListDef extends Entity implements Cloneable
         }
     }
 
-    private int _rowId;
+    @Deprecated
+    private int _rowId;  // Unique within the server... will be removed after hard table conversion
+    private int _listId; // Unique within this container
     private String _name;
     private int _domainId;
     private String _keyName;
@@ -71,14 +73,26 @@ public class ListDef extends Entity implements Cloneable
     private BodySetting _eachItemBodySetting = BodySetting.TextOnly;
     private String _eachItemBodyTemplate = null;
 
+    @Deprecated
     public int getRowId()
     {
         return _rowId;
     }
 
+    @Deprecated
     public void setRowId(int rowId)
     {
         _rowId = rowId;
+    }
+
+    public int getListId()
+    {
+        return _listId;
+    }
+
+    public void setListId(int listId)
+    {
+        _listId = listId;
     }
 
     public String getName()
@@ -376,6 +390,6 @@ public class ListDef extends Entity implements Cloneable
     @Override
     public String toString()
     {
-        return getName() + ", id: " + getRowId();
+        return getName() + ", rowid: " + getListId();
     }
 }

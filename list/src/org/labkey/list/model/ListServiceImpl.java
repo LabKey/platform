@@ -51,9 +51,9 @@ public class ListServiceImpl implements ListService.Interface
         return new ListDefinitionImpl(container, name);
     }
 
-    public ListDefinition getList(Container container, int id)
+    public ListDefinition getList(Container container, int listId)
     {
-        ListDef def = ListManager.get().getList(container, id);
+        ListDef def = ListManager.get().getList(container, listId);
         return ListDefinitionImpl.of(def);
     }
 

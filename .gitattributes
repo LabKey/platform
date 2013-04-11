@@ -862,6 +862,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-12.22-12.23.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.23-12.24.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.25-12.26.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.30-13.10.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-13.10-13.11.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -998,6 +999,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-12.23-12.24.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.24-12.25.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.25-12.26.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.30-13.10.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-13.10-13.11.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -1152,6 +1154,7 @@ experiment/src/org/labkey/experiment/ExperimentRunDetails.jsp -text
 experiment/src/org/labkey/experiment/ExperimentRunDisplayColumn.java -text
 experiment/src/org/labkey/experiment/ExperimentRunGraph.java -text
 experiment/src/org/labkey/experiment/ExperimentRunWebPartFactory.java -text
+experiment/src/org/labkey/experiment/ExperimentUpgradeCode.java -text
 experiment/src/org/labkey/experiment/ExternalDocsLabelCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/ExternalDocsURLCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/FileLinkFileListener.java -text

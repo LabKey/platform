@@ -114,9 +114,16 @@ public class ListDefinitionImpl implements ListDefinition
         _domain = PropertyService.get().createDomain(container, lsid.toString(), name);
     }
 
-    public int getListId()
+    @Deprecated // Global auto-increment that's not long for this world... needed for item index tables
+    public int getRowId()
     {
         return _def.getRowId();
+    }
+
+    @Override
+    public int getListId()
+    {
+        return _def.getListId();
     }
 
     public String getEntityId()
@@ -420,7 +427,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     private ListItem getListItem(SimpleFilter filter)
     {
-        filter.addCondition("ListId", getListId());
+        filter.addCondition("ListId", getRowId());
         ListItm itm = new TableSelector(getIndexTable(), filter, null).getObject(ListItm.class);
 
         if (itm == null)
@@ -459,7 +466,7 @@ public class ListDefinitionImpl implements ListDefinition
             ExperimentService.get().ensureTransaction();
 
             //new approach
-            SimpleFilter lstItemFilter = new SimpleFilter("ListId", getListId());
+            SimpleFilter lstItemFilter = new SimpleFilter("ListId", getRowId());
 
             //we make the assumption that big lists will have relatively few discussions and attachments
             //we find and delete these in batches of 1000, then delete the rows below
@@ -523,7 +530,7 @@ public class ListDefinitionImpl implements ListDefinition
             ListManager.get().deleteIndexedList(this);
 
             //then delete the list itself
-            Table.delete(ListManager.get().getTinfoList(), getListId());
+            Table.delete(ListManager.get().getTinfoList(), new Object[] {getContainer(), getListId()});
             Domain domain = getDomain();
             domain.delete(user);
 
@@ -862,7 +869,7 @@ public class ListDefinitionImpl implements ListDefinition
     {
         // find attachment columns
         int entityIdIndex = 0;
-        final ArrayList<_AttachmentUploadHelper> attachmentColumns = new ArrayList<_AttachmentUploadHelper>();
+        final ArrayList<_AttachmentUploadHelper> attachmentColumns = new ArrayList<>();
         for (int c=1 ; c<=it.getColumnCount() ; c++)
         {
             ColumnInfo col = it.getColumnInfo(c);
@@ -932,7 +939,7 @@ public class ListDefinitionImpl implements ListDefinition
                     AttachmentFile attachmentFile = new InputStreamAttachmentFile(aIS, filename);
                     attachmentFile.setFilename(filename);
                     if (null == attachmentFiles)
-                        attachmentFiles = new ArrayList<AttachmentFile>();
+                        attachmentFiles = new ArrayList<>();
                     attachmentFiles.add(attachmentFile);
                 }
                 if (null != attachmentFiles && !attachmentFiles.isEmpty())
@@ -1074,7 +1081,7 @@ public class ListDefinitionImpl implements ListDefinition
     public ActionURL urlFor(Class<? extends Controller> actionClass)
     {
         ActionURL ret = new ActionURL(actionClass, getContainer());
-        ret.addParameter("listId", Integer.toString(getListId()));
+        ret.addParameter("listId", getListId());
         return ret;
     }
 

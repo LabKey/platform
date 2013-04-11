@@ -116,7 +116,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.FolderMenu;
-import org.labkey.api.view.menu.NavTreeMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
@@ -312,7 +311,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         final FolderMenu folders = new FolderMenu(portalCtx);
                         form.setFolderMenu(folders);
 
-                        JspView<FolderNavigationForm> view = new JspView<FolderNavigationForm>("/org/labkey/core/project/folderNav.jsp", form);
+                        JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/folderNav.jsp", form);
                         view.setTitle("Folder Navigation");
                         view.setFrame(WebPartView.FrameType.NONE);
                         return view;
@@ -503,7 +502,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
     }
-
 
 
     @Override
@@ -871,7 +869,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         String identifiers = c.getName();
 
-        Map<String, Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<>();
 
         assert (null != keywords);
         properties.put(SearchService.PROPERTY.indentifiersMed.toString(), identifiers);

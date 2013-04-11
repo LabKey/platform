@@ -19,8 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
@@ -97,7 +97,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 13.10;
+        return 13.11;
     }
 
     protected void init()
@@ -118,6 +118,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public boolean hasScripts()
     {
         return true;
+    }
+
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new ExperimentUpgradeCode();
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
