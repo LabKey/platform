@@ -24,10 +24,7 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
@@ -60,21 +57,29 @@
     }
     NavTree projects = ContainerManager.getProjectList(ctx);
 
-    // Based on the number of projects calculate a rectangle with a maximum width of 4.
-    int rowsPerCol = projects.getChildList().size() / 4;
-    int cols = 0;
+    // TODO: check ctx.isAdminMode()?
 
-    // TODO: Adjust for remainder due to integer division
+    // Based on the number of projects calculate a rectangle with a column number of MAX_COLS
+    int MAX_COLS = 4;
 
-    if (rowsPerCol != 0 && rowsPerCol < 4)
+    int numProjects = projects.getChildCount();
+    int rowsPerCol = numProjects / MAX_COLS;
+    int cols = 1;
+
+    if (rowsPerCol != 0 && rowsPerCol < MAX_COLS)
     {
         cols = rowsPerCol;
-        rowsPerCol = projects.getChildList().size() / cols;
+        rowsPerCol = numProjects / cols;
+    }
+
+    if (rowsPerCol * cols != numProjects)
+    {
+        rowsPerCol++;
     }
 
     // Based on how these are displayed we have to walk to list/array by offset in order to display
     // the proper order to the user
-    int row = 0; int col = 0; int c; int r;
+    int c; int r;
     List<NavTree> children = projects.getChildList();
 
     if (projects.hasChildren())
@@ -96,17 +101,18 @@
 
     .project-nav ul {
         list-style: none;
-        width: <%=10*cols%>em;
+        width: <%=11.333*cols%>em;
         padding: 0;
     }
 
     .project-nav ul li {
         float: left;
-        width: 10em;
+        width: 11em;
         height: 25px;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
+        padding-right: 3px;
     }
 </style>
 <div class="project-nav">
@@ -117,17 +123,20 @@
             for (c=0; c < cols; c++)
             {
                 int idx = (rowsPerCol*c)+r;
-                NavTree p = children.get(idx);
 
-                %><li>
-                    <a title="<%=p.getText()%>" href="<%=p.getHref()%>"><%=p.getText()%></a>
-                </li><%
+                if (idx < (children.size()))
+                {
+                    NavTree p = children.get(idx);
+
+                    %><li>
+                        <a title="<%=p.getText()%>" href="<%=p.getHref()%>"><%=p.getText()%></a>
+                    </li><%
+                }
             }
         }
 %>
     </ul>
 </div>
-<div><%=generateButton("Create Project", "#")%></div>
 <%
     }
 %>

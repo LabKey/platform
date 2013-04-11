@@ -115,6 +115,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.ContainerMenu;
+import org.labkey.api.view.menu.FolderMenu;
+import org.labkey.api.view.menu.NavTreeMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
@@ -145,6 +147,7 @@ import org.labkey.core.login.LoginController;
 import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
+import org.labkey.core.project.FolderNavigationForm;
 import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.labkey.core.query.ContainerAuditViewFactory;
 import org.labkey.core.query.CoreQuerySchema;
@@ -298,6 +301,34 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         };
                         v.setFrame(WebPartView.FrameType.PORTAL);
                         return v;
+                    }
+                },
+                new BaseWebPartFactory("FolderNav")
+                {
+                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    {
+                        FolderNavigationForm form = getForm(portalCtx);
+
+                        final FolderMenu folders = new FolderMenu(portalCtx);
+                        form.setFolderMenu(folders);
+
+                        JspView<FolderNavigationForm> view = new JspView<FolderNavigationForm>("/org/labkey/core/project/folderNav.jsp", form);
+                        view.setTitle("Folder Navigation");
+                        view.setFrame(WebPartView.FrameType.NONE);
+                        return view;
+                    }
+
+                    @Override
+                    public boolean isAvailable(Container c, String location)
+                    {
+                        return false;
+                    }
+
+                    private FolderNavigationForm getForm(ViewContext context)
+                    {
+                        FolderNavigationForm form = new FolderNavigationForm();
+                        form.setPortalContext(context);
+                        return form;
                     }
                 },
                 new BaseWebPartFactory("Workbooks")
