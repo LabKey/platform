@@ -97,6 +97,7 @@
         min-width: 280px;
         max-width: 800px;
         white-space: nowrap;
+        display: inline-block;
     }
 
     .project-nav ul {
