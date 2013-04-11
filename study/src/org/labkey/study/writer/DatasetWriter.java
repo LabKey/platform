@@ -279,16 +279,7 @@ public class DatasetWriter implements InternalStudyWriter
         {
             if (column.getColumnName().equalsIgnoreCase(participantIdColumnName))
             {
-                // join to the study.participant table to get the participant's alternateId
-                SQLFragment sql = new SQLFragment();
-                sql.append("(SELECT p.AlternateId FROM ");
-                sql.append(StudySchema.getInstance().getTableInfoParticipant());
-                sql.append(" p  WHERE p.participantid = ");
-                sql.append(column.getValueSql(ExprColumn.STR_TABLE_ALIAS));
-                sql.append(" AND p.container = ?)");
-                sql.add(c);
-
-                ColumnInfo newColumn = new ExprColumn(ti, column.getName(), sql, column.getJdbcType(), column);
+                ColumnInfo newColumn = StudyService.get().createAlternateIdColumn(ti, column, c);
                 columns.remove(column);
                 columns.add(newColumn);
                 break;

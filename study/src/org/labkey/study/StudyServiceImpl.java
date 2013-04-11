@@ -35,6 +35,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -900,5 +901,20 @@ public class StudyServiceImpl implements StudyService.Service
     public DataIteratorBuilder wrapSampleMindedTransform(DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
     {
         return SampleMindedTransformTask.wrapSampleMindedTransform(in,context,study,target);
+    }
+
+    @Override
+    public ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c)
+    {
+        // join to the study.participant table to get the participant's alternateId
+        SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT p.AlternateId FROM ");
+        sql.append(StudySchema.getInstance().getTableInfoParticipant());
+        sql.append(" p  WHERE p.participantid = ");
+        sql.append(column.getValueSql(ExprColumn.STR_TABLE_ALIAS));
+        sql.append(" AND p.container = ?)");
+        sql.add(c);
+
+        return new ExprColumn(ti, column.getName(), sql, column.getJdbcType(), column);
     }
 }

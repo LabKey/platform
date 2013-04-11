@@ -37,6 +37,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.XmlBeansUtil;
@@ -137,6 +138,11 @@ public class ListWriter
                 // Write data
                 Collection<ColumnInfo> columns = getColumnsToExport(ti, false, removeProtected);
 
+                if (ctx.isAlternateIds())
+                {
+                    createAlternateIdColumns(ti, columns, ctx.getContainer());
+                }
+
                 if (!columns.isEmpty())
                 {
                     List<DisplayColumn> displayColumns = new LinkedList<DisplayColumn>();
@@ -166,6 +172,22 @@ public class ListWriter
         else
         {
             return false;
+        }
+    }
+
+    public static void createAlternateIdColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
+    {
+
+        Collection<ColumnInfo> colCopy = new LinkedList<ColumnInfo>(columns);
+        String participantIdColumnName = StudyService.get().getSubjectColumnName(c);
+        for (ColumnInfo column : colCopy)
+        {
+            if (column.getName().equalsIgnoreCase(participantIdColumnName))
+            {
+                ColumnInfo newColumn = StudyService.get().createAlternateIdColumn(ti, column, c);
+                columns.remove(column);
+                columns.add(newColumn);
+            }
         }
     }
 
