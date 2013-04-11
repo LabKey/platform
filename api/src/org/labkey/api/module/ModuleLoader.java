@@ -414,8 +414,8 @@ public class ModuleLoader implements Filter
     {
         ApplicationContext parentContext = ServiceRegistry.get().getApplicationContext();
 
-        Map<String,File> moduleNameToFile = new CaseInsensitiveHashMap<File>();
-        List<Module> modules = new ArrayList<Module>();
+        Map<String, File> moduleNameToFile = new CaseInsensitiveHashMap<>();
+        List<Module> modules = new ArrayList<>();
         for(File moduleDir : explodedModuleDirs)
         {
             Module module = null;
@@ -463,18 +463,13 @@ public class ModuleLoader implements Filter
                     Properties props = new Properties();
                     if (modulePropsFile.exists())
                     {
-                        FileInputStream in = new FileInputStream(modulePropsFile);
-                        try
+                        try (FileInputStream in = new FileInputStream(modulePropsFile))
                         {
                             props.load(in);
                         }
                         catch (IOException e)
                         {
                             _log.error("Error reading module properties file '" + modulePropsFile.getAbsolutePath() + "'", e);
-                        }
-                        finally
-                        {
-                            in.close();
                         }
                     }
 
@@ -532,7 +527,7 @@ public class ModuleLoader implements Filter
 
     private void verifyJavaVersion() throws ServletException
     {
-        if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_6))
+        if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_7))
             throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 7.");
     }
 
@@ -778,7 +773,7 @@ public class ModuleLoader implements Filter
         }
         else
         {
-            return new HashMap<String, Throwable>(_moduleFailures);
+            return new HashMap<>(_moduleFailures);
         }
     }
 

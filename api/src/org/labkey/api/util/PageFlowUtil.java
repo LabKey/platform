@@ -2339,20 +2339,6 @@ public class PageFlowUtil
         return ret.toString();
     }
 
-    static public void close(Closeable closeable)
-    {
-        if (closeable == null)
-            return;
-        try
-        {
-            closeable.close();
-        }
-        catch (IOException e)
-        {
-            _log.error("Error in close", e);
-        }
-    }
-
     /**
      * CONSOLIDATE ALL .lastFilter handling
      * scope is not fully supported

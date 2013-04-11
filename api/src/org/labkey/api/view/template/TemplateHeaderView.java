@@ -16,9 +16,7 @@
 
 package org.labkey.api.view.template;
 
-import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
@@ -129,10 +127,13 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
 
     */
 
+/*
+            We no longer support Java 6
+
             // Warn about Java 6 support
             if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_7))
                 _warningMessages.add("LabKey Server no longer supports Java 6. Please upgrade your runtime to Java 7.");
-
+*/
             //FIX: 9683
             //show admins warning about inadequate heap size (<= 256Mb)
             MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
