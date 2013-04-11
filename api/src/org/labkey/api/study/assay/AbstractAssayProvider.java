@@ -778,27 +778,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 DomainProperty propCopy = domainCopy.addProperty();
                 copiedDefaults.put(propCopy, originalDefaults.get(propSrc));
-                propCopy.setDescription(propSrc.getDescription());
-                propCopy.setFormat(propSrc.getFormat());
-                propCopy.setLabel(propSrc.getLabel());
-                propCopy.setName(propSrc.getName());
-                propCopy.setDescription(propSrc.getDescription());
-                propCopy.setType(propSrc.getType());
-                propCopy.setRequired(propSrc.isRequired());
-                propCopy.setHidden(propSrc.isHidden());
-                propCopy.setMvEnabled(propSrc.isMvEnabled());
-                propCopy.setDefaultValueTypeEnum(propSrc.getDefaultValueTypeEnum());
-                // check to see if we're moving a lookup column to another container:
-                Lookup lookup = propSrc.getLookup();
-                if (lookup != null && !toCopy.getContainer().equals(targetContainer))
-                {
-                    // we need to update the lookup properties if the lookup container is either the source or the destination container
-                    if (lookup.getContainer() == null)
-                        lookup.setContainer(propSrc.getContainer());
-                    else if (lookup.getContainer().equals(targetContainer))
-                        lookup.setContainer(null);
-                }
-                propCopy.setLookup(lookup);
+                propCopy.copyFrom(propSrc, targetContainer);
             }
             copiedDomains.add(new Pair<Domain, Map<DomainProperty, Object>>(domainCopy, copiedDefaults));
         }

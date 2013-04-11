@@ -83,6 +83,10 @@ public interface DomainProperty extends ImportAliasable
     int getScale();
     String getInputType();
 
+    /**
+     * Returns mutable but snapshotted lookup info for this property.
+     * Modifying the result will NOT affect this DomainProperty unless it is then passed to setLookup()
+     */
     Lookup getLookup();
 
     void setLookup(Lookup lookup);
@@ -97,4 +101,6 @@ public interface DomainProperty extends ImportAliasable
     void addValidator(IPropertyValidator validator);
     void removeValidator(IPropertyValidator validator);
     void removeValidator(int validatorId);
+
+    void copyFrom(DomainProperty propSrc, Container targetContainer);
 }
