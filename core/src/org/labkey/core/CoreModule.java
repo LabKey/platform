@@ -368,7 +368,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
-                        JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/core/project/projects.jsp", webPart);
+                        JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
 
                         String title = webPart.getPropertyMap().containsKey("title") ? webPart.getPropertyMap().get("title") : "Projects";
                         view.setTitle(title);
@@ -387,7 +387,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
-                        JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/core/project/projectNav.jsp", webPart);
+                        JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projectNav.jsp", webPart);
                         view.setTitle("Project Navigation");
                         view.setFrame(WebPartView.FrameType.NONE);
                         return view;
@@ -423,7 +423,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
                     {
                         CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
-                        JspView<CustomizeMenuForm> view = new JspView<CustomizeMenuForm>("/org/labkey/core/admin/customizeMenu.jsp", form);
+                        JspView<CustomizeMenuForm> view = new JspView<>("/org/labkey/core/admin/customizeMenu.jsp", form);
                         view.setTitle(form.getTitle());
                         view.setFrame(WebPartView.FrameType.PORTAL);
                         return view;
@@ -489,7 +489,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
             for (Map.Entry<String,String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
             {
-                Map<String, Object> params = new HashMap<String, Object>();
+                Map<String, Object> params = new HashMap<>();
                 params.put("Container", rootContainerId);
                 params.put("MvIndicator", qcEntry.getKey());
                 params.put("Label", qcEntry.getValue());

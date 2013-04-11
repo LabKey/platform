@@ -51,7 +51,7 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
         pw.print("# ");
         pw.println(queryInfo.getFilename());
 
-        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columns.size());
+        List<DisplayColumn> displayColumns = new ArrayList<>(columns.size());
         for (ImportableColumn column : columns)
         {
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());

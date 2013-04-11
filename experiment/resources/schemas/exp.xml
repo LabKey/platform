@@ -191,6 +191,7 @@
   <ns:table tableName="List" tableDbType="TABLE">
       <ns:columns>
           <ns:column columnName="RowId" />
+          <ns:column columnName="ListId" />
           <ns:column columnName="EntityId" />
           <ns:column columnName="Created" />
           <ns:column columnName="CreatedBy" />

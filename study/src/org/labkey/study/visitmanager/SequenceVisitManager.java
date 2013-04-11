@@ -18,11 +18,10 @@ package org.labkey.study.visitmanager;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
@@ -33,6 +32,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetTableImpl;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.TreeSet;
 
@@ -247,39 +247,29 @@ public class SequenceVisitManager extends VisitManager
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
     protected void updateVisitTable(User user)
     {
-        try
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT SequenceNum\n" +
+                "FROM " + tableParticipantVisit + "\n"+
+                "WHERE container = ? AND VisitRowId IS NULL");
+        sql.add(getStudy().getContainer().getId());
+
+        final TreeSet<Double> sequenceNums = new TreeSet<>();
+
+        new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT SequenceNum\n" +
-                    "FROM " + tableParticipantVisit + "\n"+
-                    "WHERE container = ? AND VisitRowId IS NULL");
-            sql.add(getStudy().getContainer().getId());
-
-            TreeSet<Double> sequenceNums = new TreeSet<Double>();
-            Table.TableResultSet rs = new SqlSelector(schema, sql).getResultSet();
-            try
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
-                while (rs.next())
-                {
-                    sequenceNums.add(rs.getDouble(1));
-                }
+                sequenceNums.add(rs.getDouble(1));
             }
-            finally
-            {
-                rs.close();
-            }
+        });
 
-            if (sequenceNums.size() > 0)
-            {
-                StudyManager.getInstance().ensureVisits(getStudy(), user, sequenceNums, null);
-                _updateVisitRowId();
-            }
-        }
-        catch (SQLException x)
+        if (sequenceNums.size() > 0)
         {
-            throw new RuntimeSQLException(x);
+            StudyManager.getInstance().ensureVisits(getStudy(), user, sequenceNums, null);
+            _updateVisitRowId();
         }
     }
 
