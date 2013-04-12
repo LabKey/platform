@@ -82,10 +82,14 @@
 
         // add a cell to show the file name after selection
         cell = row.insertCell(-1);
+        cell.width = "100%";
         cell.innerHTML = '<label id="label' + id + '"></label>'; 
 
+        // add a new row for file-upload-warning error messages, collapses by default
+        var row = tbl.insertRow(-1);
         cell = row.insertCell(-1);
-        cell.innerHTML = "<span class='labkey-error' id='file-upload-warning" + currentIndex + "'></span>";
+        cell.colSpan = 20;
+        cell.innerHTML = "<label class='labkey-error' id='file-upload-warning" + currentIndex + "'></label>";
     }
 
     /**
@@ -111,7 +115,9 @@
         var row = document.getElementById("file-upload-row" + index);
         if (row)
         {
-            tbl.deleteRow(row.rowIndex);
+            rowIndex = row.rowIndex;
+            tbl.deleteRow(rowIndex);  // delete a second row for the (possibly empty) error message row
+            tbl.deleteRow(rowIndex);
             _fileUploadIndex--;
 
             reindexFileUploadInputRows();
@@ -124,19 +130,23 @@
     function reindexFileUploadInputRows()
     {
         var tbl = document.getElementById("file-upload-tbl");
-        for (var i = 0; i < tbl.rows.length; i++)
+        for (var j = 0; j < tbl.rows.length; j=j+2)
         {
-            var row = tbl.rows[i];
+            // A given file upload control consists of 2 rows, 1 upload 1 error
+            var i = j/2;
+            var row = tbl.rows[j];  // use j to select the appropriate row in the table
 
             // get the previous row number for this row to help with resetting the input name
             var prevRowNum = row.id.substring(row.id.indexOf("-row")+4);
             row.id = "file-upload-row" + i;
 
+            // all elements for a give file-upload element should be reindexed
             document.getElementById(_prefix + prevRowNum).name = _prefix + (i > 0 ? i : "");
             document.getElementById(_prefix + prevRowNum).id = _prefix + i;
             row.cells[1].innerHTML = "<a id='file-upload-remove" + i + "' class='labkey-file-remove-icon labkey-file-remove-icon-disabled' onClick='removeFileUploadInputRow(this, " + i + ");'><span>&nbsp;</span></a>";
             document.getElementById("file-upload-add" + prevRowNum).id = "file-upload-add" + i;
             document.getElementById("label" + _prefix + prevRowNum).id = "label" + _prefix + i;
+            document.getElementById("file-upload-warning" + prevRowNum).id = "file-upload-warning" + i;
         }
 
         toggleAddRemoveButtons();
@@ -227,7 +237,20 @@
                 var element = Ext.get("file-upload-warning" + index);
                 if (jsonResponse.duplicate)
                 {
-                    element.update("Warning: A file with that name has already been uploaded. This file will be saved with a different name.");
+                    runNames = jsonResponse.runNames;
+                    response = "A file with name '" + Ext.util.Format.htmlEncode(fileName) + "' already exists.  ";
+                    if (runNames.length > 0)
+                    {
+                        response += "This file is associated with the Run ID(s): '" + Ext.util.Format.htmlEncode(runNames) + "'.  ";
+                    }
+                    else
+                    {
+                        response += "This file is not associated with a run.  "
+                    }
+                    response += "To continue with the renamed file '" + Ext.util.Format.htmlEncode(jsonResponse.newFileName) +
+                                "' click Save and Finish. To abort click Cancel. To use an alternate file name, " +
+                                "change the file name on your computer and then reselect the file.";
+                    element.update(response);
                 }
                 else
                 {
