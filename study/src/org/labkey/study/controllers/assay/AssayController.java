@@ -623,7 +623,9 @@ public class AssayController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            boolean duplicate = false;
+            boolean duplicate = false;   // if there is a filename conflict, set to true
+            String newFileName = null;   // if there is a filename conflict, this alternate filename will be used.
+            List<String> runNames = new ArrayList<String>();
             AssayFileWriter writer = new AssayFileWriter();
             try
             {
@@ -635,6 +637,17 @@ public class AssayController extends SpringActionController
                     if (f.exists())
                     {
                         duplicate = true;
+                        File newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
+                        newFileName = newFile.getName();
+                        ExpData expData = ExperimentService.get().getExpDataByURL(f, null); 
+                        if (expData != null)
+                        {
+                            ExpRun[] targetRuns = expData.getTargetRuns();
+                            for (ExpRun targetRun : targetRuns)
+                            {
+                                runNames.add(targetRun.getName());
+                            }
+                        }
                     }
                 }
             }
@@ -642,7 +655,11 @@ public class AssayController extends SpringActionController
             {
                 throw new AbstractFileUploadAction.UploadException(e.getMessage(), HttpServletResponse.SC_NOT_FOUND);
             }
-            return new ApiSimpleResponse("duplicate", duplicate);
+            Map<String,Object> map = new HashMap<String, Object>();
+            map.put("duplicate", duplicate);
+            map.put("newFileName", newFileName);
+            map.put("runNames", runNames);
+            return new ApiSimpleResponse(map);
         }
     }
 
