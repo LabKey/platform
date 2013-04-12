@@ -504,7 +504,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
                 return o1.getKey().compareTo(o2.getKey());
             }
         });
-        Set<String> validOptions = new HashSet<String>();
+        Set<String> validOptions = new HashSet<>();
         for (Pair<Integer, String> entry : members)
         {
             validOptions.add(entry.getValue());

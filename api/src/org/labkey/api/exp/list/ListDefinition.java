@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 public interface ListDefinition extends Comparable<ListDefinition>
 {
@@ -294,6 +295,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     @Deprecated  // Old, crufty global rowId... only used for item index tables. Remove completely on hard table conversion.
     int getRowId();
     int getListId();
+    void setPreferredListIds(Collection<Integer> preferredListIds); // Attempts to use this list IDs when inserting
     Container getContainer();
     Domain getDomain();
     String getName();
