@@ -41,10 +41,6 @@
     // Create Project URL
     ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
 
-    // Permanent Link URL TODO: Establish correct URL for page, not for getWebPart
-//    ActionURL permaLinkURL = ctx.cloneActionURL();
-//    permaLinkURL.setExtraPath("__r" + Integer.toString(ctx.getContainer().getRowId()));
-
     Container target;
     String containerPath = (String)jsonProps.get("containerPath");
     if(containerPath == null || "".equals(containerPath))
@@ -184,7 +180,16 @@
 </div>
 <div class="project-menu-buttons">
     <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=contextPath%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
-    <span class="button-icon"><a href="#" title="Permalink Page (NYI)"><img src="<%=contextPath%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
+    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=contextPath%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
+    <script type="text/javascript">
+        (function(){
+            var p = document.getElementById('permalink');
+            var pvis = document.getElementById('permalink_vis');
+            if (p && pvis) {
+                pvis.href = p.href;
+            }
+        })();
+    </script>
 </div>
 <%
     }

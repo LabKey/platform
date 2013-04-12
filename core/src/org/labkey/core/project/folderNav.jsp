@@ -5,6 +5,11 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%!
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -19,8 +24,9 @@
     FolderNavigationForm form = me.getModelBean();
     ViewContext ctx = me.getViewContext();
     String contextPath = ctx.getContextPath();
-    Path path = ctx.getContainer().getParsedPath();
-    int size = path.size();
+    User user = ctx.getUser();
+    List<Container> containers = ContainerManager.containersToRootList(ctx.getContainer());
+    int size = containers.size();
 %>
 <style type="text/css">
 
@@ -93,6 +99,17 @@
         padding-left: 20px;
     }
 </style>
+<%!
+    public String getTrailSeparator(String ctxPath)
+    {
+        return "&nbsp;<img src=\"" + ctxPath + "/_images/arrow_breadcrumb.png\" alt=\"\">&nbsp;";
+    }
+
+    public String getTrailLink(Container c, User u, String ctxPath)
+    {
+        return "<a href=\"" + c.getStartURL(u) +"\">" + c.getName() + "</a>" + getTrailSeparator(ctxPath);
+    }
+%>
 <div>
 <%
     if (size > 1)
@@ -104,24 +121,24 @@
             {
                 for (int p=0; p < size-1; p++)
                 {
-                    %><a href="#"><%=path.get(p)%></a>&nbsp;&gt;&nbsp;<%
+                    %><%=getTrailLink(containers.get(p), user, contextPath)%><%
                 }
                 if (size > 0)
-                    %><span style="color: black;"><%=path.get(size-1)%></span><%
+                    %><span style="color: black;"><%=containers.get(size-1).getName()%></span><%
             }
             else
             {
                 for (int p=0; p < 2; p++)
                 {
-                    %><a href="#"><%=path.get(p)%></a>&nbsp;&gt;&nbsp;<%
+                    %><%=getTrailLink(containers.get(p), user, contextPath)%><%
                 }
-                %><%="...&nbsp;&gt;&nbsp;"%><%
+                %>...<%=getTrailSeparator(contextPath)%><%
                 for (int p=(size-2); p < size-1 ; p++)
                 {
-                    %><a href="#"><%=path.get(p)%></a>&nbsp;&gt;&nbsp;<%
+                    %><%=getTrailLink(containers.get(p), user, contextPath)%><%
                 }
                 if (size > 0)
-                    %><span style="color: black;"><%=path.get(size-1)%></span><%
+                    %><span style="color: black;"><%=containers.get(size-1).getName()%></span><%
             }
         %>
     </div>
