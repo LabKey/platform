@@ -15,55 +15,25 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
-    int webPartId = me.getModelBean().getRowId();
-    JSONObject jsonProps = new JSONObject(me.getModelBean().getPropertyMap());
-    String renderTarget = "project-" + me.getModelBean().getIndex();
     ViewContext ctx = me.getViewContext();
     String contextPath = ctx.getContextPath();
-    boolean isAdmin = ctx.getUser().isAdministrator();
-    boolean hasPermission;
 
     // Create Project URL
     ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
 
-    Container target;
-    String containerPath = (String)jsonProps.get("containerPath");
-    if(containerPath == null || "".equals(containerPath))
-    {
-        hasPermission = true; //this means current container
-        target = ctx.getContainer();
-    }
-    else
-    {
-        target = ContainerManager.getForPath(containerPath);
-        if (target == null)
-        {
-            // Could also be an entityId
-            target = ContainerManager.getForId(containerPath);
-        }
-        hasPermission = target != null && target.hasPermission(ctx.getUser(), ReadPermission.class);
-
-        //normalize entityId vs path.
-        jsonProps.put("containerPath", target.getPath());
-    }
     NavTree projects = ContainerManager.getProjectList(ctx);
-
-    // TODO: check ctx.isAdminMode()?
 
     // Based on the number of projects calculate a rectangle with a column number of MAX_COLS
     int MAX_COLS = 4;
@@ -72,17 +42,24 @@
     int rowsPerCol = numProjects / MAX_COLS;
     int cols = 1;
 
-    if (rowsPerCol != 0 && rowsPerCol < MAX_COLS)
+    if (numProjects > 2)
     {
-        cols = rowsPerCol;
-        rowsPerCol = numProjects / cols;
+        if (rowsPerCol != 0 && rowsPerCol < MAX_COLS)
+        {
+            cols = rowsPerCol;
+            rowsPerCol = numProjects / cols;
+        }
+        else
+            cols = MAX_COLS;
+
+        if (rowsPerCol * cols != numProjects)
+        {
+            rowsPerCol++;
+        }
     }
     else
-        cols = MAX_COLS;
-
-    if (rowsPerCol * cols != numProjects)
     {
-        rowsPerCol++;
+        rowsPerCol = numProjects;
     }
 
     // Based on how these are displayed we have to walk to list/array by offset in order to display
@@ -164,7 +141,7 @@
             {
                 int idx = (rowsPerCol*c)+r;
 
-                if (idx < (children.size()))
+                if (idx < children.size())
                 {
                     NavTree p = children.get(idx);
 
@@ -176,10 +153,16 @@
         }
 %>
     </ul>
-
 </div>
 <div class="project-menu-buttons">
+<%
+    if (getViewContext().getUser().isAdministrator())
+    {
+%>
     <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=contextPath%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
+<%
+    }
+%>
     <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=contextPath%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
     <script type="text/javascript">
         (function(){
