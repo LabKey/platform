@@ -2822,7 +2822,14 @@ public class ReportsController extends SpringActionController
             {
                 Report report = id.getReport(getViewContext());
 
-                _reportName = report.getDescriptor().getReportName();
+                try
+                {
+                    _reportName = report.getDescriptor().getReportName();
+                }
+                catch(NullPointerException e)
+                {
+                    _reportName = null;
+                }
                 VBox view = new VBox(new JspView<Report>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", report));
 
                 if (!isPrint())
