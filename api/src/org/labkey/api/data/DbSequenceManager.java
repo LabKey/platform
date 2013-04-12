@@ -161,7 +161,7 @@ public class DbSequenceManager
     }
 
 
-    // Sets the sequence value to requested minimum, unless it's already at or above this value.
+    // Sets the sequence value to requested minimum, if it's currently less than this value
     static void ensureMinimum(DbSequence sequence, int minimum)
     {
         TableInfo tinfo = getTableInfo();
