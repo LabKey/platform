@@ -47,9 +47,9 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.list.xml.ListsDocument;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -90,7 +90,7 @@ public class ListImporter
             throw new InvalidFileException(ListWriter.SCHEMA_FILENAME, e);
         }
 
-        Map<String, ListsDocument.Lists.List> listSettingsMap = new HashMap<String, ListsDocument.Lists.List>();
+        Map<String, ListsDocument.Lists.List> listSettingsMap = new HashMap<>();
 
         try
         {
@@ -120,7 +120,7 @@ public class ListImporter
         }
 
         TablesType tablesXml = tablesDoc.getTables();
-        List<String> names = new LinkedList<String>();
+        List<String> names = new LinkedList<>();
 
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
 
@@ -129,14 +129,18 @@ public class ListImporter
             String name = tableType.getTableName();
             names.add(name);
 
+            Set<Integer> preferredListIds = new LinkedHashSet<>();
             ListDefinition def = lists.get(name);
 
             if (null != def)
+            {
                 def.delete(user);
+                preferredListIds.add(def.getListId());
+            }
 
             try
             {
-                createNewList(c, user, name, tableType, listSettingsMap.get(name), errors);
+                createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), errors);
             }
             catch (ImportException e)
             {
@@ -154,8 +158,8 @@ public class ListImporter
             {
                 String legalName = FileUtil.makeLegalName(name);
                 String fileName = legalName + ".tsv";
-                InputStream tsv = listsDir.getInputStream(fileName);
-                try
+
+                try (InputStream tsv = listsDir.getInputStream(fileName))
                 {
                     if (null != tsv)
                     {
@@ -167,17 +171,13 @@ public class ListImporter
                         // TODO: Error the entire job on import error?
                     }
                 }
-                finally
-                {
-                    if (tsv != null) { try { tsv.close(); } catch (IOException ignored) {} }
-                }
             }
         }
 
         log.info(names.size() + " list" + (1 == names.size() ? "" : "s") + " imported");
     }
 
-    private void createNewList(Container c, User user, String listName, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, List<String> errors) throws Exception
+    private void createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, List<String> errors) throws Exception
     {
         String keyName = listXml.getPkColumnName();
 
@@ -198,6 +198,10 @@ public class ListImporter
 
         if (null != listSettingsXml)
         {
+            // If an ID is set for this list in the archive then attempt to use it
+            if (listSettingsXml.isSetId())
+                preferredListIds.add(listSettingsXml.getId());
+
             list.setDiscussionSetting(ListDefinition.DiscussionSetting.getForValue(listSettingsXml.getDiscussions()));
             list.setAllowDelete(listSettingsXml.getAllowDelete());
             list.setAllowUpload(listSettingsXml.getAllowUpload());
@@ -217,6 +221,7 @@ public class ListImporter
             list.setEntireListBodyTemplate(listSettingsXml.getEntireListBodyTemplate());
         }
 
+        list.setPreferredListIds(preferredListIds);
         list.save(user);
 
         // TODO: This code is largely the same as SchemaXmlReader -- should consolidate

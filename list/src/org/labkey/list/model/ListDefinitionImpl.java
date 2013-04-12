@@ -74,6 +74,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -92,10 +93,13 @@ public class ListDefinitionImpl implements ListDefinition
         return new ListDefinitionImpl(def);
     }
 
-    boolean _new;
-    ListDef _defOld;
+    private boolean _new;
+    // If set to a collection of IDs, we'll attempt to use them (in succession) as the list ID on insert
+    private Collection<Integer> _preferredListIds = Collections.emptyList();
+    private ListDef _defOld;
+    private Domain _domain;
+
     ListDef _def;
-    Domain _domain;
 
     public ListDefinitionImpl(ListDef def)
     {
@@ -112,6 +116,12 @@ public class ListDefinitionImpl implements ListDefinition
         _def.setEntityId(guid);
         Lsid lsid = ListDomainType.generateDomainURI(name, container, guid);
         _domain = PropertyService.get().createDomain(container, lsid.toString(), name);
+    }
+
+    // For new lists only, we'll attempt to use these IDs at insert time
+    public void setPreferredListIds(Collection<Integer> preferredListIds)
+    {
+        _preferredListIds = preferredListIds;
     }
 
     @Deprecated // Global auto-increment that's not long for this world... needed for item index tables
@@ -361,7 +371,7 @@ public class ListDefinitionImpl implements ListDefinition
             {
                 _domain.save(user);
                 _def.setDomainId(_domain.getTypeId());
-                _def = ListManager.get().insert(user, _def);
+                _def = ListManager.get().insert(user, _def, _preferredListIds);
                 _new = false;
             }
             else

@@ -194,6 +194,7 @@ public class ListWriter
     private void writeSettings(ListsDocument.Lists.List settings, ListDefinition def)
     {
         settings.setName(def.getName());
+        settings.setId(def.getListId());
 
         if (def.getDiscussionSetting().getValue() != 0) settings.setDiscussions(def.getDiscussionSetting().getValue());
         if (!def.getAllowDelete()) settings.setAllowDelete(def.getAllowDelete());

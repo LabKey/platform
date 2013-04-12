@@ -16,6 +16,7 @@
                 <xsd:element name="list">
                     <xsd:complexType>
                         <xsd:attribute name="name" type="xsd:string" use="required"/>
+                        <xsd:attribute name="id" type="xsd:int" use="optional"/>
                         <xsd:attribute name="discussions" type="xsd:int" default="0" use="optional"/>
                         <xsd:attribute name="allowDelete" type="xsd:boolean" default="true" use="optional"/>
                         <xsd:attribute name="allowUpload" type="xsd:boolean" default="true" use="optional"/>

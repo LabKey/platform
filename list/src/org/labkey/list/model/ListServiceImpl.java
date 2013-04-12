@@ -31,7 +31,7 @@ public class ListServiceImpl implements ListService.Interface
 {
     public Map<String, ListDefinition> getLists(Container container)
     {
-        Map<String, ListDefinition> ret = new CaseInsensitiveHashMap<ListDefinition>();
+        Map<String, ListDefinition> ret = new CaseInsensitiveHashMap<>();
         for (ListDef def : ListManager.get().getLists(container))
         {
             ListDefinition list = new ListDefinitionImpl(def);

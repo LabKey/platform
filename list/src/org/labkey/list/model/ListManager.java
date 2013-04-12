@@ -57,6 +57,7 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -101,15 +102,33 @@ public class ListManager implements SearchService.DocumentProvider
 
 
     // Note: callers must invoke indexer (can't invoke here since we may be in a transaction)
-    public ListDef insert(User user, ListDef def) throws SQLException
+    public ListDef insert(User user, ListDef def, Collection<Integer> preferredListIds) throws SQLException
     {
         Container c = def.lookupContainer();
         if (null == c)
             throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
+        TableInfo tinfo = getTinfoList();
         DbSequence sequence = DbSequenceManager.get(c, LIST_SEQUENCE_NAME);
+
+        for (Integer preferredListId : preferredListIds)
+        {
+            SimpleFilter filter = new SimpleFilter(tinfo.getColumn("Container").getFieldKey(), c).addCondition(tinfo.getColumn("ListId"), preferredListId);
+
+            // Need to check proactively... unfortunately, calling insert and handling the constraint violation will cancel the current transaction
+            if (!new TableSelector(getTinfoList().getColumn("ListId"), filter, null).exists())
+            {
+                def.setListId(preferredListId);
+                def = Table.insert(user, tinfo, def);
+                sequence.ensureMinimum(preferredListId);  // Ensure sequence is at or above the preferred ID we just used
+                return def;
+            }
+        }
+
+        // If none of the preferred IDs is available then use the next sequence value
         def.setListId(sequence.next());
-        return Table.insert(user, getTinfoList(), def);
+
+        return Table.insert(user, tinfo, def);
     }
 
 
