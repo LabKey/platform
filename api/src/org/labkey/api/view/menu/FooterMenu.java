@@ -57,16 +57,6 @@ public class FooterMenu extends NavTreeMenu
             menu.add(new NavTree("Sign In", PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL()));
 
         menu.add(new NavTree("Home", AppProps.getInstance().getHomePageActionURL()));
-
-        if (null != c)
-        {
-            ActionURL permaLink = context.cloneActionURL();
-            permaLink.setExtraPath("__r" + Integer.toString(c.getRowId()));
-            NavTree ntPermalink = new NavTree("Permanent Link", permaLink);
-            ntPermalink.setId("permalink");
-            ntPermalink.setNoFollow(true);
-            menu.add(ntPermalink);
-        }
         
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
         String reportAProblemPath = laf.getReportAProblemPath();

@@ -32,8 +32,7 @@ public class FolderMenu extends NavTreeMenu
     {
         if (context.getContainer().getProject() != null)
         {
-            NavTree tree = ContainerManager.getFolderListForUser(context.getContainer().getProject(), context);
-            return tree;
+            return ContainerManager.getFolderListForUser(context.getContainer().getProject(), context);
         }
 
         return null;

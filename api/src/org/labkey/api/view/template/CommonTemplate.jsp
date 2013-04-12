@@ -224,6 +224,10 @@ if (null != me.getView("moduleNav"))
     { %>
     <!--<%= text("time " + (System.currentTimeMillis() - (Long)request.getAttribute(ViewServlet.REQUEST_STARTTIME)) + "ms") %> --><%
     }
+
+    ActionURL permaLink = me.getViewContext().cloneActionURL();
+    permaLink.setExtraPath("__r" + Integer.toString(c.getRowId()));
 %>
+<a href="<%=permaLink%>" id="permalink" style="display: none;"></a>
 </body>
 </html>

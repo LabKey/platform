@@ -1120,6 +1120,26 @@ public class ContainerManager
         return containersOnPath;
     }
 
+    /**
+     * Provides a sorted list of containers from the root to the child container provided.
+     * It does not include the root node.
+     * @param child Container from which the search is sourced.
+     * @return List sorted in order of distance from root.
+     */
+    public static List<Container> containersToRootList(Container child)
+    {
+        List<Container> containers = new ArrayList<Container>();
+        Container current = child;
+        while (current != null && !current.isRoot())
+        {
+            containers.add(current);
+            current = current.getParent();
+        }
+
+        Collections.reverse(containers);
+        return containers;
+    }
+
 
     // Move a container to another part of the container tree.  Careful: this method DOES NOT prevent you from orphaning
     // an entire tree (e.g., by setting a container's parent to one of its children); the UI in AdminController does this.
