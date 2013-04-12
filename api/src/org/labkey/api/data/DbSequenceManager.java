@@ -39,18 +39,18 @@ public class DbSequenceManager
 
     public static DbSequence get(Container c, String name, @NotNull Integer id)
     {
-        return new DbSequence(c, ensureSequence(c, name, id));
+        return new DbSequence(c, ensure(c, name, id));
     }
 
 
-    private static int ensureSequence(Container c, String name, @NotNull Integer id)
+    private static int ensure(Container c, String name, @NotNull Integer id)
     {
         Integer rowId = getRowId(c, name, id);
 
         if (null != rowId)
             return rowId.intValue();
         else
-            return createSequence(c, name, id);
+            return create(c, name, id);
     }
 
 
@@ -70,7 +70,7 @@ public class DbSequenceManager
 
 
     // Always initializes to 0; use ensureMinimumValue() to set a higher starting point
-    private static int createSequence(Container c, String name, @NotNull Integer id)
+    private static int create(Container c, String name, @NotNull Integer id)
     {
         TableInfo tinfo = getTableInfo();
 
@@ -89,16 +89,16 @@ public class DbSequenceManager
 
 
     // Not typically needed... CoreContainerListener deletes all the sequences scoped to the container
-    public static void deleteSequence(Container c, String name)
+    public static void delete(Container c, String name)
     {
-        deleteSequence(c, name, 0);
+        delete(c, name, 0);
     }
 
 
     // Useful for cases where multiple sequences are needed in a single folder, e.g., a sequence that generates row keys
     // for a list or dataset. Like the other DbSequence operations, the delete executes outside of the current thread
     // transaction; best practice is to commit the full object delete and then (on success) delete the associated sequence.
-    public static void deleteSequence(Container c, String name, @NotNull Integer id)
+    public static void delete(Container c, String name, @NotNull Integer id)
     {
         Integer rowId = getRowId(c, name, id);
 
@@ -116,7 +116,7 @@ public class DbSequenceManager
 
     // Used by container delete
     // TODO: Currently called after all container listeners have successfully deleted... should this be transacted instead?
-    public static void deleteAllSequences(Container c)
+    public static void deleteAll(Container c)
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ?");
@@ -224,7 +224,7 @@ public class DbSequenceManager
         {
             Container c = JunitUtil.getTestContainer();
 
-            DbSequenceManager.deleteSequence(c, NAME);
+            DbSequenceManager.delete(c, NAME);
             _sequence = DbSequenceManager.get(c, NAME);
         }
 
@@ -268,7 +268,7 @@ public class DbSequenceManager
         public void cleanup()
         {
             Container c = JunitUtil.getTestContainer();
-            DbSequenceManager.deleteSequence(c, NAME);
+            DbSequenceManager.delete(c, NAME);
         }
     }
 }

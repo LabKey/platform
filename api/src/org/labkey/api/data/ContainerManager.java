@@ -1291,7 +1291,7 @@ public class ContainerManager
             // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
             SecurityPolicyManager.removeAll(c);
             // and delete all container-based sequences
-            DbSequenceManager.deleteAllSequences(c);
+            DbSequenceManager.deleteAll(c);
 
             // After we've committed the transaction, be sure that we remove this container from the cache
             // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17015

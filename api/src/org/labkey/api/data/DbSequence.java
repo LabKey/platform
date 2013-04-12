@@ -37,8 +37,8 @@ public class DbSequence
         return DbSequenceManager.next(this);
     }
 
-    public void ensureMinimum(int value)
+    public void ensureMinimum(int mixValue)
     {
-        DbSequenceManager.ensureMinimum(this, value);
+        DbSequenceManager.ensureMinimum(this, mixValue);
     }
 }
