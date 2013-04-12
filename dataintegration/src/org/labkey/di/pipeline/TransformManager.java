@@ -15,6 +15,7 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
@@ -26,18 +27,23 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -59,6 +65,8 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
+import org.quartz.impl.matchers.KeyMatcher;
+import org.quartz.listeners.JobListenerSupport;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -586,15 +594,194 @@ public class TransformManager implements DataIntegrationService
             assertFalse(StdSchedulerFactory.getDefaultScheduler().checkExists(jobKey));
         }
 
-        void sleep(int sec)
+
+        @Test
+        public void etlChecker() throws Exception
         {
+            //TransformManager.get().startAllConfigurations();
+            Container c = JunitUtil.getTestContainer();
+            User u = TestContext.get().getUser();
+            User newUser = null;
+            final AtomicInteger checkerComplete = new AtomicInteger(0);
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+            cleanTransforms(c, u);
+
+            JobListenerSupport ujl = new JobListenerSupport()
+            {
+                @Override
+                public String getName()
+                {
+                    return "UserJobListener";
+                }
+
+                @Override
+                public void jobWasExecuted(org.quartz.JobExecutionContext context, org.quartz.JobExecutionException jobException)
+                {
+                    checkerComplete.incrementAndGet();
+                }
+            };
+
+            // verify we have our known descriptors for the DataIntegration module
+            Collection<ScheduledPipelineJobDescriptor> descriptors = TransformManager.get().getRegisteredDescriptors();
+            assertTrue(descriptors.size() >= 2);
+
+            // verify descriptors and underlying checker metadata
+            ScheduledPipelineJobDescriptor issuesDescriptor = findDescriptor(descriptors, "Issues");
+            ScheduledPipelineJobDescriptor usersDescriptor = findDescriptor(descriptors, "Hello World");
+            assertTrue(usersDescriptor != null && issuesDescriptor != null);
+            verifyDescriptor(usersDescriptor, c, u, "core", "users");
+            verifyDescriptor(issuesDescriptor, c, u, "issues", "issues");
+
+            // run the users's transform.  Since we cleared out the transformations the checker should run
+            // and we should have one job in the tables
+            JobKey jobKey = jobKeyFromDescriptor(usersDescriptor);
+            scheduler.getListenerManager().addJobListener(ujl, KeyMatcher.keyEquals(jobKey));
+
+            TransformManager.get().runNow(usersDescriptor, c, u);
+            assertTrue(waitForChecker(checkerComplete));
+            verifyJobs(c, u, usersDescriptor, 1);
+
+            // run again and ensure that jobs table remain the same
+            // checker ran but no job scheduled
+            TransformManager.get().runNow(usersDescriptor, c, u);
+            assertTrue(waitForChecker(checkerComplete));
+            verifyJobs(c, u, usersDescriptor, 1);
+
+            // now add a user and ensure we have 2 jobs
             try
             {
-                Thread.sleep(2*1000);
+                // add a user so that the checker returns true
+                newUser = SecurityManager.addUser(new ValidEmail("xformtest@labkey.com")).getUser();
+                TransformManager.get().runNow(usersDescriptor, c, u);
+                assertTrue(waitForChecker(checkerComplete));
+                verifyJobs(c, u, usersDescriptor, 2);
             }
-            catch (InterruptedException x)
+            finally
             {
+                if (newUser != null)
+                {
+                    UserManager.deleteUser(newUser.getUserId());
+                }
             }
         }
+
+        // if job does not run in the allotted time then returns false
+        public boolean waitForChecker(AtomicInteger checkerComplete)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                if (checkerComplete.get() > 0)
+                {
+                    checkerComplete.set(0);
+                    return true;
+                }
+                sleep(1);
+            }
+
+            return false;
+        }
+
+        void cleanTransforms(Container c, User u) throws Exception
+        {
+            // clean out any transform jobs we have lying around for the junit container and user
+            TableInfo statusInfo = DbSchema.get("pipeline").getTable("statusfiles");
+            TableInfo runsInfo = DataIntegrationDbSchema.getTransformRunTableInfo();
+            Table.delete(runsInfo, getDeleteFilter(runsInfo, c, u));
+            Table.delete(statusInfo, getDeleteFilter(statusInfo, c, u));
+        }
+
+        SimpleFilter getDeleteFilter(TableInfo ti, Container c, User u)
+        {
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition(ti.getColumn("container"), c.getId());
+            filter.addCondition(ti.getColumn("createdby"), u.getUserId());
+            return filter;
+        }
+
+        void verifyTable(TableInfo ti, int expectedRows, String columnName, String columnValue) throws  Exception
+        {
+            TableSelector ts = new TableSelector(ti, ti.getColumns(), null, null);
+            assertTrue(ts.getRowCount() == expectedRows);
+            Results r = ts.getResults(false);
+            while (r.next())
+            {
+                // use contains instead of strict equality since the id is prefixed by "ETL Job: "
+                String act = r.getString(columnName).toLowerCase();
+                String exp = columnValue.toLowerCase();
+                assertTrue(act.contains(exp));
+            }
+            r.close();
+        }
+
+        void verifyPipelineJobs(Container c, User u, ScheduledPipelineJobDescriptor d, int expectedRows) throws Exception
+        {
+            TableInfo jobsTable = PipelineService.get().getJobsTable(u, c);
+            verifyTable(jobsTable, expectedRows, "description", d.getDescription());
+        }
+
+        void verifyTransformRuns(Container c, User u, ScheduledPipelineJobDescriptor d, int expectedRows) throws Exception
+        {
+            TableInfo runsTable =  DataIntegrationDbSchema.getTransformRunTableInfo();
+            verifyTable(runsTable, expectedRows, "transformid", d.getId());
+
+        }
+
+        void verifyJobs(Container c, User u, ScheduledPipelineJobDescriptor d, int expectedRows) throws Exception
+        {
+            verifyTransformRuns(c, u, d, expectedRows);
+            verifyPipelineJobs(c, u, d, expectedRows);
+        }
+
+        ScheduledPipelineJobDescriptor findDescriptor(Collection<ScheduledPipelineJobDescriptor> descriptors, String name)
+        {
+            ScheduledPipelineJobDescriptor target = null;
+
+            for (ScheduledPipelineJobDescriptor jd : descriptors)
+            {
+                if (StringUtils.equalsIgnoreCase(jd.getModuleName(), "DataIntegration"))
+                {
+                    if (StringUtils.equalsIgnoreCase(jd.getName(), name))
+                    {
+                        target = jd;
+                        break;
+                    }
+                }
+            }
+
+            return target;
+        }
+
+        void verifyDescriptor(ScheduledPipelineJobDescriptor d, Container c, User u, String sourceSchema, String sourceQuery)
+        {
+            // ensure this is an instance of BaseQueryTransform
+            BaseQueryTransformDescriptor bd = (BaseQueryTransformDescriptor)d;
+            assertTrue(bd != null);
+            assertTrue(d.getDescription() != null);
+            assertTrue(d.getId() != null);
+            TransformJobContext tc = bd.getJobContext(c, u);
+            UpdatedRowsChecker checker = (UpdatedRowsChecker) bd.getChecker(tc);
+            verifyRowsChecker(checker, sourceSchema, sourceQuery);
+        }
+
+        void verifyRowsChecker(UpdatedRowsChecker checker, String sourceSchema, String sourceQuery)
+        {
+            assertTrue(checker != null);
+            assertTrue(StringUtils.equalsIgnoreCase(sourceQuery, checker.getSourceQueryName()));
+            SchemaKey key = SchemaKey.fromString(sourceSchema);
+            assertTrue(checker.getSourceSchemaName().equals(key));
+        }
+
+
+       void sleep(int sec)
+       {
+           try
+           {
+               Thread.sleep(sec * 1000);
+           }
+           catch (InterruptedException x)
+           {
+           }
+
+       }
     }
 }
