@@ -744,22 +744,25 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 '</div>' +
             '</div>';
 
-        this.snapshotOptions = new Ext.form.FormPanel({
-            defaults: {labelSeparator: ''},
-            items: [
-                {xtype: 'hidden', name: 'updateDelay', value: 30},
-                {xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, items: [
-                    {name: 'autoRefresh', boxLabel: this.mode == 'publish'? 'None' : 'Automatic', inputValue: true, checked: true},
-                    {name: 'autoRefresh', boxLabel: 'Manual', inputValue: false}]
-                }
-            ],
-            padding: '10px 0px',
-            border: false,
-            height: 50,
-            width : 300
-        });
+        if(this.allowRefresh)
+        {
+            this.snapshotOptions = new Ext.form.FormPanel({
+                defaults: {labelSeparator: ''},
+                items: [
+                    {xtype: 'hidden', name: 'updateDelay', value: 30},
+                    {xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, items: [
+                        {name: 'autoRefresh', boxLabel: this.mode == 'publish'? 'None' : 'Automatic', inputValue: true, checked: true},
+                        {name: 'autoRefresh', boxLabel: 'Manual', inputValue: false}]
+                    }
+                ],
+                padding: '10px 0px',
+                border: false,
+                height: 50,
+                width : 300
+            });
 
-        items.push(this.snapshotOptions);
+            items.push(this.snapshotOptions);
+        }
 
         var panel = new Ext.Panel({
             border: false,
@@ -1585,20 +1588,28 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
 
         this.nameFormPanel.doLayout();
-        var form = this.snapshotOptions.getForm();
-        var refreshOptions = form.getValues();
-        if(refreshOptions.autoRefresh === 'true' && this.mode != 'publish'){
-            if (refreshOptions.autoRefresh === 'true')
-                params.updateDelay = refreshOptions.updateDelay;
-            params.update = true;
-        }
-        else if(refreshOptions.autoRefresh === 'true' && this.mode == 'publish')
+
+        if(!this.allowRefresh)
         {
             params.update = false;
         }
-        else
-        {
-            params.update = true;
+        else{
+            var form = this.snapshotOptions.getForm();
+            var refreshOptions = form.getValues();
+
+            if(refreshOptions.autoRefresh === 'true' && this.mode != 'publish'){
+                if (refreshOptions.autoRefresh === 'true')
+                    params.updateDelay = refreshOptions.updateDelay;
+                params.update = true;
+            }
+            else if(refreshOptions.autoRefresh === 'true' && this.mode == 'publish')
+            {
+                params.update = false;
+            }
+            else
+            {
+                params.update = true;
+            }
         }
 
         this.win.getEl().mask("creating study...");
