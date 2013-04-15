@@ -1,15 +1,13 @@
-<%@ page import="org.labkey.api.util.Path" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="java.util.Set" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%!
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -145,7 +143,7 @@
 <%
     }
 %>
-    <div class="folder-tree">
+    <div id="folder-tree-wrap" class="folder-tree">
         <% me.include(form.getFolderMenu(), out); %>
     </div>
 </div>
@@ -177,5 +175,11 @@
 
         var selNodes = Ext4.DomQuery.select('.folder-nav .clbl span.marked');
         applyCollapse(selNodes);
+
+        // Folder Scrolling
+        var target = Ext4.get('folder-target');
+        if (target) {
+            target.scrollIntoView(Ext4.get('folder-tree-wrap'));
+        }
     });
 </script>
