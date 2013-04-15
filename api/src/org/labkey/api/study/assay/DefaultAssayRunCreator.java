@@ -193,7 +193,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      * @param forceSaveBatchProps
      * @return the run and batch that were inserted
      */
-    public ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, @NotNull ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
+    public ExpExperiment saveExperimentRun(final AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, @NotNull ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
     {
         Map<ExpMaterial, String> inputMaterials = new HashMap<ExpMaterial, String>();
         Map<ExpData, String> inputDatas = new HashMap<ExpData, String>();
@@ -293,15 +293,23 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             if (context.getReRunId() != null && getProvider().supportsReRun())
             {
-                ExpRun replacedRun = ExperimentService.get().getExpRun(context.getReRunId().intValue());
+                final ExpRun replacedRun = ExperimentService.get().getExpRun(context.getReRunId().intValue());
                 if (replacedRun != null && replacedRun.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
                 {
                     replacedRun.setReplacedByRun(run);
                     replacedRun.save(context.getUser());
+
                 }
                 ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
 
-                moveFilesToArchivedDir(context, replacedRun);
+                scope.addCommitTask( new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        replacedRun.archiveDataFiles(context.getUser());
+                    }
+                });
             }
 
             scope.commitTransaction();
@@ -326,52 +334,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             throw new RuntimeSQLException(e);
         }
-        catch (IOException e)
-        {
-            throw new ExperimentException(e);
-        }
         finally
         {
             scope.closeConnection();
         }
-    }
-
-    private void moveFilesToArchivedDir(AssayRunUploadContext<ProviderType> context, ExpRun replacedRun) throws ExperimentException, IOException
-    {
-        for (ExpData expData : replacedRun.getAllDataUsedByRun())
-        {
-            File file = expData.getFile();
-            // If we can find the file on disk, and it's in the assaydata directory, and there aren't any other
-            // usages, move it into an archived subdirectory
-            if (file != null && NetworkDrive.exists(file) && file.isFile() &&
-                file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory(context.getContainer())) && !hasOtherRunUsing(expData, replacedRun))
-            {
-                File archivedDir = AssayFileWriter.ensureSubdirectory(context.getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);
-                File targetFile = AssayFileWriter.findUniqueFileName(file.getName(), archivedDir);
-                targetFile = FileUtil.getAbsoluteCaseSensitiveFile(targetFile);
-                FileUtils.moveFile(file, targetFile);
-                expData.setDataFileURI(targetFile.toURI());
-                expData.save(context.getUser());
-            }
-        }
-    }
-
-    private boolean hasOtherRunUsing(ExpData originalData, ExpRun originalRun)
-    {
-        if (originalData.getDataFileUrl() != null)
-        {
-            for (ExpData data : ExperimentService.get().getAllExpDataByURL(originalData.getDataFileUrl()))
-            {
-                for (ExpRun run : data.getTargetRuns())
-                {
-                    if (!run.equals(originalRun))
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
     }
 
     private void resolveParticipantVisits(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<DomainProperty, String> allProperties, ParticipantVisitResolverType resolverType) throws ExperimentException

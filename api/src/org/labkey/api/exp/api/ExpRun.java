@@ -76,4 +76,7 @@ public interface ExpRun extends ExpObject
     ExpRun getReplacedByRun();
 
     List<? extends ExpRun> getReplacesRuns();
+
+    /** archive Data Files primarily used when a file is deleted. */
+    public void archiveDataFiles(User user);
 }
