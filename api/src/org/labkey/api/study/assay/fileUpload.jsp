@@ -247,8 +247,8 @@
                     {
                         response += "This file is not associated with a run.  "
                     }
-                    response += "To continue with the renamed file '" + Ext.util.Format.htmlEncode(jsonResponse.newFileName) +
-                                "' click Save and Finish. To abort click Cancel. To use an alternate file name, " +
+                    response += "If you continue, the renamed file '" + Ext.util.Format.htmlEncode(jsonResponse.newFileName) +
+                                "' will be used. To abort click Cancel. To use an alternate file name, " +
                                 "change the file name on your computer and then reselect the file.";
                     element.update(response);
                 }
