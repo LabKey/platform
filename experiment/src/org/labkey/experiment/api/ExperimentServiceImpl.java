@@ -1362,7 +1362,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new Lsid(generateLSID(container, ExpSampleSet.class, sourceName));
     }
 
-    public void deleteExperimentRunsByRowIds(Container container, User user, int... selectedRunIds)
+    public void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds)
     {
         if (selectedRunIds == null || selectedRunIds.length == 0)
             return;
@@ -1374,7 +1374,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 ensureTransaction();
 
-                ExpRunImpl run = getExpRun(runId);
+                final ExpRunImpl run = getExpRun(runId);
                 if (run != null)
                 {
                     SimpleFilter containerFilter = new SimpleFilter("RunId", runId);
@@ -1413,6 +1413,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     // Grab these to delete after we've deleted the Data rows
                     ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
 
+                    // Archive all data files prior to deleting - there should be a null check on run
+                    getExpSchema().getScope().addCommitTask(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            run.archiveDataFiles(user);
+                        }
+                    });
                     deleteRun(runId, datasToDelete, user);
 
                     for (ExpData data : datasToDelete)

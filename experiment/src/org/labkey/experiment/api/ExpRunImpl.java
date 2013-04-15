@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.DbCache;
@@ -42,7 +43,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.assay.AssayFileWriter;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -51,6 +56,7 @@ import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -709,5 +715,56 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         _materialOutputs = new ArrayList<ExpMaterial>();
         _dataOutputs = new ArrayList<ExpData>();
         _protocolSteps = null;
+    }
+
+    @Override
+    public void archiveDataFiles(User user)
+    {
+        try
+        {
+            for (ExpData expData : getAllDataUsedByRun())
+            {
+                File file = expData.getFile();
+                // If we can find the file on disk, and it's in the assaydata directory, and there aren't any other
+                // usages, move it into an archived subdirectory
+                if (file != null && NetworkDrive.exists(file) && file.isFile() &&
+                    file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory( getContainer())) && !hasOtherRunUsing(expData, this))
+                {
+                    File archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);
+                    File targetFile = AssayFileWriter.findUniqueFileName(file.getName(), archivedDir);
+                    targetFile = FileUtil.getAbsoluteCaseSensitiveFile(targetFile);
+                    FileUtils.moveFile(file, targetFile);
+                    expData.setDataFileURI(targetFile.toURI());
+                    expData.save(user);
+                }
+            }
+        }
+        // Exceptions were not being handled by calling functions so we translate them here
+        catch (ExperimentException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+        catch (IOException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
+    private boolean hasOtherRunUsing(ExpData originalData, ExpRun originalRun)
+    {
+        if (originalData.getDataFileUrl() != null)
+        {
+            for (ExpData data : ExperimentService.get().getAllExpDataByURL(originalData.getDataFileUrl()))
+            {
+                for (ExpRun run : data.getTargetRuns())
+                {
+                    if (!run.equals(originalRun))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
