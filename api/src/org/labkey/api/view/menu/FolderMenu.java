@@ -106,7 +106,7 @@ public class FolderMenu extends NavTreeMenu
 
                 if (selected)
                 {
-                    out.print(" class=\"nav-tree-selected\"");
+                    out.print(" class=\"nav-tree-selected\" id=\"folder-target\"");
                 }
                 out.print(">");
                 out.print(filter(nav.getText()));

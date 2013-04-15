@@ -61,7 +61,14 @@
 %>
 <div id="menubar" class="labkey-main-menu">
     <ul>
+<%
+    if (currentContext.isShowFolders())
+    {
+%>
         <li id="projectBar" class="menu-projects"> </li>
+<%
+    }
+%>
         <li id="folderBar" class="menu-folders"><%=h(c.getName())%></li>
         <%
             if(menus.size() > 0)
@@ -98,20 +105,150 @@
     </ul>
 </div>
 <script type="text/javascript">
-    Ext.onReady(function(){
+    Ext4.onReady(function() {
 
-        new LABKEY.HoverPopup({hoverElem:"projectBar", webPartName:"projectnav"});
-        new LABKEY.HoverPopup({hoverElem:"folderBar", webPartName:"foldernav"});
+        Ext4.define('HoverNavigation', {
+            mixins : {
+                observable : 'Ext.util.Observable'
+            },
 
-        <%
-            for (Portal.WebPart part : menus)
-            {
-                if (null == Portal.getPortalPartCaseInsensitive(part.getName()))
-                    continue;
+            statics : {
+                visiblePopup : false
+            },
 
-                String menuName = part.getName() + part.getIndex();
-        %>
-        new LABKEY.HoverPopup({hoverElem:"<%=menuName%>$Header", webPartName: "<%=part.getName()%>",
+            showDelay : 150,
+
+            hideDelay : 200,
+
+            hoverCls : 'selected',
+
+            constructor : function(config) {
+
+                // will apply config to this
+                this.mixins.observable.constructor.call(this, config);
+
+                this.hoverEl = Ext4.get(config.hoverElem);
+                if (!this.hoverEl) {
+                    return;
+                }
+
+                var loader = Ext4.DomHelper.insertAfter('menubar', {
+                    id  : config.hoverElem + '_menu',
+                    tag : 'div',
+                    cls : 'labkey-webpart-menu',
+                    children : [{
+                        tag : 'div',
+                        cls : 'loading-indicator',
+                        style : 'width: 100px; height: 100px;'
+                    }]
+                });
+
+                this.popup = new Ext4.Layer({zindex : 1000, constrain : false }, loader);
+                this.popup.alignTo(this.hoverEl);
+                this.popup.hide();
+
+                // Configure hover element list
+                this.hoverEl.hover(this.onTargetOver, this.delayCheck, this);
+                this.popup.hover(this.cancelHide, this.delayCheck, this);
+            },
+
+            cancelShow : function() {
+                if (this.showTimeout) {
+                    clearTimeout(this.showTimeout);
+                    this.showTimeout = false;
+                }
+            },
+
+            cancelHide : function() {
+                if (this.hideTimeout) {
+                    clearTimeout(this.hideTimeout);
+                    this.hideTimeout = false;
+                }
+            },
+
+            onTargetOver : function(e) {
+                this.cancelHide();
+
+                // show immediately if we already have a menu up
+                // Otherwise, make sure that someone hovers for a while
+                HoverNavigation.visiblePopup ? this.show() : this.delayShow();
+            },
+
+            delayCheck : function(e) {
+                if (!this.hoverEl.getRegion().contains(e.getPoint()) || !this.popup.getRegion().contains(e.getPoint())) {
+                    this.delayHide();
+                }
+            },
+
+            delayShow : function() {
+                if (!this.showTimeout) {
+                    this.showTimeout = Ext4.defer(this.show, this.showDelay, this);
+                }
+            },
+
+            delayHide : function() {
+                this.cancelHide();
+                this.cancelShow();
+                this.hideTimeout = Ext4.defer(this.hide, this.hideDelay, this);
+            },
+
+            show : function() {
+
+                if (HoverNavigation.visiblePopup) {
+                    if (HoverNavigation.visiblePopup == this) {
+                        return;
+                    }
+                    HoverNavigation.visiblePopup.hide();
+                }
+
+                this.hoverEl.addCls(this.hoverCls);
+
+                if (!this.rendered) {
+                    var p = new LABKEY.WebPart({
+                        renderTo : this.popup.id,
+                        partName : this.webPartName,
+                        frame    : 'none',
+                        partConfig : this.partConfig,
+                        failure  : function(err) {if (window.console && window.console.log) { window.console.log(err);}},
+                        scope    : this
+                    });
+                    p.render();
+                    this.rendered = true;
+                }
+
+                this.popup.show();
+                this.popup.alignTo(this.hoverEl); // default: tl-bl
+                HoverNavigation.visiblePopup = this;
+            },
+
+            hide : function() {
+                this.hoverEl.removeCls(this.hoverCls);
+                this.popup.hide();
+                if (HoverNavigation.visiblePopup == this) {
+                    HoverNavigation.visiblePopup = false;
+                }
+            }
+        });
+
+<%
+    if (currentContext.isShowFolders())
+    {
+%>
+        new HoverNavigation({hoverElem : 'projectBar', webPartName : 'projectnav' });
+<%
+    }
+%>
+        new HoverNavigation({hoverElem : 'folderBar',  webPartName : 'foldernav'});
+
+<%
+    for (Portal.WebPart part : menus)
+    {
+        if (null == Portal.getPortalPartCaseInsensitive(part.getName()))
+            continue;
+
+        String menuName = part.getName() + part.getIndex();
+%>
+        new HoverNavigation({hoverElem:"<%=menuName%>$Header", webPartName: "<%=part.getName()%>",
             partConfig: { <%
                     String sep = "";
                     for (Map.Entry<String,String> entry : part.getPropertyMap().entrySet())
@@ -120,8 +257,8 @@
                         sep = ",";
                     }%>
             }});
-        <%
-            }
-        %>
+<%
+    }
+%>
     });
 </script>
