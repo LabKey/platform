@@ -47,7 +47,7 @@ public class FolderMenu extends NavTreeMenu
             boolean indentForExpansionGifs = false;
             for (NavTree element : _elements)
             {
-                if (element.hasChildren())
+                if (element != null && element.hasChildren())
                     indentForExpansionGifs = true;
             }
             out.print("<div class=\"folder-nav\"><ul class=\"folder-nav-top\">");

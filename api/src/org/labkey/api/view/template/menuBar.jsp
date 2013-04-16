@@ -52,6 +52,7 @@
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
     boolean folderMenu = folderMode.isShowInMenu();
     boolean customMenusEnabled = laf.isMenuUIEnabled();
+    boolean showFolderNavigation = c != null && !c.isRoot();
     folderMode.isShowInMenu();
 
     if (null == c || null == c.getProject() || c.getProject().equals(ContainerManager.getHomeContainer()))
@@ -62,7 +63,14 @@
 <div id="menubar" class="labkey-main-menu">
     <ul>
         <li id="projectBar" class="menu-projects"> </li>
+<%
+    if (showFolderNavigation)
+    {
+%>
         <li id="folderBar" class="menu-folders"><%=h(c.getName())%></li>
+<%
+    }
+%>
         <%
             if(menus.size() > 0)
             {
@@ -224,9 +232,14 @@
         });
 
         new HoverNavigation({hoverElem : 'projectBar', webPartName : 'projectnav' });
-        new HoverNavigation({hoverElem : 'folderBar',  webPartName : 'foldernav'});
-
 <%
+    if (showFolderNavigation)
+    {
+%>
+        new HoverNavigation({hoverElem : 'folderBar',  webPartName : 'foldernav'});
+<%
+    }
+
     for (Portal.WebPart part : menus)
     {
         if (null == Portal.getPortalPartCaseInsensitive(part.getName()))
