@@ -61,14 +61,7 @@
 %>
 <div id="menubar" class="labkey-main-menu">
     <ul>
-<%
-    if (currentContext.isShowFolders())
-    {
-%>
         <li id="projectBar" class="menu-projects"> </li>
-<%
-    }
-%>
         <li id="folderBar" class="menu-folders"><%=h(c.getName())%></li>
         <%
             if(menus.size() > 0)
@@ -230,14 +223,7 @@
             }
         });
 
-<%
-    if (currentContext.isShowFolders())
-    {
-%>
         new HoverNavigation({hoverElem : 'projectBar', webPartName : 'projectnav' });
-<%
-    }
-%>
         new HoverNavigation({hoverElem : 'folderBar',  webPartName : 'foldernav'});
 
 <%
