@@ -13,6 +13,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     constructor : function(config)
     {
+        Ext.applyIf(config, {
+            allowRefresh : true
+        });
         Ext.apply(this, config);
         this.pageOptions = this.initPages();
         if (this.studyWriters && this.folderWriters)
@@ -40,6 +43,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         );
         this.sideBarTemplate.compile();
+        console.log(this.allowRefresh);
 
     },
 
