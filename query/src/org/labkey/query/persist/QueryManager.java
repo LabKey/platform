@@ -66,7 +66,7 @@ public class QueryManager
     private static final Logger _log = Logger.getLogger(QueryManager.class);
     private static final QueryManager instance = new QueryManager();
     private static final String SCHEMA_NAME = "query";
-    private static final List<QueryService.QueryListener> _listeners = new CopyOnWriteArrayList<QueryService.QueryListener>();
+    private static final List<QueryService.QueryListener> _listeners = new CopyOnWriteArrayList<>();
 
     public static final int FLAG_INHERITABLE = 0x01;
     public static final int FLAG_HIDDEN = 0x02;

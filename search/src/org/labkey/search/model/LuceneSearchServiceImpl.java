@@ -26,6 +26,7 @@ import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -71,6 +72,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HTMLContentExtractor;
+import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
@@ -106,7 +108,7 @@ import java.util.regex.Pattern;
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
     private static final Logger _log = Logger.getLogger(LuceneSearchServiceImpl.class);
-    private static final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<SEARCH_PHASE>(SEARCH_PHASE.class, SEARCH_PHASE.values());
+    private static final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
 
     static final Version LUCENE_VERSION = Version.LUCENE_41;
 
@@ -152,6 +154,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             File indexDir = SearchPropertyManager.getPrimaryIndexDirectory();
             _indexManager = WritableIndexManagerImpl.get(indexDir, getAnalyzer());
             setConfigurationError(null);  // Clear out any previous error
+        }
+        catch (IndexFormatTooOldException e)    // Misnomer... this is thrown when format is too recent as well
+        {
+            MinorConfigurationException mce = new MinorConfigurationException(
+                "Index format is not supported; the configured index directory may have been created by a more recent version of LabKey Server", e);
+
+            _log.error("Full-text search index format error", mce);
+
+            throw mce;
         }
         catch (Throwable t)
         {
@@ -1181,7 +1192,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         ScoreDoc[] hits = topDocs.scoreDocs;
 
-        List<SearchHit> ret = new LinkedList<SearchHit>();
+        List<SearchHit> ret = new LinkedList<>();
 
         for (int i = offset; i < Math.min(hitsToRetrieve, hits.length); i++)
         {
@@ -1297,7 +1308,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     public Map<String, Object> getIndexerStats()
     {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<>();
 
         try
         {
