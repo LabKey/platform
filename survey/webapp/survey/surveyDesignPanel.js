@@ -446,8 +446,8 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                     '        "width": 800,<br/>' +
                     '        "hidden": false,<br/>' +
                     '        "xtype": "combo",<br/>' +
-                    '        "name": "cb_extjs",<br/>' +
-                    '        "fieldLabel": "CB (ExtJS)",<br/>' +
+                    '        "name": "gender",<br/>' +
+                    '        "fieldLabel": "Gender (ExtJS)",<br/>' +
                     '        "queryMode": "local",<br/>' +
                     '        "displayField": "value",<br/>' +
                     '        "valueField": "value",<br/>' +
@@ -456,8 +456,8 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                     '        "store": {<br/>' +
                     '            "fields": ["value"],<br/>' +
                     '            "data" : [<br/>' +
-                    '                {"value": "Yes"},<br/>' +
-                    '                {"value": "No"}<br/>' +
+                    '                {"value": "Female"},<br/>' +
+                    '                {"value": "Male"}<br/>' +
                     '            ]<br/>' +
                     '        }<br/>' +
                     '    }<br/>' +
@@ -664,8 +664,8 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                     '    "hidden": true,<br/>' +
                     '    "listeners" : {<br/>' +
                     '       "change" : {<br/>' +
-                    '          "question" : "cb_extjs",<br/>' +
-                    '          "fn" : "function(me, cmp, newValue, oldValue){if (me) me.setVisible(newValue == \'Yes\');} "<br/>' +
+                    '          "question" : "gender",<br/>' +
+                    '          "fn" : "function(me, cmp, newValue, oldValue){if (me) me.setVisible(newValue == \'Female\');} "<br/>' +
                     '        }<br/>' +
                     '    }<br/>' +
                     '}</code>'
