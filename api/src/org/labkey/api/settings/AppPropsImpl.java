@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -189,9 +190,14 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     }
 
 
-    // Update the cached base server url attributes.
+    // Update the cached base server url attributes. Very important to validate this URL, #17625
     public void setBaseServerUrlAttributes(String baseServerUrl) throws URISyntaxException
     {
+        // First, validate URL using Commons Validator
+        if (!new UrlValidator(new String[] {"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS).isValid(baseServerUrl))
+            throw new URISyntaxException(baseServerUrl, "Invalid URL");
+
+        // Divide up the parts and validate some more
         URLHelper url = new URLHelper(baseServerUrl);
 
         if (url.getParsedPath().size() > 0)
@@ -199,6 +205,10 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
         String scheme = url.getScheme();
         String serverName = url.getHost();
+
+        if (null == serverName)
+            throw new URISyntaxException(baseServerUrl, "Invalid server name");
+
         int serverPort;
 
         if (url.getPort() != -1)
@@ -219,6 +229,17 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         _scheme = scheme;
         _serverName = serverName;
         _serverPort = serverPort;
+
+        // One last check... are we able to use ActionURL now?
+        try
+        {
+            ActionURL actionUrl = new ActionURL();
+            actionUrl.getURIString();
+        }
+        catch (Throwable t)
+        {
+            throw new URISyntaxException(baseServerUrl, "Invalid URL");
+        }
     }
 
 

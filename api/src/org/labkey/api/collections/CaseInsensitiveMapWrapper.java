@@ -19,7 +19,6 @@ package org.labkey.api.collections;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implements Serializable
 {
@@ -28,7 +27,7 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
     public CaseInsensitiveMapWrapper(Map<String, V> map)
     {
         super(map);
-        _correctCaseMap = new HashMap<String, String>();
+        _correctCaseMap = new HashMap<>();
         for (Map.Entry<? extends String, ? extends V> entry : map.entrySet())
         {
             _correctCaseMap.put(entry.getKey().toLowerCase(), entry.getKey());

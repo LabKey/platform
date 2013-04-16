@@ -178,22 +178,26 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="Commons Validator">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-validator.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-validator-1.4.0.jar!/" />
         </CLASSES>
-        <JAVADOC />
-        <SOURCES />
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-validator-1.4.0-javadoc.jar!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-validator-1.4.0-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="Ehcache 2.6.0">
+      <library name="Ehcache 2.7.0">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.6.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-2.7.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.6.0.sources.zip!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-2.7.0.sources.zip!/" />
         </SOURCES>
       </library>
     </orderEntry>
