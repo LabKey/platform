@@ -138,9 +138,15 @@ public class ListWriter
                 // Write data
                 Collection<ColumnInfo> columns = getColumnsToExport(ti, false, removeProtected);
 
-                if (ctx.isAlternateIds())
+                try{
+                    if (ctx.isAlternateIds())
+                    {
+                        createAlternateIdColumns(ti, columns, ctx.getContainer());
+                    }
+                }
+                catch (NullPointerException e)
                 {
-                    createAlternateIdColumns(ti, columns, ctx.getContainer());
+                    //If the NPE occurs, it is presumed to be false, so we do nothing.
                 }
 
                 if (!columns.isEmpty())
