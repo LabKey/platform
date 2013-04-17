@@ -32,14 +32,19 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
 import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.MessagingException;
+import javax.mail.Part;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -98,6 +103,19 @@ public class EmailServiceImpl implements EmailService.I
 
         if (cc.length > 0)
             msg.setRecipients(Message.RecipientType.CC, cc);
+
+        return msg;
+    }
+
+    @Override
+    public EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message, List<File> attachments)
+    {
+        EmailMessage msg = createMessage(from, to, cc, subject, message);
+
+        if(attachments != null && attachments.size() > 0)
+        {
+            msg.setFiles(attachments);
+        }
 
         return msg;
     }
@@ -175,6 +193,7 @@ public class EmailServiceImpl implements EmailService.I
         private Map<contentType, String> _contentMap = new HashMap<contentType, String>();
         private Map<String, String> _headers = new HashMap<String, String>();
         private Map<Message.RecipientType, String[]> _recipients = new HashMap<Message.RecipientType, String[]>();
+        private List<File> _files;
 
         public EmailMessageImpl(String from, String[] to, String subject)
         {
@@ -215,6 +234,12 @@ public class EmailServiceImpl implements EmailService.I
         }
 
         @Override
+        public void setFiles(List<File> files)
+        {
+            _files = files;
+        }
+
+        @Override
         public void addContent(String content)
         {
             _contentMap.put(contentType.PLAIN, content);
@@ -249,6 +274,14 @@ public class EmailServiceImpl implements EmailService.I
         public MimeMessage createMessage() throws MessagingException
         {
             MimeMessage msg = new MimeMessage(MailHelper.getSession());
+            boolean multipart = _contentMap.size() > 1 || (_files != null && _files.size() > 0);
+            MimeMultipart multiPartContent = null;
+
+            if (multipart)
+            {
+                multiPartContent = new MimeMultipart("alternative");
+                msg.setContent(multiPartContent);
+            }
 
             msg.setFrom(new InternetAddress(_from));
 
@@ -272,14 +305,6 @@ public class EmailServiceImpl implements EmailService.I
 
             if (!_contentMap.isEmpty())
             {
-                boolean multipart = _contentMap.size() > 1;
-                MimeMultipart multiPartContent = null;
-
-                if (multipart)
-                {
-                    multiPartContent = new MimeMultipart("alternative");
-                    msg.setContent(multiPartContent);
-                }
 
                 for (Map.Entry<contentType, String> entry : _contentMap.entrySet())
                 {
@@ -292,6 +317,19 @@ public class EmailServiceImpl implements EmailService.I
                     }
                     else
                         msg.setContent(entry.getValue(), entry.getKey().getMimeType());
+                }
+            }
+
+            if (_files != null && _files.size() > 0)
+            {
+                for(File file : _files)
+                {
+                    BodyPart fileBodyPart = new MimeBodyPart();
+                    DataSource source = new FileDataSource(file);
+                    fileBodyPart.setDataHandler(new DataHandler(source));
+                    fileBodyPart.setFileName(file.getName());
+                    fileBodyPart.setDisposition(Part.ATTACHMENT);
+                    multiPartContent.addBodyPart(fileBodyPart);
                 }
             }
 
