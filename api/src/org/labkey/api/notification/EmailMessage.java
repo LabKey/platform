@@ -21,6 +21,8 @@ import org.labkey.api.view.ViewContext;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,6 +55,7 @@ public interface EmailMessage
     String getSubject();
 
     void setHeader(String name, String value);
+    void setFiles(List<File> files);
     void addContent(String content);
     void addContent(contentType type, String content);
     void addContent(contentType type, ViewContext context, HttpView view) throws Exception;

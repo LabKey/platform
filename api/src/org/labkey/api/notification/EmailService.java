@@ -21,6 +21,8 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ConfigurationException;
 
 import javax.mail.MessagingException;
+import java.io.File;
+import java.util.List;
 
 /**
  * User: klum
@@ -41,6 +43,7 @@ public class EmailService
         EmailMessage createMessage(String from, String[] to, String subject);
         EmailMessage createMessage(String from, String[] to, String subject, String message);
         EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message);
+        EmailMessage createMessage(String from, String[] to, String[] cc, String subject, String message, List<File> attachments);
 
         /**
          * Send the email message synchronously from the caller thread
