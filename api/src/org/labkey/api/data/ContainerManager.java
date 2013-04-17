@@ -28,8 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -1286,7 +1284,6 @@ public class ContainerManager
     {
         try
         {
-            LOG.debug("Starting container delete for " + c.getContainerNoun(true) + " " + c.getPath());
             CORE.getSchema().getScope().ensureTransaction();
 
             // Verify that no children exist
@@ -1331,10 +1328,7 @@ public class ContainerManager
                     }
                 }
             });
-            addAuditEvent(user, c, c.getContainerNoun(true) + " " + c.getPath() + " was deleted");
             CORE.getSchema().getScope().commitTransaction();
-
-            LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
         }
         catch (SQLException x)
         {
@@ -1367,33 +1361,13 @@ public class ContainerManager
         if (!hasTreePermission(root, user, DeletePermission.class))
             throw new UnauthorizedException("You don't have delete permissions to all folders");
 
-        LOG.debug("Starting container (and children) delete for " + root.getContainerNoun(true) + " " + root.getPath());
         LinkedHashSet<Container> depthFirst = getAllChildrenDepthFirst(root);
         depthFirst.add(root);
 
         for (Container c : depthFirst)
             delete(c, user);
-
-        LOG.debug("Completed container (and children) delete for " + root.getContainerNoun(true) + " " + root.getPath());
     }
 
-    private static void addAuditEvent(User user, Container c, String comment)
-    {
-        if (user != null)
-        {
-            AuditLogEvent event = new AuditLogEvent();
-
-            event.setCreatedBy(user);
-            event.setEventType(ContainerManager.CONTAINER_AUDIT_EVENT);
-            event.setContainerId(c.getId());
-            event.setComment(comment);
-
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-
-            AuditLogService.get().addEvent(event);
-        }
-    }
 
     private static LinkedHashSet<Container> getAllChildrenDepthFirst(Container c)
     {

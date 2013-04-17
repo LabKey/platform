@@ -75,13 +75,11 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 }
             }
 
-            String displayName = getFileName(filename);
-
             StringBuilder icon = new StringBuilder();
             icon.append("<img src=\"").append(ctx.getRequest().getContextPath());
             icon.append((null != fileIconUrl) ? fileIconUrl : Attachment.getFileIcon(filename));
             icon.append("\" alt=\"icon\"");
-            icon.append("/>&nbsp;").append(PageFlowUtil.filter(displayName));
+            icon.append("/>&nbsp;").append(getFileName(filename));
 
             if (thumbnail && _map.isInlineImageFor(filename))
             {
@@ -90,7 +88,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 thumbnailHtml.append(PageFlowUtil.filter(url));
                 thumbnailHtml.append("\" />");
 
-                out.write(PageFlowUtil.helpPopup(displayName, thumbnailHtml.toString(), true, icon.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
+                out.write(PageFlowUtil.helpPopup(filename, thumbnailHtml.toString(), true, icon.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
             }
             else
             {

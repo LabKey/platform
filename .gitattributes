@@ -572,7 +572,6 @@ api/src/org/labkey/api/laboratory/SettingsNavItem.java -text
 api/src/org/labkey/api/laboratory/SimpleNavItem.java -text
 api/src/org/labkey/api/laboratory/SimpleQueryNavItem.java -text
 api/src/org/labkey/api/laboratory/SimpleSettingsItem.java -text
-api/src/org/labkey/api/laboratory/SimpleUrlNavItem.java -text
 api/src/org/labkey/api/laboratory/SingleNavItem.java -text
 api/src/org/labkey/api/laboratory/TabbedReportItem.java -text
 api/src/org/labkey/api/laboratory/assay/AbstractAssayDataProvider.java -text

@@ -20,7 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
@@ -41,7 +40,7 @@ public class QueryCountNavItem extends SingleNavItem
 
     public QueryCountNavItem(DataProvider provider, String schema, String query, String category, String label)
     {
-        super(provider, label, null, (DetailsURL)null, category);
+        super(provider, label, null, null, category);
         _schema = schema;
         _query = query;
     }
@@ -74,7 +73,7 @@ public class QueryCountNavItem extends SingleNavItem
         return ts.getRowCount();
     }
 
-    protected ActionURL getActionURL(Container c, User u)
+    protected ActionURL getItemUrl(Container c, User u)
     {
         return QueryService.get().urlFor(u, c, QueryAction.executeQuery, _schema, _query);
     }

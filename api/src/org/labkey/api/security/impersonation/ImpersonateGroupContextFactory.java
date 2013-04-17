@@ -112,14 +112,13 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         NavTree groupMenu = new NavTree("Group");
         UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
         Group[] groups = SecurityManager.getGroups(c.getProject(), true);
-        Container project = c.getProject();
 
         boolean addSeparator = false;
 
         // Site groups are always first, followed by project groups
         for (Group group : groups)
         {
-            if (!canImpersonateGroup(project, user, group))
+            if (!canImpersonateGroup(c, user, group))
                 continue;
 
             String display = group.getName();

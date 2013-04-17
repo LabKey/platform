@@ -34,26 +34,12 @@ Ext.define('Ext.ux.CheckCombo',
         this.plugins.push('combo-autowidth');
         this.listConfig = this.listConfig || {};
         Ext.apply(this.listConfig, {
-            tpl: new Ext4.XTemplate(
+            tpl:[
                 '<ul><tpl for=".">',
                     '<li role="option" class="' + Ext.baseCSSPrefix + 'boundlist-item"><span class="' + Ext.baseCSSPrefix + 'combo-checker"></span>',
-                    '&nbsp;{[this.getDisplayText(values, "' + this.displayField + '", "' + (Ext4.isDefined(this.nullCaption) ? this.nullCaption : "[none]") + '")]}',
-                '</li></tpl></ul>',
-                {
-                    getDisplayText : function (values, displayField, nullCaption) {
-                        var text;
-                        if (typeof values === "string") {
-                            text = values;
-                        } else {
-                            if (values[displayField])
-                                text = values[displayField];
-                            else
-                                text = nullCaption;
-                        }
-                        return Ext4.util.Format.htmlEncode(text);
-                    }
-                }
-            ),
+                    '&nbsp;{[(typeof values === "string" ? values : (values["' + this.displayField + '"] ? values["' + this.displayField + '"] : '+(Ext4.isDefined(this.nullCaption) ? '"' + this.nullCaption + '"' : '"[none]"')+'))]}',
+                '</li></tpl></ul>'
+            ],
             childEls: [
                 'listEl',
                 'outerEl',
