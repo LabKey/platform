@@ -274,14 +274,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public Query getQuery(@NotNull QuerySchema schema)
     {
-        Query query = new Query(schema);
-        String sql = getSql();
-        if (sql != null)
-        {
-            query.parse(sql);
-        }
-        query.setName(getSchemaName() + "." + getName());
-        return query;
+        return getQuery(schema, null, null, false);
     }
 
 
@@ -413,12 +406,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
             if (includeMetadata)
             {
-                // First, apply metadata associated with the query (e.g., .query.xml files)
-                applyQueryMetadata(schema, errors, query, (AbstractTableInfo) ret);
-
-                // Next, lookup any XML metadata that has been stored in the database, which won't have been applied
-                // if this is a file-based custom query
-                ret.overlayMetadata(getName(), schema, errors);
+                ret = applyQueryMetadata(schema, errors, query, (AbstractTableInfo) ret);
             }
         }
 
@@ -440,8 +428,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (ret != null && errors.isEmpty())
         {
             // Apply ContainerContext to any URLs added in metadata override.
-            ((QueryTableInfo)ret).afterConstruct();
-            ((QueryTableInfo)ret).remapFieldKeys();
+            ((AbstractTableInfo)ret).afterConstruct();
         }
 
         return ret;
@@ -450,11 +437,18 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     /**
      * Apply the metadata attached to the Query to the AbstractTableInfo
      */
-    protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, Query query, AbstractTableInfo ret)
+    protected TableInfo applyQueryMetadata(UserSchema schema, List<QueryException> errors, Query query, AbstractTableInfo ret)
     {
+        // First, apply metadata associated with the query (e.g., .query.xml files)
         TableType xmlTable = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getTableArray(0);
         NamedFiltersType[] xmlFilters = query.getTablesDocument() == null ? null : query.getTablesDocument().getTables().getFiltersArray();
         applyQueryMetadata(schema, errors, xmlTable, xmlFilters, ret);
+
+        // Finally, lookup any XML metadata that has been stored in the database, which won't have been applied
+        // if this is a file-based custom query
+        ret.overlayMetadata(getName(), schema, errors);
+
+        return ret;
     }
 
     protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, TableType xmlTable, NamedFiltersType[] xmlFilters, AbstractTableInfo ret)
