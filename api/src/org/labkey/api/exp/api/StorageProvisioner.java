@@ -462,6 +462,9 @@ public class StorageProvisioner
     public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema)
     {
         DomainKind kind = domain.getDomainKind();
+        if (null == kind)
+            throw new IllegalArgumentException("Could not find information for domain (deleted?): " + domain.getTypeURI());
+
         DbScope scope = kind.getScope();
         String schemaName = kind.getStorageSchemaName();
 
