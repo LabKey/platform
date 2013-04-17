@@ -117,9 +117,9 @@
                 visiblePopup : false
             },
 
-            showDelay : 150,
+            showDelay : 500,
 
-            hideDelay : 200,
+            hideDelay : 500,
 
             hoverCls : 'selected',
 
@@ -169,6 +169,7 @@
 
             onTargetOver : function(e) {
                 this.cancelHide();
+                this.render();
 
                 // show immediately if we already have a menu up
                 // Otherwise, make sure that someone hovers for a while
@@ -193,17 +194,7 @@
                 this.hideTimeout = Ext4.defer(this.hide, this.hideDelay, this);
             },
 
-            show : function() {
-
-                if (HoverNavigation.visiblePopup) {
-                    if (HoverNavigation.visiblePopup == this) {
-                        return;
-                    }
-                    HoverNavigation.visiblePopup.hide();
-                }
-
-                this.hoverEl.addCls(this.hoverCls);
-
+            render : function() {
                 if (!this.rendered) {
                     var p = new LABKEY.WebPart({
                         renderTo : this.popup.id,
@@ -216,10 +207,26 @@
                     p.render();
                     this.rendered = true;
                 }
+            },
+
+            show : function() {
+
+                if (HoverNavigation.visiblePopup) {
+                    if (HoverNavigation.visiblePopup == this) {
+                        return;
+                    }
+                    HoverNavigation.visiblePopup.hide();
+                }
+
+                this.hoverEl.addCls(this.hoverCls);
+
+                this.render();
 
                 this.popup.show();
                 this.popup.alignTo(this.hoverEl); // default: tl-bl
                 HoverNavigation.visiblePopup = this;
+
+                this.showDelay = 250;
             },
 
             hide : function() {
