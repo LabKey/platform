@@ -60,6 +60,8 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
 
             // Let containerManager delete ACLs, we want that to happen last
 
+            String message = c.getContainerNoun(true) + " " + c.getName() + " was deleted";
+            addAuditEvent(user, c, message);
             Portal.containerDeleted(c);
         }
         catch (SQLException e)

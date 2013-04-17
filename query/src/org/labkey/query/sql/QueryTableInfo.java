@@ -106,12 +106,6 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
         return false;
     }
 
-    @Override
-    public void afterConstruct()
-    {
-        super.afterConstruct();
-        remapFieldKeys();
-    }
 
     public void remapFieldKeys()
     {
@@ -127,26 +121,22 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
 
 
     // map output column to its related columns (grouped by source querytable)
-    private Map<FieldKey, Map<FieldKey,FieldKey>> mapFieldKeyToSiblings = null;
+    Map<FieldKey, Map<FieldKey,FieldKey>> mapFieldKeyToSiblings = new TreeMap<FieldKey, Map<FieldKey,FieldKey>>();
 
     private void initFieldKeyMap()
     {
-        if (mapFieldKeyToSiblings == null)
+        Query query = _relation._query;
+        for (Map.Entry<QueryTable,Map<FieldKey,QueryRelation.RelationColumn>> maps : query.qtableColumnMaps.entrySet())
         {
-            mapFieldKeyToSiblings = new TreeMap<FieldKey, Map<FieldKey,FieldKey>>();
-            Query query = _relation._query;
-            for (Map.Entry<QueryTable,Map<FieldKey,QueryRelation.RelationColumn>> maps : query.qtableColumnMaps.entrySet())
+            Map<FieldKey,QueryRelation.RelationColumn> map = maps.getValue();
+            Map<FieldKey,FieldKey> flippedMap = new TreeMap<FieldKey, FieldKey>();
+            for (Map.Entry<FieldKey,QueryRelation.RelationColumn> e : map.entrySet())
             {
-                Map<FieldKey,QueryRelation.RelationColumn> map = maps.getValue();
-                Map<FieldKey,FieldKey> flippedMap = new TreeMap<FieldKey, FieldKey>();
-                for (Map.Entry<FieldKey,QueryRelation.RelationColumn> e : map.entrySet())
-                {
-                    flippedMap.put(e.getValue().getFieldKey(), e.getKey());
-                    mapFieldKeyToSiblings.put(e.getKey(), flippedMap);
-                }
+                flippedMap.put(e.getValue().getFieldKey(), e.getKey());
+                mapFieldKeyToSiblings.put(e.getKey(), flippedMap);
             }
-            mapFieldKeyToSiblings = Collections.unmodifiableMap(mapFieldKeyToSiblings);
         }
+        mapFieldKeyToSiblings = Collections.unmodifiableMap(mapFieldKeyToSiblings);
     }
 
     @Override

@@ -118,7 +118,10 @@ public class LinkedSchema extends ExternalSchema
         // Gathering the hidden tables requires looking at the original schema's hidden/visible tables
         // and then using the additional table metadata supplied.
         Set<String> hiddenTables = new CaseInsensitiveHashSet(availableTables);
-        hiddenTables.removeAll(sourceSchema.getVisibleTableNames());
+        //Issue 17492: CaseInsensitiveHashSet.removeAll fails to remove items
+        //hiddenTables.removeAll(sourceSchema.getVisibleTableNames());
+       for (String visibleTable : sourceSchema.getVisibleTableNames())
+            hiddenTables.remove(visibleTable);
 
         hiddenTables.addAll(getHiddenTables(tableTypes));
 
@@ -237,9 +240,6 @@ public class LinkedSchema extends ExternalSchema
         {
             return null;
         }
-
-        // Copy properties from source table to query table
-        tableInfo.setDefaultVisibleColumns(sourceTable.getDefaultVisibleColumns());
 
         LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo);
 

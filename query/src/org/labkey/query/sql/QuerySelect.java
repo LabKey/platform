@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -1898,7 +1897,7 @@ groupByLoop:
                 to.copyURLFromStrict(_colinfo, Collections.singletonMap(fk,to.getFieldKey()));
             }
 
-            if (to.getURL() instanceof DetailsURL && to.getURL() != AbstractTableInfo.LINK_DISABLER)
+            if (to.getURL() instanceof DetailsURL)
             {
                 FieldKey containerFieldKey = getContainerFieldKey();
                 if (containerFieldKey != null)
