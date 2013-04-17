@@ -1413,15 +1413,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     // Grab these to delete after we've deleted the Data rows
                     ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
 
-                    // Archive all data files prior to deleting - there should be a null check on run
-                    getExpSchema().getScope().addCommitTask(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            run.archiveDataFiles(user);
-                        }
-                    });
+                    // Archive all data files prior to deleting
+                    //  ideally this would be transacted as a commit task but we decided against it due to complications
+                    run.archiveDataFiles(user);
+
                     deleteRun(runId, datasToDelete, user);
 
                     for (ExpData data : datasToDelete)
