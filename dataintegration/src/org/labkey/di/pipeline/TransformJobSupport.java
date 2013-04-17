@@ -15,32 +15,20 @@
  */
 package org.labkey.di.pipeline;
 
-import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
-import org.apache.log4j.Logger;
+import org.labkey.api.security.User;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.Serializable;
 
 /**
- * User: jeckels
- * Date: 3/13/13
+ * User: dax
+ * Date: 4/16/13
  */
-public class TransformJobContext extends ScheduledPipelineJobContext implements ContainerUser, Serializable, LoggerGetter
+public interface TransformJobSupport
 {
-    Logger _logger;
-
-    public TransformJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user, Logger logger)
-    {
-        super(descriptor, container, user);
-        _logger = logger;
-    }
-
-    public Logger getLogger()
-    {
-        return _logger;
-    }
+    BaseQueryTransformDescriptor getTransformDescriptor();
+    TransformJobContext getTransformJobContext();
 }

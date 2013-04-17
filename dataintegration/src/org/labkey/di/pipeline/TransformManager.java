@@ -265,7 +265,7 @@ public class TransformManager implements DataIntegrationService
     {
         try
         {
-            TransformJobContext info = new TransformJobContext(etlDescriptor, container, user);
+            TransformJobContext info = new TransformJobContext(etlDescriptor, container, user, null);
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             TriggerKey triggerKey = TriggerKey.triggerKey(info.getKey(), JOB_GROUP_NAME);
             scheduler.unscheduleJob(triggerKey);
@@ -598,7 +598,6 @@ public class TransformManager implements DataIntegrationService
         @Test
         public void etlChecker() throws Exception
         {
-            //TransformManager.get().startAllConfigurations();
             Container c = JunitUtil.getTestContainer();
             User u = TestContext.get().getUser();
             User newUser = null;
@@ -781,7 +780,6 @@ public class TransformManager implements DataIntegrationService
            catch (InterruptedException x)
            {
            }
-
        }
     }
 }

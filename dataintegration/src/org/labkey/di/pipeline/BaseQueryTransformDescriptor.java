@@ -221,7 +221,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     @Override
     public TransformJobContext getJobContext(Container c, User user)
     {
-        return new TransformJobContext(this, c, user);
+        return new TransformJobContext(this, c, user, LOG);
     }
 
     @Override

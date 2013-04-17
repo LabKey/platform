@@ -24,6 +24,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -54,7 +55,7 @@ import java.util.Set;
  * User: matthewb
  * Date: 12 Jan 2013
  */
-public class DataIntegrationModule extends DefaultModule implements ContainerManager.ContainerListener, StartupListener, ShutdownListener
+public class DataIntegrationModule extends SpringModule implements ContainerManager.ContainerListener, StartupListener, ShutdownListener
 {
     public static final String NAME = "DataIntegration";
 
@@ -100,7 +101,8 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     }
 
 
-    public void doStartup(ModuleContext moduleContext)
+    @Override
+    protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new ETLPipelineProvider(this));
 

@@ -20,7 +20,10 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.URLHelper;
@@ -34,10 +37,11 @@ import java.util.Date;
  * User: jeckels
  * Date: 2/20/13
  */
-public class TransformJob extends PipelineJob
+public class TransformJob extends PipelineJob implements TransformJobSupport
 {
     private final BaseQueryTransformDescriptor _etlDescriptor;
     private int _runId;
+    private TransformJobContext _transformJobContext;
 
     public TransformJob(ViewBackgroundInfo info, BaseQueryTransformDescriptor etlDescriptor)
     {
@@ -45,39 +49,77 @@ public class TransformJob extends PipelineJob
         _etlDescriptor = etlDescriptor;
         File etlLogDir = getPipeRoot().resolvePath("etlLogs");
         File etlLogFile = new File(etlLogDir, DateUtil.formatDateTime(new Date(), "yyyy-MM-dd HH-mm-ss") + ".etl.log");
+        // be sure to set the log file before passing in the logger to the context
         setLogFile(etlLogFile);
+        _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser(), getLogger());
     }
 
-    @Override
-    public void run()
+    public void logRunStart()
     {
-        setStatus("RUNNING ETL");
-        TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("RowId"), _runId), null).getObject(TransformRun.class);
-        if (run == null)
+        TransformRun run = getTransformRun();
+        if (run != null)
         {
-            getLogger().error("Unable to find database record for run with RowId " + _runId);
-            setStatus(ERROR_STATUS);
-            return;
-        }
-        try
-        {
-            // Mark that the job has started
+            // mark the run as started
             run.setStartTime(new Date());
-            Table.update(getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run, run.getRowId());
+            update(run);
+        }
+    }
 
-            // TODO - run the real transform here!
+    public void logRunFinish(int recordCount)
+    {
 
-
+        TransformRun run = getTransformRun();
+        if (run != null)
+        {
             // Mark that the job has finished successfully
             run.setEndTime(new Date());
-            run.setRecordCount(0);
+            run.setRecordCount(recordCount);
+            update(run);
+        }
+    }
+
+    private void update(TransformRun run)
+    {
+        try
+        {
+            run.setStartTime(new Date());
             Table.update(getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run, run.getRowId());
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
-        setStatus(COMPLETE_STATUS);
+    }
+
+    private TransformRun getTransformRun()
+    {
+        TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("RowId"), _runId), null).getObject(TransformRun.class);
+        if (run == null)
+        {
+            getLogger().error("Unable to find database record for run with RowId " + _runId);
+            setStatus(ERROR_STATUS);
+        }
+
+        return run;
+    }
+
+    @Override
+    public TaskPipeline getTaskPipeline()
+    {
+        return PipelineJobService.get().getTaskPipeline(new TaskId(TransformJob.class));
+    }
+
+    //
+    // TransformJobSupport
+    //
+    public BaseQueryTransformDescriptor getTransformDescriptor()
+    {
+        return _etlDescriptor;
+    }
+
+    public TransformJobContext getTransformJobContext()
+    {
+        return _transformJobContext;
     }
 
     @Override
