@@ -138,15 +138,10 @@ public class ListWriter
                 // Write data
                 Collection<ColumnInfo> columns = getColumnsToExport(ti, false, removeProtected);
 
-                try{
-                    if (ctx.isAlternateIds())
-                    {
-                        createAlternateIdColumns(ti, columns, ctx.getContainer());
-                    }
-                }
-                catch (NullPointerException e)
+
+                if (null != ctx && ctx.isAlternateIds())
                 {
-                    //If the NPE occurs, it is presumed to be false, so we do nothing.
+                    createAlternateIdColumns(ti, columns, ctx.getContainer());
                 }
 
                 if (!columns.isEmpty())
@@ -185,10 +180,9 @@ public class ListWriter
     {
 
         Collection<ColumnInfo> colCopy = new LinkedList<ColumnInfo>(columns);
-        String participantIdColumnName = StudyService.get().getSubjectColumnName(c);
         for (ColumnInfo column : colCopy)
         {
-            if (column.getName().equalsIgnoreCase(participantIdColumnName))
+            if(column.getConceptURI() != null && column.getConceptURI().equals("http://cpas.labkey.com/Study#ParticipantId"))
             {
                 ColumnInfo newColumn = StudyService.get().createAlternateIdColumn(ti, column, c);
                 columns.remove(column);
