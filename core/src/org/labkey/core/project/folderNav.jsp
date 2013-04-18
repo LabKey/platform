@@ -108,31 +108,6 @@
         margin-bottom: -5px;
         text-align: right;
     }
-
-    .button-icon {
-        background-color: #126495;
-        opacity: 0.5;
-        display: inline-block;
-        width: 26px;
-        height: 20px;
-    }
-
-    .button-icon:hover {
-        opacity: 1.0;
-    }
-
-    .button-icon a {
-        display: inline-block;
-        width: 26px;
-        height: 20px;
-        margin-bottom: 0;
-    }
-
-    .button-icon img {
-        width: 26px;
-        height: 20px;
-        margin-bottom: 0;
-    }
 </style>
 <%!
     public String getTrailSeparator(String ctxPath)

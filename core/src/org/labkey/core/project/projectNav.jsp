@@ -73,7 +73,7 @@
 <style type="text/css">
 
     #projectBar_menu {
-        padding: 10px 10px 0 10px;
+        padding: 0;
     }
 
     .project-nav {
@@ -87,8 +87,9 @@
 
     .project-nav ul {
         list-style: none;
-        width: <%=11.333*cols%>em;
-        padding: 0;
+        /* width + padding + error */
+        width: <%=(11.333*cols)+(cols*2.188)+1%>em;
+        padding: 10px;
     }
 
     .project-nav ul li {
@@ -98,38 +99,14 @@
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        padding-right: 3px;
+        padding-left: 5px;
+        padding-right: 30px;
     }
 
     .project-menu-buttons {
         border-top: 1px solid #d5d5d5;
-        padding-top: 5px;
+        padding: 5px 5px 0 0;
         text-align: right;
-    }
-
-    .button-icon {
-        background-color: #126495;
-        opacity: 0.5;
-        display: inline-block;
-        width: 26px;
-        height: 20px;
-    }
-
-    .button-icon:hover {
-        opacity: 1.0;
-    }
-
-    .button-icon a {
-        display: inline-block;
-        width: 26px;
-        height: 20px;
-        margin-bottom: 0;
-    }
-
-    .button-icon img {
-        width: 26px;
-        height: 20px;
-        margin-bottom: 0;
     }
 </style>
 <div class="project-nav">
