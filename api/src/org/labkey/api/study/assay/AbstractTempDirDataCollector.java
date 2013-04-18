@@ -96,6 +96,12 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
                 {
                     // Fixup the path in the run itself so that it's not pointed at the temp directory
                     run.setFilePathRoot(assayDir);
+
+                    // If the run name is the filename, and the filename was changed to another unique value, change the run name.
+                    if (run.getName().equals(tempDirFile.getName()) ) {
+                        run.setName(assayDirFile.getName());
+                    }
+
                     run.save(context.getUser());
                 }
                 FileUtils.moveFile(tempDirFile, assayDirFile);
