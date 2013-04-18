@@ -19,9 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -79,15 +81,34 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    protected void applyQueryMetadata(UserSchema schema, List<QueryException> errors, Query query, AbstractTableInfo ret)
+    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata)
     {
-        // First, apply wrapped query-def's metadata
-        super.applyQueryMetadata(schema, errors, query, ret);
+        // Parse/resolve the wrapped query in the context of the original source schema
+        UserSchema sourceSchema = _schema.getSourceSchema();
+        return super.getQuery(sourceSchema, errors, parent, includeMetadata);
+    }
 
-        // Next, apply linked schema metadata (either from template or from the linked schema instance)
+    @Override
+    protected TableInfo applyQueryMetadata(UserSchema schema, List<QueryException> errors, Query query, AbstractTableInfo ret)
+    {
+        // First, apply original wrapped query-def's metadata from files (using original schema name and container)
+        // Second, super.applyQueryMetadata() will also apply orignal wrapped query-def's metadata stored in the database (using original schema name and container)
+        UserSchema sourceSchema = _schema.getSourceSchema();
+        super.applyQueryMetadata(sourceSchema, errors, query, ret);
+
+        // Third, remove column URLs and some lookups using LinkedTableInfo
+        ret = new LinkedTableInfo(_schema, ret);
+        ret.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
+
+        // Fourth, apply linked schema metadata (either from template or from the linked schema instance)
         TableType metadata = _schema.getXbTable(getName());
         if (metadata != null || (_schema._namedFilters != null && _schema._namedFilters.length > 0))
             super.applyQueryMetadata(schema, errors, metadata, _schema._namedFilters, ret);
+
+        // Fifth, lookup any XML metadata that has been stored in the database (in linked schema container)
+        ret.overlayMetadata(getName(), schema, errors);
+
+        return ret;
     }
 
     @Override

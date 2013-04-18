@@ -1143,16 +1143,19 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         continue;
                     assert MemTracker.put(r);
                     _log.debug("index(" + i._id + ")");
-                    index(i._id, i._res, i._preprocessMap);
-                    i._res.setLastIndexed(i._start, i._modified);
-                    success = true;
-                    synchronized (_commitLock)
+
+                    if (index(i._id, i._res, i._preprocessMap))
                     {
-                        incrementIndexStat(ms);
-                        _countIndexedSinceCommit++;
-                        _lastIndexedTime = ms;
-                        if (_countIndexedSinceCommit > 10000)
-                            commit();
+                        i._res.setLastIndexed(i._start, i._modified);
+                        success = true;
+                        synchronized (_commitLock)
+                        {
+                            incrementIndexStat(ms);
+                            _countIndexedSinceCommit++;
+                            _lastIndexedTime = ms;
+                            if (_countIndexedSinceCommit > 10000)
+                                commit();
+                        }
                     }
                 }
                 catch (InterruptedException x)
@@ -1235,7 +1238,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    protected abstract void index(String id, WebdavResource r, Map preprocessProps);
+    // Returns true if indexing was successful
+    protected abstract boolean index(String id, WebdavResource r, Map preprocessProps);
     protected abstract void commitIndex();
     protected abstract void deleteDocument(String id);
     protected abstract void deleteDocumentsForPrefix(String prefix);

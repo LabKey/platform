@@ -2474,6 +2474,7 @@ search/src/org/labkey/search/model/ExternalAnalyzer.java -text
 search/src/org/labkey/search/model/ExternalIndexManager.java -text
 search/src/org/labkey/search/model/ExternalIndexProperties.java -text
 search/src/org/labkey/search/model/IndexManager.java -text
+search/src/org/labkey/search/model/IndexManagerClosedException.java -text
 search/src/org/labkey/search/model/LuceneSearchServiceImpl.java -text
 search/src/org/labkey/search/model/NoopWritableIndex.java -text
 search/src/org/labkey/search/model/SavePaths.java -text

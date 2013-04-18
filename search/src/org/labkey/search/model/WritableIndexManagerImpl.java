@@ -50,6 +50,8 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     private final Object _writerLock = new Object();
     private final IndexWriter _iw;
 
+    private boolean _closed = false;
+
 
     static WritableIndexManager get(File indexPath, Analyzer analyzer) throws IOException
     {
@@ -102,6 +104,12 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
     IndexWriter getIndexWriter()
     {
+        // This can happen in a race between the indexing thread and an admin changing the search configuration. We
+        // use our own exception here (instead of the standard IndexWriter AlreadyClosedException) to distinguish an
+        // explicit IndexManager close by our code from an unexpected IndexWriter.close().
+        if (_closed)
+            throw new IndexManagerClosedException();
+
         return _iw;
     }
 
@@ -126,6 +134,13 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAME.uniqueId.toString(), id));
             }
         }
+        catch (IndexManagerClosedException x)
+        {
+            // Happens when an admin switches the index configuration, e.g., setting a new path to the index files.
+            // We've swapped in the new IndexManager, but the indexing thread still holds an old (closed) IndexManager.
+            // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories
+            // anyway, so everything's getting reindexed anyway.
+        }
         catch (Throwable e)
         {
             _log.error("Indexing error deleting " + id, e);
@@ -136,10 +151,17 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
     public void deleteQuery(Query query) throws IOException
     {
-        synchronized (_writerLock)
+        try
         {
-            IndexWriter w = getIndexWriter();
-            w.deleteDocuments(query);
+            synchronized (_writerLock)
+            {
+                IndexWriter w = getIndexWriter();
+                w.deleteDocuments(query);
+            }
+        }
+        catch (IndexManagerClosedException e)
+        {
+            // Configuration was changed
         }
     }
 
@@ -166,9 +188,10 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     {
         synchronized (_writerLock)
         {
+            _closed = true;
             _iw.close();
-            _directory.close();
             _manager.close();
+            _directory.close();
         }
     }
 
@@ -177,9 +200,11 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     {
         synchronized (_writerLock)
         {
+            IndexWriter iw = getIndexWriter();
+
             try
             {
-                _iw.commit();
+                iw.commit();
                 _manager.maybeRefresh();
             }
             catch (IOException e)
@@ -194,7 +219,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 {
                     try
                     {
-                        _iw.close();
+                        iw.close();
                     }
                     catch (IOException e1)
                     {
@@ -203,7 +228,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
                         try
                         {
-                            _iw.close();
+                            iw.close();
                         }
                         catch (IOException e2)
                         {

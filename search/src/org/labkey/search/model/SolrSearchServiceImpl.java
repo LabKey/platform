@@ -36,9 +36,10 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 {
     private static final Logger _log = Logger.getLogger(SolrSearchServiceImpl.class);
     
-    protected void index(String id, WebdavResource r, Map preprocessMap)
+    protected boolean index(String id, WebdavResource r, Map preprocessMap)
     {
         _log.info("INDEX: " + r.getExecuteHref(null));
+        return true;
 //        if ("text/html".equals(r.getContentType()))
 //        {
 //            try

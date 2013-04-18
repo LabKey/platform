@@ -184,6 +184,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public void updatePrimaryIndex()
     {
         super.updatePrimaryIndex();
+
+        // Commit and close current index
+        commit();
+        try
+        {
+            _indexManager.close();
+        }
+        catch (Exception e)
+        {
+            _log.error("Closing index", e);
+        }
+
+        // Initialize new index and clear the last indexed
         initializeIndex();
         clearLastIndexed();
     }
@@ -661,7 +674,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         // Split the identifiers string by whitespace, index each without stemming
         if (!identifiers.isEmpty())
             for (String identifier : identifiers.split(("\\s+")))
-                doc.add(new Field(fieldName.toString(), identifier.toLowerCase(), StringField.TYPE_NOT_STORED));
+                doc.add(new Field(fieldName.toString(), identifier.toLowerCase(), INDEXED_IDENTIFIER));
     }
 
 
@@ -955,17 +968,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-    protected void index(String id, WebdavResource r, Map preprocessMap)
+    protected boolean index(String id, WebdavResource r, Map preprocessMap)
     {
         try
         {
             Document doc = (Document)preprocessMap.get(Document.class);
             _indexManager.index(r.getDocumentId(), doc);
+            return true;
+        }
+        catch (IndexManagerClosedException x)
+        {
+            // Happens when an admin switches the index configuration, e.g., setting a new path to the index files.
+            // We've swapped in the new IndexManager, but the indexing thread still holds an old (closed) IndexManager.
+            // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories
+            // anyway, so everything's getting reindexed anyway.
         }
         catch(Throwable e)
         {
             _log.error("Indexing error with " + id, e);
         }
+
+        return false;
     }
 
 
