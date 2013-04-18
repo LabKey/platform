@@ -101,6 +101,14 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     }
 
     @Override
+    public void afterConstruct()
+    {
+        super.afterConstruct();
+        if (getRealTable() instanceof AbstractTableInfo)
+            ((AbstractTableInfo)getRealTable()).afterConstruct();
+    }
+
+    @Override
     public void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, @Nullable NamedFiltersType[] filtersArray, Collection<QueryException> errors)
     {
         if (_rootTable instanceof SchemaTableInfo)

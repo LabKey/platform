@@ -163,7 +163,7 @@ abstract public class AbstractTableInfo implements TableInfo
             }
             if (_detailsURL != null && _detailsURL != LINK_DISABLER)
             {
-                _detailsURL.setContainerContext(cc);
+                _detailsURL.setContainerContext(cc, false);
             }
         }
     }

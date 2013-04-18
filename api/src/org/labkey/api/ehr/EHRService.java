@@ -84,6 +84,8 @@ abstract public class EHRService
         housing(),
         project(),
         protocol(),
+        assignment(),
+        moreReports(),
         animalSearch();
 
         REPORT_LINK_TYPE()
