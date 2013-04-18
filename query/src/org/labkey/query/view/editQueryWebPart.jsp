@@ -107,7 +107,7 @@
                 xtype : 'radio',
                 id : 'selectQueryList',
                 name : 'selectQuery',
-                boxLabel : 'Show the list of tables in this schema.',
+                boxLabel : 'Show the list of queries in this schema.',
                 value : false,
                 checked : !<%=PageFlowUtil.jsString(props.get("queryName"))%>,
                 listeners : {
