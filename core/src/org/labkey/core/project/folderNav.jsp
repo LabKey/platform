@@ -8,6 +8,9 @@
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%!
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -25,6 +28,8 @@
     User user = ctx.getUser();
     List<Container> containers = ContainerManager.containersToRootList(ctx.getContainer());
     int size = containers.size();
+
+    ActionURL createFolderURL = new ActionURL(AdminController.CreateFolderAction.class, ctx.getContainer());
 %>
 <style type="text/css">
 
@@ -43,18 +48,17 @@
     }
 
     .folder-trail {
-        padding: 3px 20px 7px 7px;
+        padding: 8px 20px 10px 10px;
         color: #a9a9a9;
         white-space: nowrap;
-        border-bottom: 1px solid lightgray;
+        border-bottom: 1px solid #d5d5d5;
     }
 
     .folder-tree {
-        padding-right: 50px;
         max-height: 325px;
         overflow-x: hidden;
         overflow-y: auto;
-        padding-left: 7px;
+        padding: 5px 50px 10px 10px;
     }
 
     ul {
@@ -95,6 +99,39 @@
     .expand-folder {
         background: url(<%=contextPath%>/_images/expand-collapse.gif) no-repeat 0 -130px;
         padding-left: 20px;
+    }
+
+    .folder-menu-buttons {
+        border-top: 1px solid #d5d5d5;
+        padding-top: 5px;
+        margin-top: 5px;
+        margin-bottom: -5px;
+        text-align: right;
+    }
+
+    .button-icon {
+        background-color: #126495;
+        opacity: 0.5;
+        display: inline-block;
+        width: 26px;
+        height: 20px;
+    }
+
+    .button-icon:hover {
+        opacity: 1.0;
+    }
+
+    .button-icon a {
+        display: inline-block;
+        width: 26px;
+        height: 20px;
+        margin-bottom: 0;
+    }
+
+    .button-icon img {
+        width: 26px;
+        height: 20px;
+        margin-bottom: 0;
     }
 </style>
 <%!
@@ -183,3 +220,23 @@
         }
     });
 </script>
+<div class="folder-menu-buttons">
+<%
+    if (ctx.getContainer().hasPermission(ctx.getUser(), AdminPermission.class))
+    {
+%>
+    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="/labkey/_images/icon_projects_add.png" alt="New Sub-Folder" /></a></span>
+<%
+    }
+%>
+    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="/labkey/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
+    <script type="text/javascript">
+        (function(){
+            var p = document.getElementById('permalink');
+            var pvis = document.getElementById('permalink_vis');
+            if (p && pvis) {
+                pvis.href = p.href;
+            }
+        })();
+    </script>
+</div>

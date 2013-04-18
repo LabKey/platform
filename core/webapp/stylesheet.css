@@ -3828,7 +3828,7 @@ a.labkey-main-menu-link:visited
 
 .labkey-main-menu ul
 {
-    list-style-type: none;
+    list-style: none;
     margin: 0 0 0 20px;
     padding: 5px 0;
     width: 75%;
@@ -3844,6 +3844,7 @@ a.labkey-main-menu-link:visited
 .labkey-main-menu li
 {
     display: inline;
+    height: 27px;
     margin: 0 0 0 0;
     padding: 6px 9px;
     color: #fff;
@@ -3852,14 +3853,13 @@ a.labkey-main-menu-link:visited
 }
 
 .labkey-main-menu li.menu-projects {
-    background: rgba(0,0,0,0.3) url(./_images/icon_menu_projects.png) top center no-repeat;
+    background: url(./_images/icon_menu_projects.png) no-repeat top center;
+    background-color: rgba(0,0,0,0.3);
     padding: 6px 18px 6px 23px;
     border-left: 1px solid rgba(255,255,255,0.3);
 }
 
 .labkey-main-menu li.menu-folders {
-    /* background-color: #0a5581; */
-    /* border-right: 1px solid #297daf; */
     background-color: rgba(0,0,0,0.3);
     margin-right: -5px;
     padding-right: 12px;
@@ -3868,7 +3868,6 @@ a.labkey-main-menu-link:visited
 }
 
 .labkey-main-menu li:hover {
-    /* background-color: #fff; */
     color: #000;
 }
 

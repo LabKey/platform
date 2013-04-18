@@ -154,26 +154,16 @@
 %>
     </ul>
 </div>
+<%
+        if (getViewContext().getUser().isAdministrator())
+        {
+%>
 <div class="project-menu-buttons">
-<%
-    if (getViewContext().getUser().isAdministrator())
-    {
-%>
     <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=contextPath%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
-<%
-    }
-%>
-    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=contextPath%>/_images/icon_permalink.png" alt="Permalink Page" /></a></span>
-    <script type="text/javascript">
-        (function(){
-            var p = document.getElementById('permalink');
-            var pvis = document.getElementById('permalink_vis');
-            if (p && pvis) {
-                pvis.href = p.href;
-            }
-        })();
-    </script>
 </div>
+<%
+        }
+%>
 <%
     }
 %>
