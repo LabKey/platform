@@ -141,15 +141,6 @@ if (bean.showHeader() != PageConfig.TrueFalse.False)
         </tr><%
      }%>
         <tr>
-            <%     if (HttpView.currentContext().isShowFolders()) { %>
-            <td id="leftmenupanel" class="labkey-site-nav-panel">
-<%            if (HttpView.currentContext().isShowFolders())
-                {%>
-    		    <div class="labkey-site-nav-expander"> </div>
-            <%  } %>
-                <% me.include(me.getView("menu") ,out); %>
-            </td>
-            <% } %>
             <td class="labkey-proj">
 
                 <% if (null != me.getView("appbar"))

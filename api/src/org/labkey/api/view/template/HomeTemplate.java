@@ -29,8 +29,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.menu.MenuService;
-import org.labkey.api.view.menu.MenuView;
 import org.labkey.api.wiki.WikiService;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -57,21 +55,6 @@ public class HomeTemplate extends PrintTemplate
         page.setNavTrail(Arrays.asList(navTrail));
 
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-        WebPartView wikiMenu = null;
-        if (null != c && null != c.getProject() && ModuleLoader.getInstance().isStartupComplete() && null != wikiService)
-        {
-            wikiMenu = wikiService.getView(c.getProject(), "_navTree", false);
-            if (null != wikiMenu)
-                wikiMenu.setFrame(FrameType.NONE); // 12336: Explicitly don't frame the _header override.
-        }
-
-        if (null != wikiMenu)
-            setView("menu", wikiMenu);
-        else
-        {
-            MenuView navElements = MenuService.get().getMenuView(context, page);
-            setView("menu", navElements);
-        }
 
         WebPartView header = null;
         if (ModuleLoader.getInstance().isStartupComplete() && null != wikiService && null != c && null != c.getProject())

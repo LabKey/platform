@@ -15,7 +15,6 @@
  */
 package org.labkey.api.view;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
@@ -434,9 +433,6 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
 
     public boolean isShowFolders()
     {
-        String showFoldersStr = PreferenceService.get().getProperty("showFolders", getUser());
-        Boolean showFolders = (Boolean) ConvertUtils.convert(showFoldersStr, Boolean.class);
-
         if (isAdminMode())
             return true;
 
@@ -450,7 +446,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
             case IN_MENU:
                 return false; //The menu bar takes care of this now...
             case ADMIN:
-                return isAdminMode();
+                return isAdminMode() || getUser().isAdministrator();
             default:
                 return true;
         }

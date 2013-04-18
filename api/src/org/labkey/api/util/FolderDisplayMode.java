@@ -31,8 +31,9 @@ public enum FolderDisplayMode
     OPTIONAL_ON("Optionally -- Show by default", true),
     @Deprecated
     OPTIONAL_OFF("Optionally -- Hide by default", true),
+    @Deprecated
     IN_MENU("As drop down menu", true),
-    ADMIN("Optionally for admins", false);
+    ADMIN("Only for Administrators", false);
 
     private String displayString;
     private boolean showInMenu;

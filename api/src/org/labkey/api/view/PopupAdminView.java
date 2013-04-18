@@ -24,10 +24,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
-import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.view.menu.FolderAdminMenu;
-import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.menu.ProjectAdminMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
 
@@ -74,18 +71,6 @@ public class PopupAdminView extends PopupMenuView
             return;
         
         NavTree navTree = new NavTree("Admin");
-        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-
-        //Allow Admins to turn the folder bar on & off
-        if (laf.getFolderDisplayMode() != FolderDisplayMode.ALWAYS && !"POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-        {
-            ActionURL adminURL = MenuService.get().getSwitchAdminModeURL(context);
-
-            if (context.isAdminMode())
-                navTree.addChild("Hide Navigation Bar", adminURL);
-            else
-                navTree.addChild("Show Navigation Bar", adminURL);
-        }
 
         if (hasAdminReadInRoot)
         {
