@@ -61,7 +61,7 @@
         padding: 5px 50px 10px 10px;
     }
 
-    ul {
+    .folder-nav ul {
         list-style: none;
         padding-left: 20px;
     }
