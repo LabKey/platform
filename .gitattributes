@@ -809,8 +809,6 @@ dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.02-0.03.
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.03-0.04.sql -text
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
-dataintegration/src/org/labkey/di/api/ScheduledPipelineJobContext.java -text
-dataintegration/src/org/labkey/di/api/ScheduledPipelineJobDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/BaseQueryTransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/DataIntegrationDbSchema.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
