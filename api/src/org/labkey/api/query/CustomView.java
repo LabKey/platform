@@ -23,6 +23,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
@@ -46,4 +47,6 @@ public interface CustomView extends CustomViewInfo
     void delete(User user, HttpServletRequest request) throws QueryException;
     /** @return true if serialized sucessfully. */
     boolean serialize(VirtualFile dir) throws IOException;
+
+    Collection<String> getDependents();
 }

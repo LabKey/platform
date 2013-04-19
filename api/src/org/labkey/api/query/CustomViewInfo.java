@@ -150,6 +150,7 @@ public interface CustomViewInfo
     Date getModified();
 
     String getSchemaName();
+    SchemaKey getSchemaPath();
     String getQueryName();
     
     Container getContainer();

@@ -72,10 +72,14 @@ abstract public class QueryService
      */
     abstract public Map<String, QueryDefinition> getQueryDefs(User user, Container container, String schema);
     abstract public List<QueryDefinition> getQueryDefs(User user, Container container);
+
+    abstract public QueryDefinition getQueryDef(User user, Container container, String schema, String name);
+
+    @Deprecated /** Use SchemaKey form instead. */
     abstract public QueryDefinition createQueryDef(User user, Container container, String schema, String name);
+    abstract public QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name);
     abstract public QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name);
     abstract public QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
-    abstract public QueryDefinition getQueryDef(User user, Container container, String schema, String name);
 
     abstract public QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String name);
     abstract public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name);
@@ -189,13 +193,11 @@ abstract public class QueryService
 
     public abstract List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path);
 
-    public interface QueryListener
-    {
-        void viewChanged(CustomView view);
-        void viewDeleted(CustomView view);
-    }
+    abstract public void addQueryListener(QueryChangeListener listener);
+    abstract public void removeQueryListener(QueryChangeListener listener);
 
-    abstract public void addQueryListener(QueryListener listener);
+    abstract public void addCustomViewListener(CustomViewChangeListener listener);
+    abstract public void removeCustomViewListener(CustomViewChangeListener listener);
 
     //
     // Thread local environment for executing a query

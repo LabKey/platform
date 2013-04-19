@@ -24,6 +24,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.Map;
 import java.util.List;
 import java.sql.SQLException;
@@ -31,6 +32,7 @@ import java.sql.SQLException;
 public interface QueryDefinition
 {
     String getName();
+    void setName(String name);
 
     @Deprecated // Use .getSchemaPath() instead.
     String getSchemaName();
@@ -75,8 +77,28 @@ public interface QueryDefinition
     ContainerFilter getContainerFilter();
 
     boolean canEdit(User user);
+
+    /**
+     * Save a new QueryDefinition or update an existing QueryDefinition.
+     * TableQueryDefinition and file-based queries cannot be deleted.
+     * Fires the {@link QueryChangeListener#queryChanged(Container, ContainerFilter, SchemaKey, QueryChangeListener.QueryProperty, Collection)} event.
+     *
+     * @param user
+     * @throws SQLException
+     */
     void save(User user, Container container) throws SQLException;
+    void save(User user, Container container, boolean fireChangeEvent) throws SQLException;
+
+    /**
+     * Delete the QueryDefinition.
+     * TableQueryDefinition and file-based queries cannot be deleted.
+     * Fires the {@link QueryChangeListener#queryDeleted(Container, ContainerFilter, SchemaKey, Collection)} event.
+     *
+     * @param user
+     * @throws SQLException
+     */
     void delete(User user) throws SQLException;
+    void delete(User user, boolean fireChangeEvent) throws SQLException;
 
     List<QueryParseException> getParseErrors(QuerySchema schema);
 
@@ -92,6 +114,7 @@ public interface QueryDefinition
      * Returns whether this is a table-based query definition (versus a custom query).
      */
     boolean isTableQueryDefinition();
+    Collection<String> getDependents();
 
     boolean isSqlEditable();
     boolean isMetadataEditable();

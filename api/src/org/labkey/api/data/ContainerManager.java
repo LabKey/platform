@@ -36,6 +36,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.event.PropertyChange;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -1685,7 +1686,7 @@ public class ContainerManager
     }
 
 
-    public static class ContainerPropertyChangeEvent extends PropertyChangeEvent
+    public static class ContainerPropertyChangeEvent extends PropertyChangeEvent implements PropertyChange<Property, Object>
     {
         public final Property property;
         public final Container container;
@@ -1702,6 +1703,12 @@ public class ContainerManager
         public ContainerPropertyChangeEvent(Container c, Property p, Object oldValue, Object newValue)
         {
             this(c, null, p, oldValue, newValue);
+        }
+
+        @Override
+        public Property getProperty()
+        {
+            return property;
         }
     }
 
