@@ -397,6 +397,7 @@ api/src/org/labkey/api/etl/AbstractDataIterator.java -text
 api/src/org/labkey/api/etl/BeanDataIterator.java -text
 api/src/org/labkey/api/etl/CachingDataIterator.java -text
 api/src/org/labkey/api/etl/CoerceDataIterator.java -text
+api/src/org/labkey/api/etl/CopyConfig.java -text
 api/src/org/labkey/api/etl/DataIterator.java -text
 api/src/org/labkey/api/etl/DataIteratorBuilder.java -text
 api/src/org/labkey/api/etl/DataIteratorContext.java -text
