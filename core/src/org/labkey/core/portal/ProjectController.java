@@ -1281,6 +1281,7 @@ public class ProjectController extends SpringActionController
 
             getViewContext().getResponse().setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
             MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
+            mr.setCharacterEncoding("UTF-8");
             view.render(request, mr);
 
             if (mr.getStatus() != HttpServletResponse.SC_OK){

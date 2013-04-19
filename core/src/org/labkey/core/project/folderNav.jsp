@@ -58,6 +58,8 @@
         max-height: 325px;
         overflow-x: hidden;
         overflow-y: auto;
+        -ms-overflow-y: auto;
+        -ms-overflow-x: hidden;
         padding: 5px 50px 10px 10px;
     }
 

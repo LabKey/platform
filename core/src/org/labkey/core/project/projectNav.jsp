@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
@@ -85,6 +86,8 @@
         display: inline-block;
         overflow-y: auto;
         overflow-x: hidden;
+        -ms-overflow-y: auto;
+        -ms-overflow-x: hidden;
     }
 
     .project-nav ul {
@@ -125,7 +128,20 @@
                     NavTree p = children.get(idx);
 
                     %><li>
-                        <a title="<%=p.getText()%>" href="<%=p.getHref()%>"><%=p.getText()%></a>
+                        <%
+                            if (null != p.getHref())
+                            {
+                        %>
+                        <a title="<%=h(p.getText())%>" href="<%=PageFlowUtil.filter(p.getHref())%>"><%=h(p.getText())%></a>
+                        <%
+                            }
+                            else
+                            {
+                        %>
+                        <span><%=h(p.getText())%></span>
+                        <%
+                            }
+                        %>
                     </li><%
                 }
             }
