@@ -69,6 +69,7 @@ import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.query.DataSetQuerySettings;
 import org.labkey.study.writer.DatasetWriter;
 import org.springframework.validation.BindException;
@@ -78,6 +79,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -253,8 +255,25 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         TableInfo tinfo = view.getTable();
         SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
         Map<FieldKey, ColumnInfo> colMap = new HashMap<FieldKey, ColumnInfo>();
+        Integer optionsId = qsDef.getOptionsId();
+        StudySnapshot snapshot = null;
 
-        for (ColumnInfo column : DatasetWriter.getColumnsToExport(tinfo, def, false, false))
+        if (optionsId != null)
+            snapshot = StudyManager.getInstance().getRefreshStudySnapshot(optionsId);
+
+        boolean  removeProtected = (snapshot != null) ? snapshot.getSnapshotSettings().isRemoveProtectedColumns() : false;
+        Collection<ColumnInfo> columns = DatasetWriter.getColumnsToExport(tinfo, def, false, removeProtected);
+
+        if (snapshot != null && snapshot.getSnapshotSettings().isShiftDates())
+        {
+            DatasetWriter.createDateShiftColumns(tinfo, columns, view.getContainer());
+        }
+        if (snapshot != null && snapshot.getSnapshotSettings().isUseAlternateParticipantIds())
+        {
+            DatasetWriter.createAlternateIdColumns(tinfo, columns, view.getContainer());
+        }
+
+        for (ColumnInfo column : columns)
         {
             colMap.put(column.getFieldKey(), column);
         }

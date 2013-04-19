@@ -2148,6 +2148,7 @@ query/resources/schemas/dbscripts/postgresql/query-12.301-13.10.sql -text
 query/resources/schemas/dbscripts/postgresql/query-12.31-12.32.sql -text
 query/resources/schemas/dbscripts/postgresql/query-12.32-12.33.sql -text
 query/resources/schemas/dbscripts/postgresql/query-12.33-12.34.sql -text
+query/resources/schemas/dbscripts/postgresql/query-13.10-13.11.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-2.00.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-2.20.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-8.20.sql -text
@@ -2194,6 +2195,7 @@ query/resources/schemas/dbscripts/sqlserver/query-12.301-13.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-12.31-12.32.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-12.32-12.33.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-12.33-12.34.sql -text
+query/resources/schemas/dbscripts/sqlserver/query-13.10-13.11.sql -text
 query/resources/schemas/query.xml -text
 query/resources/views/SearchPanel.html -text
 query/resources/views/SearchPanel.view.xml -text

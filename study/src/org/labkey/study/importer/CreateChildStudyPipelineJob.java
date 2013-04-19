@@ -220,6 +220,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                         _form.isMaskClinic(), _datasets, new PipelineJobLoggerGetter(this)
                 );
 
+                // Save these snapshot settings to support specimen refresh and provide history
+                StudySnapshot snapshot = new StudySnapshot(studyCtx, _dstContainer, _form.isSpecimenRefresh());
+                Table.insert(getUser(), StudySchema.getInstance().getTableInfoStudySnapshot(), snapshot);
+
                 if (selectedVisits != null)
                     studyCtx.setVisitIds(selectedVisits);
 
@@ -243,17 +247,13 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 exportParticipantGroups(_form, ctx, vf);
 
                 // import dataset data or create snapshot datasets
-                importDatasetData(context, _form, destStudy, vf, _errors);
+                importDatasetData(context, _form, destStudy, snapshot, vf, _errors);
 
                 // import the specimen data
                 importSpecimenData(destStudy, vf);
 
                 // import folder items (reports, lists, etc)
                 importFolderItems(destStudy, vf);
-
-                // Save these snapshot settings to support specimen refresh and provide history
-                StudySnapshot snapshot = new StudySnapshot(studyCtx, _dstContainer, _form.isSpecimenRefresh());
-                Table.insert(getUser(), StudySchema.getInstance().getTableInfoStudySnapshot(), snapshot);
 
                 // Get a fresh copy of the study... import methods may have changed it
                 StudyImpl mutableStudy = StudyManager.getInstance().getStudy(_dstContainer).createMutable();
@@ -410,7 +410,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
         importer.process(null, folderImportContext, vf);
     }
 
-    private void importDatasetData(ViewContext context, ChildStudyDefinition form, StudyImpl destStudy, VirtualFile vf, BindException errors) throws Exception
+    private void importDatasetData(ViewContext context, ChildStudyDefinition form, StudyImpl destStudy, StudySnapshot snapshot, VirtualFile vf, BindException errors) throws Exception
     {
         User user = getUser();
 
@@ -466,6 +466,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                     QuerySnapshotDefinition qsDef = QueryService.get().createQuerySnapshotDef(destStudy.getContainer(), queryDef, def.getLabel());
                     qsDef.setUpdateDelay(form.getUpdateDelay());
                     qsDef.setParticipantGroups(participantGroups);
+                    qsDef.setOptionsId(snapshot.getRowId());
 
                     qsDef.save(user);
 

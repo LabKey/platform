@@ -3609,6 +3609,16 @@ public class StudyManager
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getCollection(StudySnapshot.class);
     }
 
+    @Nullable
+    public StudySnapshot getRefreshStudySnapshot(Integer snapshotId)
+    {
+        TableSelector selector = new TableSelector(StudySchema.getInstance().getTableInfoStudySnapshot(), new SimpleFilter(FieldKey.fromParts("RowId"), snapshotId), null);
+        StudySnapshot[] snapshots = selector.getArray(StudySnapshot.class);
+
+        assert (snapshots.length == 0 || snapshots.length == 1);
+        return snapshots.length == 1 ? snapshots[0] : null;
+    }
+
     /**
      * Convert a placeholder or 'ghost' dataset to an actual dataset by renaming the target dataset to the placeholder's name,
      * transferring all timepoint requirements from the placeholder to the target and deleting the placeholder dataset.

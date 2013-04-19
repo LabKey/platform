@@ -241,6 +241,18 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return _snapshotDef.getFilter();
     }
 
+    @Override
+    public void setOptionsId(Integer optionsId)
+    {
+        _snapshotDef.setOptionsId(optionsId);
+    }
+
+    @Override
+    public Integer getOptionsId()
+    {
+        return _snapshotDef.getOptionsId();
+    }
+
     public void save(User user) throws Exception
     {
         if (!_dirty)

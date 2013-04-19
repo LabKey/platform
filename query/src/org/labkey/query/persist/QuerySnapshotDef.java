@@ -69,6 +69,7 @@ public class QuerySnapshotDef extends Entity implements Cloneable
     private String _queryTableName;
     private String _queryTableContainer;
     private String _participantGroups;
+    private Integer _optionsId;
 
     public int getRowId()
     {
@@ -188,6 +189,16 @@ public class QuerySnapshotDef extends Entity implements Cloneable
     public void setParticipantGroups(String participantGroups)
     {
         _participantGroups = participantGroups;
+    }
+
+    public Integer getOptionsId()
+    {
+        return _optionsId;
+    }
+
+    public void setOptionsId(Integer optionsId)
+    {
+        _optionsId = optionsId;
     }
 
     public QuerySnapshotDef clone()

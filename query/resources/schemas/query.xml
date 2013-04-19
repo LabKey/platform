@@ -118,6 +118,7 @@
             <ns:column columnName="UpdateDelay"/>
             <ns:column columnName="QueryTableName"/>
             <ns:column columnName="QueryTableContainer"/>
+            <ns:column columnName="OptionsId"/>
         </ns:columns>
     </ns:table>
 </ns:tables>
