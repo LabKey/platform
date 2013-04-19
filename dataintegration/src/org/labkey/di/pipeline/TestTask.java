@@ -23,11 +23,9 @@ import org.labkey.api.pipeline.RecordedActionSet;
  * User: daxh
  * Date: 4/17/13
  */
-abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactory>
+public class TestTask extends PipelineJob.Task<TestTaskFactory>
 {
-    protected RecordedActionSet _records = new RecordedActionSet();
-
-    public TransformTask(TransformTaskFactory factory, PipelineJob job)
+    public TestTask(TestTaskFactory factory, PipelineJob job)
     {
         super(factory, job);
     }
@@ -46,12 +44,9 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         //
         // do transform work here!
         //
-        doWork();
+        ctx.getLogger().info("Test task is running and doing great work!");
 
-        job.logRunFinish("Complete", 0);
-
-        return _records;
+        job.logRunFinish("Complete", 0 /* recordCount */);
+        return new RecordedActionSet();
     }
-
-    abstract public void doWork() throws PipelineJobException;
 }

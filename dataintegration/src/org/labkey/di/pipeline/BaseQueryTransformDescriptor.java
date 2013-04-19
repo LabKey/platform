@@ -25,28 +25,28 @@ import org.labkey.api.data.Table;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.di.steps.SimpleQueryTransformStep;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
-import org.labkey.etl.xml.TransformType;
 import org.quartz.ScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
@@ -246,6 +246,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         TransformJob job = new TransformJob((TransformJobContext)context, this);
         try
         {
+            registerTransformTask();
             PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
         }
         catch (Exception e)
@@ -276,15 +277,13 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         return job;
     }
 
-
-
-    PipelineJob.Task createTask(TransformJob job, TransformJobContext context, int i)
+    PipelineJob.Task createTask(TransformTaskFactory factory, TransformJob job, TransformJobContext context, int i)
     {
         if (i != 0)
             throw new IllegalArgumentException();
 
         SimpleQueryTransformStepMeta meta = _stepMetaData;
-        SimpleQueryTransformStep step = new SimpleQueryTransformStep(null, job, meta, context);
+        SimpleQueryTransformStep step = new SimpleQueryTransformStep(factory, job, meta, context);
         return step;
 
 //        Class c = meta.getTargetStepClass();
@@ -311,5 +310,37 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         map.put("scheduleDescription", getScheduleDescription());
         map.put("version", getVersion());
         return map;
+    }
+
+    // for now, we only handle a single TransformTask but this can be expanded to handle
+    // multiple steps of the same or different task types.
+    private void registerTransformTask() throws CloneNotSupportedException
+    {
+        TaskPipelineSettings settings = new TaskPipelineSettings(org.labkey.di.pipeline.TransformJob.class);
+        PipelineJobService.get().addTaskFactory(new TransformTaskFactory(org.labkey.di.pipeline.TransformTask.class));
+
+        Object[] spec = new Object[1];
+        spec[0] = new TaskId(org.labkey.di.pipeline.TransformTask.class);
+        settings.setTaskProgressionSpec(spec);
+
+        PipelineJobService.get().addTaskPipeline(settings);
+
+
+        /*
+        TaskPipelineSettings settings = new TaskPipelineSettings(org.labkey.di.pipeline.TransformJob.class);
+        Object[] spec = new Object[3];
+
+        PipelineJobService.get().addTaskFactory(new TransformTaskFactory(org.labkey.di.pipeline.TransformTask.class));
+        spec[0] = new TaskId(org.labkey.di.pipeline.TransformTask.class);
+
+        // if we are running two tasks then we an instance of the factory with a matching task id
+        PipelineJobService.get().addTaskFactory(new TestTaskFactory(org.labkey.di.pipeline.TestTask.class, "1"));
+        spec[1] = new TaskId(org.labkey.di.pipeline.TestTask.class, "1");
+        PipelineJobService.get().addTaskFactory(new TestTaskFactory(org.labkey.di.pipeline.TestTask.class, "2"));
+        spec[2] = new TaskId(org.labkey.di.pipeline.TestTask.class, "2");
+
+        settings.setTaskProgressionSpec(spec);
+        PipelineJobService.get().addTaskPipeline(settings);
+        */
     }
 }

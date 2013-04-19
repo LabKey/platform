@@ -667,7 +667,7 @@ public class TransformManager implements DataIntegrationService
             try
             {
                 // add a user so that the checker returns true
-                newUser = SecurityManager.addUser(new ValidEmail("xformtest@labkey.com")).getUser();
+                newUser = createUser();
                 TransformManager.get().runNow(usersDescriptor, c, u);
                 assertTrue(waitForChecker(checkerComplete));
                 verifyJobs(c, u, usersDescriptor, 2);
@@ -679,6 +679,20 @@ public class TransformManager implements DataIntegrationService
                     UserManager.deleteUser(newUser.getUserId());
                 }
             }
+        }
+
+        public User createUser() throws Exception
+        {
+            ValidEmail email = new ValidEmail("xformtest@labkey.com");
+            // we want to force a change to the user's table so delete the user and recreate if it
+            // already exists
+            User u = UserManager.getUser(email);
+            if (null != u)
+            {
+                UserManager.deleteUser(u.getUserId());
+            }
+
+            return SecurityManager.addUser(email).getUser();
         }
 
         // if job does not run in the allotted time then returns false

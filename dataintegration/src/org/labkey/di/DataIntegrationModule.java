@@ -55,7 +55,7 @@ import java.util.Set;
  * User: matthewb
  * Date: 12 Jan 2013
  */
-public class DataIntegrationModule extends SpringModule implements ContainerManager.ContainerListener, StartupListener, ShutdownListener
+public class DataIntegrationModule extends DefaultModule implements ContainerManager.ContainerListener, StartupListener, ShutdownListener
 {
     public static final String NAME = "DataIntegration";
 
@@ -102,7 +102,7 @@ public class DataIntegrationModule extends SpringModule implements ContainerMana
 
 
     @Override
-    protected void startupAfterSpringConfig(ModuleContext moduleContext)
+    protected void doStartup(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new ETLPipelineProvider(this));
 

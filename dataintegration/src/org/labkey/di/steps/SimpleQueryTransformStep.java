@@ -11,8 +11,6 @@ import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.pipeline.RecordedActionSet;
-import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
@@ -23,6 +21,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.di.pipeline.TransformJobContext;
+import org.labkey.di.pipeline.TransformTask;
+import org.labkey.di.pipeline.TransformTaskFactory;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -34,26 +34,24 @@ import java.sql.SQLException;
  * Date: 2013-04-16
  * Time: 12:27 PM
  */
-public class SimpleQueryTransformStep extends PipelineJob.Task
+public class SimpleQueryTransformStep extends TransformTask
 {
     final SimpleQueryTransformStepMeta _meta;
     final TransformJobContext _context;
-    final RecordedActionSet _record = new RecordedActionSet();
 
-    public SimpleQueryTransformStep(TaskFactory f, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
+    public SimpleQueryTransformStep(TransformTaskFactory f, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
     {
         super(f, job);
         _meta = meta;
         _context = context;
     }
 
-
-    @Override
-    public RecordedActionSet run() throws PipelineJobException
+    public void doWork() throws PipelineJobException
     {
 
         try
         {
+            _context.getLogger().info("SimpleQueryTransformStep.doWork called");
 // this works, but need to update tests
 //            if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
 //                getJob().setStatus("ERROR");
@@ -62,7 +60,6 @@ public class SimpleQueryTransformStep extends PipelineJob.Task
         {
             getJob().getLogger().error(x);
         }
-        return _record;
     }
 
 
