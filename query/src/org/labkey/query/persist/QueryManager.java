@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FilterInfo;
@@ -34,8 +35,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -66,7 +69,8 @@ public class QueryManager
     private static final Logger _log = Logger.getLogger(QueryManager.class);
     private static final QueryManager instance = new QueryManager();
     private static final String SCHEMA_NAME = "query";
-    private static final List<QueryService.QueryListener> _listeners = new CopyOnWriteArrayList<>();
+    private static final List<QueryChangeListener> QUERY_LISTENERS = new CopyOnWriteArrayList<>();
+    private static final List<CustomViewChangeListener> VIEW_LISTENERS = new CopyOnWriteArrayList<>();
 
     public static final int FLAG_INHERITABLE = 0x01;
     public static final int FLAG_HIDDEN = 0x02;
@@ -474,21 +478,113 @@ public class QueryManager
         Table.delete(getTableInfoExternalSchema(), filter);
     }
 
-    public void addQueryListener(QueryService.QueryListener listener)
+    public void addQueryListener(QueryChangeListener listener)
     {
-        _listeners.add(listener);
+        QUERY_LISTENERS.add(listener);
+    }
+
+    public void removeQueryListener(QueryChangeListener listener)
+    {
+        QUERY_LISTENERS.add(listener);
+    }
+
+    public void fireQueryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    {
+        for (QueryChangeListener l : QUERY_LISTENERS)
+            l.queryCreated(container, scope, schema, queries);
+    }
+
+    public void fireQueryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        assert checkChanges(property, changes);
+        for (QueryChangeListener l : QUERY_LISTENERS)
+            l.queryChanged(container, scope, schema, property, changes);
+    }
+
+    // Checks all changes have the correct property and type.
+    private boolean checkChanges(QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        boolean valid = true;
+        for (QueryChangeListener.QueryPropertyChange change : changes)
+        {
+            if (change.getProperty() != property)
+            {
+               _log.error(String.format("Property '%s' doesn't match change property '%s'", property, change.getProperty()));
+                valid = false;
+            }
+            if (property == null)
+            {
+                if (change.getOldValue() != null && change.getNewValue() != null)
+                {
+                    _log.error("Null property indicates multiple properties have changed and so old and new values should also be null.");
+                    valid = false;
+                }
+            }
+            else
+            {
+                if (change.getOldValue() != null && !property.getPropertyClass().isInstance(change.getOldValue()))
+                {
+                    _log.error(String.format("Old value '%s' isn't an instance of property '%s' class '%s'", change.getOldValue(), property, property.getPropertyClass()));
+                    valid = false;
+                }
+                if (change.getNewValue() != null && !property.getPropertyClass().isInstance(change.getNewValue()))
+                {
+                    _log.error(String.format("New value '%s' isn't an instance of property '%s' class '%s'", change.getNewValue(), property, property.getPropertyClass()));
+                    valid = false;
+                }
+            }
+        }
+        return valid;
+    }
+
+    public void fireQueryDeleted(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    {
+        for (QueryChangeListener l : QUERY_LISTENERS)
+            l.queryDeleted(container, scope, schema, queries);
+    }
+
+    public Collection<String> getQueryDependents(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    {
+        ArrayList<String> dependents = new ArrayList<>();
+        for (QueryChangeListener l : QUERY_LISTENERS)
+            dependents.addAll(l.queryDependents(container, scope, schema, queries));
+        return dependents;
+    }
+
+    public void addCustomViewListener(CustomViewChangeListener listener)
+    {
+        VIEW_LISTENERS.add(listener);
+    }
+
+    public void removeCustomViewListener(CustomViewChangeListener listener)
+    {
+        VIEW_LISTENERS.remove(listener);
+    }
+
+    public void fireViewCreated(CustomView view)
+    {
+        for (CustomViewChangeListener l : VIEW_LISTENERS)
+            l.viewCreated(view);
     }
 
     public void fireViewChanged(CustomView view)
     {
-        for (QueryService.QueryListener l : _listeners)
+        for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewChanged(view);
     }
 
     public void fireViewDeleted(CustomView view)
     {
-        for (QueryService.QueryListener l : _listeners)
+        for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewDeleted(view);
+    }
+
+    public Collection<String> getViewDepedents(CustomView view)
+    {
+        ArrayList<String> dependents = new ArrayList<>();
+        for (CustomViewChangeListener l : VIEW_LISTENERS)
+            dependents.addAll(l.viewDependents(view));
+        return dependents;
     }
 
     static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.ContainerListener()

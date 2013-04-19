@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
@@ -169,6 +170,11 @@ public class CustomViewInfoImpl implements CustomViewInfo
     public String getSchemaName()
     {
         return _cstmView.getSchema();
+    }
+
+    public SchemaKey getSchemaPath()
+    {
+        return SchemaKey.fromString(_cstmView.getSchema());
     }
 
     public String getQueryName()

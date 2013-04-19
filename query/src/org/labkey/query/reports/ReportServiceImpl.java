@@ -90,7 +90,7 @@ import java.util.concurrent.ConcurrentMap;
  * User: Karl Lum
  * Date: Dec 21, 2007
  */
-public class ReportServiceImpl implements ReportService.I, ContainerManager.ContainerListener, QueryService.QueryListener
+public class ReportServiceImpl implements ReportService.I, ContainerManager.ContainerListener
 {
     private static final String SCHEMA_NAME = "core";
     private static final String TABLE_NAME = "Report";
@@ -105,11 +105,14 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     /** maps report types to implementations */
     private final ConcurrentMap<String, Class> _reports = new ConcurrentHashMap<String, Class>();
 
+    private final ReportQueryChangeListener _listener = new ReportQueryChangeListener();
+
     public ReportServiceImpl()
     {
         ContainerManager.addContainerListener(this);
         ConvertUtils.register(new ReportIdentifierConverter(), ReportIdentifier.class);
-        QueryService.get().addQueryListener(this);
+        QueryService.get().addQueryListener(_listener);
+        QueryService.get().addCustomViewListener(_listener);
         SystemMaintenance.addTask(new ReportServiceMaintenanceTask());
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
     }
@@ -856,16 +859,6 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return (report != null);
     }
 
-    public void viewChanged(CustomView view)
-    {
-        _uncacheDependent(view);
-    }
-
-    public void viewDeleted(CustomView view)
-    {
-        _uncacheDependent(view);
-    }
-
     @Nullable
     private Report _deserialize(Container container, User user, XmlObject reportXml) throws IOException, XmlValidationException
     {
@@ -945,25 +938,6 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             report.afterSave(container, user, root);
         }
         return report;
-    }
-
-    private void _uncacheDependent(CustomView view)
-    {
-        try
-        {
-            QueryDefinition def = view.getQueryDefinition();
-            String key = ReportUtil.getReportKey(def.getSchemaName(), def.getName());
-
-            for (Report report : getReports(null, view.getContainer(), key))
-            {
-                if (StringUtils.equals(view.getName(), report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName)))
-                    report.clearCache();
-            }
-        }
-        catch (Exception e)
-        {
-            _log.error("An error occurred uncaching dependent reports", e);
-        }
     }
 
     @Override
@@ -1060,4 +1034,5 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             ReportService.get().maintenance();
         }
     }
+
 }

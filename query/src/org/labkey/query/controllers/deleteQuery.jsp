@@ -18,7 +18,27 @@
 <%@ page extends="org.labkey.query.controllers.Page" %>
 <%@ page import="org.labkey.api.query.QueryForm"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.query.QueryDefinition" %>
+<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<% QueryForm form = (QueryForm) HttpView.currentModel(); %>
+<%
+    QueryForm form = (QueryForm) HttpView.currentModel();
+    QueryDefinition queryDef = form.getQueryDef();
+    Collection<String> dependents = queryDef.getDependents();
+%>
 <labkey:errors></labkey:errors>
 <p>Are you sure you want to delete the query '<%=h(form.getQueryName())%>'?</p>
+
+<%
+    if (dependents.size() > 0)
+    {
+        %>The following depend upon this query:
+        <ul><%
+        for (String dependent : dependents)
+        {
+            %><li><%=h(dependent)%></li><%
+        }
+        %></ul><%
+    }
+%>
+

@@ -37,6 +37,12 @@ public class CustomQueryDefinitionImpl extends QueryDefinitionImpl
         super(user, container, schema, name);
     }
 
+    public CustomQueryDefinitionImpl(User user, Container container, SchemaKey schema, String name)
+    {
+        super(user, container, schema, name);
+    }
+
+    @Deprecated /** Use SchemaKey form instead. */
     public CustomQueryDefinitionImpl(User user, Container container, String schema, String name)
     {
         super(user, container, SchemaKey.fromString(schema), name);
@@ -45,6 +51,7 @@ public class CustomQueryDefinitionImpl extends QueryDefinitionImpl
     public void setSql(String sql)
     {
         edit().setSql(sql);
+        // CONSIDER: Add sql QueryPropertyChange to _changes
     }
 
     public boolean isMetadataEditable()

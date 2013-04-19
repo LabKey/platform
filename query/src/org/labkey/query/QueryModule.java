@@ -83,7 +83,6 @@ import javax.script.ScriptEngineManager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -113,6 +112,8 @@ public class QueryModule extends DefaultModule
         LinkedSchema.register();
 
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER);
+
+        QueryService.get().addQueryListener(new CustomViewQueryChangeListener());
 
         ReportService.registerProvider(new ReportServiceImpl());
         ReportService.get().addUIProvider(new ReportUIProvider());

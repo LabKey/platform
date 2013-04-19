@@ -52,24 +52,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.MetadataException;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -163,7 +146,13 @@ public class QueryServiceImpl extends QueryService
         return null;
     }
 
+    @Deprecated /** Use SchemaKey form instead. */
     public QueryDefinition createQueryDef(User user, Container container, String schema, String name)
+    {
+        return new CustomQueryDefinitionImpl(user, container, schema, name);
+    }
+
+    public QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name)
     {
         return new CustomQueryDefinitionImpl(user, container, schema, name);
     }
@@ -1711,9 +1700,24 @@ public class QueryServiceImpl extends QueryService
 		}
 	}
 
-    public void addQueryListener(QueryListener listener)
+    public void addQueryListener(QueryChangeListener listener)
     {
         QueryManager.get().addQueryListener(listener);
+    }
+
+    public void removeQueryListener(QueryChangeListener listener)
+    {
+        QueryManager.get().removeQueryListener(listener);
+    }
+
+    public void addCustomViewListener(CustomViewChangeListener listener)
+    {
+        QueryManager.get().addCustomViewListener(listener);
+    }
+
+    public void removeCustomViewListener(CustomViewChangeListener listener)
+    {
+        QueryManager.get().removeCustomViewListener(listener);
     }
 
     private String _prettyPrint(String s)

@@ -1918,20 +1918,11 @@ public class QueryController extends SpringActionController
 
 			if (!StringUtils.isEmpty(form.rename) && !form.rename.equalsIgnoreCase(queryDef.getName()))
 			{
-				QueryService s = QueryService.get();
-				QueryDefinition copy = s.createQueryDef(getUser(), queryDef.getContainer(), queryDef.getSchemaName(), form.rename);
-				copy.setSql(queryDef.getSql());
-				copy.setMetadataXml(queryDef.getMetadataXml());
-				copy.setDescription(form.description);
-				copy.setCanInherit(form.inheritable);
-				copy.setIsHidden(form.hidden);
-				copy.save(getUser(), copy.getContainer());
-				queryDef.delete(getUser());
+				queryDef.setName(form.rename);
 				// update form so getSuccessURL() works
 				_form = new PropertiesForm(form.getSchemaName(), form.rename);
 				_form.setViewContext(form.getViewContext());
                 _queryName = form.rename;
-				return true;
 			}
 
             queryDef.setDescription(form.description);
@@ -3743,6 +3734,7 @@ public class QueryController extends SpringActionController
     {
         private String _dataSource;
         private String _schemaName;
+        private boolean _sorted;
 
         public String getDataSource()
         {
@@ -3762,6 +3754,16 @@ public class QueryController extends SpringActionController
         public void setSchemaName(String schemaName)
         {
             _schemaName = schemaName;
+        }
+
+        public boolean isSorted()
+        {
+            return _sorted;
+        }
+
+        public void setSorted(boolean sorted)
+        {
+            _sorted = sorted;
         }
     }
 
@@ -3790,7 +3792,13 @@ public class QueryController extends SpringActionController
                     {
                         UserSchema schema = QueryService.get().getUserSchema(getUser(), c, form.getSchemaName());
                         if (null != schema)
-                            tableNames.addAll(schema.getTableAndQueryNames(true));
+                        {
+                            if (form.isSorted())
+                                for (TableInfo table : schema.getSortedTables())
+                                    tableNames.add(table.getName());
+                            else
+                                tableNames.addAll(schema.getTableAndQueryNames(true));
+                        }
                     }
                 }
             }

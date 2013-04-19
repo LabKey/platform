@@ -26,9 +26,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.view.ActionURL;
+import org.labkey.query.persist.QueryManager;
 import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -136,4 +139,11 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         // Do nothing -- shouldn't export ModuleCustomViews
         return false;
     }
+
+    @Override
+    public Collection<String> getDependents()
+    {
+        return QueryManager.get().getQueryDependents(null, null, getSchemaPath(), Collections.singleton(getName()));
+    }
+
 }

@@ -36,6 +36,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
@@ -72,6 +73,8 @@ import org.labkey.query.view.CustomViewSetKey;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -87,6 +90,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected User _user = null;
     protected UserSchema _schema = null;
     protected QueryDef _queryDef;
+    protected List<QueryChangeListener.QueryPropertyChange> _changes = null;
     private boolean _dirty;
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;
@@ -100,6 +104,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _user = user;
         _queryDef = queryDef;
         _dirty = queryDef.getQueryDefId() == 0;
+        if (_dirty)
+            _changes = new ArrayList<>();
     }
 
     public QueryDefinitionImpl(User user, Container container, UserSchema schema, String name)
@@ -116,6 +122,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _queryDef.setSchemaPath(schema);
         _queryDef.setContainer(container.getId());
         _dirty = true;
+        _changes = new ArrayList<>();
     }
 
     public boolean canInherit()
@@ -135,11 +142,18 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public void delete(User user) throws SQLException
     {
+        delete(user, true);
+    }
+
+    public void delete(User user, boolean fireChangeEvent) throws SQLException
+    {
         if (!canEdit(user))
         {
             throw new IllegalArgumentException("Access denied");
         }
         QueryManager.get().delete(user, _queryDef);
+        if (fireChangeEvent)
+            QueryManager.get().fireQueryDeleted(getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
         _queryDef = null;
     }
 
@@ -218,6 +232,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public String getName()
     {
         return _queryDef.getName();
+    }
+
+    public void setName(String name)
+    {
+        if (getName().equals(name))
+            return;
+        String oldName = getName();
+        edit().setName(name);
+        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Name, oldName, name));
     }
 
     public String getModuleName()
@@ -475,18 +498,17 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         if (container.equals(getContainer()))
             return;
-        QueryDef queryDefNew = new QueryDef();
-        queryDefNew.setSchema(_queryDef.getSchema());
-        queryDefNew.setName(getName());
-        queryDefNew.setContainer(container.getId());
-        queryDefNew.setSql(_queryDef.getSql());
-        queryDefNew.setMetaData(_queryDef.getMetaData());
-        queryDefNew.setDescription(_queryDef.getDescription());
-        _queryDef = queryDefNew;
-        _dirty = true;
+        Container oldContainer = getContainer();
+        edit().setContainer(container.getId());
+        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Container, oldContainer, container));
     }
 
     public void save(User user, Container container) throws SQLException
+    {
+        save(user, container, true);
+    }
+
+    public void save(User user, Container container, boolean fireChangeEvent) throws SQLException
     {
         setContainer(container);
         if (!_dirty)
@@ -494,17 +516,36 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (isNew())
         {
             _queryDef = QueryManager.get().insert(user, _queryDef);
+
+            if (fireChangeEvent)
+                QueryManager.get().fireQueryCreated(container, null, _queryDef.getSchemaPath(), Collections.singleton(_queryDef.getName()));
         }
         else
         {
             _queryDef = QueryManager.get().update(user, _queryDef);
+
+            if (fireChangeEvent)
+            {
+                // Reduce list of changes down to a single QueryPropertyChange event.
+                QueryChangeListener.QueryPropertyChange change;
+                if (_changes.size() == 1)
+                    change = _changes.get(0);
+                else
+                    change = new QueryChangeListener.QueryPropertyChange(this);
+                QueryManager.get().fireQueryChanged(container, null, _queryDef.getSchemaPath(), change.getProperty(), Collections.singleton(change));
+            }
         }
+        _changes = null;
         _dirty = false;
     }
 
     public void setCanInherit(boolean f)
     {
+        if (canInherit() == f)
+            return;
+        boolean oldValue = canInherit();
         edit().setFlags(mgr.setCanInherit(_queryDef.getFlags(), f));
+        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Inherit, oldValue, f));
     }
 
     public boolean isHidden()
@@ -514,7 +555,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public void setIsHidden(boolean f)
     {
+        if (isHidden() == f)
+            return;
+        boolean oldValue = isHidden();
         edit().setFlags(mgr.setIsHidden(_queryDef.getFlags(), f));
+        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Hidden, oldValue, f));
     }
 
     public boolean isSnapshot()
@@ -536,12 +581,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public void setIsSnapshot(boolean f)
     {
+        if (isSnapshot() == f)
+            return;
         edit().setFlags(mgr.setIsSnapshot(_queryDef.getFlags(), f));
     }
 
     public void setMetadataXml(String xml)
     {
         edit().setMetaData(StringUtils.trimToNull(xml));
+        // CONSIDER: Add metadata QueryPropertyChange to _changes
     }
 
     public ActionURL urlFor(QueryAction action)
@@ -658,7 +706,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public void setDescription(String description)
     {
+        if (StringUtils.equals(getDescription(), description))
+            return;
+        String oldDescription = getDescription();
         edit().setDescription(description);
+        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Description, oldDescription, description));
     }
 
     public QueryDef getQueryDef()
@@ -851,6 +903,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (_dirty)
             return _queryDef;
         _queryDef = _queryDef.clone();
+        _changes = new ArrayList<>();
         _dirty = true;
         return _queryDef;
     }
@@ -858,6 +911,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public boolean isTableQueryDefinition()
     {
         return false;
+    }
+
+    public Collection<String> getDependents()
+    {
+        return QueryManager.get().getQueryDependents(getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
     }
 
     @Override

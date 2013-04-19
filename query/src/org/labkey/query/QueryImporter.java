@@ -26,8 +26,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -36,6 +38,7 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
+import org.labkey.query.persist.QueryManager;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -43,6 +46,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -102,6 +106,10 @@ public class QueryImporter implements FolderImporter
                 }
             }
 
+            // Map of new and updated queries by schema
+            Map<SchemaKey, List<String>> createdQueries = new LinkedHashMap<>();
+            Map<SchemaKey, List<QueryChangeListener.QueryPropertyChange>> changedQueries = new LinkedHashMap<>();
+
             for (String sqlFileName : sqlFileNames)
             {
                 String baseFilename = sqlFileName.substring(0, sqlFileName.length() - QueryWriter.FILE_EXTENSION.length());
@@ -115,22 +123,53 @@ public class QueryImporter implements FolderImporter
 
                 QueryType queryXml = queryDoc.getQuery();
 
-                // For now, just delete if a query by this name already exists.
-                QueryDefinition oldQuery = QueryService.get().getQueryDef(ctx.getUser(), ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());
+                String queryName = queryXml.getName();
+                String schemaName = queryXml.getSchemaName();
+                SchemaKey schemaKey = SchemaKey.fromString(schemaName);
 
-                if (null != oldQuery)
-                    oldQuery.delete(ctx.getUser());
+                // Reuse the existing queryDef so created or change events will be fired appropriately.
+                QueryDefinition queryDef = QueryService.get().getQueryDef(ctx.getUser(), ctx.getContainer(), schemaName, queryName);
+                if (queryDef != null)
+                {
+                    List<QueryChangeListener.QueryPropertyChange> changes = changedQueries.get(schemaKey);
+                    if (changes == null)
+                        changedQueries.put(schemaKey, changes = new ArrayList<>());
+                    changes.add(new QueryChangeListener.QueryPropertyChange(queryDef));
+                }
+                else
+                {
+                    queryDef = QueryService.get().createQueryDef(ctx.getUser(), ctx.getContainer(), schemaKey, queryName);
+                    List<String> created = createdQueries.get(schemaKey);
+                    if (created == null)
+                        createdQueries.put(schemaKey, created = new ArrayList<>());
+                    created.add(queryName);
+                }
 
-                QueryDefinition newQuery = QueryService.get().createQueryDef(ctx.getUser(), ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());
-                newQuery.setSql(sql);
-                newQuery.setDescription(queryXml.getDescription());
+                queryDef.setSql(sql);
+                queryDef.setDescription(queryXml.getDescription());
 
                 if (null != queryXml.getMetadata())
-                    newQuery.setMetadataXml(queryXml.getMetadata().xmlText());
+                    queryDef.setMetadataXml(queryXml.getMetadata().xmlText());
 
-                newQuery.save(ctx.getUser(), ctx.getContainer());
+                queryDef.save(ctx.getUser(), ctx.getContainer(), false);
 
                 metaFilesMap.remove(metaFileName);
+            }
+
+            // fire query created events
+            for (Map.Entry<SchemaKey, List<String>> entry : createdQueries.entrySet())
+            {
+                SchemaKey schemaKey = entry.getKey();
+                List<String> queries = entry.getValue();
+                QueryManager.get().fireQueryCreated(ctx.getContainer(), null, schemaKey, queries);
+            }
+
+            // fire query changed events
+            for (Map.Entry<SchemaKey, List<QueryChangeListener.QueryPropertyChange>> entry : changedQueries.entrySet())
+            {
+                SchemaKey schemaKey = entry.getKey();
+                List<QueryChangeListener.QueryPropertyChange> changes = entry.getValue();
+                QueryManager.get().fireQueryChanged(ctx.getContainer(), null, schemaKey, null, changes);
             }
 
             ctx.getLogger().info(sqlFileNames.size() + " quer" + (1 == sqlFileNames.size() ? "y" : "ies") + " imported");

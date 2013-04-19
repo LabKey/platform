@@ -2211,6 +2211,7 @@ query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text
 query/src/org/labkey/query/CustomViewImporter.java -text
 query/src/org/labkey/query/CustomViewInfoImpl.java -text
+query/src/org/labkey/query/CustomViewQueryChangeListener.java -text
 query/src/org/labkey/query/CustomViewUtil.java -text
 query/src/org/labkey/query/CustomViewWriter.java -text
 query/src/org/labkey/query/CustomViewXmlReader.java -text
@@ -2296,6 +2297,7 @@ query/src/org/labkey/query/reports/AttachmentReport.java -text
 query/src/org/labkey/query/reports/BaseRedirectReport.java -text
 query/src/org/labkey/query/reports/LinkReport.java -text
 query/src/org/labkey/query/reports/ReportImporter.java -text
+query/src/org/labkey/query/reports/ReportQueryChangeListener.java -text
 query/src/org/labkey/query/reports/ReportServiceImpl.java -text
 query/src/org/labkey/query/reports/ReportWebdavProvider.java -text
 query/src/org/labkey/query/reports/ReportWriter.java -text

@@ -57,6 +57,7 @@ import org.labkey.query.design.DgOrderByString;
 import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.ViewDocument;
 import org.labkey.query.persist.CstmView;
+import org.labkey.query.persist.QueryManager;
 import org.labkey.query.view.CustomViewSetKey;
 
 import javax.servlet.http.HttpServletRequest;
@@ -612,4 +613,11 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         _dirty = true;
         return _cstmView;
     }
+
+    @Override
+    public Collection<String> getDependents()
+    {
+        return QueryManager.get().getQueryDependents(getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
+    }
+
 }
