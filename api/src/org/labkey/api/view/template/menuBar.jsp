@@ -52,7 +52,8 @@
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
     boolean folderMenu = folderMode.isShowInMenu();
     boolean customMenusEnabled = laf.isMenuUIEnabled();
-    boolean showFolderNavigation = c != null && !c.isRoot();
+    boolean showFolderNavigation = c != null && !c.isRoot() && c.getProject() != null;
+    Container p = c.getProject();
     folderMode.isShowInMenu();
 
     if (null == c || null == c.getProject() || c.getProject().equals(ContainerManager.getHomeContainer()))
@@ -73,7 +74,7 @@
     if (showFolderNavigation)
     {
 %>
-        <li id="folderBar" class="menu-folders"><%=h(c.getName())%></li>
+        <li id="folderBar" class="menu-folders"><%=p.getName()%></li>
 <%
     }
 %>
@@ -182,8 +183,12 @@
                 HoverNavigation.visiblePopup ? this.show() : this.delayShow();
             },
 
+            notFocused : function(e) {
+                return !this.hoverEl.getRegion().contains(e.getPoint()) || !this.popup.getRegion().contains(e.getPoint());
+            },
+
             delayCheck : function(e) {
-                if (!this.hoverEl.getRegion().contains(e.getPoint()) || !this.popup.getRegion().contains(e.getPoint())) {
+                if (this.notFocused(e)) {
                     this.delayHide();
                 }
             },
@@ -231,8 +236,6 @@
                 this.popup.show();
                 this.popup.alignTo(this.hoverEl); // default: tl-bl
                 HoverNavigation.visiblePopup = this;
-
-                this.showDelay = 250;
             },
 
             hide : function() {
