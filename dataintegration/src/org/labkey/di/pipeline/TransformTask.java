@@ -33,8 +33,10 @@ import java.util.List;
  * User: daxh
  * Date: 4/17/13
  */
-public class TransformTask extends PipelineJob.Task<TransformTask.Factory>
+abstract public class TransformTask extends PipelineJob.Task<TransformTask.Factory>
 {
+    protected RecordedActionSet _records = new RecordedActionSet();
+
     public TransformTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
@@ -54,11 +56,15 @@ public class TransformTask extends PipelineJob.Task<TransformTask.Factory>
         //
         // do transform work here!
         //
-        ctx.getLogger().info("Incredible query transform work would be done here for this task!");
+        doWork();
 
-        job.logRunFinish(0 /* recordCount */);
-        return new RecordedActionSet();
+        job.logRunFinish("Complete", 0);
+
+        return _records;
     }
+
+    abstract void doWork() throws PipelineJobException;
+
 
     public static class Factory extends AbstractTaskFactory<AbstractTaskFactorySettings, Factory>
     {
@@ -67,9 +73,15 @@ public class TransformTask extends PipelineJob.Task<TransformTask.Factory>
             super(TransformTask.class);
         }
 
-        public PipelineJob.Task createTask(PipelineJob job)
+        public PipelineJob.Task createTask(PipelineJob pjob)
         {
-            return new TransformTask(this, job);
+            TransformJob job = (TransformJob)pjob;
+            TransformJobSupport support = job.getJobSupport(TransformJobSupport.class);
+            BaseQueryTransformDescriptor etl = support.getTransformDescriptor();
+            TransformJobContext ctx = support.getTransformJobContext();
+
+            // UNDONE: need to handle multiple steps
+            return etl.createTask(job,ctx,0);
         }
 
         public List<FileType> getInputTypes()

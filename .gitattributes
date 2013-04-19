@@ -823,6 +823,7 @@ dataintegration/src/org/labkey/di/pipeline/TransformManager.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformRun.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTask.java -text
 dataintegration/src/org/labkey/di/pipeline/UpdatedRowsChecker.java -text
+dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStepMeta.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text

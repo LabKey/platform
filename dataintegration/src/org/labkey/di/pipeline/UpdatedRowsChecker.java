@@ -132,7 +132,8 @@ public class UpdatedRowsChecker implements Callable<Boolean>
     {
         SQLFragment sql = new SQLFragment("SELECT MAX(StartTime) FROM ");
         sql.append(DataIntegrationDbSchema.getTransformRunTableInfo(), "tr");
-        sql.append(" WHERE Container = ? AND TransformId = ? AND TransformVersion = ?");
+        // TODO: need to be able to tell successful jobs from failed jobs
+        sql.append(" WHERE Container = ? AND TransformId = ? AND TransformVersion = ?"); //  AND Status='Complete'");
         sql.add(getContainer());
         sql.add(d.getId());
         sql.add(d.getVersion());

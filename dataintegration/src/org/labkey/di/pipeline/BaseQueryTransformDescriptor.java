@@ -35,15 +35,18 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.di.steps.SimpleQueryTransformStep;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
+import org.labkey.etl.xml.TransformType;
 import org.quartz.ScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
@@ -107,10 +110,16 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             _description = etlXML.getDescription();
 
             _stepMetaData = new SimpleQueryTransformStepMeta();
-            _stepMetaData.setSourceSchema(SchemaKey.fromString(etlXML.getSource().getSchemaName()));
-            _stepMetaData.setSourceQuery(etlXML.getSource().getQueryName());
-            _stepMetaData.setDestinationSchema(SchemaKey.fromString(etlXML.getDestination().getSchemaName()));
-            _stepMetaData.setDestinationQuery(etlXML.getDestination().getQueryName());
+            if (null != etlXML.getSource())
+            {
+                _stepMetaData.setSourceSchema(SchemaKey.fromString(etlXML.getSource().getSchemaName()));
+                _stepMetaData.setSourceQuery(etlXML.getSource().getQueryName());
+            }
+            if (null != etlXML.getDestination())
+            {
+                _stepMetaData.setTargetSchema(SchemaKey.fromString(etlXML.getDestination().getSchemaName()));
+                _stepMetaData.setTargetQuery(etlXML.getDestination().getQueryName());
+            }
         }
         finally
         {
@@ -189,7 +198,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     @Override
     public String toString()
     {
-        return "ETLDescriptor: " + _name + " (" + getScheduleDescription() + ")";
+        return "ETLDescriptor: " + _name + " (" + getScheduleDescription() + ", " + _stepMetaData.toString() + ")";
     }
 
 
@@ -232,10 +241,9 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
 
     @Override
-    public PipelineJob getPipelineJob(ScheduledPipelineJobContext info) throws PipelineJobException
+    public PipelineJob getPipelineJob(ScheduledPipelineJobContext context) throws PipelineJobException
     {
-        ViewBackgroundInfo backgroundInfo = new ViewBackgroundInfo(info.getContainer(), info.getUser(), null);
-        TransformJob job = new TransformJob(backgroundInfo, this);
+        TransformJob job = new TransformJob((TransformJobContext)context, this);
         try
         {
             PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
@@ -250,14 +258,14 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         run.setStartTime(new Date());
         run.setTransformId(getId());
         run.setTransformVersion(getVersion());
-        run.setContainer(info.getContainer());
+        run.setContainer(context.getContainer());
 
         PipelineStatusFile statusFile = PipelineService.get().getStatusFile(job.getLogFile());
         run.setJobId(statusFile.getRowId());
 
         try
         {
-            run = Table.insert(info.getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run);
+            run = Table.insert(context.getUser(), DataIntegrationDbSchema.getTransformRunTableInfo(), run);
         }
         catch (SQLException e)
         {
@@ -268,6 +276,28 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         return job;
     }
 
+
+
+    PipelineJob.Task createTask(TransformJob job, TransformJobContext context, int i)
+    {
+        if (i != 0)
+            throw new IllegalArgumentException();
+
+        SimpleQueryTransformStepMeta meta = _stepMetaData;
+        SimpleQueryTransformStep step = new SimpleQueryTransformStep(null, job, meta, context);
+        return step;
+
+//        Class c = meta.getTargetStepClass();
+//        try
+//        {
+//            PipelineJob.Task task = (PipelineJob.Task)c.getConstructor(meta.getClass()).newInstance(meta);
+//            return task;
+//        }
+//        catch (NoSuchMethodException|InstantiationException|IllegalAccessException|InvocationTargetException|ClassCastException x)
+//        {
+//            throw new RuntimeException(x);
+//        }
+    }
 
 
     public Map<String, Object> toJSON(@Nullable Map<String,Object> map)

@@ -1,5 +1,6 @@
 package org.labkey.di.steps;
 
+import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.SchemaKey;
 
 /**
@@ -10,61 +11,24 @@ import org.labkey.api.query.SchemaKey;
  *
  * Metadata for a simple query transform
  */
-public class SimpleQueryTransformStepMeta
+public class SimpleQueryTransformStepMeta extends CopyConfig
 {
-    private SchemaKey _sourceSchema;
-    private String _sourceQuery;
-    private String _timestampColumn = "modifed";
-    private SchemaKey _destinationSchema;
-    private String _destinationQuery;
+    Class targetStepClass = SimpleQueryTransformStep.class;
 
-    public SchemaKey getSourceSchema()
+    public Class getTargetStepClass()
     {
-        return _sourceSchema;
+        return targetStepClass;
     }
 
-    public void setSourceSchema(SchemaKey sourceSchema)
+    public void setTargetStepClass(Class targetStepClass)
     {
-        _sourceSchema = sourceSchema;
+        this.targetStepClass = targetStepClass;
     }
 
-    public String getSourceQuery()
+    @Override
+    public String toString()
     {
-        return _sourceQuery;
-    }
-
-    public void setSourceQuery(String sourceQuery)
-    {
-        _sourceQuery = sourceQuery;
-    }
-
-    public String getTimestampColumnName()
-    {
-        return _timestampColumn;
-    }
-
-    public void setTimestampColumnName(String timestampColumn)
-    {
-        _timestampColumn = timestampColumn;
-    }
-
-    public SchemaKey getDestinationSchema()
-    {
-        return _destinationSchema;
-    }
-
-    public void setDestinationSchema(SchemaKey destinationSchema)
-    {
-        _destinationSchema = destinationSchema;
-    }
-
-    public String getDestinationQuery()
-    {
-        return _destinationQuery;
-    }
-
-    public void setDestinationQuery(String destinationQuery)
-    {
-        _destinationQuery = destinationQuery;
+        return getSourceSchema().toString() + "." + getSourceQuery() + " --> " +
+                getTargetSchema().toString() + "." + getTargetQuery();
     }
 }

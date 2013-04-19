@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -40,6 +41,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.*;
@@ -52,6 +54,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.writer.ContainerUser;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -598,12 +601,25 @@ public class TransformManager implements DataIntegrationService
         @Test
         public void etlChecker() throws Exception
         {
-            Container c = JunitUtil.getTestContainer();
             User u = TestContext.get().getUser();
+            Container root = JunitUtil.getTestContainer();
+            Container c = ContainerManager.createContainer(root, "junit_etl_" + GUID.makeHash(), "junit temp", "temp", Container.TYPE.normal, u);
+
+            try
+            {
+                _etlChecker(c, u);
+            }
+            finally
+            {
+                ContainerManager.delete(root,u);
+            }
+        }
+
+        public void _etlChecker(Container c, User u) throws Exception
+        {
             User newUser = null;
             final AtomicInteger checkerComplete = new AtomicInteger(0);
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            cleanTransforms(c, u);
 
             JobListenerSupport ujl = new JobListenerSupport()
             {
@@ -627,6 +643,7 @@ public class TransformManager implements DataIntegrationService
             // verify descriptors and underlying checker metadata
             ScheduledPipelineJobDescriptor issuesDescriptor = findDescriptor(descriptors, "Issues");
             ScheduledPipelineJobDescriptor usersDescriptor = findDescriptor(descriptors, "Hello World");
+
             assertTrue(usersDescriptor != null && issuesDescriptor != null);
             verifyDescriptor(usersDescriptor, c, u, "core", "users");
             verifyDescriptor(issuesDescriptor, c, u, "issues", "issues");
@@ -680,14 +697,14 @@ public class TransformManager implements DataIntegrationService
             return false;
         }
 
-        void cleanTransforms(Container c, User u) throws Exception
-        {
-            // clean out any transform jobs we have lying around for the junit container and user
-            TableInfo statusInfo = DbSchema.get("pipeline").getTable("statusfiles");
-            TableInfo runsInfo = DataIntegrationDbSchema.getTransformRunTableInfo();
-            Table.delete(runsInfo, getDeleteFilter(runsInfo, c, u));
-            Table.delete(statusInfo, getDeleteFilter(statusInfo, c, u));
-        }
+//        void cleanTransforms(Container c, User u) throws Exception
+//        {
+//            // clean out any transform jobs we have lying around for the junit container and user
+//            TableInfo statusInfo = DbSchema.get("pipeline").getTable("statusfiles");
+//            TableInfo runsInfo = DataIntegrationDbSchema.getTransformRunTableInfo();
+//            Table.delete(runsInfo, getDeleteFilter(runsInfo, c, u));
+//            Table.delete(statusInfo, getDeleteFilter(statusInfo, c, u));
+//        }
 
         SimpleFilter getDeleteFilter(TableInfo ti, Container c, User u)
         {
@@ -697,31 +714,38 @@ public class TransformManager implements DataIntegrationService
             return filter;
         }
 
-        void verifyTable(TableInfo ti, int expectedRows, String columnName, String columnValue) throws  Exception
+        void verifyTable(TableInfo ti, int expectedRows, Container c, String columnName, String columnValue) throws  Exception
         {
-            TableSelector ts = new TableSelector(ti, ti.getColumns(), null, null);
-            assertTrue(ts.getRowCount() == expectedRows);
-            Results r = ts.getResults(false);
-            while (r.next())
-            {
-                // use contains instead of strict equality since the id is prefixed by "ETL Job: "
-                String act = r.getString(columnName).toLowerCase();
-                String exp = columnValue.toLowerCase();
-                assertTrue(act.contains(exp));
-            }
-            r.close();
+            SimpleFilter f = new SimpleFilter();
+            if (null != c && null != ti.getColumn("container"))
+                f = f.addCondition(new FieldKey(null,"container"), c.getId());
+            if (null != columnName)
+                f = f.addCondition(new FieldKey(null,columnName), columnValue, CompareType.CONTAINS);
+
+            TableSelector ts = new TableSelector(ti, ti.getColumns(), f, null);
+            assertEquals((int)expectedRows, (int)ts.getRowCount());
+
+//            Results r = ts.getResults(false);
+//            while (r.next())
+//            {
+//                // use contains instead of strict equality since the id is prefixed by "ETL Job: "
+//                String act = r.getString(columnName).toLowerCase();
+//                String exp = columnValue.toLowerCase();
+//                assertTrue(act.contains(exp));
+//            }
+//            r.close();
         }
 
         void verifyPipelineJobs(Container c, User u, ScheduledPipelineJobDescriptor d, int expectedRows) throws Exception
         {
             TableInfo jobsTable = PipelineService.get().getJobsTable(u, c);
-            verifyTable(jobsTable, expectedRows, "description", d.getDescription());
+            verifyTable(jobsTable, expectedRows, c, "description", d.getDescription());
         }
 
         void verifyTransformRuns(Container c, User u, ScheduledPipelineJobDescriptor d, int expectedRows) throws Exception
         {
             TableInfo runsTable =  DataIntegrationDbSchema.getTransformRunTableInfo();
-            verifyTable(runsTable, expectedRows, "transformid", d.getId());
+            verifyTable(runsTable, expectedRows, c, "transformid", d.getId());
 
         }
 
@@ -782,4 +806,74 @@ public class TransformManager implements DataIntegrationService
            }
        }
     }
+
+
+    /*
+    private static class TestDescriptorWrapper implements ScheduledPipelineJobDescriptor
+    {
+        private final ScheduledPipelineJobDescriptor _d;
+        private final Runnable _done;
+
+        TestDescriptorWrapper(ScheduledPipelineJobDescriptor d, Runnable done)
+        {
+            _d = d;
+            _done = done;
+        }
+
+        public String getId()
+        {
+            return _d.getId();
+        }
+
+        public String getName()
+        {
+            return _d.getName();
+        }
+
+        public String getDescription()
+        {
+            return _d.getDescription();
+        }
+
+        public String getModuleName()
+        {
+            return _d.getModuleName();
+        }
+
+        public int getVersion()
+        {
+            return _d.getVersion();
+        }
+
+        public ScheduleBuilder getScheduleBuilder()
+        {
+            return _d.getScheduleBuilder();
+        }
+
+        public String getScheduleDescription()
+        {
+            return _d.getScheduleDescription();
+        }
+
+        public Class<? extends Job> getJobClass()
+        {
+            return _d.getJobClass();
+        }
+
+        public ContainerUser getJobContext(Container c, User user)
+        {
+            return _d.getJobContext(c, user);
+        }
+
+        public Callable<Boolean> getChecker(ContainerUser context)
+        {
+            return _d.getChecker(context);
+        }
+
+        public PipelineJob getPipelineJob(ContainerUser context) throws PipelineJobException
+        {
+            return _d.getPipelineJob(context);
+        }
+    }
+    */
 }

@@ -43,9 +43,11 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
     private int _runId;
     private TransformJobContext _transformJobContext;
 
-    public TransformJob(ViewBackgroundInfo info, BaseQueryTransformDescriptor etlDescriptor)
+    public TransformJob(TransformJobContext info, BaseQueryTransformDescriptor etlDescriptor)
     {
-        super(ETLPipelineProvider.NAME, info, PipelineService.get().findPipelineRoot(info.getContainer()));
+        super(ETLPipelineProvider.NAME,
+                new ViewBackgroundInfo(info.getContainer(), info.getUser(), null),
+                PipelineService.get().findPipelineRoot(info.getContainer()));
         _etlDescriptor = etlDescriptor;
         File etlLogDir = getPipeRoot().resolvePath("etlLogs");
         File etlLogFile = new File(etlLogDir, DateUtil.formatDateTime(new Date(), "yyyy-MM-dd HH-mm-ss") + ".etl.log");
@@ -65,13 +67,14 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
         }
     }
 
-    public void logRunFinish(int recordCount)
+    public void logRunFinish(String status, int recordCount)
     {
 
         TransformRun run = getTransformRun();
         if (run != null)
         {
             // Mark that the job has finished successfully
+            run.setStatus(status);
             run.setEndTime(new Date());
             run.setRecordCount(recordCount);
             update(run);
