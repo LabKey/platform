@@ -83,6 +83,8 @@
         max-width: 800px;
         white-space: nowrap;
         display: inline-block;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
     .project-nav ul {
