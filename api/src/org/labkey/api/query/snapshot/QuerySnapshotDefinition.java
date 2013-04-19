@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query.snapshot;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
@@ -55,4 +56,6 @@ public interface QuerySnapshotDefinition
 
     int getUpdateDelay();
     void setUpdateDelay(int delayInSeconds);
+    void setOptionsId(Integer optionsId);
+    @Nullable Integer getOptionsId();
 }
