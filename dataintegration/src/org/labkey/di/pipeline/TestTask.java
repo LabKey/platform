@@ -18,6 +18,7 @@ package org.labkey.di.pipeline;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 
 /**
  * User: daxh
@@ -25,9 +26,14 @@ import org.labkey.api.pipeline.RecordedActionSet;
  */
 public class TestTask extends PipelineJob.Task<TestTaskFactory>
 {
-    public TestTask(TestTaskFactory factory, PipelineJob job)
+    final SimpleQueryTransformStepMeta _meta;
+    final TransformJobContext _context;
+
+    public TestTask(TestTaskFactory factory, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
     {
         super(factory, job);
+        _meta = meta;
+        _context = context;
     }
 
     public RecordedActionSet run() throws PipelineJobException

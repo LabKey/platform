@@ -14,6 +14,8 @@ import org.labkey.api.query.SchemaKey;
 public class SimpleQueryTransformStepMeta extends CopyConfig
 {
     Class targetStepClass = SimpleQueryTransformStep.class;
+    Class taskClass;
+    private String description;
 
     public Class getTargetStepClass()
     {
@@ -23,6 +25,26 @@ public class SimpleQueryTransformStepMeta extends CopyConfig
     public void setTargetStepClass(Class targetStepClass)
     {
         this.targetStepClass = targetStepClass;
+    }
+
+    public Class getTaskClass()
+    {
+        return taskClass;
+    }
+
+    public void setTaskClass(Class taskClass)
+    {
+        this.taskClass = taskClass;
+    }
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public void setDescription(String description)
+    {
+        this.description = description;
     }
 
     @Override

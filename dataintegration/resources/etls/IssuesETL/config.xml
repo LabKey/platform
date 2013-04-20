@@ -2,8 +2,12 @@
 <etl xmlns="http://labkey.org/etl/xml">
     <name>Issues</name>
     <description>Check for new Issues</description>
-    <transforms></transforms>
-    <source schemaName="issues" queryName="issues" />
-    <destination schemaName="destSchema" queryName="destQuery" />
+    <transforms>
+        <transform type="org.labkey.di.pipeline.TransformTask">
+            <description>Copy issues</description>
+            <source schemaName="issues" queryName="issues" />
+            <destination schemaName="destSchema" queryName="destQuery" />
+        </transform>
+    </transforms>
     <schedule><poll updateTimeColumn="none" createTimeColumn="none2"></poll></schedule>
 </etl>

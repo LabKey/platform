@@ -11,10 +11,8 @@
         <all>
             <element name="name" type="string" maxOccurs="1" />
             <element name="description" type="string" maxOccurs="1" />
-            <element name="source" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="1" />
             <element name="transforms" type="etl:TransformsType" maxOccurs="1" />
             <element name="schedule" type="etl:ScheduleType" maxOccurs="1" />
-            <element name="destination" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="1" />
         </all>
     </complexType>
 
@@ -24,14 +22,17 @@
     </complexType>
 
     <complexType name="TransformsType">
-        <all>
-            <element name="transform" type="etl:TransformType" minOccurs="0" />
-        </all>
+        <sequence minOccurs="0" maxOccurs="unbounded">
+            <element name="transform" type="etl:TransformType"/>
+        </sequence>
     </complexType>
 
     <complexType name="TransformType">
         <all>
             <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1" />
+            <element name="description" type="string" minOccurs="1" maxOccurs="1"/>
+            <element name="source" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="1" />
+            <element name="destination" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="1" />
         </all>
         <attribute name="type" type="string" use="required" />
         <attribute name="file" type="string" />

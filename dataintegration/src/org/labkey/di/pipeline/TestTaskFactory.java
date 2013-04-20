@@ -45,9 +45,13 @@ public class TestTaskFactory extends AbstractTaskFactory<AbstractTaskFactorySett
         super(namespaceClass, name);
     }
 
-    public PipelineJob.Task createTask(PipelineJob job)
+    public PipelineJob.Task createTask(PipelineJob pjob)
     {
-        return new TestTask(this, job);
+        TransformJob job = (TransformJob)pjob;
+        TransformJobSupport support = job.getJobSupport(TransformJobSupport.class);
+        BaseQueryTransformDescriptor etl = support.getTransformDescriptor();
+        TransformJobContext ctx = support.getTransformJobContext();
+        return etl.createTask(this, job, ctx, 0);
     }
 
     public List<FileType> getInputTypes()

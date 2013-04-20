@@ -41,6 +41,8 @@ import org.labkey.di.steps.SimpleQueryTransformStep;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
+import org.labkey.etl.xml.TransformType;
+import org.labkey.etl.xml.TransformsType;
 import org.quartz.ScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
 
@@ -48,6 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -75,8 +78,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     private String _moduleName;
 
     // steps
-    // TODO generalize into a list/graph of *StepMeta of different types
-    private SimpleQueryTransformStepMeta _stepMetaData;
+    private ArrayList<SimpleQueryTransformStepMeta> _stepMetaDatas = new ArrayList<SimpleQueryTransformStepMeta>();
 
 
     public BaseQueryTransformDescriptor(Resource resource, String moduleName) throws XmlException, IOException
@@ -108,17 +110,15 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
 
             _name = etlXML.getName();
             _description = etlXML.getDescription();
-
-            _stepMetaData = new SimpleQueryTransformStepMeta();
-            if (null != etlXML.getSource())
+            TransformsType transforms = etlXML.getTransforms();
+            if (transforms != null)
             {
-                _stepMetaData.setSourceSchema(SchemaKey.fromString(etlXML.getSource().getSchemaName()));
-                _stepMetaData.setSourceQuery(etlXML.getSource().getQueryName());
-            }
-            if (null != etlXML.getDestination())
-            {
-                _stepMetaData.setTargetSchema(SchemaKey.fromString(etlXML.getDestination().getSchemaName()));
-                _stepMetaData.setTargetQuery(etlXML.getDestination().getQueryName());
+                TransformType[] transformTypes = transforms.getTransformArray();
+                for (TransformType t : transformTypes)
+                {
+                    SimpleQueryTransformStepMeta meta = buildSimpleQueryTransformStepMeta(t);
+                    _stepMetaDatas.add(meta);
+                }
             }
         }
         finally
@@ -126,6 +126,54 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             if (inputStream != null) { try { inputStream.close(); } catch (IOException ignored) {} }
         }
 
+    }
+
+    private SimpleQueryTransformStepMeta buildSimpleQueryTransformStepMeta(TransformType transformXML) throws XmlException
+    {
+        SimpleQueryTransformStepMeta meta = new SimpleQueryTransformStepMeta();
+        if (null != transformXML.getDescription())
+        {
+            meta.setDescription(transformXML.getDescription());
+        }
+
+        String className = transformXML.getType();
+        if (null != className)
+        {
+            try
+            {
+                Class taskClass = Class.forName(className);
+                if (isValidTaskClass(taskClass))
+                {
+                    meta.setTaskClass(taskClass);
+                }
+                else
+                {
+                    className = null;
+                }
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new XmlException("Invalid transform class specified");
+            }
+        }
+
+        if (null == className)
+        {
+            throw new  XmlException("Invalid transform class specified");
+        }
+
+        if (null != transformXML.getSource())
+        {
+            meta.setSourceSchema(SchemaKey.fromString(transformXML.getSource().getSchemaName()));
+            meta.setSourceQuery(transformXML.getSource().getQueryName());
+        }
+        if (null != transformXML.getDestination())
+        {
+            meta.setTargetSchema(SchemaKey.fromString(transformXML.getDestination().getSchemaName()));
+            meta.setTargetQuery(transformXML.getDestination().getQueryName());
+        }
+
+        return meta;
     }
 
     private Resource ensureResource()
@@ -198,7 +246,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     @Override
     public String toString()
     {
-        return "ETLDescriptor: " + _name + " (" + getScheduleDescription() + ", " + _stepMetaData.toString() + ")";
+        return "ETLDescriptor: " + _name + " (" + getScheduleDescription() + ", " + _stepMetaDatas.get(0).toString() + ")";
     }
 
 
@@ -236,7 +284,9 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     @Override
     public Callable<Boolean> getChecker(ScheduledPipelineJobContext context)
     {
-        return new UpdatedRowsChecker(this, context, _stepMetaData.getSourceSchema(), _stepMetaData.getSourceQuery());
+        // Revisit when we decide how the checker accounts for a multi-step transform. For now run against the source and destination
+        // from the 0th step
+        return new UpdatedRowsChecker(this, context, _stepMetaDatas.get(0).getSourceSchema(), _stepMetaDatas.get(0).getSourceQuery());
     }
 
 
@@ -246,7 +296,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         TransformJob job = new TransformJob((TransformJobContext)context, this);
         try
         {
-            registerTransformTask();
+            registerTransformSteps();
             PipelineService.get().setStatus(job, PipelineJob.WAITING_STATUS, null, true);
         }
         catch (Exception e)
@@ -277,14 +327,28 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         return job;
     }
 
+    // for now we are using the BaseQueryTransformDescriptor as a catch-all for every ETL transform task
+    PipelineJob.Task createTask(TestTaskFactory factory, TransformJob job, TransformJobContext context, int i)
+    {
+        SimpleQueryTransformStepMeta meta = getTransformStepMetaFromTaskId(factory.getId());
+
+        if (null != meta)
+            return new TestTask(factory, job, meta, context);
+
+        return null;
+    }
+
     PipelineJob.Task createTask(TransformTaskFactory factory, TransformJob job, TransformJobContext context, int i)
     {
         if (i != 0)
             throw new IllegalArgumentException();
 
-        SimpleQueryTransformStepMeta meta = _stepMetaData;
-        SimpleQueryTransformStep step = new SimpleQueryTransformStep(factory, job, meta, context);
-        return step;
+        SimpleQueryTransformStepMeta meta = getTransformStepMetaFromTaskId(factory.getId());
+
+        if (null != meta)
+            return new SimpleQueryTransformStep(factory, job, meta, context);
+
+        return null;
 
 //        Class c = meta.getTargetStepClass();
 //        try
@@ -312,35 +376,57 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         return map;
     }
 
-    // for now, we only handle a single TransformTask but this can be expanded to handle
-    // multiple steps of the same or different task types.
-    private void registerTransformTask() throws CloneNotSupportedException
+    private SimpleQueryTransformStepMeta getTransformStepMetaFromTaskId(TaskId tid)
     {
+        int i = Integer.parseInt(tid.getName());
+
+        if (i < _stepMetaDatas.size())
+            return _stepMetaDatas.get(i);
+
+        return null;
+    }
+
+    private void registerTransformSteps() throws CloneNotSupportedException
+    {
+        ArrayList<Object> progressionSpec = new ArrayList<Object>();
         TaskPipelineSettings settings = new TaskPipelineSettings(org.labkey.di.pipeline.TransformJob.class);
-        PipelineJobService.get().addTaskFactory(new TransformTaskFactory(org.labkey.di.pipeline.TransformTask.class));
 
-        Object[] spec = new Object[1];
-        spec[0] = new TaskId(org.labkey.di.pipeline.TransformTask.class);
-        settings.setTaskProgressionSpec(spec);
+        // register all the tasks that are associated with this transform
+        // associate the correct stepMetaData with the task via the index
+        for (int i = 0; i < _stepMetaDatas.size(); i++)
+        {
+            String taskId = String.valueOf(i);
+            SimpleQueryTransformStepMeta meta = _stepMetaDatas.get(i);
+            Class taskClass = meta.getTaskClass();
+            // check to see if this class is part of our known transform tasks
+            if (org.labkey.di.pipeline.TransformTask.class.isAssignableFrom(taskClass))
+            {
+                PipelineJobService.get().addTaskFactory(new TransformTaskFactory(taskClass, taskId));
+            }
+            else
+            if (org.labkey.di.pipeline.TestTask.class.isAssignableFrom(taskClass))
+            {
+                PipelineJobService.get().addTaskFactory(new TestTaskFactory(taskClass, taskId));
+            }
+            else
+            {
+                // we should have already checked this when parsing the ETL config file
+                assert false;
+            }
 
+            progressionSpec.add(new TaskId(meta.getTaskClass(), taskId));
+        }
+
+        settings.setTaskProgressionSpec(progressionSpec.toArray());
         PipelineJobService.get().addTaskPipeline(settings);
+    }
 
+    private boolean isValidTaskClass(Class taskClass)
+    {
+        if (org.labkey.di.pipeline.TransformTask.class.isAssignableFrom(taskClass) ||
+            org.labkey.di.pipeline.TestTask.class.isAssignableFrom(taskClass))
+            return true;
 
-        /*
-        TaskPipelineSettings settings = new TaskPipelineSettings(org.labkey.di.pipeline.TransformJob.class);
-        Object[] spec = new Object[3];
-
-        PipelineJobService.get().addTaskFactory(new TransformTaskFactory(org.labkey.di.pipeline.TransformTask.class));
-        spec[0] = new TaskId(org.labkey.di.pipeline.TransformTask.class);
-
-        // if we are running two tasks then we an instance of the factory with a matching task id
-        PipelineJobService.get().addTaskFactory(new TestTaskFactory(org.labkey.di.pipeline.TestTask.class, "1"));
-        spec[1] = new TaskId(org.labkey.di.pipeline.TestTask.class, "1");
-        PipelineJobService.get().addTaskFactory(new TestTaskFactory(org.labkey.di.pipeline.TestTask.class, "2"));
-        spec[2] = new TaskId(org.labkey.di.pipeline.TestTask.class, "2");
-
-        settings.setTaskProgressionSpec(spec);
-        PipelineJobService.get().addTaskPipeline(settings);
-        */
+        return false;
     }
 }

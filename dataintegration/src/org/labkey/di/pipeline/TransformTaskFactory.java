@@ -51,9 +51,7 @@ public class TransformTaskFactory extends AbstractTaskFactory<AbstractTaskFactor
         TransformJobSupport support = job.getJobSupport(TransformJobSupport.class);
         BaseQueryTransformDescriptor etl = support.getTransformDescriptor();
         TransformJobContext ctx = support.getTransformJobContext();
-
-        // UNDONE: need to handle multiple steps
-        return etl.createTask(this, job,ctx,0);
+        return etl.createTask(this, job, ctx, 0);
     }
 
     public List<FileType> getInputTypes()
