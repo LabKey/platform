@@ -3613,10 +3613,8 @@ public class StudyManager
     public StudySnapshot getRefreshStudySnapshot(Integer snapshotId)
     {
         TableSelector selector = new TableSelector(StudySchema.getInstance().getTableInfoStudySnapshot(), new SimpleFilter(FieldKey.fromParts("RowId"), snapshotId), null);
-        StudySnapshot[] snapshots = selector.getArray(StudySnapshot.class);
 
-        assert (snapshots.length == 0 || snapshots.length == 1);
-        return snapshots.length == 1 ? snapshots[0] : null;
+        return selector.getObject(StudySnapshot.class);
     }
 
     /**
