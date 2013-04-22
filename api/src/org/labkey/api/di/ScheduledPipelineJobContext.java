@@ -36,6 +36,10 @@ public class ScheduledPipelineJobContext implements ContainerUser
     private int _userId = 0;
     private boolean _verbose = false;
 
+    public ScheduledPipelineJobContext()
+    {
+    }
+
     public ScheduledPipelineJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
         _containerId = container.getId();
