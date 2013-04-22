@@ -35,10 +35,6 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     public RecordedActionSet run() throws PipelineJobException
     {
         TransformJob job = (TransformJob) getJob();
-        TransformJobSupport support = job.getJobSupport(TransformJobSupport.class);
-        BaseQueryTransformDescriptor etl = support.getTransformDescriptor();
-        TransformJobContext ctx = support.getTransformJobContext();
-
         // undone:  for multi-step transforms we'll need to have a better way to record
         // logging job start and stop
         job.logRunStart();

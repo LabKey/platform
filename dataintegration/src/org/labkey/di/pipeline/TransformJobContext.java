@@ -29,18 +29,16 @@ import java.io.Serializable;
  * User: jeckels
  * Date: 3/13/13
  */
-public class TransformJobContext extends ScheduledPipelineJobContext implements ContainerUser, Serializable, LoggerGetter
+public class TransformJobContext extends ScheduledPipelineJobContext implements ContainerUser, Serializable
 {
-    Logger _logger;
-
-    public TransformJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user, Logger logger)
+    // add default ctor for jdk serialization so that
+    // the pipeline can restart jobs in the jobstore.
+    public TransformJobContext()
     {
-        super(descriptor, container, user);
-        _logger = logger;
     }
 
-    public Logger getLogger()
+    public TransformJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
-        return _logger;
+        super(descriptor, container, user);
     }
 }

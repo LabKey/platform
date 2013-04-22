@@ -278,7 +278,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     @Override
     public TransformJobContext getJobContext(Container c, User user)
     {
-        return new TransformJobContext(this, c, user, LOG);
+        return new TransformJobContext(this, c, user);
     }
 
     @Override
@@ -386,12 +386,12 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
         return null;
     }
 
-    private void registerTransformSteps() throws CloneNotSupportedException
+    public void registerTransformSteps() throws CloneNotSupportedException
     {
         ArrayList<Object> progressionSpec = new ArrayList<Object>();
         TaskPipelineSettings settings = new TaskPipelineSettings(org.labkey.di.pipeline.TransformJob.class);
 
-        // register all the tasks that are associated with this transform
+        // Register all the tasks that are associated with this transform and
         // associate the correct stepMetaData with the task via the index
         for (int i = 0; i < _stepMetaDatas.size(); i++)
         {
@@ -412,6 +412,7 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
             {
                 // we should have already checked this when parsing the ETL config file
                 assert false;
+                continue;
             }
 
             progressionSpec.add(new TaskId(meta.getTaskClass(), taskId));

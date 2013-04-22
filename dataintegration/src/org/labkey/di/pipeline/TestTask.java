@@ -50,7 +50,7 @@ public class TestTask extends PipelineJob.Task<TestTaskFactory>
         //
         // do transform work here!
         //
-        ctx.getLogger().info("Test task is running and doing great work!");
+        job.getLogger().info("Test task is running and doing great work!");
 
         job.logRunFinish("Complete", 0 /* recordCount */);
         return new RecordedActionSet();

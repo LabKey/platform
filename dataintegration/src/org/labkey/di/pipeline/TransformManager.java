@@ -268,7 +268,7 @@ public class TransformManager implements DataIntegrationService
     {
         try
         {
-            TransformJobContext info = new TransformJobContext(etlDescriptor, container, user, null);
+            TransformJobContext info = new TransformJobContext(etlDescriptor, container, user);
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             TriggerKey triggerKey = TriggerKey.triggerKey(info.getKey(), JOB_GROUP_NAME);
             scheduler.unscheduleJob(triggerKey);

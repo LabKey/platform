@@ -51,9 +51,8 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
         _etlDescriptor = etlDescriptor;
         File etlLogDir = getPipeRoot().resolvePath("etlLogs");
         File etlLogFile = new File(etlLogDir, DateUtil.formatDateTime(new Date(), "yyyy-MM-dd HH-mm-ss") + ".etl.log");
-        // be sure to set the log file before passing in the logger to the context
+        _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser());
         setLogFile(etlLogFile);
-        _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser(), getLogger());
     }
 
     public void logRunStart()
@@ -109,7 +108,31 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
     @Override
     public TaskPipeline getTaskPipeline()
     {
-        return PipelineJobService.get().getTaskPipeline(new TaskId(TransformJob.class));
+        TaskId tid = new TaskId(TransformJob.class);
+
+        TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(tid);
+        if (null == pipeline)
+        {
+            // If we are retrying a task because it didn't complete then we need
+            // to register the task pipeline before it is available.  Normally this
+            // happens when we queue the pipeline job but in the retry case the job
+            // is being queued directly from the pipeline service.
+            try
+            {
+                if (null != _etlDescriptor)
+                {
+                    _etlDescriptor.registerTransformSteps();
+                    pipeline = PipelineJobService.get().getTaskPipeline(tid);
+                }
+            }
+            catch(CloneNotSupportedException ex)
+            {
+                // if we couldn't recreate the pipeline then return null
+                // to mark the current job in error
+            }
+        }
+
+        return pipeline;
     }
 
     //

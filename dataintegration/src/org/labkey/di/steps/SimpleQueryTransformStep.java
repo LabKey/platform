@@ -51,7 +51,7 @@ public class SimpleQueryTransformStep extends TransformTask
 
         try
         {
-            _context.getLogger().info("SimpleQueryTransformStep.doWork called");
+            getJob().getLogger().info("SimpleQueryTransformStep.doWork called");
 // this works, but need to update tests
 //            if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
 //                getJob().setStatus("ERROR");
