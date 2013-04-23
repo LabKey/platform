@@ -744,6 +744,7 @@ api/src/org/labkey/api/qc/ValidationDataHandler.java -text
 api/src/org/labkey/api/query/AbstractBeanQueryUpdateService.java -text
 api/src/org/labkey/api/query/AbstractMethodInfo.java -text
 api/src/org/labkey/api/query/AbstractNestableDataRegion.java -text
+api/src/org/labkey/api/query/AbstractQueryChangeListener.java -text
 api/src/org/labkey/api/query/AbstractQueryImportAction.java -text
 api/src/org/labkey/api/query/AbstractQueryUpdateService.java -text
 api/src/org/labkey/api/query/AbstractSchema.java -text

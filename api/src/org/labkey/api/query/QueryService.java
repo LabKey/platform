@@ -105,9 +105,14 @@ abstract public class QueryService
     /** Get schema for SchemaKey path. */
     abstract public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath);
 
-    /** If schema or query is null, return custom views for all schemas/queries */
-    abstract public List<CustomView> getCustomViews(User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
-    abstract public CustomView getCustomView(User user, Container container, String schema, String query, String name);
+    /** If schema, query, or user is null, return custom views for all schemas/queries/users.  To get only shared custom views, use {@link QueryService#getSharedCustomViews(Container, String, String, boolean)}. */
+    abstract public List<CustomView> getCustomViews(@Nullable User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
+    abstract public CustomView getCustomView(@Nullable User user, Container container, String schema, String query, String name);
+
+    /** If schema, query is null, return custom views for all schemas/queries */
+    abstract public List<CustomView> getSharedCustomViews(Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
+    abstract public CustomView getSharedCustomView(Container container, String schema, String query, String name);
+
     abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException;
 
     /**

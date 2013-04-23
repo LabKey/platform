@@ -50,9 +50,36 @@ public interface QueryDefinition
     void setIsTemporary(boolean temporary);
     boolean isTemporary();
 
-    CustomView getCustomView(@Nullable User owner, @Nullable HttpServletRequest request, String name);
-    Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden);
-    CustomView createCustomView(@Nullable User owner, String name);
+    /**
+     * Get the named custom view for this QueryDefinition and owner.
+     * @param owner Get the custom view with the given name owned by the user or is shared.
+     * @param request It not null, include custom views saved in session state.
+     * @param name The name of the custom view.
+     * @return The CustomView.
+     */
+    CustomView getCustomView(@NotNull User owner, @Nullable HttpServletRequest request, String name);
+
+    /**
+     * Get the shared custom view for this QueryDefinition by name.
+     * @param name The name of the custom view.
+     * @return The shared CustomView.
+     */
+    CustomView getSharedCustomView(String name);
+
+    /**
+     * Get all custom views applicable to this query.
+     *
+     * @param owner If not null, get custom views owned by the user and shared views.  If null, gets all custom views from all owners and shared views.
+     * @param request If not null, include custom views saved in session state.
+     * @param includeHidden If true, include hidden custom views.
+     * @param sharedOnly If true, return only shared custom views.
+     * @return
+     */
+    Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly);
+
+    CustomView createCustomView(@NotNull User owner, String name);
+    CustomView createSharedCustomView(String name);
+
     List<ColumnInfo> getColumns(CustomView view, TableInfo table);
     List<DisplayColumn> getDisplayColumns(CustomView view, TableInfo table);
 
