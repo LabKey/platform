@@ -38,7 +38,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
     private final Map<FieldKey, String> _currentValues = new HashMap<FieldKey, String>();
 
     public static final String VALUE_DELIMETER = "{@~^";
-    public static final String VALUE_DELIMETER_REGEX = "\\Q{@~^\\E";
+    public static final String VALUE_DELIMETER_REGEX = "\\Q" + VALUE_DELIMETER + "\\E";
 
     public MultiValuedRenderContext(RenderContext ctx, Set<FieldKey> requiredFieldKeys)
     {
