@@ -2,9 +2,10 @@ package org.labkey.di.steps;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -14,12 +15,13 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.di.filters.FilterStrategy;
+import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
@@ -46,15 +48,15 @@ public class SimpleQueryTransformStep extends TransformTask
         _context = context;
     }
 
+
     public void doWork() throws PipelineJobException
     {
 
         try
         {
             getJob().getLogger().info("SimpleQueryTransformStep.doWork called");
-// this works, but need to update tests
-//            if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
-//                getJob().setStatus("ERROR");
+            if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
+                getJob().setStatus("ERROR");
         }
         catch (Exception x)
         {
@@ -64,7 +66,7 @@ public class SimpleQueryTransformStep extends TransformTask
 
 
 
-    public static boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException
+    public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException
     {
         QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
         if (null == sourceSchema || null == sourceSchema.getDbSchema())
@@ -92,7 +94,7 @@ public class SimpleQueryTransformStep extends TransformTask
         try
         {
             targetScope.ensureTransaction();
-            if (!sourceScope.equals(targetScope))
+            if (null != sourceScope)
                 sourceScope.ensureTransaction();
 
             long start = System.currentTimeMillis();
@@ -137,13 +139,17 @@ public class SimpleQueryTransformStep extends TransformTask
     }
 
 
-    static DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log) throws SQLException
+    DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log) throws SQLException
     {
         try
         {
             QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
-            String sql = meta.getSourceQuery().startsWith("SELECT") ? meta.getSourceQuery() : "SELECT * FROM " + meta.getSourceQuery();
-            ResultSet rs = QueryService.get().select(sourceSchema, sql);
+            TableInfo t = sourceSchema.getTable(meta.getSourceQuery());
+            FilterStrategy filterStrategy = getFilterStrategy();
+            Filter f = filterStrategy.getFilter(getVariableMap());
+
+            ResultSet rs = new TableSelector(t, f, null).getResults();
+
             return new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context));
         }
         catch (QueryParseException x)
@@ -182,5 +188,18 @@ public class SimpleQueryTransformStep extends TransformTask
         {
             throw new RuntimeException(sqlx);
         }
+    }
+
+
+    FilterStrategy _filterStrategy = null;
+
+    FilterStrategy getFilterStrategy()
+    {
+        if (null == _filterStrategy)
+        {
+            _filterStrategy = new ModifiedSinceFilterStrategy(_context, _meta);
+        }
+
+        return _filterStrategy;
     }
 }

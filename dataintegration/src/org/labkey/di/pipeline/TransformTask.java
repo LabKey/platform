@@ -25,12 +25,26 @@ import org.labkey.api.pipeline.RecordedActionSet;
  */
 abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactory>
 {
-    protected RecordedActionSet _records = new RecordedActionSet();
+    final private RecordedActionSet _records = new RecordedActionSet();
+    final private VariableMap _variableMap;
+
 
     public TransformTask(TransformTaskFactory factory, PipelineJob job)
     {
         super(factory, job);
+
+        TransformJob txJob = (TransformJob)job;
+// TODO
+//        _variableMap = new VariableMapImpl(txJob.getVariableMap());
+        _variableMap = new VariableMapImpl(null);
     }
+
+
+    public VariableMap getVariableMap()
+    {
+        return _variableMap;
+    }
+
 
     public RecordedActionSet run() throws PipelineJobException
     {

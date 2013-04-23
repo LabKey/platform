@@ -809,6 +809,8 @@ dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.02-0.03.
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.03-0.04.sql -text
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
+dataintegration/src/org/labkey/di/filters/FilterStrategy.java -text
+dataintegration/src/org/labkey/di/filters/ModifiedSinceFilterStrategy.java -text
 dataintegration/src/org/labkey/di/pipeline/BaseQueryTransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/DataIntegrationDbSchema.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
@@ -824,8 +826,12 @@ dataintegration/src/org/labkey/di/pipeline/TransformRun.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTask.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTaskFactory.java -text
 dataintegration/src/org/labkey/di/pipeline/UpdatedRowsChecker.java -text
+dataintegration/src/org/labkey/di/pipeline/VariableDescription.java -text
+dataintegration/src/org/labkey/di/pipeline/VariableMap.java -text
+dataintegration/src/org/labkey/di/pipeline/VariableMapImpl.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStepMeta.java -text
+dataintegration/src/org/labkey/di/steps/StepMeta.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text
 demo/module.properties -text

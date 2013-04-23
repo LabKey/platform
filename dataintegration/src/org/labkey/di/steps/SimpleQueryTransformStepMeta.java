@@ -11,7 +11,7 @@ import org.labkey.api.query.SchemaKey;
  *
  * Metadata for a simple query transform
  */
-public class SimpleQueryTransformStepMeta extends CopyConfig
+public class SimpleQueryTransformStepMeta extends CopyConfig implements StepMeta
 {
     Class targetStepClass = SimpleQueryTransformStep.class;
     Class taskClass;

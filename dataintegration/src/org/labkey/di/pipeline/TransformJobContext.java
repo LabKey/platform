@@ -17,6 +17,8 @@ package org.labkey.di.pipeline;
 
 import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.di.ScheduledPipelineJobContext;
@@ -40,5 +42,47 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
     public TransformJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
     {
         super(descriptor, container, user);
+    }
+
+
+    /* VARIABLES */
+
+    VariableMapImpl jobVariables;
+
+
+    // these are known built-in variables, might become property descriptors or protocolparameters or something,
+    // just going to use an enum for now
+    public enum Variable implements VariableDescription
+    {
+        IncrementalStartTimestamp(JdbcType.TIMESTAMP),
+        IncrementalEndTimestamp(JdbcType.TIMESTAMP),
+        TranformRunId(JdbcType.INTEGER),
+        UserId(JdbcType.INTEGER);
+
+        final JdbcType _type;
+
+        Variable(JdbcType type)
+        {
+            _type = type;
+        }
+
+
+        @Override
+        public String getName()
+        {
+            return this.name();
+        }
+
+        @Override
+        public String getURI()
+        {
+            return getClass().getName() + "#" + getName();
+        }
+
+        @Override
+        public JdbcType getJdbcType()
+        {
+            return _type;
+        }
     }
 }
