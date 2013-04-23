@@ -37,6 +37,8 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
@@ -1429,8 +1431,47 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form, errors);
 
-            getDataRegion().setTable(MothershipManager.get().getTableInfoServerInstallation());
-            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerInstallation(), "ServerInstallationId,ServerInstallationGUID,Note,OrganizationName,ServerHostName,ServerIP,LogoLink,SystemDescription,SystemShortName");
+            TableInfo serverInstallationTable = new MothershipSchema(getViewContext().getUser(), getViewContext().getContainer()).getTable(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
+            getDataRegion().setTable(serverInstallationTable);
+
+            Collection<FieldKey> requestedColumns = new ArrayList<>();
+
+            requestedColumns.add(FieldKey.fromParts("ServerInstallationId"));
+            requestedColumns.add(FieldKey.fromParts("ServerInstallationGUID"));
+            requestedColumns.add(FieldKey.fromParts("Note"));
+            requestedColumns.add(FieldKey.fromParts("OrganizationName"));
+            requestedColumns.add(FieldKey.fromParts("ServerHostName"));
+            requestedColumns.add(FieldKey.fromParts("ServerIP"));
+            requestedColumns.add(FieldKey.fromParts("LogoLink"));
+            requestedColumns.add(FieldKey.fromParts("SystemDescription"));
+            requestedColumns.add(FieldKey.fromParts("SystemShortName"));
+
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "AdministratorEmail"));
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "UserCount"));
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ActiveUserCount"));
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ProjectCount"));
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ContainerCount"));
+
+            requestedColumns.add(FieldKey.fromParts("ExceptionCount"));
+            requestedColumns.add(FieldKey.fromParts("VersionCount"));
+            requestedColumns.add(FieldKey.fromParts("DaysActive"));
+            requestedColumns.add(FieldKey.fromParts("LastPing"));
+            requestedColumns.add(FieldKey.fromParts("FirstPing"));
+
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(serverInstallationTable, requestedColumns);
+
+            for (ColumnInfo col : columns.values())
+            {
+                // The 5 columns from the lookup via MostRecentSession are all user editable by default, which is
+                // incorrect for their usage on this page.
+                if (!"Note".equalsIgnoreCase(col.getColumnName()))
+                {
+                   col.setUserEditable(false);
+                }
+            }
+
+            getDataRegion().addColumns(new ArrayList<>(columns.values()));
+
             getDataRegion().addHiddenFormField("ServerInstallationId", form.getPkVal().toString());
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
