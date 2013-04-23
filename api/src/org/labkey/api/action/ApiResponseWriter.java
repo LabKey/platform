@@ -15,13 +15,21 @@
  */
 package org.labkey.api.action;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 import java.util.Stack;
 
 /**
@@ -36,6 +44,15 @@ import java.util.Stack;
  */
 public abstract class ApiResponseWriter
 {
+     /*
+     * (MAB) This code defaults to using setting the response to SC_BAD_REQUEST
+     * when any error is encountered.  I think this is wrong.  Expected
+     * errors should be encoded in a normal JSON reponse and SC_OK.
+     *
+     * Allow new code to specify that SC_OK should be used for errors
+     */
+    int errorResponseStatus = HttpServletResponse.SC_BAD_REQUEST;
+
     protected static class StreamState
     {
         private String _name;
@@ -72,8 +89,24 @@ public abstract class ApiResponseWriter
 
     public enum Format
     {
-        JSON,
+        JSON
+        {
+            @Override
+            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
+            {
+                return new ApiJsonWriter(response, contentTypeOverride);
+            }
+        },
         XML
+        {
+            @Override
+            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
+            {
+                return new ApiXmlWriter(response, contentTypeOverride);
+            }
+        };
+
+        public abstract ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException;
     }
 
     private final HttpServletResponse _response;
@@ -91,15 +124,192 @@ public abstract class ApiResponseWriter
         _writer = out;
     }
 
-    public abstract void write(ApiResponse response) throws IOException;
+    public void setErrorResponseStatus(int status)
+    {
+        errorResponseStatus = status;
+    }
 
-    public abstract void write(Throwable e) throws IOException;
+    public void write(ApiResponse response) throws IOException
+    {
+        if (response instanceof ApiStreamResponse)
+        {
+            try
+            {
+                ((ApiStreamResponse) response).render(this);
+            }
+            catch (Exception e)
+            {
+                //at this point, we can't guarantee a legitimate
+                //JSON response, and we need to write the exception
+                //back so the client can tell something went wrong
+                if (null != getResponse())
+                {
+                    if (!getResponse().isCommitted())
+                        getResponse().reset();
+                }
+                write(e);
+            }
+        }
+        else
+        {
+            JSONObject json = new JSONObject(response.getProperties());
+            writeJsonObj(json);
+        }
+    }
 
-    public abstract void write(BatchValidationException e) throws IOException;
+    protected abstract void writeJsonObj(JSONObject json) throws IOException;
 
-    public abstract void write(ValidationException e) throws IOException;
+    public void write(Throwable e, int status) throws IOException
+    {
+        if (null == getResponse())
+        {
+            if (e instanceof IOException)
+                throw (IOException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new RuntimeException(e);
+        }
 
-    public abstract void write(Errors errors) throws IOException;
+        getResponse().setStatus(status);
+
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
+        jsonObj.put("exceptionClass", e.getClass().getName());
+        jsonObj.put("stackTrace", e.getStackTrace());
+
+        writeJsonObj(jsonObj);
+    }
+
+
+    public void write(Throwable e) throws IOException
+    {
+        int status;
+
+        if (e instanceof NotFoundException)
+            status = HttpServletResponse.SC_NOT_FOUND;
+        else
+            status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+
+        write(e, status);
+    }
+
+
+    public void write(BatchValidationException e) throws IOException
+    {
+        if (null != getResponse())
+            getResponse().setStatus(errorResponseStatus);
+
+        JSONObject obj = new JSONObject();
+        JSONArray arr = new JSONArray();
+        String message = null;
+        for (ValidationException vex : e.getRowErrors())
+        {
+            JSONObject child = toJSON(vex);
+            if (message == null)
+                message = child.optString("exception", "(No error message)");
+            arr.put(child);
+        }
+        obj.put("success", Boolean.FALSE);
+        obj.put("errors", arr);
+        obj.put("exception", message);
+        obj.put("extraContext", e.getExtraContext());
+
+        writeJsonObj(obj);
+    }
+
+    public void write(ValidationException e) throws IOException
+    {
+        if (null != getResponse())
+            getResponse().setStatus(errorResponseStatus);
+
+        JSONObject obj = toJSON(e);
+        obj.put("success", Boolean.FALSE);
+        writeJsonObj(obj);
+    }
+
+    protected JSONObject toJSON(ValidationException e)
+    {
+        JSONObject obj = new JSONObject();
+        String message = null;
+        JSONArray jsonErrors = new JSONArray();
+        for (ValidationError error : e.getErrors())
+        {
+            if (message == null)
+                message = error.getMessage();
+            toJSON(jsonErrors, error);
+        }
+
+        obj.put("errors", jsonErrors);
+        obj.put("exception", message == null ? "(No error message)" : message);
+        if (e.getSchemaName() != null)
+            obj.put("schemaName", e.getSchemaName());
+        if (e.getQueryName() != null)
+            obj.put("queryName", e.getQueryName());
+        if (e.getRow() != null)
+            obj.put("row", e.getRow());
+        if (e.getRowNumber() > -1)
+            obj.put("rowNumber", e.getRowNumber());
+
+        return obj;
+    }
+
+    public void toJSON(JSONArray parent, ValidationError error)
+    {
+        String msg = error.getMessage();
+        String key = null;
+        if (error instanceof PropertyValidationError)
+            key = ((PropertyValidationError) error).getProperty();
+
+        JSONObject jsonError = new JSONObject();
+
+        // these are the Ext expected property names
+        jsonError.putOpt("id", key);
+        jsonError.put("msg", msg);
+        // TODO deprecate these with a new API version
+        jsonError.putOpt("field", key);
+        jsonError.put("message", msg);
+
+        parent.put(jsonError);
+    }
+
+    public void write(Errors errors) throws IOException
+    {
+        //set the status to 400 to indicate that it was a bad request
+        if (null != getResponse())
+            getResponse().setStatus(errorResponseStatus);
+
+        String exception = null;
+        JSONArray jsonErrors = new JSONArray();
+        for (ObjectError error : (List<ObjectError>) errors.getAllErrors())
+        {
+            String msg = error.getDefaultMessage();
+            String key = error.getObjectName();
+
+            if (error instanceof FieldError)
+            {
+                FieldError ferror = (FieldError) error;
+                key = ferror.getField();
+            }
+
+            JSONObject jsonError = new JSONObject();
+            // these are the Ext expected property names
+            jsonError.putOpt("id", key);
+            jsonError.put("msg", msg);
+            // TODO deprecate these with a new API version
+            jsonError.put("field", key);
+            jsonError.put("message", msg);
+
+            if (null == exception)
+                exception = msg;
+
+            jsonErrors.put(jsonError);
+        }
+
+        JSONObject root = new JSONObject();
+        root.put("exception", exception);
+        root.put("errors", jsonErrors);
+        writeJsonObj(root);
+    }
 
     //stream oriented methods
     public abstract void startResponse() throws IOException;

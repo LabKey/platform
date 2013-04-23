@@ -140,6 +140,11 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 }
             }
 
+            if ("xml".equalsIgnoreCase(getViewContext().getRequest().getParameter("respFormat")))
+            {
+                _respFormat = ApiResponseWriter.Format.XML;
+            }
+
             //validate the form
             validate(form, errors);
 
@@ -341,7 +346,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         //for now, always return a JSON writer.
         //in the future, look at the posted content-type, or a query string param
         //to determine which format to create
-        return new ApiJsonWriter(getViewContext().getResponse(), getContentTypeOverride());
+        return _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride());
     }
 
     public ApiResponseWriter.Format getResponseFormat()
