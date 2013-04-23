@@ -64,7 +64,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
 
     public boolean isShared()
     {
-        return null == _cstmView.getCustomViewOwner();
+        return _cstmView.isShared();
     }
 
     public User getCreatedBy()

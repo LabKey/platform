@@ -81,9 +81,9 @@ public class StudyQueryReport extends QueryReport
                 {
                     HttpServletRequest request = new MockHttpServletRequest();
                     String viewName = getDescriptor().getProperty(QueryParam.viewName.toString());
-                    if (def.getCustomView(null, request, viewName) == null)
+                    if (def.getSharedCustomView(viewName) == null)
                     {
-                        CustomView view = def.createCustomView(null, viewName);
+                        CustomView view = def.createSharedCustomView(viewName);
                         view.setIsHidden(true);
                         view.save(context.getUser(), request);
                     }

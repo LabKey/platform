@@ -65,7 +65,7 @@ a display value, select the display value from the linked table.
             QueryDefinition queryDef = schema.getQueryDefForTable(tableName);
             if (queryDef != null)
             {
-                viewNames.addAll(queryDef.getCustomViews(ctx.getUser(), ctx.getRequest(), false).keySet());
+                viewNames.addAll(queryDef.getCustomViews(ctx.getUser(), ctx.getRequest(), false, false).keySet());
             }
 
             tableNames.put(tableName, viewNames);

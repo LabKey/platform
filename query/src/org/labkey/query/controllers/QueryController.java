@@ -1647,7 +1647,11 @@ public class QueryController extends SpringActionController
         String name = StringUtils.trimToNull(viewName);
 
         boolean isHidden = false;
-        CustomView view = queryDef.getCustomView(owner, getViewContext().getRequest(), name);
+        CustomView view;
+        if (owner == null)
+            view = queryDef.getSharedCustomView(name);
+        else
+            view = queryDef.getCustomView(owner, getViewContext().getRequest(), name);
 
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
@@ -1680,7 +1684,11 @@ public class QueryController extends SpringActionController
             // and the user wants to override the shared view with a personal view.
             if (view == null || (owner != null && view.isShared()))
             {
-                view = queryDef.createCustomView(owner, name);
+                if (owner == null)
+                    view = queryDef.createSharedCustomView(name);
+                else
+                    view = queryDef.createCustomView(owner, name);
+
                 if (owner != null && session)
                     ((CustomViewImpl) view).isSession(true);
             }
@@ -4301,7 +4309,7 @@ public class QueryController extends SpringActionController
                 if (!getContainer().hasPermission(getUser(), AdminPermission.class))
                     throw new UnauthorizedException();
             }
-            CstmView[] existing = QueryManager.get().getCstmViews(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false);
+            CstmView[] existing = QueryManager.get().getCstmViews(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false, false);
             CstmView view;
             if (existing.length != 0)
             {
@@ -4812,7 +4820,7 @@ public class QueryController extends SpringActionController
                         + form.getSchemaName() + "' schema in the container '"
                         + getViewContext().getContainer().getPath() + "'!");
 
-            Map<String, CustomView> views = querydef.getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), true);
+            Map<String, CustomView> views = querydef.getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), true, false);
             if (null == views)
                 views = Collections.emptyMap();
 

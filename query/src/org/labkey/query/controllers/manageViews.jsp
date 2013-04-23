@@ -55,11 +55,11 @@
     List<CstmView> views = new ArrayList<CstmView>();
     if (form.getViewContext().hasPermission(UpdatePermission.class))
     {
-        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, null, false)));
+        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, null, false, false)));
     }
     if (!user.isGuest())
     {
-        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, user, false)));
+        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, user, false, false)));
     }
 
     // UNDONE: Requires queryName for now.  We need a method to get all session views in a container.

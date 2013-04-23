@@ -187,13 +187,38 @@ public class QueryManager
         return view;
     }
 
-    public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, @Nullable User user, boolean inheritable)
+    /**
+     * Get all shared custom views that are applicable.
+     * If <code>inheritable</code> is true, custom views from parent and Shared container are included.
+     *
+     * @param container
+     * @param schemaName
+     * @param queryName
+     * @param inheritable
+     * @return
+     */
+    public List<CstmView> getAllSharedCstmViews(Container container, String schemaName, String queryName, boolean inheritable)
+    {
+        return getAllCstmViews(container, schemaName, queryName, null, inheritable, true);
+    }
+
+    /**
+     * Get all custom views that are applicable for this user including shared custom views.
+     * If <code>inheritable</code> is true, custom views from parent and Shared container are included.
+     *
+     * @param container The current container.
+     * @param schemaName The schema name or null for all schemas.
+     * @param queryName The query name or null for all queries in the schema.
+     * @param user The owner or null for all views (shared or owned by someone.)
+     * @param inheritable If true, look up container hierarchy and in Shared project for custom views.
+     * @param sharedOnly If true, ignore the <code>user</code> parameter and only include shared custom views.
+     * @return List of custom views entities in priority order.
+     */
+    public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, @Nullable User user, boolean inheritable, boolean sharedOnly)
     {
         List<CstmView> views = new ArrayList<CstmView>();
 
-        views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, user, false)));
-        if (user != null)
-            views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, false)));
+        getCstmViewsInContainer(views, container, schemaName, queryName, user, false, sharedOnly);
 
         if (!inheritable)
             return views;
@@ -201,21 +226,41 @@ public class QueryManager
         Container containerCur = container == null ? null : container.getParent();
         while (containerCur != null && !containerCur.isRoot())
         {
-            views.addAll(Arrays.asList(getCstmViews(containerCur, schemaName, queryName, null, user, true)));
-            if (user != null)
-                views.addAll(Arrays.asList(getCstmViews(containerCur, schemaName, queryName, null, null, true)));
+            getCstmViewsInContainer(views, containerCur, schemaName, queryName, user, true, sharedOnly);
             containerCur = containerCur.getParent();
         }
 
         // look in the shared project
-        views.addAll(Arrays.asList(getCstmViews(ContainerManager.getSharedContainer(), schemaName, queryName, null, user, true)));
-        if (user != null)
-            views.addAll(Arrays.asList(getCstmViews(ContainerManager.getSharedContainer(), schemaName, queryName, null, null, true)));
+        getCstmViewsInContainer(views, ContainerManager.getSharedContainer(), schemaName, queryName, user, true, sharedOnly);
 
         return views;
     }
 
-    public CstmView[] getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly)
+    private void getCstmViewsInContainer(List<CstmView> views, Container container, String schemaName, String queryName, @Nullable User user, boolean inheritable, boolean sharedOnly)
+    {
+        if (sharedOnly)
+        {
+            // Get only shared custom views
+            views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, inheritable, true)));
+        }
+        else
+        {
+            if (user != null)
+            {
+                // Custom views owned by the user first, then add shared custom views
+                views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, user, inheritable, false)));
+                views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, inheritable, true)));
+            }
+            else
+            {
+                // Get all custom views regardless of owner
+                views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, inheritable, false)));
+            }
+        }
+
+    }
+
+    public CstmView[] getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly, boolean sharedOnly)
     {
         CstmView.Key key = new CstmView.Key(container);
         if (schemaName != null)
@@ -229,7 +274,18 @@ public class QueryManager
             key.setFlagMask(FLAG_INHERITABLE, FLAG_INHERITABLE);
         }
 
-        key.setUser(user);
+        if (sharedOnly)
+        {
+            // Get shared custom views (customviewowner is null in database)
+            key.setShared(sharedOnly);
+        }
+        else
+        {
+            // Get custom views owned by the user or, if user is null, get all custom views (shared or not).
+            if (user != null)
+                key.setUser(user);
+        }
+
         return key.select();
     }
 

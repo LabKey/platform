@@ -167,17 +167,29 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return getContainer().hasPermission(user, AdminPermission.class);
     }
 
-    public CustomView getCustomView(@Nullable User owner, @Nullable HttpServletRequest request, String name)
+    public CustomView getCustomView(@NotNull User owner, @Nullable HttpServletRequest request, String name)
     {
-        return getCustomViews(owner, request, true).get(name);
+        assert owner != null;
+        return getCustomViews(owner, request, true, false).get(name);
     }
 
-    public CustomView createCustomView(@Nullable User owner, String name)
+    public CustomView getSharedCustomView(String name)
     {
+        return getCustomViews(null, null, true, true).get(name);
+    }
+
+    public CustomView createCustomView(@NotNull User owner, String name)
+    {
+        assert owner != null;
         return new CustomViewImpl(this, owner, name);
     }
 
-    public Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden)
+    public CustomView createSharedCustomView(String name)
+    {
+        return new CustomViewImpl(this, null, name);
+    }
+
+    public Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly)
     {
         Map<String, CustomView> ret = new LinkedHashMap<String, CustomView>();
 
@@ -192,7 +204,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
 
         // Database custom view and module custom views.
-        ret.putAll(QueryServiceImpl.get().getCustomViewMap(owner, getContainer(), this, true));
+        ret.putAll(QueryServiceImpl.get().getCustomViewMap(owner, getContainer(), this, true, sharedOnly));
 
         // Session views have highest precedence.
         if (owner != null && request != null)

@@ -157,7 +157,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), def.getContainer(), "study", def.getLabel());
         if (null == qd)
             qd = schema.getQueryDefForTable(def.getLabel());
-        Map<String, CustomView> views = qd.getCustomViews(context.getUser(), context.getRequest(), false);
+        Map<String, CustomView> views = qd.getCustomViews(context.getUser(), context.getRequest(), false, false);
         if (views != null)
         {
             for (CustomView view: views.values())

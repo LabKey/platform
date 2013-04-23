@@ -16,6 +16,7 @@
 
 package org.labkey.query.persist;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Entity;
@@ -60,13 +61,18 @@ public final class CstmView extends Entity implements Cloneable, Serializable
             else
                 addCondition(Column.name, name);
         }
-        
-        public void setUser(@Nullable User user)
+
+        public void setShared(boolean shared)
         {
-            if (user == null)
+            if (shared)
                 addIsNull(Column.customviewowner);
             else
-                addCondition(Column.customviewowner, user.getUserId());
+                addIsNotNull(Column.customviewowner);
+        }
+
+        public void setUser(@NotNull User user)
+        {
+            addCondition(Column.customviewowner, user.getUserId());
         }
     }
 
@@ -109,6 +115,11 @@ public final class CstmView extends Entity implements Cloneable, Serializable
     public void setCustomViewOwner(Integer owner)
     {
         _owner = owner;
+    }
+
+    public boolean isShared()
+    {
+        return null == _owner;
     }
 
     public String getColumns()

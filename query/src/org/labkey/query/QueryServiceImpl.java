@@ -381,7 +381,7 @@ public class QueryServiceImpl extends QueryService
         return ret.get(name);
     }
 
-    private Map<String, CustomView> getCustomViewMap(User user, Container container, String schema, String query, boolean includeInherited)
+    private Map<String, CustomView> getCustomViewMap(@Nullable User user, Container container, String schema, String query, boolean includeInherited, boolean sharedOnly)
     {
         // Check for a custom query that matches
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true);
@@ -398,12 +398,12 @@ public class QueryServiceImpl extends QueryService
 
         if (qd != null)
         {
-            return getCustomViewMap(user, container, qd, includeInherited);
+            return getCustomViewMap(user, container, qd, includeInherited, sharedOnly);
         }
         return Collections.emptyMap();
     }
 
-    protected Map<String, CustomView> getCustomViewMap(@Nullable User user, Container container, QueryDefinition qd, boolean inheritable)
+    protected Map<String, CustomView> getCustomViewMap(@Nullable User user, Container container, QueryDefinition qd, boolean inheritable, boolean sharedOnly)
     {
         Map<String, CustomView> views = new HashMap<String, CustomView>();
 
@@ -414,19 +414,35 @@ public class QueryServiceImpl extends QueryService
         }
 
         // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
-        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getSchemaPath().toString(), qd.getName(), user, inheritable))
+        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getSchemaPath().toString(), qd.getName(), user, inheritable, sharedOnly))
             views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
 
         return views;
     }
 
-    public CustomView getCustomView(User user, Container container, String schema, String query, String name)
+    public CustomView getCustomView(@Nullable User user, Container container, String schema, String query, String name)
     {
-        Map<String, CustomView> views = getCustomViewMap(user, container, schema, query, false);
+        Map<String, CustomView> views = getCustomViewMap(user, container, schema, query, false, false);
         return views.get(name);
     }
 
-    public List<CustomView> getCustomViews(User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited)
+    public List<CustomView> getCustomViews(@Nullable User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited)
+    {
+        return _getCustomViews(user, container, schemaName, queryName, includeInherited, false);
+    }
+
+    public CustomView getSharedCustomView(Container container, String schema, String query, String name)
+    {
+        Map<String, CustomView> views = getCustomViewMap(null, container, schema, query, false, true);
+        return views.get(name);
+    }
+
+    public List<CustomView> getSharedCustomViews(Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited)
+    {
+        return _getCustomViews(null, container, schemaName, queryName, includeInherited, true);
+    }
+
+    private List<CustomView> _getCustomViews(@Nullable User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly)
     {
         if (schemaName == null || queryName == null)
         {
@@ -435,7 +451,7 @@ public class QueryServiceImpl extends QueryService
             List<CustomView> result = new ArrayList<CustomView>();
             Map<String, UserSchema> schemas = new HashMap<String, UserSchema>();
             Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<Pair<String, String>, QueryDefinition>();
-            for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schemaName, queryName, user, includeInherited))
+            for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schemaName, queryName, user, includeInherited, sharedOnly))
             {
                 Pair<String, String> key = new Pair<String, String>(cstmView.getSchema(), cstmView.getQueryName());
                 QueryDefinition queryDef = queryDefs.get(key);
@@ -462,7 +478,7 @@ public class QueryServiceImpl extends QueryService
             return result;
         }
 
-        return new ArrayList<CustomView>(getCustomViewMap(user, container, schemaName, queryName, includeInherited).values());
+        return new ArrayList<CustomView>(getCustomViewMap(user, container, schemaName, queryName, includeInherited, sharedOnly).values());
     }
 
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path)
@@ -568,7 +584,7 @@ public class QueryServiceImpl extends QueryService
             try
             {
                 // Get all shared views on this query with the same name
-                CstmView[] views = mgr.getCstmViews(container, qd.getSchemaName(), qd.getName(), viewName, null, false);
+                CstmView[] views = mgr.getCstmViews(container, qd.getSchemaName(), qd.getName(), viewName, null, false, true);
 
                 // Delete them
                 for (CstmView view : views)
@@ -593,12 +609,12 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User currentUser)
+    public Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @NotNull User currentUser)
     {
         return getCustomViewProperties(view, currentUser, true);
     }
 
-    private Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User currentUser, boolean includeShadowed)
+    private Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @NotNull User currentUser, boolean includeShadowed)
     {
         if (view == null)
             return null;
@@ -621,8 +637,14 @@ public class QueryServiceImpl extends QueryService
         // Include view information about shadowed view
         if (includeShadowed && view.isSession())
         {
-            CustomView shadowedView = view.getQueryDefinition().getCustomView(currentUser, null, view.getName());
-            ret.put("shadowed", getCustomViewProperties(shadowedView, currentUser, false));
+            User owner = view.getOwner();
+            if (owner == null)
+                owner = currentUser;
+            CustomView shadowedView = view.getQueryDefinition().getCustomView(owner, null, view.getName());
+
+            // Don't include shadowed custom view if it is owned by someone else.
+            if (shadowedView == null || shadowedView.isShared() || shadowedView.getOwner() == owner)
+                ret.put("shadowed", getCustomViewProperties(shadowedView, currentUser, false));
         }
 
         return ret;

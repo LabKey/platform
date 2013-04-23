@@ -18,6 +18,8 @@ package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -85,7 +87,13 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         _dirty = false;
     }
 
-    public CustomViewImpl(QueryDefinition queryDef, User user, String name)
+    /**
+     * Create new CustomView for the query.
+     * @param queryDef The query.
+     * @param user Owner of the custom view or null for shared.
+     * @param name Name of the custom view.
+     */
+    public CustomViewImpl(QueryDefinition queryDef, @Nullable User user, @NotNull String name)
     {
         super(new CstmView());
         _queryDef = queryDef;

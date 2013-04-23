@@ -17,6 +17,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Aggregate;
@@ -189,13 +190,15 @@ public class CustomViewUtil
         return ret;
     }
 
-    public static Map<String, Object> toMap(CustomView view, User user, boolean includeFieldMeta)
+    public static Map<String, Object> toMap(CustomView view, @NotNull User user, boolean includeFieldMeta)
     {
+        assert user != null;
         return toMap(view, user, includeFieldMeta, new HashMap<FieldKey, Map<String, Object>>());
     }
 
-    public static Map<String, Object> toMap(CustomView view, User user, boolean includeFieldMeta, Map<FieldKey, Map<String, Object>> columnMetadata)
+    public static Map<String, Object> toMap(CustomView view, @NotNull User user, boolean includeFieldMeta, Map<FieldKey, Map<String, Object>> columnMetadata)
     {
+        assert user != null;
         Map<String, Object> ret = QueryService.get().getCustomViewProperties(view, user);
 
         ActionURL gridURL = view.getQueryDefinition().urlFor(QueryAction.executeQuery);

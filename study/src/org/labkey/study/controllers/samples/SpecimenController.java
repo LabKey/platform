@@ -3392,7 +3392,7 @@ public class SpecimenController extends BaseStudyController
             // 13485 - Use provider to handle NULL study
             StudyQuerySchema schema = (StudyQuerySchema) new StudySchemaProvider().getSchema(DefaultSchema.get(context.getUser(), context.getContainer()));
             QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
-            return def.getCustomViews(context.getUser(), context.getRequest(), false);
+            return def.getCustomViews(context.getUser(), context.getRequest(), false, false);
         }
 
         public boolean hasReports()
