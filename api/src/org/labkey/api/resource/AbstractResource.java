@@ -118,6 +118,6 @@ abstract public class AbstractResource implements Resource
     public String toString()
     {
         Resolver r = getResolver();
-        return (r == null ? "[]" : "[" + r.toString() + "]") + getPath().toString();
+        return (r == null ? "[]" : "[" + r.toString() + "] ") + getPath().toString();
     }
 }
