@@ -99,13 +99,19 @@ public class StudyService
          * Returns the dataset id of the requested dataset definition label,
          * or -1 if no such dataset by that label exists
          */
-        public int getDatasetId(Container c, String datasetLabel);
+        public int getDatasetIdByLabel(Container c, String datasetLabel);
+
+        /**
+         * Returns the dataset id of the requested dataset definition name,
+         * or -1 if no such dataset by that label exists
+         */
+        public int getDatasetIdByName(Container c, String datasetName);
 
         /**
          * Returns the dataset id of the requested dataset definition label or name,
          * or -1 if no such dataset by that label or name exists (i.e. also check name in the case of a dataset label change)
          */
-        public int getDatasetId(Container c, String datasetLabel, String name);
+        public int getDatasetIdByQueryName(Container c, String queryName);
 
         /**
          * Delete a single dataset row

@@ -15,10 +15,14 @@
  */
 package org.labkey.api.visualization;
 
+import org.json.JSONObject;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.reports.model.ReportPropsManager;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.Pair;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,4 +65,32 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
             else
                 return null;
         }
+
+    @Override
+    public boolean updateQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        if (getJSON() != null)
+        {
+            // GenericChart JSON config usages of queryName in 13.1:
+            // jsonData.queryConfig.queryName
+            JSONObject json = new JSONObject(getJSON());
+            JSONObject queryJson = json.getJSONObject("queryConfig");
+            String queryName = queryJson.getString("queryName");
+            if (queryName != null)
+            {
+                for (QueryChangeListener.QueryPropertyChange qpc : changes)
+                {
+                    if (queryName.equals(qpc.getOldValue()))
+                    {
+                        queryJson.put("queryName", qpc.getNewValue());
+                        queryJson.put("queryLabel", ReportUtil.getQueryLabelByName(qpc.getSource().getSchema(), qpc.getSource().getName()));
+                        setJSON(json.toString());
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 }

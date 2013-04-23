@@ -144,10 +144,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return _name;
     }
 
-     public String getTitle()
-     {
-         return _title == null ? _name : _title;
-     }
+    protected void setTitle(String title)
+    {
+        _title = title;
+    }
+
+    public String getTitle()
+    {
+        return _title == null ? _name : _title;
+    }
 
      public String getMetaDataName()
     {

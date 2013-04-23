@@ -130,6 +130,11 @@ public class Sort
             return _fieldKey;
         }
 
+        public void setFieldKey(FieldKey fieldKey)
+        {
+            _fieldKey = fieldKey;
+        }
+
         @Deprecated // Use .getFieldKey() instead.
         public String getColumnName()
         {

@@ -26,6 +26,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
@@ -409,7 +410,7 @@ public class ReportUtil
         ViewCategory vc;
         if ("study".equalsIgnoreCase(schema) && !StringUtils.isEmpty(query))
         {
-            int datasetId = StudyService.get().getDatasetId(c, query);
+            int datasetId = StudyService.get().getDatasetIdByQueryName(c, query);
             if (datasetId >= 0)
             {
                 DataSet ds = StudyService.get().getDataSet(c, datasetId);
@@ -480,6 +481,7 @@ public class ReportUtil
                         info.setEntityId(descriptor.getEntityId());
                         info.setDataType(ViewInfo.DataType.reports);
                         info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
+                        info.setQueryLabel(StringUtils.defaultIfEmpty(getQueryLabelByName(user, c, schema, query), "Stand-alone views"));
 
                         if (status != null)
                             info.setStatus(ViewInfo.Status.valueOf(status));
@@ -596,6 +598,7 @@ public class ReportUtil
 
                     info.setReportId(new QueryViewReportId(viewId));
                     info.setQuery(view.getQueryName());
+                    info.setQueryLabel(getQueryLabelByName(user, c, view.getSchemaName(), view.getQueryName()));
                     info.setSchema(view.getSchemaName());
                     info.setEditable(view.isEditable());
                     info.setCreatedBy(createdBy);
@@ -676,6 +679,29 @@ public class ReportUtil
             return false;
         }
         return true;
+    }
+
+    public static String getQueryLabelByName(User user, Container container, String schema, String query)
+    {
+        if (schema != null && query != null)
+        {
+            UserSchema userSchema = QueryService.get().getUserSchema(user, container, schema);
+            return getQueryLabelByName(userSchema, query);
+        }
+        // fall back on returning the query name as the label
+        return query;
+    }
+
+    public static String getQueryLabelByName(UserSchema userSchema, String query)
+    {
+        if (userSchema != null)
+        {
+            TableInfo tableInfo = userSchema.getTable(query);
+            if (tableInfo != null)
+                return tableInfo.getTitle();
+        }
+        // fall back on returning the query name as the label
+        return query;
     }
 
     public static boolean isInherited(CustomViewInfo view, Container container)

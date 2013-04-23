@@ -33,6 +33,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.DataSetTable;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -466,6 +467,37 @@ abstract public class UserSchema extends AbstractSchema
     public List<String> getTableAndQueryNames(boolean visibleOnly)
     {
         return new ArrayList<String>(_getQueries(visibleOnly).keySet());        
+    }
+
+    public Map<String, String> getTableAndQueryNamesAndLabels(boolean visibleOnly)
+    {
+        Map<String, QueryDefinition> queries = _getQueries(visibleOnly);
+        TreeMap<String, String> namesAndLabels = new TreeMap<String, String>(new Comparator<String>()
+        {
+            @Override
+            public int compare(String o1, String o2)
+            {
+                return o1.compareToIgnoreCase(o2);
+            }
+        });
+
+        for (QueryDefinition queryDefinition : queries.values())
+        {
+            String name = queryDefinition.getName();
+            String label = name;
+            try
+            {
+                TableInfo tableInfo = getTable(name);
+                if (null != tableInfo && tableInfo instanceof DataSetTable)
+                    label = tableInfo.getTitle();
+            }
+            catch (QueryParseException e)
+            {
+                // ignore; not found
+            }
+            namesAndLabels.put(name, label);
+        }
+        return namesAndLabels;
     }
 
     /**

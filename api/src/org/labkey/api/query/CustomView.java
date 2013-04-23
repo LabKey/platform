@@ -32,6 +32,7 @@ public interface CustomView extends CustomViewInfo
 {
     QueryDefinition getQueryDefinition();
     void setName(String name);
+    void setQueryName(String queryName);
     void setCanInherit(boolean f);
     boolean canEdit(Container c, Errors errors);
     void setIsHidden(boolean f);

@@ -35,6 +35,7 @@ public class ViewInfo
     private ReportIdentifier _reportId;
     private String _entityId;
     private String _query;
+    private String _queryLabel;
     private String _schema;
     private String _category;
     private int _categoryDisplayOrder;
@@ -125,6 +126,16 @@ public class ViewInfo
     public void setQuery(String query)
     {
         _query = query;
+    }
+
+    public String getQueryLabel()
+    {
+        return _queryLabel != null ? _queryLabel : _query;
+    }
+
+    public void setQueryLabel(String queryLabel)
+    {
+        _queryLabel = queryLabel;
     }
 
     public String getSchema()
@@ -452,6 +463,8 @@ public class ViewInfo
             o.put("reportId", getReportId().toString());
         if (getQuery() != null)
             o.put("query", getQuery());
+        if (getQueryLabel() != null)
+            o.put("queryLabel", getQueryLabel());
         if (getSchema() != null)
             o.put("schema", getSchema());
 

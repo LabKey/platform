@@ -948,6 +948,7 @@ LABKEY.Query = new function()
          *      <li><b>queries:</b> an array of objects, each of which has the following properties
          *          <ul>
          *              <li><b>name:</b> the name of the query</li>
+         *              <li><b>title:</b> this is the label used when displaying this table. If the table has no title, this will be the same as the name.</li>
          *              <li><b>viewDataUrl:</b> the server-relative URL where this query's data can be viewed.
          *                  Available in LabKey Server version 10.2 and later.</li>
          *              <li><b>columns:</b> if config.includeColumns is not false, this will contain an array of

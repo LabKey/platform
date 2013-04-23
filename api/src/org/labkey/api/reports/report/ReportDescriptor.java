@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.qc.TsvDataExchangeHandler;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
@@ -499,6 +500,13 @@ public enum Prop implements ReportProperty
     protected String adjustPropertyValue(@Nullable ImportContext context, String key, Object value)
     {
         return String.valueOf(value);
+    }
+
+    // Let subclasses decide how they need to handle query name changes, return true if changes have been made to the
+    // descriptor. It is up to the caller to save the report changes
+    public boolean updateQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        return false;
     }
 
     public void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
@@ -108,8 +109,6 @@ abstract public class QueryService
     abstract public List<CustomView> getCustomViews(User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
     abstract public CustomView getCustomView(User user, Container container, String schema, String query, String name);
     abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException;
-    abstract public void updateCustomViewsAfterRename(@NotNull Container c, @NotNull String schema,
-            @NotNull String oldQueryName, @NotNull String newQueryName);
 
     /**
      * Get CustomView properties as a JSON map.
@@ -290,4 +289,7 @@ abstract public class QueryService
      * Returns a DetailsURL that can be used for the row audit history for the table.
      */
     abstract public @Nullable DetailsURL getAuditDetailsURL(User user, Container c, TableInfo table);
+
+    abstract public void fireQueryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
+    abstract public void fireQueryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes);
 }

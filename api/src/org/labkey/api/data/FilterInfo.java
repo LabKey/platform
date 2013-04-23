@@ -48,6 +48,11 @@ public class FilterInfo implements Serializable
         return field;
     }
 
+    public void setField(FieldKey field)
+    {
+        this.field = field;
+    }
+
     public CompareType getOp()
     {
         return op;

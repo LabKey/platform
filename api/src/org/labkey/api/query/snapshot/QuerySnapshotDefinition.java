@@ -31,6 +31,7 @@ import java.util.Date;/*
 public interface QuerySnapshotDefinition
 {
     String getName();
+    String getQueryTableName();
     int getId();
     QueryDefinition getQueryDefinition(User user);
 
@@ -47,6 +48,7 @@ public interface QuerySnapshotDefinition
     String getFilter();
     List<Integer> getParticipantGroups();
     void setParticipantGroups(List<Integer> groups);
+    void setQueryTableName(String queryTableName);
 
     Date getCreated();
     Date getLastUpdated();

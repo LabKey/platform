@@ -22,10 +22,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.reports.model.ReportPropsManager;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,6 +129,101 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                 }
             }
         }
+    }
+
+    @Override
+    public boolean updateQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        if (getJSON() != null)
+        {
+            // TimeChart JSON config usages of queryName in 13.1:
+            // subject.queryName
+            // measures[].dateOptions.dateCol.queryName
+            // measures[].dateOptions.zeroDateCol.queryName
+            // measures[].dimension.queryName
+            // measures[].measure.queryName
+            JSONObject json = new JSONObject(getJSON());
+
+            boolean hasUpdates = updateJSONObjectQueryNameReference(json.getJSONObject("subject"), "queryName", changes);
+
+            JSONArray measures = json.getJSONArray("measures");
+            for(int i = 0; i < measures.length(); i++)
+            {
+                // update dateOptions queryNames for dateCol and zeroDateCol
+                boolean dateColUpdates = false;
+                boolean zeroDateColUpdates = false;
+                boolean dimensionUpdates = false;
+                if (measures.getJSONObject(i).has("dateOptions"))
+                {
+                    JSONObject dateOptions = measures.getJSONObject(i).getJSONObject("dateOptions");
+                    if (dateOptions.has("dateCol"))
+                    {
+                        dateColUpdates = updateJSONObjectQueryNameReference(dateOptions.getJSONObject("dateCol"), "queryName", changes);
+                    }
+                    if (dateOptions.has("zeroDateCol"))
+                    {
+                        zeroDateColUpdates = updateJSONObjectQueryNameReference(dateOptions.getJSONObject("zeroDateCol"), "queryName", changes);
+                    }
+                    // update dimension queryName
+                    if (measures.getJSONObject(i).has("dimension"))
+                    {
+                        dimensionUpdates = updateJSONObjectQueryNameReference(measures.getJSONObject(i).getJSONObject("dimension"), "queryName", changes);
+                    }
+                }
+
+                // update measure queryName
+                JSONObject measureJson = measures.getJSONObject(i).getJSONObject("measure");
+                String origQueryName = measureJson.getString("queryName");
+                boolean measureUpdates = updateJSONObjectQueryNameReference(measureJson, "queryName", changes);
+                // special case for measure queryname:
+                // reset the measure alias based on the schemaName_queryName_measureName and add a queryLabel
+                if (measureUpdates)
+                {
+                    String schema = measureJson.getString("schemaName");
+                    String query = measureJson.getString("queryName");
+                    String name = measureJson.getString("name");
+                    if (schema != null && query != null && name != null)
+                        measureJson.put("alias", schema + "_" + query + "_" + name);
+
+                    for (QueryChangeListener.QueryPropertyChange qpc : changes)
+                    {
+                        if (query.equals(qpc.getNewValue()))
+                        {
+                            measureJson.put("queryLabel", ReportUtil.getQueryLabelByName(qpc.getSource().getSchema(), query));
+                            break;
+                        }
+                    }
+                }
+
+                hasUpdates = hasUpdates || dateColUpdates || zeroDateColUpdates || dimensionUpdates || measureUpdates;
+            }
+
+            if (hasUpdates)
+            {
+                setJSON(json.toString());
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean updateJSONObjectQueryNameReference(JSONObject json, String propName, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        String queryName = json.getString(propName);
+        if (queryName != null)
+        {
+            for (QueryChangeListener.QueryPropertyChange qpc : changes)
+            {
+                if (queryName.equals(qpc.getOldValue()))
+                {
+                    json.put(propName, qpc.getNewValue());
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public String getViewClass()

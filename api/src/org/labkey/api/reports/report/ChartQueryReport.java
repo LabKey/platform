@@ -22,7 +22,6 @@ import org.jfree.chart.ChartRenderingInfo;
 import org.jfree.chart.imagemap.ImageMapUtilities;
 import org.jfree.chart.plot.Plot;
 import org.labkey.api.data.*;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
