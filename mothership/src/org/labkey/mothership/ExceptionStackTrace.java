@@ -18,11 +18,13 @@ package org.labkey.mothership;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.security.User;
 import org.labkey.api.util.HashHelpers;
 
 import java.io.StringReader;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Date;
 
 /**
  * User: jeckels
@@ -37,6 +39,8 @@ public class ExceptionStackTrace
     private Integer _assignedTo;
     private Integer _bugNumber;
     private String _comments;
+    private Date _modified;
+    private User _modifiedBy;
 
     public String getStackTrace()
     {
@@ -172,6 +176,26 @@ public class ExceptionStackTrace
     public void setComments(String comments)
     {
         _comments = comments;
+    }
+
+    public Date getModified()
+    {
+        return _modified;
+    }
+
+    public User getModifiedBy()
+    {
+        return _modifiedBy;
+    }
+
+    public void setModified(Date modified)
+    {
+        _modified = modified;
+    }
+
+    public void setModifiedBy(User modifiedBy)
+    {
+        _modifiedBy = modifiedBy;
     }
 
     public static class TestCase extends Assert

@@ -63,6 +63,8 @@
             <ns:column columnName="Comments">
                 <ns:inputRows>4</ns:inputRows>
             </ns:column>
+            <ns:column columnName="Modified"/>
+            <ns:column columnName="ModifiedBy"/>
         </ns:columns>
     </ns:table>
     <ns:table tableName="ServerInstallation" tableDbType="TABLE">

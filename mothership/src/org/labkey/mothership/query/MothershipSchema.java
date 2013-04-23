@@ -37,6 +37,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -376,6 +377,8 @@ public class MothershipSchema extends UserSchema
         result.setTitleColumn("ExceptionStackTraceId");
         result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId")));
 
+        result.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer()));
+
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
         defaultCols.add(FieldKey.fromParts("Instances"));
@@ -384,6 +387,8 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromParts("BugNumber"));
         defaultCols.add(FieldKey.fromParts("AssignedTo"));
         defaultCols.add(FieldKey.fromParts("StackTrace"));
+        defaultCols.add(FieldKey.fromParts("ModifiedBy"));
+        defaultCols.add(FieldKey.fromParts("Modified"));
         result.setDefaultVisibleColumns(defaultCols);
 
         return result;

@@ -1407,15 +1407,19 @@ public class MothershipController extends SpringActionController
 
             getDataRegion().setButtonBar(bb);
             getDataRegion().setFormActionUrl(saveURL);
-            getDataRegion().setTable(MothershipManager.get().getTableInfoExceptionStackTrace());
-            getDataRegion().addColumns(MothershipManager.get().getTableInfoExceptionStackTrace(), "ExceptionStackTraceId,StackTrace,BugNumber,Comments");
-            getDataRegion().addHiddenFormField("exceptionStackTraceId", Integer.toString(form.getBean().getExceptionStackTraceId()));
-            getDataRegion().addDisplayColumn(new AssignedToDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("AssignedTo"), c));
-            getDataRegion().getDisplayColumn(1).setVisible(false);
-            getDataRegion().addDisplayColumn(new CreateIssueDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("StackTrace"), b));
-            getDataRegion().addDisplayColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("StackTrace")));
 
-            setTitle("Exception Stack Trace Details");
+            TableInfo exceptionStackTraceTable = new MothershipSchema(getViewContext().getUser(), c).getTable("ExceptionStackTrace");
+            getDataRegion().setTable(exceptionStackTraceTable);
+            getDataRegion().addColumns(exceptionStackTraceTable, "ExceptionStackTraceId,StackTrace,BugNumber,Comments");
+            getDataRegion().addHiddenFormField("exceptionStackTraceId", Integer.toString(form.getBean().getExceptionStackTraceId()));
+            getDataRegion().addDisplayColumn(new AssignedToDisplayColumn(exceptionStackTraceTable.getColumn("AssignedTo"), c));
+            getDataRegion().getDisplayColumn(1).setVisible(false);
+            getDataRegion().addDisplayColumn(new CreateIssueDisplayColumn(exceptionStackTraceTable.getColumn("StackTrace"), b));
+            getDataRegion().addDisplayColumn(new StackTraceDisplayColumn(exceptionStackTraceTable.getColumn("StackTrace")));
+
+            getDataRegion().addColumn(exceptionStackTraceTable.getColumn("ModifiedBy"));
+            getDataRegion().addColumn(exceptionStackTraceTable.getColumn("Modified"));
+
         }
     }
 
