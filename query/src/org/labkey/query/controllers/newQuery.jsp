@@ -21,17 +21,19 @@
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     NewQueryForm form = (NewQueryForm) HttpView.currentModel();
-    List<String> tableAndQueryNames = Collections.emptyList();
+    Map<String, String> namesAndLabels = new HashMap<String, String>();
     if (form.getSchema() != null)
-        tableAndQueryNames = form.getSchema().getTableAndQueryNames(false);
+        namesAndLabels = form.getSchema().getTableAndQueryNamesAndLabels(false);
 %>
 <labkey:errors />
 
-<% if (tableAndQueryNames.size() == 0) { %>
+<% if (namesAndLabels.size() == 0) { %>
     Cannot create a new query: no tables/queries exist in the current schema to base the new query on.
 <% } else { %>
     <form action="<%=urlFor(QueryController.NewQueryAction.class)%>" method="POST">
@@ -45,8 +47,15 @@
         <p>
             Which query/table do you want this new query to be based on?<br>
             <select name="ff_baseTableName">
-                <% for (String queryName : tableAndQueryNames) { %>
-                <option name="<%=h(queryName)%>"<%=queryName.equals(form.ff_baseTableName) ? " selected" : ""%>><%=h(queryName)%></option>
+                <% for (Map.Entry<String, String> entry : namesAndLabels.entrySet())
+                {
+                    String queryLabel = entry.getValue();
+                    String queryName = entry.getKey();
+                    String displayText = queryName;
+                    if (!queryName.equalsIgnoreCase(queryLabel))
+                        displayText += " (" + queryLabel + ")";
+                %>
+                <option name="<%=h(queryName)%>" value="<%=h(queryName)%>" <%=text(queryName.equals(form.ff_baseTableName) ? " selected" : "")%>><%=h(displayText)%></option>
                 <% } %>
             </select>
         </p>

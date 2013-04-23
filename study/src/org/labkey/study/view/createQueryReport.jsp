@@ -111,8 +111,9 @@
                     {
                         DataSet def = datasetMap.get(name);
                         if (def != null) {
+                            String label = !def.getLabel().equals(def.getName()) ? def.getName() + " (" + def.getLabel() + ")" : def.getLabel();
                 %>
-                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDataSetId()) %>" <%= name.equals(bean.getQueryName()) ? "SELECTED" : "" %>><%= h(name) %></option>
+                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDataSetId()) %>" <%= name.equals(bean.getQueryName()) ? "SELECTED" : "" %>><%= h(label) %></option>
                 <%
                         } else {
                 %>

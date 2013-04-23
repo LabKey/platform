@@ -106,7 +106,7 @@ public class ChartReportView extends AbstractReportView
                 {
                     DataSet ds = study.getDataSet(datasetId);
                     if (ds != null)
-                        descriptor.setProperty(ReportDescriptor.Prop.queryName, ds.getLabel());
+                        descriptor.setProperty(ReportDescriptor.Prop.queryName, ds.getName());
                 }
             }
         }

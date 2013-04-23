@@ -52,7 +52,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         Container container = getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
 
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, domain.getName());
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinitionByName(study, domain.getName());
 
         if (def == null)
             throw new IllegalStateException("Could not find dataset: " + domain.getName());
@@ -128,7 +128,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
     {
         Container container = getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, orig.getName());
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinitionByName(study, orig.getName());
         if (def == null)
             throw new IllegalStateException("Could not find dataset: " + orig.getName());
 

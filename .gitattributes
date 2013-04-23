@@ -2236,6 +2236,7 @@ query/src/org/labkey/query/QueryImporter.java -text
 query/src/org/labkey/query/QueryModule.java -text
 query/src/org/labkey/query/QueryServiceImpl.java -text
 query/src/org/labkey/query/QuerySnapshotDefImpl.java -text
+query/src/org/labkey/query/QuerySnapshotQueryChangeListener.java -text
 query/src/org/labkey/query/QueryWebdavProvider.java -text
 query/src/org/labkey/query/QueryWriter.java -text
 query/src/org/labkey/query/TableQueryDefinition.java -text

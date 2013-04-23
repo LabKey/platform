@@ -19,11 +19,13 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
@@ -66,6 +68,59 @@ public class ParticipantReportDescriptor extends ReportDescriptor
         }
 
         return super.adjustPropertyValue(context, key, value);
+    }
+
+    @Override
+    public boolean updateQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        if (getProperty(ParticipantReport.MEASURES_PROP) != null)
+        {
+            // ParticipantReport measure config uses queryName in 13.1
+            boolean hasUpdates = false;
+            JSONArray jsonMeasuresArr = new JSONArray(getProperty(ParticipantReport.MEASURES_PROP));
+            for(int i = 0; i < jsonMeasuresArr.length(); i++)
+            {
+                JSONObject measure = jsonMeasuresArr.getJSONObject(i).getJSONObject("measure");
+                boolean measureUpdates = updateJSONObjectQueryNameReference(measure, changes);
+                // special case for measure queryname: reset the measure alias based on the schemaName_queryName_measureName
+                if (measureUpdates)
+                {
+                    String schema = measure.getString("schemaName");
+                    String query = measure.getString("queryName");
+                    String name = measure.getString("name");
+                    if (schema != null && query != null && name != null)
+                        measure.put("alias", schema + "_" + query + "_" + name);
+                }
+
+                hasUpdates = hasUpdates || measureUpdates;
+            }
+
+            if (hasUpdates)
+            {
+                setProperty(ParticipantReport.MEASURES_PROP, jsonMeasuresArr.toString());
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean updateJSONObjectQueryNameReference(JSONObject json, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        String queryName = json.getString("queryName");
+        if (queryName != null)
+        {
+            for (QueryChangeListener.QueryPropertyChange qpc : changes)
+            {
+                if (queryName.equals(qpc.getOldValue()))
+                {
+                    json.put("queryName", qpc.getNewValue());
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override

@@ -56,7 +56,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -78,7 +77,6 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.ResultSet;
@@ -111,7 +109,7 @@ public class DataSetQueryView extends StudyQueryView
         ViewContext context = getViewContext();
         DatasetFilterForm form = getForm(context);
 
-        _dataset = StudyManager.getInstance().getDataSetDefinition(_study, settings.getQueryName());
+        _dataset = StudyManager.getInstance().getDataSetDefinitionByName(_study, settings.getQueryName());
         if (_dataset == null)
             throw new IllegalArgumentException("Unable to find the dataset specified");
 
@@ -349,7 +347,7 @@ public class DataSetQueryView extends StudyQueryView
 
         User user = getUser();
         boolean canWrite = canWrite(_dataset, user);
-        boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getLabel());
+        boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
         boolean isAssayDataset = _dataset.isAssayData();
         ExpProtocol protocol = null;
 

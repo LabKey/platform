@@ -890,7 +890,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
                 },
                 failure : function(info, response, options) {
-                    LABKEY.Utils.displayAjaxErrorResponse(response, options);
                     this.clearChartPanel("Error: " + info.exception);
                 },
                 measures: this.chartInfo.measures,
@@ -962,7 +961,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
                 },
                 failure : function(info, response, options) {
-                    LABKEY.Utils.displayAjaxErrorResponse(response, options);
                     this.clearChartPanel("Error: " + info.exception);
                 },
                 measures: this.chartInfo.measures,

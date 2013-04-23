@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -81,6 +82,7 @@
             reportId        : <%=q(form.getReportId() != null ? form.getReportId().toString() : null) %>,
             schemaName      : <%=q(form.getSchemaName() != null ? form.getSchemaName() : null) %>,
             queryName       : <%=q(form.getQueryName() != null ? form.getQueryName() : null) %>,
+            queryLabel      : <%=q(ReportUtil.getQueryLabelByName(ctx.getUser(), c, form.getSchemaName(), form.getQueryName()))%>,
             viewName        : <%=q(form.getViewName() != null ? form.getViewName() : null) %>,
             dataRegionName  : <%=q(form.getDataRegionName())%>,
             renderType      : <%=q(form.getRenderType())%>,

@@ -65,8 +65,10 @@ import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -565,10 +567,17 @@ public class StudyManager
             ensureViewCategory(user, dataSetDefinition);
             _datasetHelper.update(user, dataSetDefinition, pk);
 
-            if (!old.getLabel().equals(dataSetDefinition.getLabel()))
+            if (!old.getName().equals(dataSetDefinition.getName()))
             {
-                QueryService.get().updateCustomViewsAfterRename(dataSetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME,
-                        old.getLabel(), dataSetDefinition.getLabel());
+                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<String>(
+                    QueryService.get().getUserSchema(user, dataSetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(dataSetDefinition.getName()),
+                    QueryChangeListener.QueryProperty.Name,
+                    old.getName(),
+                    dataSetDefinition.getName()
+                );
+
+                QueryService.get().fireQueryChanged(dataSetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
+                        QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
             scope.commitTransaction();
         }
@@ -1740,14 +1749,6 @@ public class StudyManager
     }
 
 
-    public DataSetDefinition[] getDataSetDefinitionsForUpgrade(Container c) throws SQLException
-    {
-        DataSetDefinition[] datasets = Table.executeQuery(StudySchema.getInstance().getSchema(),
-                "SELECT * FROM study.dataset WHERE container=?", new Object[] {c.getId()}, DataSetDefinition.class);
-        return datasets;
-    }
-
-
     public PropertyDescriptor[] getSharedProperties(Study study)
     {
         return _datasetHelper.getSharedProperties(study.getContainer());
@@ -1778,7 +1779,7 @@ public class StudyManager
     }
 
     @Nullable
-    public DataSetDefinition getDataSetDefinition(Study s, String label)
+    public DataSetDefinition getDataSetDefinitionByLabel(Study s, String label)
     {
         if (label == null)
         {
@@ -1811,16 +1812,28 @@ public class StudyManager
     
 
     @Nullable
-    public DataSet getDataSetDefinitionByName(Study s, String name)
+    public DataSetDefinition getDataSetDefinitionByName(Study s, String name)
     {
         SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
         filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, FieldKey.fromParts("Name"));
 
-        DataSet[] defs = _datasetHelper.get(s.getContainer(), filter);
+        DataSetDefinition[] defs = _datasetHelper.get(s.getContainer(), filter);
         if (defs != null && defs.length == 1)
             return defs[0];
 
         return null;
+    }
+
+
+    @Nullable
+    public DataSetDefinition getDatasetDefinitionByQueryName(Study s, String queryName)
+    {
+        // Try getting by name first, then by label
+        DataSetDefinition def = getDataSetDefinitionByName(s, queryName);
+        if (null == def)
+            def = getDataSetDefinitionByLabel(s, queryName);
+
+        return def;
     }
 
 
@@ -2063,7 +2076,7 @@ public class StudyManager
         deleteDatasetType(study, user, ds);
         try {
             QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(), 
-                    StudySchema.getInstance().getSchemaName(), ds.getLabel());
+                    StudySchema.getInstance().getSchemaName(), ds.getName());
             if (def != null)
                 def.delete(user);
         }
@@ -2914,7 +2927,7 @@ public class StudyManager
             }
 
             // Check for name conflicts
-            DataSet existingDef = manager.getDataSetDefinition(study, label);
+            DataSet existingDef = manager.getDataSetDefinitionByLabel(study, label);
 
             if (existingDef != null && existingDef.getDataSetId() != id)
             {

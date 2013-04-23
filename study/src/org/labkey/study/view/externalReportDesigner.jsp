@@ -19,6 +19,9 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
 <%@ page import="org.labkey.study.reports.ExternalReport"%>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportsController.ExternalReportBean> me = (JspView<ReportsController.ExternalReportBean>) HttpView.currentView();
@@ -42,10 +45,17 @@
             <td>Dataset/Query</td>
             <td>            <select name="queryName">
                 <%
+                    Map<String, DataSetDefinition> datasetMap = bean.getDatasetDefinitions();
                     for (String name : bean.getTableAndQueryNames())
                     {
+                        String label = name;
+                        DataSet def = datasetMap.get(name);
+                        if (def != null)
+                        {
+                            label = !def.getLabel().equals(def.getName()) ? def.getName() + " (" + def.getLabel() + ")" : def.getLabel();
+                        }
                 %>
-                <option value="<%= h(name) %>" <%= name.equals(report.getQueryName()) ? "SELECTED" : "" %>><%= h(name) %></option>
+                <option value="<%= h(name) %>" <%= name.equals(report.getQueryName()) ? "SELECTED" : "" %>><%= h(label) %></option>
                 <%
                     }
                 %>

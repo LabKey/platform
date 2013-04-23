@@ -240,7 +240,7 @@ Ext.reg('labkey-query-tree-panel', LABKEY.ext.QueryTreePanel);
 LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
     domProps : {
-        schemName: 'lkqdSchemaName',
+        schemaName: 'lkqdSchemaName',
         queryName: 'lkqdQueryName',
         containerPath: 'lkqdContainerPath',
         fieldKey: 'lkqdFieldKey'
@@ -416,10 +416,14 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             viewDataUrl = LABKEY.ActionURL.buildURL('query', 'sourceQuery', null, {schemaName : _qd.schemaName, 'query.queryName' : _qd.name});
 
         var schemaKey = LABKEY.SchemaKey.fromString(_qd.schemaName);
+        var displayText = _qd.name;
+        if (_qd.name.toLowerCase() != _qd.title.toLowerCase())
+            displayText += ' (' + _qd.title + ')';
+
         var children = [{
             tag: 'a',
             href: viewDataUrl,
-            html: Ext.util.Format.htmlEncode(schemaKey.toDisplayString()) + "." + Ext.util.Format.htmlEncode(_qd.name)
+            html: Ext.util.Format.htmlEncode(schemaKey.toDisplayString()) + "." + Ext.util.Format.htmlEncode(displayText)
         }];
         if (_qd.isUserDefined && _qd.moduleName) {
             var _tip = '' +
@@ -1536,6 +1540,10 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
                                 tag: 'span',
                                 cls: 'labkey-link',
                                 html: Ext.util.Format.htmlEncode(query.name)
+                            },
+                            {
+                                tag: 'span',
+                                html: Ext.util.Format.htmlEncode((query.name.toLowerCase() != query.title.toLowerCase() ? ' (' + query.title + ')' : ''))
                             }
                         ]
                     },

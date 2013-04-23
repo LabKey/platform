@@ -69,8 +69,8 @@ public class QueryManager
     private static final Logger _log = Logger.getLogger(QueryManager.class);
     private static final QueryManager instance = new QueryManager();
     private static final String SCHEMA_NAME = "query";
-    private static final List<QueryChangeListener> QUERY_LISTENERS = new CopyOnWriteArrayList<>();
-    private static final List<CustomViewChangeListener> VIEW_LISTENERS = new CopyOnWriteArrayList<>();
+    private static final List<QueryChangeListener> QUERY_LISTENERS = new CopyOnWriteArrayList<QueryChangeListener>();
+    private static final List<CustomViewChangeListener> VIEW_LISTENERS = new CopyOnWriteArrayList<CustomViewChangeListener>();
 
     public static final int FLAG_INHERITABLE = 0x01;
     public static final int FLAG_HIDDEN = 0x02;
@@ -248,22 +248,6 @@ public class QueryManager
         Table.delete(getTableInfoCustomView(), view.getCustomViewId());
     }
 
-
-    public void updateViewsAfterRename(@NotNull Container c, @NotNull String schema,
-            @NotNull String oldQueryName, @NotNull String newQueryName)
-    {
-        try
-        {
-            Table.execute(getDbSchema(), "UPDATE " + getTableInfoCustomView() + " SET queryname=? WHERE container=? AND \"schema\"=? AND queryname=?",
-                    newQueryName, c, schema, oldQueryName);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
-    
     public ExternalSchemaDef getExternalSchemaDef(int id)
     {
         ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(null);
@@ -545,7 +529,7 @@ public class QueryManager
 
     public Collection<String> getQueryDependents(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
-        ArrayList<String> dependents = new ArrayList<>();
+        ArrayList<String> dependents = new ArrayList<String>();
         for (QueryChangeListener l : QUERY_LISTENERS)
             dependents.addAll(l.queryDependents(container, scope, schema, queries));
         return dependents;
@@ -581,7 +565,7 @@ public class QueryManager
 
     public Collection<String> getViewDepedents(CustomView view)
     {
-        ArrayList<String> dependents = new ArrayList<>();
+        ArrayList<String> dependents = new ArrayList<String>();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             dependents.addAll(l.viewDependents(view));
         return dependents;

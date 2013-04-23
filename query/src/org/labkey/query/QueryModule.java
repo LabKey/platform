@@ -114,6 +114,7 @@ public class QueryModule extends DefaultModule
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER);
 
         QueryService.get().addQueryListener(new CustomViewQueryChangeListener());
+        QueryService.get().addQueryListener(new QuerySnapshotQueryChangeListener());
 
         ReportService.registerProvider(new ReportServiceImpl());
         ReportService.get().addUIProvider(new ReportUIProvider());

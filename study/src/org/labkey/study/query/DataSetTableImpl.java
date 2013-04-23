@@ -101,8 +101,10 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
     public DataSetTableImpl(final StudyQuerySchema schema, DataSetDefinition dsd)
     {
         super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions()), schema);
-        setDescription("Contains up to one row of " + dsd.getLabel() + " data for each " +
-                dsd.getKeyTypeDescription() + " combination.");
+        String nameLabel = dsd.getName();
+        if (!dsd.getLabel().equalsIgnoreCase(dsd.getName()))
+            nameLabel += " (" + dsd.getLabel() + ")";
+        setDescription("Contains up to one row of " + nameLabel + " data for each " + dsd.getKeyTypeDescription() + " combination.");
         _dsd = dsd;
         _title = dsd.getLabel();
 

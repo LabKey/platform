@@ -46,7 +46,7 @@
     String datasetLabel = showDataset ? "Hide Dataset Definition" : "Edit Dataset Definition";
 
     final Study study = StudyManager.getInstance().getStudy(context.getContainer());
-    final DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, bean.getSnapshotName());
+    final DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, bean.getSnapshotName());
     ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
 %>
 

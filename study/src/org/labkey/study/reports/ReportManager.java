@@ -119,7 +119,7 @@ public class ReportManager implements DatasetManager.DatasetListener
     {
         SimpleFilter filter = new SimpleFilter();
         Container container = context.getContainer();
-        String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getLabel());
+        String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
 
         List<Pair<String, String>> labels = new ArrayList<Pair<String, String>>();
 
@@ -221,7 +221,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         QuerySettings settings = schema.getSettings(url.getPropertyValues(), "Dataset");
         //Otherwise get from the URL somehow...
         if (null != def)
-            settings.setQueryName(def.getLabel());
+            settings.setQueryName(def.getName());
 
         ReportQueryView qv = new ReportQueryView(schema, settings);
         return qv.getResultSet(0);
@@ -349,7 +349,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                 if (study == null)
                     return Collections.emptyMap();
                 for (DataSetDefinition ds : StudyManager.getInstance().getDataSetDefinitions(study))
-                    _datasets.put(ds.getLabel(), ds);
+                    _datasets.put(ds.getName(), ds);
             }
 
             return _datasets;
@@ -412,7 +412,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                 else if (queryName != null)
                 {
                     // try query name, which is synonymous to dataset in study-land
-                    DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, queryName);
+                    DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, queryName);
                     if (dsDef != null)
                         return dsDef.canRead(user);
                 }
@@ -480,7 +480,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         if (def != null)
         {
             _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
-            String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getLabel());
+            String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
             for (Report report : ReportUtil.getReports(def.getContainer(), null, reportKey, true))
             {
                 report.clearCache();

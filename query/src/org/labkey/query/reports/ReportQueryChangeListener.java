@@ -13,9 +13,14 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.User;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
 * User: kevink
@@ -51,6 +56,10 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
     @Override
     public void queryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
     {
+        if (property != null && property.equals(QueryProperty.Name))
+        {
+            _updateReportQueryNameChange(container, schema, changes);
+        }
     }
 
     @Override
@@ -89,4 +98,58 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
         return Collections.emptyList();
     }
 
+    private void _updateReportQueryNameChange(Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
+    {
+        // most property updates only care about the query name old value string and new value string
+        Map<String, String> queryNameChangeMap = new HashMap<String, String>();
+        for (QueryPropertyChange qpc : changes)
+        {
+            queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+        }
+
+        // passing in null for the user should get all reports (private and public, independent of the owner)
+        for (Report report : ReportService.get().getReports(null, container))
+        {
+            try {
+                boolean hasUpdates = false;
+                ReportDescriptor descriptor = report.getDescriptor();
+
+                // update reportKey (stored in core.Report)
+                if (descriptor.getReportKey() != null && descriptor.getReportKey().startsWith(schemaKey.toString() + "/"))
+                {
+                    String reportKeyQuery = descriptor.getReportKey().substring(schemaKey.toString().length() + 1);
+                    if (queryNameChangeMap.containsKey(reportKeyQuery))
+                    {
+                        descriptor.setReportKey(schemaKey.toString() + "/" + queryNameChangeMap.get(reportKeyQuery));
+                        hasUpdates = true;
+                    }
+                }
+
+                // update report queryName property
+                String schemaName = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
+                String queryName = descriptor.getProperty(ReportDescriptor.Prop.queryName);
+                if (queryName != null && schemaName != null && schemaName.equals(schemaKey.toString()))
+                {
+                    if (queryNameChangeMap.containsKey(queryName))
+                    {
+                        descriptor.setProperty(ReportDescriptor.Prop.queryName, queryNameChangeMap.get(queryName));
+                        hasUpdates = true;
+                    }
+                }
+
+                // report specific migration for JSON config properties that contain queryName
+                hasUpdates = descriptor.updateQueryNameReferences(changes) || hasUpdates;
+
+                if (hasUpdates)
+                {
+                    ContainerUser rptContext = new DefaultContainerUser(container, User.getReferenceFixupUser());
+                    ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.getLogger(ReportQueryChangeListener.class).error("An error occurred upgrading report properties: ", e);
+            }
+        }
+    }
 }

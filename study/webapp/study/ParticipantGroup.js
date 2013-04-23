@@ -56,7 +56,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             schemaName : 'study',
             queryName : 'DataSets',
             filterArray : [LABKEY.Filter.create('DemographicData', true)],
-            columns : 'Label',
+            columns : ['Label', 'Name'],
             sort : 'Label',
             listeners : {
                 load :function(store, records, options){
@@ -254,7 +254,7 @@ Ext4.define('Study.window.ParticipantGroup', {
 
     onDemographicSelect : function(combo, records, idx) {
         if (Ext4.isArray(records) && records.length > 0) {
-            this.displayQueryWebPart(records[0].get("Label"));
+            this.displayQueryWebPart(records[0].get("Name"));       // Use Name for getting query
         }
     },
 

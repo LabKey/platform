@@ -150,7 +150,7 @@ public class ExportExcelReport extends RedirectReport
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(study.getContainer()) + ",SequenceNum");
 
             UserSchema schema = QueryService.get().getUserSchema(user, study.getContainer(), StudyQuerySchema.SCHEMA_NAME);
-            DataSetQuerySettings settings = (DataSetQuerySettings)schema.getSettings(context, DataSetQueryView.DATAREGION, def.getLabel());
+            DataSetQuerySettings settings = (DataSetQuerySettings)schema.getSettings(context, DataSetQueryView.DATAREGION, def.getName());
             settings.setBaseFilter(siteFilter);
             settings.setBaseSort(sort);
 

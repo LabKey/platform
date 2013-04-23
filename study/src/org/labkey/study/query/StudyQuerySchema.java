@@ -208,9 +208,9 @@ public class StudyQuerySchema extends UserSchema
             for (DataSetDefinition dsd : _study.getDataSets())
             {
                 boolean canRead = dsd.canRead(user);
-                if (dsd.getLabel() == null || !canRead)
+                if (dsd.getName() == null || !canRead)
                     continue;
-                ret.add(dsd.getLabel());
+                ret.add(dsd.getName());
             }
         }
         return ret;
@@ -224,9 +224,9 @@ public class StudyQuerySchema extends UserSchema
         {
             for (DataSetDefinition dsd : _study.getDataSets())
             {
-                if (dsd.getLabel() == null)
+                if (dsd.getName() == null)
                     continue;
-                ret.put(dsd.getLabel(), dsd);
+                ret.put(dsd.getName(), dsd);
             }
         }
         return ret;
@@ -435,10 +435,9 @@ public class StudyQuerySchema extends UserSchema
             return ret;
         }
 
-        //might be a dataset--try getting by name first, then by label
-        DataSetDefinition dsd = getDataSetDefinitionByName(name);
-        if (dsd == null)
-            dsd = getDataSetDefinitions().get(name);
+        // Might be a dataset
+        DataSetDefinition dsd = getDatasetDefinitionByQueryName(name);
+
         if (null != dsd)
         {
             try
@@ -453,6 +452,18 @@ public class StudyQuerySchema extends UserSchema
         
         return null;
     }
+
+
+    // Simple helper to keep us consistent... try getting by name first, then by label
+    private @Nullable DataSetDefinition getDatasetDefinitionByQueryName(String queryName)
+    {
+        assert _study != null : "Attempt to get datasets without a study";
+        if (null == queryName)
+            return null;
+
+        return StudyManager.getInstance().getDatasetDefinitionByQueryName(_study, queryName);
+    }
+
 
     // Null if there's no alias dataset configured, otherwise a "skinny" table with just Participant, Source, and Alias,
     // in that order but having the configured names.
@@ -509,7 +520,7 @@ public class StudyQuerySchema extends UserSchema
     {
         if (getStudy() != null)
         {
-            DataSetDefinition dsd = getDataSetDefinitions().get(settings.getQueryName());
+            DataSetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
             if (dsd != null)
             {
                 if (!(settings instanceof DataSetQuerySettings))
@@ -559,7 +570,7 @@ public class StudyQuerySchema extends UserSchema
         if (study == null)
             return null;
         
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, queryName);
+        DataSetDefinition def = getDatasetDefinitionByQueryName(queryName);
         if (def != null)
         {
             if (def.canRead(getUser()))

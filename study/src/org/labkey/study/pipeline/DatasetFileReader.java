@@ -319,7 +319,7 @@ public class DatasetFileReader
     private DatasetImportRunnable newImportJob(DataSetDefinition ds, VirtualFile root, String tsv, Action defaultAction, boolean defaultDeleteAfterImport, Date defaultReplaceCutoff, OneToOneStringMap defaultColumnMap)
     {
         DatasetImportRunnable runnable;
-        if (ds.getDataSetId() == -1 && "Participant".equals(ds.getLabel()))
+        if (ds.getDataSetId() == -1 && "Participant".equals(ds.getName()))
             runnable = new ParticipantImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         else
             runnable = new DatasetImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);

@@ -29,7 +29,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     name: config.origMeasures[i].measure.name,
                     queryName: config.origMeasures[i].measure.queryName,
                     origLabel: config.origMeasures[i].measure.label,
-                    label: config.origMeasures[i].measure.label + " from " + config.origMeasures[i].measure.queryName,
+                    label: config.origMeasures[i].measure.label + " from " + (config.origMeasures[i].measure.queryLabel || config.origMeasures[i].measure.queryName),
                     measure: Ext4.apply({}, config.origMeasures[i].measure),
                     dimension: Ext4.apply({}, config.origMeasures[i].dimension),
                     dateCol: config.origMeasures[i].dateOptions ? Ext4.apply({}, config.origMeasures[i].dateOptions.dateCol) : undefined
@@ -43,7 +43,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 {name: 'id', type: 'integer'},
                 {name: 'label', type: 'string'},
                 {name: 'name', type: 'string'},
-                {name: 'queryName', type: 'string'}
+                {name: 'queryName', type: 'string'},
+                {name: 'queryLabel', type: 'string'}
             ]
         });
 
@@ -56,6 +57,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 {name:'longlabel'},
                 {name:'description'},
                 {name:'isUserDefined'},
+                {name:'queryLabel'},
                 {name:'queryName'},
                 {name:'schemaName'},
                 {name:'type'}
@@ -664,7 +666,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             name: newMeasure.name,
             queryName: newMeasure.queryName,
             origLabel: newMeasure.label,
-            label: newMeasure.label + " from " + newMeasure.queryName,
+            label: newMeasure.label + " from " + newMeasure.queryLabel,
             measure: Ext4.apply({}, newMeasure),
             dimension: {}
         });
@@ -918,7 +920,9 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                                     var dimStore = grid.getStore();
                                     dimSelModel.suspendEvents(false);
                                     for(var i = 0; i < dimension.values.length; i++){
-                                        dimSelModel.select(dimStore.find('value', dimension.values[i]), true);
+                                        var recIndex = dimStore.find('value', dimension.values[i]);
+                                        if (recIndex > -1)
+                                            dimSelModel.select(recIndex, true);
                                     }
                                     dimSelModel.resumeEvents();
 
@@ -1102,8 +1106,9 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
     getDefaultTitle: function(){
         var title = "";
         Ext4.each(this.measures, function(m){
-            if (title.indexOf(m.queryName) == -1)
-                title += (title.length > 0 ? ", " : "") + m.queryName;
+            var measureQueryLabel = m.measure.queryLabel || m.queryName;
+            if (title.indexOf(measureQueryLabel) == -1)
+                title += (title.length > 0 ? ", " : "") + measureQueryLabel;
         });
         return title;
     },

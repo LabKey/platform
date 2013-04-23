@@ -63,6 +63,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.study.DataSetTable;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -4700,14 +4701,15 @@ public class QueryController extends SpringActionController
             if (viewDataUrl != null)
                 qinfo.put("viewDataUrl", viewDataUrl);
 
-            if (includeColumns)
+            String title = name;
+            try
             {
-                try
-                {
-                    //get the table info if the user requested column info
-                    TableInfo table = schema.getTable(name);
+                //get the table info if the user requested column info
+                TableInfo table = schema.getTable(name);
 
-                    if (null != table)
+                if (null != table)
+                {
+                    if (includeColumns)
                     {
                         //enumerate the columns
                         List<Map<String, Object>> cinfos = new ArrayList<Map<String, Object>>();
@@ -4727,13 +4729,16 @@ public class QueryController extends SpringActionController
                         if (cinfos.size() > 0)
                             qinfo.put("columns", cinfos);
                     }
-                }
-                catch(Exception e)
-                {
-                    //may happen due to query failing parse
+                    if (table instanceof DataSetTable)
+                        title = table.getTitle();
                 }
             }
+            catch(Exception e)
+            {
+                //may happen due to query failing parse
+            }
 
+            qinfo.put("title", title);
             return qinfo;
         }
     }

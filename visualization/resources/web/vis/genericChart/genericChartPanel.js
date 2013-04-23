@@ -761,7 +761,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 resetTitle: function() {
                     // need a reset title function.
-                    this.mainTitlePanel.setMainTitle(this.queryName + ' - ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label))
+                    this.mainTitlePanel.setMainTitle((this.queryLabel || this.queryName) + ' - ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label))
                 },
                 scope: this
             }
@@ -960,6 +960,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var config = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
+            queryLabel  : this.queryLabel,
             maxRows     : 5000,
             requiredVersion : 12.1,
             method: 'POST'
@@ -1130,6 +1131,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 listeners   : {
                     change : {fn : function(cmp, newValue) {
                         this.schemaName = newValue;
+                        this.queryLabel = null;
                         this.queryName = null;
                         var proxy = queryStore.getProxy();
                         if (proxy)
@@ -1150,13 +1152,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 store       : queryStore,
                 editable    : false,
                 allowBlank  : false,
-                displayField   : 'name',
+                displayField   : 'queryLabel',
                 triggerAction  : 'all',
                 typeAhead      : true,
                 valueField     : 'name',
                 emptyText      : 'None',
                 listeners   : {
-                    change : {fn : function(cmp, newValue) {this.queryName = newValue;}, scope : this}
+                    change : {fn : function(cmp, newValue) {
+                        var selected = cmp.getStore().getAt(cmp.getStore().find('name', newValue));
+                        this.queryLabel = selected.data.title;
+                        this.queryName = selected.data.name;
+                    }, scope : this}
                 }
             });
 
@@ -1231,9 +1237,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var schemaStore = Ext4.create('Ext.data.Store', {
             model : 'LABKEY.data.Schema',
             data  : [
-                {name : 'study'},
                 {name : 'assay'},
-                {name : 'lists'}
+                {name : 'lists'},
+                {name : 'study'}
             ]
         });
 
@@ -1249,6 +1255,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             extend : 'Ext.data.Model',
             fields : [
                 {name : 'name'},
+                {name : 'title'},
+                {name : 'queryLabel', convert: function(value, record){
+                    return record.data.name != record.data.title ? record.data.name + ' (' + record.data.title + ')' : record.data.title;
+                }},
                 {name : 'description'},
                 {name : 'isUserDefined', type : 'boolean'}
             ]
@@ -1268,7 +1278,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     type : 'json',
                     root : 'queries'
                 }
-            }
+            },
+            sorters : [{property: 'title', direction: 'ASC'}]
         };
 
         return Ext4.create('Ext.data.Store', config);
@@ -1310,7 +1321,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var reportConfig = this.getCurrentReportConfig();
         reportConfig.name = data.reportName;
         reportConfig.description = data.reportDescription;
-        console.log('Shared: ', data.shared);
+
         reportConfig["public"] = data.shared;
         reportConfig.thumbnailType =  data.thumbnailType;
         reportConfig.svg = this.chartSVG;
@@ -1438,6 +1449,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (json.queryConfig.columns)
             this.savedColumns = json.queryConfig.columns;
+
+        if (json.queryConfig.queryLabel)
+            this.queryLabel = json.queryConfig.queryLabel;
 
         if (json.chartConfig)
         {
@@ -2350,7 +2364,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     getDefaultTitle: function(){
-        return this.queryName + (this.yAxisMeasure ? ' - ' + this.yAxisMeasure.label : '');
+        return (this.queryLabel || this.queryName) + (this.yAxisMeasure ? ' - ' + this.yAxisMeasure.label : '');
     },
 
     getDefaultYAxisLabel: function(){

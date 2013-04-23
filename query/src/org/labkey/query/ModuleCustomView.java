@@ -60,6 +60,11 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         throw new UnsupportedOperationException("Can't set name on a module-based custom view!");
     }
 
+    public void setQueryName(String queryName)
+    {
+        throw new UnsupportedOperationException("Can't set queryName on a module-based custom view!");
+    }
+
     public void setCanInherit(boolean f)
     {
         throw new UnsupportedOperationException("Module-based custom views cannot inherit");

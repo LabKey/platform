@@ -197,8 +197,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 // dataset snapshots must have an underlying dataset definition defined
                 StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, qsDef.getName());
-
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinitionByName(study, qsDef.getName());
                 if (def != null)
                 {
                     QueryView view = createQueryView(context, qsDef, errors);
@@ -329,8 +328,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             if (!errors.hasErrors())
             {
                 Study study = StudyManager.getInstance().getStudy(qsDef.getContainer());
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, qsDef.getName());
-
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinitionByName(study, qsDef.getName());
                 return new ActionURL(StudyController.DatasetAction.class, qsDef.getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
             }
@@ -382,7 +380,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             StudyImpl study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
 
             // purge the dataset rows then recreate the new one...
-            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, def.getName());
+            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, def.getName());
             if (dsDef != null)
             {
                 DbSchema schema = StudySchema.getInstance().getSchema();
@@ -496,7 +494,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         if (def != null)
         {
             Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, def.getName());
+            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, def.getName());
             if (dsDef != null)
                 return DatasetAuditViewFactory.getInstance().createDatasetView(context, dsDef);
         }
@@ -668,7 +666,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             Set<DataSetDefinition> deferredDatasets = new HashSet<DataSetDefinition>(snapshotDefs.size());
             for (QuerySnapshotDefinition def : snapshotDefs)
             {
-                deferredDatasets.add(StudyManager.getInstance().getDataSetDefinition(study, def.getName()));
+                deferredDatasets.add(StudyManager.getInstance().getDataSetDefinitionByName(study, def.getName()));
                 TimerTask task = new SnapshotUpdateTask(def, true);
                 task.run();
             }

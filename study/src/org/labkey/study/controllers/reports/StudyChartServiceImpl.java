@@ -197,7 +197,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
             Study study = StudyManager.getInstance().getStudy(_context.getContainer());
             DataSet def = StudyManager.getInstance().getDataSetDefinition(study, showWithDataset);
             if (def != null)
-                queryName = def.getLabel();
+                queryName = def.getName();
             return ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), queryName);
         }
         return ReportUtil.getReportQueryKey(descriptor);

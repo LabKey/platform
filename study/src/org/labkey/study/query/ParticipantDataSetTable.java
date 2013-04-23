@@ -45,7 +45,7 @@ public class ParticipantDataSetTable extends VirtualTable
             if (!dataset.canRead(schema.getUser()))
                 continue;
 
-            String name = dataset.getLabel();
+            String name = dataset.getName();
             if (name == null)
                 continue;
             // if not keyed by Participant/SequenceNum it is not a lookup

@@ -43,7 +43,9 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -148,7 +150,17 @@ public class ListManager implements SearchService.DocumentProvider
             ListDef old = getList(c, def.getListId());
             ret = Table.update(user, getTinfoList(), def, new Object[]{c, def.getListId()});
             if (!old.getName().equals(ret.getName()))
-                QueryService.get().updateCustomViewsAfterRename(c, ListSchema.NAME, old.getName(), def.getName());
+            {
+                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<String>(
+                    QueryService.get().getUserSchema(user, c, ListSchema.NAME).getQueryDefForTable(ret.getName()),
+                    QueryChangeListener.QueryProperty.Name,
+                    old.getName(),
+                    ret.getName()
+                );
+
+                QueryService.get().fireQueryChanged(c, null, new SchemaKey(null, ListSchema.NAME),
+                        QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
+            }
 
             scope.commitTransaction();
         }

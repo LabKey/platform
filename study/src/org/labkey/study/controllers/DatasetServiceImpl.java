@@ -236,7 +236,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
             if (!def.getLabel().equals(updated.getLabel()))
             {
-                DataSet existing = studyManager.getDataSetDefinition(study, updated.getLabel());
+                DataSet existing = studyManager.getDataSetDefinitionByLabel(study, updated.getLabel());
 
                 if (existing != null)
                 {

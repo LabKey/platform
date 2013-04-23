@@ -463,7 +463,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 {
                     queryDef.setContainer(getSourceStudy().getContainer());
 
-                    QuerySnapshotDefinition qsDef = QueryService.get().createQuerySnapshotDef(destStudy.getContainer(), queryDef, def.getLabel());
+                    QuerySnapshotDefinition qsDef = QueryService.get().createQuerySnapshotDef(destStudy.getContainer(), queryDef, def.getName());
                     qsDef.setUpdateDelay(form.getUpdateDelay());
                     qsDef.setParticipantGroups(participantGroups);
                     qsDef.setOptionsId(snapshot.getRowId());

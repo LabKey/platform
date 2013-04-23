@@ -63,7 +63,8 @@ LABKEY.ViewsPanel.prototype = {
                 '<table>',
                     '<tpl if="description != undefined"><tr><td><b>description</b></td><td>{description}</td></tr></tpl>',
                     '<tr><td><b>folder</b></td><td>{container}</td></tr>',
-                    '<tr><td><b>query name</b></td><td>{query}</td></tr>',
+                    '<tpl if="query != queryLabel"><tr><td><b>query name</b></td><td>{query} ({queryLabel})</td></tr></tpl>',
+                    '<tpl if="query == queryLabel"><tr><td><b>query name</b></td><td>{query}</td></tr></tpl>',
                     '<tpl if="schema != undefined"><tr><td><b>schema name</b></td><td>{schema}</td></tr></tpl>',
                     '<tr><td><b>permissions</b></td><td>{permissions}</td>',
                     '<tpl if="runUrl != undefined || editUrl != undefined">',
@@ -92,6 +93,7 @@ LABKEY.ViewsPanel.prototype = {
             reader: new Ext.data.JsonReader({root:'views',id:'reportId'},
                     [
                         {name:'query'},
+                        {name:'queryLabel'},
                         {name:'schema'},
                         {name:'name'},
                         {name:'createdBy'},
@@ -114,8 +116,8 @@ LABKEY.ViewsPanel.prototype = {
                         {name:'type'}]),
             proxy: new Ext.data.HttpProxy(this.dataConnection),
             autoLoad: true,
-            sortInfo: {field:'query', direction:"ASC"},
-            groupField:'query'});
+            sortInfo: {field:'name', direction:"ASC"},
+            groupField:'queryLabel'});
 
         return store;
     },
@@ -278,6 +280,8 @@ LABKEY.ViewsPanel.prototype = {
                     s += rec.data.name;
                 if (rec.data.query)
                     s += rec.data.query;
+                if (rec.data.queryLabel)
+                    s += rec.data.queryLabel;
                 if (rec.data.type)
                     s += rec.data.type;
                 answer = t.test(s);
@@ -307,7 +311,8 @@ LABKEY.ViewsPanel.prototype = {
             {header:'Modified By', dataIndex:'modifiedBy', hidden:true},
             {header:'Modified', dataIndex:'modified', hidden:true},
             {header:'Permissions', dataIndex:'permissions'},
-            {header:'Query', dataIndex:'query', renderer : Ext.util.Format.htmlEncode},
+            {header:'Query', dataIndex:'query', renderer : Ext.util.Format.htmlEncode, hidden:true},
+            {header:'Query Label', dataIndex:'queryLabel', renderer : Ext.util.Format.htmlEncode},
             {header:'Description', dataIndex:'description', hidden:true},
             {header:'Schema', dataIndex:'schema', hidden:true}
         ];
@@ -426,7 +431,7 @@ function renderRow(value, p, record)
     if (record.data.description != undefined)
         txt = txt.concat('<b>description:</b> ' + record.data.description + '<br>');
     if (record.data.query != undefined)
-        txt = txt.concat('<b>query:</b> ' + record.data.query + '<br>');
+        txt = txt.concat('<b>query:</b> ' + record.data.query + (record.data.query != record.data.queryLabel ? ' (' + record.data.queryLabel + ')' : '') + '<br>');
     if (record.data.schema != undefined)
         txt = txt.concat('<b>schema:</b> ' + record.data.schema + '<br>');
     txt = txt.concat('"');

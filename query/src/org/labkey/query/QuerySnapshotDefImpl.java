@@ -93,6 +93,11 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return _snapshotDef.getName();
     }
 
+    public String getQueryTableName()
+    {
+        return _snapshotDef.getQueryTableName();
+    }
+
     public int getId()
     {
         return _snapshotDef.getRowId();
@@ -194,6 +199,12 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     public void setParticipantGroups(List<Integer> groups)
     {
         edit().setParticipantGroups(StringUtils.join(groups.iterator(), ","));
+    }
+
+    @Override
+    public void setQueryTableName(String queryTableName)
+    {
+        edit().setQueryTableName(queryTableName);
     }
 
     public Date getCreated()

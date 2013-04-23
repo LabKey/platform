@@ -119,28 +119,39 @@ public class StudyServiceImpl implements StudyService.Service
         return null;
     }
 
-    public int getDatasetId(Container c, String datasetLabel)
+    @Override
+    public int getDatasetIdByLabel(Container c, String datasetLabel)
     {
         Study study = StudyManager.getInstance().getStudy(c);
         if (study == null)
             return -1;
-        DataSet def = StudyManager.getInstance().getDataSetDefinition(study, datasetLabel);
-        if (def == null)
-            return -1;
-        return def.getDataSetId();
+        DataSet def = StudyManager.getInstance().getDataSetDefinitionByLabel(study, datasetLabel);
+
+        return def == null ? -1 : def.getDataSetId();
     }
 
     @Override
-    public int getDatasetId(Container c, String datasetLabel, String name)
+    public int getDatasetIdByName(Container c, String datasetName)
+    {
+        Study study = StudyManager.getInstance().getStudy(c);
+        if (study == null)
+            return -1;
+        DataSet def = StudyManager.getInstance().getDataSetDefinitionByName(study, datasetName);
+
+        return def == null ? -1 : def.getDataSetId();
+    }
+
+    @Override
+    public int getDatasetIdByQueryName(Container c, String queryName)
     {
         Study study = StudyManager.getInstance().getStudy(c);
         if (study == null)
             return -1;
 
-        // first try resolving the dataset def by label, and then by name
-        DataSet def = StudyManager.getInstance().getDataSetDefinition(study, datasetLabel);
+        // first try resolving the dataset def by name and then by label
+        DataSet def = StudyManager.getInstance().getDataSetDefinitionByName(study, queryName);
         if (def == null)
-            def = StudyManager.getInstance().getDataSetDefinitionByName(study, name);
+            def = StudyManager.getInstance().getDataSetDefinitionByLabel(study, queryName);
 
         return def == null ? -1 : def.getDataSetId();
     }

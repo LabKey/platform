@@ -193,7 +193,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         {
             for (GWTAssayDefinition assayDefinition : studyDefinition.getAssaySchedule().getAssays())
             {
-                int dsId = StudyService.get().getDatasetId(getContainer(), assayDefinition.getName());
+                int dsId = StudyService.get().getDatasetIdByName(getContainer(), assayDefinition.getName());
                 if (dsId == -1)
                 {
                     DataSetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getName(),

@@ -372,7 +372,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 multiSelect: true,
                 bubbleEvents : ['viewready', 'selectionchange'],
                 columns: [
-                    {header:'Dataset', dataIndex:'queryName', flex: 2},
+                    {header:'Dataset Name', dataIndex:'queryName', flex: 2, hidden: true},
+                    {header:'Dataset', dataIndex:'queryLabel', flex: 2},
                     {header:'Measure', dataIndex:'label', flex: 2},
                     {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer, flex: 3}
                 ]
@@ -388,7 +389,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 multiSelect: false,
                 bubbleEvents : ['selectionchange'],
                 columns: [
-                    {header:'Dataset', dataIndex:'queryName', flex: 2},
+                    {header:'Dataset Name', dataIndex:'queryName', flex: 2, hidden: true},
+                    {header:'Dataset', dataIndex:'queryLabel', flex: 2},
                     {header:'Measure', dataIndex:'label', flex: 2},
                     {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer, flex: 3}
                 ],
@@ -554,7 +556,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
             }
 
             //NOTE: if ever split into a standalone component, we would want a config option specifying these fields
-            var fields = ['queryName', 'label', 'description'];
+            var fields = ['queryName', 'queryLabel', 'label', 'description'];
 
             this.measuresStore.clearFilter();
             this.measuresStore.filter([{
@@ -619,7 +621,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
             var rec = selection[0];
             var textField = Ext4.getCmp(this.axisMap[axisId].labelId);
             if (textField) {
-                textField.setValue(rec.data.queryName + ' : ' + rec.data.label);
+                textField.setValue((rec.data.queryLabel || rec.data.queryName) + ' : ' + rec.data.label);
                 this.fireEvent('measureChanged', axisId, rec.data);
             }
         }
@@ -772,7 +774,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             },
             border: false,
             forceFit: true,
-            columns: [{header: 'Source', dataIndex: 'queryName', cls: '', renderer: this.formatSourcesWithSelections}]
+            columns: [{header: 'Source', dataIndex: 'queryLabel', cls: '', renderer: this.formatSourcesWithSelections}]
         });
 
         this.sourcePanel = Ext4.create('Ext.panel.Panel', {
@@ -1038,6 +1040,7 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                 {name   : 'description'},
                 {name   : 'isUserDefined'},
                 {name   : 'isDemographic'},
+                {name   : 'queryLabel'},
                 {name   : 'queryName'},
                 {name   : 'schemaName'},
                 {name   : 'type'},
@@ -1065,7 +1068,7 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
         this.addEvents("measureStoreSorted");
 
         this.on('load', function(store) {
-            store.sort([{property: 'schemaName', direction: 'ASC'},{property: 'queryName', direction: 'ASC'},{property: 'label', direction: 'ASC'}]);
+            store.sort([{property: 'schemaName', direction: 'ASC'},{property: 'queryLabel', direction: 'ASC'},{property: 'label', direction: 'ASC'}]);
             this.fireEvent("measureStoreSorted", this);
         }, this);        
     },

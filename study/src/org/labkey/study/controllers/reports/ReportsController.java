@@ -37,6 +37,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
@@ -608,7 +609,7 @@ public class ReportsController extends BaseStudyController
                 if (report instanceof StudyQueryReport)
                 {
                     // add the dataset id
-                    DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getQueryName());
+                    DataSet def = StudyManager.getInstance().getDatasetDefinitionByQueryName(getStudy(), form.getQueryName());
                     if (def != null)
                     {
                         report.getDescriptor().setProperty("showWithDataset", String.valueOf(def.getDataSetId()));
@@ -1118,7 +1119,7 @@ public class ReportsController extends BaseStudyController
 
                 for (DataSetDefinition def : StudyManager.getInstance().getDataSetDefinitions(study))
                 {
-                    _datasetMap.put(def.getLabel(), def);
+                    _datasetMap.put(def.getName(), def);
                 }
             }
             return _datasetMap;
@@ -1798,7 +1799,7 @@ public class ReportsController extends BaseStudyController
                     if (study != null)
                     {
                         _def = StudyManager.getInstance().
-                                getDataSetDefinition(study, _report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
+                                getDatasetDefinitionByQueryName(study, _report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
                     }
                 }
             }

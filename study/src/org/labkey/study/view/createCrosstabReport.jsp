@@ -46,7 +46,7 @@
                     for (DataSetDefinition dataset : bean.getDatasets())
                     {
                 %>
-                <option value="<%=h(dataset.getLabel())%>"><%= h(dataset.getDisplayString()) %></option>
+                <option value="<%=h(dataset.getName())%>"><%= h(dataset.getDisplayString()) %></option>
                 <%
                     }
                 %>

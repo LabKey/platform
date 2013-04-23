@@ -738,7 +738,7 @@ public class StudyController extends BaseStudyController
                 DataSetDefinition def = getDataSetDefinition();
 
                 if (def != null &&
-                    QueryService.get().getCustomView(getUser(), getContainer(), StudySchema.getInstance().getSchemaName(), def.getLabel(), viewName) == null)
+                    QueryService.get().getCustomView(getUser(), getContainer(), StudySchema.getInstance().getSchemaName(), def.getName(), viewName) == null)
                 {
                     ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
                     if (reportId != null && reportId.getReport(getViewContext()) != null)
@@ -784,11 +784,11 @@ public class StudyController extends BaseStudyController
                     throw new NotFoundException();
             }
 
-            boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), def.getLabel()) &&
+            boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), def.getName()) &&
                 !def.isAssayData();
 
             UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), StudyQuerySchema.SCHEMA_NAME);
-            DataSetQuerySettings settings = (DataSetQuerySettings)schema.getSettings(getViewContext(), DataSetQueryView.DATAREGION, def.getLabel());
+            DataSetQuerySettings settings = (DataSetQuerySettings)schema.getSettings(getViewContext(), DataSetQueryView.DATAREGION, def.getName());
 
             settings.setShowEditLinks(showEditLinks);
             settings.setShowSourceLinks(true);
@@ -2219,7 +2219,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermissionClass(UpdatePermission.class)
     public class ShowUploadHistoryAction extends SimpleViewAction<IdForm>
     {
-        String _datasetName;
+        String _datasetLabel;
 
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
@@ -2241,7 +2241,9 @@ public class StudyController extends BaseStudyController
             if (form.getId() != 0)
             {
                 filter.addCondition(DataSetDefinition.DATASETKEY, form.getId());
-                _datasetName = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId()).getLabel();
+                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId());
+                if (dsd != null)
+                    _datasetLabel = dsd.getLabel();
             }
 
             gv.setFilter(filter);
@@ -2250,7 +2252,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Upload History" + (null != _datasetName ? " for " + _datasetName : ""));
+            return root.addChild("Upload History" + (null != _datasetLabel ? " for " + _datasetLabel : ""));
         }
     }
 
@@ -2306,7 +2308,7 @@ public class StudyController extends BaseStudyController
             if (def != null)
             {
                 final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-                DataSetQuerySettings qs = (DataSetQuerySettings)querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getLabel());
+                DataSetQuerySettings qs = (DataSetQuerySettings)querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getName());
 
                 if (!def.canRead(getUser()))
                 {
@@ -2702,11 +2704,11 @@ public class StudyController extends BaseStudyController
 
         if (sortMap == null)
         {
-            QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), dsd.getContainer(), "study", dsd.getLabel());
+            QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), dsd.getContainer(), "study", dsd.getName());
             if (qd == null)
             {
                 UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
-                qd = schema.getQueryDefForTable(dsd.getLabel());
+                qd = schema.getQueryDefForTable(dsd.getName());
             }
             CustomView cview = qd.getCustomView(context.getUser(), context.getRequest(), null);
             if (cview != null)
@@ -2824,7 +2826,7 @@ public class StudyController extends BaseStudyController
                     return Collections.emptyList();
             }
             StudyQuerySchema querySchema = new StudyQuerySchema(study, context.getUser(), true);
-            QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getLabel());
+            QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getName());
             qs.setViewName(viewName);
 
             QueryView queryView = querySchema.createView(context, qs, null);
@@ -3551,7 +3553,7 @@ public class StudyController extends BaseStudyController
             DataSetQuerySettings qs = new DataSetQuerySettings(getViewContext().getBindPropertyValues(), DataSetQueryView.DATAREGION);
 
             qs.setSchemaName(querySchema.getSchemaName());
-            qs.setQueryName(def.getLabel());
+            qs.setQueryName(def.getName());
             qs.setMaxRows(Table.ALL_ROWS);
             qs.setShowSourceLinks(false);
             qs.setShowEditLinks(false);
@@ -4932,12 +4934,12 @@ public class StudyController extends BaseStudyController
                     return;
                 }
 
-                // check for a dataset with the same name unless it's one that we created
-                DataSet dataset = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), name);
+                // check for a dataset with the same label/name unless it's one that we created
+                DataSet dataset = StudyManager.getInstance().getDatasetDefinitionByQueryName(StudyManager.getInstance().getStudy(getContainer()), name);
                 if (dataset != null)
                 {
                     if (dataset.getDataSetId() != form.getSnapshotDatasetId())
-                        errors.reject("snapshotQuery.error", "A Dataset with the same name already exists");
+                        errors.reject("snapshotQuery.error", "A Dataset with the same name/label already exists");
                 }
             }
             else
@@ -4960,7 +4962,7 @@ public class StudyController extends BaseStudyController
             else if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
             {
                 StudyImpl study = getStudy();
-                DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+                DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, form.getSnapshotName());
 
                 ActionURL url = getViewContext().cloneActionURL().replaceParameter("ff_snapshotName", form.getSnapshotName()).
                         replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay())).
@@ -5008,7 +5010,7 @@ public class StudyController extends BaseStudyController
         private void createDataset(StudySnapshotForm form, BindException errors) throws Exception
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-            DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+            DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, form.getSnapshotName());
 
             if (dsDef == null)
             {
@@ -5153,7 +5155,7 @@ public class StudyController extends BaseStudyController
                 {
                     // create the GWT dataset designer
                     StudyImpl study = getStudy();
-                    DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+                    DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, form.getSnapshotName());
 
                     if (dsDef == null)
                         throw new NotFoundException("Unable to edit the created DataSet Definition");
@@ -7739,7 +7741,7 @@ public class StudyController extends BaseStudyController
                     case importFromFile:
                         if (StringUtils.isEmpty(form.getName()))
                             errors.reject(ERROR_MSG, "A Dataset name must be specified.");
-                        else if (StudyManager.getInstance().getDataSetDefinition(_study, form.getName()) != null)
+                        else if (StudyManager.getInstance().getDataSetDefinitionByName(_study, form.getName()) != null)
                             errors.reject(ERROR_MSG, "A Dataset named: " + form.getName() + " already exists in this folder.");
                         break;
 

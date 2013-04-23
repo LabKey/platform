@@ -15,6 +15,7 @@
  */
 package org.labkey.study;
 
+import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
@@ -38,6 +39,9 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleUpgrader;
+import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -53,6 +57,9 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
 
@@ -60,8 +67,11 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -404,6 +414,44 @@ public class StudyUpgradeCode implements UpgradeCode
             finally
             {
                 scope.closeConnection();
+            }
+        }
+    }
+
+    // invoked for module version < 13.11 in StudyModule.afterUpdate
+    @DeferredUpgrade
+    public static void upgradeDatasetLabelsToNames(ModuleContext context)
+    {
+        // one time upgrade to migrate all queryName usages of dataset labels in reports, custom views, and query snapshots
+        // to instead be references to the dataset name (which is what will be used going forward)
+        MultiMap<Container, Container> containerTree = ContainerManager.getContainerTree();
+        for (Map.Entry<Container, Collection<Container>> treeEntry : containerTree.entrySet())
+        {
+            for (Container container : treeEntry.getValue())
+            {
+                Study study = StudyManager.getInstance().getStudy(container);
+                if (study != null)
+                {
+                    List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<QueryChangeListener.QueryPropertyChange>();
+                    DataSetDefinition[] datasetDefs = StudyManager.getInstance().getDataSetDefinitions(study);
+                    for (DataSetDefinition dsd : datasetDefs)
+                    {
+                        if (!dsd.getName().equals(dsd.getLabel()))
+                        {
+                            queryPropertyChanges.add(new QueryChangeListener.QueryPropertyChange<String>(
+                                    QueryService.get().getUserSchema(context.getUpgradeUser(), container, StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(dsd.getName()),
+                                    QueryChangeListener.QueryProperty.Name,
+                                    dsd.getLabel(),
+                                    dsd.getName()
+                            ));
+                        }
+                    }
+
+                    if (queryPropertyChanges.size() > 0)
+                    {
+                        QueryService.get().fireQueryChanged(container, null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME), QueryChangeListener.QueryProperty.Name, queryPropertyChanges);
+                    }
+                }
             }
         }
     }

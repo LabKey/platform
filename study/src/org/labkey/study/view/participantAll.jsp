@@ -341,7 +341,7 @@
             {
                 %>
                 <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="<%=totalSeqKeyCount+1%>" class="labkey-alternate-row"><%=textLink("add chart",url.replaceParameter("queryName", dataset.getLabel()).replaceParameter("datasetId", String.valueOf(datasetId)))%></td>
+                    <td colspan="<%=totalSeqKeyCount+1%>" class="labkey-alternate-row"><%=textLink("add chart",url.replaceParameter("queryName", dataset.getName()).replaceParameter("datasetId", String.valueOf(datasetId)))%></td>
                 </tr>
                 <%
             }

@@ -72,7 +72,9 @@ import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -171,6 +173,7 @@ import org.labkey.study.writer.SpecimenWriter;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
+import javax.servlet.ServletContext;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -222,7 +225,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 13.10;
+        return 13.11;
     }
 
     protected void init()
@@ -274,7 +277,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
-        Set<ModuleResourceLoader> loaders = new HashSet<>();
+        Set<ModuleResourceLoader> loaders = new HashSet<ModuleResourceLoader>();
         loaders.add(new ModuleAssayLoader());
         loaders.add(new StudyViewLoader());
         return loaders;
@@ -287,7 +290,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        return new ArrayList<WebPartFactory>(Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory,
@@ -303,7 +306,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         if (study != null)
         {
-            Collection<String> list = new LinkedList<>();
+            Collection<String> list = new LinkedList<String>();
             list.add("Study: " + study.getLabel());
             long participants = StudyManager.getInstance().getParticipantCount(study);
             if (0 < participants)
@@ -347,7 +350,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             public Set<ExperimentRunType> getExperimentRunTypes(Container container)
             {
-                Set<ExperimentRunType> result = new HashSet<>();
+                Set<ExperimentRunType> result = new HashSet<ExperimentRunType>();
                 for (final ExpProtocol protocol : AssayService.get().getAssayProtocols(container))
                 {
                     result.add(new AssayRunType(protocol, container));
@@ -416,6 +419,22 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
     }
 
+    @Override
+    public void afterUpdate(final ModuleContext moduleContext)
+    {
+        super.afterUpdate(moduleContext);
+
+        if (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.11)
+        {
+            ContextListener.addStartupListener(new StartupListener()
+            {
+                public void moduleStartupComplete(ServletContext servletContext)
+                {
+                    StudyUpgradeCode.upgradeDatasetLabelsToNames(moduleContext);
+                }
+            });
+        }
+    }
 
     @Override
     @NotNull
@@ -488,7 +507,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
-            JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/dataViews.jsp", webPart);
+            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/dataViews.jsp", webPart);
             view.setTitle("Data Views");
             view.setFrame(WebPartView.FrameType.PORTAL);
             Container c = portalCtx.getContainer();
@@ -543,7 +562,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
-            JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/studySchedule.jsp", webPart);
+            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/studySchedule.jsp", webPart);
             view.setTitle("Study Schedule");
             view.setFrame(WebPartView.FrameType.PORTAL);
             Container c = portalCtx.getContainer();
@@ -716,7 +735,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        Set<Class> set = new HashSet<>();
+        Set<Class> set = new HashSet<Class>();
         set.add(SpecimenImporter.TestCase.class);
         set.add(StudyManager.DatasetImportTestCase.class);
         set.add(ParticipantGroupManager.ParticipantGroupTestCase.class);
@@ -731,7 +750,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getUnitTests()
     {
-        Set<Class> set = new HashSet<>();
+        Set<Class> set = new HashSet<Class>();
         set.add(SampleMindedTransformTask.TestCase.class);
         set.add(DatasetWriter.TestCase.class);
         set.add(SpecimenWriter.TestCase.class);

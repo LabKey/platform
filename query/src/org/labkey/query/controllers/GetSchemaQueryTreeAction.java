@@ -26,6 +26,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.DataSetTable;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 
@@ -131,8 +132,12 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         }
                         catch (QueryException ignored) {}
 
+                        String label = qname;
+                        if (null != tinfo && tinfo instanceof DataSetTable)
+                            label = tinfo.getTitle();           // Display title (label if different from name) for Datasets
+
                         // If there's an error, still include the table in the tree
-                        addQueryToList(schemaPath, qname, tinfo == null ? null : tinfo.getDescription(), builtIn);
+                        addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), builtIn);
                         addedQueryCount++;
                     }
 
@@ -156,7 +161,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         QueryDefinition qdef = queryDefMap.get(qname);
                         if (!qdef.isTemporary())
                         {
-                            addQueryToList(schemaPath, qname, qdef.getDescription(), userDefined);
+                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), userDefined);
                             addedQueryCount++;
                         }
                     }
@@ -230,12 +235,16 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
     }
 
 
-    protected void addQueryToList(SchemaKey schemaName, String qname, String description, JSONArray list)
+    protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, JSONArray list)
     {
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
         qprops.put("queryName", qname);
-        qprops.put("text", PageFlowUtil.filter(qname));
+        qprops.put("queryLabel", label);
+        String text = qname;
+        if (!qname.equalsIgnoreCase(label))
+            text += " (" + label + ")";
+        qprops.put("text", PageFlowUtil.filter(text));
         qprops.put("leaf", true);
         if (null != description)
         {

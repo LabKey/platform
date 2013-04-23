@@ -529,6 +529,12 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         Table.delete(getTable(), filter);
     }
 
+    @Override
+    public int saveReport(ContainerUser context, String key, Report report, boolean skipValidation) throws SQLException
+    {
+        return _saveReport(context, key, report, skipValidation).getRowId();
+    }
+
     public int saveReport(ContainerUser context, String key, Report report) throws SQLException
     {
         return _saveReport(context, key, report).getRowId();
@@ -579,6 +585,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     private ReportDB _saveReport(ContainerUser context, String key, Report report) throws SQLException
     {
+        return _saveReport(context, key, report, false);
+    }
+
+    private ReportDB _saveReport(ContainerUser context, String key, Report report, boolean skipValidation) throws SQLException
+    {
         DbScope scope = getTable().getSchema().getScope();
         try
         {
@@ -590,7 +601,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
             // last chance to validate permissions, this should be done in the controller actions, so
             // just throw an exception if validation fails
-            validateReportPermissions(context, report);
+            if (!skipValidation)
+                validateReportPermissions(context, report);
 
             final ReportDB r = _saveReport(context.getUser(), context.getContainer(), key, descriptor);
             scope.commitTransaction();

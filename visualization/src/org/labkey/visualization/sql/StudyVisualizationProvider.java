@@ -119,9 +119,9 @@ public class StudyVisualizationProvider extends VisualizationProvider
         joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSubjectCol, secondSubjectCol));
 
         // attempt to lookup the dataset using the queryName by label and then by name
-        int firstDatasetId  = StudyService.get().getDatasetId(first.getContainer(), first.getQueryName(), first.getQueryName());
+        int firstDatasetId  = StudyService.get().getDatasetIdByQueryName(first.getContainer(), first.getQueryName());
         DataSet firstDataSet = firstDatasetId > -1 ? StudyService.get().getDataSet(first.getContainer(), firstDatasetId) : null;
-        int secondDatasetId  = StudyService.get().getDatasetId(second.getContainer(), second.getQueryName(), second.getQueryName());
+        int secondDatasetId  = StudyService.get().getDatasetIdByQueryName(second.getContainer(), second.getQueryName());
         DataSet secondDataSet = secondDatasetId > -1 ? StudyService.get().getDataSet(second.getContainer(), secondDatasetId) : null;
 
         // if either query is a demographic dataset, it's sufficient to join on subject only:
@@ -343,7 +343,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
             {
                 if (ds.isShowByDefault())
                 {
-                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getLabel(), ColumnMatchType.All_VISIBLE, false);
+                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getName(), ColumnMatchType.All_VISIBLE, false);
                     if (entry != null)
                     {
                         queries.put(entry.getKey(), entry.getValue());

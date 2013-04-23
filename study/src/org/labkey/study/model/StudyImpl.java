@@ -198,7 +198,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
-    // TODO: Make admin editable, persist, and display. For now, just use the first "word" of the label.
+    // TODO: Make short name admin editable, persist, and display. For now, just use the first "word" of the label.
     public String getShortName()
     {
         String shortName = _label.split("\\s", 2)[0];

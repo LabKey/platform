@@ -34,6 +34,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
@@ -591,12 +592,6 @@ public class QueryServiceImpl extends QueryService
         return count;
     }
 
-
-    public void updateCustomViewsAfterRename(@NotNull Container c, @NotNull String schema,
-            @NotNull String oldQueryName, @NotNull String newQueryName)
-    {
-        QueryManager.get().updateViewsAfterRename(c,schema,oldQueryName,newQueryName);
-    }
 
     public Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User currentUser)
     {
@@ -2047,5 +2042,17 @@ public class QueryServiceImpl extends QueryService
 	    {
 		    _close();
 	    }
+    }
+
+    @Override
+    public void fireQueryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    {
+        QueryManager.get().fireQueryCreated(container, scope, schema, queries);
+    }
+
+    @Override
+    public void fireQueryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    {
+        QueryManager.get().fireQueryChanged(container, scope, schema, property, changes);
     }
 }

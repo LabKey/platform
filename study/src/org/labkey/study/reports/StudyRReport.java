@@ -99,7 +99,7 @@ public class StudyRReport extends RReport
             if (study != null)
             {
                 return StudyManager.getInstance().
-                        getDataSetDefinition(study, getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
+                        getDatasetDefinitionByQueryName(study, getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
             }
         }
         catch (Exception e)

@@ -95,6 +95,9 @@
             extend : 'Ext.data.Model',
             fields : [
                 {name : 'name'},
+                {name : 'title', convert: function(value, record){
+                    return record.data.name != value ? record.data.name + ' (' + value + ')' : value;
+                }},
                 {name : 'description'},
                 {name : 'isUserDefined', type : 'boolean'},
                 {name: 'viewDataUrl'}
@@ -108,7 +111,8 @@
                 reader : {
                     type : 'json'
                 }
-            }
+            },
+            sorters : [{property: 'title', direction: 'ASC'}]
         };
 
         return Ext4.create('Ext.data.Store', config);
@@ -210,7 +214,7 @@
             store: queryStore,
             editable: false,
             disabled: true,
-            displayField: 'name',
+            displayField: 'title',
             valueField: 'name',
             typeAhead: 'true',
             emptyText: 'None',
