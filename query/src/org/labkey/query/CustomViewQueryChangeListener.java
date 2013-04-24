@@ -56,7 +56,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         QueryServiceImpl svc = QueryServiceImpl.get();
         String schemaName = schema.toString();
 
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
         List<CustomView> views = svc.getCustomViews(null, container, schemaName, null, true);
         VIEW_LOOP:
         for (CustomView view : views)
@@ -142,7 +142,6 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
             queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
-        // TODO: need to also get private custom views
         for (CustomView customView : QueryService.get().getCustomViews(null, container, schemaKey.toString(), null, false))
         {
             try {

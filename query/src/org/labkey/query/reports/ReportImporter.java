@@ -22,13 +22,21 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * User: adam
@@ -65,7 +73,7 @@ public class ReportImporter implements FolderImporter
 
                 try
                 {
-                    if (ReportService.get().importReport(ctx.getUser(), ctx.getContainer(), reportsDir.getXmlBean(reportFileName), reportsDir) != null)
+                    if (ReportService.get().importReport(ctx, reportsDir.getXmlBean(reportFileName), reportsDir) != null)
                         count++;
                     else
                         ctx.getLogger().warn("Unable to import report file: " + reportFileName);
@@ -83,6 +91,36 @@ public class ReportImporter implements FolderImporter
 
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
+        // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
+        // fire the query change listeners for older archives to fix-up these dataset label references
+        if (ctx.getArchiveVersion() != null && ctx.getArchiveVersion() < 13.11)
+        {
+            Study study = StudyService.get().getStudy(ctx.getContainer());
+            if (study != null)
+            {
+                List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<QueryChangeListener.QueryPropertyChange>();
+                for (DataSet dataSet : study.getDataSets())
+                {
+                    if (!dataSet.getName().equals(dataSet.getLabel()))
+                    {
+                        queryPropertyChanges.add(new QueryChangeListener.QueryPropertyChange<String>(
+                                QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), "study").getQueryDefForTable(dataSet.getName()),
+                                QueryChangeListener.QueryProperty.Name,
+                                dataSet.getLabel(),
+                                dataSet.getName()
+                        ));
+                    }
+                }
+
+                if (queryPropertyChanges.size() > 0)
+                {
+                    ctx.getLogger().info("Post-processing reports, custom views, and query snapshots to use dataset name instead of label");
+                    QueryService.get().fireQueryChanged(ctx.getUser(), ctx.getContainer(), null, new SchemaKey(null, "study"), QueryChangeListener.QueryProperty.Name, queryPropertyChanges);
+                    ctx.getLogger().info("Done post-processing dataset label to name conversion");
+                }
+            }
+        }
+
         return null;
     }
 

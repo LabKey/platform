@@ -115,12 +115,13 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
                 ReportDescriptor descriptor = report.getDescriptor();
 
                 // update reportKey (stored in core.Report)
-                if (descriptor.getReportKey() != null && descriptor.getReportKey().startsWith(schemaKey.toString() + "/"))
+                String[] keyParts = ReportUtil.splitReportKey(descriptor.getReportKey());
+                if (keyParts.length > 0 && keyParts[0].equals(schemaKey.toString()))
                 {
-                    String reportKeyQuery = descriptor.getReportKey().substring(schemaKey.toString().length() + 1);
+                    String reportKeyQuery = keyParts[keyParts.length-1];
                     if (queryNameChangeMap.containsKey(reportKeyQuery))
                     {
-                        descriptor.setReportKey(schemaKey.toString() + "/" + queryNameChangeMap.get(reportKeyQuery));
+                        descriptor.setReportKey(ReportUtil.getReportKey(schemaKey.toString(), queryNameChangeMap.get(reportKeyQuery)));
                         hasUpdates = true;
                     }
                 }

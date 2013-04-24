@@ -30,12 +30,9 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.xml.RepositoryType;
-import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.io.File;

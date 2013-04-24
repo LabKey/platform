@@ -197,4 +197,17 @@ public class StudyImportContext extends AbstractContext
 
         return null;
     }
+
+    @Override
+    public Double getArchiveVersion()
+    {
+        try {
+            StudyDocument studyDoc = getDocument();
+            return studyDoc.getStudy() != null ? studyDoc.getStudy().getArchiveVersion() : null;
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
 }

@@ -533,7 +533,7 @@ public class VisualizationController extends SpringActionController
                 Map<String, Object> props = getColumnProps(fieldKey, column, query);
                 props.put("schemaName", query.getSchema().getName());
                 props.put("queryName", getQueryName(query));
-                props.put("queryLabel", getQueryName(query, true));
+                props.put("queryLabel", getQueryLabel(query));
                 props.put("isUserDefined", !query.isTableQueryDefinition());
                 props.put("isDemographic", isDemographic);
                 props.put("id", count++);
@@ -549,7 +549,7 @@ public class VisualizationController extends SpringActionController
 
             props.put("name", fieldKey.toString());
             props.put("label", col.getLabel());
-            props.put("longlabel", col.getLabel() + " (" + getQueryName(query, true) + ")");
+            props.put("longlabel", col.getLabel() + " (" + getQueryLabel(query) + ")");
             props.put("type", col.getJdbcType().name());
             props.put("description", StringUtils.trimToEmpty(col.getDescription()));
             props.put("alias", VisualizationSourceColumn.getAlias(query.getSchemaName(), getQueryName(query), col.getName()));
@@ -562,11 +562,16 @@ public class VisualizationController extends SpringActionController
             return getQueryName(query, false);
         }
 
+        private String getQueryLabel(QueryDefinition query)
+        {
+            return getQueryName(query, true);
+        }
+
         private String getQueryName(QueryDefinition query, boolean asLabel)
         {
             List<QueryException> errors = new ArrayList<QueryException>();
             TableInfo table = query.getTable(errors, false);
-            String queryName;
+            String queryName = query.getName();
             if (table instanceof DataSetTable && errors.isEmpty())
             {
                 if (asLabel)
@@ -574,8 +579,6 @@ public class VisualizationController extends SpringActionController
                 else
                     queryName = ((DataSetTable) table).getDataSet().getName();
             }
-            else
-                queryName = query.getName();
             return queryName;
         }
     }

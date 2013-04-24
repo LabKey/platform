@@ -217,6 +217,17 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getDataSetDefinition(this, id);
     }
 
+    @Override
+    public DataSetDefinition getDataSetByName(String name)
+    {
+        return StudyManager.getInstance().getDataSetDefinitionByName(this, name);
+    }
+
+    @Override
+    public DataSetDefinition getDataSetByLabel(String label)
+    {
+        return StudyManager.getInstance().getDataSetDefinitionByLabel(this, label);
+    }
 
     public List<DataSetDefinition> getDataSets()
     {

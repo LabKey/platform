@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -60,6 +61,9 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -69,6 +73,7 @@ import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import java.beans.PropertyChangeEvent;
@@ -915,39 +920,54 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     }
 
     @Override @Nullable
-    public Report importReport(final User user, final Container container, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException
+    public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException
     {
-        Report report = deserialize(container, user, reportXml);
+        Report report = deserialize(ctx.getContainer(), ctx.getUser(), reportXml);
         if (report != null)
         {
             ReportDescriptor descriptor = report.getDescriptor();
             String key = descriptor.getReportKey();
-
             if (StringUtils.isBlank(key))
             {
                 // use the default key used by query views
                 key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
             }
 
-            Report[] existingReports = getReports(user, container, key);
+            List<Report> existingReports = new ArrayList<>();
+            existingReports.addAll(Arrays.asList(getReports(ctx.getUser(), ctx.getContainer(), key)));
+
+            // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
+            // so if we are importing an older study archive, we need to also check for existing reports using the query name (i.e. dataset name)
+            // NOTE: this will then be fixed up in the ReportImporter.postProcess
+            if (ctx.getArchiveVersion() != null && ctx.getArchiveVersion() < 13.11)
+            {
+                String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
+                Study study = StudyService.get().getStudy(ctx.getContainer());
+                if (study != null && schema.equals("study"))
+                {
+                    DataSet dataset = study.getDataSetByLabel(descriptor.getProperty(ReportDescriptor.Prop.queryName));
+                    if (dataset != null && !dataset.getName().equals(dataset.getLabel()))
+                    {
+                        String newKey = ReportUtil.getReportKey(schema, dataset.getName());
+                        existingReports.addAll(Arrays.asList(getReports(ctx.getUser(), ctx.getContainer(), newKey)));
+                    }
+                }
+            }
 
             for (Report existingReport : existingReports)
             {
                 if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
                 {
-                    deleteReport(new ContainerUser(){
-                        public User getUser() {return user;}
-                        public Container getContainer() {return container;}
-                    }, existingReport);
+                    deleteReport(new DefaultContainerUser(ctx.getContainer(), ctx.getUser()), existingReport);
                 }
             }
 
-            int rowId = _saveReport(user, container, key, descriptor).getRowId();
+            int rowId = _saveReport(ctx.getUser(), ctx.getContainer(), key, descriptor).getRowId();
             descriptor.setReportId(new DbReportIdentifier(rowId));
 
             // re-load the report to get the updated property information (i.e container, etc.)
             report = ReportService.get().getReport(rowId);
-            report.afterSave(container, user, root);
+            report.afterSave(ctx.getContainer(), ctx.getUser(), root);
         }
         return report;
     }

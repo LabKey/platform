@@ -372,8 +372,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 multiSelect: true,
                 bubbleEvents : ['viewready', 'selectionchange'],
                 columns: [
-                    {header:'Dataset Name', dataIndex:'queryName', flex: 2, hidden: true},
-                    {header:'Dataset', dataIndex:'queryLabel', flex: 2},
+                    {header:'Dataset/Query Name', dataIndex:'queryName', flex: 2, hidden: true},
+                    {header:'Dataset/Query', dataIndex:'queryLabel', flex: 2},
                     {header:'Measure', dataIndex:'label', flex: 2},
                     {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer, flex: 3}
                 ]
@@ -389,8 +389,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 multiSelect: false,
                 bubbleEvents : ['selectionchange'],
                 columns: [
-                    {header:'Dataset Name', dataIndex:'queryName', flex: 2, hidden: true},
-                    {header:'Dataset', dataIndex:'queryLabel', flex: 2},
+                    {header:'Dataset/Query Name', dataIndex:'queryName', flex: 2, hidden: true},
+                    {header:'Dataset/Query', dataIndex:'queryLabel', flex: 2},
                     {header:'Measure', dataIndex:'label', flex: 2},
                     {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer, flex: 3}
                 ],
