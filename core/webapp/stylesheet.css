@@ -3918,3 +3918,122 @@ li.labkey-main-menu-project-link
     height: 20px;
     margin-bottom: 0;
 }
+
+#projectBar_menu {
+    padding: 0;
+}
+
+.project-nav {
+    max-height: 350px;
+    min-height: 75px;
+    min-width: 280px;
+    max-width: 800px;
+    white-space: nowrap;
+    display: inline-block;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -ms-overflow-y: auto;
+    -ms-overflow-x: hidden;
+}
+
+.project-nav ul {
+    list-style: none;
+    padding: 10px;
+}
+
+.project-nav ul li {
+    list-style: none;
+    float: left;
+    width: 11em;
+    height: 25px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-left: 5px;
+    padding-right: 30px;
+    display: inline;
+}
+
+.project-menu-buttons {
+    border-top: 1px solid #d5d5d5;
+    padding: 5px 5px 0 0;
+    text-align: right;
+}
+
+#folderBar_menu {
+    padding-right: 0px;
+    padding-left: 0px;
+}
+
+.folder-nav {
+    max-height: 350px;
+    min-height: 75px;
+    min-width: 280px;
+    max-width: 800px;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.folder-trail {
+    padding: 8px 20px 10px 10px;
+    color: #a9a9a9;
+    white-space: nowrap;
+    border-bottom: 1px solid #d5d5d5;
+}
+
+.folder-tree {
+    max-height: 325px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -ms-overflow-y: auto;
+    -ms-overflow-x: hidden;
+    padding: 5px 50px 10px 10px;
+}
+
+.folder-nav ul {
+    list-style: none;
+    padding-left: 20px;
+}
+
+.folder-nav ul.folder-nav-top {
+    padding-left: 0 !important;
+    margin: 0;
+}
+
+.folder-nav span:hover {
+    cursor: pointer;
+}
+
+.folder-nav ul li {
+    padding-top: 8px;
+}
+
+.folder-nav ul li span {
+    padding-left: 20px;
+}
+
+.folder-nav .clbl span.marked {
+    padding-left: 20px;
+}
+
+.folder-nav ul li a {
+    white-space: nowrap;
+}
+
+.collapse-folder {
+    background: url(./_images/expand-collapse.gif) no-repeat 0 2px;
+    padding-left: 20px;
+}
+
+.expand-folder {
+    background: url(./_images/expand-collapse.gif) no-repeat 0 -130px;
+    padding-left: 20px;
+}
+
+.folder-menu-buttons {
+    border-top: 1px solid #d5d5d5;
+    padding-top: 5px;
+    margin-top: 5px;
+    margin-bottom: -5px;
+    text-align: right;
+}

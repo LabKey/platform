@@ -71,51 +71,8 @@
     if (projects.hasChildren())
     {
 %>
-<style type="text/css">
-
-    #projectBar_menu {
-        padding: 0;
-    }
-
-    .project-nav {
-        max-height: 350px;
-        min-height: 75px;
-        min-width: 280px;
-        max-width: 800px;
-        white-space: nowrap;
-        display: inline-block;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -ms-overflow-y: auto;
-        -ms-overflow-x: hidden;
-    }
-
-    .project-nav ul {
-        list-style: none;
-        /* width + padding + error */
-        width: <%=(11.333*cols)+(cols*2.188)+1%>em;
-        padding: 10px;
-    }
-
-    .project-nav ul li {
-        float: left;
-        width: 11em;
-        height: 25px;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        padding-left: 5px;
-        padding-right: 30px;
-    }
-
-    .project-menu-buttons {
-        border-top: 1px solid #d5d5d5;
-        padding: 5px 5px 0 0;
-        text-align: right;
-    }
-</style>
 <div class="project-nav">
-    <ul>
+    <ul style="width: <%=(11.333*cols)+(cols*2.188)+1%>em;">
 <%
         for (r=0; r < rowsPerCol; r++)
         {
