@@ -115,7 +115,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
     // is initialized).
-    private volatile WritableIndexManager _indexManager = new NoopWritableIndex(_log);
+    private volatile WritableIndexManager _indexManager = new NoopWritableIndex("the indexer has not been started yet", _log);
 
     private static ExternalIndexManager _externalIndexManager;
 
@@ -168,7 +168,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             _log.error("Error: Unable to initialize search index. Search will be disabled and new documents will not be indexed for searching until this is corrected and the server is restarted. See below for details about the cause.");
             setConfigurationError(t);
-            _indexManager = new NoopWritableIndex(_log);
+            String statusMessage = "the search index is misconfigured. Search is disabled and new documents are not being indexed. Correct the problem and restart your server.";
+            _indexManager = new NoopWritableIndex(statusMessage, _log);
             throw new RuntimeException("Error: Unable to initialize search index", t);
         }
     }

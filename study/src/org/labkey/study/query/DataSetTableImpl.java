@@ -402,21 +402,9 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
             {
                 for (final ColumnInfo columnInfo : assayResultTable.getColumns())
                 {
-                    if (getColumn(columnInfo.getName()) == null)
+                    if (!getColumnNameSet().contains(columnInfo.getName()))
                     {
-                        ExprColumn wrappedColumn = new ExprColumn(this, columnInfo.getName(), columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType())
-                        {
-                            @Override
-                            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
-                            {
-                                super.declareJoins(parentAlias, map);
-                                columnInfo.declareJoins(getAssayResultAlias(parentAlias), map);
-                            }
-                        };
-                        wrappedColumn.copyAttributesFrom(columnInfo);
-                        ForeignKey fk = wrappedColumn.getFk();
-                        if (fk != null && fk instanceof SpecimenForeignKey)
-                            ((SpecimenForeignKey) fk).setTargetStudyOverride(dsd.getContainer());
+                        ExprColumn wrappedColumn = wrapAssayColumn(columnInfo);
                         addColumn(wrappedColumn);
                     }
                 }
@@ -447,6 +435,25 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         }
     }
 
+    /** Wrap a column in our underlying assay data table with one that puts it in the dataset table */
+    private ExprColumn wrapAssayColumn(final ColumnInfo columnInfo)
+    {
+        ExprColumn wrappedColumn = new ExprColumn(this, columnInfo.getName(), columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType())
+        {
+            @Override
+            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+            {
+                super.declareJoins(parentAlias, map);
+                columnInfo.declareJoins(getAssayResultAlias(parentAlias), map);
+            }
+        };
+        wrappedColumn.copyAttributesFrom(columnInfo);
+        ForeignKey fk = wrappedColumn.getFk();
+        if (fk != null && fk instanceof SpecimenForeignKey)
+            ((SpecimenForeignKey) fk).setTargetStudyOverride(_dsd.getContainer());
+        return wrappedColumn;
+    }
+
     @Override
     public DataSet getDataSet()
     {
@@ -474,6 +481,13 @@ public class DataSetTableImpl extends FilteredTable<StudyQuerySchema> implements
         ExpProtocol protocol = _dsd.getAssayProtocol();
         if (protocol != null)
         {
+            // First, see the if the assay table can resolve the column
+            result = createAssayResultTable().getColumn(name);
+            if (result != null)
+            {
+                return wrapAssayColumn(result);
+            }
+
             AssayProvider provider = AssayService.get().getProvider(protocol);
             FieldKey runFieldKey = provider == null ? null : provider.getTableMetadata(protocol).getRunFieldKeyFromResults();
             if (name.toLowerCase().startsWith("run"))

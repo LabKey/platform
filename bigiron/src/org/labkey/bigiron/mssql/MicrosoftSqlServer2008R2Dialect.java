@@ -970,6 +970,13 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             // Address both "int identity" and "bigint identity", #14136
             return StringUtils.endsWithIgnoreCase(getSqlTypeName(), "identity");
         }
+
+        @Nullable
+        @Override
+        public String getDefault() throws SQLException
+        {
+            return _rsCols.getString("COLUMN_DEF");
+        }
     }
 
 

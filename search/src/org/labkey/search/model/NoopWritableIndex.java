@@ -34,11 +34,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class NoopWritableIndex implements WritableIndexManager
 {
     private final Logger _log;
+    private final String _statusMessage;
     private final AtomicLong _errors = new AtomicLong(0);
 
-    public NoopWritableIndex(Logger log)
+    public NoopWritableIndex(String statusMessage, Logger log)
     {
         _log = log;
+        _statusMessage = statusMessage;
     }
 
     @Override
@@ -101,7 +103,7 @@ public class NoopWritableIndex implements WritableIndexManager
     private void log(String action)
     {
         if (0 == (_errors.get() % 1000))
-            _log.warn("Unable to " + action + "; the search index is misconfigured. Search is disabled and new documents are not being indexed. Correct the problem and restart your server.");
+            _log.warn("Unable to " + action + "; " + _statusMessage);
 
         _errors.incrementAndGet();
     }

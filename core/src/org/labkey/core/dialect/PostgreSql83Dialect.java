@@ -1283,6 +1283,13 @@ class PostgreSql83Dialect extends SqlDialect
 
             return null;
         }
+
+        @Nullable
+        @Override
+        public String getDefault() throws SQLException
+        {
+            return _rsCols.getString("COLUMN_DEF");
+        }
     }
 
 

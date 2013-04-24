@@ -135,11 +135,18 @@ public class SearchModule extends DefaultModule
             ss.addSearchCategory(UmlsController.umlsCategory);
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
+            // 13.1 moved to Lucene 4.1 and updated many of the index fields, so rebuild the index. For future index rebuilds, just update the version number below.
+            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 12.32);
+
             // don't start the crawler until all the modules are done startuping
             ContextListener.addStartupListener(new StartupListener(){
                 public void moduleStartupComplete(ServletContext servletContext)
                 {
                     ss.start();
+
+                    if (clearIndex)
+                        ss.clear();
+
                     DavCrawler.getInstance().start();
                 }
             });
@@ -163,12 +170,6 @@ public class SearchModule extends DefaultModule
     public void afterUpdate(ModuleContext moduleContext)
     {
         super.afterUpdate(moduleContext);
-
-        if (!moduleContext.isNewInstall() && moduleContext.getInstalledVersion() < 12.32)
-        {
-            SearchService ss = ServiceRegistry.get(SearchService.class);
-            ss.clear();
-        }
 
         // we want to clear the last indexed time on all documents so that failed attempts can be tried again
         final StartupListener l = new StartupListener()
