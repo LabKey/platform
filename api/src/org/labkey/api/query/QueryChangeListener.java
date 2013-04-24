@@ -1,9 +1,11 @@
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.event.PropertyChange;
+import org.labkey.api.security.User;
 
 import java.util.Collection;
 
@@ -20,33 +22,40 @@ public interface QueryChangeListener
     /**
      * This method is called when a set of tables or queries are created in the given container and schema.
      *
+     * @param user The user that initiated the change.
      * @param container The container the tables or queries are created in.
      * @param scope The scope of containers that the tables or queries affect.
      * @param schema The schema of the tables or queries.
      * @param queries The query or table names.
      */
-    void queryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
+    void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries);
 
     /**
      * This method is called when a set of tables or queries are changed in the given container and schema.
+     * <p>
+     * <b>ACHTUNG!</b> - All dependent objects should be fixed up regardless of ownership or the <code>user</code>
+     * that initiated the change. When persisting fixed up dependent objects, save using the <code>user</code>
+     * that initiated the changes even if that user doesn't own the object.
      *
+     * @param user The user that initiated the change.
      * @param container The container the tables or queries are changed in.
      * @param scope The scope of containers that the tables or queries affect.
      * @param schema The schema of the tables or queries.
-     * @param property The QueryProperty that has changed or null if more than one property has changed.
+     * @param property The QueryProperty that has changed.
      * @param changes The set of change events.  Each QueryPropertyChange is associated with a single table or query.
      */
-    void queryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes);
+    void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes);
 
     /**
      * This method is called when a set of tables or queries are deleted from the given container and schema.
      *
+     * @param user The user that initiated the change.
      * @param container The container the tables or queries are deleted from.
      * @param scope The scope of containers that the tables or queries affect.
      * @param schema The schema of the tables or queries.
      * @param queries The query or table names.
      */
-    void queryDeleted(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
+    void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries);
 
     /**
      * Get a textual representation of items that depdend on a table or query.
@@ -57,7 +66,7 @@ public interface QueryChangeListener
      * @param schema The schema of the tables or queries.
      * @param queries The query or table names.
      */
-    Collection<String> queryDependents(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
+    Collection<String> queryDependents(Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries);
 
     // CONSIDER: Create a generic class instead of using an enum.
     public enum QueryProperty
@@ -68,7 +77,7 @@ public interface QueryChangeListener
         Inherit(Boolean.class),
         Hidden(Boolean.class);
 
-        private Class<?> _klass;
+        private final Class<?> _klass;
 
         QueryProperty(Class<?> klass)
         {
@@ -82,36 +91,28 @@ public interface QueryChangeListener
     }
 
     /**
-     * A change event for a single table or query.
-     * If multiple properties have been changed,
-     * {@link .getProperty}, {@link .getOldValue}, and {@link .getNewValue} will return null.
+     * A change event for a single property of a single table or query.
+     * If multiple properties have been changed, QueryChangeListener will
+     * fire {@link QueryChangeListener#queryChanged(User, Container, ContainerFilter, SchemaKey, QueryChangeListener.QueryProperty, Collection)}
+     * for each property that has changed.
      *
      * @param <V> The property type.
      */
     class QueryPropertyChange<V> implements PropertyChange<QueryProperty, V>
     {
-        private QueryDefinition _queryDef;
-        private QueryProperty _property;
-        private V _oldValue;
-        private V _newValue;
-
-        /**
-         * Multiple property changes for a table or query.
-         * @param queryDef Represents either a custom query or a TableInfo (TableQueryDefinition)
-         */
-        public QueryPropertyChange(QueryDefinition queryDef)
-        {
-            this(queryDef, null, null, null);
-        }
+        private final QueryDefinition _queryDef;
+        private final QueryProperty _property;
+        private final V _oldValue;
+        private final V _newValue;
 
         /**
          * A single property change event for a table or query.
          * @param queryDef Represents either a custom query or a TableInfo (TableQueryDefinition).
-         * @param property The changed property or null if more than one property has changed.
-         * @param oldValue The previous property value or null if more than onde property has changed
-         * @param newValue The current property value or null if more than onde property has changed
+         * @param property The changed property.
+         * @param oldValue The previous property value or null.
+         * @param newValue The current property value or null.
          */
-        public QueryPropertyChange(QueryDefinition queryDef, QueryProperty property, V oldValue, V newValue)
+        public QueryPropertyChange(@NotNull QueryDefinition queryDef, @NotNull QueryProperty property, V oldValue, V newValue)
         {
             _queryDef = queryDef;
             _property = property;
@@ -120,7 +121,7 @@ public interface QueryChangeListener
         }
 
         public QueryDefinition getSource() { return _queryDef; }
-        @Nullable
+        @NotNull
         public QueryProperty getProperty() { return _property; }
         @Nullable
         public V getOldValue() { return _oldValue; }

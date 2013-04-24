@@ -2,6 +2,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,31 +15,31 @@ import java.util.List;
 public abstract class AbstractQueryChangeListener implements QueryChangeListener
 {
     @Override
-    public void queryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
         for (String query : queries)
-            queryCreated(container, scope, schema, query);
+            queryCreated(user, container, scope, schema, query);
     }
 
-    protected abstract void queryCreated(Container container, ContainerFilter scope, SchemaKey schema, String query);
+    protected abstract void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, String query);
 
     @Override
-    public void queryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
     {
         for (QueryPropertyChange change : changes)
-            queryChanged(container, scope, schema, change);
+            queryChanged(user, container, scope, schema, change);
     }
 
-    protected abstract void queryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryPropertyChange change);
+    protected abstract void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryPropertyChange change);
 
     @Override
-    public void queryDeleted(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
         for (String query : queries)
-            queryDeleted(container, scope, schema, query);
+            queryDeleted(user, container, scope, schema, query);
     }
 
-    protected abstract void queryDeleted(Container container, ContainerFilter scope, SchemaKey schema, String query);
+    protected abstract void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, String query);
 
     @Override
     public Collection<String> queryDependents(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)

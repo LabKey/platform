@@ -295,6 +295,7 @@ abstract public class QueryService
      */
     abstract public @Nullable DetailsURL getAuditDetailsURL(User user, Container c, TableInfo table);
 
-    abstract public void fireQueryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
-    abstract public void fireQueryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes);
+    abstract public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
+    abstract public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes);
+    abstract public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries);
 }

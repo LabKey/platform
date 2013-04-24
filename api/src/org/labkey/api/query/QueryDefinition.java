@@ -22,6 +22,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.query.QueryChangeListener.QueryProperty;
+import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
@@ -108,13 +110,13 @@ public interface QueryDefinition
     /**
      * Save a new QueryDefinition or update an existing QueryDefinition.
      * TableQueryDefinition and file-based queries cannot be deleted.
-     * Fires the {@link QueryChangeListener#queryChanged(Container, ContainerFilter, SchemaKey, QueryChangeListener.QueryProperty, Collection)} event.
+     * Fires the {@link QueryChangeListener#queryChanged(Container, ContainerFilter, SchemaKey, QueryProperty, Collection)} event.
      *
      * @param user
      * @throws SQLException
      */
-    void save(User user, Container container) throws SQLException;
-    void save(User user, Container container, boolean fireChangeEvent) throws SQLException;
+    Collection<QueryPropertyChange> save(User user, Container container) throws SQLException;
+    Collection<QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent) throws SQLException;
 
     /**
      * Delete the QueryDefinition.
