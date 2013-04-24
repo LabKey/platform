@@ -417,7 +417,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
         var schemaKey = LABKEY.SchemaKey.fromString(_qd.schemaName);
         var displayText = _qd.name;
-        if (_qd.name.toLowerCase() != _qd.title.toLowerCase())
+        if (_qd.name.toLowerCase() != (_qd.title || '').toLowerCase())
             displayText += ' (' + _qd.title + ')';
 
         var children = [{
