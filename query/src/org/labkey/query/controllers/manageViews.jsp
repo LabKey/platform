@@ -55,7 +55,7 @@
     List<CstmView> views = new ArrayList<CstmView>();
     if (form.getViewContext().hasPermission(UpdatePermission.class))
     {
-        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, null, false, false)));
+        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, null, false, true)));
     }
     if (!user.isGuest())
     {
