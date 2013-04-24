@@ -170,7 +170,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public CustomView getCustomView(@NotNull User owner, @Nullable HttpServletRequest request, String name)
     {
-        assert owner != null;
         return getCustomViews(owner, request, true, false).get(name);
     }
 
@@ -181,7 +180,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public CustomView createCustomView(@NotNull User owner, String name)
     {
-        assert owner != null;
         return new CustomViewImpl(this, owner, name);
     }
 
