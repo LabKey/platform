@@ -98,4 +98,10 @@ public abstract class ColumnMetaDataReader
     {
         return null;
     }
+
+    // TODO: Implement for other dialects
+    public @Nullable String getDefault() throws SQLException
+    {
+        return null;
+    }
 }

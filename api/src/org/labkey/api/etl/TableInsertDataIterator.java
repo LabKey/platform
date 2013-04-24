@@ -17,6 +17,7 @@
 package org.labkey.api.etl;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 
 public class TableInsertDataIterator extends StatementDataIterator implements DataIteratorBuilder
 {
@@ -39,6 +41,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     final TableInfo _table;
     final Container _c;
     boolean _selectIds = false;
+    final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
 
     public static TableInsertDataIterator create(DataIterator data, TableInfo table, DataIteratorContext context)
     {
@@ -67,6 +70,10 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         for (ColumnInfo col : table.getColumns())
         {
             Integer index = map.get(col.getName());
+
+            if (null == index && null != col.getJdbcDefaultValue())
+                _skipColumnNames.add(col.getName());
+
             if (col.isAutoIncrement())
             {
                 indexAutoIncrement = index;
@@ -106,7 +113,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
-            _stmt = StatementUtils.insertStatement(_conn, _table, _c, null, _selectIds, false);
+            _stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
             super.init();
             if (_selectIds)
                 _batchSize = 1;

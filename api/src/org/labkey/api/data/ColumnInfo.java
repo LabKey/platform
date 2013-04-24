@@ -119,6 +119,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String textAlign = null;
     private ForeignKey fk = null;
     private String defaultValue = null;
+    private String jdbcDefaultValue = null;  // TODO: Merge with defaultValue, see #17646
     private int scale = 0;
     private boolean isAutoIncrement = false;
     private boolean isKeyField = false;
@@ -312,6 +313,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (col.shortLabel != null)
             setShortLabel(col.getShortLabel());
         setDefaultValue(col.getDefaultValue());
+        setJdbcDefaultValue(col.getJdbcDefaultValue());
         setDescription(col.getDescription());
         if (col.isFormatStringSet())
             setFormat(col.getFormat());
@@ -543,6 +545,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         checkLocked();
         this.textAlign = textAlign;
+    }
+
+    public String getJdbcDefaultValue()
+    {
+        return jdbcDefaultValue;
+    }
+
+    public void setJdbcDefaultValue(String jdbcDefaultValue)
+    {
+        this.jdbcDefaultValue = jdbcDefaultValue;
     }
 
     public String getDefaultValue()
@@ -1301,6 +1313,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             col.isAutoIncrement = reader.isAutoIncrement();
             col.scale = reader.getScale();
             col.nullable = reader.isNullable();
+            col.jdbcDefaultValue = reader.getDefault();
 
             inferMetadata(col);
 

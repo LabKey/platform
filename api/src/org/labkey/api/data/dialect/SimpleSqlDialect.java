@@ -397,7 +397,8 @@ public abstract class SimpleSqlDialect extends SqlDialect
     @Override
     public boolean isCaseSensitive()
     {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+        // This is a reasonable default assumption... nothing bad happens if the database happens to be case-insensitive
+        return true;
     }
 
     // The following methods should never be called on a simple dialect.

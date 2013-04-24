@@ -103,7 +103,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new IntegerArrayConverter()), int[].class);
         _register(new NullSafeConverter(new _IntegerConverter()), Integer.class);
         _register(new _IntegerConverter(), Integer.TYPE);
-        _register(new NullSafeConverter(new SqlDateConverter()), java.sql.Date.class);
+        _register(new NullSafeConverter(new LenientSqlDateConverter()), java.sql.Date.class);
         _register(new NullSafeConverter(new SqlTimestampConverter()), java.sql.Time.class);
         _register(new LenientTimestampConverter(), java.sql.Timestamp.class);
         _register(new LenientDateConverter(), java.util.Date.class);

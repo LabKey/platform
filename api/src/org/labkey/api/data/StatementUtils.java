@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
@@ -114,7 +115,12 @@ public class StatementUtils
      */
     public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return createStatement(conn, table, c, user, selectIds, autoFillDefaultColumns, true);
+        return createStatement(conn, table, null, c, user, selectIds, autoFillDefaultColumns, true);
+    }
+
+    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    {
+        return createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, true);
     }
 
     /**
@@ -130,11 +136,11 @@ public class StatementUtils
      */
     public static Parameter.ParameterMap updateStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return createStatement(conn, table, c, user, selectIds, autoFillDefaultColumns, false);
+        return createStatement(conn, table, null, c, user, selectIds, autoFillDefaultColumns, false);
     }
 
 
-    public static Parameter.ParameterMap createStatement(Connection conn, TableInfo t, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, boolean insert) throws SQLException
+    public static Parameter.ParameterMap createStatement(Connection conn, TableInfo t, @Nullable Set<String> skipColumnNames, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, boolean insert) throws SQLException
     {
         if (!(t instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Table must be an UpdatedableTableInfo");
@@ -329,6 +335,9 @@ public class StatementUtils
 
         String objectIdColumnName = StringUtils.trimToNull(updatable.getObjectIdColumnName());
         ColumnInfo autoIncrementColumn = null;
+        CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
+        if (null == remap)
+            remap = new CaseInsensitiveHashMap<String>();
 
         for (ColumnInfo column : table.getColumns())
         {
@@ -341,11 +350,11 @@ public class StatementUtils
             }
             if (column.isVersionColumn() && column != colModified)
                 continue;
-            if (done.contains(column.getName()))
+            String name = column.getName();
+            if (done.contains(name))
                 continue;
-            done.add(column.getName());
+            done.add(name);
 
-            cols.add(new SQLFragment(column.getSelectName()));
             SQLFragment valueSQL = new SQLFragment();
             if (column.getName().equalsIgnoreCase(objectIdColumnName))
             {
@@ -357,9 +366,12 @@ public class StatementUtils
             }
             else
             {
+                if (null != skipColumnNames && skipColumnNames.contains(StringUtils.defaultString(remap.get(name),name)))
+                    continue;
                 Parameter p = new Parameter(column, null);
                 appendParameterOrVariable(valueSQL, d, useVariables, p, parameterToVariable);
             }
+            cols.add(new SQLFragment(column.getSelectName()));
             values.add(valueSQL);
         }
 
@@ -373,22 +385,38 @@ public class StatementUtils
         if (insert)
         {
             // Create a standard INSERT INTO table (col1, col2) VALUES (val1, val2) statement
-            sqlfInsertInto.append("INSERT INTO ").append(table).append(" (");
-            comma = "";
-            for (SQLFragment colSQL : cols)
-            {
-                sqlfInsertInto.append(comma);
-                comma = ", ";
-                sqlfInsertInto.append(colSQL);
-            }
-            sqlfInsertInto.append(")\nVALUES (");
-            comma = "";
+            // or (for degenerate, empty values case) INSERT INTO table VALUES (DEFAULT)
+            sqlfInsertInto.append("INSERT INTO ").append(table);
 
-            for (SQLFragment valueSQL : values)
+            if (!values.isEmpty())
             {
-                sqlfInsertInto.append(comma);
-                comma = ", ";
-                sqlfInsertInto.append(valueSQL);
+                sqlfInsertInto.append(" (");
+                comma = "";
+                for (SQLFragment colSQL : cols)
+                {
+                    sqlfInsertInto.append(comma);
+                    comma = ", ";
+                    sqlfInsertInto.append(colSQL);
+                }
+                sqlfInsertInto.append(")");
+            }
+
+            sqlfInsertInto.append("\nVALUES (");
+
+            if (values.isEmpty())
+            {
+                sqlfInsertInto.append("DEFAULT");
+            }
+            else
+            {
+                comma = "";
+
+                for (SQLFragment valueSQL : values)
+                {
+                    sqlfInsertInto.append(comma);
+                    comma = ", ";
+                    sqlfInsertInto.append(valueSQL);
+                }
             }
 
             sqlfInsertInto.append(")");
@@ -520,7 +548,7 @@ public class StatementUtils
             script.appendStatement(sqlfObjectProperty, d);
             script.appendStatement(sqlfSelectIds, d);
 
-            ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, updatable.remapSchemaColumns());
+            ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
         }
         else
         {

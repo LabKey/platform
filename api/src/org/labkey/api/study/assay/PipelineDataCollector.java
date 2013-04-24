@@ -163,12 +163,13 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
 
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
+        Map<String, File> result = super.uploadComplete(context, run);
         List<Map<String, File>> files = getFileQueue(context);
         if (!files.isEmpty())
         {
             files.remove(0);
         }
-        return super.uploadComplete(context, run);
+        return result;
     }
 
     public AdditionalUploadType getAdditionalUploadType(ContextType context)

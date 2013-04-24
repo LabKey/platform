@@ -248,7 +248,7 @@ public class StandardETL implements DataIteratorBuilder
 
     boolean isRequiredForInsert(@NotNull ColumnInfo col, @Nullable DomainProperty dp)
     {
-        if (col.isAutoIncrement() || col.isVersionColumn())
+        if (col.isAutoIncrement() || col.isVersionColumn() || null != col.getJdbcDefaultValue())
             return false;
         return !col.isNullable() || (null != dp && dp.isRequired());
     }
