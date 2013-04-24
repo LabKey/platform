@@ -18,8 +18,6 @@ package org.labkey.study.controllers;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
-import org.labkey.api.action.HasPageConfig;
-import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
@@ -29,12 +27,9 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.AssayFolderType;
 import org.labkey.study.CohortFilter;
@@ -44,16 +39,10 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.BaseStudyPage;
-import org.labkey.study.view.StudyNavigationView;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
-import java.io.PrintWriter;
 import java.util.Collection;
-
-import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
  * User: Karl Lum
@@ -66,30 +55,6 @@ public abstract class BaseStudyController extends SpringActionController
         QCState
     }
 
-    static final boolean extprototype = false;
-
-/*
-    public static class StudyUrlsImpl implements StudyUrls
-    {
-        @Override
-        public ActionURL getCreateStudyURL(Container container)
-        {
-            return new ActionURL(StudyController.CreateStudyAction.class, container);
-        }
-
-        @Override
-        public ActionURL getManageStudyURL(Container container)
-        {
-            return new ActionURL(StudyController.ManageStudyAction.class, container);
-        }
-
-        @Override
-        public ActionURL getStudyOverviewURL(Container container)
-        {
-            return getStudyOverviewURL(container);
-        }
-    }
-*/
     public static ActionURL getStudyOverviewURL(Container c)
     {
         return new ActionURL(StudyController.OverviewAction.class, c);
@@ -105,14 +70,6 @@ public abstract class BaseStudyController extends SpringActionController
         return new SpecimenUtils(this);
     }
 
-    ActionURL getPermaLink()
-    {
-        ActionURL url = getViewContext().cloneActionURL().setExtraPath(getContainer().getId());
-        url.deleteParameter("_template");
-        url.deleteParameter("_dc");
-        return url;
-    }
-
     public PageConfig defaultPageConfig()
     {
         PageConfig page =  super.defaultPageConfig();
@@ -122,68 +79,6 @@ public abstract class BaseStudyController extends SpringActionController
         if ("custom".equals(template))
             page.setTemplate(PageConfig.Template.Custom);
         return page;
-    }
-
-    protected ModelAndView getTemplate(ViewContext context, final ModelAndView mv, final Controller action, PageConfig page)
-    {
-        if (!extprototype)
-            return super.getTemplate(context,mv,action,page);
-
-        if (((HasPageConfig)action).getPageConfig().getTemplate() == PageConfig.Template.Custom)
-        {
-            HttpView custom = new HttpView()
-            {
-                protected void renderInternal(Object model, PrintWriter out) throws Exception
-                {
-                    out.println("<!--custom-->");   // marker
-                    include(mv);
-                    out.println("<script type='text/javascript'>updatePageProperties({");
-                    out.print("permalink:");out.println(jsString(getPermaLink().getLocalURIString()));
-                    if (action instanceof NavTrailAction)
-                    {
-                        NavTree root = new NavTree();
-                        appendNavTrail(action, root);
-                        out.print(",navtrail:[");
-                        String c = "";
-                        NavTree last = null;
-                        for (NavTree nt : root.getChildren())
-                        {
-                            out.print(c);c = ",";
-                            out.print("{title:");out.print(jsString(nt.getText()));out.print(',');
-                            out.print("url:");out.print(jsString(nt.getHref()));out.print('}');
-                            last = nt;
-                        }
-                        out.print("]");
-                        if (null != last)
-                        {
-                            out.print(",title:");out.println(jsString(last.getText()));
-                        }
-                    }
-                    out.println("});</script>");
-                }
-            };
-            return custom;
-        }
-
-        HttpView wrapper =  new HttpView()
-        {
-            protected void renderInternal(Object model, PrintWriter out) throws Exception
-            {
-
-                out.println("<div class=extContainer><div id=studyDiv><!--BODY-->");
-                include(mv);
-                out.println("</div></div>");
-            }
-        };
-        ModelAndView t = super.getTemplate(context, wrapper, action, page);
-        if (t instanceof HomeTemplate)
-        {
-            StudyImpl study = null;
-            try {study = getStudy(true);}catch (ServletException x){}
-            if (null != study)
-                ((HttpView)t).setView("moduleNav", new StudyNavigationView(study));
-        }
-        return t;
     }
 
     public static StudyImpl getStudy(boolean allowNullStudy, Container c) throws ServletException
