@@ -171,6 +171,12 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     }
 
     @Override
+    public Double getArchiveVersion()
+    {
+        return null;
+    }
+
+    @Override
     public <K extends ImportContext> void addContext(Class<K> contextClass, K context)
     {
         _contextMap.put(contextClass, context);

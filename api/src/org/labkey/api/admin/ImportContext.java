@@ -39,6 +39,7 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     public boolean isShiftDates();
     public boolean isAlternateIds();
     public boolean isMaskClinic();
+    public Double getArchiveVersion();
 
     // These methods let writers add and get module-specific context information
     public <K extends ImportContext> void addContext(Class<K> contextClass, K context);

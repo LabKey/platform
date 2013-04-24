@@ -111,4 +111,17 @@ public class FolderImportContext extends AbstractFolderContext
 
         return folderDoc;
     }
+
+    @Override
+    public Double getArchiveVersion()
+    {
+        try {
+            FolderDocument folderDoc = getDocument();
+            return folderDoc.getFolder() != null ? folderDoc.getFolder().getArchiveVersion() : null;
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
 }

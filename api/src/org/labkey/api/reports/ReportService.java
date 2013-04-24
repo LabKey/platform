@@ -18,6 +18,7 @@ package org.labkey.api.reports;
 
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.module.Module;
@@ -122,7 +123,7 @@ public class ReportService
          * parameters. Imported reports are always treated as new reports even if they were exported from
          * the same container.
          */
-        public Report importReport(User user, Container container, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException;
+        public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException;
 
         /**
          * Runs maintenance on the report service.

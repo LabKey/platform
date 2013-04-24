@@ -146,6 +146,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     protected void setTitle(String title)
     {
+        checkLocked();
         _title = title;
     }
 

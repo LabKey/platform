@@ -35,6 +35,10 @@ public interface Study extends StudyEntity
 
     DataSet getDataSet(int id);
 
+    DataSet getDataSetByName(String name);
+
+    DataSet getDataSetByLabel(String label);
+
     List<? extends DataSet> getDataSets();
 
     List<? extends DataSet> getDataSetsByType(String[] types);
