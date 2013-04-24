@@ -19,6 +19,7 @@ package org.labkey.core;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -78,6 +79,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.Compress;
@@ -148,7 +150,7 @@ public class CoreController extends SpringActionController
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static final Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static final Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<Content,Content>();
-    
+    private static final Logger _log = Logger.getLogger(CoreController.class);
 
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
 
@@ -851,27 +853,43 @@ public class CoreController extends SpringActionController
         {
             String path = Attachment.getFileIcon(StringUtils.trimToEmpty(form.getExtension()));
 
-            //open the file and stream it back to the client
-            HttpServletResponse response = getViewContext().getResponse();
-            response.setContentType(PageFlowUtil.getContentTypeFor(path));
-            response.setHeader("Cache-Control", "public");
-            response.setHeader("Pragma", "");
-
-            byte[] buf = new byte[4096];
-            InputStream is = ViewServlet.getViewServletContext().getResourceAsStream(path);
-            OutputStream os = response.getOutputStream();
-
-            try
+            if (path != null)
             {
-                for(int len; (len=is.read(buf))!=-1; )
-                    os.write(buf,0,len);
-            }
-            finally
-            {
-                os.close();
-                is.close();
-            }
+                //open the file and stream it back to the client
+                HttpServletResponse response = getViewContext().getResponse();
+                response.setContentType(PageFlowUtil.getContentTypeFor(path));
+                response.setHeader("Cache-Control", "public");
+                response.setHeader("Pragma", "");
 
+                byte[] buf = new byte[4096];
+                WebdavResolver staticFiles = ServiceRegistry.get().getService(WebdavResolver.class);
+
+                WebdavResource file = staticFiles.lookup(new Path(path));
+                if (file != null)
+                {
+                    InputStream is = file.getInputStream();
+                    OutputStream os = response.getOutputStream();
+
+                    try
+                    {
+                        for(int len; (len=is.read(buf))!=-1; )
+                            os.write(buf,0,len);
+                    }
+                    finally
+                    {
+                        os.close();
+                        is.close();
+                    }
+                }
+                else
+                {
+                    _log.warn("Unable to retrieve icon file: " + path);
+                }
+            }
+            else
+            {
+                _log.warn("No icon file found for extension: " + StringUtils.trimToEmpty(form.getExtension()));
+            }
             return null;
         }
 
