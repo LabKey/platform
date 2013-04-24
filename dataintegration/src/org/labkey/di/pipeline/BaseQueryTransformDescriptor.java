@@ -286,14 +286,14 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     {
         // Revisit when we decide how the checker accounts for a multi-step transform. For now run against the source and destination
         // from the 0th step
-//        return new UpdatedRowsChecker(this, context, _stepMetaDatas.get(0).getSourceSchema(), _stepMetaDatas.get(0).getSourceQuery());
-        return new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception
-            {
-                return true;
-            }
-        };
+        return new UpdatedRowsChecker(this, context, _stepMetaDatas.get(0).getSourceSchema(), _stepMetaDatas.get(0).getSourceQuery());
+//        return new Callable<Boolean>() {
+//            @Override
+//            public Boolean call() throws Exception
+//            {
+//                return true;
+//            }
+//        };
     }
 
 
