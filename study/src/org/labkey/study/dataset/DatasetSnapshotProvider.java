@@ -269,7 +269,12 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
         if (snapshot != null && snapshot.getSnapshotSettings().isUseAlternateParticipantIds())
         {
-            DatasetWriter.createAlternateIdColumns(tinfo, columns, view.getContainer());
+            Study study = StudyManager.getInstance().getStudy(view.getContainer());
+            if (study != null)
+            {
+                StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
+                DatasetWriter.createAlternateIdColumns(tinfo, columns, view.getContainer());
+            }
         }
 
         for (ColumnInfo column : columns)
