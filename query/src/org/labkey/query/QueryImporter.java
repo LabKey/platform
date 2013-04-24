@@ -26,7 +26,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryChangeListener.QueryProperty;
+import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -108,7 +109,7 @@ public class QueryImporter implements FolderImporter
 
             // Map of new and updated queries by schema
             Map<SchemaKey, List<String>> createdQueries = new LinkedHashMap<>();
-            Map<SchemaKey, List<QueryChangeListener.QueryPropertyChange>> changedQueries = new LinkedHashMap<>();
+            Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange>> changedQueries = new LinkedHashMap<>();
 
             for (String sqlFileName : sqlFileNames)
             {
@@ -128,21 +129,12 @@ public class QueryImporter implements FolderImporter
                 SchemaKey schemaKey = SchemaKey.fromString(schemaName);
 
                 // Reuse the existing queryDef so created or change events will be fired appropriately.
+                boolean created = false;
                 QueryDefinition queryDef = QueryService.get().getQueryDef(ctx.getUser(), ctx.getContainer(), schemaName, queryName);
-                if (queryDef != null)
+                if (queryDef == null)
                 {
-                    List<QueryChangeListener.QueryPropertyChange> changes = changedQueries.get(schemaKey);
-                    if (changes == null)
-                        changedQueries.put(schemaKey, changes = new ArrayList<>());
-                    changes.add(new QueryChangeListener.QueryPropertyChange(queryDef));
-                }
-                else
-                {
+                    created = true;
                     queryDef = QueryService.get().createQueryDef(ctx.getUser(), ctx.getContainer(), schemaKey, queryName);
-                    List<String> created = createdQueries.get(schemaKey);
-                    if (created == null)
-                        createdQueries.put(schemaKey, created = new ArrayList<>());
-                    created.add(queryName);
                 }
 
                 queryDef.setSql(sql);
@@ -151,25 +143,45 @@ public class QueryImporter implements FolderImporter
                 if (null != queryXml.getMetadata())
                     queryDef.setMetadataXml(queryXml.getMetadata().xmlText());
 
-                queryDef.save(ctx.getUser(), ctx.getContainer(), false);
+                Collection<QueryPropertyChange> changes = queryDef.save(ctx.getUser(), ctx.getContainer(), false);
+                if (created)
+                {
+                    List<String> queries = createdQueries.get(schemaKey);
+                    if (queries == null)
+                        createdQueries.put(schemaKey, queries = new ArrayList<>());
+                    queries.add(queryName);
+                }
+                else if (changes != null)
+                {
+                    for (QueryPropertyChange change : changes)
+                    {
+                        // Group changed queries by schemaKey/QueryProperty
+                        Pair<SchemaKey, QueryProperty> key = Pair.of(schemaKey, change.getProperty());
+                        List<QueryPropertyChange> changesBySchemaProperty = changedQueries.get(key);
+                        if (changesBySchemaProperty == null)
+                            changedQueries.put(key, changesBySchemaProperty = new ArrayList<>());
+                        changesBySchemaProperty.add(change);
+                    }
+                }
 
                 metaFilesMap.remove(metaFileName);
             }
 
-            // fire query created events
+            // fire query created events (one set of changes per container/schema)
             for (Map.Entry<SchemaKey, List<String>> entry : createdQueries.entrySet())
             {
                 SchemaKey schemaKey = entry.getKey();
                 List<String> queries = entry.getValue();
-                QueryManager.get().fireQueryCreated(ctx.getContainer(), null, schemaKey, queries);
+                QueryService.get().fireQueryCreated(ctx.getUser(), ctx.getContainer(), null, schemaKey, queries);
             }
 
-            // fire query changed events
-            for (Map.Entry<SchemaKey, List<QueryChangeListener.QueryPropertyChange>> entry : changedQueries.entrySet())
+            // fire query changed events (one set of changes per container/schema/queryproperty)
+            for (Map.Entry<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange>> entry : changedQueries.entrySet())
             {
-                SchemaKey schemaKey = entry.getKey();
-                List<QueryChangeListener.QueryPropertyChange> changes = entry.getValue();
-                QueryManager.get().fireQueryChanged(ctx.getContainer(), null, schemaKey, null, changes);
+                SchemaKey schemaKey = entry.getKey().first;
+                QueryProperty property = entry.getKey().second;
+                List<QueryPropertyChange> changes = entry.getValue();
+                QueryService.get().fireQueryChanged(ctx.getUser(), ctx.getContainer(), null, schemaKey, property, changes);
             }
 
             ctx.getLogger().info(sqlFileNames.size() + " quer" + (1 == sqlFileNames.size() ? "y" : "ies") + " imported");

@@ -525,25 +525,31 @@ public class QueryManager
 
     public void removeQueryListener(QueryChangeListener listener)
     {
-        QUERY_LISTENERS.add(listener);
+        QUERY_LISTENERS.remove(listener);
     }
 
-    public void fireQueryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
         for (QueryChangeListener l : QUERY_LISTENERS)
-            l.queryCreated(container, scope, schema, queries);
+            l.queryCreated(user, container, scope, schema, queries);
     }
 
-    public void fireQueryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryChangeListener.QueryPropertyChange> changes)
     {
         assert checkChanges(property, changes);
         for (QueryChangeListener l : QUERY_LISTENERS)
-            l.queryChanged(container, scope, schema, property, changes);
+            l.queryChanged(user, container, scope, schema, property, changes);
     }
 
     // Checks all changes have the correct property and type.
     private boolean checkChanges(QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
     {
+        if (property == null)
+        {
+            _log.error("Null property not allowed.");
+            return false;
+        }
+
         boolean valid = true;
         for (QueryChangeListener.QueryPropertyChange change : changes)
         {
@@ -552,35 +558,24 @@ public class QueryManager
                _log.error(String.format("Property '%s' doesn't match change property '%s'", property, change.getProperty()));
                 valid = false;
             }
-            if (property == null)
+            if (change.getOldValue() != null && !property.getPropertyClass().isInstance(change.getOldValue()))
             {
-                if (change.getOldValue() != null && change.getNewValue() != null)
-                {
-                    _log.error("Null property indicates multiple properties have changed and so old and new values should also be null.");
-                    valid = false;
-                }
+                _log.error(String.format("Old value '%s' isn't an instance of property '%s' class '%s'", change.getOldValue(), property, property.getPropertyClass()));
+                valid = false;
             }
-            else
+            if (change.getNewValue() != null && !property.getPropertyClass().isInstance(change.getNewValue()))
             {
-                if (change.getOldValue() != null && !property.getPropertyClass().isInstance(change.getOldValue()))
-                {
-                    _log.error(String.format("Old value '%s' isn't an instance of property '%s' class '%s'", change.getOldValue(), property, property.getPropertyClass()));
-                    valid = false;
-                }
-                if (change.getNewValue() != null && !property.getPropertyClass().isInstance(change.getNewValue()))
-                {
-                    _log.error(String.format("New value '%s' isn't an instance of property '%s' class '%s'", change.getNewValue(), property, property.getPropertyClass()));
-                    valid = false;
-                }
+                _log.error(String.format("New value '%s' isn't an instance of property '%s' class '%s'", change.getNewValue(), property, property.getPropertyClass()));
+                valid = false;
             }
         }
         return valid;
     }
 
-    public void fireQueryDeleted(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
         for (QueryChangeListener l : QUERY_LISTENERS)
-            l.queryDeleted(container, scope, schema, queries);
+            l.queryDeleted(user, container, scope, schema, queries);
     }
 
     public Collection<String> getQueryDependents(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)

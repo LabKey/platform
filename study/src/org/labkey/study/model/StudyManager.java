@@ -576,7 +576,7 @@ public class StudyManager
                     dataSetDefinition.getName()
                 );
 
-                QueryService.get().fireQueryChanged(dataSetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
+                QueryService.get().fireQueryChanged(user, dataSetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
                         QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
             scope.commitTransaction();

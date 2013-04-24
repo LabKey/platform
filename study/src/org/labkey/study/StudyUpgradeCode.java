@@ -449,7 +449,7 @@ public class StudyUpgradeCode implements UpgradeCode
 
                     if (queryPropertyChanges.size() > 0)
                     {
-                        QueryService.get().fireQueryChanged(container, null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME), QueryChangeListener.QueryProperty.Name, queryPropertyChanges);
+                        QueryService.get().fireQueryChanged(User.getReferenceFixupUser(), container, null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME), QueryChangeListener.QueryProperty.Name, queryPropertyChanges);
                     }
                 }
             }

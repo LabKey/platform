@@ -96,6 +96,7 @@ public class StudyQueryReport extends QueryReport
         }
     }
 
+    // XXX: Can we replace with a CustomViewChangeListener?
     public ReportIdentifier renameReport(ViewContext context, String newKey, String newName) throws SQLException
     {
         ReportIdentifier reportId;

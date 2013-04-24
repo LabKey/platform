@@ -36,7 +36,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryChangeListener.QueryProperty;
+import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
@@ -90,7 +91,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected User _user = null;
     protected UserSchema _schema = null;
     protected QueryDef _queryDef;
-    protected List<QueryChangeListener.QueryPropertyChange> _changes = null;
+    protected List<QueryPropertyChange> _changes = null;
     private boolean _dirty;
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;
@@ -153,7 +154,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
         QueryManager.get().delete(user, _queryDef);
         if (fireChangeEvent)
-            QueryManager.get().fireQueryDeleted(getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
+            QueryService.get().fireQueryDeleted(user, getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
         _queryDef = null;
     }
 
@@ -252,7 +253,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             return;
         String oldName = getName();
         edit().setName(name);
-        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Name, oldName, name));
+        _changes.add(new QueryPropertyChange<>(this, QueryProperty.Name, oldName, name));
     }
 
     public String getModuleName()
@@ -512,25 +513,26 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             return;
         Container oldContainer = getContainer();
         edit().setContainer(container.getId());
-        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Container, oldContainer, container));
+        _changes.add(new QueryPropertyChange<>(this, QueryProperty.Container, oldContainer, container));
     }
 
-    public void save(User user, Container container) throws SQLException
+    public Collection<QueryPropertyChange> save(User user, Container container) throws SQLException
     {
-        save(user, container, true);
+        return save(user, container, true);
     }
 
-    public void save(User user, Container container, boolean fireChangeEvent) throws SQLException
+    public Collection<QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent) throws SQLException
     {
         setContainer(container);
         if (!_dirty)
-            return;
+            return null;
+
         if (isNew())
         {
             _queryDef = QueryManager.get().insert(user, _queryDef);
 
             if (fireChangeEvent)
-                QueryManager.get().fireQueryCreated(container, null, _queryDef.getSchemaPath(), Collections.singleton(_queryDef.getName()));
+                QueryService.get().fireQueryCreated(user, container, null, _queryDef.getSchemaPath(), Collections.singleton(_queryDef.getName()));
         }
         else
         {
@@ -538,17 +540,18 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
             if (fireChangeEvent)
             {
-                // Reduce list of changes down to a single QueryPropertyChange event.
-                QueryChangeListener.QueryPropertyChange change;
-                if (_changes.size() == 1)
-                    change = _changes.get(0);
-                else
-                    change = new QueryChangeListener.QueryPropertyChange(this);
-                QueryManager.get().fireQueryChanged(container, null, _queryDef.getSchemaPath(), change.getProperty(), Collections.singleton(change));
+                // Fire change event for each property change.
+                for (QueryPropertyChange change : _changes)
+                {
+                    QueryService.get().fireQueryChanged(user, container, null, _queryDef.getSchemaPath(), change.getProperty(), Collections.singleton(change));
+                }
             }
         }
+
+        Collection<QueryPropertyChange> changes = _changes;
         _changes = null;
         _dirty = false;
+        return changes;
     }
 
     public void setCanInherit(boolean f)
@@ -557,7 +560,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             return;
         boolean oldValue = canInherit();
         edit().setFlags(mgr.setCanInherit(_queryDef.getFlags(), f));
-        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Inherit, oldValue, f));
+        _changes.add(new QueryPropertyChange<>(this, QueryProperty.Inherit, oldValue, f));
     }
 
     public boolean isHidden()
@@ -571,7 +574,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             return;
         boolean oldValue = isHidden();
         edit().setFlags(mgr.setIsHidden(_queryDef.getFlags(), f));
-        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Hidden, oldValue, f));
+        _changes.add(new QueryPropertyChange<>(this, QueryProperty.Hidden, oldValue, f));
     }
 
     public boolean isSnapshot()
@@ -722,7 +725,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             return;
         String oldDescription = getDescription();
         edit().setDescription(description);
-        _changes.add(new QueryChangeListener.QueryPropertyChange<>(this, QueryChangeListener.QueryProperty.Description, oldDescription, description));
+        _changes.add(new QueryPropertyChange<>(this, QueryProperty.Description, oldDescription, description));
     }
 
     public QueryDef getQueryDef()

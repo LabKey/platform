@@ -596,7 +596,7 @@ public class QueryServiceImpl extends QueryService
             }
 
             // owner == null since we're exporting/importing only shared views
-            CustomView cv = qd.createCustomView(null, reader.getName());
+            CustomView cv = qd.createSharedCustomView(reader.getName());
             cv.setColumnProperties(reader.getColList());
             cv.setFilterAndSort(reader.getFilterAndSortString());
             cv.setIsHidden(reader.isHidden());
@@ -2067,14 +2067,20 @@ public class QueryServiceImpl extends QueryService
     }
 
     @Override
-    public void fireQueryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
-        QueryManager.get().fireQueryCreated(container, scope, schema, queries);
+        QueryManager.get().fireQueryCreated(user, container, scope, schema, queries);
     }
 
     @Override
-    public void fireQueryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
     {
-        QueryManager.get().fireQueryChanged(container, scope, schema, property, changes);
+        QueryManager.get().fireQueryChanged(user, container, scope, schema, property, changes);
+    }
+
+    @Override
+    public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    {
+        QueryManager.get().fireQueryDeleted(user, container, scope, schema, queries);
     }
 }

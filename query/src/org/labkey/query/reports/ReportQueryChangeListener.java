@@ -49,21 +49,21 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
 
 
     @Override
-    public void queryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
     }
 
     @Override
-    public void queryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
     {
         if (property != null && property.equals(QueryProperty.Name))
         {
-            _updateReportQueryNameChange(container, schema, changes);
+            _updateReportQueryNameChange(user, container, schema, changes);
         }
     }
 
     @Override
-    public void queryDeleted(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
     }
 
@@ -98,7 +98,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
         return Collections.emptyList();
     }
 
-    private void _updateReportQueryNameChange(Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
+    private void _updateReportQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
     {
         // most property updates only care about the query name old value string and new value string
         Map<String, String> queryNameChangeMap = new HashMap<String, String>();
@@ -142,7 +142,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
 
                 if (hasUpdates)
                 {
-                    ContainerUser rptContext = new DefaultContainerUser(container, User.getReferenceFixupUser());
+                    ContainerUser rptContext = new DefaultContainerUser(container, user);
                     ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
                 }
             }

@@ -15,11 +15,13 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
+import java.util.Collection;
 
 /*
 * User: Dave
@@ -61,7 +63,13 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
     }
 
     @Override
-    public void save(User user, Container container) throws SQLException
+    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container) throws SQLException
+    {
+        throw new UnsupportedOperationException("Module-based queries are read-only!");
+    }
+
+    @Override
+    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent) throws SQLException
     {
         throw new UnsupportedOperationException("Module-based queries are read-only!");
     }

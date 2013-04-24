@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
@@ -34,6 +35,7 @@ import org.labkey.query.persist.QueryDef;
 import org.labkey.query.sql.Query;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -112,7 +114,13 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public void save(User user, Container container) throws SQLException
+    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container) throws SQLException
+    {
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
+    }
+
+    @Override
+    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent) throws SQLException
     {
         throw new UnsupportedOperationException("Linked schema queries are read-only!");
     }

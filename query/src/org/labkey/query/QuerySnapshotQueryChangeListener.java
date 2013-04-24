@@ -23,21 +23,21 @@ import java.util.Map;
 public class QuerySnapshotQueryChangeListener implements QueryChangeListener
 {
     @Override
-    public void queryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
     }
 
     @Override
-    public void queryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
     {
         if (property != null && property.equals(QueryProperty.Name))
         {
-            _updateQuerySnapshotQueryNameChange(container, schema, changes);
+            _updateQuerySnapshotQueryNameChange(user, container, schema, changes);
         }
     }
 
     @Override
-    public void queryDeleted(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
     }
 
@@ -48,7 +48,7 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
         return Collections.emptyList();
     }
 
-    private void _updateQuerySnapshotQueryNameChange(Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
+    private void _updateQuerySnapshotQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
     {
         // most property updates only care about the query name old value string and new value string
         Map<String, String> queryNameChangeMap = new HashMap<String, String>();
@@ -59,13 +59,14 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
 
         for (QuerySnapshotDefinition qsd : QueryService.get().getQuerySnapshotDefs(container, schemaKey.toString()))
         {
-            try {
+            try
+            {
                 // update QueryTableName (stored in query.QuerySnapshotDef)
                 String queryTableName = qsd.getQueryTableName();
                 if (queryTableName != null && queryNameChangeMap.containsKey(queryTableName))
                 {
                     qsd.setQueryTableName(queryNameChangeMap.get(queryTableName));
-                    qsd.save(User.getReferenceFixupUser());
+                    qsd.save(user);
                 }
             }
             catch (Exception e)

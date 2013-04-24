@@ -16,6 +16,7 @@ import org.labkey.api.security.User;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -31,21 +32,21 @@ import java.util.Map;
 public class CustomViewQueryChangeListener implements QueryChangeListener
 {
     @Override
-    public void queryCreated(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
     }
 
     @Override
-    public void queryChanged(Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
+    public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryProperty property, Collection<QueryPropertyChange> changes)
     {
         if (property != null && property.equals(QueryProperty.Name))
         {
-            _updateCustomViewQueryNameChange(container, schema, changes);
+            _updateCustomViewQueryNameChange(user, container, schema, changes);
         }
     }
 
     @Override
-    public void queryDeleted(Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
     }
 
@@ -56,24 +57,83 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         String schemaName = schema.toString();
 
         List<String> ret = new ArrayList<String>();
-        for (String queryName : queries)
+        List<CustomView> views = svc.getCustomViews(null, container, schemaName, null, true);
+        VIEW_LOOP:
+        for (CustomView view : views)
         {
-            // UNDONE: Need to get all custom views -- null User only fetches shared custom views.
-            List<CustomView> views = svc.getCustomViews(null, container, schemaName, queryName, true);
-            for (CustomView view : views)
+            if (queries.contains(view.getQueryName()))
             {
-                String viewName = view.getName() == null ? "<default>" : view.getName();
+                ret.add(dependentViewMessage(container, view));
+                continue VIEW_LOOP;
+            }
 
-                if (view.getContainer() != null && view.getContainer() != container)
-                    ret.add("Custom view '" + viewName + "' in container '" + view.getContainer().getPath() + "'");
-                else
-                    ret.add("Custom view '" + viewName + "'");
+            for (FieldKey col : view.getColumns())
+            {
+                FieldKey colTable = col.getTable();
+                if (colTable != null && colTable.getName() != null && queries.contains(colTable.getName()))
+                {
+                    ret.add(dependentViewMessage(container, view));
+                    continue VIEW_LOOP;
+                }
+            }
+
+            CustomViewInfo.FilterAndSort fas;
+            try
+            {
+                fas = CustomViewInfo.FilterAndSort.fromString(view.getFilterAndSort());
+            }
+            catch (URISyntaxException e)
+            {
+                Logger.getLogger(CustomViewQueryChangeListener.class).error("An error occurred finding custom view dependents: ", e);
+                continue VIEW_LOOP;
+            }
+
+            for (FilterInfo filterInfo : fas.getFilter())
+            {
+                FieldKey filterTable = filterInfo.getField().getTable();
+                if (filterTable != null && filterTable.getName() != null && queries.contains(filterTable.getName()))
+                {
+                    ret.add(dependentViewMessage(container, view));
+                    continue VIEW_LOOP;
+                }
+            }
+
+            for (Sort.SortField sortField : fas.getSort())
+            {
+                FieldKey sortTable = sortField.getFieldKey().getTable();
+                if (sortTable != null && sortTable.getName() != null && queries.contains(sortTable.getName()))
+                {
+                    ret.add(dependentViewMessage(container, view));
+                    continue VIEW_LOOP;
+                }
+            }
+
+            for (Aggregate aggregate : fas.getAggregates())
+            {
+                FieldKey aggTable = aggregate.getFieldKey().getTable();
+                if (aggTable != null && aggTable.getName() != null && queries.contains(aggTable.getName()))
+                {
+                    ret.add(dependentViewMessage(container, view));
+                    continue VIEW_LOOP;
+                }
             }
         }
         return ret;
     }
 
-    private void _updateCustomViewQueryNameChange(Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
+    private String dependentViewMessage(Container container, CustomView view)
+    {
+        String viewName = view.getName() == null ? "<default>" : view.getName();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Custom view '").append(viewName).append("'");
+        if (view.getContainer() != null && view.getContainer() != container)
+            sb.append(" in container '").append(view.getContainer().getPath()).append("'");
+
+        return sb.toString();
+    }
+
+    private void _updateCustomViewQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
     {
         // most property updates only care about the query name old value string and new value string
         Map<String, String> queryNameChangeMap = new HashMap<String, String>();
@@ -165,7 +225,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 if (hasUpdates)
                 {
                     HttpServletRequest request = new MockHttpServletRequest();
-                    customView.save(User.getReferenceFixupUser(), request);
+                    customView.save(user, request);
                 }
             }
             catch (Exception e)

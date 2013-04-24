@@ -158,7 +158,7 @@ public class ListManager implements SearchService.DocumentProvider
                     ret.getName()
                 );
 
-                QueryService.get().fireQueryChanged(c, null, new SchemaKey(null, ListSchema.NAME),
+                QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListSchema.NAME),
                         QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
 
