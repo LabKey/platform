@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.URLHelper;
 
 import java.io.Serializable;
 
@@ -27,9 +28,9 @@ import java.io.Serializable;
  */
 public class FilterInfo implements Serializable
 {
-    FieldKey field;
-    CompareType op;
-    String value;
+    final FieldKey field;
+    final CompareType op;
+    final String value;
 
     public FilterInfo(String field, String op, String value)
     {
@@ -46,11 +47,6 @@ public class FilterInfo implements Serializable
     public FieldKey getField()
     {
         return field;
-    }
-
-    public void setField(FieldKey field)
-    {
-        this.field = field;
     }
 
     public CompareType getOp()
@@ -86,4 +82,16 @@ public class FilterInfo implements Serializable
         return result;
     }
 
+    /**
+     * Add the filter parameter on the url
+     * @param url The url to be modified.
+     * @param regionName The dataRegion used to scope the sort.
+     * @param fieldKey The fieldKey to use in the url parameter
+     */
+    public void applyToURL(URLHelper url, String regionName, FieldKey fieldKey)
+    {
+        String opStr = op.getPreferredUrlKey() != null ? op.getPreferredUrlKey() : "";
+        String valueStr = value != null ? value : "";
+        url.addParameter(regionName + "." + fieldKey.toString() + "~" + opStr, valueStr);
+    }
 }

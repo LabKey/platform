@@ -22,9 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.queryCustomView.PropertyName;
 
 import java.net.URISyntaxException;
@@ -141,56 +139,6 @@ public interface CustomViewInfo
             }
 
             return fas;
-        }
-
-        // TODO: this is based off of CustomViewUtil.update, and should really be merged into one util location
-        public static ActionURL toURL(FilterAndSort fas)
-        {
-            ActionURL url = new ActionURL();
-
-            for (FilterInfo filterInfo : fas.getFilter())
-            {
-                String op = filterInfo.getOp().getPreferredUrlKey() != null ? filterInfo.getOp().getPreferredUrlKey() : "";
-                String value = filterInfo.getValue() != null ? filterInfo.getValue() : "";
-                url.addParameter(FILTER_PARAM_PREFIX + "." + filterInfo.getField().toString() + "~" + op, value);
-            }
-
-            Sort sort = new Sort();
-            for (Sort.SortField sortField : fas.getSort())
-            {
-                sort.appendSortColumn(sortField.getFieldKey(), sortField.getSortDirection(), true);
-            }
-            sort.applyToURL(url, FILTER_PARAM_PREFIX, false);
-
-            for (Aggregate aggregate : fas.getAggregates())
-            {
-                String fieldKey = StringUtils.trimToNull(aggregate.getFieldKey().toString());
-                String type = StringUtils.trimToNull(aggregate.getType().name());
-                String label = StringUtils.trimToNull(aggregate.getLabel());
-
-                if (fieldKey == null || type == null)
-                    continue;
-
-                StringBuilder ret = new StringBuilder();
-                if(label != null)
-                {
-                    ret.append(PageFlowUtil.encode("label=" + label));
-                    ret.append(PageFlowUtil.encode("&type=" + type));
-                }
-                else
-                {
-                    ret.append(PageFlowUtil.encode(type));
-                }
-                url.addParameter(FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "." + fieldKey, ret.toString());
-            }
-
-            for (String containerFilerName : fas.getContainerFilterNames())
-            {
-                if (containerFilerName != null)
-                    url.addParameter(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME, containerFilerName);
-            }
-
-            return url;
         }
     }
 

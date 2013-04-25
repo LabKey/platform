@@ -286,11 +286,6 @@ public class Aggregate
         return _fieldKey;
     }
 
-    public void setFieldKey(FieldKey fieldKey)
-    {
-        _fieldKey = fieldKey;
-    }
-
     @Deprecated // Use getFieldKey() instead.
     public String getColumnName()
     {
@@ -440,6 +435,17 @@ public class Aggregate
         ret.append(PageFlowUtil.encode("&type=" + getType().name()));
 
         return ret.toString();
+    }
+
+    /**
+     * Add the aggregate parameter on the url
+     * @param url The url to be modified.
+     * @param regionName The dataRegion used to scope the sort.
+     * @param fieldKey The fieldKey to use in the url parameter
+     */
+    public void applyToURL(URLHelper url, String regionName, FieldKey fieldKey)
+    {
+        url.addParameter(regionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + "." + fieldKey.toString(), getValueForUrl());
     }
 
     public static final class TestCase extends Assert
