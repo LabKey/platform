@@ -481,12 +481,11 @@ public class QueryServiceImpl extends QueryService
         return new ArrayList<CustomView>(getCustomViewMap(user, container, schemaName, queryName, includeInherited, sharedOnly).values());
     }
 
-    public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path)
+    public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query)
     {
         List<CustomView> customViews = new ArrayList<CustomView>();
 
         String schema = qd.getSchema().getSchemaName();
-        String query = qd.getName();
 
         for (Module module : container.getActiveModules())
         {

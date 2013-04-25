@@ -109,9 +109,15 @@ public class DataSetQueryView extends StudyQueryView
         ViewContext context = getViewContext();
         DatasetFilterForm form = getForm(context);
 
-        _dataset = StudyManager.getInstance().getDataSetDefinitionByName(_study, settings.getQueryName());
+        _dataset = StudyManager.getInstance().getDatasetDefinitionByQueryName(_study, settings.getQueryName());     // Robust enough to consider that QueryName may actually be label
         if (_dataset == null)
             throw new IllegalArgumentException("Unable to find the dataset specified");
+
+        if (!_dataset.getName().equals(settings.getQueryName()))
+        {
+            // settings has label instead of name; warn that label is being used to lookup
+            logAuditEvent("Dataset query was referenced by label, not name.", 0);
+        }
 
         if (settings.isUseQCSet() && StudyManager.getInstance().showQCStates(getContainer()))
             _qcStateSet = QCStateSet.getSelectedStates(getContainer(), form.getQCState());

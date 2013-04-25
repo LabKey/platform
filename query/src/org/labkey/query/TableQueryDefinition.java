@@ -47,7 +47,7 @@ import java.util.Map;
 public class TableQueryDefinition extends QueryDefinitionImpl
 {
     private String _sql;
-
+    private String _title;
 
     public TableQueryDefinition(UserSchema schema, String tableName)
     {
@@ -216,5 +216,21 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         TableInfo tableInfo = getTable(new ArrayList<QueryException>(), true);
         // Might have been deleted out from under us
         return tableInfo != null && tableInfo.isMetadataOverrideable();
+    }
+
+    @Override
+    public String getTitle()
+    {
+        if (null == _title)
+        {
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo tableInfo = getTable(getSchema(), errors, false);
+            if (null != tableInfo)
+                _title = tableInfo.getTitle();
+        }
+
+        if (null != _title)
+            return _title;
+        return getName();
     }
 }

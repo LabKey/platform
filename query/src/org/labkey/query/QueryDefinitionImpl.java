@@ -254,6 +254,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _changes.add(new QueryPropertyChange<>(this, QueryProperty.Name, oldName, name));
     }
 
+    public String getTitle()
+    {
+        return getName();
+    }
+
     public String getModuleName()
     {
         // TODO: In the future this could use the TableInfo if that ever has access to module information
