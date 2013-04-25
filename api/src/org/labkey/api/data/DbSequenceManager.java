@@ -6,12 +6,15 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.util.JunitUtil;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
+import org.labkey.api.util.JunitUtil;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: adam
@@ -150,14 +153,41 @@ public class DbSequenceManager
     static int next(DbSequence sequence)
     {
         TableInfo tinfo = getTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = Value + 1 WHERE Container = ? AND RowId = ?");
+        boolean isPostgreSQL = tinfo.getSqlDialect().isPostgreSQL();
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ");
+
+        if (isPostgreSQL)
+        {
+            // Adding this sub-select with FOR UPDATE locks the row to ensure a true atomic update
+            sql.append("(SELECT Value FROM ").append(tinfo, "seq").append(" WHERE Container = ? AND RowId = ? FOR UPDATE)");
+            sql.add(sequence.getContainer());
+            sql.add(sequence.getRowId());
+        }
+        else
+        {
+            sql.append("Value");
+        }
+
+        sql.append(" + 1 WHERE Container = ? AND RowId = ?");
         sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
 
         // Reselect the current value
         tinfo.getSqlDialect().addReselect(sql, "Value");
 
+        // Add locking appropriate to this dialect
+        addLocks(tinfo, sql);
+
         return executeAndReturnInteger(tinfo, sql);
+    }
+
+
+    private static void addLocks(TableInfo tinfo, SQLFragment updateSql)
+    {
+        if (tinfo.getSqlDialect().isSqlServer())
+            updateSql.insert(updateSql.indexOf("SET"), "WITH (XLOCK, ROWLOCK) ");
     }
 
 
@@ -165,11 +195,30 @@ public class DbSequenceManager
     static void ensureMinimum(DbSequence sequence, int minimum)
     {
         TableInfo tinfo = getTableInfo();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE Container = ? AND RowId = ? AND Value < ?");
+        boolean isPostgreSQL = tinfo.getSqlDialect().isPostgreSQL();
+
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE Container = ? AND RowId = ? AND ");
         sql.add(minimum);
         sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
+
+        if (isPostgreSQL)
+        {
+            // Adding this sub-select with FOR UPDATE locks the row to ensure a true atomic update
+            sql.append("(SELECT Value FROM ").append(tinfo, "seq").append(" WHERE Container = ? AND RowId = ? FOR UPDATE)");
+            sql.add(sequence.getContainer());
+            sql.add(sequence.getRowId());
+        }
+        else
+        {
+            sql.append("Value");
+        }
+
+        sql.append(" < ?");
         sql.add(minimum);
+
+        // Add locking appropriate to this dialect
+        addLocks(tinfo, sql);
 
         execute(tinfo, sql);
     }
@@ -262,6 +311,41 @@ public class DbSequenceManager
             final double perSecond = n / (elapsed / 1000.0);
 
             assertTrue(perSecond > 100);   // A very low bar
+        }
+
+        @Test
+        public void multiThreadStressTest() throws InterruptedException
+        {
+            final int threads = 5;
+            final int n = 1000;
+            final int totalCount = threads * n;
+            final Set<Integer> values = new HashSet<>(totalCount);
+            final Set<Integer> duplicateValues = new HashSet<>();
+            final long start = System.currentTimeMillis();
+
+            JunitUtil.createRace(new Runnable(){
+                @Override
+                public void run()
+                {
+                    for (int i = 0; i < n; i++)
+                    {
+                        int next = _sequence.next();
+                        if (!values.add(next))
+                            duplicateValues.add(next);
+                    }
+                }
+            }, threads, threads).awaitTermination(1, TimeUnit.MINUTES);
+
+            final long elapsed = System.currentTimeMillis() - start;
+            final double perSecond = totalCount / (elapsed / 1000.0);
+
+            assertEquals(totalCount, values.size());
+            assertEquals(duplicateValues.size() + " duplicate values were detected!", 0, duplicateValues.size());
+
+            for (int i = 0; i < threads * n; i++)
+                assertTrue(values.contains(i + 1));
+
+            assertTrue("Less than 100 iterations per second: " + perSecond, perSecond > 100);   // A very low bar
         }
 
         @After
