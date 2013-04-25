@@ -84,7 +84,7 @@ class PostgreSql83Dialect extends SqlDialect
 {
     private static final Logger _log = Logger.getLogger(PostgreSql83Dialect.class);
 
-    private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<String, Integer>();
+    private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private InClauseGenerator _inClauseGenerator = null;
     private AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
 
@@ -928,7 +928,7 @@ class PostgreSql83Dialect extends SqlDialect
     @Override
     public List<String> getChangeStatements(TableChange change)
     {
-        List<String> sql = new ArrayList<String>();
+        List<String> sql = new ArrayList<>();
         switch (change.getType())
         {
             case CreateTable:
@@ -953,7 +953,7 @@ class PostgreSql83Dialect extends SqlDialect
 
     private List<String> getRenameColumnsStatement(TableChange change)
     {
-        List<String> statements = new ArrayList<String>();
+        List<String> statements = new ArrayList<>();
         for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
         {
             statements.add(String.format("ALTER TABLE %s.%s RENAME COLUMN %s TO %s",
@@ -977,7 +977,7 @@ class PostgreSql83Dialect extends SqlDialect
 
     private String getDropColumnsStatement(TableChange change)
     {
-        List<String> sqlParts = new ArrayList<String>();
+        List<String> sqlParts = new ArrayList<>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
             String name = prop.getExactName() ? quoteIdentifier(prop.getName()) : makePropertyIdentifier(prop.getName());
@@ -992,7 +992,7 @@ class PostgreSql83Dialect extends SqlDialect
 
     private String getAddColumnsStatement(TableChange change)
     {
-        List<String> sqlParts = new ArrayList<String>();
+        List<String> sqlParts = new ArrayList<>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
             sqlParts.add("ADD COLUMN " + getSqlColumnSpec(prop));
@@ -1003,8 +1003,8 @@ class PostgreSql83Dialect extends SqlDialect
 
     private List<String> getCreateTableStatements(TableChange change)
     {
-        List<String> statements = new ArrayList<String>();
-        List<String> createTableSqlParts = new ArrayList<String>();
+        List<String> statements = new ArrayList<>();
+        List<String> createTableSqlParts = new ArrayList<>();
         String pkColumn = null;
         for (PropertyStorageSpec prop : change.getColumns())
         {
@@ -1042,7 +1042,7 @@ class PostgreSql83Dialect extends SqlDialect
 
     private String getSqlColumnSpec(PropertyStorageSpec prop)
     {
-        List<String> colSpec = new ArrayList<String>();
+        List<String> colSpec = new ArrayList<>();
         colSpec.add(makePropertyIdentifier(prop.getName()));
         colSpec.add(sqlTypeNameFromSqlType(prop));
         if (prop.getSqlTypeInt() == Types.VARCHAR)
@@ -1261,27 +1261,6 @@ class PostgreSql83Dialect extends SqlDialect
                 scale = _domainScaleMap.get(domainName);
 
             return scale;
-        }
-
-        @Override
-        public String getSequence() throws SQLException
-        {
-            DbSchema schema = _table.getSchema();
-            String src = _rsCols.getString("COLUMN_DEF");
-
-            int start = src.indexOf('\'');
-            int end = src.lastIndexOf('\'');
-
-            if (end > start)
-            {
-                String sequence = src.substring(start + 1, end);
-                if (!sequence.toLowerCase().startsWith(schema.getName().toLowerCase() + "."))
-                    sequence = schema.getName() + "." + sequence;
-
-                return sequence;
-            }
-
-            return null;
         }
 
         @Nullable

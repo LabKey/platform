@@ -21,7 +21,7 @@ package org.labkey.bigiron.sas;
  * Time: 4:50 PM
  */
 
-// Supports the SAS 9.2 SAS/SHARE JDBC driver
+// Supports the SAS 9.3 SAS/SHARE JDBC driver
 public class Sas93Dialect extends Sas92Dialect
 {
 }

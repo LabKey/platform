@@ -212,12 +212,6 @@ public abstract class OracleDialect extends SimpleSqlDialect
 
 
     @Override
-    public boolean shouldCacheMetaData()
-    {
-        return true;
-    }
-
-    @Override
     public boolean allowSortOnSubqueryWithoutLimit()
     {
         return true;
