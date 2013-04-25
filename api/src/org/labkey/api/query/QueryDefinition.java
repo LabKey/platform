@@ -35,6 +35,7 @@ public interface QueryDefinition
 {
     String getName();
     void setName(String name);
+    String getTitle();
 
     @Deprecated // Use .getSchemaPath() instead.
     String getSchemaName();

@@ -194,7 +194,7 @@ abstract public class QueryService
      * @param qd the query for which views should be fetched
      * @param path the relative path within the module to check for custom views
      */
-    public abstract List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path);
+    public abstract List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query);
 
     public abstract List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path);
 

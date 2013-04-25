@@ -509,13 +509,20 @@ public abstract class AssayProtocolSchema extends AssaySchema
         // Look for <MODULE>/assay/<ASSAY_TYPE>/queries/<TABLE_TYPE>/*.qview.xml files
         // where TABLE_TYPE is Runs, Batches, Data, etc
         Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getName()));
-        result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerPath));
+        result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerPath, qd.getName()));
+
+        // Also look using label, if different
+        if (!qd.getName().equals(qd.getTitle()))
+        {
+            Path providerLabelPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getTitle()));
+            result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerLabelPath, qd.getTitle()));
+        }
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
         String legacyQueryName = _protocol.getName() + " " + qd.getName();
         String legacySchemaName = AssaySchema.NAME;
         Path legacyPath = new Path(QueryService.MODULE_QUERIES_DIRECTORY, legacySchemaName, FileUtil.makeLegalName(legacyQueryName));
-        result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, legacyPath));
+        result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, legacyPath, qd.getName()));
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
         result.addAll(QueryService.get().getCustomViews(getUser(), container, legacySchemaName, legacyQueryName, true));

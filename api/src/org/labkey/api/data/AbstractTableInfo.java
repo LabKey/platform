@@ -1199,7 +1199,17 @@ abstract public class AbstractTableInfo implements TableInfo
                 getPublicSchemaName().replaceAll("\\W", "_"),
                 getName().replaceAll("\\W", "_") + ".js");
 
-        Path[] paths = pathNew.equals(pathOld) ? new Path[] {pathNew} : new Path[] { pathNew, pathOld };
+        Set<Path> paths = new HashSet<>();
+        paths.add(pathNew);
+        paths.add(pathOld);
+
+        if (null != getTitle() && !getName().equals(getTitle()))
+        {
+            Path pathLabel = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
+                    FileUtil.makeLegalName(getPublicSchemaName()),
+                    FileUtil.makeLegalName(getTitle()) + ".js");
+            paths.add(pathLabel);
+        }
 
         // UNDONE: get all table scripts instead of just first found
         Resource r = null;

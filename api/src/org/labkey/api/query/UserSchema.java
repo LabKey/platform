@@ -615,14 +615,34 @@ abstract public class UserSchema extends AbstractSchema
     public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
     {
         // Look under <ROOT>/queries/<SCHEMA_NAME>/<QUERY_NAME> for custom views (.qview.xml) files
+        // Also look under <ROOT>/queries/<SCHEMA_NAME>/<QUERY_LABEL>, if different
+        List<String> partsLabel = null;
+        if (!qd.getName().equals(qd.getTitle()))
+        {
+            partsLabel = new ArrayList<>();
+        }
+
         List<String> parts = new ArrayList<String>();
         parts.add(QueryService.MODULE_QUERIES_DIRECTORY);
+        if (null != partsLabel)
+            partsLabel.add(QueryService.MODULE_QUERIES_DIRECTORY);
         for (String schemaPart : getSchemaPath().getParts())
         {
-            parts.add(FileUtil.makeLegalName(schemaPart));
+            String legalName = FileUtil.makeLegalName(schemaPart);
+            parts.add(legalName);
+            if (null != partsLabel)
+                partsLabel.add(legalName);
         }
+
         parts.add(FileUtil.makeLegalName(qd.getName()));
-        return QueryService.get().getFileBasedCustomViews(container, qd, new Path(parts));
+        if (null != partsLabel)
+            partsLabel.add(FileUtil.makeLegalName(qd.getTitle()));
+
+        List<CustomView> views = QueryService.get().getFileBasedCustomViews(container, qd, new Path(parts), qd.getName());
+        if (null != partsLabel)
+            views.addAll(QueryService.get().getFileBasedCustomViews(container, qd, new Path(partsLabel), qd.getTitle()));
+
+        return views;
     }
 
     /**
