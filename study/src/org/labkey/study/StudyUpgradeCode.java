@@ -31,12 +31,10 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.UpgradeUtils;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.QueryChangeListener;
@@ -82,75 +80,6 @@ import java.util.Map;
 public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
-
-    // called at 10.30->10.31
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void materializeAssayResults(final ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            return;
-
-        // This needs to happen later, after all of the AssayProviders have been registered
-        ContextListener.addStartupListener(new StartupListener()
-        {
-            @Override
-            public void moduleStartupComplete(ServletContext servletContext)
-            {
-                AssayService.get().upgradeAssayDefinitions(moduleContext.getUpgradeUser(), 11.1);
-            }
-        });
-    }
-
-
-    /**
-     * Called at 10.31->10.32
-     * Get rid of the duplicate assay data in datasets and rely on a join to the original data on the assay side
-     */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void deleteDuplicateAssayDatasetFields(ModuleContext context)
-    {
-        if (context.isNewInstall())
-            return;
-
-        deleteDuplicateAssayDatasetFields(context.getUpgradeUser(), ContainerManager.getRoot());
-    }
-
-    private void deleteDuplicateAssayDatasetFields(User user, Container c)
-    {
-        try
-        {
-            Study study = StudyService.get().getStudy(c);
-            if (study != null)
-            {
-                for (DataSet dataSet : study.getDataSets())
-                {
-                    if (dataSet.isAssayData())
-                    {
-                        Domain domain = dataSet.getDomain();
-                        for (DomainProperty prop : domain.getProperties())
-                        {
-                            String keyName = dataSet.getKeyPropertyName();
-                            if (keyName == null || !keyName.equalsIgnoreCase(prop.getName()))
-                            {
-                                prop.delete();
-                            }
-                        }
-                        domain.save(user);
-                    }
-                }
-            }
-
-            // Recurse through the children
-            for (Container child : c.getChildren())
-            {
-                deleteDuplicateAssayDatasetFields(user, child);
-            }
-        }
-        catch (ChangePropertyDescriptorException e)
-        {
-            throw new UnexpectedException(e);
-        }
-    }
 
     // called at 11.10->11.101
     @SuppressWarnings({"UnusedDeclaration"})
@@ -231,7 +160,8 @@ public class StudyUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            try {
+            try
+            {
                 for (Report report : ReportService.get().getReports(new SimpleFilter()))
                 {
                     ReportDescriptor descriptor = report.getDescriptor();
