@@ -472,8 +472,8 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {string} [config.containerPath] An alternate container in which to create a new container. If not specified,
-         * the current container path will be used.
+         * @param {string} [config.containerPath] The container which should be deleted. If not specified,
+         * the current container path will be deleted.
          * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
