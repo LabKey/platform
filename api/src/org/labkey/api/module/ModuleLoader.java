@@ -105,7 +105,7 @@ import java.util.TreeSet;
  */
 public class ModuleLoader implements Filter
 {
-    private static final double EARLIEST_UPGRADE_VERSION = 10.3;
+    private static final double EARLIEST_UPGRADE_VERSION = 11.1;
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<String, Throwable>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<String, Module>();
