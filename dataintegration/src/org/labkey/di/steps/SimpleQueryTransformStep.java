@@ -12,6 +12,7 @@ import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
@@ -20,12 +21,13 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.di.TransformDataIteratorBuilder;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
-
+import static org.labkey.di.pipeline.TransformJobContext.Variable.*;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -40,6 +42,8 @@ public class SimpleQueryTransformStep extends TransformTask
 {
     final SimpleQueryTransformStepMeta _meta;
     final TransformJobContext _context;
+    long _recordsInserted = -1;
+    long _recordsDeleted = -1;
 
     public SimpleQueryTransformStep(TransformTaskFactory f, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
     {
@@ -57,6 +61,8 @@ public class SimpleQueryTransformStep extends TransformTask
             getJob().getLogger().info("SimpleQueryTransformStep.doWork called");
             if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
                 getJob().setStatus("ERROR");
+
+            recordWork();
         }
         catch (Exception x)
         {
@@ -64,6 +70,16 @@ public class SimpleQueryTransformStep extends TransformTask
         }
     }
 
+
+    private void recordWork()
+    {
+        RecordedAction action = new RecordedAction();
+        if (-1 != _recordsInserted)
+            action.addParameter(RecordsInserted.getParameterType(),_recordsInserted);
+        if (-1 != _recordsDeleted)
+            action.addParameter(RecordsDeleted.getParameterType(),_recordsInserted);
+        addRecordedAction(action);
+    }
 
 
     public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException
@@ -106,14 +122,17 @@ public class SimpleQueryTransformStep extends TransformTask
             DataIteratorBuilder source = selectFromSource(meta, c, u, context, log);
             if (null == source)
                 return false;
-            int count = appendToTarget(meta, c, u, context, source);
+            int transformRunId = getTransformJob().getTransformRunId();
+            DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source);
+
+            _recordsInserted = appendToTarget(meta, c, u, context, transformSource);
 
             targetScope.commitTransaction();
             if (null != sourceScope)
                 sourceScope.commitTransaction();
 
             long finish = System.currentTimeMillis();
-            log.info(DateUtil.toISO(finish) + " Copied " + count + " row" + (count != 1 ? "s" : "") + " in " + DateUtil.formatDuration(finish - start) + ".");
+            log.info(DateUtil.toISO(finish) + " Copied " + _recordsInserted + " row" + (_recordsInserted != 1 ? "s" : "") + " in " + DateUtil.formatDuration(finish - start) + ".");
         }
         catch (Exception x)
         {

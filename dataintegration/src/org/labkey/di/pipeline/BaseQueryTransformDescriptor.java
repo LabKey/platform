@@ -37,6 +37,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.di.DataIntegrationDbSchema;
 import org.labkey.di.steps.SimpleQueryTransformStep;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.etl.xml.EtlDocument;

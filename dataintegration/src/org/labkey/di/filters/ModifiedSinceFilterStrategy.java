@@ -11,7 +11,7 @@ import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.di.pipeline.TransformJobContext;
-import org.labkey.di.pipeline.VariableMap;
+import org.labkey.di.VariableMap;
 import org.labkey.di.steps.StepMeta;
 
 import java.util.Arrays;

@@ -18,8 +18,6 @@ package org.labkey.query.sql;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.QueryService;
 
-import java.lang.ref.Reference;
-
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
@@ -49,6 +47,13 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
     public String getName()
     {
         return _name;
+    }
+
+    // These are not associated with a domain or persisted type
+    @Override
+    public String getURI()
+    {
+        return "#" + _name;
     }
 
     @Override

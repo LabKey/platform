@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.view.ViewContext;
+import org.labkey.di.DataIntegrationDbSchema;
 import org.labkey.di.DataIntegrationModule;
 
 /**

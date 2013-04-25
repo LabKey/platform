@@ -1,9 +1,7 @@
 package org.labkey.di.filters;
 
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.di.pipeline.TransformJobContext;
-import org.labkey.di.pipeline.VariableMap;
-import org.labkey.di.steps.StepMeta;
+import org.labkey.di.VariableMap;
 
 /**
  * Created with IntelliJ IDEA.

@@ -31,6 +31,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.di.DataIntegrationDbSchema;
 
 import java.util.Collections;
 import java.util.Date;

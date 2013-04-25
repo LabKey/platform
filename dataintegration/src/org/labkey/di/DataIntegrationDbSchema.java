@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.di.pipeline;
+package org.labkey.di;
 
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
@@ -25,16 +25,35 @@ import org.labkey.api.data.TableInfo;
 public class DataIntegrationDbSchema
 {
     public static final String SCHEMA_NAME = "dataintegration";
+    public enum Columns
+    {
+        TransformRunId("_txTransformRunId");
+
+        final String _name;
+
+        Columns(String name)
+        {
+            _name = name;
+        }
+
+        String getColumnName()
+        {
+            return _name;
+        }
+    }
+
 
     public static DbSchema getSchema()
     {
         return DbSchema.get(SCHEMA_NAME);
     }
 
+
     public static TableInfo getTransformRunTableInfo()
     {
         return getSchema().getTable("transformrun");
     }
+
 
     public static TableInfo getTranformConfigurationTableInfo()
     {

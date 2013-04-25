@@ -17,7 +17,10 @@ package org.labkey.di.pipeline;
 
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.di.VariableMap;
+import org.labkey.di.VariableMapImpl;
 
 /**
  * User: daxh
@@ -25,6 +28,7 @@ import org.labkey.api.pipeline.RecordedActionSet;
  */
 abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactory>
 {
+    final private TransformJob _txJob;
     final private RecordedActionSet _records = new RecordedActionSet();
     final private VariableMap _variableMap;
 
@@ -33,10 +37,14 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     {
         super(factory, job);
 
-        TransformJob txJob = (TransformJob)job;
-// TODO
-//        _variableMap = new VariableMapImpl(txJob.getVariableMap());
-        _variableMap = new VariableMapImpl(null);
+        _txJob = (TransformJob)job;
+        _variableMap = new VariableMapImpl(_txJob.getVariableMap());
+    }
+
+
+    protected TransformJob getTransformJob()
+    {
+        return _txJob;
     }
 
 
@@ -62,6 +70,13 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
         return _records;
     }
+
+
+    protected void addRecordedAction(RecordedAction action)
+    {
+        _records.add(action);
+    }
+
 
     abstract public void doWork() throws PipelineJobException;
 }

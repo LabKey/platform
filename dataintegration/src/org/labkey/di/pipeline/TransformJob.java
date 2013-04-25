@@ -28,6 +28,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.di.DataIntegrationDbSchema;
+import org.labkey.di.VariableMap;
+import org.labkey.di.VariableMapImpl;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -42,6 +45,8 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
     private final BaseQueryTransformDescriptor _etlDescriptor;
     private int _runId;
     private TransformJobContext _transformJobContext;
+    private final VariableMapImpl _variableMap = new VariableMapImpl(null);
+
 
     public TransformJob(TransformJobContext info, BaseQueryTransformDescriptor etlDescriptor)
     {
@@ -54,6 +59,13 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
         _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser());
         setLogFile(etlLogFile);
     }
+
+
+    public VariableMap getVariableMap()
+    {
+        return _variableMap;
+    }
+
 
     public void logRunStart()
     {
@@ -93,6 +105,7 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
         }
     }
 
+
     private TransformRun getTransformRun()
     {
         TransformRun run = new TableSelector(DataIntegrationDbSchema.getTransformRunTableInfo(), Table.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("RowId"), _runId), null).getObject(TransformRun.class);
@@ -104,6 +117,13 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
 
         return run;
     }
+
+
+    public int getTransformRunId()
+    {
+        return getTransformRun().getRowId();
+    }
+
 
     @Override
     public TaskPipeline getTaskPipeline()

@@ -1,4 +1,4 @@
-package org.labkey.di.pipeline;
+package org.labkey.di;
 
 /**
 * Created with IntelliJ IDEA.

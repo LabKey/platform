@@ -1,4 +1,4 @@
-package org.labkey.di.pipeline;
+package org.labkey.di;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
@@ -35,7 +35,7 @@ public class VariableMapImpl implements VariableMap
     {
         VariableDescription d = declarations.get(key);
         if (null != d)
-            value = d.getJdbcType().convert(value);
+            value = d.getType().convert(value);
         return values.put(key,value);
     }
 
