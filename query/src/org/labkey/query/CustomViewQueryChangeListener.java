@@ -28,6 +28,7 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -193,46 +194,65 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 }
 
                 CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(customView.getFilterAndSort());
+                ActionURL updatedFilterAndSortUrl = new ActionURL();
 
-                // update filter info list based on fieldKey table name
+                // update filter info list based on fieldKey table name, and include them in the udpated FilterAndSort URL
                 boolean filtersUpdated = false;
                 for (FilterInfo filterInfo : fas.getFilter())
                 {
+                    FieldKey fieldKey = filterInfo.getField();
                     FieldKey filterTable = filterInfo.getField().getTable();
                     if (filterTable != null && filterTable.getName() != null && queryNameChangeMap.containsKey(filterTable.getName()))
                     {
-                        filterInfo.setField(new FieldKey(new FieldKey(filterTable.getParent(), queryNameChangeMap.get(filterTable.getName())), filterInfo.getField().getName()));
+                        fieldKey = new FieldKey(new FieldKey(filterTable.getParent(), queryNameChangeMap.get(filterTable.getName())), filterInfo.getField().getName());
                         filtersUpdated = true;
                     }
+
+                    filterInfo.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, fieldKey);
                 }
 
-                // update sort field list based on fieldKey table name
+                // update sort field list based on fieldKey table name, and include them in the udpated FilterAndSort URL
                 boolean sortsUpdated = false;
+                Sort sort = new Sort();
                 for (Sort.SortField sortField : fas.getSort())
                 {
+                    FieldKey fieldKey = sortField.getFieldKey();
                     FieldKey sortTable = sortField.getFieldKey().getTable();
                     if (sortTable != null && sortTable.getName() != null && queryNameChangeMap.containsKey(sortTable.getName()))
                     {
-                        sortField.setFieldKey(new FieldKey(new FieldKey(sortTable.getParent(), queryNameChangeMap.get(sortTable.getName())), sortField.getFieldKey().getName()));
+                        fieldKey = new FieldKey(new FieldKey(sortTable.getParent(), queryNameChangeMap.get(sortTable.getName())), sortField.getFieldKey().getName());
                         sortsUpdated = true;
                     }
-                }
 
-                // update aggregates based on fieldKey table name
+                    sort.appendSortColumn(fieldKey, sortField.getSortDirection(), true);
+                }
+                sort.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, false);
+
+                // update aggregates based on fieldKey table name, and include them in the udpated FilterAndSort URL
                 boolean aggregatesUpdated = false;
                 for (Aggregate aggregate : fas.getAggregates())
                 {
+                    FieldKey fieldKey = aggregate.getFieldKey();
                     FieldKey aggTable = aggregate.getFieldKey().getTable();
                     if (aggTable != null && aggTable.getName() != null && queryNameChangeMap.containsKey(aggTable.getName()))
                     {
-                        aggregate.setFieldKey(new FieldKey(new FieldKey(aggTable.getParent(), queryNameChangeMap.get(aggTable.getName())), aggregate.getFieldKey().getName()));
+                        fieldKey = new FieldKey(new FieldKey(aggTable.getParent(), queryNameChangeMap.get(aggTable.getName())), aggregate.getFieldKey().getName());
                         aggregatesUpdated = true;
                     }
+
+                    aggregate.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, fieldKey);
+                }
+
+                // add the container filters to the updated FilterAndSort URL
+                for (String containerFilerName : fas.getContainerFilterNames())
+                {
+                    if (containerFilerName != null)
+                        updatedFilterAndSortUrl.addParameter(CustomViewInfo.FILTER_PARAM_PREFIX + "." + CustomViewInfo.CONTAINER_FILTER_NAME, containerFilerName);
                 }
 
                 if (filtersUpdated || sortsUpdated || aggregatesUpdated)
                 {
-                    customView.setFilterAndSortFromURL(CustomViewInfo.FilterAndSort.toURL(fas), CustomViewInfo.FILTER_PARAM_PREFIX);
+                    customView.setFilterAndSortFromURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX);
                     hasUpdates = true;
                 }
 
