@@ -88,8 +88,8 @@ public abstract class SqlDialect
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
 
     private final Set<String> _reservedWordSet;
-    private final Map<String, Integer> _sqlTypeNameMap = new CaseInsensitiveHashMap<Integer>();
-    private final Map<Integer, String> _sqlTypeIntMap = new HashMap<Integer, String>();
+    private final Map<String, Integer> _sqlTypeNameMap = new CaseInsensitiveHashMap<>();
+    private final Map<Integer, String> _sqlTypeIntMap = new HashMap<>();
 
     protected SqlDialect()
     {
@@ -239,15 +239,6 @@ public abstract class SqlDialect
     }
 
     protected abstract String sqlTypeNameFromSqlType(PropertyStorageSpec prop);
-
-    // Should we cache ResultSetMetaData for this dialect's ResultSets?  In other words, does the database server
-    // prevent access to ResultSetMetaData after the underlying ResultSet has been closed?
-    // TODO: Delete... not used, we always cache resultset meta data, unless we're consuming results immediately
-    public boolean shouldCacheMetaData()
-    {
-        // Most database servers allow access to result set meta data
-        return false;
-    }
 
     protected String getDatabaseMaintenanceSql()
     {

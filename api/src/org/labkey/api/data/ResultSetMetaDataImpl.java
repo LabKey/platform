@@ -33,7 +33,7 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
 
     protected ResultSetMetaDataImpl(int size)
     {
-        _list = new ArrayList<ColumnMetaData>(size);
+        _list = new ArrayList<>(size);
         _list.add(null);
     }
 

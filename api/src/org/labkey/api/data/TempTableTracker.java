@@ -48,8 +48,8 @@ public class TempTableTracker extends WeakReference<Object>
 {
     static Logger _log = Logger.getLogger(TempTableTracker.class);
     static final String LOGFILE = "CPAS_sqlTempTables.log";
-    static final Map<String, TempTableTracker> createdTableNames = new TreeMap<String,TempTableTracker>();
-    static final ReferenceQueue<Object> cleanupQueue = new ReferenceQueue<Object>();
+    static final Map<String, TempTableTracker> createdTableNames = new TreeMap<>();
+    static final ReferenceQueue<Object> cleanupQueue = new ReferenceQueue<>();
     static RandomAccessFile tempTableLog = null;
 
     DbSchema schema;
@@ -247,7 +247,7 @@ public class TempTableTracker extends WeakReference<Object>
 
                 if (loadFile)
                 {
-                    TreeSet<String> logEntries = new TreeSet<String>();
+                    TreeSet<String> logEntries = new TreeSet<>();
 
                     try
                     {
