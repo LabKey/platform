@@ -75,4 +75,9 @@ public class RecordedActionSet
         _actions.addAll(set.getActions());
         _otherInputs.putAll(set.getOtherInputs());
     }
+
+    public void add(RecordedAction action)
+    {
+        _actions.add(action);
+    }
 }

@@ -25,6 +25,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -226,10 +227,8 @@ abstract public class QueryService
     abstract public void copyEnvironment(Object o);
 
 
-    public interface ParameterDecl
+    public interface ParameterDecl extends ParameterDescription
     {
-        String getName();
-        JdbcType getType();
         Object getDefault();
         boolean isRequired();
     }
