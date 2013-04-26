@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.data.AbstractTableInfo;
@@ -101,6 +102,7 @@ public class DataSetQueryView extends StudyQueryView
     private QCStateSet _qcStateSet;
     private ExpProtocol _protocol;
     private AssayProvider _provider;
+    protected static Logger _systemLog = Logger.getLogger(DataSetQueryView.class);
 
     public DataSetQueryView(UserSchema schema, DataSetQuerySettings settings, BindException errors)
     {
@@ -116,7 +118,7 @@ public class DataSetQueryView extends StudyQueryView
         if (!_dataset.getName().equals(settings.getQueryName()))
         {
             // settings has label instead of name; warn that label is being used to lookup
-            logAuditEvent("Dataset query was referenced by label, not name.", 0);
+            _systemLog.warn("Dataset in schema'" + schema.getName() + "' was referenced by label (" + settings.getQueryName() + "), not name (" + _dataset.getName() + ").");
         }
 
         if (settings.isUseQCSet() && StudyManager.getInstance().showQCStates(getContainer()))
