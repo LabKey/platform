@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.HashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
@@ -42,6 +44,12 @@
     int numProjects = projects.getChildCount();
     int rowsPerCol = numProjects / MAX_COLS;
     int cols = 1;
+    int remainder = numProjects - (rowsPerCol * MAX_COLS);
+
+    if (remainder == 0)
+    {
+        remainder = -1; // ensure that remainder is not compared
+    }
 
     if (numProjects > 2)
     {
@@ -67,6 +75,7 @@
     // the proper order to the user
     int c; int r;
     List<NavTree> children = projects.getChildList();
+    Set<Integer> duplicates = new HashSet<Integer>();
 
     if (projects.hasChildren())
     {
@@ -74,14 +83,38 @@
 <div class="project-nav">
     <ul style="width: <%=(11.333*cols)+(cols*2.188)+1%>em;">
 <%
+        int idx, last = rowsPerCol-1;
         for (r=0; r < rowsPerCol; r++)
         {
             for (c=0; c < cols; c++)
             {
-                int idx = (rowsPerCol*c)+r;
-
-                if (idx < children.size())
+                if (remainder > 0)
                 {
+                    if (c == 0)
+                    {
+                        idx = r;
+                    }
+                    else if (c <= remainder)
+                    {
+                        if (c == remainder && (r == last))
+                        {
+                            continue;
+                        }
+                        idx = (rowsPerCol * c) + r;
+                    }
+                    else
+                    {
+                        idx = (rowsPerCol * c) + r - (c-remainder);
+                    }
+                }
+                else
+                {
+                    idx = (rowsPerCol * c) + r;
+                }
+
+                if (idx < children.size() && !duplicates.contains(Integer.valueOf(idx)))
+                {
+                    duplicates.add(Integer.valueOf(idx));
                     NavTree p = children.get(idx);
 
                     %><li>
