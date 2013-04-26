@@ -139,7 +139,7 @@
     if (ctx.getContainer().hasPermission(ctx.getUser(), AdminPermission.class))
     {
 %>
-    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="/labkey/_images/icon_projects_add.png" alt="New Sub-Folder" /></a></span>
+    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="/labkey/_images/icon_folders_add.png" alt="New Subfolder" /></a></span>
 <%
     }
 %>

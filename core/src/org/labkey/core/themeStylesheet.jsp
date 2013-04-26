@@ -173,6 +173,11 @@ div.labkey-button-bar, table.labkey-button-bar
     color: #<%= text %>;
 }
 
+/* menu icons */
+span.button-icon {
+    background-color: #<%= link %>;
+}
+
 /* this keeps the enabled button text blue */
 a.labkey-menu-button
 {

@@ -4117,7 +4117,11 @@ public class AdminController extends SpringActionController
 
             getPageConfig().setNavTrail(getCreateProjectWizardSteps(c.isRoot()));
             getPageConfig().setTemplate(Template.Wizard);
-            getPageConfig().setTitle("Name and Type");
+
+            if (c.isRoot())
+                getPageConfig().setTitle("Create Project");
+            else
+                getPageConfig().setTitle("Create Folder");
 
             return vbox;
         }
@@ -4464,7 +4468,7 @@ public class AdminController extends SpringActionController
     {
         List<NavTree> navTrail = new ArrayList<NavTree>();
 
-        navTrail.add(new NavTree("Name and Type"));
+        navTrail.add(new NavTree(isProject ? "Create Project" : "Create Folder"));
         navTrail.add(new NavTree("Users / Permissions"));
         if(isProject)
             navTrail.add(new NavTree("Project Settings"));

@@ -168,7 +168,7 @@
                     tag: 'span',
                     style: 'padding-bottom: 20px;'
                 },{
-                    html: 'Type:',
+                    html: 'Folder Type:',
                     cls: 'labkey-wizard-header'
                 },{
                     xtype: 'radiogroup',

@@ -3536,6 +3536,15 @@ div.note {
     color: #000000;
 }
 
+/* save for when we look at project webpart updates
+
+.tool-icon.thumb-wrap.thumb-wrap-bottom a,
+.tool-icon.thumb-wrap.thumb-wrap-bottom a:visited {
+	text-transform: none;
+	font-size: 12px;
+	font-weight: normal;
+} */
+
 .study-schedule-container .x4-reset .x4-grid-header-ct {
     background-image: none;
     background-color: #E7EFF4;
@@ -3894,7 +3903,7 @@ li.labkey-main-menu-project-link
     /* Do we want to differentiate the project link? */
 }
 
-.button-icon {
+span.button-icon {
     background-color: #126495;
     opacity: 0.5;
     display: inline-block;
