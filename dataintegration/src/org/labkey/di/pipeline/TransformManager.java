@@ -610,9 +610,10 @@ public class TransformManager implements DataIntegrationService
             }
             finally
             {
-                ContainerManager.delete(root,u);
+                ContainerManager.delete(c,u);
             }
         }
+
 
         public void _etlChecker(Container c, User u) throws Exception
         {

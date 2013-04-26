@@ -1581,7 +1581,7 @@ public class QueryServiceImpl extends QueryService
 
         boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
         SQLFragment outerSelect = new SQLFragment("SELECT *");
-        SQLFragment selectFrag = new SQLFragment("SELECT");
+        SQLFragment selectFrag = new SQLFragment("SELECT ");
         String strComma = "\n";
         String tableName = table.getName();
 
