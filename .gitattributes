@@ -5123,6 +5123,7 @@ internal/webapp/_images/go-next.png -text
 internal/webapp/_images/go-previous-disabled.png -text
 internal/webapp/_images/go-previous.png -text
 internal/webapp/_images/grab.png -text
+internal/webapp/_images/icon_folders_add.png -text
 internal/webapp/_images/icon_menu_folders.png -text
 internal/webapp/_images/icon_menu_projects.png -text
 internal/webapp/_images/icon_menu_projects_over.png -text
