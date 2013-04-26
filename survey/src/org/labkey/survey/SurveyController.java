@@ -1069,7 +1069,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                 {
                     TableInfo table = schema.getTable(tableName);
 
-                    if (table.getUpdateService() != null)
+                    if (table != null && table.getUpdateService() != null)
                     {
                         if (table.getAuditRowPk() != null)
                         {
