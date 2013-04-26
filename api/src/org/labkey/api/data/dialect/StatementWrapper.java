@@ -1693,4 +1693,10 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             sb.append("\n    ").append(line);
         }
     }
+
+
+    public String getDebugSql()
+    {
+        return _debugSql;
+    }
 }

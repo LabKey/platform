@@ -23,6 +23,7 @@ import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
@@ -104,7 +105,8 @@ public class Parameter
 
 
     private String _name;
-    private @Nullable String _uri = null;  // for migration of ontology based code
+    private @Nullable String _uri = null;       // for migration of ontology based code
+    private @Nullable String _variable = null;  // not used internally, but provided for convenience
     private final @Nullable JdbcType _type;
 
     // only allow setting once, do not clear
@@ -341,6 +343,19 @@ public class Parameter
     }
 
 
+    @Nullable
+    public String getVariableName()
+    {
+        return _variable;
+    }
+
+
+    public void setVariableName(@Nullable String variable)
+    {
+        _variable = variable;
+    }
+
+
     public String toString()
     {
         return "[" + (null==_indexes?"":Ints.join(",", _indexes)) + (null==_name?"":":"+_name) + "]";
@@ -409,6 +424,12 @@ public class Parameter
 
         private void init(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
         {
+            if (stmt instanceof StatementWrapper)
+            {
+
+            }
+
+
             _scope = scope;
             _dialect = scope.getSqlDialect();
             _map = new CaseInsensitiveHashMap<Parameter>(parameters.size() * 2);
@@ -626,6 +647,7 @@ public class Parameter
             _onClose = r;
         }
 
+
         protected void afterClose()
         {
             if (null != _onClose)
@@ -638,6 +660,7 @@ public class Parameter
             _onClose = null;
         }
 
+
         @Override
         protected void finalize() throws Throwable
         {
@@ -645,6 +668,14 @@ public class Parameter
             assert null == _onClose;
             if (null != _onClose)
                 _onClose.run();
+        }
+
+
+        public String getDebugSql()
+        {
+            if (_stmt instanceof StatementWrapper)
+                return ((StatementWrapper)_stmt).getDebugSql();
+            return "";
         }
     }
 }
