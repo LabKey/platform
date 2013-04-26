@@ -943,7 +943,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             {
                 String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
                 Study study = StudyService.get().getStudy(ctx.getContainer());
-                if (study != null && schema.equals("study"))
+                if (study != null && schema != null && schema.equals("study"))
                 {
                     DataSet dataset = study.getDataSetByLabel(descriptor.getProperty(ReportDescriptor.Prop.queryName));
                     if (dataset != null && !dataset.getName().equals(dataset.getLabel()))
