@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
+import org.labkey.api.exp.pipeline.ExpGeneratorId;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -423,9 +424,14 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
                 continue;
             }
 
-            progressionSpec.add(new TaskId(meta.getTaskClass(), taskId));
+            progressionSpec.add(new TaskId(taskClass, taskId));
         }
 
+        // Register the task to generate an experiment run to track this transform as the last step.
+        // The ExpGenerator factory should have already been registered by the Experiment module
+        progressionSpec.add(new TaskId(ExpGeneratorId.class));
+
+        // add the pipeline
         settings.setTaskProgressionSpec(progressionSpec.toArray());
         PipelineJobService.get().addTaskPipeline(settings);
     }

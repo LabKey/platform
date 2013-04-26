@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.JspView;
@@ -36,6 +37,7 @@ import org.labkey.api.view.SimpleWebPartFactory;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.di.data.TransformDataType;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.ETLPipelineProvider;
 import org.labkey.di.view.DataIntegrationController;
@@ -71,7 +73,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
     public double getVersion()
     {
-        return 13.10;
+        return 13.11;
     }
 
     protected void init()
@@ -94,6 +96,13 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     }
 
     @Override
+    @NotNull
+    public Set<DbSchema> getSchemasToTest()
+    {
+        return PageFlowUtil.set(DbSchema.get(DataIntegrationDbSchema.SCHEMA_NAME));
+    }
+
+    @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
     }
@@ -106,6 +115,9 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
         ContainerManager.addContainerListener(this);
         ContextListener.addShutdownListener(this);
+
+        DataIntegrationDbSchema.register(this);
+        TransformDataType.register();
     }
 
 

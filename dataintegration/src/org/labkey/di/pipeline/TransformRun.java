@@ -40,6 +40,7 @@ public class TransformRun
     private User _modifiedBy;
     private Container _container;
     private int _jobId;
+    private Integer _expRunId = null;
 
     public int getRowId()
     {
@@ -169,5 +170,15 @@ public class TransformRun
     public int getJobId()
     {
         return _jobId;
+    }
+
+    public void setExpRunId(int expRunId)
+    {
+        _expRunId = expRunId;
+    }
+
+    public Integer getExpRunId()
+    {
+        return _expRunId;
     }
 }

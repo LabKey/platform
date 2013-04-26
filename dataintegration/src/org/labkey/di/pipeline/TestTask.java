@@ -17,6 +17,7 @@ package org.labkey.di.pipeline;
 
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 
@@ -28,6 +29,7 @@ public class TestTask extends PipelineJob.Task<TestTaskFactory>
 {
     final SimpleQueryTransformStepMeta _meta;
     final TransformJobContext _context;
+    final public static String ACTION_NAME = "Test Step";
 
     public TestTask(TestTaskFactory factory, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
     {
@@ -42,17 +44,11 @@ public class TestTask extends PipelineJob.Task<TestTaskFactory>
         TransformJobSupport support = job.getJobSupport(TransformJobSupport.class);
         BaseQueryTransformDescriptor etl = support.getTransformDescriptor();
         TransformJobContext ctx = support.getTransformJobContext();
-
-        // undone:  for multi-step transforms we'll need to have a better way to record
-        // logging job start and stop
-        job.logRunStart();
-
+        RecordedAction action = new RecordedAction(ACTION_NAME);
         //
         // do transform work here!
         //
         job.getLogger().info("Test task is running and doing great work!");
-
-        job.logRunFinish("Complete", 0 /* recordCount */);
-        return new RecordedActionSet();
+        return new RecordedActionSet(action);
     }
 }

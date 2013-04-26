@@ -44,6 +44,8 @@ import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 import static org.labkey.di.pipeline.TransformJobContext.Variable.*;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -57,8 +59,10 @@ public class SimpleQueryTransformStep extends TransformTask
 {
     final SimpleQueryTransformStepMeta _meta;
     final TransformJobContext _context;
-    long _recordsInserted = -1;
-    long _recordsDeleted = -1;
+    // todo: make these long again but then update the AbstractParameter code
+    // or else you'll get a cast exception.
+    int _recordsInserted = -1;
+    int _recordsDeleted = -1;
 
     public SimpleQueryTransformStep(TransformTaskFactory f, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
     {
@@ -70,29 +74,39 @@ public class SimpleQueryTransformStep extends TransformTask
 
     public void doWork() throws PipelineJobException
     {
-
         try
         {
             getJob().getLogger().info("SimpleQueryTransformStep.doWork called");
             if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
                 getJob().setStatus("ERROR");
-
             recordWork();
         }
         catch (Exception x)
         {
             getJob().getLogger().error(x);
         }
-    }
-
+   }
 
     private void recordWork()
     {
-        RecordedAction action = new RecordedAction();
+        RecordedAction action = new RecordedAction(TransformTask.ACTION_NAME);
         if (-1 != _recordsInserted)
             action.addParameter(RecordsInserted.getParameterType(),_recordsInserted);
         if (-1 != _recordsDeleted)
             action.addParameter(RecordsDeleted.getParameterType(),_recordsInserted);
+
+        try
+        {
+            // input is source table
+            // output is dest table
+            // todo: this is a fake URI, figure out the real story for the Data Input/Ouput for a transform step
+            action.addInput(new URI(_meta.getSourceSchema() + "." + _meta.getSourceQuery()), TransformTask.INPUT_ROLE);
+            action.addOutput(new URI(_meta.getTargetSchema() + "." + _meta.getTargetQuery()), TransformTask.OUTPUT_ROLE, false);
+        }
+        catch (URISyntaxException ignore)
+        {
+        }
+
         addRecordedAction(action);
     }
 
@@ -205,7 +219,7 @@ public class SimpleQueryTransformStep extends TransformTask
         TableInfo targetTableInfo = querySchema.getTable(meta.getTargetQuery());
         if (null == targetTableInfo)
         {
-            context.getErrors().addRowError(new ValidationException("Could find table: " +  meta.getTargetSchema() + "." + meta.getTargetQuery()));
+            context.getErrors().addRowError(new ValidationException("Could not find table: " +  meta.getTargetSchema() + "." + meta.getTargetQuery()));
             return -1;
         }
         try

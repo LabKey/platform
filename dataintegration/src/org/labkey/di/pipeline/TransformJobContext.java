@@ -34,8 +34,8 @@ import java.io.Serializable;
  */
 public class TransformJobContext extends ScheduledPipelineJobContext implements ContainerUser, Serializable
 {
-    // add default ctor for jdk serialization so that
-    // the pipeline can restart jobs in the jobstore.
+    // No-args constructor to support de-serialization in Java 7
+    @SuppressWarnings({"UnusedDeclaration"})
     public TransformJobContext()
     {
     }

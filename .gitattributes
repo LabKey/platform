@@ -805,10 +805,12 @@ dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-13.1
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.01-0.02.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.02-0.03.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.03-0.04.sql -text
+dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.10-13.11.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.01-0.02.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.02-0.03.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.03-0.04.sql -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.10-13.11.sql -text
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationDbSchema.java -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
@@ -816,6 +818,7 @@ dataintegration/src/org/labkey/di/TransformDataIteratorBuilder.java -text
 dataintegration/src/org/labkey/di/VariableDescription.java -text
 dataintegration/src/org/labkey/di/VariableMap.java -text
 dataintegration/src/org/labkey/di/VariableMapImpl.java -text
+dataintegration/src/org/labkey/di/data/TransformDataType.java -text
 dataintegration/src/org/labkey/di/filters/FilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/ModifiedSinceFilterStrategy.java -text
 dataintegration/src/org/labkey/di/pipeline/BaseQueryTransformDescriptor.java -text
@@ -1278,6 +1281,8 @@ experiment/src/org/labkey/experiment/deriveSamplesChooseTarget.jsp -text
 experiment/src/org/labkey/experiment/experimentRunQueryHeader.jsp -text
 experiment/src/org/labkey/experiment/fileExportOptions.jsp -text
 experiment/src/org/labkey/experiment/moveRunsLocation.jsp -text
+experiment/src/org/labkey/experiment/pipeline/ExpGeneratorHelper.java -text
+experiment/src/org/labkey/experiment/pipeline/ExpGeneratorTask.java -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineJob.java -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineProvider.java -text
 experiment/src/org/labkey/experiment/pipeline/MoveRunsPipelineJob.java -text
@@ -1285,6 +1290,7 @@ experiment/src/org/labkey/experiment/pipeline/MoveRunsTask.java -text
 experiment/src/org/labkey/experiment/pipeline/MoveRunsTaskFactory.java -text
 experiment/src/org/labkey/experiment/pipeline/XarGeneratorSource.java -text
 experiment/src/org/labkey/experiment/pipeline/XarGeneratorTask.java -text
+experiment/src/org/labkey/experiment/pipeline/XarWriter.java -text
 experiment/src/org/labkey/experiment/runTypeFilters.jsp -text
 experiment/src/org/labkey/experiment/samples/UploadMaterialSetForm.java -text
 experiment/src/org/labkey/experiment/samples/UploadSamplesHelper.java -text

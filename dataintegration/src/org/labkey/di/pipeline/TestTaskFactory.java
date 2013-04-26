@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.util.FileType;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -71,6 +72,6 @@ public class TestTaskFactory extends AbstractTaskFactory<AbstractTaskFactorySett
 
     public List<String> getProtocolActionNames()
     {
-        return Collections.emptyList();
+        return Arrays.asList(TestTask.ACTION_NAME);
     }
 }

@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.util.FileType;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -71,6 +72,8 @@ public class TransformTaskFactory extends AbstractTaskFactory<AbstractTaskFactor
 
     public List<String> getProtocolActionNames()
     {
-        return Collections.emptyList();
+        // undone: we may need to register the action name dynamically as we
+        // undone: set up the pipeline
+        return Arrays.asList(TransformTask.ACTION_NAME);
     }
 }

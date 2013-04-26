@@ -19,9 +19,12 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.query.FieldKey;
@@ -35,6 +38,8 @@ import org.labkey.di.VariableMapImpl;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -78,7 +83,7 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
         }
     }
 
-    public void logRunFinish(String status, int recordCount)
+    public void logRunFinish(String status, ExpRun expRun, int recordCount)
     {
 
         TransformRun run = getTransformRun();
@@ -87,9 +92,26 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
             // Mark that the job has finished successfully
             run.setStatus(status);
             run.setEndTime(new Date());
+            run.setExpRunId(expRun.getRowId());
             run.setRecordCount(recordCount);
             update(run);
         }
+    }
+
+    // when we transition from a null task to a non-null task then
+    // use this as the indictoar that the job has started.
+    // we may need to revisit this if we support split jobs
+    public boolean setActiveTaskId(TaskId activeTaskId)
+    {
+        if (activeTaskId != null && getActiveTaskId() == null)
+        {
+            logRunStart();
+
+            // We mark the job as finished when the ExpGenerator task finishes.
+            // See clearActionSet() below
+        }
+
+        return super.setActiveTaskId(activeTaskId);
     }
 
     private void update(TransformRun run)
@@ -147,8 +169,6 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
             }
             catch(CloneNotSupportedException ex)
             {
-                // if we couldn't recreate the pipeline then return null
-                // to mark the current job in error
             }
         }
 
@@ -166,6 +186,40 @@ public class TransformJob extends PipelineJob implements TransformJobSupport
     public TransformJobContext getTransformJobContext()
     {
         return _transformJobContext;
+    }
+
+    //
+    // Called by the ExpGeneratorTask after it has finished
+    // generating the experiment run for the current set
+    // of actions for this transform job.
+    //
+    public void clearActionSet(ExpRun run)
+    {
+        // Gather the rollup record count for all the tasks run
+        Set<RecordedAction> actions = getActionSet().getActions();
+        int recordCount = 0;
+
+        for (RecordedAction action : actions)
+        {
+            if (action.getName() == TransformTask.ACTION_NAME)
+            {
+                for (Map.Entry<RecordedAction.ParameterType, Object> param : action.getParams().entrySet())
+                {
+                    RecordedAction.ParameterType paramKey = param.getKey();
+                    if (paramKey.getName() == TransformJobContext.Variable.RecordsInserted.getName() ||
+                        paramKey.getName() == TransformJobContext.Variable.RecordsDeleted.getName()    )
+                    {
+                        assert paramKey.getType() == PropertyType.INTEGER;
+                        // todo: should we break out inserted and deleted records in the TransformRun table
+                        // instead of just having one record count?
+                        recordCount += (Integer) param.getValue();
+                    }
+                }
+            }
+        }
+
+        logRunFinish("Complete", run, recordCount);
+        super.clearActionSet(run);
     }
 
     @Override

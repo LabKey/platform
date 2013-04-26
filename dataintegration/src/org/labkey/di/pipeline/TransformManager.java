@@ -596,6 +596,8 @@ public class TransformManager implements DataIntegrationService
             assertFalse(StdSchedulerFactory.getDefaultScheduler().checkExists(jobKey));
         }
 
+/*
+rewrite to use vehicle schema?
 
         @Test
         public void etlChecker() throws Exception
@@ -613,6 +615,7 @@ public class TransformManager implements DataIntegrationService
                 ContainerManager.delete(c,u);
             }
         }
+ */
 
 
         public void _etlChecker(Container c, User u) throws Exception
