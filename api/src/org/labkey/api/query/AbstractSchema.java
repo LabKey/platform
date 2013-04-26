@@ -74,7 +74,7 @@ abstract public class AbstractSchema implements QuerySchema
         for (String schemaName : schemaNames)
         {
             QuerySchema schema = getSchema(schemaName);
-            if (schema != null)
+            if (schema != null && !schema.isHidden())
                 schemas.add(schema);
         }
         return Collections.unmodifiableList(schemas);
