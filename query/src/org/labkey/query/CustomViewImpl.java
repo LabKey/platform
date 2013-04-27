@@ -381,6 +381,9 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
                         AggregateType aggXml = aggsXml.addNewAggregate();
                         aggXml.setColumn(agg.getFieldKey().toString());
                         aggXml.setType(aggEnum);
+
+                        if (agg.getLabel() != null)
+                            aggXml.setLabel(agg.getLabel());
                     }
                 }
             }
