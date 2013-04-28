@@ -15,7 +15,12 @@
  */
 package org.labkey.api.query.snapshot;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -23,9 +28,12 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -58,19 +66,9 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         return null;
     }
 
-    public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
         return updateSnapshot(form, errors, false);
-    }
-
-    public ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors, boolean suppressVisitManagerRecalc) throws Exception
-    {
-        throw new UnsupportedOperationException();
     }
 
     public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, BindException errors) throws Exception
@@ -83,19 +81,6 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
     {
         QueryView view = QueryView.create(queryForm, errors);
         return view.getDisplayColumns();
-    }
-
-    public ActionURL getCreateWizardURL(QuerySettings settings, ViewContext context)
-    {
-        QuerySettings qs = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
-        return PageFlowUtil.urlProvider(QueryUrls.class).urlCreateSnapshot(context.getContainer()).
-                addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
-                addParameter(qs.param(QueryParam.queryName), settings.getQueryName());
-    }
-
-    public ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context)
-    {
-        return PageFlowUtil.urlProvider(QueryUrls.class).urlCustomizeSnapshot(context.getContainer());  
     }
 
     /**

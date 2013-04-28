@@ -26,9 +26,6 @@ import org.labkey.api.data.Container;
 
 public interface QueryUrls extends UrlProvider
 {
-    ActionURL urlCreateSnapshot(Container c);
-    ActionURL urlCustomizeSnapshot(Container c);
-    ActionURL urlUpdateSnapshot(Container c);
     ActionURL urlSchemaBrowser(Container c);
     ActionURL urlSchemaBrowser(Container c, String schemaName);
     ActionURL urlSchemaBrowser(Container c, String schemaName, String queryName);
