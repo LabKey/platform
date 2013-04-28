@@ -775,7 +775,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                  * qus.importRows() should probably take a DataIteratorBuilder instead of DataIterator
                  */
                 DataIteratorContext context = new DataIteratorContext(errors);
-                context.setForImport(true);
+                context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
                 qus.importRows(user, study.getContainer(), dl.getDataIterator(context), errors, null);
             }
 

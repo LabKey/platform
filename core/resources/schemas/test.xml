@@ -35,4 +35,22 @@
 			<ns:column columnName="BitNotNull"/>
 		</ns:columns>
 	</ns:table>
+    <ns:table tableName="TestTable2" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="_ts"/>
+            <ns:column columnName="EntityId"/>
+            <ns:column columnName="RowId"/>
+            <ns:column columnName="CreatedBy"/>
+            <ns:column columnName="Created"/>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="Text"/>
+            <ns:column columnName="IntNull"/>
+            <ns:column columnName="IntNotNull"/>
+            <ns:column columnName="DatetimeNull"/>
+            <ns:column columnName="DatetimeNotNull"/>
+            <ns:column columnName="RealNull"/>
+            <ns:column columnName="BitNull"/>
+            <ns:column columnName="BitNotNull"/>
+        </ns:columns>
+    </ns:table>
 </ns:tables>

@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import com.extjs.gxt.ui.client.dnd.Insert;
 import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -813,7 +814,7 @@ public class StudyManager
             clearVisitAliases(study);
 
             DataIteratorContext context = new DataIteratorContext();
-            context.setForImport(true);
+            context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
             StandardETL etl = StandardETL.forInsert(tinfo, loader, study.getContainer(), user, context);
             DataIteratorBuilder insert = ((UpdateableTableInfo)tinfo).persistRows(etl, context);
             Pump p = new Pump(insert, context);
@@ -2719,7 +2720,7 @@ public class StudyManager
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext();
-        context.setForImport(true);
+        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
         List<String> lsids = def.importDatasetData(study, user, loader, context, checkDuplicates, defaultQCState, logger, false);
         batchValidateExceptionToList(context.getErrors(),errors);
         return lsids;
@@ -2730,7 +2731,7 @@ public class StudyManager
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
-        context.setForImport(true);
+        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
         return def.importDatasetData(study, user, loader, context, checkDuplicates, defaultQCState, logger, false);
     }
     
@@ -2746,7 +2747,7 @@ public class StudyManager
 
         DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
         DataIteratorContext context = new DataIteratorContext();
-        context.setForImport(!forUpdate);
+        context.setInsertOption(forUpdate ? QueryUpdateService.InsertOption.INSERT : QueryUpdateService.InsertOption.IMPORT);
         List<String> lsids = def.importDatasetData(study, user, it, context, checkDuplicates, defaultQCState, logger, forUpdate);
         batchValidateExceptionToList(context.getErrors(),errors);
         return lsids;

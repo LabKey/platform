@@ -134,7 +134,7 @@ public class SimpleQueryTransformStep extends TransformTask
 
         ResultSet rs = null;
         DataIteratorContext context = new DataIteratorContext();
-        context.setForImport(true);
+        context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
         context.setFailFast(true);
         try
         {
@@ -145,8 +145,6 @@ public class SimpleQueryTransformStep extends TransformTask
             long start = System.currentTimeMillis();
             log.info(DateUtil.toISO(start) + " Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +
                     meta.getTargetSchema() + "." + meta.getTargetQuery());
-            context.setForImport(true);
-            context.setFailFast(true);
 
             DataIteratorBuilder source = selectFromSource(meta, c, u, context, log);
             if (null == source)

@@ -387,7 +387,7 @@ public class ListTable extends FilteredTable<ListSchema> implements UpdateableTa
                     @Override
                     public Object call() throws Exception
                     {
-                        Object keyValue = (_context.isForImport() && inputKeyColumn != 0) ? it.getInputColumnValue(inputKeyColumn) : null;
+                        Object keyValue = (_context.getInsertOption().batch && inputKeyColumn != 0) ? it.getInputColumnValue(inputKeyColumn) : null;
                         return null != keyValue ? keyValue : _keyIncrementer.getNextKey((ListDefinitionImpl)_list);
                     }
                 });
@@ -402,7 +402,7 @@ public class ListTable extends FilteredTable<ListSchema> implements UpdateableTa
 
             DataIterator ret = LoggingDataIterator.wrap(it);
 
-            if (0 != keyColumnOutput && (context.isForImport() || _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger))
+            if (0 != keyColumnOutput && (context.getInsertOption().batch || _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger))
             {
                 ValidatorIterator vi = new ValidatorIterator(ret, context, _list.getContainer(), null);
                 vi.addUniqueValidator(keyColumnOutput, DbSchema.get("exp").getSqlDialect().isCaseSensitive());

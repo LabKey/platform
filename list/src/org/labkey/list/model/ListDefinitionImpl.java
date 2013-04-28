@@ -55,6 +55,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
@@ -825,7 +826,7 @@ public class ListDefinitionImpl implements ListDefinition
 
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
-        context.setForImport(true);
+        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
         DataIteratorBuilder dib = lqus.createImportETL(user, getContainer(), loader, context);
         DataIterator insertIt = null;
         DataIterator attach = null;

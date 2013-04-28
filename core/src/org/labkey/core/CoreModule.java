@@ -198,7 +198,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public double getVersion()
     {
-        return 13.11;
+        return 13.12;
     }
 
     @Override
@@ -713,6 +713,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 AtomicDatabaseInteger.TestCase.class,
                 DbSequenceManager.TestCase.class
                 //,RateLimiter.TestCase.class
+                , StatementUtils.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());

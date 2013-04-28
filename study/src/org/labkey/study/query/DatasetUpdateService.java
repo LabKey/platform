@@ -85,7 +85,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     @Override
     public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
-        DataIteratorContext context = getDataIteratorContext(errors, true);
+        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT);
         int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
         if (count > 0)
         {
@@ -99,7 +99,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
-        DataIteratorContext context = getDataIteratorContext(errors, false);
+        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT);
         List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, context, extraScriptContext);
         if (null != result && result.size() > 0)
         {

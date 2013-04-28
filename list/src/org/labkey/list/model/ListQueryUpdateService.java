@@ -67,10 +67,10 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, boolean forImport)
+    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption insertOption)
     {
-        DataIteratorContext context = super.getDataIteratorContext(errors, forImport);
-        if (forImport)
+        DataIteratorContext context = super.getDataIteratorContext(errors, insertOption);
+        if (insertOption.batch)
         {
             context.setMaxRowErrors(100);
             context.setFailFast(false);
@@ -89,7 +89,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, false), extraScriptContext);
+        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT), extraScriptContext);
         if (null != result && result.size() > 0 && !errors.hasErrors())
             ListManager.get().indexList(_list);
         return result;
@@ -98,7 +98,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
     @Override
     public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
-        int count = super._importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, true), extraScriptContext);
+        int count = super._importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT), extraScriptContext);
         if (count > 0 && !errors.hasErrors())
             ListManager.get().indexList(_list);
         return count;
