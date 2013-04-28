@@ -21,7 +21,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.tika.io.IOUtils;
@@ -43,9 +42,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
-import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
-import org.labkey.api.query.snapshot.QuerySnapshotForm;
-import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -97,7 +93,6 @@ import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 import org.labkey.query.QueryServiceImpl;
-import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.TableWriter;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryAuditViewFactory;
@@ -109,6 +104,7 @@ import org.labkey.query.metadata.client.MetadataEditor;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
+import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.sql.QNode;
@@ -173,21 +169,6 @@ public class QueryController extends SpringActionController
 
     public static class QueryUrlsImpl implements QueryUrls
     {
-        public ActionURL urlCreateSnapshot(Container c)
-        {
-            return new ActionURL(CreateSnapshotAction.class, c);
-        }
-
-        public ActionURL urlCustomizeSnapshot(Container c)
-        {
-            return new ActionURL(EditSnapshotAction.class, c);
-        }
-
-        public ActionURL urlUpdateSnapshot(Container c)
-        {
-            return new ActionURL(UpdateSnapshotAction.class, c);
-        }
-
         public ActionURL urlSchemaBrowser(Container c)
         {
             return new ActionURL(BeginAction.class, c);
@@ -1439,136 +1420,6 @@ public class QueryController extends SpringActionController
             writer.println(url.getURIString());
 
             QueryService.get().addAuditEvent(getUser(), getContainer(), form.getSchemaName(), form.getQueryName(), url, "Exported to Excel Web Query definition", null);
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class CreateSnapshotAction extends FormViewAction<QuerySnapshotForm>
-    {
-        ActionURL _successURL;
-        public void validateCommand(QuerySnapshotForm form, Errors errors)
-        {
-            String name = StringUtils.trimToNull(form.getSnapshotName());
-
-            if (name != null)
-            {
-                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), name);
-                if (def != null)
-                    errors.reject("snapshotQuery.error", "A Snapshot with the same name already exists");
-            }
-            else
-                errors.reject("snapshotQuery.error", "The Query Snapshot name cannot be blank");
-        }
-
-        public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
-        {
-            if (!reshow)
-            {
-                List<DisplayColumn> columns = QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors);
-                String[] columnNames = new String[columns.size()];
-                int i=0;
-
-                for (DisplayColumn dc : columns)
-                    columnNames[i++] = dc.getName();
-                form.setSnapshotColumns(columnNames);
-            }
-            return new JspView<QueryForm>("/org/labkey/query/controllers/createSnapshot.jsp", form, errors);
-        }
-
-        public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
-        {
-            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errors);
-            return !errors.hasErrors();
-        }
-
-        public ActionURL getSuccessURL(QuerySnapshotForm queryForm)
-        {
-            return _successURL;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Create Query Snapshot");
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class EditSnapshotAction extends FormViewAction<QuerySnapshotForm>
-    {
-        ActionURL _successURL;
-
-        public void validateCommand(QuerySnapshotForm form, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
-        {
-            if (!reshow)
-                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
-
-            VBox box = new VBox();
-            QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName());
-
-            if (provider != null)
-            {
-                boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
-
-                box.addView(new JspView<QueryForm>("/org/labkey/query/controllers/editSnapshot.jsp", form, errors));
-
-                if (showHistory)
-                {
-                    HttpView historyView = provider.createAuditView(form);
-                    if (historyView != null)
-                        box.addView(historyView);
-                }
-
-                box.addView(new JspView<QueryForm>("/org/labkey/query/controllers/createSnapshot.jsp", form, errors));
-            }
-            return box;
-        }
-
-        public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
-        {
-            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName());
-            if (def != null)
-            {
-                def.setColumns(form.getFieldKeyColumns());
-
-                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def, errors);
-                if (errors.hasErrors())
-                    return false;
-            }
-            else
-                errors.reject("snapshotQuery.error", "Unable to create QuerySnapshotDefinition");
-
-            return false;
-        }
-
-        public ActionURL getSuccessURL(QuerySnapshotForm form)
-        {
-            return _successURL;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Edit Query Snapshot");
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class UpdateSnapshotAction extends SimpleViewAction<QuerySnapshotForm>
-    {
-        public ModelAndView getView(QuerySnapshotForm form, BindException errors) throws Exception
-        {
-            ActionURL url = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form, errors);
-            if (url != null)
-                return HttpView.redirect(url);
             return null;
         }
 

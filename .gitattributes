@@ -2286,9 +2286,7 @@ query/src/org/labkey/query/controllers/ViewQuerySourceAction.java -text
 query/src/org/labkey/query/controllers/admin.jsp -text
 query/src/org/labkey/query/controllers/apitest.jsp -text
 query/src/org/labkey/query/controllers/browse.jsp -text
-query/src/org/labkey/query/controllers/createSnapshot.jsp -text
 query/src/org/labkey/query/controllers/deleteQuery.jsp -text
-query/src/org/labkey/query/controllers/editSnapshot.jsp -text
 query/src/org/labkey/query/controllers/exportTables.jsp -text
 query/src/org/labkey/query/controllers/externalSchema.jsp -text
 query/src/org/labkey/query/controllers/internalDeleteView.jsp -text
