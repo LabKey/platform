@@ -30,6 +30,13 @@ public class VariableMapImpl implements VariableMap
     final CaseInsensitiveHashMap<VariableDescription> declarations = new CaseInsensitiveHashMap<>();
     final CaseInsensitiveHashMap<Object> values = new CaseInsensitiveHashMap<>();
 
+    // No-args constructor to support de-serialization in Java 7
+    @SuppressWarnings({"UnusedDeclaration"})
+    public VariableMapImpl()
+    {
+        _outer = null;
+    }
+
     public VariableMapImpl(VariableMap parentScope)
     {
         _outer = parentScope;
