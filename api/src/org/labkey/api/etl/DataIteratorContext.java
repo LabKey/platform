@@ -16,6 +16,8 @@
 package org.labkey.api.etl;
 
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
+import static org.labkey.api.query.QueryUpdateService.InsertOption.*;
 
 /**
  * User: matthewb
@@ -24,8 +26,16 @@ import org.labkey.api.query.BatchValidationException;
  */
 public class DataIteratorContext
 {
+    /*
+      NOTE: DIC is not really meant to be a set up parameter block
+      targetOption and selectIds should probably be moved out in a future
+      refactor
+     */
+    QueryUpdateService.InsertOption _insertOption = INSERT;
+    Boolean _selectIds = null;
+
+
     final BatchValidationException _errors;
-    boolean _forImport = false;
     boolean _failFast = true;
     boolean _verbose = false;   // allow more than one error per field (across all rows)
     int _maxRowErrors = 1;
@@ -40,14 +50,24 @@ public class DataIteratorContext
         _errors = errors;
     }
 
-    public boolean isForImport()
+    public QueryUpdateService.InsertOption getInsertOption()
     {
-        return _forImport;
+        return _insertOption;
     }
 
-    public void setForImport(boolean forImport)
+    public void setInsertOption(QueryUpdateService.InsertOption targetOption)
     {
-        _forImport = forImport;
+        _insertOption = targetOption;
+    }
+
+    public Boolean getSelectIds()
+    {
+        return _selectIds;
+    }
+
+    public void setSelectIds(Boolean selectIds)
+    {
+        _selectIds = selectIds;
     }
 
     public boolean isFailFast()

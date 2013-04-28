@@ -425,10 +425,7 @@ public class Parameter
         private void init(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
         {
             if (stmt instanceof StatementWrapper)
-            {
-
-            }
-
+                _debugSql = ((StatementWrapper)stmt).getDebugSql();
 
             _scope = scope;
             _dialect = scope.getSqlDialect();
@@ -671,11 +668,16 @@ public class Parameter
         }
 
 
+        String _debugSql;
+
         public String getDebugSql()
         {
-            if (_stmt instanceof StatementWrapper)
-                return ((StatementWrapper)_stmt).getDebugSql();
-            return "";
+            return _debugSql;
+        }
+
+        public void setDebugSql(String sql)
+        {
+            _debugSql = sql;
         }
     }
 }

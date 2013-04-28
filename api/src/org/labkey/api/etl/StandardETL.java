@@ -27,6 +27,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
@@ -84,7 +85,7 @@ public class StandardETL implements DataIteratorBuilder
         _c = c;
         _user = user;
         _context = context;
-        _useImportAliases = context.isForImport();
+        _useImportAliases = context.getInsertOption().useImportAliases;
     }
 
 

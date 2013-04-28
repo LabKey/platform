@@ -17,10 +17,12 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
@@ -30,6 +32,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -39,6 +42,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,10 +101,10 @@ public class StatementUtils
     }
 
 
-//    public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
-//    {
-//        return new StatementUtils(table).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.merge);
-//    }
+    public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    {
+        return new StatementUtils(table).createStatement(conn, table, skipColumnNames, c, user, selectIds, autoFillDefaultColumns, operation.merge);
+    }
 
 
 
@@ -109,7 +114,7 @@ public class StatementUtils
 
     boolean useVariables = false;
     SqlDialect dialect;
-    CaseInsensitiveHashMap<Parameter> parameters = new CaseInsensitiveHashMap<>();
+    Map<String,Parameter> parameters = new CaseInsensitiveMapWrapper(new LinkedHashMap<String,Parameter>());
 
     private String makeVariableName(String name)
     {
@@ -205,7 +210,7 @@ public class StatementUtils
     }
 
 
-    private StatementUtils(TableInfo t)
+    private StatementUtils(@NotNull TableInfo t)
     {
         dialect = t.getSqlDialect();
     }
@@ -228,11 +233,13 @@ public class StatementUtils
         {
             if (!dialect.isPostgreSQL() && !dialect.isSqlServer())
                 throw new IllegalArgumentException("Merge is only supported/tested on postgres and sql server");
+            if (selectIds)
+                throw new IllegalArgumentException("Merge does not support the selectid option");
         }
 
-        useVariables = operation.merge == op && dialect.isPostgreSQL();
+        useVariables = operation.merge == op; //  && dialect.isPostgreSQL();
         String ifTHEN = dialect.isSqlServer() ? " BEGIN " : " THEN ";
-        String ifEND = dialect.isSqlServer() ? " END " : "; END IF ";
+        String ifEND = dialect.isSqlServer() ? " END " : " END IF ";
         String containerIdConstant = null==c ? null : "'" + c.getId() + "'";
 
         Timestamp ts = new Timestamp(System.currentTimeMillis());
@@ -255,22 +262,21 @@ public class StatementUtils
         // Keys for UPDATE or MERGE
         //
 
-/*        // TODO more control/configuration
+        // TODO more control/configuration
         // using objectURIColumnName preferentially to be backward compatible with OntologyManager.saveTabDelimited
-        // but that usage should probably go away
-        HashSet<FieldKey> keys = new LinkedHashSet<>();
+        //    which in turn is only called by LuminexDataHandler.saveDataRows()
+        LinkedHashMap<FieldKey,ColumnInfo> keys = new LinkedHashMap<>();
         ColumnInfo col = table.getColumn("Container");
         if (null != col)
-            keys.add(col.getFieldKey());
+            keys.put(col.getFieldKey(), col);
         col = table.getColumn(objectURIColumnName);
         if (null != col)
-            keys.add(col.getFieldKey());
+            keys.put(col.getFieldKey(), col);
         else
         {
             for (ColumnInfo pk : table.getPkColumns())
-                keys.add(pk.getFieldKey());
+                keys.put(pk.getFieldKey(), pk);
         }
-*/
 
         //
         // exp.Objects INSERT
@@ -303,9 +309,7 @@ public class StatementUtils
 
                 objectIdVar = dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
                 useVariables = dialect.isPostgreSQL();
-                if (!sqlfDeclare.isEmpty())
-                    sqlfDeclare.append(";\n");
-                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT");
+                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT;");
 
                 if (null == c)
                     containerParameter = createParameter("container", JdbcType.VARCHAR);
@@ -325,7 +329,7 @@ public class StatementUtils
                 appendParameterOrVariableOrConstant(sqlfInsertObject, containerParameter, containerIdConstant);
                 sqlfInsertObject.append(" AND ObjectURI = ");
                 appendParameterOrVariable(sqlfInsertObject, objecturiParameter);
-                sqlfInsertObject.append(")");
+                sqlfInsertObject.append(");\n");
 
                 // Grab the object's ObjectId
                 sqlfSelectObject.append(setKeyword).append(objectIdVar).append(" = (");
@@ -333,7 +337,7 @@ public class StatementUtils
                 appendParameterOrVariableOrConstant(sqlfSelectObject, containerParameter, containerIdConstant);
                 sqlfSelectObject.append(" AND ObjectURI = ");
                 appendParameterOrVariable(sqlfSelectObject, objecturiParameter);
-                sqlfSelectObject.append(")");
+                sqlfSelectObject.append(");\n");
 
                 if (operation.insert != op)
                 {
@@ -348,7 +352,7 @@ public class StatementUtils
                         separator = ", ";
                         sqlfDelete.append(property.getPropertyId());
                     }
-                    sqlfDelete.append(")");
+                    sqlfDelete.append(");\n");
                 }
             }
         }
@@ -360,7 +364,7 @@ public class StatementUtils
         List<SQLFragment> cols = new ArrayList<>();
         List<SQLFragment> values = new ArrayList<>();
 
-        ColumnInfo col = table.getColumn("Container");
+        col = table.getColumn("Container");
         if (null != col)
         {
             cols.add(new SQLFragment("Container"));
@@ -465,13 +469,22 @@ public class StatementUtils
         SQLFragment sqlfSelectIds = null;
         boolean selectAutoIncrement = false;
 
-        SQLFragment sqlfInsertInto = new SQLFragment();
-        SQLFragment sqlfUpdate = new SQLFragment();
-
         assert cols.size() == values.size() : cols.size() + " columns and " + values.size() + " values - should match";
 
+        //
+        // INSERT
+        //
+
+        SQLFragment sqlfInsertInto = new SQLFragment();
         if (operation.insert == op || operation.merge == op)
         {
+            if (operation.merge == op)
+            {
+                sqlfInsertInto.append("IF ");
+                sqlfInsertInto.append(dialect.isSqlServer() ? "@@ROWCOUNT>0" :  "NOT FOUND");
+                sqlfInsertInto.append(ifTHEN).append("\n\t");
+            }
+
             // Create a standard INSERT INTO table (col1, col2) VALUES (val1, val2) statement
             // or (for degenerate, empty values case) INSERT INTO table VALUES (DEFAULT)
             sqlfInsertInto.append("INSERT INTO ").append(table.getSelectName());
@@ -515,17 +528,25 @@ public class StatementUtils
                 if (null != objectIdVar)
                 {
                     rowIdVar = dialect.isPostgreSQL() ? "_$rowid$_" : "@_rowid_";
-                    if (!sqlfDeclare.isEmpty())
-                        sqlfDeclare.append(";\n");
-                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT");
+                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;");
                 }
                 dialect.appendSelectAutoIncrement(sqlfInsertInto, table, autoIncrementColumn.getName(), rowIdVar);
             }
+            sqlfInsertInto.append(";\n");
+
+            if (operation.merge == op)
+                sqlfInsertInto.append(ifEND).append("\n");
         }
+
+        //
+        // UPDATE
+        //
+
+        SQLFragment sqlfUpdate = new SQLFragment();
         if (operation.update == op || operation.merge == op)
         {
             // Create a standard UPDATE table SET col1 = val1, col2 = val2 statement
-            sqlfUpdate.append("UPDATE ").append(table.getSelectName()).append(" SET ");
+            sqlfUpdate.append("UPDATE ").append(table.getSelectName()).append("\nSET ");
             comma = "";
             for (int i = 0; i < cols.size(); i++)
             {
@@ -535,10 +556,18 @@ public class StatementUtils
                 sqlfUpdate.append(" = ");
                 sqlfUpdate.append(values.get(i));
             }
-            sqlfUpdate.append(" WHERE ");
-            sqlfUpdate.append(objectURIColumnName);
-            sqlfUpdate.append(" = ");
-            appendParameterOrVariable(sqlfUpdate, objecturiParameter);
+            sqlfUpdate.append("\nWHERE ");
+            String and = "";
+            for (Map.Entry<FieldKey,ColumnInfo> e : keys.entrySet())
+            {
+                ColumnInfo keyCol = e.getValue();
+                sqlfUpdate.append(and);
+                sqlfUpdate.append(keyCol.getSelectName());
+                sqlfUpdate.append(" = ");
+                appendParameterOrVariable(sqlfUpdate, keyCol);
+                and = " AND ";
+            }
+            sqlfUpdate.append(";\n");
         }
 
 
@@ -614,7 +643,7 @@ public class StatementUtils
                     sqlfObjectProperty.append("NULL");
                 sqlfObjectProperty.append(",");
                 appendPropertyValue(sqlfObjectProperty, dp, v);
-                sqlfObjectProperty.append(")");
+                sqlfObjectProperty.append(");\n");
                 sqlfObjectProperty.append(ifEND);
             }
         }
@@ -628,15 +657,40 @@ public class StatementUtils
         if (!useVariables)
         {
             SQLFragment script = new SQLFragment();
-            script.appendStatement(sqlfDeclare, dialect);
-            script.appendStatement(sqlfInsertObject, dialect);
-            script.appendStatement(sqlfSelectObject, dialect);
-            script.appendStatement(sqlfDelete, dialect);
-            script.appendStatement(sqlfUpdate, dialect);
-            script.appendStatement(sqlfInsertInto, dialect);
-            script.appendStatement(sqlfObjectProperty, dialect);
-            script.appendStatement(sqlfSelectIds, dialect);
-
+            for (SQLFragment f : Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds))
+                if (null != f && !f.isEmpty())
+                    script.append(f);
+            ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
+        }
+        else if (dialect.isSqlServer())
+        {
+            if (!parameters.isEmpty())
+            {
+                SQLFragment select = new SQLFragment();
+                sqlfDeclare.append("DECLARE ");
+                select.append("SELECT ");
+                comma = "";
+                for (Map.Entry<String, Parameter> e : parameters.entrySet())
+                {
+                    Parameter p = e.getValue();
+                    String variable = p.getVariableName();
+                    String type = dialect.sqlTypeNameFromSqlType(p.getType().sqlType);
+                    sqlfDeclare.append(comma);
+                    sqlfDeclare.append(variable);
+                    sqlfDeclare.append(" ");
+                    sqlfDeclare.append(type);
+                    select.append(comma).append(variable).append("=?");
+                    select.add(p);
+                    comma = ", ";
+                }
+                sqlfDeclare.append(";\n");
+                sqlfDeclare.append(select);
+                sqlfDeclare.append(";\n");
+            }
+            SQLFragment script = new SQLFragment();
+            for (SQLFragment f : Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds))
+                if (null != f && !f.isEmpty())
+                    script.append(f);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
         }
         else
@@ -659,7 +713,7 @@ public class StatementUtils
                 fn.append(variable);
                 fn.append(" ");
                 fn.append(type);
-                fn.append(" -- ").append(AliasManager.makeLegalName(p.getName(), null, false));
+//                fn.append(" -- ").append(AliasManager.makeLegalName(p.getName(), null, false));
                 drop.append(comma).append(type);
                 call.append(comma).append("?");
                 call.add(p);
@@ -690,31 +744,29 @@ public class StatementUtils
                 call.append("}");
             }
 
-            // Append these by hand -- don't want ; in the middle of the function
             fn.append(sqlfDeclare);
 
-            // Treat as one statement -- don't want ; inbetween
-            sqlfInsertObject.insert(0, "BEGIN\n");
-
-            fn.appendStatement(sqlfInsertObject, dialect);
-            fn.appendStatement(sqlfSelectObject, dialect);
-            fn.appendStatement(sqlfDelete, dialect);
-            fn.appendStatement(sqlfUpdate, dialect);
-            fn.appendStatement(sqlfInsertInto, dialect);
-
-            fn.appendStatement(sqlfObjectProperty, dialect);
+            String semi = "";
+            fn.append("BEGIN\n");
+            for (SQLFragment f : Arrays.asList(sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty))
+            {
+                if (null != f && !f.isEmpty())
+                    fn.append(f);
+            }
             if (null == sqlfSelectIds)
             {
-                fn.appendStatement(new SQLFragment("RETURN"), dialect);
+                fn.append(new SQLFragment(";RETURN;\n"));
             }
             else
             {
-                sqlfSelectIds.insert(0, "RETURN QUERY ");
-                fn.appendStatement(sqlfSelectIds, dialect);
+                sqlfSelectIds.insert(0, "RETURN QUERY;\n");
+                fn.append(sqlfSelectIds);
+                fn.append(";\n");
             }
-            fn.append(";\nEND;\n$$ LANGUAGE plpgsql;\n");
+            fn.append("END;\n$$ LANGUAGE plpgsql;\n");
             new SqlExecutor(table.getSchema()).execute(fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
+            ret.setDebugSql(fn.getSQL() + "--\n" + call.toString());
             ret.onClose(new Runnable() { @Override public void run()
             {
                 try
@@ -753,12 +805,14 @@ public class StatementUtils
     public static class TestCase extends Assert
     {
         TableInfo issues;
+        TableInfo test;
         User user;
         Container container;
 
         void init()
         {
             issues = DbSchema.get("issues").getTable("issues");
+            test = DbSchema.get("test").getTable("testtable2");
             container = JunitUtil.getTestContainer();
             user = TestContext.get().getUser();
         }
@@ -768,10 +822,21 @@ public class StatementUtils
         public void testInsert() throws Exception
         {
             init();
+            Parameter.ParameterMap m = null;
             try (Connection conn = issues.getSchema().getScope().getConnection())
             {
-                Parameter.ParameterMap m = StatementUtils.insertStatement(conn, issues, null, container, user, true, true);
-                System.err.println(m.getDebugSql());
+                m = StatementUtils.insertStatement(conn, issues, null, container, user, true, true);
+                System.err.println(m.getDebugSql()+"\n\n");
+                m.close(); m = null;
+
+                m = StatementUtils.insertStatement(conn, test, null, container, user, true, true);
+                System.err.println(m.getDebugSql()+"\n\n");
+                m.close(); m = null;
+            }
+            finally
+            {
+                if (null != m)
+                    m.close();
             }
         }
 
@@ -780,10 +845,21 @@ public class StatementUtils
         public void testUpdate() throws Exception
         {
             init();
+            Parameter.ParameterMap m = null;
             try (Connection conn = issues.getSchema().getScope().getConnection())
             {
-                Parameter.ParameterMap m = StatementUtils.updateStatement(conn, issues, container, user, true, true);
-                System.err.println(m.getDebugSql());
+                m = StatementUtils.updateStatement(conn, issues, container, user, true, true);
+                System.err.println(m.getDebugSql()+"\n\n");
+                m.close(); m = null;
+
+                m = StatementUtils.updateStatement(conn, test, container, user, true, true);
+                System.err.println(m.getDebugSql()+"\n\n");
+                m.close(); m = null;
+            }
+            finally
+            {
+                if (null != m)
+                    m.close();
             }
         }
 
@@ -792,8 +868,21 @@ public class StatementUtils
         public void testMerge() throws Exception
         {
             init();
+            Parameter.ParameterMap m = null;
             try (Connection conn = issues.getSchema().getScope().getConnection())
             {
+                m = StatementUtils.mergeStatement(conn, issues, null, container, user, false, true);
+                System.err.println(m.getDebugSql()+"\n\n");
+                m.close(); m = null;
+
+                m = StatementUtils.mergeStatement(conn, test, null, container, user, false, true);
+                System.err.println(m.getDebugSql()+"\n\n");
+                m.close(); m = null;
+            }
+            finally
+            {
+                if (null != m)
+                    m.close();
             }
         }
     }

@@ -46,6 +46,30 @@ import java.sql.SQLException;
  */
 public interface QueryUpdateService
 {
+    enum InsertOption
+    {
+        // interactive/api
+        INSERT(false, false, false, true),
+        UPSERT(false, true, false, false),
+        // bulk
+        IMPORT(true, false, true, false),
+        MERGE(true, true, false, false);
+
+        final public boolean batch;
+        final public boolean mergeRows;
+        final public boolean useImportAliases;
+        final public boolean reselectIds;
+
+        InsertOption(boolean batch, boolean merge, boolean aliases, boolean selectIds)
+        {
+            this.batch = batch;
+            mergeRows = merge;
+            useImportAliases = aliases;
+            reselectIds = selectIds;
+        }
+    }
+
+
     /**
      * Returns the rows identified by the keys, existing in the container, as maps.
      * If the row is not found, it is omitted from the returned list.

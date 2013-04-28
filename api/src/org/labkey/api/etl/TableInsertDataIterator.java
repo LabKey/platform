@@ -43,14 +43,16 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     boolean _selectIds = false;
     final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
 
-    public static TableInsertDataIterator create(DataIterator data, TableInfo table, DataIteratorContext context)
+
+    public static DataIteratorBuilder create(DataIterator data, TableInfo table, DataIteratorContext context)
     {
         TableInsertDataIterator it = new TableInsertDataIterator(data, table, null, context);
         return it;
     }
 
+
     /** If container != null, it will be set as a constant in the insert statement */
-    public static TableInsertDataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context)
+    public static DataIteratorBuilder create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context)
     {
         TableInsertDataIterator it = new TableInsertDataIterator(data.getDataIterator(context), table, c, context);
         return it;
@@ -87,9 +89,16 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
         // NOTE StatementUtils figures out reselect etc, but we need to get our metadata straight at construct time
         // Can't move StatementUtils.insertStatement here because the transaction might not be started yet
-        boolean forImport = _context.isForImport();
-        boolean hasTriggers = _table.hasTriggers(_c);
-        _selectIds = !forImport || hasTriggers;
+
+        if (null != context.getSelectIds())
+            _selectIds = context.getSelectIds();
+        else
+        {
+            boolean forInsert = _context.getInsertOption().reselectIds;
+            boolean hasTriggers = _table.hasTriggers(_c);
+            _selectIds = forInsert || hasTriggers;
+        }
+
         if (_selectIds)
         {
             SchemaTableInfo t = (SchemaTableInfo)((UpdateableTableInfo)table).getSchemaTableInfo();

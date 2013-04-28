@@ -95,12 +95,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, boolean forImport)
+    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport)
     {
         if (null == errors)
             errors = new BatchValidationException();
         DataIteratorContext context = new DataIteratorContext(errors);
-        context.setForImport(forImport);
+        context.setInsertOption(forImport);
         return context;
     }
 
@@ -171,7 +171,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         boolean hasTableScript = hasTableScript(container);
         DataIteratorBuilder in = new DataIteratorBuilder.Wrapper(rows);
-        TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, extraScriptContext, context.isForImport());
+        TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, extraScriptContext, context.getInsertOption().useImportAliases);
         if (hasTableScript)
             in = helper.before(in);
         DataIteratorBuilder importETL = createImportETL(user, container, in, context);

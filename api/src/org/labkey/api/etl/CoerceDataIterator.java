@@ -42,7 +42,7 @@ public class CoerceDataIterator extends SimpleTranslator
     {
         super(source, context);
         setDebugName("Coerce before trigger script");
-        init(target, context._forImport);
+        init(target, context.getInsertOption().useImportAliases);
     }
 
     void init(TableInfo target, boolean useImportAliases)

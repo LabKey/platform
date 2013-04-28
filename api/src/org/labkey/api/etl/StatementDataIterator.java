@@ -16,6 +16,7 @@
 package org.labkey.api.etl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
@@ -51,7 +52,7 @@ class StatementDataIterator extends AbstractDataIterator
     CPUTimer _elapsed = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".elapsed");
     CPUTimer _execute = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".execute()");
 
-    protected StatementDataIterator(DataIterator data, Parameter.ParameterMap map, DataIteratorContext context)
+    protected StatementDataIterator(DataIterator data, @Nullable Parameter.ParameterMap map, DataIteratorContext context)
     {
         super(context);
         _data = data;

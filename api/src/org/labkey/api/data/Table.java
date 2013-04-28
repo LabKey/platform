@@ -1930,7 +1930,7 @@ public class Table
             translate.selectAll();
             translate.addBuiltInColumns(JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable, false);
 
-            TableInsertDataIterator load = TableInsertDataIterator.create(
+            DataIteratorBuilder load = TableInsertDataIterator.create(
                     translate,
                     testTable,
                     dic
