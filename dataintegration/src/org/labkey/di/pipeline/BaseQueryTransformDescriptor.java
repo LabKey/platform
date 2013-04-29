@@ -134,6 +134,11 @@ public class BaseQueryTransformDescriptor implements ScheduledPipelineJobDescrip
     private SimpleQueryTransformStepMeta buildSimpleQueryTransformStepMeta(TransformType transformXML) throws XmlException
     {
         SimpleQueryTransformStepMeta meta = new SimpleQueryTransformStepMeta();
+
+        if (null == transformXML.getId())
+            throw new XmlException("Id attribute is required");
+        meta.setId(transformXML.getId());
+
         if (null != transformXML.getDescription())
         {
             meta.setDescription(transformXML.getDescription());

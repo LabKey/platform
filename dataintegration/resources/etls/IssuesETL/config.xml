@@ -3,7 +3,7 @@
     <name>Issues</name>
     <description>Check for new Issues</description>
     <transforms>
-        <transform type="org.labkey.di.pipeline.TransformTask">
+        <transform id="issues" type="org.labkey.di.pipeline.TransformTask">
             <description>Copy issues</description>
             <source schemaName="issues" queryName="issues" />
             <destination schemaName="destSchema" queryName="destQuery" />

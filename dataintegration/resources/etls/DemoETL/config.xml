@@ -3,15 +3,15 @@
     <name>Hello World</name>
     <description>Check for new Users</description>
     <transforms>
-        <transform type="org.labkey.di.pipeline.TransformTask">
+        <transform id="transform1" type="org.labkey.di.pipeline.TransformTask">
             <description>Copy new Users</description>
             <source schemaName="core" queryName="users" />
             <destination schemaName="destSchema" queryName="destQuery" />
         </transform>
-        <transform type="org.labkey.di.pipeline.TestTask">
+        <transform id="test2" type="org.labkey.di.pipeline.TestTask">
             <description>Test Task 2</description>
         </transform>
-        <transform type="org.labkey.di.pipeline.TestTask">
+        <transform id="test3" type="org.labkey.di.pipeline.TestTask">
             <description>Test Task 3</description>
         </transform>
     </transforms>
