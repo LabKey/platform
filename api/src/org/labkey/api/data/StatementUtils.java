@@ -604,8 +604,6 @@ public class StatementUtils
                 PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
                 Parameter v = createParameter(dp.getName(), dp.getPropertyURI(), propertyType.getJdbcType());
                 Parameter mv = createParameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, JdbcType.VARCHAR);
-                sqlfObjectProperty.append(stmtSep);
-                stmtSep = ";\n";
                 sqlfObjectProperty.append("IF (");
                 appendPropertyValue(sqlfObjectProperty, dp, v);
                 sqlfObjectProperty.append(" IS NOT NULL");
@@ -645,6 +643,7 @@ public class StatementUtils
                 appendPropertyValue(sqlfObjectProperty, dp, v);
                 sqlfObjectProperty.append(");\n");
                 sqlfObjectProperty.append(ifEND);
+                sqlfObjectProperty.append(";\n");
             }
         }
 
@@ -755,11 +754,11 @@ public class StatementUtils
             }
             if (null == sqlfSelectIds)
             {
-                fn.append(new SQLFragment(";RETURN;\n"));
+                fn.append(new SQLFragment("RETURN;\n"));
             }
             else
             {
-                sqlfSelectIds.insert(0, "RETURN QUERY;\n");
+                sqlfSelectIds.insert(0, "RETURN QUERY\n");
                 fn.append(sqlfSelectIds);
                 fn.append(";\n");
             }
